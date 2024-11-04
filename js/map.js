@@ -418,7 +418,7 @@ function popInfo(busId) {
 
         for (let i = 0; i < sortedStops.length-1; i++) {
 
-            const eta = busETAs[busId][sortedStops[i]]
+            const eta = busETAs[busId][sortedStops[i]] + 20
             // console.log(sortedStops[i])
 
             const stopName = stopsData[sortedStops[i]].name
@@ -429,7 +429,7 @@ function popInfo(busId) {
                     <div class="next-stop-campus">${campusName}</div>
                     <div class="next-stop-name">${stopName}</div>
                 </div>`)
-            $('.next-stops-grid').append($(`<div class="next-stop-time">${Math.ceil(eta/60)}m</div>`))
+            $('.next-stops-grid').append($(`<div class="next-stop-time">${Math.round(eta/60)}m</div>`))
         }
     }
 
