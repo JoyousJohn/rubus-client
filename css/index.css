@@ -39,15 +39,20 @@ html {
 .info-popup-wrapper, .route-panel-wrapper {
     width: 100%;
     position: fixed;
-    left: 0;
-    right: 0;
+    /* left: 0; */
+    /* right: 0; */
     z-index: 401;
+}
+
+.info-popup-wrapper {
+    pointer-events: none; /* Needed since max height to allow tall panel on desktop. Can instead set height 100% on each parent elm in mq */
 }
 
 .bus-info-popup {
     display: none;
     font-family: var(--font-family);
     margin: 1rem;
+    pointer-events: all;
 }
 
 .info-main {

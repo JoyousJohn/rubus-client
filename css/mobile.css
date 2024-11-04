@@ -1,0 +1,36 @@
+@media (min-width: 992px) {
+    .info-popup-wrapper {
+        max-width: 30%;
+        right: 0;
+        height: 100vh;
+        margin-top: 1rem;
+        margin-right: 1rem;
+    }
+
+    .info-next-stops {
+        max-height: 100%;
+        margin-bottom: 4rem; /* Not sure why needed, look into .bus-info-popup 1rem marigin */
+    }
+
+    .route-selectors {
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        row-gap: 0.5rem;
+    }
+
+    .settings-btn {
+        padding: 1rem 2rem !important;
+        aspect-ratio: auto;
+    }
+
+    .route-selector:last-child {
+        margin-right: 0; /* For settings */
+    }
+
+    .panout {
+        margin-bottom: 1rem;
+    }
+
+}
+  
