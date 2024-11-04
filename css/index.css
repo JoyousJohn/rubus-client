@@ -1,0 +1,447 @@
+:root {
+    --font-family: 'PP Neue Montreal', sans-serif;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+}
+
+html {
+    font-size: 62.5%;
+}
+
+#map {
+    height: 100%;
+}
+
+.bus-icon-outer {
+    /* This class can be used to style the marker */
+    background-color: red; /* Example color */
+    border-radius: 50%; /* Make it circular */
+    border-top-left-radius: 10%;
+    border: 2px solid black; /* Optional: add a border */
+    height: 27px;
+    width: 27px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.bus-icon-inner {
+    width: 13px;
+    height: 13px;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 50%;
+}
+
+.info-popup-wrapper, .route-panel-wrapper {
+    width: 100%;
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 401;
+}
+
+.bus-info-popup {
+    display: none;
+    font-family: var(--font-family);
+    margin: 1rem;
+}
+
+.info-main {
+    column-gap: 1rem;
+    /* justify-content: center; */
+    align-items: center;
+}
+
+.info-route {
+    font-weight: 800;
+    font-size: 3rem;
+}
+
+.info-stop-name {
+    font-size: 2.5rem;
+}
+
+.info-campuses {
+    font-size: 2.5rem;
+}
+
+.info-extra {
+    font-size: 1.5rem;
+    color: dimgray;
+    line-height: 0.7;
+}
+
+.info-capacity {
+    color: #000000;
+}
+
+.bus-stopped-for {
+    font-size: 1.5rem;
+    color: #f62929
+}
+
+
+.bus-info-main, .info-next-stops {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1.5rem 2rem;
+}
+
+.bus-stopped-for {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1rem 2rem;}
+
+.info-next-stops {
+    max-height: 40vh;
+    overflow-y: scroll;
+}
+
+.next-stops-grid {
+    grid-template-columns: auto 1fr auto;
+    column-gap: 2rem;
+    row-gap: 1.5rem;
+    align-items: center;
+}
+
+.next-stop-circle {
+    width: 10px;
+    height: 10px;
+    background-color: rgb(162, 162, 162);
+    border-radius: 50%;
+    position: relative;
+}
+
+.next-stop-circle::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 4rem; /* Adjusts to your grid gap */
+    background: rgb(240, 240, 240);
+    left: 50%;
+    transform: translateX(-50%);
+    top: 100%;
+}
+
+.next-stop-circle::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 3rem; /* Adjusts to your grid gap */
+    background: rgb(240, 240, 240);
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+}
+
+.next-stop-circle:first-child:before {
+    display: none;
+}
+
+.next-stops-grid .next-stop-circle:nth-last-child(3)::after {
+    display: none;
+}
+
+.next-stop-campus {
+    font-size: 1.2rem;
+    color: gray;
+    font-weight: bold;
+    line-height: 0.8;
+}
+
+.next-stop-name {
+    font-size: 1.5rem;
+}
+
+.next-stop-time {
+    font-size: 1.6rem;
+    /* color: rgb(57, 57, 176); */
+    font-weight: bold;
+}
+
+.next-stops-text {
+    color: gray;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+
+.stop-info-popup {
+    background-color: white;
+    border-radius: 1rem;
+    margin: 1rem;
+    padding: 1rem;
+    font-family: var(--font-family);
+    display: none;
+}
+
+
+.info-stop-servicing {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.stop-info-buses-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    column-gap: 0.5rem;
+    margin: 1rem;
+    margin-top: 0;
+}
+
+.stop-bus-route {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.stop-bus-id {
+    font-size: 1.5rem;
+    color: rgb(60, 60, 60);
+}
+
+.stop-bus-eta {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+
+.route-panel {
+    background-color: white;
+    font-family: var(--font-family);
+    padding: 1rem;
+    border-radius: 1rem;
+    height: 100vh;
+}
+
+.route-name {
+    font-weight: bold;
+    font-size: 2.5rem;
+}
+
+.route-campuses {
+    font-size: 2rem;
+}
+
+.route-active-buses {
+    font-size: 1.5rem;
+    color: gray;
+}
+
+.route-bus-name {
+    font-size: 1.7rem;
+}
+
+.route-bus-speed {
+    font-size: 1.5rem;
+    color: rgb(94, 94, 94);
+}
+
+
+.bottom {
+    position: fixed;
+    flex-direction: column;
+    display: flex;
+    bottom: 0;
+    z-index: 401;
+    padding: 0.5rem;
+    padding-bottom: 0;
+    /* row-gap: 1rem; */
+    width: 100%;
+}
+
+.panout {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 5rem;
+    font-size: 2.5rem;
+    width: min-content;
+    color: #5b5b5b;
+    display: flex;
+    aspect-ratio: 1;
+}
+
+.route-selectors {
+    display: flex;
+    font-family: var(--font-family);
+    font-weight: bold;
+    column-gap: 0.5rem;
+    user-select: none;
+    width: min-content;
+    overflow-x: scroll;
+    touch-action: pan-x;
+    padding-top: 1rem;
+    margin-left: -1rem;
+    padding-left: 1rem;
+    padding-bottom: 1rem;
+    /* Hide scrollbar for WebKit browsers */
+    /* Hide scrollbar for Firefox */
+    scrollbar-width: none;
+}
+
+/* Hide scrollbar for WebKit browsers */
+.route-selectors::-webkit-scrollbar {
+    display: none;
+}
+
+.route-selector {
+    font-size: 2rem;
+    color: white;
+    border-radius: 4rem;
+    padding: 0.5rem 2rem;
+    white-space: pre;
+    /* pointer-events: none; */
+}
+
+.route-selector:last-child {
+    margin-right: 2rem;
+}
+
+.settings-btn {
+    background-color: black;
+    padding: 0 !important;
+    aspect-ratio: 1;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.route-close {
+    background-color: rgb(208, 77, 77);
+    font-family: Arial;
+    font-weight: bold;
+    aspect-ratio: 1;
+    margin: 1rem;
+    color: white;
+    border-radius: 50%;
+    font-size: 2rem;
+    display: none;
+}
+
+.info-speed-wrapper {
+    line-height: 1;
+    text-align: center;
+}
+
+.info-speed {
+    font-size: 2rem;
+}
+
+.info-mph {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: gray;
+}
+
+
+.settings-panel {
+    height: 100vh;
+    background-color: #f4f4f4;
+    display: none;
+    font-family: var(--font-family);
+    padding: 2rem;
+    z-index: 401;
+    position: fixed;
+    inset: 0;
+}
+
+.settings-main-heading {
+    /* color: black; */
+    font-size: 1.8rem;
+    /* font-weight: bold; */
+}
+
+.settings-heading {
+    font-size: 1.5rem;
+    margin-left: 0.5rem;
+    margin-bottom: 0.2rem;
+    /* font-weight: bold; */
+    color: gray;
+}
+
+.settings-options {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(185, 185, 185);
+    font-size: 1.8rem;
+    background-color: white;
+    /* text-align: center; */
+}
+
+.settings-option {
+    padding: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: rgb(54, 54, 54);
+}
+
+.settings-selected {
+    background-color: rgb(210, 210, 255);
+    /* color: white; */
+}
+
+.settings-option:not(:first-child) {
+    border-left: 1px solid rgb(185, 185, 185);
+}
+
+.settings-close {
+    background-color: rgb(208, 77, 77);
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    height: 4rem;
+    width: 4rem;
+    color: white;
+    font-family: Arial;
+    font-size: 2rem;
+    border-radius: 50%;
+    margin: 1rem;
+    display: none;
+}
+
+.small-marker {
+    height: 20px;
+}
+
+.medium-marker {
+    height: 27px;
+}
+
+.big-marker {
+    height: 35px;
+    margin: 0.3rem;
+}
+
+.marker {
+    border-radius: 50%;
+    border-top-left-radius: 10%;
+    background-color: red;
+    border: 2px solid black; /* Optional: add a border */
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* transform: rotate(90deg); */
+}
+
+.marker > div {
+    background-color: white;
+    border-radius: 50%;
+    border: 2px solid black;
+    aspect-ratio: 1;
+}
+
+.small-marker > div {
+    height: 8px;    
+}
+
+.medium-marker > div {
+    height: 13px;    
+}
+
+.big-marker > div {
+    height: 19px;    
+}

@@ -1,0 +1,16 @@
+{
+    "name": "RUBus.live",
+    "short_name": "RUBus",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#007bff",
+    "icons": [
+      {
+        "src": "img/rubus_transparent.png",
+        "sizes": "1024x1024",
+        "type": "image/png"
+      }
+    ]
+  }
+  

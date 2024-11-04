@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUBus v2</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet-pip@1.1.0/leaflet-pip.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src='https://unpkg.com/leaflet.marker.slideto@0.2.0/Leaflet.Marker.SlideTo.js'></script>
+
+    <script type="text/javascript" src="https://unpkg.com/l-subpixel-position@1.0.0/index.js"></script>
+
+    <link rel="manifest" href="manifest.json">
+
+    <script defer src="js/map.js?unix={{unix}}"></script>
+    <script defer src="js/poly.js?unix={{unix}}"></script>
+    <script defer src="js/gui.js?unix={{unix}}"></script>
+    <script defer src="js/ws.js?unix={{unix}}"></script>
+    <script defer src="js/rubusws.js?unix={{unix}}"></script>
+    <script defer src="js/pre.js?unix={{unix}}"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/index.css?unix={{unix}}">
+    <link rel="stylesheet" type="text/css" href="css/tailwind.css?unix={{unix}}">
+
+    <link href="https://fonts.cdnfonts.com/css/yusei-magic" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/bricolage-grotesque" rel="stylesheet">
+    <!-- <link href="https://fonts.cdnfonts.com/css/agdasima" rel="stylesheet"> -->
+    <script src="https://kit.fontawesome.com/9fec56898e.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.cdnfonts.com/css/pp-neue-montreal" rel="stylesheet">
+                
+</head>
+<body>
+
+    <div class="info-popup-wrapper">
+
+        <div class="bus-info-popup">
+            <div class="flex flex-col gap-y-0p5rem">
+                <div class="bus-info-main">
+                    <div class="info-main flex justify-between">
+                        <div class="flex align-center gap-x-1rem">
+                            <div class="info-route"></div>
+                            <div class="info-campuses"></div>
+                        </div>  
+                        <div class="info-speed-wrapper">
+                            <div class="info-speed"></div>
+                            <div class="info-mph">MPH</div>
+                        </div>
+                    </div>
+                    <div class="info-extra flex" style="white-space: pre;">
+                        <div class="info-name"></div>
+                        <div class="info-capacity"></div>
+                    </div>
+                </div>
+
+                <div class="bus-stopped-for">
+                    Stopped for Xm
+                </div>
+
+                <div class="info-next-stops">
+                    <!-- <div class="next-stops-text">NEXT STOPS</div> -->
+                    <div class="next-stops-grid grid">
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        
+
+        <div class="stop-info-popup">
+
+            <div class="info-stop-name center"></div>
+            <div class="info-stop-servicing flex gap-x-1rem justify-center"></div>
+
+            <div class="stop-info-buses-grid align-center">
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="route-panel-wrapper">
+        <div class="route-panel none">
+            <div class="flex align-center gap-x-1rem">
+                <div class="route-name"></div>
+                <div class="route-campuses"></div>
+            </div>  
+            <div class="route-active-buses center"></div>
+            <div class="active-buses"></div>
+        </div>
+    </div>
+
+    <div class="settings-panel">
+        <div class="settings-main-heading center">Settings</div>
+        <div class="settings-list flex flex-col gap-y-1rem">
+
+            <div class="settings-font">
+                <div class="settings-heading">FONT</div>
+                <div class="settings-options grid grid-cols-3">
+                    <div class="settings-option" settings-option="font" font-option="yusei magic" style="font-family: Yusei Magic;">Yusei</div>
+                    <div class="settings-option" settings-option="font" font-option="PP Neue Montreal" style="font-family: PP Neue Montreal;">Montreal</div>
+                    <div class="settings-option" settings-option="font" font-option="bricolage grotesque" style="font-family: bricolage grotesque;">Grotesque</div>
+                </div>
+            </div>
+
+            <div class="settings-marker-size">
+                <div class="settings-heading">MARKER SIZE</div>
+                <div class="settings-options grid grid-cols-3">
+                    <div class="settings-option"><div class="marker small-marker"><div></div></div></div>
+                    <div class="settings-option settings-selected"><div class="marker medium-marker"><div></div></div></div>
+                    <div class="settings-option"><div class="marker big-marker"><div></div></div></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="settings-close flex justify-center align-center">X</div>
+
+    </div>
+    
+    <div class="bottom">
+        <div class="panout" onclick="panout()"><i class="fa-solid fa-route"></i></div>
+        <div class="flex justify-between">
+            <div class="route-selectors">
+                <div class="route-selector settings-btn"><i class="fa-solid fa-gear"></i></div>
+            </div>
+            <div class="route-close justify-center align-center">X</div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- 100% privacy-first analytics -->
+<script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+<noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
+
+</body>
+
+</html>
