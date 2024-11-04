@@ -15,7 +15,7 @@ function populateRouteSelectors(activeRoutes) {
     routesArray.sort((a, b) => a === 'undefined' ? 1 : b === 'undefined' ? -1 : 0);
 
     routesArray.forEach(route => {
-        console.log(route)
+        // console.log(route)
 
         const $routeElm = $(`<div class="route-selector" routeName="${route}">${route.toUpperCase()}</div>`)  
         
@@ -365,6 +365,73 @@ function selectedRoute(route) {
 
 }
 
+let routeRiderships = {}
+function updateBusOverview(routes) {
+
+    if (!routes) { 
+        routes = Object.keys(busesByRoutes);
+        $('.buses-overview-grid').empty();
+    }
+
+    if (routes.includes('undefined')) { // Should I even track this?
+        routes = routes.filter(route => route !== 'undefined');
+    }
+
+    // console.log(`Updating bus overview for routes: ${routes.join(', ')}`)
+
+    const routeData = routes.map(route => {
+        routeRiderships[route] = 0;
+        busesByRoutes[route].forEach(busId => {
+            routeRiderships[route] += Math.ceil(busData[busId].capacity/100 * 57);
+        });
+        return { route, ridership: routeRiderships[route] };
+    });
+
+    routeData.sort((a, b) => b.ridership - a.ridership);
+
+    routeData.forEach(({route}) => {
+        if ($(`.bus-overview-ridership[route="${route}"]`).length === 0) {
+            const $busName = $(`<div class="bus-overview-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]); // (${busesByRoutes[route].length})
+            const $busRidership = $(`<div class="bus-overview-ridership" route="${route}">${routeRiderships[route]} riders</div>`);
+            $('.buses-overview-grid').append($busName);
+            $('.buses-overview-grid').append($busRidership);
+        } else {
+            const prevRiders = parseInt($(`.bus-overview-ridership[route="${route}"]`).text().split(' ')[0]);
+            const newRiders = (routeRiderships[route])
+
+
+            if (prevRiders !== newRiders) {
+                // console.log(`'prevriders: ${prevRiders}, newriders: ${newRiders} `)
+                let color = ''
+                if (prevRiders > newRiders) {
+                    color = 'red'
+                } else if (prevRiders < newRiders) {
+                    color = 'lime'
+                }
+
+                setTimeout(() => {
+                    $(`.bus-overview-ridership[route="${route}"]`).text(`${routeRiderships[route]} riders`).css('color', color).css('transition', 'color 0.25s');
+                    setTimeout(() => {
+                        $(`.bus-overview-ridership[route="${route}"]`).css('color', 'black').css('transition', 'color 1s');
+                    }, 1000);
+                }, Math.random() * 5000);
+            }
+        }
+    });
+
+}
+
+
+function busesOverview() {
+    $('.buses-panel-wrapper').slideDown('fast');
+    $('.bottom, .leaflet-control-attribution').hide();
+    $('.buses-close').show();
+
+    updateBusOverview();
+
+}
+
+
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
     $('.panout, .settings-btn').show();
@@ -397,6 +464,12 @@ $('.settings-close').click(function() {
     $('.settings-panel').hide();
     $('.bottom').show();
     $(this).hide();
+})
+
+$('.buses-close').click(function() {
+    $('.buses-panel-wrapper').slideUp('fast');
+    $('.bottom').show();
+    $('.buses-close').hide();
 })
 
 $(document).ready(function() {

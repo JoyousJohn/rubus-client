@@ -8,7 +8,7 @@ async function setPolylines(activeRoutes) {
 
         if (!coordinates) continue // if undefined
 
-        console.log(typeof coordinates[0])
+        // console.log(typeof coordinates[0])
 
         if (Object.keys(coordinates[0])[0] === 'lat') {
             coordinates = coordinates.map(point => [point.lat, point.lng]); // Note: Leaflet uses [lat, lng]
@@ -217,6 +217,7 @@ function routesServicing(stopId) {
 let busesByRoutes = {}
 
 function makeBusesByRoutes() {
+    busesByRoutes = {}
     for (const bus in busData) {
         const route = busData[bus].route 
         // console.log(route)

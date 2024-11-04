@@ -96,6 +96,10 @@ function panout() {
     map.fitBounds(polylineBounds);
 }
 
+function busesOverview() {
+    
+}
+
 // Method to calculate Haversine distance between two points
 function haversine(lat1, lon1, lat2, lon2) {
     const R = 3958.8; // Radius of Earth in miles

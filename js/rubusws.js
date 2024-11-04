@@ -26,7 +26,7 @@ function openRUBusSocket() {
     }
 
     socket.addEventListener("open", (event) => {
-        console.log("WebSocket connection opened:", event);
+        console.log("WebSocket connection opened");
     });
 
     function processEventData(eventData) {
@@ -130,8 +130,6 @@ function openRUBusSocket() {
 
     socket.addEventListener("message", (event) => {    
         
-        console.log('new data')
-
         try {
             const eventData = JSON.parse(event.data);
             console.log("Formatted message from server:", eventData);

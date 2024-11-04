@@ -57,6 +57,7 @@ async function fetchBusData() {
         // console.log('Response data:', data);
 
         let activeBuses = []
+        let pollActiveRoutes = new Set()
 
         for (const someId in data.buses) {
 
@@ -89,6 +90,9 @@ async function fetchBusData() {
 
             plotBus(busId)
             calculateSpeed(busId)
+
+            makeBusesByRoutes()
+            pollActiveRoutes.add(busData[busId].route)
             
         }
 
@@ -110,6 +114,10 @@ async function fetchBusData() {
                 
             }
 
+        }
+
+        if ($('.buses-panel-wrapper').is(':visible')) {
+            updateBusOverview(Array.from(pollActiveRoutes))
         }
 
     } catch (error) {
@@ -187,11 +195,6 @@ function updateTimeToStops(busIds) {
                     busETAs[busId] = {};
                 }
                 busETAs[busId][thisStopId] = Math.round(currentETA)
-
-                if (busId === '18018') {
-                    console.log(`[${busId}] ETA for stopId ${thisStopId}: ${busETAs[busId][thisStopId]} seconds`)
-                }
-
             }
         }
 
@@ -219,7 +222,6 @@ $(document).ready(async function() {
         }, 5000);
     }
 
-    makeBusesByRoutes()
     addStopsToMap()
 
     async function fetchETAs() {
