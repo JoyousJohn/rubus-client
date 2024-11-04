@@ -399,28 +399,37 @@ function popInfo(busId) {
 
         const nextStop = data.next_stop
         let routeStops = stopLists[data.route]
+        let sortedStops = []
 
         const nextStopIndex = routeStops.indexOf(nextStop);
+
         if (nextStopIndex !== -1) {
-            routeStops = routeStops.slice(nextStopIndex)
-                            .concat(routeStops.slice(0, nextStopIndex));
+            sortedStops = routeStops
+                            .slice(nextStopIndex)
+                            .concat(routeStops.slice(0, nextStopIndex))
+        }
+
+        if (nextStopIndex + 1 === routeStops.length) {
+            sortedStops.push(routeStops[0])
+        } else {
+            sortedStops.push(routeStops[nextStopIndex + 1])
         }
 
         let currentETA = 0
 
-        for (let i = 0; i < routeStops.length-1; i++) {
+        for (let i = 0; i < sortedStops.length-1; i++) {
 
             if (etas) {
 
                 let prevStopId
 
                 if (i === 0) {
-                    prevStopId = routeStops[routeStops.length-1]
+                    prevStopId = sortedStops[sortedStops.length-1]
                 } else {
-                    prevStopId = routeStops[i-1]
+                    prevStopId = sortedStops[i-1]
                 }
 
-                const thisStopId = routeStops[i]
+                const thisStopId = sortedStops[i]
 
                 // console.log('prev stop: ', prevStopId)
                 // console.log('thisStopId stop: ', thisStopId)
@@ -437,8 +446,8 @@ function popInfo(busId) {
 
             }
 
-            const stopName = stopsData[routeStops[i]].name
-            const campusName = campusShortNamesMappings[stopsData[routeStops[i]].campus]
+            const stopName = stopsData[sortedStops[i]].name
+            const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]
 
             $('.next-stops-grid').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
             $('.next-stops-grid').append(`<div class="flex flex-col">
