@@ -1,19 +1,25 @@
 // socket = new WebSocket('wss://rubus.live/ws');
 
 let etas = {}
+let waits = {}
 let busLocations = {}
 let busETAs = {}
 
 function updateETAs(etasData) {
     etas = etasData
-    console.log(etas)
-    alert('eta received')
+    // console.log(etas)
+}
+
+function updateWaits(waitsData) {
+    const stop = Object.keys(waitsData)[0]
+    waits[stop] = Math.round(waitsData[stop])
+    // console.log(waitsData)
 }
 
 function openRUBusSocket() {
 
     let socket;
-    if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
+    if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") { // window.location.hostname === ""
         socket = new WebSocket('ws://127.0.0.1:5000/ws');
     } else {
         socket = new WebSocket('wss://transloc.up.railway.app/ws');
@@ -29,6 +35,11 @@ function openRUBusSocket() {
 
             if (eventData['event'] === 'eta_update') {
                 updateETAs(eventData['etas']);
+                return;
+            }
+
+            if (eventData['event'] === 'wait_update') {
+                updateWaits(eventData['wait_update']);
                 return;
             }
 

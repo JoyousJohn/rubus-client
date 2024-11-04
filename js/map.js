@@ -415,36 +415,11 @@ function popInfo(busId) {
             sortedStops.push(routeStops[nextStopIndex + 1])
         }
 
-        let currentETA = 0
 
         for (let i = 0; i < sortedStops.length-1; i++) {
 
-            if (etas) {
-
-                let prevStopId
-
-                if (i === 0) {
-                    prevStopId = sortedStops[sortedStops.length-1]
-                } else {
-                    prevStopId = sortedStops[i-1]
-                }
-
-                const thisStopId = sortedStops[i]
-
-                // console.log('prev stop: ', prevStopId)
-                // console.log('thisStopId stop: ', thisStopId)
-                // console.log('eta: ', currentETA)
-
-                // console.table(etas[thisStopId])
-
-                if (thisStopId in etas && prevStopId in etas[thisStopId]['from']) {
-                    currentETA += etas[thisStopId]['from'][prevStopId]
-                } else {
-                    console.log(thisStopId + ' from  ' + prevStopId + ' not found.')
-                    currentETA += 300
-                }
-
-            }
+            const eta = busETAs[busId][sortedStops[i]]
+            // console.log(sortedStops[i])
 
             const stopName = stopsData[sortedStops[i]].name
             const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]
@@ -454,7 +429,7 @@ function popInfo(busId) {
                     <div class="next-stop-campus">${campusName}</div>
                     <div class="next-stop-name">${stopName}</div>
                 </div>`)
-            $('.next-stops-grid').append($(`<div class="next-stop-time">${Math.ceil(currentETA/60)}m</div>`))
+            $('.next-stops-grid').append($(`<div class="next-stop-time">${Math.ceil(eta/60)}m</div>`))
         }
     }
 

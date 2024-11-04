@@ -54,7 +54,7 @@ async function fetchBusData() {
         }
 
         const data = await response.json();
-        console.log('Response data:', data);
+        // console.log('Response data:', data);
 
         let activeBuses = []
 
@@ -129,28 +129,37 @@ function updateTimeToStops(busIds) {
         const nextStop = getNextStopId(busRoute, stopId)
 
         let routeStops = stopLists[busRoute]
+        let sortedStops = []
 
         const nextStopIndex = routeStops.indexOf(nextStop);
         if (nextStopIndex !== -1) {
-            routeStops = routeStops.slice(nextStopIndex)
+            sortedStops = routeStops.slice(nextStopIndex)
                             .concat(routeStops.slice(0, nextStopIndex));
+        }
+
+        if (nextStopIndex + 1 === routeStops.length) {
+            sortedStops.push(routeStops[0])
+        } else {
+            sortedStops.push(routeStops[nextStopIndex + 1])
         }
 
         let currentETA = 0
 
-        for (let i = 0; i < routeStops.length-1; i++) {
+        // console.log(busId)
+
+        for (let i = 0; i < sortedStops.length-1; i++) {
 
             if (etas) {
 
                 let prevStopId
 
                 if (i === 0) {
-                    prevStopId = routeStops[routeStops.length-1]
+                    prevStopId = sortedStops[sortedStops.length-1]
                 } else {
-                    prevStopId = routeStops[i-1]
+                    prevStopId = sortedStops[i-1]
                 }
 
-                const thisStopId = routeStops[i]
+                const thisStopId = sortedStops[i]
 
                 // console.log('prev stop: ', prevStopId)
                 // console.log('thisStopId stop: ', thisStopId)
@@ -161,16 +170,27 @@ function updateTimeToStops(busIds) {
                 if (etas[thisStopId] && prevStopId in etas[thisStopId]['from']) {
                     currentETA += etas[thisStopId]['from'][prevStopId]
                 } else {
-                    console.log(routeStops)
-                    console.log('nextStop: ', nextStop)
-                    console.log(thisStopId + ' from  ' + prevStopId + ' not found. 1111111')
+                    // console.log(routeStops)
+                    // console.log('nextStop: ', nextStop)
+                    // console.log(thisStopId + ' from  ' + prevStopId + ' not found. 1111111')
                     currentETA += 300
+                }
+
+                if (waits[prevStopId]) {
+                    currentETA += waits[prevStopId]
+                    // console.log(`Adding ${waits[prevStopId]}s to currentETA to get to stopId ${thisStopId}`)
+                } else {
+                    currentETA += 30
                 }
 
                 if (!busETAs[busId]) {
                     busETAs[busId] = {};
                 }
                 busETAs[busId][thisStopId] = Math.round(currentETA)
+
+                if (busId === '18018') {
+                    console.log(`[${busId}] ETA for stopId ${thisStopId}: ${busETAs[busId][thisStopId]} seconds`)
+                }
 
             }
         }
@@ -215,9 +235,23 @@ $(document).ready(async function() {
         } catch (error) {
             console.error('Error fetching ETAs:', error);
         }
+
+        try {
+            const response = await fetch('https://transloc.up.railway.app/waits');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            waits = data;
+            console.log('Waits fetched:', waits);
+            // updateTimeToStops('all')
+        } catch (error) {
+            console.error('Error fetching waits:', error);
+        }
+
     }
 
-    fetchETAs();
+    await fetchETAs();
 
     async function fetchWhere() {
         try {
@@ -242,7 +276,7 @@ $(document).ready(async function() {
         }
     }
 
-    fetchWhere();
+    await fetchWhere();
 
     openRUBusSocket();
 
