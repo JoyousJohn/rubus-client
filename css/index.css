@@ -190,6 +190,9 @@ html, body {
     padding: 1rem;
     font-family: var(--font-family);
     display: none;
+    pointer-events: all;
+    overflow-y: scroll;
+    max-height: 40vh;
 }
 
 
@@ -289,7 +292,7 @@ html, body {
 
 .panout, .buses-btn {
     background-color: white;
-    padding: 2rem;
+    padding: 1.7rem;
     border-radius: 5rem;
     font-size: 2.5rem;
     width: min-content;
@@ -297,6 +300,10 @@ html, body {
     display: flex;
     aspect-ratio: 1;
     pointer-events: all;
+}
+
+.panout > i, .buses-btn > i {
+    font-size: 2rem;
 }
 
 .route-selectors {
@@ -354,6 +361,7 @@ html, body {
     border-radius: 50%;
     font-size: 2rem;
     display: none;
+    pointer-events: all;
 }
 
 .info-speed-wrapper {
