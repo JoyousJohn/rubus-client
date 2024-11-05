@@ -394,6 +394,7 @@ function popInfo(busId) {
 
     console.log('data: ', data)
 
+    console.log('next_stop' in data)
 
     if ('next_stop' in data) {
         $('.next-stops-grid').empty();
@@ -442,13 +443,15 @@ function popInfo(busId) {
                 <div class="next-stop-time">${formattedTime}</div>
             </div>`))
         }
+
+        $('.info-next-stops').scrollTop(0).show(); // remove .show after adding message saying stops unavailable in the else statement above
     }
 
     else {
+        console.log('trying to hide')
         $('.info-next-stops').hide();
     }
 
-    $('.info-next-stops').scrollTop(0).show(); // remove .show after adding message saying stops unavailable in the else statement above
     $('.bus-info-popup').show();
 }
 
