@@ -14,6 +14,6 @@ Alternatively, you can use Passio's own ETA endpoint, although the methodology t
 <br>
 `GET passiogo.com/mapGetData.php?eta=<int>&routeId=<int>&stopIds=<int list>&routeIds=<int list>`
 <br><br>
-You will also need to supply your own map tiles API key in `js/maps.js`' and LineString, routes, and stops endpoints in `js/poly.js` if you're not serving these locally.
+You will also need to supply your own map tiles API key in `js/maps.js`' and LineString, routes, and stops endpoints in `js/poly.js` if you're using these and are not serving them locally. Update the Font Awesome Kit key in `index.html` if you'd like to use the same icons.
 <br><br>
 This app can easily be made to service another bus network Passio handles by changing the form data parameters in `js/pre.js` and map coordinates and bounds in `js/map.js`.
