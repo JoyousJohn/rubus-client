@@ -260,7 +260,7 @@ html, body {
 .buses-panel-wrapper {
     background-color: white;
     font-family: var(--font-family);
-    padding: 1rem;
+    /* padding: 1rem; */
     border-radius: 1rem;
     height: 100vh;
     display: none;
@@ -269,11 +269,18 @@ html, body {
 .ridership-title {
     font-size: 2.5rem;
     text-align: center;
+    margin-top: 2rem;
 }
 
 .buses-overview-grid {
     margin-top: 2rem;
     font-size: 2rem;
+    grid-template-columns: auto 1fr 1fr;
+    column-gap: 2rem;
+}
+
+.bus-overview-heading {
+    text-decoration: underline;
 }
 
 .bottom {

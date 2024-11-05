@@ -368,9 +368,11 @@ function selectedRoute(route) {
 let routeRiderships = {}
 function updateBusOverview(routes) {
 
+    const loopTimes = calculateLoopTimes();
+
     if (!routes) { 
         routes = Object.keys(busesByRoutes);
-        $('.buses-overview-grid').empty();
+        $('.buses-overview-grid').children().not('.bus-overview-heading, .bus-overview-footer').remove();
     }
 
     if (routes.includes('undefined')) { // Should I even track this?
@@ -379,10 +381,14 @@ function updateBusOverview(routes) {
 
     // console.log(`Updating bus overview for routes: ${routes.join(', ')}`)
 
+    let totalRidership = 0;
+
     const routeData = routes.map(route => {
         routeRiderships[route] = 0;
         busesByRoutes[route].forEach(busId => {
-            routeRiderships[route] += Math.ceil(busData[busId].capacity/100 * 57);
+            const riders = Math.ceil(busData[busId].capacity/100 * 57)
+            routeRiderships[route] += riders;
+            totalRidership += riders;
         });
         return { route, ridership: routeRiderships[route] };
     });
@@ -393,8 +399,11 @@ function updateBusOverview(routes) {
         if ($(`.bus-overview-ridership[route="${route}"]`).length === 0) {
             const $busName = $(`<div class="bus-overview-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]); // (${busesByRoutes[route].length})
             const $busRidership = $(`<div class="bus-overview-ridership" route="${route}">${routeRiderships[route]} riders</div>`);
-            $('.buses-overview-grid').append($busName);
-            $('.buses-overview-grid').append($busRidership);
+            const $loopTime = $(`<div class="bus-overview-loop-time" route="${route}">${loopTimes[route]} min</div>`);
+            const $footer = $('.buses-overview-grid > .bus-overview-footer').first();
+            $footer.before($busName);
+            $footer.before($busRidership);
+            $footer.before($loopTime);
         } else {
             const prevRiders = parseInt($(`.bus-overview-ridership[route="${route}"]`).text().split(' ')[0]);
             const newRiders = (routeRiderships[route])
@@ -419,6 +428,7 @@ function updateBusOverview(routes) {
         }
     });
 
+    $('.total-ridership').text(totalRidership + ' riding')
 }
 
 
@@ -428,6 +438,44 @@ function busesOverview() {
     $('.buses-close').show();
 
     updateBusOverview();
+}
+
+
+function calculateLoopTimes() {
+
+    let loopTimes = {}
+
+    for (const route of activeRoutes) {
+
+        let eta = 0
+        const stopList = stopLists[route]
+
+        for (let i = 0; i < stopList.length - 1; i++) {
+            const thisStop = stopList[i]
+
+            let prevStop
+            if (i === 0) {
+                prevStop = stopList[stopList.length - 1]
+            } else {
+                prevStop = stopList[i - 1]
+            }
+
+            if (prevStop in etas[thisStop]['from']) {
+                eta += etas[thisStop]['from'][prevStop]
+            } else {
+                eta += 300
+            }
+
+            if (waits[thisStop]) {
+                eta += waits[thisStop]
+            } else {
+                eta += 20
+            }
+        }
+
+        loopTimes[route] = Math.round(eta/60)
+    }
+    return loopTimes
 }
 
 
