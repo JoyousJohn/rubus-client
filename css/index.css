@@ -284,6 +284,7 @@ html, body {
     /* row-gap: 1rem; */
     width: 100%;
     row-gap: 0.8rem;
+    pointer-events: none;
 }
 
 .panout, .buses-btn {
@@ -295,6 +296,7 @@ html, body {
     color: #5b5b5b;
     display: flex;
     aspect-ratio: 1;
+    pointer-events: all;
 }
 
 .route-selectors {
@@ -310,9 +312,8 @@ html, body {
     margin-left: -1rem;
     padding-left: 1rem;
     padding-bottom: 1rem;
-    /* Hide scrollbar for WebKit browsers */
-    /* Hide scrollbar for Firefox */
     scrollbar-width: none;
+    pointer-events: all;
 }
 
 /* Hide scrollbar for WebKit browsers */
