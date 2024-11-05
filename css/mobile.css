@@ -17,6 +17,7 @@
         position: fixed;
         top: 0;
         row-gap: 0.5rem;
+        text-align: center;
     }
 
     .settings-btn {
