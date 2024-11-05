@@ -428,7 +428,6 @@ function busesOverview() {
     $('.buses-close').show();
 
     updateBusOverview();
-
 }
 
 
@@ -446,7 +445,6 @@ function closeRouteMenu() {
     }
 
     panelRoute = undefined
-
 }
 
 $('.route-close').click(function() {

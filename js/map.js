@@ -96,9 +96,6 @@ function panout() {
     map.fitBounds(polylineBounds);
 }
 
-function busesOverview() {
-    
-}
 
 // Method to calculate Haversine distance between two points
 function haversine(lat1, lon1, lat2, lon2) {
@@ -422,8 +419,15 @@ function popInfo(busId) {
 
         for (let i = 0; i < sortedStops.length-1; i++) {
 
-            const eta = busETAs[busId][sortedStops[i]] + 20
+            const eta = Math.round((busETAs[busId][sortedStops[i]] + 20)/60)
             // console.log(sortedStops[i])
+            const currentTime = new Date();
+            currentTime.setMinutes(currentTime.getMinutes() + eta);
+            const formattedTime = currentTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
 
             const stopName = stopsData[sortedStops[i]].name
             const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]
@@ -433,7 +437,10 @@ function popInfo(busId) {
                     <div class="next-stop-campus">${campusName}</div>
                     <div class="next-stop-name">${stopName}</div>
                 </div>`)
-            $('.next-stops-grid').append($(`<div class="next-stop-time">${Math.round(eta/60)}m</div>`))
+            $('.next-stops-grid').append($(`<div class="flex flex-col center">
+                <div class="next-stop-eta">${eta}m</div>
+                <div class="next-stop-time">${formattedTime}</div>
+            </div>`))
         }
     }
 

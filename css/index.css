@@ -165,10 +165,15 @@ html, body {
     font-size: 1.5rem;
 }
 
-.next-stop-time {
+.next-stop-eta {
     font-size: 1.6rem;
     /* color: rgb(57, 57, 176); */
     font-weight: bold;
+}
+
+.next-stop-time {
+    font-size: 1.2rem;
+    color: #656565;
 }
 
 .next-stops-text {
