@@ -359,6 +359,12 @@ function selectedRoute(route) {
         $('.settings-btn').hide();
         $('.leaflet-control-attribution').hide();
         $('.route-panel').slideDown('fast');
+
+        if ($(window).width() > 992) {
+            const routeSelectorsWidth = $('.route-selectors').width() / parseFloat(getComputedStyle(document.documentElement).fontSize) + 2;
+            $('.route-panel').css('padding-left', routeSelectorsWidth + 'rem');
+        }
+
     }
 
     panelRoute = route
