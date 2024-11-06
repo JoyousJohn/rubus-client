@@ -51,7 +51,7 @@ const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds ob
 //     console.log('Drag initialized successfully');
 // };
 
-
+let isDesktop;
 
 $(document).ready(function() {
 
@@ -79,13 +79,21 @@ $(document).ready(function() {
     map.on('move', function() {
 
         // if (!busesDoneInit) return <-- investigate what this is
-        if ($(window).width() > 992) { // if desktop don't hide info boxes on move
+        if (isDesktop) { // if desktop don't hide info boxes on move
             return
         }
         hideInfoBoxes();
     });
 
+    isDesktop = $(window).width() > 992;
+
+    $(window).resize(function() {
+        isDesktop = $(window).width() > 992;
+    });
+
 });
+
+
 
 
 $(document).on('keydown', function(e) {
@@ -100,6 +108,9 @@ function hideInfoBoxes() {
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
     }
+
+    $('.buses-panel-wrapper').slideUp('fast');
+
 }
 
 function panout() {

@@ -33,5 +33,11 @@
         margin-bottom: 1rem;
     }
 
+    .buses-panel-wrapper {
+        height: auto;
+        width: 33%;
+        margin: 2rem;
+    }
+
 }
   

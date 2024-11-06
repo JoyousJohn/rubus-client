@@ -360,7 +360,7 @@ function selectedRoute(route) {
         $('.leaflet-control-attribution').hide();
         $('.route-panel').slideDown('fast');
 
-        if ($(window).width() > 992) {
+        if (isDesktop) {
             const routeSelectorsWidth = $('.route-selectors').width() / parseFloat(getComputedStyle(document.documentElement).fontSize) + 2;
             $('.route-panel').css('padding-left', routeSelectorsWidth + 'rem');
         }
@@ -439,10 +439,18 @@ function updateBusOverview(routes) {
 
 
 function busesOverview() {
-    $('.buses-panel-wrapper').slideDown('fast');
-    $('.bottom, .leaflet-control-attribution').hide();
-    $('.buses-close').show();
 
+    if (!isDesktop) {
+        $('.bottom, .leaflet-control-attribution').hide();
+        $('.buses-close').addClass('flex');
+        $('.buses-panel-wrapper').css('margin-left', 0);
+    } else {
+        const routeSelectorsWidth = $('.route-selectors').width() / parseFloat(getComputedStyle(document.documentElement).fontSize) + 2;
+        $('.buses-panel-wrapper').css('margin-left', routeSelectorsWidth + 'rem');
+    }
+
+    $('.buses-panel-wrapper').slideDown('fast');
+    
     updateBusOverview();
     updateRidershipChart();
 }
@@ -643,7 +651,9 @@ $('.route-close').click(function() {
 $('.settings-btn').on('touchstart click', function() { // why do i need touchstart here but not below? idk
     $('.leaflet-control-attribution').hide();
     $('.settings-panel').show();
-    $('.bottom').hide();
+    if (isDesktop) {
+        $('.bottom').hide();
+    }
     $('.settings-close').show();
 })
 
