@@ -455,12 +455,14 @@ async function updateRidershipChart() {
         console.error('Error fetching ridership:', error);
     }
 
-    // console.table(timeRiderships);
+    const utcOffset = new Date().getTimezoneOffset();
 
-    const estOffset = -5 * 60; // EST is UTC-5
     Object.keys(timeRiderships).forEach(key => {
-        const estMinutes = parseInt(key) + estOffset;
-        timeRiderships[estMinutes] = timeRiderships[key];
+        let nyMinutes = parseInt(key) - utcOffset;
+        if (nyMinutes < 0) {
+            nyMinutes += 1440;
+        }
+        timeRiderships[nyMinutes] = timeRiderships[key];
         delete timeRiderships[key];
     });
 

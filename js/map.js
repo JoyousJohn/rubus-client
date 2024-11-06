@@ -184,6 +184,12 @@ async function calculateSpeed(busId) {
 
     let elapsedMs = 0;
     speedTimeout[busId] = setInterval(() => {
+
+        if (!busData[busId]) { // handle out of service
+            clearInterval(speedTimeout[busId]);
+            return;
+        }
+
         busData[busId].visualSpeed += speedChangeDir;
         if (busData[busId.visualSpeed < 0]) {
             busData[busId].visualSpeed = 0;
