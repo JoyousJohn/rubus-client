@@ -568,10 +568,10 @@ async function updateRidershipChart() {
                     },
                     ticks: {
                         autoSkip: false,
-                        maxRotation: 0,
+                        maxRotation: 45,
                         callback: function(val, index) {
                             const time = this.getLabelForValue(val);
-                            return time.includes(':00') ? time.split(':')[0] + ' ' + time.split(' ')[1] : '';
+                            return time.includes(':00') ? time.split(':')[0] + time.split(' ')[1] : '';
                         }
                     }
                 }
