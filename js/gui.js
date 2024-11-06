@@ -567,7 +567,7 @@ function calculateLoopTimes() {
                 prevStop = stopList[i - 1]
             }
 
-            if (prevStop in etas[thisStop]['from']) {
+            if (etas[thisStop] && prevStop in etas[thisStop]['from']) { // investigate why I need the first condition
                 eta += etas[thisStop]['from'][prevStop]
             } else {
                 eta += 300

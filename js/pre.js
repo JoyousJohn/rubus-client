@@ -108,7 +108,9 @@ async function fetchBusData() {
 
                 console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`)
                 delete busMarkers[busId];
-                busMarkers[busId].remove();
+                if (busMarkers[busId]) { // investigate why this would occur
+                    busMarkers[busId].remove();
+                }
                 delete busData[busId];
                 delete busETAs[busId];   
                 
