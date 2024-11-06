@@ -283,6 +283,18 @@ html, body {
     text-decoration: underline;
 }
 
+.ridership-chart-wrapper {
+    margin: 1rem;
+    margin-top: 3rem;
+}
+
+.ridership-chart {
+
+}
+
+
+
+
 .bottom {
     position: fixed;
     flex-direction: column;

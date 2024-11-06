@@ -438,6 +438,113 @@ function busesOverview() {
     $('.buses-close').show();
 
     updateBusOverview();
+    updateRidershipChart();
+}
+
+async function updateRidershipChart() {
+
+    let timeRiderships
+
+    try {
+        const response = await fetch('https://transloc.up.railway.app/ridership');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        timeRiderships = await response.json();
+    } catch (error) {
+        console.error('Error fetching ridership:', error);
+    }
+
+    // console.table(timeRiderships);
+
+    const estOffset = -5 * 60; // EST is UTC-5
+    Object.keys(timeRiderships).forEach(key => {
+        const estMinutes = parseInt(key) + estOffset;
+        timeRiderships[estMinutes] = timeRiderships[key];
+        delete timeRiderships[key];
+    });
+
+    Object.keys(timeRiderships).forEach(key => {
+        const estTime = new Date();
+        const totalMinutes = parseInt(key);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        
+        estTime.setHours(hours);
+        estTime.setMinutes(minutes);
+        const formattedTime = estTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        timeRiderships[formattedTime] = timeRiderships[key];
+        delete timeRiderships[key];
+    });
+
+    const labels = Object.keys(timeRiderships);
+    const values = Object.values(timeRiderships);
+
+    // Create the chart
+    const ctx = document.getElementById('ridership-chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.5,
+                pointRadius: 0,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                tooltip: {
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y} riders`;
+                        },
+                        title: function(tooltipItems) {
+                            return tooltipItems[0].label;
+                        }
+                    }
+                },
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        display: false,
+                    },
+                    grid: {
+                        color: 'rgba(200, 200, 200, 0.3)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(200, 200, 200, 0.3)'
+                    },
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 0,
+                        callback: function(val, index) {
+                            const time = this.getLabelForValue(val);
+                            return time.includes(':00') ? time.split(':')[0] + ' ' + time.split(' ')[1] : '';
+                        }
+                    }
+                }
+            },
+            maintainAspectRatio: false
+        }
+    });
 }
 
 
