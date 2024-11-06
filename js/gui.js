@@ -355,7 +355,7 @@ function selectedRoute(route) {
 
     if (!panelRoute) {
         $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight())
-        $('.panout').fadeOut('fast');
+        $('.panout, .buses-btn').fadeOut('fast');
         $('.settings-btn').hide();
         $('.leaflet-control-attribution').hide();
         $('.route-panel').slideDown('fast');
@@ -616,7 +616,7 @@ function calculateLoopTimes() {
 
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
-    $('.panout, .settings-btn').show();
+    $('.panout, .settings-btn, .buses-btn').show();
     $(this).hide();
     $('.route-close').hide();
 
