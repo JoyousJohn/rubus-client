@@ -467,17 +467,39 @@ async function updateRidershipChart() {
     });
 
     Object.keys(timeRiderships).forEach(key => {
-        const estTime = new Date();
         const totalMinutes = parseInt(key);
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
         
+        // Skip times between 4 AM and 6 PM
+        if (hours >= 4 && hours < 18) {
+            delete timeRiderships[key];
+            return;
+        }
+        
+        const estTime = new Date();
+        // If time is between 12am-4am, set to next day
+        if (hours < 4) {
+            estTime.setDate(estTime.getDate() + 1);
+        }
+        
         estTime.setHours(hours);
         estTime.setMinutes(minutes);
         const formattedTime = estTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        timeRiderships[formattedTime] = timeRiderships[key];
+        // Store timestamp for sorting
+        timeRiderships[formattedTime] = {
+            timestamp: estTime.getTime(),
+            value: timeRiderships[key]
+        };
         delete timeRiderships[key];
     });
+
+    // Sort by timestamp and convert back to simple value format
+    const sortedEntries = Object.entries(timeRiderships)
+        .sort(([,a], [,b]) => a.timestamp - b.timestamp);
+    timeRiderships = Object.fromEntries(
+        sortedEntries.map(([time, data]) => [time, data.value])
+    );
 
     const labels = Object.keys(timeRiderships);
     const values = Object.values(timeRiderships);
