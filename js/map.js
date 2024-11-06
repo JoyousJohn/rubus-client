@@ -78,19 +78,29 @@ $(document).ready(function() {
 
     map.on('move', function() {
 
-        // if (!busesDoneInit) return
-
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').fadeOut();
-        popupBusId = null
-        // popupStopId = null
-
-        if (selectedMarkerId && busMarkers[selectedMarkerId]) {
-            busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
-            busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
+        // if (!busesDoneInit) return <-- investigate what this is
+        if ($(window).width() > 992) { // if desktop don't hide info boxes on move
+            return
         }
+        hideInfoBoxes();
     });
 
 });
+
+
+$(document).on('keydown', function(e) {
+    if (e.key === 'Escape') { hideInfoBoxes(); }
+})
+
+function hideInfoBoxes() {
+    $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').fadeOut();  
+    popupBusId = null
+
+    if (selectedMarkerId && busMarkers[selectedMarkerId]) {
+        busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
+        busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
+    }
+}
 
 function panout() {
     map.fitBounds(polylineBounds);
