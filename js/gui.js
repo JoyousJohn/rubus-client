@@ -466,13 +466,16 @@ async function updateRidershipChart() {
         delete timeRiderships[key];
     });
 
+
+
     Object.keys(timeRiderships).forEach(key => {
+
         const totalMinutes = parseInt(key);
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
         
         // Skip times between 4 AM and 6 PM
-        if (hours >= 4 && hours < 18) {
+        if (hours >= 4 && hours < 6) {
             delete timeRiderships[key];
             return;
         }
@@ -493,6 +496,7 @@ async function updateRidershipChart() {
         };
         delete timeRiderships[key];
     });
+
 
     // Sort by timestamp and convert back to simple value format
     const sortedEntries = Object.entries(timeRiderships)
