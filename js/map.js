@@ -84,7 +84,7 @@ $(document).ready(function() {
         popupBusId = null
         // popupStopId = null
 
-        if (selectedMarkerId) {
+        if (selectedMarkerId && busMarkers[selectedMarkerId]) {
             busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
             busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
         }
@@ -254,6 +254,10 @@ const updateMarkerPosition = (busId) => {
 
         // Calculate and apply current rotation
         let currentRotation = startRotation + rotationChange * progress;
+
+        if (!busMarkers[busId]) { // bus went out of service
+            return
+        }
 
         const iconElement = marker.getElement().querySelector('.bus-icon-outer');
         if (iconElement) {

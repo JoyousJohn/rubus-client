@@ -107,8 +107,8 @@ async function fetchBusData() {
             if (!activeBuses.includes(parseInt(busId))) {
 
                 console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`)
-                busMarkers[busId].remove();
                 delete busMarkers[busId];
+                busMarkers[busId].remove();
                 delete busData[busId];
                 delete busETAs[busId];   
                 
