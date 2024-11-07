@@ -200,6 +200,13 @@ html, body {
     font-weight: bold;
 }
 
+.no-buses {
+    color: white;
+    background-color: black;
+    padding: 0.25rem 1rem;
+    border-radius: 0.5rem;
+}
+
 .stop-info-buses-grid {
     display: grid;
     grid-template-columns: auto 1fr auto auto;

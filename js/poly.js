@@ -93,6 +93,10 @@ async function addStopsToMap() {
         activeStops = [...new Set(activeStops)]
     }
 
+    if (!activeStops.length) { // no buses running, show all stops
+        activeStops = Array.from({length: 22}, (_, i) => i + 1);
+    }
+
     // console.log(activeStops)
 
     stopsData = await getStopsData();
@@ -130,7 +134,15 @@ async function addStopsToMap() {
         let servicingBuses = {}
 
         $('.info-stop-servicing').empty();
-        routesServicing(stopId).forEach(servicedRoute => {
+
+        const servicedRoutes = routesServicing(stopId)
+
+        if (!servicedRoutes.length) {
+            const $noneRouteElm = $(`<div class="no-buses">NO BUSES ACTIVE</div>`)
+            $('.info-stop-servicing').append($noneRouteElm)
+        }
+
+        servicedRoutes.forEach(servicedRoute => {
             const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`).css('color', colorMappings[servicedRoute])
             $('.info-stop-servicing').append($serviedRouteElm)
             // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);
@@ -170,11 +182,9 @@ async function addStopsToMap() {
                 flyToMarker(busId)
             });
 
-            $('.stop-info-popup').show();
         })
 
-                    
-
+        $('.stop-info-popup').show();
         
     }
 
