@@ -599,7 +599,7 @@ async function updateRidershipChart() {
         sortedEntries.map(([time, data]) => [time, data.value])
     );
 
-    if (!timeRiderships.length) {
+    if (!Object.keys(timeRiderships).length) {
         return
     }
 
@@ -701,6 +701,18 @@ $('.buses-close').click(function() {
     $('.buses-close').removeClass('flex');
 })
 
+const markerSizeMap = {
+    'small': '20',
+    'medium': '27',
+    'big': '35'
+}
+
+const innerSizeMap = {
+    'small': '8',
+    'medium': '13',
+    'big': '19'
+}
+
 $(document).ready(function() {
 
     let settings = localStorage.getItem('settings');
@@ -710,13 +722,15 @@ $(document).ready(function() {
     } else {
         settings = {
             'font': 'yusei magic',
-            'bus_marker_size': 'medium'
+            'marker_size': 'medium'
         };
         localStorage.setItem('settings', JSON.stringify(settings))
         $(`div.settings-option[font-option="yusei magic"]`).addClass('settings-selected')
+        $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
     }
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
+    $(`div.settings-option[marker-size-option="${settings['marker_size']}"]`).addClass('settings-selected')
 
     $('.settings-option').click(function() {
         if ($(this).hasClass('settings-selected')) { return; }
@@ -730,6 +744,19 @@ $(document).ready(function() {
             $(this).addClass('settings-selected')
             settings['font'] = $(this).attr('font-option')
             document.documentElement.style.setProperty('--font-family', settings['font']);
+        }
+
+        else if (settingsOption === 'marker_size') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['marker_size'] = $(this).attr('marker-size-option')
+            // code to change bus marker size
+
+            const newMarkerDimensions = markerSizeMap[settings['marker_size']]
+            const newMarkerInnerDimensions = innerSizeMap[settings['marker_size']]
+
+            $('.bus-icon-outer').css('height', newMarkerDimensions + 'px').css('width', newMarkerDimensions + 'px');
+            $('.bus-icon-inner').css('height', newMarkerInnerDimensions + 'px').css('width', newMarkerInnerDimensions + 'px');
         }
 
         localStorage.setItem('settings', JSON.stringify(settings))

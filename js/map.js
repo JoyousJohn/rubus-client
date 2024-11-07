@@ -91,7 +91,7 @@ $(document).ready(function() {
         } else {
             isTransitioning = true;
 
-            if (Object.keys(busData).length === 0) { // don't hide no buses running notification
+            if (Object.keys(busData).length === 0) { // don't hide no buses running notification // can && and check if no-bus is visible to show the message again after user clicks on a stop
                 return;
             }
             hideInfoBoxes();
