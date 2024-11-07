@@ -138,7 +138,7 @@ async function addStopsToMap() {
                 if (busETAs[busId]) {
                     servicingBuses[busId] = {
                         'route': servicedRoute,
-                        'eta': busETAs[busId][stopId]
+                        'eta': Math.round(busETAs[busId][stopId]/60)
                     }
                 }
             })
@@ -153,10 +153,19 @@ async function addStopsToMap() {
         sortedBusIds.forEach(busId => {
             const data = servicingBuses[busId]
 
+            const currentTime = new Date();
+            currentTime.setMinutes(currentTime.getMinutes() + data.eta);
+            const formattedTime = currentTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
             $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`).css('color', colorMappings[data.route]))
             $('.stop-info-buses-grid').append(`<div class="stop-bus-id">${busData[busId].busName}</div>`)
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${Math.round(data.eta/60)}m</div>`)
-    
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${(data.eta)}m</div>`)
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-time">${formattedTime}</div>`)
+                    
             $('.stop-info-popup').show();
         })
 

@@ -203,7 +203,7 @@ html, body {
 
 .stop-info-buses-grid {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
     column-gap: 0.5rem;
     margin: 1rem;
     margin-top: 0;
@@ -224,6 +224,10 @@ html, body {
     font-weight: bold;
 }
 
+.stop-bus-time {
+    font-size: 1.5rem;
+    color: #616161;
+}
 
 .route-panel {
     background-color: white;
