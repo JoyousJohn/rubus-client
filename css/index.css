@@ -285,14 +285,18 @@ html, body {
 
 .ridership-chart-wrapper {
     margin: 1rem;
-    margin-top: 3rem;
+    /* margin-top: 2rem; */
 }
 
 .ridership-chart {
-
+    
 }
 
-
+.ridership-history-title {
+    font-size: 2rem;
+    margin-top: 3rem;
+    text-decoration: underline;
+}
 
 
 .bottom {
