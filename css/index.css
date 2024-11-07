@@ -343,6 +343,11 @@ html, body {
     font-size: 2rem;
 }
 
+.panout {
+    color: rgb(185, 185, 185);
+    transition: color 0.2s ease;
+}
+
 .fa-gear {
     padding: 1rem;
 }

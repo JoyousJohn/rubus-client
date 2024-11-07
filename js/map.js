@@ -52,6 +52,7 @@ const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds ob
 // };
 
 let isDesktop;
+// let pannedOut = true;
 
 $(document).ready(function() {
 
@@ -96,6 +97,7 @@ $(document).ready(function() {
 
     map.on('moveend', function() {
         isTransitioning = false; // Clear the transitioning flag
+        $('.panout').css('color', 'black')
     });
 
     isDesktop = $(window).width() > 992;
@@ -126,11 +128,34 @@ function hideInfoBoxes() {
 }
 
 function panout() {
+
+    // console.log(map.getBounds())
+    // console.log(bounds)
+
+    // improve this later with a flag?
+
+    // const marginOfError = 0.01; // Define a margin of error
+    // console.log(Math.abs(map.getBounds().getNorthEast().lng - bounds.getNorthEast().lng))
+    // console.log(Math.abs(map.getBounds().getSouthWest().lng - bounds.getSouthWest().lng))
+    // console.log(Math.abs(map.getBounds().getNorthEast().lat - bounds.getNorthEast().lat))
+    // console.log(Math.abs(map.getBounds().getSouthWest().lat - bounds.getSouthWest().lat) < marginOfError)
+
+    // if (Math.abs(map.getBounds().getNorthEast().lng - bounds.getNorthEast().lng) < marginOfError &&
+    //     Math.abs(map.getBounds().getSouthWest().lng - bounds.getSouthWest().lng) < marginOfError &&
+    //     Math.abs(map.getBounds().getNorthEast().lat - bounds.getNorthEast().lat) < marginOfError &&
+    //     Math.abs(map.getBounds().getSouthWest().lat - bounds.getSouthWest().lat) < marginOfError) {
+    //     return; // Exit if the current bounds are equal to the bounds var
+    // }
+
     if (polylineBounds) {
         map.fitBounds(polylineBounds);
     } else { // no buses running, show all of nb
         map.fitBounds(bounds);
     }
+    $('.panout').css('color', 'blue')
+    setTimeout(() => {
+        $('.panout').css('color', 'rgb(185, 185, 185)')
+    }, 500);
 }
 
 // Method to calculate Haversine distance between two points
