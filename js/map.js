@@ -81,8 +81,9 @@ $(document).ready(function() {
         // if (!busesDoneInit) return <-- investigate what this is
         if (isDesktop) { // if desktop don't hide info boxes on move
             return
+        } else if (!isDesktop) {
+            hideInfoBoxes();
         }
-        hideInfoBoxes();
     });
 
     isDesktop = $(window).width() > 992;
@@ -92,9 +93,6 @@ $(document).ready(function() {
     });
 
 });
-
-
-
 
 $(document).on('keydown', function(e) {
     if (e.key === 'Escape') { hideInfoBoxes(); }
@@ -109,14 +107,15 @@ function hideInfoBoxes() {
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
     }
 
-    $('.buses-panel-wrapper').slideUp('fast');
+    if (!$('.buses-panel-wrapper').is(':visible')) {
+        $('.buses-panel-wrapper').slideUp('fast');
+    }
 
 }
 
 function panout() {
     map.fitBounds(polylineBounds);
 }
-
 
 // Method to calculate Haversine distance between two points
 function haversine(lat1, lon1, lat2, lon2) {
