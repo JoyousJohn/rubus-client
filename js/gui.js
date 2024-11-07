@@ -676,7 +676,7 @@ $('.settings-close').click(function() {
 $('.buses-close').click(function() {
     $('.buses-panel-wrapper').slideUp('fast');
     $('.bottom').show();
-    $('.buses-close').hide();
+    $('.buses-close').removeClass('flex');
 })
 
 $(document).ready(function() {
