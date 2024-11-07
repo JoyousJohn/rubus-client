@@ -88,6 +88,8 @@ async function fetchBusData() {
             }            
             busData[busId].capacity = bus.paxLoad
 
+            updateMarkerSize() // set correct html marker size before plotting
+
             plotBus(busId)
             calculateSpeed(busId)
 
@@ -217,6 +219,7 @@ $(document).ready(async function() {
     if (activeRoutes.size > 0) {
         setPolylines(activeRoutes)
         populateRouteSelectors(activeRoutes)
+        $('.info-mph').text('MPH')
     } else {
         $('.bus-info-popup').show().find('.info-campuses').text('Checking for buses...').addClass('pulsate');
         $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that

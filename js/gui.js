@@ -683,9 +683,9 @@ $('.route-close').click(function() {
 $('.settings-btn').on('touchstart click', function() { // why do i need touchstart here but not below? idk
     $('.leaflet-control-attribution').hide();
     $('.settings-panel').show();
-    if (isDesktop) {
+    // if (isDesktop) {
         $('.bottom').hide();
-    }
+    // }
     $('.settings-close').show();
 })
 
@@ -713,9 +713,11 @@ const innerSizeMap = {
     'big': '19'
 }
 
+let settings
+
 $(document).ready(function() {
 
-    let settings = localStorage.getItem('settings');
+    settings = localStorage.getItem('settings');
     if (settings) {
         settings = JSON.parse(settings);
         document.documentElement.style.setProperty('--font-family', settings['font']);
@@ -747,19 +749,24 @@ $(document).ready(function() {
         }
 
         else if (settingsOption === 'marker_size') {
+            
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['marker_size'] = $(this).attr('marker-size-option')
-            // code to change bus marker size
+            updateMarkerSize()
 
-            const newMarkerDimensions = markerSizeMap[settings['marker_size']]
-            const newMarkerInnerDimensions = innerSizeMap[settings['marker_size']]
-
-            $('.bus-icon-outer').css('height', newMarkerDimensions + 'px').css('width', newMarkerDimensions + 'px');
-            $('.bus-icon-inner').css('height', newMarkerInnerDimensions + 'px').css('width', newMarkerInnerDimensions + 'px');
         }
 
         localStorage.setItem('settings', JSON.stringify(settings))
     })
 
 })
+
+function updateMarkerSize() {
+
+    const outterDimensions = markerSizeMap[settings['marker_size']]
+    const innerDimensions = innerSizeMap[settings['marker_size']]
+
+    $('.bus-icon-outer').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
+    $('.bus-icon-inner').css('height', innerDimensions + 'px').css('width', innerDimensions + 'px');
+}
