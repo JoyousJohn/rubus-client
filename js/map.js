@@ -90,6 +90,10 @@ $(document).ready(function() {
 
         } else {
             isTransitioning = true;
+
+            if (Object.keys(busData).length === 0) { // don't hide no buses running notification
+                return;
+            }
             hideInfoBoxes();
         }
 

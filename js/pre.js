@@ -218,9 +218,10 @@ $(document).ready(async function() {
         setPolylines(activeRoutes)
         populateRouteSelectors(activeRoutes)
     } else {
-        $('.bus-info-popup').show().find('.info-campuses').text('Checking for buses...');
+        $('.bus-info-popup').show().find('.info-campuses').text('Checking for buses...').addClass('pulsate');
+        $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
         setTimeout(() => {
-            $('.bus-info-popup').find('.info-campuses').text('No buses running!');
+            $('.bus-info-popup').find('.info-campuses').text('No buses running!').removeClass('pulsate');
         }, 5000);
     }
 
