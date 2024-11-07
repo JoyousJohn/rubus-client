@@ -150,6 +150,8 @@
 
 .justify-around { justify-content: space-around; }
 
+.justify-evenly { justify-content: space-evenly; }
+
 .gap-6rem { gap: 6rem; }
 
 .gap-8rem { gap: 8rem; }

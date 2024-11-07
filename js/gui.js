@@ -551,8 +551,6 @@ async function updateRidershipChart() {
         delete timeRiderships[key];
     });
 
-
-
     Object.keys(timeRiderships).forEach(key => {
 
         const totalMinutes = parseInt(key);
@@ -582,7 +580,6 @@ async function updateRidershipChart() {
         delete timeRiderships[key];
     });
 
-
     // Sort by timestamp and convert back to simple value format
     const sortedEntries = Object.entries(timeRiderships)
         .sort(([,a], [,b]) => a.timestamp - b.timestamp);
@@ -597,6 +594,13 @@ async function updateRidershipChart() {
     ridershipChart.data.datasets[0].data = values;
     ridershipChart.update();
     
+    const averageRidership = values.reduce((a, b) => a + b, 0) / values.length;
+    $('.ridership-avg').text(`AVG: ${Math.round(averageRidership)}`);
+
+    const maxRidership = Math.max(...values);
+    const peakTime = labels[values.indexOf(maxRidership)];
+    $('.ridership-max').text(`PEAK: ${maxRidership} at ${peakTime}`);
+
 }
 
 
