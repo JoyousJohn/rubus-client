@@ -599,6 +599,10 @@ async function updateRidershipChart() {
         sortedEntries.map(([time, data]) => [time, data.value])
     );
 
+    if (!timeRiderships.length) {
+        return
+    }
+
     const labels = Object.keys(timeRiderships);
     const values = Object.values(timeRiderships);
 
@@ -612,6 +616,8 @@ async function updateRidershipChart() {
     const maxRidership = Math.max(...values);
     const peakTime = labels[values.indexOf(maxRidership)];
     $('.ridership-max').text(`PEAK: ${maxRidership} at ${peakTime}`);
+
+    $('.ridership-super-wrapper').show();
 
 }
 

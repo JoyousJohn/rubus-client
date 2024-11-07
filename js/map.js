@@ -540,10 +540,63 @@ function startStoppedForTimer(busId) {
 
 function flyToMarker(busId) {
     const loc = { lat: busData[busId].lat, long: busData[busId].long };
-    // isTransitioning = true; 
-    map.flyTo([loc.lat, loc.long], map.getZoom(), {
-        animate: true,
-        duration: 0.3
-    });
+    
+    // First fly to location
+    map.flyTo(
+        [loc.lat, loc.long], 
+        map.getZoom(),
+        {
+            animate: true,
+            duration: 0.3
+        }
+    );
+    
+    // Then select the marker which will show the popup
     selectBusMarker(busId);
+    
+    // Wait for popup to appear and then adjust the map
+    const checkForPopupAndAdjust = () => {
+        console.log('Checking for popup...');
+        const popupElement = document.querySelector('.bus-info-popup');
+        
+        if (popupElement) {
+            console.log('Found popup, height:', popupElement.offsetHeight);
+            const mapHeight = map.getContainer().offsetHeight;
+            
+            // Simplified offset calculation:
+            // Move up by half the popup height to center in remaining space
+            const pixelOffset = popupElement.offsetHeight / 2;
+            
+            const currentZoom = map.getZoom();
+            const pixelsToLatLngAtZoom = (pixels) => {
+                const metersPerPixel = 40075016.686 * Math.abs(Math.cos(loc.lat * Math.PI / 180)) 
+                    / Math.pow(2, currentZoom + 8);
+                return (pixels * metersPerPixel) / 111111;
+            };
+            
+            const latOffset = pixelsToLatLngAtZoom(pixelOffset);
+            // Note the + instead of - for the offset
+            const newLat = Number(loc.lat) + Number(latOffset);
+            
+            console.log('Original lat:', loc.lat);
+            console.log('Pixel offset:', pixelOffset);
+            console.log('Lat offset:', latOffset);
+            console.log('New lat:', newLat);
+            
+            // Adjust position after popup is visible
+            map.panTo(
+                [newLat, Number(loc.long)],
+                {
+                    animate: true,
+                    duration: 0.3
+                }
+            );
+        } else {
+            // Try again in a short moment
+            setTimeout(checkForPopupAndAdjust, 50);
+        }
+    };
+    
+    // Start checking for popup
+    setTimeout(checkForPopupAndAdjust, 50);
 }
