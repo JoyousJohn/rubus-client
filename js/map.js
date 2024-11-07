@@ -491,14 +491,15 @@ function startStoppedForTimer(busId) {
 
     const arrivedDatetime = new Date(busData[busId].timeArrived);
     const now = new Date()//.toISOString();
-    console.log(now)
+    // console.log(now)
     const secondsDifference = Math.floor((now - arrivedDatetime) / 1000);
-    console.log('secondsDifference: ', secondsDifference)
+    // console.log('secondsDifference: ', secondsDifference)
+
     if (secondsDifference > 59) {
         const minutes = Math.floor(secondsDifference / 60);
         const remainingSeconds = secondsDifference % 60;
         $('.bus-stopped-for').text(`Stopped for ${minutes}m ${remainingSeconds}s`).show();
-    } else {
+    } else if (secondsDifference > 0) {
         $('.bus-stopped-for').text("Stopped for " + secondsDifference + "s").show();
     }
     
