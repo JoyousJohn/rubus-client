@@ -126,7 +126,11 @@ function hideInfoBoxes() {
 }
 
 function panout() {
-    map.fitBounds(polylineBounds);
+    if (polylineBounds) {
+        map.fitBounds(polylineBounds);
+    } else { // no buses running, show all of nb
+        map.fitBounds(bounds);
+    }
 }
 
 // Method to calculate Haversine distance between two points
