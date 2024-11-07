@@ -165,7 +165,11 @@ async function addStopsToMap() {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-id">${busData[busId].busName}</div>`)
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${(data.eta)}m</div>`)
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time">${formattedTime}</div>`)
-                    
+                 
+            $('.stop-info-buses-grid').children().slice(-4).click(function() {
+                flyToMarker(busId)
+            });
+
             $('.stop-info-popup').show();
         })
 

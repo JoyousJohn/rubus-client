@@ -76,14 +76,26 @@ $(document).ready(function() {
         id: 'mapbox/streets-v11',
     }).addTo(map);
 
+    let isTransitioning = false; // Flag to track if the map is transitioning
+
     map.on('move', function() {
 
-        // if (!busesDoneInit) return <-- investigate what this is
-        if (isDesktop) { // if desktop don't hide info boxes on move
-            return
-        } else if (!isDesktop) {
+        if (isDesktop) {
+            return;
+        }
+
+        if (isTransitioning || isDesktop) {
+            return; 
+
+        } else {
+            isTransitioning = true;
             hideInfoBoxes();
         }
+
+    });
+
+    map.on('moveend', function() {
+        isTransitioning = false; // Clear the transitioning flag
     });
 
     isDesktop = $(window).width() > 992;
@@ -211,7 +223,7 @@ async function calculateSpeed(busId) {
         }
 
         busData[busId].visualSpeed += speedChangeDir;
-        if (busData[busId.visualSpeed < 0]) {
+        if (busData[busId].visualSpeed < 0) {
             busData[busId].visualSpeed = 0;
         }
 
@@ -333,26 +345,31 @@ function plotBus(busId) {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[busData[busId].route];
     
         busMarkers[busId].on('click', function() {
-            popInfo(busId);
-            console.log(busId + ': ')
-            console.table(busData[busId])
-            popupBusId = busId
-
-            if (selectedMarkerId) {
-                busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
-                busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
-            }
-            
-            busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '0 0 10px ' + colorMappings[busData[busId].route];
-
+            selectBusMarker(busId)
             // busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'blue';
-            selectedMarkerId = busId
         });
 
     } else {
         // Update the existing marker's position
         updateMarkerPosition(busId);
     }
+}
+
+function selectBusMarker(busId) {
+
+    popInfo(busId);
+    // console.log(busId + ': ')
+    // console.table(busData[busId])
+    popupBusId = busId
+
+    if (selectedMarkerId) {
+        busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
+        busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
+    }
+    
+    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '0 0 10px ' + colorMappings[busData[busId].route];
+
+    selectedMarkerId = busId
 }
 
 const campusMappings = {
@@ -422,9 +439,9 @@ function popInfo(busId) {
         $('.bus-stopped-for').hide();
     }
 
-    console.log('data: ', data)
+    // console.log('data: ', data)
 
-    console.log('next_stop' in data)
+    // console.log('next_stop' in data)
 
     if ('next_stop' in data) {
         $('.next-stops-grid').empty();
@@ -521,8 +538,12 @@ function startStoppedForTimer(busId) {
     }, 1000);
 }
 
-
-
-
-
-
+function flyToMarker(busId) {
+    const loc = { lat: busData[busId].lat, long: busData[busId].long };
+    // isTransitioning = true; 
+    map.flyTo([loc.lat, loc.long], map.getZoom(), {
+        animate: true,
+        duration: 0.3
+    });
+    selectBusMarker(busId);
+}
