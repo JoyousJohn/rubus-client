@@ -225,6 +225,9 @@ $(document).ready(async function() {
     }
 
     addStopsToMap()
+    $('.buses-btn').css('display', 'flex');
+
+    makeRidershipChart()
 
     async function fetchETAs() {
         try {
