@@ -426,15 +426,22 @@ function updateBusOverview(routes) {
 
                 setTimeout(() => {
                     $(`.bus-overview-ridership[route="${route}"]`).text(`${routeRiderships[route]} riders`).css('color', color).css('transition', 'color 0.25s');
+
+                    const ridersChange = newRiders - prevRiders;
+                    const nowTotalRidership = parseInt($('.total-ridership').text().split(' ')[0])
+                    $('.total-ridership').text(`${nowTotalRidership + ridersChange} riding`).css('color', color).css('transition', 'color 0.25s');
+
                     setTimeout(() => {
-                        $(`.bus-overview-ridership[route="${route}"]`).css('color', 'black').css('transition', 'color 1s');
+                        $(`.bus-overview-ridership[route="${route}"], .total-ridership`).css('color', 'black').css('transition', 'color 1s');
                     }, 1000);
                 }, Math.random() * 5000);
             }
         }
     });
 
-    $('.total-ridership').text(totalRidership + ' riding')
+    if (!$('.total-ridership').text().length) {
+        $('.total-ridership').text(totalRidership + ' riding');
+    }
 }
 
 
