@@ -441,6 +441,11 @@ function updateBusOverview(routes) {
 
     if (!$('.total-ridership').text().length) {
         $('.total-ridership').text(totalRidership + ' riding');
+    } else {
+        const textTotalRidership = parseInt($('.total-ridership').text().split(' ')[0])
+        if (textTotalRidership !== totalRidership) { // total became unsynced because of
+            $('.total-ridership').text(totalRidership + ' riding'); // ^^ the autocomplete for that comment is so funny haha
+        }
     }
 }
 
