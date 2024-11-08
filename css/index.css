@@ -369,6 +369,7 @@ html, body {
     padding-bottom: 1rem;
     scrollbar-width: none;
     pointer-events: all;
+    line-height: 1.6;
 }
 
 /* Hide scrollbar for WebKit browsers */

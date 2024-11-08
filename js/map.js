@@ -101,7 +101,7 @@ $(document).ready(function() {
 
     map.on('moveend', function() {
         isTransitioning = false; // Clear the transitioning flag
-        $('.panout').css('color', 'black')
+        $('.panout').css('color', '#5b5b5b')
     });
 
     isDesktop = $(window).width() > 992;
