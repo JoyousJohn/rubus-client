@@ -17,7 +17,29 @@ async function setPolylines(activeRoutes) {
 
         }
 
-        // Create a Leaflet polyline
+        // const pathData = ['M', coordinates[0]];  // Move to the first point
+
+        // for (let i = 1; i < coordinates.length - 1; i += 2) {
+        //     const controlPoint = coordinates[i];
+        //     const nextPoint = coordinates[i + 1];
+
+        //     if (controlPoint && nextPoint) {
+        //         pathData.push('Q', controlPoint, nextPoint);
+        //     }
+        // }
+
+        // if (coordinates.length % 2 === 0) {
+        //     pathData.push('L', coordinates[coordinates.length - 1]);
+        // }
+
+        // // Create the curve
+        // const polyline = L.curve(pathData, {
+        //     color: colorMappings[routeName],   
+        //     weight: 4,      
+        //     opacity: 1,     
+        //     smoothFactor: 1 
+        // }).addTo(map);
+
         const polyline = L.polyline(coordinates, {
             color: colorMappings[routeName],
             weight: 4,
@@ -28,7 +50,6 @@ async function setPolylines(activeRoutes) {
         // Add the polyline to the map
         polyline.addTo(map);
 
-        // Store the polyline for later reference
         polylines[routeName] = polyline;
 
         fetchPromises.push(coordinates);
@@ -46,6 +67,7 @@ async function setPolylines(activeRoutes) {
 }
 
 async function getPolylineData(routeName) {
+
     try {
 
         const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c']

@@ -65,7 +65,7 @@ $(document).ready(function() {
         // intertia: true,
         // updateWhenIdle: true,
         // updateWhenZooming: true,
-        preferCanvas: true,
+        // preferCanvas: true,
 
     }).setView([40.507476,-74.4541267], 14);
 
@@ -160,6 +160,25 @@ function panout() {
     setTimeout(() => {
         $('.panout').css('color', 'rgb(185, 185, 185)')
     }, 500);
+}
+
+function centerme() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+            const userLat = position.coords.latitude;
+            const userLong = position.coords.longitude;
+            const targetZoom = 18;
+
+            map.flyTo([userLat, userLong], targetZoom, {
+                animate: true,
+                duration: 0.3
+            });
+        }, (error) => {
+            console.error('Error getting user location:', error);
+        });
+    } else {
+        console.error('Geolocation is not supported by this browser.');
+    }
 }
 
 // Method to calculate Haversine distance between two points
@@ -572,64 +591,76 @@ function startStoppedForTimer(busId) {
 }
 
 function flyToMarker(busId) {
-    const loc = { lat: busData[busId].lat, long: busData[busId].long };
+    if (!busId || !busData || !busData[busId]) {
+        console.error('Invalid bus ID or missing bus data');
+        return;
+    }
+
+    const lat = Number(busData[busId].lat);
+    const long = Number(busData[busId].long);
+    const loc = { lat, long };
+    const targetZoom = 18;
     
-    // First fly to location
+    // First fly to location and zoom
     map.flyTo(
-        [loc.lat, loc.long], 
-        map.getZoom(),
+        [loc.lat, loc.long],
+        targetZoom,
         {
             animate: true,
             duration: 0.3
         }
     );
-    
+   
     // Then select the marker which will show the popup
     selectBusMarker(busId);
-    
+   
     // Wait for popup to appear and then adjust the map
     const checkForPopupAndAdjust = () => {
-        console.log('Checking for popup...');
         const popupElement = document.querySelector('.bus-info-popup');
         
-        if (popupElement) {
-            console.log('Found popup, height:', popupElement.offsetHeight);
-            const mapHeight = map.getContainer().offsetHeight;
-            
-            // Simplified offset calculation:
-            // Move up by half the popup height to center in remaining space
+        // Check if both popup exists and map has finished zooming
+        if (popupElement && Math.abs(map.getZoom() - targetZoom) < 0.01) {
             const pixelOffset = popupElement.offsetHeight / 2;
-            
-            const currentZoom = map.getZoom();
+           
             const pixelsToLatLngAtZoom = (pixels) => {
-                const metersPerPixel = 40075016.686 * Math.abs(Math.cos(loc.lat * Math.PI / 180)) 
-                    / Math.pow(2, currentZoom + 8);
+                // Use targetZoom instead of current zoom
+                const metersPerPixel = 40075016.686 * Math.abs(Math.cos(loc.lat * Math.PI / 180))
+                    / Math.pow(2, targetZoom + 8);
                 return (pixels * metersPerPixel) / 111111;
             };
-            
+           
             const latOffset = pixelsToLatLngAtZoom(pixelOffset);
-            // Note the + instead of - for the offset
             const newLat = Number(loc.lat) + Number(latOffset);
-            
+           
+            console.log('Zoom level when adjusting:', map.getZoom());
             console.log('Original lat:', loc.lat);
             console.log('Pixel offset:', pixelOffset);
             console.log('Lat offset:', latOffset);
             console.log('New lat:', newLat);
-            
-            // Adjust position after popup is visible
-            map.panTo(
+           
+            map.flyTo(
                 [newLat, Number(loc.long)],
+                targetZoom,
                 {
                     animate: true,
-                    duration: 0.3
+                    duration: 0.5
                 }
             );
         } else {
-            // Try again in a short moment
+            // Keep checking until both conditions are met
+            if (!checkForPopupAndAdjust.attempts) {
+                checkForPopupAndAdjust.attempts = 1;
+            } else {
+                checkForPopupAndAdjust.attempts++;
+                if (checkForPopupAndAdjust.attempts > 20) { // Increased max attempts
+                    console.error('Failed to find popup or reach target zoom after multiple attempts');
+                    return;
+                }
+            }
             setTimeout(checkForPopupAndAdjust, 50);
         }
     };
-    
-    // Start checking for popup
+   
+    // Start checking for popup and zoom level
     setTimeout(checkForPopupAndAdjust, 50);
 }

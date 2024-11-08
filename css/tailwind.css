@@ -152,6 +152,8 @@
 
 .justify-evenly { justify-content: space-evenly; }
 
+.align-end { align-items: end; }
+
 .gap-6rem { gap: 6rem; }
 
 .gap-8rem { gap: 8rem; }

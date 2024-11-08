@@ -552,6 +552,11 @@ async function updateRidershipChart() {
         if (!response.ok) throw new Error('Network response was not ok');
         
         const timeRiderships = await response.json();
+
+        if (!Object.keys(timeRiderships).length) {
+            return; // Don't show chart if no ridership data
+        }
+
         const utcOffset = new Date().getTimezoneOffset();
 
         // Prepare entries for sorting and formatting

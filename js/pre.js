@@ -95,7 +95,7 @@ async function fetchBusData() {
             pollActiveRoutes.add(busData[busId].route)
             
             if (busId === popupBusId) {
-                $('.info-capacity').text(bus.paxLoad + '% capacity')
+                $('.info-capacity').text(bus.paxLoad + '% capacity');
             }
 
         }
@@ -115,10 +115,10 @@ async function fetchBusData() {
                 if (busMarkers[busId]) { // investigate why this would occur
                     busMarkers[busId].remove();
                 }
-                delete busData[busId];
                 delete busETAs[busId];   
 
-                pollActiveRoutes.delete(busData[busId].route)
+                pollActiveRoutes.delete(busData[busId].route);
+                delete busData[busId];
                 
             }
 

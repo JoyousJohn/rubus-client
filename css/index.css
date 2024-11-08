@@ -327,9 +327,10 @@ html, body {
     width: 100%;
     row-gap: 0.8rem;
     pointer-events: none;
+    box-sizing: border-box;
 }
 
-.panout, .buses-btn {
+.panout, .buses-btn, .centerme {
     background-color: white;
     padding: 1.7rem;
     border-radius: 5rem;
@@ -341,13 +342,17 @@ html, body {
     pointer-events: all;
 }
 
-.panout > i, .buses-btn > i {
+.panout > i, .buses-btn > i, .centerme > i {
     font-size: 2rem;
 }
 
 .panout {
     color: rgb(185, 185, 185);
     transition: color 0.2s ease;
+}
+
+.centerme {
+    height: min-content;
 }
 
 .fa-gear {
