@@ -65,7 +65,7 @@ $(document).ready(function() {
         // intertia: true,
         // updateWhenIdle: true,
         // updateWhenZooming: true,
-        // preferCanvas: true,
+        preferCanvas: true,
 
     }).setView([40.507476,-74.4541267], 14);
 
