@@ -539,86 +539,58 @@ async function makeRidershipChart() {
 }
 
 async function updateRidershipChart() {
-
-    let timeRiderships
-
     try {
         const response = await fetch('https://transloc.up.railway.app/ridership');
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        timeRiderships = await response.json();
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const timeRiderships = await response.json();
+        const utcOffset = new Date().getTimezoneOffset();
+
+        // Prepare entries for sorting and formatting
+        const entries = Object.entries(timeRiderships).map(([key, value]) => {
+            let localMinutes = parseInt(key) - utcOffset;
+            if (localMinutes < 0) localMinutes += 1440; // Handle day wraparound
+
+            // Add 24 hours (1440 mins) to early morning times to sort them at the end
+            const sortMinutes = localMinutes < 300 ? localMinutes + 1440 : localMinutes;
+
+            const hours = Math.floor(localMinutes / 60);
+            const minutes = localMinutes % 60;
+            const time = new Date();
+            time.setHours(hours, minutes, 0, 0);
+
+            const formattedTime = time.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+
+            return [formattedTime, value, sortMinutes];
+        });
+
+        // Sort and convert to chart format
+        const sortedData = Object.fromEntries(
+            entries.sort(([, , a], [, , b]) => a - b)
+        );
+
+        const labels = Object.keys(sortedData);
+        const values = Object.values(sortedData);
+        
+        ridershipChart.data.labels = labels;
+        ridershipChart.data.datasets[0].data = values;
+        ridershipChart.update();
+
+        const totalRidership = values.reduce((a, b) => a + b, 0);
+        const averageRidership = Math.round(totalRidership / values.length);
+        const maxRidership = Math.max(...values);
+        const peakTime = labels[values.indexOf(maxRidership)];
+        
+        $('.ridership-avg').text(`AVG: ${averageRidership}`);
+        $('.ridership-max').text(`PEAK: ${maxRidership} at ${peakTime}`);
+        $('.ridership-super-wrapper').show();
+        
     } catch (error) {
         console.error('Error fetching ridership:', error);
     }
-
-    const utcOffset = new Date().getTimezoneOffset();
-
-    Object.keys(timeRiderships).forEach(key => {
-        let nyMinutes = parseInt(key) - utcOffset;
-        if (nyMinutes < 0) {
-            nyMinutes += 1440;
-        }
-        timeRiderships[nyMinutes] = timeRiderships[key];
-        delete timeRiderships[key];
-    });
-
-    Object.keys(timeRiderships).forEach(key => {
-
-        const totalMinutes = parseInt(key);
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        
-        // Skip times between 4 AM and 6 PM
-        if (hours >= 4 && hours < 6) {
-            delete timeRiderships[key];
-            return;
-        }
-        
-        const estTime = new Date();
-        // If time is between 12am-4am, set to next day
-        if (hours < 4) {
-            estTime.setDate(estTime.getDate() + 1);
-        }
-        
-        estTime.setHours(hours);
-        estTime.setMinutes(minutes);
-        const formattedTime = estTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        // Store timestamp for sorting
-        timeRiderships[formattedTime] = {
-            timestamp: estTime.getTime(),
-            value: timeRiderships[key]
-        };
-        delete timeRiderships[key];
-    });
-
-    // Sort by timestamp and convert back to simple value format
-    const sortedEntries = Object.entries(timeRiderships)
-        .sort(([,a], [,b]) => a.timestamp - b.timestamp);
-    timeRiderships = Object.fromEntries(
-        sortedEntries.map(([time, data]) => [time, data.value])
-    );
-
-    if (!Object.keys(timeRiderships).length) {
-        return
-    }
-
-    const labels = Object.keys(timeRiderships);
-    const values = Object.values(timeRiderships);
-
-    ridershipChart.data.labels = labels;
-    ridershipChart.data.datasets[0].data = values;
-    ridershipChart.update();
-    
-    const averageRidership = values.reduce((a, b) => a + b, 0) / values.length;
-    $('.ridership-avg').text(`AVG: ${Math.round(averageRidership)}`);
-
-    const maxRidership = Math.max(...values);
-    const peakTime = labels[values.indexOf(maxRidership)];
-    $('.ridership-max').text(`PEAK: ${maxRidership} at ${peakTime}`);
-
-    $('.ridership-super-wrapper').show();
-
 }
 
 
