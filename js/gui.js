@@ -755,3 +755,70 @@ function updateMarkerSize() {
     $('.bus-icon-outer').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
     $('.bus-icon-inner').css('height', innerDimensions + 'px').css('width', innerDimensions + 'px');
 }
+
+let locationShared;
+
+function checkIfLocationShared() {
+    const lsLocationShared = localStorage.getItem('locationShared');
+
+    locationShared = lsLocationShared === 'true';
+
+    if (locationShared) {
+        if (navigator.geolocation) {
+
+            console.log("Trying to find nearest stop...")
+
+            navigator.geolocation.getCurrentPosition((position) => {
+                const userLat = position.coords.latitude;
+                const userLong = position.coords.longitude;
+                
+                let closestStop = null;
+                let closestStopId = null;
+                let closestDistance = Infinity;
+
+                console.log(stopsData)
+                for (const stopId in stopsData) {
+                    const stop = stopsData[stopId];
+                    const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
+                    console.log(distance)
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestStop = stop;
+                        closestStopId = stopId;
+                    }
+                }
+
+                if (closestStop) {
+                    console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
+                    flyToStop(closestStopId);
+                    $('.closest-stop').removeClass('none');
+                } else {
+                    console.log('No stops found within the given data.');
+                }
+
+            }, (error) => {
+                console.error('Error getting user location:', error);
+            });
+        } else {
+            console.error('Geolocation is not supported by this browser.');
+        }
+    }
+}
+
+function flyToStop(stopId) {
+    const stopData = stopsData[stopId];
+    const lat = Number(stopData.latitude);
+    const long = Number(stopData.longitude);
+    const loc = { lat, long };
+
+    map.flyTo(
+        [loc.lat, loc.long],
+        15,
+        {
+            animate: true,
+            duration: 0.5
+        }
+    );
+
+    popStopInfo(Number(stopId));
+}

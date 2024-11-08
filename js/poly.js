@@ -104,6 +104,72 @@ function getNextStopId(route, stopId) {
     return nextStopId
 }
 
+async function popStopInfo(stopId) {
+
+    $('.bus-info-popup, .route-panel').hide();
+
+    const stopData = stopsData[stopId]
+    $('.info-stop-name').text(stopData.name)
+
+    let servicingBuses = {}
+
+    $('.info-stop-servicing').empty();
+
+    const servicedRoutes = routesServicing(stopId)
+
+    console.log('servicedRoutes:', servicedRoutes)
+
+    if (!servicedRoutes.length) {
+        const $noneRouteElm = $(`<div class="no-buses">NO BUSES ACTIVE</div>`)
+        $('.info-stop-servicing').append($noneRouteElm)
+    }
+
+    servicedRoutes.forEach(servicedRoute => {
+        const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`).css('color', colorMappings[servicedRoute])
+        $('.info-stop-servicing').append($serviedRouteElm)
+        // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);
+        busesByRoutes[servicedRoute].forEach(busId => {
+            if (busETAs[busId]) {
+                servicingBuses[busId] = {
+                    'route': servicedRoute,
+                    'eta': Math.round(busETAs[busId][stopId]/60)
+                }
+            }
+        })
+    })
+
+    const sortedBusIds = Object.entries(servicingBuses)
+        .sort(([, a], [, b]) => a.eta - b.eta)
+        .map(([busId]) => busId);
+
+    $('.stop-info-buses-grid').empty();
+
+    sortedBusIds.forEach(busId => {
+        const data = servicingBuses[busId]
+
+        const currentTime = new Date();
+        currentTime.setMinutes(currentTime.getMinutes() + data.eta);
+        const formattedTime = currentTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`).css('color', colorMappings[data.route]))
+        $('.stop-info-buses-grid').append(`<div class="stop-bus-id">${busData[busId].busName}</div>`)
+        $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${(data.eta)}m</div>`)
+        $('.stop-info-buses-grid').append(`<div class="stop-bus-time">${formattedTime}</div>`)
+             
+        $('.stop-info-buses-grid').children().slice(-4).click(function() {
+            flyToMarker(busId)
+        });
+
+    })
+
+    $('.stop-info-popup').show();
+    
+}
+
 async function addStopsToMap() {
 
     stopLists = await getStopsList()
@@ -122,6 +188,7 @@ async function addStopsToMap() {
     // console.log(activeStops)
 
     stopsData = await getStopsData();
+    checkIfLocationShared();
 
     activeStops.forEach(stopId => {
 
@@ -145,72 +212,6 @@ async function addStopsToMap() {
 
         busStopMarkers[stopId] = marker;
     });
-
-    async function popStopInfo(stopId) {
-
-        $('.bus-info-popup, .route-panel').hide();
-
-        const stopData = stopsData[stopId]
-        $('.info-stop-name').text(stopData.name)
-
-        let servicingBuses = {}
-
-        $('.info-stop-servicing').empty();
-
-        const servicedRoutes = routesServicing(stopId)
-
-        if (!servicedRoutes.length) {
-            const $noneRouteElm = $(`<div class="no-buses">NO BUSES ACTIVE</div>`)
-            $('.info-stop-servicing').append($noneRouteElm)
-        }
-
-        servicedRoutes.forEach(servicedRoute => {
-            const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`).css('color', colorMappings[servicedRoute])
-            $('.info-stop-servicing').append($serviedRouteElm)
-            // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);
-            busesByRoutes[servicedRoute].forEach(busId => {
-                if (busETAs[busId]) {
-                    servicingBuses[busId] = {
-                        'route': servicedRoute,
-                        'eta': Math.round(busETAs[busId][stopId]/60)
-                    }
-                }
-            })
-        })
-
-        const sortedBusIds = Object.entries(servicingBuses)
-            .sort(([, a], [, b]) => a.eta - b.eta)
-            .map(([busId]) => busId);
-
-        $('.stop-info-buses-grid').empty();
-
-        sortedBusIds.forEach(busId => {
-            const data = servicingBuses[busId]
-
-            const currentTime = new Date();
-            currentTime.setMinutes(currentTime.getMinutes() + data.eta);
-            const formattedTime = currentTime.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-
-            $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`).css('color', colorMappings[data.route]))
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-id">${busData[busId].busName}</div>`)
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${(data.eta)}m</div>`)
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-time">${formattedTime}</div>`)
-                 
-            $('.stop-info-buses-grid').children().slice(-4).click(function() {
-                flyToMarker(busId)
-            });
-
-        })
-
-        $('.stop-info-popup').show();
-        
-    }
-
-    
 
     async function getStopsList() {
         try {
@@ -273,3 +274,4 @@ function makeBusesByRoutes() {
         // console.log(busesByRoutes[route])
     }
 }
+

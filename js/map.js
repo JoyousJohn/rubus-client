@@ -181,6 +181,12 @@ function centerme() {
                 animate: true,
                 duration: 0.3
             });
+
+            if(!locationShared) {
+                localStorage.setItem('locationShared', true);
+                locationShared = true;
+            }
+
         }, (error) => {
             console.error('Error getting user location:', error);
         });
@@ -672,3 +678,4 @@ function flyToMarker(busId) {
     // Start checking for popup and zoom level
     setTimeout(checkForPopupAndAdjust, 50);
 }
+

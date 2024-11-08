@@ -200,7 +200,7 @@ html, body {
     font-weight: bold;
 }
 
-.no-buses {
+.no-buses, .closest-stop {
     color: white;
     background-color: black;
     padding: 0.25rem 1rem;
