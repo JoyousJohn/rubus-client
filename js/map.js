@@ -169,6 +169,14 @@ function centerme() {
             const userLong = position.coords.longitude;
             const targetZoom = 18;
 
+            L.marker([userLat, userLong], 
+                { icon: L.icon({
+                    iconUrl: 'img/location_marker.png',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12],
+                })
+            }).addTo(map)
+
             map.flyTo([userLat, userLong], targetZoom, {
                 animate: true,
                 duration: 0.3
