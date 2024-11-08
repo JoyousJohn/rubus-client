@@ -117,6 +117,8 @@ async function fetchBusData() {
                 }
                 delete busData[busId];
                 delete busETAs[busId];   
+
+                pollActiveRoutes.delete(busData[busId].route)
                 
             }
 

@@ -527,7 +527,15 @@ async function makeRidershipChart() {
                         maxRotation: 45,
                         callback: function(val, index) {
                             const time = this.getLabelForValue(val);
-                            return time.includes(':00') ? time.split(':')[0] + time.split(' ')[1] : '';
+                            const hour = parseInt(time.split(':')[0]); 
+                            
+                            const totalDataPoints = this.chart.data.labels.length;
+                            if (totalDataPoints > 150) { // check if the 150 num should be changed later
+                                // Skip odd-hour labels if there are more than 150 data points
+                                return hour % 2 !== 0 || !time.includes(':00') ? '' : hour + time.split(' ')[1];
+                            } else {
+                                return time.includes(':00') ? hour + time.split(' ')[1] : '';
+                            }
                         }
                     }
                 }
