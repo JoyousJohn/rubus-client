@@ -163,6 +163,10 @@ function updateStopBuses(stopId) {
 
 async function popStopInfo(stopId) {
 
+    if (Number(closestStopId) === stopId) {
+        $('.closest-stop').removeClass('none')
+    }
+
     popupStopId = stopId;
     $('.bus-info-popup, .route-panel').hide();
 

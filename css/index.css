@@ -375,6 +375,7 @@ html, body {
     scrollbar-width: none;
     pointer-events: all;
     line-height: 1.6;
+    margin-right: -0.5rem;
 }
 
 /* Hide scrollbar for WebKit browsers */

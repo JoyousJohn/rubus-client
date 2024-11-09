@@ -121,6 +121,13 @@ $(document).on('keydown', function(e) {
 
 function hideInfoBoxes() {
     $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').fadeOut();  
+
+    if (popupStopId) {
+        popupStopId = null;
+        thisClosestStopId = null;
+        $('.closest-stop').addClass('none');        
+    }
+
     popupBusId = null;
     popupStopId = null;
 

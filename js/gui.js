@@ -757,6 +757,7 @@ function updateMarkerSize() {
 }
 
 let locationShared;
+let closestStopId;
 
 function checkIfLocationShared() {
     const lsLocationShared = localStorage.getItem('locationShared');
@@ -773,7 +774,7 @@ function checkIfLocationShared() {
                 const userLong = position.coords.longitude;
                 
                 let closestStop = null;
-                let closestStopId = null;
+                let thisClosestStopId = null;
                 let closestDistance = Infinity;
 
                 console.log(stopsData)
@@ -784,13 +785,14 @@ function checkIfLocationShared() {
                     if (distance < closestDistance) {
                         closestDistance = distance;
                         closestStop = stop;
-                        closestStopId = stopId;
+                        thisClosestStopId = stopId;
                     }
                 }
 
                 if (closestStop) {
                     console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
-                    flyToStop(closestStopId);
+                    closestStopId = thisClosestStopId
+                    flyToStop(thisClosestStopId);
                     $('.closest-stop').removeClass('none');
                 } else {
                     console.log('No stops found within the given data.');

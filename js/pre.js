@@ -287,6 +287,9 @@ $(document).ready(async function() {
             }
 
             updateTimeToStops(validBusIds)
+            if (popupStopId) {
+                updateStopBuses(popupStopId)
+            }
         } catch (error) {
             console.error('Error fetching bus locations:', error);
         }
