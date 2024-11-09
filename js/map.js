@@ -529,6 +529,17 @@ function popInfo(busId) {
     $('.info-name').text(data.busName + ' | ')
     $('.info-capacity').text(data.capacity + '% capacity')
 
+    if (data.joined_service) {
+        const joinedServiceDateTime = new Date(data.joined_service);
+        const formattedTime = joinedServiceDateTime.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: undefined,
+            hour12: true
+        });
+        $('.bus-joined-service').text('Joined service at ' + formattedTime);
+    }
+
     if ('at_stop' in busData[busId] && busData[busId].at_stop === true) {
         startStoppedForTimer(busId)
     } else {

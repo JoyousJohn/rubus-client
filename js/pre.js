@@ -301,6 +301,26 @@ $(document).ready(async function() {
 
     await fetchWhere();
 
+    async function fetchJoinTimes() {
+        try {
+            const response = await fetch('https://transloc.up.railway.app/joined_service');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const joined_service = await response.json();
+            console.log('Bus joined service times:', joined_service);
+
+            for (const busId in joined_service) {
+                if (!(busId in busData)) { continue; } 
+                busData[busId]['joined_service'] = joined_service[busId]
+            }
+        } catch (error) {
+            console.error('Error fetching joined service times:', error);
+        }
+    }
+
+    fetchJoinTimes();
+
     openRUBusSocket();
 
     if (Object.keys(busData).length === 0) wsClient.connect();

@@ -223,6 +223,15 @@ html, body {
     font-weight: bold;
 }
 
+.bus-joined-service {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    color: gray;
+}
+
+
+
 
 .stop-info-popup {
     background-color: white;
