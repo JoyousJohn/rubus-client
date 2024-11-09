@@ -172,7 +172,6 @@ function updateStopBuses(stopId) {
         $('.stop-info-buses-grid').children().slice(-4).click(function() {
             flyToBus(busId)
         });
-
     })
 
     const avgWait = waits[stopId]

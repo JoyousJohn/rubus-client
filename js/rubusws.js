@@ -71,19 +71,9 @@ function openRUBusSocket() {
 
             busData[busId]['stopId'] = stopId
             busData[busId]['next_stop'] = getNextStopId(busRoute, stopId)
-            updateTimeToStops([busId])
-            if (popupStopId) {
-                updateStopBuses(popupStopId)
-            }
-
-            if (popupBusId === busId) {
-                popInfo(busId)
-            }
 
             const stopName = stopsData[stopId].name
             const busName = busData[busId].busName
-
-            let nextStopId = null;
 
             if (eventData['event'] === 'arrival') {
                 busData[busId]['at_stop'] = true
@@ -104,6 +94,17 @@ function openRUBusSocket() {
                     $('.bus-stopped-for').slideUp();
                 }
             }
+
+            updateTimeToStops([busId]) // updates bus's etas to all stops
+
+            if (popupStopId) {
+                updateStopBuses(popupStopId) // this is on the stops wrapper
+            }
+
+            if (popupBusId === busId) {
+                popInfo(busId) // this is on the bus wrapper 
+            }
+
         }
 
         else {
