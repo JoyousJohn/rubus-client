@@ -355,7 +355,7 @@ function selectedRoute(route) {
 
     if (!panelRoute) {
         $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight())
-        $('.panout, .buses-btn').fadeOut('fast');
+        $('.panout, .buses-btn, .centerme').fadeOut('fast');
         $('.settings-btn').hide();
         $('.leaflet-control-attribution').hide();
         $('.route-panel').slideDown('fast');
@@ -647,7 +647,7 @@ function calculateLoopTimes() {
 
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
-    $('.panout, .settings-btn, .buses-btn').show();
+    $('.panout, .settings-btn, .buses-btn, .centerme').show();
     $(this).hide();
     $('.route-close').hide();
 
@@ -745,6 +745,8 @@ $(document).ready(function() {
         localStorage.setItem('settings', JSON.stringify(settings))
     })
 
+    getBuildNumber()
+
 })
 
 function updateMarkerSize() {
@@ -802,7 +804,7 @@ function checkIfLocationShared() {
                             iconAnchor: [12, 12],
                         })
                     }).addTo(map)
-                    
+
                     flyToStop(thisClosestStopId);
                     $('.closest-stop').show('none');
                 } else {
@@ -834,4 +836,16 @@ function flyToStop(stopId) {
     );
 
     popStopInfo(Number(stopId));
+}
+
+async function getBuildNumber() {
+    $.ajax({
+        url: 'https://api.github.com/repos/JoyousJohn/rubus-public/commits?per_page=1', // &page = 1
+        type: 'GET',
+        success: function(data, textStatus, jqXHR) {
+            const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
+            const lastPage = linkHeader.match(/page=(\d+)>; rel="last"/)[1];
+            $('.build-number').text('- Version b0' + lastPage);
+        }
+    });
 }
