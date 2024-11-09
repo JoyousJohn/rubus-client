@@ -61,7 +61,10 @@ async function setPolylines(activeRoutes) {
         // Fit the map to show all polylines
         const group = new L.featureGroup(Object.values(polylines));
         polylineBounds = group.getBounds();
-        map.fitBounds(polylineBounds, { padding: [10, 10] });
+
+        if ($('.closest-stop').hasClass('none')) { // Don't it bounds if closest stop is shown. Temp hack? Otherwise move end event from setting bounds will trigger hide info boxes.
+            map.fitBounds(polylineBounds, { padding: [10, 10] });
+        }
         // addStopsToMap();
     });
 }

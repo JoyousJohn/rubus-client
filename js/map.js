@@ -101,6 +101,7 @@ $(document).ready(function() {
 
     map.on('moveend', function() {
         isTransitioning = false; // Clear the transitioning flag
+        // console.log('Set istransitioning to false');
         $('.panout').css('color', '#5b5b5b')
     });
 
