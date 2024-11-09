@@ -107,14 +107,18 @@ async function fetchBusData() {
         for (const busId in busData) { 
 
             // console.log(busId)
+            if (busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'on2') {
+                continue;
+            }
 
             if (!activeBuses.includes(parseInt(busId))) {
 
                 console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`)
-                delete busMarkers[busId];
                 if (busMarkers[busId]) { // investigate why this would occur
                     busMarkers[busId].remove();
+                    console.log('removing')
                 }
+                delete busMarkers[busId];
                 delete busETAs[busId];   
 
                 pollActiveRoutes.delete(busData[busId].route);
@@ -299,7 +303,7 @@ $(document).ready(async function() {
 
     openRUBusSocket();
 
-    // if (Object.keys(busData).length === 0) wsClient.connect();
+    if (Object.keys(busData).length === 0) wsClient.connect();
 
     setTimeout(() => {
         fetchBusData();

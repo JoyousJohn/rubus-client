@@ -70,7 +70,7 @@ async function getPolylineData(routeName) {
 
     try {
 
-        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c']
+        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'lx', 'ftbl']
         if (!knownRoutes.includes(routeName)) return
 
         let polylineData;
@@ -282,7 +282,7 @@ async function addStopsToMap() {
 function routesServicing(stopId) {
     let routesServicing = []  
     activeRoutes.forEach(activeRoute => {
-        if (stopLists[activeRoute].includes(stopId)) {
+        if (activeRoute in stopLists && stopLists[activeRoute].includes(stopId)) { // remove activeRoute in stopLists check after adding football routes + stops
             routesServicing.push(activeRoute)
         }
     })

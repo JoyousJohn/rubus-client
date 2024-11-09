@@ -550,8 +550,8 @@ function popInfo(busId) {
 
         if (nextStopIndex !== -1) {
             sortedStops = routeStops
-                            .slice(nextStopIndex)
-                            .concat(routeStops.slice(0, nextStopIndex))
+                .slice(nextStopIndex)
+                .concat(routeStops.slice(0, nextStopIndex))
         }
 
         if (nextStopIndex + 1 === routeStops.length) {
@@ -595,7 +595,6 @@ function popInfo(busId) {
     }
 
     else {
-        console.log('trying to hide')
         $('.info-next-stops').hide();
     }
 

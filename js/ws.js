@@ -34,6 +34,10 @@ class BusWebSocketClient {
     // Process each message received from the WebSocket server
     processMessage(message) {
 
+        if($('.info-campuses').text() === 'No buses running!') {
+            $('.bus-info-popup').hide(); // check if this works
+        }
+
         const data = JSON.parse(message);
 
         // Skip secondary GPS
