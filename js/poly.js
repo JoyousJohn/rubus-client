@@ -123,7 +123,15 @@ function updateStopBuses(stopId) {
         $('.info-stop-servicing').append($serviedRouteElm)
         // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);
         busesByRoutes[servicedRoute].forEach(busId => {
-            if (busETAs[busId]) {
+
+            if (busData[busId]['at_stop'] && busData[busId]['stopId'] === stopId) {
+                servicingBuses[busId] = {
+                    'route': servicedRoute,
+                    'eta': 0,
+                }
+            }
+
+            else if (busETAs[busId]) {
                 servicingBuses[busId] = {
                     'route': servicedRoute,
                     'eta': Math.round(busETAs[busId][stopId]/60)
@@ -151,11 +159,18 @@ function updateStopBuses(stopId) {
 
         $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`).css('color', colorMappings[data.route]))
         $('.stop-info-buses-grid').append(`<div class="stop-bus-id">${busData[busId].busName}</div>`)
-        $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${(data.eta)}m</div>`)
-        $('.stop-info-buses-grid').append(`<div class="stop-bus-time">${formattedTime}</div>`)
+
+        if (data.eta === 0) {
+            // $('.stop-info-buses-grid').append(`<div></div>`)
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">Here</div>`)
+            $('.stop-info-buses-grid').append(`<div></div>`)
+        } else {
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${(data.eta)}m</div>`)
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-time">${formattedTime}</div>`)
+        }
              
         $('.stop-info-buses-grid').children().slice(-4).click(function() {
-            flyToMarker(busId)
+            flyToBus(busId)
         });
 
     })

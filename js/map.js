@@ -630,7 +630,7 @@ function startStoppedForTimer(busId) {
     }, 1000);
 }
 
-function flyToMarker(busId) {
+function flyToBus(busId) {
     if (!busId || !busData || !busData[busId]) {
         console.error('Invalid bus ID or missing bus data');
         return;
