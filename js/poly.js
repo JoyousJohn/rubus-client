@@ -162,13 +162,15 @@ function updateStopBuses(stopId) {
 
     const avgWait = waits[stopId]
     const waitStr = `${Math.round(avgWait / 60)}m ${avgWait % 60}s`
-    $('.stop-info-avg-wait').text(`Buses wait here for an average of ${waitStr}`)
+    $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`)
 }
 
 async function popStopInfo(stopId) {
 
     if (Number(closestStopId) === stopId) {
-        $('.closest-stop').removeClass('none')
+        $('.closest-stop').show();
+    } else {
+        $('.closest-stop').hide();
     }
 
     popupStopId = stopId;

@@ -125,7 +125,6 @@ function hideInfoBoxes() {
     if (popupStopId) {
         popupStopId = null;
         thisClosestStopId = null;
-        $('.closest-stop').addClass('none');        
     }
 
     popupBusId = null;
@@ -171,16 +170,30 @@ function panout() {
     setTimeout(() => {
         $('.panout').css('color', 'rgb(185, 185, 185)')
     }, 500);
+
+    hideInfoBoxes();
 }
 
+let userPosition;
+
 function centerme() {
+
+    if (userPosition) {
+        map.flyTo(userPosition, 18, {
+            animate: true,
+            duration: 0.3
+        });
+        hideInfoBoxes();
+        return;
+    }
+
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((position) => {
             const userLat = position.coords.latitude;
             const userLong = position.coords.longitude;
-            const targetZoom = 18;
+            userPosition = [userLat, userLong];
 
-            L.marker([userLat, userLong], 
+            L.marker(userPosition, 
                 { icon: L.icon({
                     iconUrl: 'img/location_marker.png',
                     iconSize: [24, 24],
@@ -188,10 +201,12 @@ function centerme() {
                 })
             }).addTo(map)
 
-            map.flyTo([userLat, userLong], targetZoom, {
+            map.flyTo(userPosition, 18, {
                 animate: true,
                 duration: 0.3
             });
+
+            hideInfoBoxes();
 
             if(!locationShared) {
                 localStorage.setItem('locationShared', true);
@@ -558,14 +573,14 @@ function popInfo(busId) {
             const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]
 
             $('.next-stops-grid').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
-            $('.next-stops-grid').append(`<div class="flex flex-col">
+            $('.next-stops-grid').append($(`<div class="flex flex-col">
                     <div class="next-stop-campus">${campusName}</div>
                     <div class="next-stop-name">${stopName}</div>
-                </div>`)
+                </div>`).click(() => { flyToStop(sortedStops[i])}));
             $('.next-stops-grid').append($(`<div class="flex flex-col center">
                 <div class="next-stop-eta">${eta}m</div>
                 <div class="next-stop-time">${formattedTime}</div>
-            </div>`))
+            </div>`).click(() => { flyToStop(sortedStops[i])}));
         }
 
         $('.info-next-stops').scrollTop(0).show(); // remove .show after adding message saying stops unavailable in the else statement above

@@ -757,6 +757,7 @@ function updateMarkerSize() {
 }
 
 let locationShared;
+let userLocation;
 let closestStopId;
 
 function checkIfLocationShared() {
@@ -772,7 +773,8 @@ function checkIfLocationShared() {
             navigator.geolocation.getCurrentPosition((position) => {
                 const userLat = position.coords.latitude;
                 const userLong = position.coords.longitude;
-                
+                userPosition = [userLat, userLong];
+
                 let closestStop = null;
                 let thisClosestStopId = null;
                 let closestDistance = Infinity;
@@ -793,7 +795,7 @@ function checkIfLocationShared() {
                     console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
                     closestStopId = thisClosestStopId
                     flyToStop(thisClosestStopId);
-                    $('.closest-stop').removeClass('none');
+                    $('.closest-stop').show('none');
                 } else {
                     console.log('No stops found within the given data.');
                 }

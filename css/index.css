@@ -228,6 +228,7 @@ html, body {
 .stop-bus-eta {
     font-size: 1.8rem;
     font-weight: bold;
+    /* text-align: right; */
 }
 
 .stop-bus-time {
