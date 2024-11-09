@@ -552,6 +552,35 @@ html, body {
     height: 19px;    
 }
 
+
+.settings-rubus {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid rgb(214, 214, 214);
+    column-gap: 0.5rem;
+}
+
+.settings-rubus-logo {
+    background-image: url('../img/rubus-favicon.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
+}
+
+.settings-rubus-attribution {
+    font-size: 1.25rem;
+}
+
+
+
+
+
+
+
+
+
 .pulsate {
     animation: pulsate 1.5s infinite;
 }
