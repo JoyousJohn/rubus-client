@@ -794,6 +794,15 @@ function checkIfLocationShared() {
                 if (closestStop) {
                     console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
                     closestStopId = thisClosestStopId
+
+                    L.marker(userPosition, 
+                        { icon: L.icon({
+                            iconUrl: 'img/location_marker.png',
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12],
+                        })
+                    }).addTo(map)
+                    
                     flyToStop(thisClosestStopId);
                     $('.closest-stop').show('none');
                 } else {
