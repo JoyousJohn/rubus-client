@@ -78,14 +78,15 @@ $(document).ready(function() {
     }).addTo(map);
 
     let isTransitioning = false; // Flag to track if the map is transitioning
+    let isFittingBounds = false;
 
-    map.on('move', function() {
+    map.on('drag', function() {
 
         if (isDesktop) {
             return;
         }
 
-        if (isTransitioning || isDesktop) {
+        if (isTransitioning || isDesktop || isFittingBounds) {
             return; 
 
         } else {

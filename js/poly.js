@@ -62,9 +62,12 @@ async function setPolylines(activeRoutes) {
         const group = new L.featureGroup(Object.values(polylines));
         polylineBounds = group.getBounds();
 
-        if ($('.closest-stop').hasClass('none')) { // Don't it bounds if closest stop is shown. Temp hack? Otherwise move end event from setting bounds will trigger hide info boxes.
-            map.fitBounds(polylineBounds, { padding: [10, 10] });
-        }
+        // if ($('.closest-stop').hasClass('none')) { // Don't it bounds if closest stop is shown. Temp hack? Otherwise move end event from setting bounds will trigger hide info boxes.
+        // isFittingBounds = true;
+        map.fitBounds(polylineBounds, { padding: [10, 10] }) //, () => {
+            // isFittingBounds = false;
+        // });
+        // }
         // addStopsToMap();
     });
 }
