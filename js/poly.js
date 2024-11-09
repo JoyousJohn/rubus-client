@@ -159,6 +159,10 @@ function updateStopBuses(stopId) {
         });
 
     })
+
+    const avgWait = waits[stopId]
+    const waitStr = `${Math.round(avgWait / 60)}m ${avgWait % 60}s`
+    $('.stop-info-avg-wait').text(`Buses wait here for an average of ${waitStr}`)
 }
 
 async function popStopInfo(stopId) {
@@ -175,7 +179,7 @@ async function popStopInfo(stopId) {
 
     updateStopBuses(stopId);
 
-    $('.stop-info-popup').show();
+    $('.stop-info-popup').show().scrollTop(0);
     
 }
 

@@ -235,6 +235,14 @@ html, body {
     color: #616161;
 }
 
+.stop-info-avg-wait {
+    /* font-size: 1.5rem; */
+    color: gray;
+    margin: 0 1rem 1rem 1rem;
+}
+
+
+
 .route-panel {
     background-color: white;
     font-family: var(--font-family);
