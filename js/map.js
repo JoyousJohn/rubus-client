@@ -62,6 +62,7 @@ $(document).ready(function() {
         maxBoundsViscosity: 1.3, // Optional: Adjust the stickiness of the bounds (1.0 is default)
         zoomControl: false,
         inertiaDeceleration: 1000,
+        zoomSnap: 0,
         // maxBoundsViscosity: 1.0,
         // intertia: true,
         // updateWhenIdle: true,
@@ -106,6 +107,9 @@ $(document).ready(function() {
         // console.log('Set istransitioning to false');
         $('.panout').css('color', '#5b5b5b')
     });
+
+    map.on('zoomend', updateDotPosition);
+    updateDotPosition();
 
     isDesktop = $(window).width() > 992;
 
@@ -583,7 +587,11 @@ function popInfo(busId) {
             </div>`).click(() => { flyToStop(sortedStops[i])}));
         }
 
-        $('.info-next-stops').scrollTop(0).show(); // remove .show after adding message saying stops unavailable in the else statement above
+        $('.info-next-stops').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
+
+        setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
+            $('.info-next-stops').scrollTop(0)
+        }, 0);
     }
 
     else {
@@ -591,6 +599,7 @@ function popInfo(busId) {
         $('.info-next-stops').hide();
     }
 
+    
     $('.bus-info-popup').show();
 }
 
@@ -705,3 +714,6 @@ function flyToBus(busId) {
     setTimeout(checkForPopupAndAdjust, 50);
 }
 
+$('.zoom-scroll-bar').click(function() {
+
+})
