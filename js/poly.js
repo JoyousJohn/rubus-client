@@ -61,13 +61,7 @@ async function setPolylines(activeRoutes) {
         // Fit the map to show all polylines
         const group = new L.featureGroup(Object.values(polylines));
         polylineBounds = group.getBounds();
-
-        // if ($('.closest-stop').hasClass('none')) { // Don't it bounds if closest stop is shown. Temp hack? Otherwise move end event from setting bounds will trigger hide info boxes.
-        // isFittingBounds = true;
-        map.fitBounds(polylineBounds, { padding: [10, 10] }) //, () => {
-            // isFittingBounds = false;
-        // });
-        // }
+        map.fitBounds(polylineBounds, { padding: [10, 10] });
         // addStopsToMap();
     });
 }
@@ -110,20 +104,14 @@ function getNextStopId(route, stopId) {
     return nextStopId
 }
 
-async function popStopInfo(stopId) {
-
-    $('.bus-info-popup, .route-panel').hide();
-
-    const stopData = stopsData[stopId]
-    $('.info-stop-name').text(stopData.name)
-
+function updateStopBuses(stopId) {
     let servicingBuses = {}
 
     $('.info-stop-servicing').empty();
 
     const servicedRoutes = routesServicing(stopId)
 
-    console.log('servicedRoutes:', servicedRoutes)
+    // console.log('servicedRoutes:', servicedRoutes)
 
     if (!servicedRoutes.length) {
         const $noneRouteElm = $(`<div class="no-buses">NO BUSES ACTIVE</div>`)
@@ -171,6 +159,17 @@ async function popStopInfo(stopId) {
         });
 
     })
+}
+
+async function popStopInfo(stopId) {
+
+    popupStopId = stopId;
+    $('.bus-info-popup, .route-panel').hide();
+
+    const stopData = stopsData[stopId]
+    $('.info-stop-name').text(stopData.name)
+
+    updateStopBuses(stopId);
 
     $('.stop-info-popup').show();
     

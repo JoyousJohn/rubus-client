@@ -72,6 +72,9 @@ function openRUBusSocket() {
             busData[busId]['stopId'] = stopId
             busData[busId]['next_stop'] = getNextStopId(busRoute, stopId)
             updateTimeToStops([busId])
+            if (popupStopId) {
+                updateStopBuses(popupStopId)
+            }
 
             if (popupBusId === busId) {
                 popInfo(busId)

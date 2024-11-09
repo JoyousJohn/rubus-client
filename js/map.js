@@ -4,6 +4,7 @@ let busData = {}
 let polylines = {};
 let activeRoutes = new Set();
 let popupBusId;
+let popupStopId;
 let busesDoneInit; // don't check for moves until map is done plotting
 
 const southWest = L.latLng(40.4550081,-74.4957839); // Define the southwest corner of the bounds
@@ -120,7 +121,8 @@ $(document).on('keydown', function(e) {
 
 function hideInfoBoxes() {
     $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').fadeOut();  
-    popupBusId = null
+    popupBusId = null;
+    popupStopId = null;
 
     if (selectedMarkerId && busMarkers[selectedMarkerId]) {
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
