@@ -5,7 +5,7 @@
   <img src="https://github.com/user-attachments/assets/fce7fc0e-7cac-4f11-a23f-1bd8ca345b34" width="23%" />
   <img src="https://github.com/user-attachments/assets/a7da8d6b-8828-4d18-ab37-c0a9dd19c154" width="23%" /> 
   <img src="https://github.com/user-attachments/assets/56fe6db9-bde0-4706-9d40-f20de15a7fbd" width="23%" />
-  <img src="https://github.com/user-attachments/assets/f148978c-c716-413a-9113-9a194a3e74fa" width="23%"/>
+  <img src="https://github.com/user-attachments/assets/f087c8ba-3cdf-4903-997a-3ace45089a63" width="23%"/>
 <p>
 <br>
 RUBus features real-time bus locations, bearings, capacities, speeds, time stopped, ETAs, loop time, and live and historical ridership, alongside customization options. Bus positioning is fetched from the Passio API while live speed and ridership estimations are calculated on the client.

@@ -236,7 +236,7 @@ html, body {
 }
 
 .stop-info-avg-wait {
-    /* font-size: 1.5rem; */
+    font-size: 1.3rem;
     color: gray;
     margin: 0 1rem 1rem 1rem;
 }
