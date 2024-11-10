@@ -124,6 +124,9 @@ $(document).on('keydown', function(e) {
 })
 
 function hideInfoBoxes() {
+
+    // console.log('hideInfoBoxes() triggered')
+
     $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').fadeOut();  
 
     if (popupStopId) {
@@ -633,15 +636,14 @@ function startStoppedForTimer(busId) {
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {
-        // console.log(seconds)
         if (popupBusId === busId) {
             seconds++;
             if (seconds > 59) {
                 const minutes = Math.floor(seconds / 60);
                 const remainingSeconds = seconds % 60;
-                $('.bus-stopped-for').text(`Stopped for ${minutes}m ${remainingSeconds}s`);
-            } else {
-                $('.bus-stopped-for').text("Stopped for " + seconds + "s");
+                $('.bus-stopped-for').text(`Stopped for ${minutes}m ${remainingSeconds}s`).show();
+            } else if (seconds > 0) {
+                $('.bus-stopped-for').text("Stopped for " + seconds + "s").show();
             }
         } else {
             clearInterval(stoppedForInterval);
