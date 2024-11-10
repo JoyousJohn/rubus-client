@@ -58,7 +58,6 @@ function populateRouteSelectors(activeRoutes) {
                         
                         // if (!scrolled) {
 
-                            console.log('aaa')
                             isLongPress = true;
                             if (shownRoute) {
                                 shownBeforeRoute = shownRoute
@@ -102,8 +101,6 @@ function populateRouteSelectors(activeRoutes) {
 
                     // const currentScrollLeft = $('.route-selectors').scrollLeft();
                     // if (initialScrollLeft !== currentScrollLeft) { return; }
-
-                    console.log('bbb')
 
                     if (panelRoute) {
                         selectedRoute(route)
@@ -366,6 +363,35 @@ function selectedRoute(route) {
         }
 
     }
+
+
+    $('.route-stops-grid').empty();
+
+    stopLists[route].forEach(stopId => {
+
+        $('.route-stops-grid').append('<div class="next-stop-circle"></div>')
+        const $stopElm = $(`<div class="flex flex-col">
+            <div class="route-stop-name">${stopsData[stopId].name}</div>
+            <div class="route-buses-for-stop"></div>
+        </div>`)
+
+        // Sort bus IDs based on their ETA
+        busesByRoutes[route]
+            .sort((a, b) => Math.round(busETAs[a][stopId] / 60) - Math.round(busETAs[b][stopId] / 60)) // Sort by ETA
+            .forEach(busId => {
+
+            const $gridElm = $stopElm.find('.route-buses-for-stop')
+            $gridElm.append(`<div>${busData[busId].busName}</div>`)
+            $gridElm.append(`<div class="bold">${Math.round(busETAs[busId][stopId]/60)}m</div>`)
+            $gridElm.append(`<div class="align-right">x stops away</div>`)
+
+        })
+
+        $('.route-stops-grid').append($stopElm)
+
+    })
+
+    $('.route-stops-grid .next-stop-circle').css('background-color', colorMappings[route])
 
     panelRoute = route
 
@@ -794,6 +820,7 @@ function checkIfLocationShared() {
                 }
 
                 if (closestStop) {
+
                     console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
                     closestStopId = thisClosestStopId
 
@@ -805,7 +832,9 @@ function checkIfLocationShared() {
                         })
                     }).addTo(map)
 
-                    flyToStop(thisClosestStopId);
+                    if (!panelRoute && !$('.settings-panel').is(':visible')) {
+                        flyToStop(thisClosestStopId);
+                    }
                     $('.closest-stop').show('none');
                 } else {
                     console.log('No stops found within the given data.');

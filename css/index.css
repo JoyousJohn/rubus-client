@@ -326,6 +326,30 @@ html, body {
     color: rgb(94, 94, 94);
 }
 
+.route-stops-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 2rem;
+    row-gap: 3rem;
+    align-items: center;
+    margin-top: 2rem;
+    padding: 1rem;
+    overflow-y: scroll;
+    margin-bottom: 8rem;
+}
+
+.route-stop-name {
+    font-size: 1.75rem;
+}
+
+.route-buses-for-stop {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    font-size: 1.5rem;
+    column-gap: 1rem;
+}
+
+
 
 .buses-panel-wrapper {
     background-color: white;
