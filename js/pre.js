@@ -254,6 +254,9 @@ $(document).ready(async function() {
             // updateTimeToStops('all')
         } catch (error) {
             console.error('Error fetching ETAs:', error);
+
+            $('.notif-popup').text('RUBus/Passio servers are experiencing issues and ETAs could not be fetched. Accurate, live bus positioning is still available.').fadeIn();
+
         }
 
         try {

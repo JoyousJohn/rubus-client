@@ -37,6 +37,7 @@
         height: auto;
         width: 33%;
         margin: 2rem;
+        border-radius: 1rem;
     }
 
     .bus-info-popup {
