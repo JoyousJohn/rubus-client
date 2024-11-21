@@ -53,7 +53,9 @@ const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds ob
 // };
 
 let isDesktop;
-// let pannedOut = true;
+let tileLayer;
+
+const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1NzlxZDByYXIyam9kd2QybnB4ZzUifQ.2Ssy25qvKfJ70J4LpueDKA'
 
 $(document).ready(function() {
 
@@ -74,9 +76,17 @@ $(document).ready(function() {
     map.setMinZoom(13);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
 
-    L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1NzlxZDByYXIyam9kd2QybnB4ZzUifQ.2Ssy25qvKfJ70J4LpueDKA', {
+    let mapTheme
+    settings = JSON.parse(localStorage.getItem('settings'));
+    if (settings && settings['map-theme']) {
+        mapTheme = (settings)['map-theme'];
+    } else {
+        mapTheme = 'streets-v11'
+    }
+
+    tileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken, {
         maxZoom: 20,
-        id: 'mapbox/streets-v11',
+        id: 'mapbox/' + mapTheme,
     }).addTo(map);
 
     let isTransitioning = false; // Flag to track if the map is transitioning
@@ -179,6 +189,17 @@ function panout() {
     }, 500);
 
     hideInfoBoxes();
+}
+
+function changeMapStyle(newStyle) {
+    let newUrl = 'https://api.mapbox.com/styles/v1/mapbox/' + newStyle + '/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken;
+    tileLayer.setUrl(newUrl);
+    
+    // Force map to immediately update (not require zoom)
+    const currentCenter = map.getCenter();
+    const currentZoom = map.getZoom();
+    map.setView([0, 0], 1, { animate: false });
+    map.setView(currentCenter, currentZoom, { animate: true });
 }
 
 let userPosition;

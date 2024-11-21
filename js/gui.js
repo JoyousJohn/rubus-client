@@ -735,15 +735,18 @@ $(document).ready(function() {
     } else {
         settings = {
             'font': 'yusei magic',
-            'marker_size': 'medium'
+            'marker_size': 'medium',
+            'map-theme': 'streets-v11'
         };
         localStorage.setItem('settings', JSON.stringify(settings))
         $(`div.settings-option[font-option="yusei magic"]`).addClass('settings-selected')
         $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
+        $(`div.settings-option[map-theme-option="streets-v11"]`).addClass('settings-selected')
     }
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker_size']}"]`).addClass('settings-selected')
+    $(`div.settings-option[map-theme-option="${settings['map-theme']}"]`).addClass('settings-selected')
 
     $('.settings-option').click(function() {
         if ($(this).hasClass('settings-selected')) { return; }
@@ -765,6 +768,15 @@ $(document).ready(function() {
             $(this).addClass('settings-selected')
             settings['marker_size'] = $(this).attr('marker-size-option')
             updateMarkerSize()
+
+        }
+
+        else if (settingsOption === 'map-theme') {
+            
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['map-theme'] = $(this).attr('map-theme-option')
+            changeMapStyle($(this).attr('map-theme-option'))
 
         }
 
