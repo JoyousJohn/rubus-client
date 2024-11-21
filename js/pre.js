@@ -244,7 +244,9 @@ $(document).ready(async function() {
         setTimeout(() => {
             $('.bus-info-popup').find('.info-campuses').text('No buses running!').removeClass('pulsate');
         }, 5000);
+        $('.centerme-wrapper').addClass('centerme-bottom-right')
     }
+    $('.centerme-wrapper').fadeIn();
 
     addStopsToMap()
     $('.buses-btn').css('display', 'flex');

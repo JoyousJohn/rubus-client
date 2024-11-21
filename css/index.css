@@ -446,8 +446,18 @@ html, body {
     transition: color 0.2s ease;
 }
 
+.centerme-wrapper {
+    display: none;
+}
+
 .centerme {
     height: min-content;
+}
+
+.centerme-bottom-right {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem
 }
 
 .fa-gear {
