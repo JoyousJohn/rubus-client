@@ -101,10 +101,6 @@ html, body {
     pointer-events: all;
 }
 
-.notif-popup-wrapper {
-
-}
-
 .notif-popup {
     background-color: rgb(172, 53, 53);
     padding: 2rem 3rem;

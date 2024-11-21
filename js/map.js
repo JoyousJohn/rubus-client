@@ -79,6 +79,10 @@ $(document).ready(function() {
     let mapTheme
     settings = JSON.parse(localStorage.getItem('settings'));
     if (settings && settings['map-theme']) {
+        if (settings['map-theme'] === 'auto') {
+            const currentHour = new Date().getHours();
+            mapTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
+        }
         mapTheme = (settings)['map-theme'];
     } else {
         mapTheme = 'streets-v11'
