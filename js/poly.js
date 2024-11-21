@@ -114,7 +114,16 @@ function updateStopBuses(stopId) {
     // console.log('servicedRoutes:', servicedRoutes)
 
     if (!servicedRoutes.length) {
-        const $noneRouteElm = $(`<div class="no-buses">NO BUSES ACTIVE</div>`)
+
+        let stopNoBusesMsg
+
+        if (!jQuery.isEmptyObject(busData)) {
+            stopNoBusesMsg = 'NOT SERVICED BY ACTIVE ROUTES'
+        } else {
+            stopNoBusesMsg = 'NO BUSES ACTIVE'
+        }
+
+        const $noneRouteElm = $(`<div class="no-buses">${stopNoBusesMsg}/div>`)
         $('.info-stop-servicing').append($noneRouteElm)
     }
 

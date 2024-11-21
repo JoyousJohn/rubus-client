@@ -114,16 +114,23 @@ async function fetchBusData() {
             if (!activeBuses.includes(parseInt(busId))) {
 
                 console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`)
+                delete busMarkers[busId];
+
                 if (busMarkers[busId]) { // investigate why this would occur
                     busMarkers[busId].remove();
                     console.log('removing')
                 }
-                delete busMarkers[busId];
                 delete busETAs[busId];   
 
-                pollActiveRoutes.delete(busData[busId].route);
-                delete busData[busId];
-                
+                const route = busData[busId].route
+                pollActiveRoutes.delete(route);
+
+                delete busesByRoutes[route][busId]; // Will this ever fail if makeBusesByRoute in fetchBusData updates (and removes the now out of service bus) before this is reached?
+                if (Object.keys(busesByRoutes[route]).length === 0) {
+                    polylines[route].remove();
+                }
+
+                delete busData[busId];   
             }
 
         }
