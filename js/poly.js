@@ -123,7 +123,7 @@ function updateStopBuses(stopId) {
             stopNoBusesMsg = 'NO BUSES ACTIVE'
         }
 
-        const $noneRouteElm = $(`<div class="no-buses">${stopNoBusesMsg}/div>`)
+        const $noneRouteElm = $(`<div class="no-buses">${stopNoBusesMsg}</div>`)
         $('.info-stop-servicing').append($noneRouteElm)
     }
 

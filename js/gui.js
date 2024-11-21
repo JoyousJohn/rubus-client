@@ -624,7 +624,7 @@ async function updateRidershipChart() {
         const peakTime = labels[values.indexOf(maxRidership)];
         
         $('.ridership-avg').text(`AVG: ${averageRidership}`);
-        $('.ridership-max').text(`PEAK: ${maxRidership} at ${peakTime}`);
+        $('.ridership-max').text(`PEAK: ${maxRidership.toLocaleString()} at ${peakTime}`);
         $('.ridership-super-wrapper').show();
         
     } catch (error) {
@@ -736,12 +736,12 @@ $(document).ready(function() {
         settings = {
             'font': 'yusei magic',
             'marker_size': 'medium',
-            'map-theme': 'streets-v11'
+            'map-theme': 'auto'
         };
         localStorage.setItem('settings', JSON.stringify(settings))
         $(`div.settings-option[font-option="yusei magic"]`).addClass('settings-selected')
         $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
-        $(`div.settings-option[map-theme-option="streets-v11"]`).addClass('settings-selected')
+        $(`div.settings-option[map-theme-option="auto"]`).addClass('settings-selected')
     }
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
@@ -753,7 +753,7 @@ $(document).ready(function() {
 
         const settingsOption = $(this).attr('settings-option')
 
-        console.log(settingsOption)
+        // console.log(settingsOption)
 
         if (settingsOption === 'font') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')

@@ -152,7 +152,7 @@ function hideInfoBoxes() {
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
     }
 
-    if (!$('.buses-panel-wrapper').is(':visible')) {
+    if ($('.buses-panel-wrapper').is(':visible')) {
         $('.buses-panel-wrapper').slideUp('fast');
     }
 
@@ -192,6 +192,12 @@ function panout() {
 }
 
 function changeMapStyle(newStyle) {
+
+    if (newStyle === 'auto') {
+        const currentHour = new Date().getHours();
+        newStyle = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
+    }
+
     let newUrl = 'https://api.mapbox.com/styles/v1/mapbox/' + newStyle + '/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken;
     tileLayer.setUrl(newUrl);
     

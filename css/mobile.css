@@ -48,5 +48,16 @@
         padding: 0.15rem;
     }
 
+    .buses-panel-wrapper {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE & Edge */
+    }
+    
+    /* Hide scrollbar for Chrome, Safari, and Opera */
+    .buses-panel-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+    
+    
 }
   
