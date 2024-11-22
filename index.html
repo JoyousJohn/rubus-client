@@ -173,6 +173,101 @@
                 </div>
             </div>
 
+            <div class="settings-show-bus-speeds flex justify-between">
+                <div class="settings-heading">Select Closest Stop on Open</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-select-closest-stop" class="toggle-input">
+                    <label for="toggle-select-closest-stop" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-show-bus-speeds flex justify-between">
+                <div class="settings-heading">Show Arrival Times</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-arrival-times" class="toggle-input">
+                    <label for="toggle-arrival-times" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div> 
+
+            <div class="settings-show-bus-speeds flex justify-between">
+                <div class="settings-heading">Show Bus Speeds</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-bus-speeds" class="toggle-input">
+                    <label for="toggle-bus-speeds" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-show-bus-speeds flex justify-between">
+                <div class="settings-heading">Place Stops Above Buses</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-stops-above-buses" class="toggle-input">
+                    <label for="toggle-stops-above-buses" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="dev-options-head settings-heading mt-2rem" onclick="toggleDevOptions()">Show Developer Options ▼</div>
+            <div class="dev-options-wrapper none">
+
+                <div class="flex flex-col gap-y-1rem">
+
+                    <div class="settings-map-renderer">
+                        <div class="settings-heading">MAP RENDERER</div>
+                        <div class="settings-options grid grid-cols-2">
+                            <div class="settings-option" settings-option="map-renderer" map-renderer-option="canvas">Canvas</div>
+                            <div class="settings-option" settings-option="map-renderer" map-renderer-option="svg">SVG</div>
+                        </div>
+                    </div>
+
+                    <div class="settings-show-bus-speeds flex justify-between">
+                        <div class="settings-heading">Pause updateMarkerPosition()</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-pause-update-marker" class="toggle-input">
+                            <label for="toggle-pause-update-marker" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-show-bus-speeds flex justify-between">
+                        <div class="settings-heading">Pause Passio Polling</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-pause-passio-polling" class="toggle-input">
+                            <label for="toggle-pause-passio-polling" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-show-bus-speeds flex justify-between">
+                        <div class="settings-heading">Disconnect from RUBus WSS</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-disconnect-rubus" class="toggle-input">
+                            <label for="toggle-disconnect-rubus" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-show-bus-speeds flex justify-between">
+                        <div class="settings-heading">Show Stop Polygons</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-stop-polygons" class="toggle-input">
+                            <label for="toggle-show-stop-polygons" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="settings-rubus">
                 <div class="settings-rubus-logo"></div>
                 <div class="settings-rubus-attribution">

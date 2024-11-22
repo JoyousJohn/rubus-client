@@ -57,6 +57,10 @@
     .buses-panel-wrapper::-webkit-scrollbar {
         display: none;
     }
+
+    .settings-heading {
+        user-select: none;
+    }
     
     
 }

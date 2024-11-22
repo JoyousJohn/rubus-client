@@ -802,6 +802,23 @@ $(document).ready(function() {
 
 })
 
+function toggleDevOptions() {
+
+    const $devWrapper = $('.dev-options-wrapper')
+    const $devTitle = $('.dev-options-head')
+    const optionsShown = $devWrapper.is(':visible')
+    console.log(optionsShown)
+
+    if(!optionsShown) {
+        $devWrapper.slideDown();
+        $devTitle.text('Hide Developer Options ▲')
+    } else {
+        $devWrapper.slideUp();
+        $devTitle.text('Show Developer Options ▼');
+    }
+
+}
+
 function updateMarkerSize() {
 
     const outterDimensions = markerSizeMap[settings['marker_size']]
