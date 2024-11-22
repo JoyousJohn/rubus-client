@@ -78,12 +78,16 @@ $(document).ready(function() {
 
     let mapTheme
     settings = JSON.parse(localStorage.getItem('settings'));
-    if (settings && settings['map-theme']) {
-        if (settings['map-theme'] === 'auto') {
+    if (settings && settings['theme']) {
+
+        if (settings['theme'] === 'light') {
+            mapTheme = 'streets-v11'
+        } else if (settings['theme'] === 'dark') {
+            mapTheme = 'dark-v11'
+        } else if (settings['theme'] === 'auto') {
             const currentHour = new Date().getHours();
             mapTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
-        }
-        mapTheme = (settings)['map-theme'];
+        } 
     } else {
         mapTheme = 'streets-v11'
     }
@@ -196,11 +200,6 @@ function panout() {
 }
 
 function changeMapStyle(newStyle) {
-
-    if (newStyle === 'auto') {
-        const currentHour = new Date().getHours();
-        newStyle = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
-    }
 
     let newUrl = 'https://api.mapbox.com/styles/v1/mapbox/' + newStyle + '/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken;
     tileLayer.setUrl(newUrl);

@@ -39,6 +39,19 @@
 </head>
 <body>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            (function() {
+                let theme = JSON.parse(localStorage.getItem('settings'))['theme'] || 'light';
+                if (theme === 'auto') {
+                    const currentHour = new Date().getHours();
+                    theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('theme', theme);
+            })();
+        });
+    </script>
+
     <div class="info-popup-wrapper h-100">
 
         <div class="bus-info-popup">
@@ -155,12 +168,12 @@
                 </div>
             </div>
 
-             <div class="settings-map-theme">
-                <div class="settings-heading">MAP THEME</div>
+             <div class="settings-theme">
+                <div class="settings-heading">THEME</div>
                 <div class="settings-options grid grid-cols-3">
-                    <div class="settings-option" settings-option="map-theme" map-theme-option="streets-v11">Light</div>
-                    <div class="settings-option" settings-option="map-theme" map-theme-option="dark-v11">Dark</div>
-                    <div class="settings-option" settings-option="map-theme" map-theme-option="auto">Auto</div>
+                    <div class="settings-option" settings-option="theme" theme-option="light">Light</div>
+                    <div class="settings-option" settings-option="theme" theme-option="dark">Dark</div>
+                    <div class="settings-option" settings-option="theme" theme-option="auto">Auto</div>
                 </div>
             </div>
 

@@ -2,6 +2,26 @@
     --font-family: 'PP Neue Montreal', sans-serif;
 }
 
+[theme="dark"] {
+    --theme-bg: rgb(53, 53, 53);
+    --theme-color: rgb(184, 184, 184);
+    --theme-color-lighter: rgb(200, 200, 200);
+    --theme-extra: rgb(146, 146, 146);
+    --theme-line-bg: rgb(99, 99, 99);
+    --theme-stop-bus-name: rgb(105, 105, 105);
+    --theme-stop-bus-time: rgb(127, 127, 127);
+}
+
+[theme="light"] {
+    --theme-bg: white;
+    --theme-color: black;
+    --theme-color-lighter: gray;
+    --theme-extra: dimgray;
+    --theme-line-bg: rgb(240, 240, 240);
+    --theme-stop-bus-name: rgb(60, 60, 60);
+    --theme-stop-bus-time: rgb(105, 105, 105);
+}
+
 body {
     margin: 0;
     height: 100vh;
@@ -125,6 +145,7 @@ html, body {
 
 .info-stop-name {
     font-size: 2.5rem;
+    color: var(--theme-color)
 }
 
 .info-campuses {
@@ -133,22 +154,23 @@ html, body {
 
 .info-extra {
     font-size: 1.5rem;
-    color: dimgray;
+    color: var(--theme-extra);
     line-height: 0.7;
 }
 
 .info-capacity {
-    color: #000000;
+    color: var(--theme-color);
 }
 
 .bus-info-main, .info-next-stops {
-    background-color: white;
+    background-color: var(--theme-bg);
     border-radius: 1rem;
     padding: 1.5rem 2rem;
+    color: var(--theme-color) /* in light theme this is already black by default */
 }
 
 .bus-stopped-for {
-    background-color: white;
+    background-color: var(--theme-bg);
     border-radius: 1rem;
     padding: 1rem 2rem;
     font-size: 1.5rem;
@@ -182,7 +204,7 @@ html, body {
     position: absolute;
     width: 8px;
     height: 4rem; /* Adjusts to your grid gap */
-    background: rgb(240, 240, 240);
+    background: var(--theme-line-bg);
     left: 50%;
     transform: translateX(-50%);
     top: 100%;
@@ -193,7 +215,7 @@ html, body {
     position: absolute;
     width: 8px;
     height: 3rem; /* Adjusts to your grid gap */
-    background: rgb(240, 240, 240);
+    background: var(--theme-line-bg);
     left: 50%;
     transform: translateX(-50%) translateY(-100%);
 }
@@ -245,7 +267,7 @@ html, body {
 
 
 .stop-info-popup {
-    background-color: white;
+    background-color: var(--theme-bg);
     border-radius: 1rem;
     margin: 1rem;
     padding: 1rem;
@@ -284,18 +306,19 @@ html, body {
 
 .stop-bus-id {
     font-size: 1.5rem;
-    color: rgb(60, 60, 60);
+    color: var(--theme-stop-bus-name)
 }
 
 .stop-bus-eta {
     font-size: 1.8rem;
     font-weight: bold;
+    color: var(--theme-color)
     /* text-align: right; */
 }
 
 .stop-bus-time {
     font-size: 1.5rem;
-    color: #616161;
+    color: var(--theme-stop-bus-time) /* #616161; */
 }
 
 .stop-info-avg-wait {
@@ -426,12 +449,12 @@ html, body {
 }
 
 .panout, .buses-btn, .centerme {
-    background-color: white;
+    background-color: var(--theme-bg);
     padding: 1.7rem;
     border-radius: 5rem;
     font-size: 2.5rem;
     width: min-content;
-    color: #5b5b5b;
+    color: var(--theme-color);
     display: flex;
     aspect-ratio: 1;
     pointer-events: all;
@@ -536,7 +559,7 @@ html, body {
 .info-mph {
     font-size: 1.5rem;
     font-weight: bold;
-    color: gray;
+    color: var(--theme-color-lighter);
 }
 
 

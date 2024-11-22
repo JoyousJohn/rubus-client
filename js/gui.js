@@ -729,7 +729,7 @@ let settings
 const defaultSettings = {
     'font': 'yusei magic',
     'marker_size': 'medium',
-    'map-theme': 'auto'
+    'theme': 'auto'
 };
 
 $(document).ready(function() {
@@ -756,12 +756,12 @@ $(document).ready(function() {
         localStorage.setItem('settings', JSON.stringify(settings))
         $(`div.settings-option[font-option="yusei magic"]`).addClass('settings-selected')
         $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
-        $(`div.settings-option[map-theme-option="auto"]`).addClass('settings-selected')
+        $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
     }
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker_size']}"]`).addClass('settings-selected')
-    $(`div.settings-option[map-theme-option="${settings['map-theme']}"]`).addClass('settings-selected')
+    $(`div.settings-option[theme-option="${settings['theme']}"]`).addClass('settings-selected')
 
     $('.settings-option').click(function() {
         if ($(this).hasClass('settings-selected')) { return; }
@@ -786,12 +786,20 @@ $(document).ready(function() {
 
         }
 
-        else if (settingsOption === 'map-theme') {
+        else if (settingsOption === 'theme') {
             
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
-            settings['map-theme'] = $(this).attr('map-theme-option')
-            changeMapStyle($(this).attr('map-theme-option'))
+            settings['theme'] = $(this).attr('theme-option')
+
+            let theme = $(this).attr('theme-option')
+            if (theme === 'auto') {
+                const currentHour = new Date().getHours();
+                theme = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
+            }
+
+            changeMapStyle(theme)
+            document.documentElement.setAttribute('theme', theme);
 
         }
 
