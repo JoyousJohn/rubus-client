@@ -201,6 +201,13 @@ function panout() {
 
 function changeMapStyle(newStyle) {
 
+    if (newStyle === 'light') {
+        newStyle = 'streets-v11'
+    } else {
+        newStyle = 'dark-v11'
+    }
+
+    console.log("Setting map style to " + newStyle)
     let newUrl = 'https://api.mapbox.com/styles/v1/mapbox/' + newStyle + '/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken;
     tileLayer.setUrl(newUrl);
     
