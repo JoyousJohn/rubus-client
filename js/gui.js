@@ -748,7 +748,7 @@ $(document).ready(function() {
                 delete settings[key];
             }
         }
-        localStorage.setItem(JSON.stringify(settings))
+        localStorage.setItem('settings', JSON.stringify(settings))
 
         document.documentElement.style.setProperty('--font-family', settings['font']);
     } else {
