@@ -726,18 +726,33 @@ const innerSizeMap = {
 
 let settings
 
+const defaultSettings = {
+    'font': 'yusei magic',
+    'marker_size': 'medium',
+    'map-theme': 'auto'
+};
+
 $(document).ready(function() {
 
     settings = localStorage.getItem('settings');
     if (settings) {
         settings = JSON.parse(settings);
+
+        for (let key in defaultSettings) {
+            if (!settings.hasOwnProperty(key)) {
+                settings[key] = defaultSettings[key];
+            }
+        }
+        for (let key in settings) {
+            if (!defaultSettings.hasOwnProperty(key)) {
+                delete settings[key];
+            }
+        }
+        localStorage.setItem(JSON.stringify(settings))
+
         document.documentElement.style.setProperty('--font-family', settings['font']);
     } else {
-        settings = {
-            'font': 'yusei magic',
-            'marker_size': 'medium',
-            'map-theme': 'auto'
-        };
+        settings = defaultSettings
         localStorage.setItem('settings', JSON.stringify(settings))
         $(`div.settings-option[font-option="yusei magic"]`).addClass('settings-selected')
         $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
