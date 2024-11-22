@@ -691,7 +691,7 @@ html, body {
 .settings-rubus {
     display: grid;
     grid-template-columns: 1fr 3fr;
-    margin-top: 3rem;
+    margin-top: 1rem;
     padding-top: 2rem;
     border-top: 2px solid rgb(214, 214, 214);
     column-gap: 0.5rem;
