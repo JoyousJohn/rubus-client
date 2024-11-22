@@ -924,9 +924,15 @@ async function getBuildNumber() {
         url: 'https://api.github.com/repos/JoyousJohn/rubus-public/commits?per_page=1', // &page = 1
         type: 'GET',
         success: function(data, textStatus, jqXHR) {
+
+            let commitDate = new Date(data[0]['commit']['committer']['date']);
+            let month = commitDate.getMonth() + 1;
+            let day = commitDate.getDate();
+            commitDate = month + '/' + day;
+
             const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
             const lastPage = linkHeader.match(/page=(\d+)>; rel="last"/)[1];
-            $('.build-number').text('- Version b0' + lastPage);
+            $('.build-number').text('- Version b0' + lastPage + ' (' + commitDate + ')');
         }
     });
 }
