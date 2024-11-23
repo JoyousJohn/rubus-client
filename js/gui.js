@@ -987,10 +987,12 @@ function changeThemeViaModal(newTheme) {
 
         if (selectedModalTheme === 'auto') {
             const currentHour = new Date().getHours();
-            newTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
-            selectedModalTheme = newTheme;
+            selectedModalTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
-        document.documentElement.setAttribute('theme', selectedModalTheme);
+        console.log("User's first theme selection is: " + selectedModalTheme)
+        setTimeout(() => {
+            document.documentElement.setAttribute('theme', selectedModalTheme);
+        }, 0);
 
     } else {
         $('.theme-modal-auto').removeClass('theme-modal-selected');
