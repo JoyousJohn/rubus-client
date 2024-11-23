@@ -974,12 +974,18 @@ function changeThemeViaModal(newTheme) {
         $('.theme-modal').fadeOut();
         $(`div[settings-option="theme"]`).removeClass('settings-selected') // hack, I ain't refactoring this anytime soon
         $(`div[theme-option="${selectedModalTheme}"]`).addClass('settings-selected')
-        document.documentElement.setAttribute('theme', selectedModalTheme);
 
         setDefaultSettings(); // must do default settings first
 
         settings['theme'] = selectedModalTheme
         localStorage.setItem('settings', JSON.stringify(settings))
+
+        if (selectedModalTheme === 'auto') {
+            const currentHour = new Date().getHours();
+            newTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
+            selectedModalTheme = newTheme;
+        }
+        document.documentElement.setAttribute('theme', selectedModalTheme);
 
     } else {
         $('.theme-modal-auto').removeClass('theme-modal-selected');

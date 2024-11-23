@@ -78,7 +78,6 @@
     </div>
 
     <script>
-        console.log(JSON.parse(localStorage.getItem('settings')))
         if (JSON.parse(localStorage.getItem('settings')) && JSON.parse(localStorage.getItem('settings'))['theme']) {
             document.querySelector('.theme-modal').style.display = 'none';
         }
