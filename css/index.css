@@ -4,7 +4,7 @@
 
 [theme="dark"] {
     --theme-bg: rgb(53, 53, 53);
-    --theme-color: rgb(184, 184, 184);
+    --theme-color: rgb(203, 203, 203);
     --theme-color-lighter: rgb(200, 200, 200);
     --theme-extra: rgb(146, 146, 146);
     --theme-line-bg: rgb(99, 99, 99);
@@ -33,6 +33,54 @@ html {
 
 html, body {
     overscroll-behavior-y: none;
+}
+
+.theme-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 402;
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
+    font-family: var(--font-family);
+}
+
+.theme-modal > .grid > img {
+    width: 100%;
+    border: 1px solid var(--theme-extra);
+    cursor: pointer;
+    /* object-fit: contain; */
+}
+
+.theme-modal-auto {
+    font-size: 2rem;
+    color: white;
+    border-radius: 0.75rem;
+    margin: 3rem;
+    padding: 1.5rem;
+    /* font-weight: bold; */
+    border: 1px solid rgb(80, 80, 230);;
+    background-color: rgb(144, 136, 234);
+}
+
+.theme-modal-selected {
+    /* border: 3px solid blue; */
+    box-shadow: 0 0 1.5rem var(--theme-color);
+    background-color: rgb(61, 61, 196);
+}
+
+.theme-modal-confirm {
+    background-color: rgb(64, 52, 205);
+    margin: 3rem;
+    padding: 1.5rem;
+    font-size: 2rem;
+    color: white;
+    border-radius: 0.75rem;
+    /* border: 1px solid rgb(119, 109, 230); */
+    border: 1px solid rgb(80, 80, 230);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 #map {

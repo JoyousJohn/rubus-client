@@ -201,6 +201,8 @@ function panout() {
 
 function changeMapStyle(newStyle) {
 
+    document.documentElement.setAttribute('theme', newStyle);
+
     if (newStyle === 'light') {
         newStyle = 'streets-v11'
     } else {

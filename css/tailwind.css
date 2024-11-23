@@ -22,6 +22,22 @@
 
 .bold { font-weight: bold; }
 
+.text-1p5rem { font-size: 1.5rem; }
+
+.text-1p7rem { font-size: 1.7rem; }
+
+.text-1p8rem { font-size: 1.8rem; }
+
+.text-2rem { font-size: 2rem; }
+
+.text-2p5rem { font-size: 2.5rem; }
+
+.text-3rem { font-size: 3rem; }
+
+.text-4rem { font-size: 4rem; }
+
+.text-5rem { font-size: 5rem; }
+
 .font-8rem { font-size: 8rem; }
 
 .font-10rem { font-size: 10rem; }
@@ -72,7 +88,13 @@
 
 .fw-600 { font-weight: 600; }
 
+.pt-2rem { padding-top: 2rem; }
+
+.pt-3rem { padding-top: 3rem; }
+
 .pt-4rem { padding-top: 4rem; }
+
+.pt-5rem { padding-top: 5rem; }
 
 .pt-8rem { padding-top: 8rem; }
 
@@ -97,6 +119,18 @@
 .px-16rem { padding-left: 16rem; padding-right: 16rem; }
 
 .py-8rem { padding-top: 8rem; padding-bottom: 8rem; }
+
+.m-1rem { margin: 1rem; }
+
+.m-2rem { margin: 2rem; }
+
+.m-3rem { margin: 3rem; }
+
+.m-4rem { margin: 4rem; }
+
+.m-5rem { margin: 5rem; }
+
+.mt-1rem { margin-top: 1rem; }
 
 .mt-2rem { margin-top: 2rem; }
 
@@ -176,6 +210,14 @@
 
 .gap-x-1rem { column-gap: 1rem; }
 
+.gap-x-2rem { column-gap: 2rem; }
+
+.gap-x-3rem { column-gap: 3rem; }
+
+.gap-x-4rem { column-gap: 4rem; }
+
+.gap-x-5rem { column-gap: 5rem; }
+
 .gap-y-0p5rem { row-gap: 0.5rem; }
 
 .gap-y-1rem { row-gap: 1rem; }
@@ -210,3 +252,5 @@
 }
 
 .br-20px { border-radius: 20px; }
+
+.br-1rem { border-radius: 1rem; }

@@ -724,22 +724,30 @@ const innerSizeMap = {
     'big': '19'
 }
 
-let settings
+let settings = {}
 
-const defaultSettings = {
-    'font': 'yusei magic',
+let defaultSettings = {
+    'font': 'PP Neue Montreal',
     'marker_size': 'medium',
     'theme': 'auto'
 };
 
-$(document).ready(function() {
+function setDefaultSettings (){
+    delete defaultSettings['theme']
+    settings = defaultSettings
+    localStorage.setItem('settings', JSON.stringify(settings))
+    $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
+    $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
+    // $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
+}
 
+function updateSettings() {
     settings = localStorage.getItem('settings');
     if (settings) {
         settings = JSON.parse(settings);
 
         for (let key in defaultSettings) {
-            if (!settings.hasOwnProperty(key)) {
+            if (!settings.hasOwnProperty(key) && key !== 'theme') {
                 settings[key] = defaultSettings[key];
             }
         }
@@ -748,20 +756,20 @@ $(document).ready(function() {
                 delete settings[key];
             }
         }
+        console.log(settings)
         localStorage.setItem('settings', JSON.stringify(settings))
 
         document.documentElement.style.setProperty('--font-family', settings['font']);
     } else {
-        settings = defaultSettings
-        localStorage.setItem('settings', JSON.stringify(settings))
-        $(`div.settings-option[font-option="yusei magic"]`).addClass('settings-selected')
-        $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
-        $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
+        setDefaultSettings();
     }
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker_size']}"]`).addClass('settings-selected')
-    $(`div.settings-option[theme-option="${settings['theme']}"]`).addClass('settings-selected')
+    
+    if (!$('.theme-modal').is(':visible')) {
+        $(`div.settings-option[theme-option="${settings['theme']}"]`).addClass('settings-selected')
+    }
 
     $('.settings-option').click(function() {
         if ($(this).hasClass('settings-selected')) { return; }
@@ -769,7 +777,6 @@ $(document).ready(function() {
         const settingsOption = $(this).attr('settings-option')
 
         // console.log(settingsOption)
-
         if (settingsOption === 'font') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
@@ -799,7 +806,6 @@ $(document).ready(function() {
             }
 
             changeMapStyle(theme)
-            document.documentElement.setAttribute('theme', theme);
 
         }
 
@@ -807,6 +813,13 @@ $(document).ready(function() {
     })
 
     getBuildNumber()
+}
+
+$(document).ready(function() {
+
+    updateSettings();
+
+    
 
 })
 
@@ -935,4 +948,43 @@ async function getBuildNumber() {
             $('.build-number').text('- Version b0' + lastPage + ' (' + commitDate + ')');
         }
     });
+}
+
+
+
+let selectedModalTheme = 'auto';
+
+function changeThemeViaModal(newTheme) {
+
+    $('.theme-modal-selected').removeClass('theme-modal-selected')
+
+    if (newTheme === 'auto') {
+        const currentHour = new Date().getHours();
+        newTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
+        selectedModalTheme = newTheme;
+        $('.theme-modal-auto').addClass('theme-modal-selected');
+        settings['theme'] = 'auto'
+        localStorage.setItem('settings', JSON.stringify(settings))
+        
+    } else if (newTheme === 'confirm') {
+        $('.theme-modal').fadeOut();
+        $(`div[settings-option="theme"]`).removeClass('settings-selected') // hack, I ain't refactoring this anytime soon
+        $(`div[theme-option="${selectedModalTheme}"]`).addClass('settings-selected')
+        document.documentElement.setAttribute('theme', selectedModalTheme);
+
+        setDefaultSettings(); // must do default settings first
+
+        settings['theme'] = selectedModalTheme
+        localStorage.setItem('settings', JSON.stringify(settings))
+
+    } else {
+        $('.theme-modal-auto').removeClass('theme-modal-selected');
+        $(`img[theme-option="${newTheme}"]`).addClass('theme-modal-selected')
+        selectedModalTheme = newTheme;
+        settings['theme'] = selectedModalTheme
+        localStorage.setItem('settings', JSON.stringify(settings))
+    }
+
+    changeMapStyle(newTheme);
+
 }
