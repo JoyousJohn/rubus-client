@@ -662,7 +662,7 @@ html, body {
     border-left: 1px solid rgb(185, 185, 185);
 }
 
-.settings-close, .buses-close {
+.settings-close > div, .buses-close {
     background-color: rgb(208, 77, 77);
     position: fixed;
     bottom: 0;
@@ -674,6 +674,10 @@ html, body {
     font-size: 2rem;
     border-radius: 50%;
     margin: 1rem;
+    z-index: 401;
+}
+
+.buses-close {
     display: none;
 }
 
