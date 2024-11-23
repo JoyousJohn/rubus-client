@@ -857,6 +857,58 @@ let locationShared;
 let userLocation;
 let closestStopId;
 
+function findNearestStop(fly) {
+    console.log("Trying to find nearest stop...")
+
+    navigator.geolocation.getCurrentPosition((position) => {
+        const userLat = position.coords.latitude;
+        const userLong = position.coords.longitude;
+        userPosition = [userLat, userLong];
+
+        let closestStop = null;
+        let thisClosestStopId = null;
+        let closestDistance = Infinity;
+
+        console.log(stopsData)
+        for (const stopId in stopsData) {
+            const stop = stopsData[stopId];
+            const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
+            console.log(distance)
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestStop = stop;
+                thisClosestStopId = stopId;
+            }
+        }
+
+        if (closestStop) {
+
+            console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
+            closestStopId = thisClosestStopId
+
+            L.marker(userPosition, 
+                { icon: L.icon({
+                    iconUrl: 'img/location_marker.png',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12],
+                })
+            }).addTo(map)
+
+            if (fly && !panelRoute && !$('.settings-panel').is(':visible')) {
+                $('.fly-closest-stop-wrapper').fadeIn();
+                flyToStop(thisClosestStopId);
+                console.log("Flying to closest stop")
+            }
+            $('.closest-stop').show('none');
+        } else {
+            console.log('No stops found within the given data.');
+        }
+
+    }, (error) => {
+        console.error('Error getting user location:', error);
+    });
+}
+
 function checkIfLocationShared() {
     const lsLocationShared = localStorage.getItem('locationShared');
 
@@ -864,54 +916,7 @@ function checkIfLocationShared() {
 
     if (locationShared) {
         if (navigator.geolocation) {
-
-            console.log("Trying to find nearest stop...")
-
-            navigator.geolocation.getCurrentPosition((position) => {
-                const userLat = position.coords.latitude;
-                const userLong = position.coords.longitude;
-                userPosition = [userLat, userLong];
-
-                let closestStop = null;
-                let thisClosestStopId = null;
-                let closestDistance = Infinity;
-
-                console.log(stopsData)
-                for (const stopId in stopsData) {
-                    const stop = stopsData[stopId];
-                    const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
-                    console.log(distance)
-                    if (distance < closestDistance) {
-                        closestDistance = distance;
-                        closestStop = stop;
-                        thisClosestStopId = stopId;
-                    }
-                }
-
-                if (closestStop) {
-
-                    console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
-                    closestStopId = thisClosestStopId
-
-                    L.marker(userPosition, 
-                        { icon: L.icon({
-                            iconUrl: 'img/location_marker.png',
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12],
-                        })
-                    }).addTo(map)
-
-                    if (!panelRoute && !$('.settings-panel').is(':visible')) {
-                        flyToStop(thisClosestStopId);
-                    }
-                    $('.closest-stop').show('none');
-                } else {
-                    console.log('No stops found within the given data.');
-                }
-
-            }, (error) => {
-                console.error('Error getting user location:', error);
-            });
+            findNearestStop(true);
         } else {
             console.error('Geolocation is not supported by this browser.');
         }

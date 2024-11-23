@@ -259,6 +259,8 @@ function centerme() {
                 locationShared = true;
             }
 
+            findNearestStop(false);
+
         }, (error) => {
             console.error('Error getting user location:', error);
         });

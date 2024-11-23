@@ -345,13 +345,21 @@
     
     <div class="bottom">
         <div class="flex justify-between align-end">
+
             <div class="flex flex-col" style="row-gap: 0.8rem">
                 <div class="buses-btn none" onclick="busesOverview()"><i class="fa-solid fa-bus"></i></div>
                 <div class="panout" onclick="panout()"><i class="fa-solid fa-route"></i></div>
             </div>
-            <div class="centerme-wrapper">
-                <div class="centerme" onclick="centerme()"><i class="fa-solid fa-location-crosshairs"></i></div>
+
+            <div class="flex flex-col" style="row-gap: 0.8rem">
+                <div class="fly-closest-stop-wrapper none">
+                    <div class="fly-closest-stop" onclick="flyToStop(closestStopId)"><i class="fa-solid fa-location-arrow"></i></div>
+                </div>
+                <div class="centerme-wrapper">
+                    <div class="centerme" onclick="centerme()"><i class="fa-solid fa-location-crosshairs"></i></div>
+                </div>
             </div>
+
         </div>
         <div class="flex justify-between">
             <div class="route-selectors">
