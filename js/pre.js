@@ -372,7 +372,7 @@ async function randomStepBusSpeeds() {
 
         const randChange = Math.random() < 0.5 ? -1 : 1;
         busData[busId].visualSpeed += randChange;
-        if (popupBusId == busId) {
+        if (popupBusId == busId && showBusSpeeds) {
             $('.info-speed').text(Math.round(busData[busId].visualSpeed))
             // console.log('changed speed to ' + busData[busId].visualSpeed)
         }

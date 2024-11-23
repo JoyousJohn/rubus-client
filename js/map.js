@@ -288,7 +288,7 @@ function haversine(lat1, lon1, lat2, lon2) {
 
 
 let speedTimeout = {};
-
+let showBusSpeeds = true;
 
 // Method to calculate speed in mph for a specific bus
 async function calculateSpeed(busId) {
@@ -320,7 +320,7 @@ async function calculateSpeed(busId) {
     if (!('visualSpeed' in busData[busId])) {
         busData[busId].speed = realSpeed
         busData[busId].visualSpeed = realSpeed
-        if (popupBusId === busId) {
+        if (popupBusId === busId && showBusSpeeds) {
             console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
             $('.info-speed').text(Math.round(busData[busId].visualSpeed))
         }
@@ -371,7 +371,7 @@ async function calculateSpeed(busId) {
 
         elapsedMs += updateIntervalMs;
         
-        if (popupBusId === busId) {
+        if (popupBusId === busId && showBusSpeeds) {
             // console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
             $('.info-speed').text(Math.round(busData[busId].visualSpeed))
         }
@@ -588,7 +588,9 @@ function popInfo(busId) {
     $('.info-route').text(data.route.toUpperCase()).css('color', colorMappings[data.route])
     $('.info-bus-name').text(data.busName)
     $('.info-campuses').text(campusMappings[data.route])
-    $('.info-speed').text(parseInt(data.visualSpeed))
+    if (showBusSpeeds) {
+        $('.info-speed').text(parseInt(data.visualSpeed))
+    }
     $('.info-name').text(data.busName + ' | ')
     $('.info-capacity').text(data.capacity + '% capacity')
 

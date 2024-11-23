@@ -6,24 +6,24 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-select-closest-stop':
             console.log(`Auto select closest stop ${isChecked ? 'ON' : 'OFF'}`);
-
-            if (isChecked) {
-                settings['toggle-select-closest-stop'] = true;
-            } else {
-                settings['toggle-select-closest-stop'] = false;
-            }
-
+            settings['toggle-select-closest-stop'] = isChecked;
             break;
 
         case 'toggle-show-arrival-times':
             console.log(`Show arrival times now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-arrival-times'] = isChecked;
+            break;
 
-            if (isChecked) {
-                settings['toggle-show-arrival-times'] = true;
+        case 'toggle-show-bus-speeds':
+            console.log(`Show bus speeds now ${isChecked ? 'ON' : 'OFF'}`);
+            showBusSpeeds = isChecked;
+            settings['toggle-show-bus-speeds'] = isChecked;
+            if (!isChecked) {
+                $('.info-speed-wrapper').hide();
             } else {
-                settings['toggle-show-arrival-times'] = false;
+                $('.info-speed-wrapper').show();
             }
-            
+            break;
 
         case 'toggle-pause-update-marker':
             console.log(`Pause update marker positions now ${isChecked ? 'ON' : 'OFF'}`);
@@ -73,4 +73,9 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
 $(document).ready(function() {
     $('.dev-options-wrapper .toggle-input').prop('checked', false);
+
+    if (!settings['toggle-show-bus-speeds']) {
+        $('.info-speed-wrapper').hide();
+    }
+
 })
