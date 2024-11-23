@@ -632,11 +632,11 @@ function popInfo(busId) {
             const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]
 
             $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col">
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
                     <div class="next-stop-campus">${campusName}</div>
                     <div class="next-stop-name">${stopName}</div>
                 </div>`).click(() => { flyToStop(sortedStops[i])}));
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col center">
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
                 <div class="next-stop-eta">${eta}m</div>
                 <div class="next-stop-time">${formattedTime}</div>
             </div>`).click(() => { flyToStop(sortedStops[i])}));

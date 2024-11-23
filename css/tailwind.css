@@ -258,3 +258,5 @@
 .br-1rem { border-radius: 1rem; }
 
 .select-none { user-select: none; }
+
+.pointer { cursor: pointer; }
