@@ -497,7 +497,7 @@ function plotBus(busId) {
                 className: 'bus-icon',
                 iconSize: [30, 30],
                 iconAnchor: [15, 15],
-                html: '<div class="bus-icon-outer"><div class="bus-icon-inner"></div></div>'
+                html: '<div class="bus-icon-outer" style="will-change: transform;"><div class="bus-icon-inner"></div></div>'
             }),
             route: busData[busId].route
         }).addTo(map);
