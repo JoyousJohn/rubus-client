@@ -562,7 +562,6 @@ const campusShortNamesMappings = {
 let stoppedForInterval;
 
 function popInfo(busId) {
-
     $('.stop-info-popup, .route-panel').hide();
 
     const data = busData[busId]
@@ -573,6 +572,7 @@ function popInfo(busId) {
     $('.info-name').text(data.busName + ' | ')
     $('.info-capacity').text(data.capacity + '% capacity')
 
+
     if (data.joined_service) {
         const joinedServiceDateTime = new Date(data.joined_service);
         const formattedTime = joinedServiceDateTime.toLocaleTimeString('en-US', {
@@ -582,8 +582,8 @@ function popInfo(busId) {
             hour12: true
         });
         $('.bus-joined-service').text('Joined service at ' + formattedTime);
+        $('.info-next-stops').show();
     }
-
     if ('at_stop' in busData[busId] && busData[busId].at_stop === true) {
         startStoppedForTimer(busId)
     } else {
@@ -595,7 +595,7 @@ function popInfo(busId) {
     // console.log('next_stop' in data)
 
     if ('next_stop' in data) {
-        $('.next-stops-grid').empty();
+        $('.next-stops-grid > div').empty();
 
         const nextStop = data.next_stop
         let routeStops = stopLists[data.route]
@@ -606,19 +606,19 @@ function popInfo(busId) {
         if (nextStopIndex !== -1) {
             sortedStops = routeStops
                 .slice(nextStopIndex)
-                .concat(routeStops.slice(0, nextStopIndex))
+                .concat(routeStops.slice(0, nextStopIndex));
         }
 
         if (nextStopIndex + 1 === routeStops.length) {
-            sortedStops.push(routeStops[0])
+            sortedStops.push(routeStops[0]);
         } else {
-            sortedStops.push(routeStops[nextStopIndex + 1])
+            sortedStops.push(routeStops[nextStopIndex + 1]);
         }
 
 
         for (let i = 0; i < sortedStops.length-1; i++) {
 
-            const eta = Math.round((busETAs[busId][sortedStops[i]] + 20)/60)
+            const eta = Math.round((busETAs[busId][sortedStops[i]] + 20)/60);
             // console.log(sortedStops[i])
             const currentTime = new Date();
             currentTime.setMinutes(currentTime.getMinutes() + eta);
@@ -631,18 +631,18 @@ function popInfo(busId) {
             const stopName = stopsData[sortedStops[i]].name
             const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]
 
-            $('.next-stops-grid').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
-            $('.next-stops-grid').append($(`<div class="flex flex-col">
+            $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col">
                     <div class="next-stop-campus">${campusName}</div>
                     <div class="next-stop-name">${stopName}</div>
                 </div>`).click(() => { flyToStop(sortedStops[i])}));
-            $('.next-stops-grid').append($(`<div class="flex flex-col center">
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col center">
                 <div class="next-stop-eta">${eta}m</div>
                 <div class="next-stop-time">${formattedTime}</div>
             </div>`).click(() => { flyToStop(sortedStops[i])}));
         }
 
-        $('.info-next-stops').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
+        $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
 
         setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
             $('.info-next-stops').scrollTop(0)
@@ -650,9 +650,9 @@ function popInfo(busId) {
     }
 
     else {
-        $('.info-next-stops').hide();
+        $('.next-stops-grid').hide();
+        $('.next-stops-grid > div').empty();
     }
-
     
     $('.bus-info-popup').show();
 }

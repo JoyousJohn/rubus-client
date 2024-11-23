@@ -108,10 +108,10 @@
                     Stopped for Xm
                 </div>
 
-                <div class="info-next-stops">
+                <div class="info-next-stops none">
                     <!-- <div class="next-stops-text">NEXT STOPS</div> -->
-                    <div class="next-stops-grid grid">
-
+                    <div class="next-stops-grid none">
+                        <div class="grid"></div>
                     </div>
 
                     <div class="bus-joined-service"></div>
@@ -170,7 +170,7 @@
             </div>
         </div>
 
-        <div class="ridership-super-wrapper">
+        <div class="ridership-super-wrapper select-none">
             <div class="ridership-history-title center">Ridership Today</div>
             <div class="ridership-chart-wrapper">
                 <canvas id="ridership-chart"></canvas>
@@ -310,11 +310,13 @@
                         </div>
                     </div>
 
-                    <div class="settings-map-renderer"></div>
-                        <div class="settings-heading">RESET SETTINGS</div>
+                    <div class="settings-reset-settings">
+                        <div class="settings-heading">REMOVE SETTINGS localStorage</div>
                         <div class="settings-options grid">
-                            <div class="settings-option" onclick="localStorage.removeItem('settings');">Clear (restart needed)</div>
+                            <div class="settings-option" onclick="localStorage.removeItem('settings'); $('div.settings-reset-settings div.settings-option').text('Restart for changes to take effect.').css('background-color', 'lightgray')">Reset (restart needed)</div>
                         </div>
+                    </div>
+                        
                     </div>
 
                 </div>
@@ -331,7 +333,7 @@
 
             </div>
 
-            <div class="settings-rubus-attribution flex justify-around gray777777 mb-3rem">
+            <div class="settings-rubus-attribution flex justify-around gray777777 mb-3rem mt-1p5rem">
                 <div>About</div>
                 <div>Contact</div>
                 <div>Terms</div>

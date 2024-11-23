@@ -328,6 +328,18 @@ $(document).ready(async function() {
                 if (!(busId in busData)) { continue; } 
                 busData[busId]['joined_service'] = joined_service[busId]
             }
+
+            if (popupBusId) {
+                const formattedTime = new Date(joined_service[popupBusId]).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: undefined,
+                    hour12: true
+                });
+                $('.bus-joined-service').text('Joined service at ' + formattedTime);
+                $('.info-next-stops').show();
+            }
+
         } catch (error) {
             console.error('Error fetching joined service times:', error);
         }

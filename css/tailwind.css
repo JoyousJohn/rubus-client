@@ -132,6 +132,8 @@
 
 .mt-1rem { margin-top: 1rem; }
 
+.mt-1p5rem { margin-top: 1.5rem; }
+
 .mt-2rem { margin-top: 2rem; }
 
 .mt-5rem { margin-top: 5rem; }
@@ -254,3 +256,5 @@
 .br-20px { border-radius: 20px; }
 
 .br-1rem { border-radius: 1rem; }
+
+.select-none { user-select: none; }
