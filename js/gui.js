@@ -728,10 +728,17 @@ const innerSizeMap = {
 
 let settings = {}
 
+const toggleSettings = [
+    'toggle-select-closest-stop',
+    'toggle-show-arrival-times'
+]
+
 let defaultSettings = {
     'font': 'PP Neue Montreal',
     'marker_size': 'medium',
-    'theme': 'auto'
+    'theme': 'auto',
+    'toggle-select-closest-stop': true,
+    'toggle-show-arrival-times': true
 };
 
 function setDefaultSettings (){
@@ -818,6 +825,17 @@ function updateSettings() {
 
     })
 
+    toggleSettings.forEach(toggleSetting => {
+
+        const isChecked = settings[toggleSetting]; 
+        const $toggleInput = $(`#${toggleSetting}`);
+
+        if ($toggleInput.length) {
+            $toggleInput.prop('checked', isChecked);
+        }
+
+    })
+
     getBuildNumber()
 }
 
@@ -896,7 +914,7 @@ function findNearestStop(fly) {
                 })
             }).addTo(map)
 
-            if (fly && !panelRoute && !$('.settings-panel').is(':visible')) {
+            if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible')) {
                 $('.fly-closest-stop-wrapper').fadeIn();
                 flyToStop(thisClosestStopId);
                 console.log("Flying to closest stop")

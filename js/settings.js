@@ -3,6 +3,28 @@ $('.settings-toggle .toggle-input').on('change', function () {
     const isChecked = $(this).prop('checked');
 
     switch (toggleId) {
+
+        case 'toggle-select-closest-stop':
+            console.log(`Auto select closest stop ${isChecked ? 'ON' : 'OFF'}`);
+
+            if (isChecked) {
+                settings['toggle-select-closest-stop'] = true;
+            } else {
+                settings['toggle-select-closest-stop'] = false;
+            }
+
+            break;
+
+        case 'toggle-show-arrival-times':
+            console.log(`Show arrival times now ${isChecked ? 'ON' : 'OFF'}`);
+
+            if (isChecked) {
+                settings['toggle-show-arrival-times'] = true;
+            } else {
+                settings['toggle-show-arrival-times'] = false;
+            }
+            
+
         case 'toggle-pause-update-marker':
             console.log(`Pause update marker positions now ${isChecked ? 'ON' : 'OFF'}`);
 
@@ -34,4 +56,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
     }
+
+    localStorage.setItem('settings', JSON.stringify(settings))
+
 });
