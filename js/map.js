@@ -393,6 +393,7 @@ async function calculateSpeed(busId) {
 }
 
 const animationFrames = {}
+let pauseRotationUpdating = false;
 
 // Update the marker's position during animation
 const updateMarkerPosition = (busId) => {
@@ -437,18 +438,20 @@ const updateMarkerPosition = (busId) => {
             rotationChange += 360;
         }
 
-        // Calculate and apply current rotation
-        let currentRotation = startRotation + rotationChange * progress;
-
         if (!busMarkers[busId]) { // bus went out of service
             return
         }
 
-        const iconElement = marker.getElement().querySelector('.bus-icon-outer');
-        if (iconElement) {
-            iconElement.style.transform = `rotate(${currentRotation}deg)`;
-        }
+        if (!pauseRotationUpdating) {
+            let currentRotation = startRotation + rotationChange * progress;
 
+            const iconElement = marker.getElement().querySelector('.bus-icon-outer');
+            if (iconElement) {
+                iconElement.style.transform = `rotate(${currentRotation}deg)`;
+            }
+        }
+        // Calculate and apply current rotation
+        
         if (progress < 1) {
             animationFrames[busId] = requestAnimationFrame(animateMarker);
         } else {

@@ -40,6 +40,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
+        case 'toggle-pause-rotation-updating':
+                console.log(`Pause rotation updating now ${isChecked ? 'ON' : 'OFF'}`);
+                pauseRotationUpdating = isChecked
+                break;
+
         case 'toggle-pause-passio-polling':
             console.log(`Pause Passio Polling is now ${isChecked ? 'ON' : 'OFF'}`);
             break;
