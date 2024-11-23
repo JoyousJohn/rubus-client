@@ -392,10 +392,17 @@ async function calculateSpeed(busId) {
 
 }
 
+const animationFrames = {}
+
 // Update the marker's position during animation
 const updateMarkerPosition = (busId) => {
     const loc = {lat: busData[busId].lat, long: busData[busId].long};
     const marker = busMarkers[busId];
+
+    if (animationFrames[busId]) {
+        cancelAnimationFrame(animationFrames[busId]);
+        delete animationFrames[busId];
+    }
 
     // Get the start and end points
     const startLatLng = marker.getLatLng();
@@ -443,7 +450,9 @@ const updateMarkerPosition = (busId) => {
         }
 
         if (progress < 1) {
-            requestAnimationFrame(animateMarker);
+            animationFrames[busId] = requestAnimationFrame(animateMarker);
+        } else {
+            delete animationFrames[busId]; // Animation complete, clean up
         }
     };
 
@@ -463,6 +472,7 @@ const handleMapInteraction = () => {
 };
 
 let selectedMarkerId
+let pauseUpdateMarkerPositions = false
 
 function plotBus(busId) {
 
@@ -489,7 +499,7 @@ function plotBus(busId) {
             // busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'blue';
         });
 
-    } else {
+    } else if (!pauseUpdateMarkerPositions) {
         // Update the existing marker's position
         updateMarkerPosition(busId);
     }
