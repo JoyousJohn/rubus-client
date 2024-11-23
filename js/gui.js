@@ -956,7 +956,7 @@ async function getBuildNumber() {
 
             const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
             const lastPage = linkHeader.match(/page=(\d+)>; rel="last"/)[1];
-            $('.build-number').text('- Version b0' + lastPage + ' (' + commitDate + ')');
+            $('.build-number').text('- Version b' + lastPage + ' (' + commitDate + ')');
         }
     });
 }
