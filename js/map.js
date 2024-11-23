@@ -252,6 +252,8 @@ function centerme() {
                 duration: 0.3
             });
 
+            $('.fly-closest-stop-wrapper').show();
+
             hideInfoBoxes();
 
             if(!locationShared) {
