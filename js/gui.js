@@ -380,10 +380,12 @@ function selectedRoute(route) {
             .sort((a, b) => Math.round(busETAs[a][stopId] / 60) - Math.round(busETAs[b][stopId] / 60)) // Sort by ETA
             .forEach(busId => {
 
-            const $gridElm = $stopElm.find('.route-buses-for-stop')
-            $gridElm.append(`<div>${busData[busId].busName}</div>`)
-            $gridElm.append(`<div class="bold">${Math.round(busETAs[busId][stopId]/60)}m</div>`)
-            $gridElm.append(`<div class="align-right">x stops away</div>`)
+            if (busETAs[busId]) {
+                const $gridElm = $stopElm.find('.route-buses-for-stop')
+                $gridElm.append(`<div>${busData[busId].busName}</div>`)
+                $gridElm.append(`<div class="bold">${Math.round(busETAs[busId][stopId]/60)}m</div>`)
+                $gridElm.append(`<div class="align-right">x stops away</div>`)
+            }
 
         })
 
