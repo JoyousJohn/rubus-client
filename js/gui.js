@@ -982,8 +982,8 @@ function changeThemeViaModal(newTheme) {
 
         setDefaultSettings(); // must do default settings first
 
-        settings['theme'] = selectedModalTheme
-        localStorage.setItem('settings', JSON.stringify(settings))
+        settings['theme'] = selectedModalTheme;
+        localStorage.setItem('settings', JSON.stringify(settings));
 
         if (selectedModalTheme === 'auto') {
             const currentHour = new Date().getHours();
@@ -992,14 +992,15 @@ function changeThemeViaModal(newTheme) {
         console.log("User's first theme selection is: " + selectedModalTheme)
         setTimeout(() => {
             document.documentElement.setAttribute('theme', selectedModalTheme);
+            changeMapStyle(selectedModalTheme);
         }, 0);
 
     } else {
         $('.theme-modal-auto').removeClass('theme-modal-selected');
-        $(`img[theme-option="${newTheme}"]`).addClass('theme-modal-selected')
+        $(`img[theme-option="${newTheme}"]`).addClass('theme-modal-selected');
         selectedModalTheme = newTheme;
-        settings['theme'] = selectedModalTheme
-        localStorage.setItem('settings', JSON.stringify(settings))
+        settings['theme'] = selectedModalTheme;
+        localStorage.setItem('settings', JSON.stringify(settings));
     }
 
     changeMapStyle(newTheme);
