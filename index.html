@@ -78,6 +78,7 @@
     </div>
 
     <script>
+        console.log(JSON.parse(localStorage.getItem('settings')))
         if (JSON.parse(localStorage.getItem('settings')) && JSON.parse(localStorage.getItem('settings'))['theme']) {
             document.querySelector('.theme-modal').style.display = 'none';
         }
@@ -309,6 +310,14 @@
                             </label>
                         </div>
                     </div>
+
+                    <div class="settings-map-renderer"></div>
+                        <div class="settings-heading">RESET SETTINGS</div>
+                        <div class="settings-options grid">
+                            <div class="settings-option" onclick="localStorage.removeItem('settings');">Clear (restart needed)</div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

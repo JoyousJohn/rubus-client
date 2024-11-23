@@ -743,7 +743,9 @@ function setDefaultSettings (){
 
 function updateSettings() {
     settings = localStorage.getItem('settings');
+    console.log(settings)
     if (settings) {
+
         settings = JSON.parse(settings);
 
         for (let key in defaultSettings) {
@@ -756,7 +758,6 @@ function updateSettings() {
                 delete settings[key];
             }
         }
-        console.log(settings)
         localStorage.setItem('settings', JSON.stringify(settings))
 
         document.documentElement.style.setProperty('--font-family', settings['font']);
@@ -809,7 +810,10 @@ function updateSettings() {
 
         }
 
-        localStorage.setItem('settings', JSON.stringify(settings))
+        if (settingsOption) { // don't reset ls if ls was cleared (that option doesn't currently have settingsOption). add some sort of attribute later as this will be in analytics
+            localStorage.setItem('settings', JSON.stringify(settings))
+        }
+
     })
 
     getBuildNumber()
