@@ -41,9 +41,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
             break;
 
         case 'toggle-pause-rotation-updating':
-                console.log(`Pause rotation updating now ${isChecked ? 'ON' : 'OFF'}`);
-                pauseRotationUpdating = isChecked
-                break;
+            console.log(`Pause rotation updating now ${isChecked ? 'ON' : 'OFF'}`);
+            pauseRotationUpdating = isChecked
+            break;
+
+        case 'toggle-whole-pixel-positioning':
+            console.log(`Whole pixel positioning is now ${isChecked ? 'ON' : 'OFF'}`);
+            wholePixelPositioning = isChecked
+            break;
 
         case 'toggle-pause-passio-polling':
             console.log(`Pause Passio Polling is now ${isChecked ? 'ON' : 'OFF'}`);
@@ -65,3 +70,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
     localStorage.setItem('settings', JSON.stringify(settings))
 
 });
+
+$(document).ready(function() {
+    $('.dev-options-wrapper .toggle-input').prop('checked', false);
+})

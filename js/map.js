@@ -394,6 +394,7 @@ async function calculateSpeed(busId) {
 
 const animationFrames = {}
 let pauseRotationUpdating = false;
+let wholePixelPositioning = false;
 
 // Update the marker's position during animation
 const updateMarkerPosition = (busId) => {
@@ -429,7 +430,11 @@ const updateMarkerPosition = (busId) => {
         const currentLat = startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress;
         const currentLng = startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress;
 
-        marker.setLatLngPrecise([currentLat, currentLng]);
+        if (wholePixelPositioning) {
+            marker.setLatLng([currentLat, currentLng]);
+        } else {
+            marker.setLatLngPrecise([currentLat, currentLng]);
+        }
 
         let rotationChange = endRotation - startRotation
         if (rotationChange > 180) {
