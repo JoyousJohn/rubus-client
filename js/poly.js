@@ -198,7 +198,7 @@ async function popStopInfo(stopId) {
     }
 
     popupStopId = stopId;
-    $('.bus-info-popup, .route-panel').hide();
+    $('.bus-info-popup, .route-panel, .my-location-popup').hide();
 
     $('.info-stop-name').text(stopsData[stopId].name)
 

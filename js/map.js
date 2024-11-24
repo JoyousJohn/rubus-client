@@ -247,6 +247,11 @@ function centerme() {
                 })
             }).addTo(map)
 
+            marker.on('click', function() {
+                $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
+                $('.my-location-popup').show();
+            })
+
             map.flyTo(userPosition, 18, {
                 animate: true,
                 duration: 0.3
@@ -676,6 +681,7 @@ function popInfo(busId) {
         $('.next-stops-grid > div').empty();
     }
     
+    $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
     $('.bus-info-popup').show();
 }
 

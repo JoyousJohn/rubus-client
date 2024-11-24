@@ -880,6 +880,9 @@ function updateMarkerSize() {
 let locationShared;
 let userLocation;
 let closestStopId;
+let closestStopDistances = {};
+let sortedClosestStopDistances = {};
+let closestStopsMap;
 
 function findNearestStop(fly) {
     console.log("Trying to find nearest stop...")
@@ -893,11 +896,12 @@ function findNearestStop(fly) {
         let thisClosestStopId = null;
         let closestDistance = Infinity;
 
-        console.log(stopsData)
         for (const stopId in stopsData) {
             const stop = stopsData[stopId];
             const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
-            console.log(distance)
+
+            closestStopDistances[stopId] = distance;
+
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestStop = stop;
@@ -905,18 +909,33 @@ function findNearestStop(fly) {
             }
         }
 
+        closestStopsMap = new Map(
+            Object.entries(closestStopDistances)
+                .sort(([, distanceA], [, distanceB]) => distanceA - distanceB)
+        );
+        populateMeClosestStops()
+
         if (closestStop) {
 
             console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
             closestStopId = thisClosestStopId
 
-            L.marker(userPosition, 
+            const marker = L.marker(userPosition, 
                 { icon: L.icon({
                     iconUrl: 'img/location_marker.png',
                     iconSize: [24, 24],
                     iconAnchor: [12, 12],
                 })
             }).addTo(map)
+
+            marker.on('click', function() {
+                $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
+                $('.my-location-popup').show();
+                // map.flyTo(userPosition, 18, {
+                //     animate: true,
+                //     duration: 0.3
+                // });
+            })
 
             $('.fly-closest-stop-wrapper').fadeIn();
             if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible')) {
@@ -927,6 +946,8 @@ function findNearestStop(fly) {
         } else {
             console.log('No stops found within the given data.');
         }
+
+        // generate closestStopDistances object where the keys are stop ids and values are distances
 
     }, (error) => {
         console.error('Error getting user location:', error);
@@ -964,6 +985,29 @@ function flyToStop(stopId) {
 
     popStopInfo(Number(stopId));
 }
+
+
+function populateMeClosestStops() {
+
+    $('.closest-stops-list').empty();
+    
+    let count = 0;
+    
+    for (const [stopId, distance] of closestStopsMap) {
+
+        if (!activeStops.includes(parseInt(stopId))) continue;
+        if (count >= 5) break;
+        
+        const stopNameDiv = $(`<div class="name pointer">${stopsData[stopId].name}</div>`).click(() => { flyToStop(stopId)})
+        const stopDistDiv = $(`<div class="dist bold pointer">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>`).click(() => { flyToStop(stopId)}) // add meter option later
+            
+        $('.closest-stops-list').append(stopNameDiv);
+        $('.closest-stops-list').append(stopDistDiv);
+
+        count++;
+    }
+}
+
 
 async function getBuildNumber() {
     $.ajax({

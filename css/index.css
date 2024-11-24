@@ -316,7 +316,7 @@ html, body {
 
 
 
-.stop-info-popup {
+.stop-info-popup, .my-location-popup {
     background-color: var(--theme-bg);
     border-radius: 1rem;
     margin: 1rem;
@@ -375,6 +375,38 @@ html, body {
     font-size: 1.3rem;
     color: gray;
     margin: 0 1rem 1rem 1rem;
+}
+
+
+.my-location-popup {
+    padding-bottom: 2rem;
+    padding-top: 1.5rem;
+}
+
+.closest-stops-list {
+    grid-template-columns: 1fr auto;
+    width: 85%;
+}
+
+.my-location-popup .you {
+    color: var(--theme-color);
+}
+
+.my-location-popup .stops {
+    border-radius: 0.5rem;
+    padding: 0.25rem 1rem;
+    background-color: black;
+    /* color: var(--theme-color-lighter); */
+    color: white;
+}
+
+.my-location-popup .name {
+    color: var(--theme-color-lighter);
+    font-size: 1.7rem;
+}
+
+.my-location-popup .dist {
+    color: var(--theme-color)
 }
 
 

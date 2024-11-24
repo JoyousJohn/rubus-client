@@ -322,7 +322,7 @@ $(document).ready(async function() {
                 throw new Error('Network response was not ok');
             }
             const joined_service = await response.json();
-            console.log('Bus joined service times:', joined_service);
+            // console.log('Bus joined service times:', joined_service);
 
             for (const busId in joined_service) {
                 if (!(busId in busData)) { continue; } 
