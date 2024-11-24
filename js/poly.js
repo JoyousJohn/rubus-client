@@ -90,7 +90,6 @@ async function getPolylineData(routeName) {
 } 
 
 const busStopMarkers = {};
-let stopLists;
 
 function getNextStopId(route, stopId) {
     const routeStops = stopLists[route]
@@ -211,7 +210,6 @@ async function popStopInfo(stopId) {
 
 async function addStopsToMap() {
 
-    stopLists = await getStopsList()
     activeStops = []
 
     for (const activeRoute in busesByRoutes) {
@@ -250,25 +248,6 @@ async function addStopsToMap() {
 
         busStopMarkers[stopId] = marker;
     });
-
-    async function getStopsList() {
-        try {
-            let stopListsData;
-    
-            if (localStorage.getItem('stopsList') !== null) {
-                stopListsData = JSON.parse(localStorage.getItem('stopsList'));
-            } else {
-                const response = await fetch('https://transloc.up.railway.app/stopLists');
-                const data = await response.json();
-                localStorage.setItem('stopsList', JSON.stringify(data));
-                stopListsData = data;
-            }
-            return stopListsData;
-        } catch (error) {
-            console.error('Error fetching bus stop list:', error);
-            throw error; // Propagate the error
-        }
-    }
 
 }
 
