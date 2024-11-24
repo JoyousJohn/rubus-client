@@ -19,7 +19,7 @@ RUBus features real-time bus locations, bearings, capacities, speeds, time stopp
 This repo does not provide or include a method by which to calculate ETAs. Your own external endpoints or sockets will have to be set if you're computing these server-side.
 <br><br>
 Alternatively, you can use Passio's own ETA endpoint, although the methodology they use to calculate ETA is unclear:
-<br>
+
 `GET passiogo.com/mapGetData.php?eta=<int>&routeId=<int>&stopIds=<int list>&routeIds=<int list>`
 <br><br>
 Interestingly, the ETA endpoint also returns bus speed while the positioning endpoint does not. This can be used as an alternate source of speed if bandwith is not a concern. It's unclear whether this is actual real speed though, as the returned key is named "calculatedSpeed".
