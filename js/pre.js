@@ -90,6 +90,7 @@ async function fetchBusData() {
 
             plotBus(busId)
             calculateSpeed(busId)
+            updateTimeToStops([busId])
 
             makeBusesByRoutes()
             pollActiveRoutes.add(busData[busId].route)
@@ -156,6 +157,7 @@ function updateTimeToStops(busIds) {
 
         const busRoute = busData[busId].route
         const nextStop = getNextStopId(busRoute, stopId)
+        busData[busId].next_stop = nextStop
 
         let routeStops = stopLists[busRoute]
         let sortedStops = []
@@ -180,10 +182,15 @@ function updateTimeToStops(busIds) {
 
             if (etas) {
 
-                let prevStopId
+                let prevStopId;
+                let progress = 0;
 
                 if (i === 0) {
                     prevStopId = sortedStops[sortedStops.length-1]
+
+                    progress = progressToNextStop(busId)
+                    console.log(`Progress for busId ${busId} (name: ${busData[busId].busName}): ${Math.round(progress*100)}%`)
+
                 } else {
                     prevStopId = sortedStops[i-1]
                 }
@@ -215,7 +222,9 @@ function updateTimeToStops(busIds) {
                 if (!busETAs[busId]) {
                     busETAs[busId] = {};
                 }
-                busETAs[busId][thisStopId] = Math.round(currentETA)
+
+                
+                busETAs[busId][thisStopId] = Math.round(currentETA * (1 - progress))
             }
         }
 

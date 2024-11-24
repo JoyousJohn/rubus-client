@@ -231,7 +231,6 @@ async function addStopsToMap() {
         const thisStop = stopsData[stopId];
         const lat = thisStop['latitude'];
         const long = thisStop['longitude'];
-
         const busStopIcon = L.icon({
             iconUrl: 'img/stop_marker.png',
             iconSize: [18, 18], // Customize icon size as needed
@@ -276,3 +275,65 @@ function makeBusesByRoutes() {
     }
 }
 
+function progressToNextStop(busId) {
+
+    console.log("Getting progressToNextStop(" + busId + ")")
+
+    if (!busData[busId]['next_stop']) {
+        console.log(`busId ${busId} doesn't have a .next_stop attribute.`);
+        console.log(busData[busId]['next_stop'])
+        return 0
+    }
+
+    const nextStopId = String(busData[busId]['next_stop']);
+
+    if (!percentageDistances[nextStopId]) {
+        console.log("nextStopId " + nextStopId + " not in percentageDistances for busId:", busId);
+        return 0
+    }
+
+    const prevStopId = String(busData[busId]['stopId']);
+
+    if (!percentageDistances[nextStopId]['from'][prevStopId]) {
+        console.log("prevStopId " + prevStopId + " not in percentageDistances.nextStopId for busId:", busId);
+        return 0
+    }
+
+
+    // console.log(percentageDistances[nextStopId]['from'])
+
+    const nextStopDistances = percentageDistances[nextStopId]['from'][prevStopId]['geometry']['coordinates']
+    let minDistance = Infinity
+    let minIndex = -1
+    for (let i = nextStopDistances.length - 1; i >= 0; i--) {
+        const busLat = busData[busId]['lat']
+        const busLng = busData[busId]['long']
+        const nextStopLat = nextStopDistances[i][1]
+        const nextStopLng = nextStopDistances[i][0]
+        const dist = Math.sqrt(
+            Math.pow(busLat - nextStopLat, 2) + 
+            Math.pow(busLng - nextStopLng, 2)
+        )
+        // console.log("busLat:", busLat)
+        // console.log("busLng:", busLng)
+        // console.log("nextStopLat:", nextStopLat)
+        // console.log("nextStopLng:", nextStopLng)
+        // console.log(dist)
+        // if (dist > minDistance) { // wish i could do this but messes up when curved
+        //     break
+        // }
+        if (dist < minDistance) {
+            minDistance = dist
+            minIndex = i
+        }
+    }
+    
+    const percentage = percentageDistances[nextStopId]['from'][prevStopId]['properties']['percentages'][minIndex]
+
+    // console.log(percentage)
+
+    return percentage
+
+
+
+}
