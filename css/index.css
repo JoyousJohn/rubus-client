@@ -385,7 +385,7 @@ html, body {
 
 .closest-stops-list {
     grid-template-columns: 1fr auto;
-    width: 85%;
+    width: 90%;
 }
 
 .my-location-popup .you {
@@ -402,11 +402,12 @@ html, body {
 
 .my-location-popup .name {
     color: var(--theme-color-lighter);
-    font-size: 1.7rem;
+    font-size: 1.6rem;
 }
 
 .my-location-popup .dist {
-    color: var(--theme-color)
+    color: var(--theme-color);
+    font-size: 1.7rem;
 }
 
 

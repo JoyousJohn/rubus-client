@@ -145,7 +145,7 @@ function hideInfoBoxes() {
 
     // console.log('hideInfoBoxes() triggered')
 
-    $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').fadeOut();  
+    $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').fadeOut();  
 
     if (popupStopId) {
         popupStopId = null;
