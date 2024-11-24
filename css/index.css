@@ -86,6 +86,7 @@ html, body {
 
 #map {
     height: 100%;
+    /* background-color: var(--theme-bg); */
 }
 
 .map-zoom-scroll-wrapper {
@@ -488,7 +489,7 @@ html, body {
     display: flex;
     bottom: 0;
     z-index: 401;
-    padding: 0.5rem;
+    /* padding: 0.5rem; */
     padding-bottom: 0;
     /* row-gap: 1rem; */
     width: 100%;
@@ -546,13 +547,12 @@ html, body {
     overflow-x: scroll;
     touch-action: pan-x;
     padding-top: 1rem;
-    margin-left: -1rem;
+    /* margin-left: -1rem; */
     padding-left: 1rem;
     padding-bottom: 1rem;
     scrollbar-width: none;
     pointer-events: all;
     line-height: 1.6;
-    margin-right: -0.5rem;
 }
 
 /* Hide scrollbar for WebKit browsers */
@@ -570,7 +570,7 @@ html, body {
 }
 
 .route-selector:last-child {
-    margin-right: 2rem;
+    margin-right: 1rem;
 }
 
 .settings-btn {

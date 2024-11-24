@@ -90,7 +90,6 @@ async function getPolylineData(routeName) {
 } 
 
 const busStopMarkers = {};
-let stopsData = null;
 let stopLists;
 
 function getNextStopId(route, stopId) {
@@ -202,8 +201,7 @@ async function popStopInfo(stopId) {
     popupStopId = stopId;
     $('.bus-info-popup, .route-panel').hide();
 
-    const stopData = stopsData[stopId]
-    $('.info-stop-name').text(stopData.name)
+    $('.info-stop-name').text(stopsData[stopId].name)
 
     updateStopBuses(stopId);
 
@@ -228,7 +226,6 @@ async function addStopsToMap() {
 
     // console.log(activeStops)
 
-    stopsData = await getStopsData();
     checkIfLocationShared();
 
     activeStops.forEach(stopId => {
@@ -270,22 +267,6 @@ async function addStopsToMap() {
         } catch (error) {
             console.error('Error fetching bus stop list:', error);
             throw error; // Propagate the error
-        }
-    }
-
-    async function getStopsData() {
-        try {
-            if (localStorage.getItem('stopsData') !== null) {
-                stopsData = JSON.parse(localStorage.getItem('stopsData'));
-            } else {
-                const response = await fetch('https://transloc.up.railway.app/stops');
-                const data = await response.json();
-                localStorage.setItem('stopsData', JSON.stringify(data));
-                stopsData = data;
-            }
-            return stopsData;
-        } catch (error) {
-            console.error('Error fetching stops data:', error);
         }
     }
 

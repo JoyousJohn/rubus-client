@@ -730,7 +730,8 @@ let settings = {}
 
 const toggleSettings = [
     'toggle-select-closest-stop',
-    'toggle-show-arrival-times'
+    'toggle-show-arrival-times',
+    'toggle-show-stop-polygons'
 ]
 
 let defaultSettings = {
@@ -738,7 +739,10 @@ let defaultSettings = {
     'marker_size': 'medium',
     'theme': 'auto',
     'toggle-select-closest-stop': true,
-    'toggle-show-arrival-times': true
+    'toggle-show-arrival-times': true,
+    
+    // dev settings
+    'toggle-show-stop-polygons': false
 };
 
 function setDefaultSettings (){

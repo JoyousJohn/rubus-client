@@ -55,7 +55,7 @@ const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds ob
 let isDesktop;
 let tileLayer;
 
-const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1NzlxZDByYXIyam9kd2QybnB4ZzUifQ.2Ssy25qvKfJ70J4LpueDKA'
+const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1MXE0ZTBpYmEyeG83OHhpZDE0MngifQ.0agtew4qq5sWFEBl2gIVgA'
 
 $(document).ready(function() {
 

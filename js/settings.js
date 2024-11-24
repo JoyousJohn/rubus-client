@@ -60,6 +60,12 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-show-stop-polygons':
             console.log(`Show Stop Polygons is now ${isChecked ? 'ON' : 'OFF'}`);
+
+            if (Object.keys(polygons).length === 0) {
+                makePolygons()
+            }
+            togglePolygons(isChecked)
+            settings['toggle-show-stop-polygons'] = isChecked;
             break;
 
         default:
@@ -72,10 +78,62 @@ $('.settings-toggle .toggle-input').on('change', function () {
 });
 
 $(document).ready(function() {
-    $('.dev-options-wrapper .toggle-input').prop('checked', false);
+
+    // Untoggle if the switch is not one that gets saved in settings (like some of the dev ones)
+    $('.dev-options-wrapper .toggle-input').each(function() {
+        const toggleId = $(this).attr('id');
+        if (!(toggleId in defaultSettings)) {
+            $(this).prop('checked', false);
+        }
+    });
 
     if (!settings['toggle-show-bus-speeds']) {
         $('.info-speed-wrapper').hide();
     }
 
+    if (settings['toggle-show-stop-polygons']) {
+        makePolygons()
+        togglePolygons(true)
+    }
+
 })
+
+
+let polygons = {}
+
+function makePolygons() {
+
+    for (const stopId in stopsData) {
+        const stop = stopsData[stopId];
+
+        const polygonCoordinates = stop.polygon.map(coord => [
+            coord[1],
+            coord[0]
+        ]);
+
+        const polygon = L.polygon(polygonCoordinates, {
+            color: 'blue',
+            fillColor: 'blue',
+            fillOpacity: 0.5
+        })
+
+        polygons[stopId] = polygon;
+
+        // polygon.on('click', () => {
+        //     alert(`Stop Name: ${stop.name}`);
+        // });
+    }
+}
+
+function togglePolygons(show) {
+
+    for (const stopId in polygons) {
+        const polygon = polygons[stopId];
+        
+        if (show) {
+            polygon.addTo(map);
+        } else {
+            polygon.removeFrom(map);
+        }
+    }
+}
