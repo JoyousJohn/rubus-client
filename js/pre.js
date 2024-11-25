@@ -220,7 +220,7 @@ function updateTimeToStops(busIds) {
                     // console.log(routeStops)
                     // console.log('nextStop: ', nextStop)
                     console.log('i: ' + i + ' thisStopId -> [' + thisStopId + '][from][' + prevStopId + '] <- prevStopId' + ' not found.')
-                    currentETA += 300
+                    currentETA += 300 * (1 - progress)
                     // console.log(``)
                 }
 

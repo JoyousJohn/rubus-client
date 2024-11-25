@@ -71,7 +71,30 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-show-etas-in-seconds':
             console.log(`Show ETAs in seconds is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-etas-in-seconds'] = isChecked;
-            showETAsInSeconds = isChecked
+            showETAsInSeconds = isChecked;
+
+            if (isChecked) {
+                countdownInterval = setInterval(() => {
+
+                    if (popupBusId && !busData[popupBusId].at_stop) {
+                        $('.next-stop-eta').each(function() {
+                            let text = $(this).text();
+                            if (text.endsWith('s')) {
+                                let seconds = parseInt(text);
+                                if (seconds > 0) {
+                                    $(this).text((seconds - 1) + 's');
+                                }
+                            }
+                        });
+                    }
+ 
+                }, 1000);
+            } else {
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+            }
+
             break;
 
         case 'toggle-show-bus-id':
@@ -88,6 +111,8 @@ $('.settings-toggle .toggle-input').on('change', function () {
     localStorage.setItem('settings', JSON.stringify(settings))
 
 });
+
+let countdownInterval;
 
 $(document).ready(function() {
 
@@ -110,6 +135,28 @@ $(document).ready(function() {
 
     if (settings['toggle-show-etas-in-seconds']) {
         showETAsInSeconds = settings['toggle-show-etas-in-seconds'];
+        
+        // Start countdown timer for ETAs
+        countdownInterval = setInterval(() => {
+
+            if (popupBusId && !busData[popupBusId].at_stop) {
+                $('.next-stop-eta').each(function() {
+                    let text = $(this).text();
+                    if (text.endsWith('s')) {
+                        let seconds = parseInt(text);
+                        if (seconds > 0) {
+                            $(this).text((seconds - 1) + 's');
+                        }
+                    }
+                });
+            }
+
+        }, 1000);
+
+        // Clear interval when setting is turned off
+        if (!showETAsInSeconds) {
+            clearInterval(countdownInterval);
+        }
     }
 
     if (settings['toggle-show-bus-id']) {
