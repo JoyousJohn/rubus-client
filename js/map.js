@@ -662,17 +662,27 @@ function popInfo(busId) {
 
         for (let i = 0; i < sortedStops.length-1; i++) {
 
-
-
-            const eta = Math.round((busETAs[busId][sortedStops[i]] + 20)/secondsDivisor);
+            const eta = Math.round((busETAs[busId][sortedStops[i]]) + 10/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
             // console.log(sortedStops[i])
             const currentTime = new Date();
-            currentTime.setMinutes(currentTime.getMinutes() + eta);
-            const formattedTime = currentTime.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
+
+            let formattedTime;
+            if (showETAsInSeconds) {
+                currentTime.setSeconds(currentTime.getSeconds() + eta);
+                formattedTime = currentTime.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                });
+            } else {
+                currentTime.setMinutes(currentTime.getMinutes() + eta);
+                formattedTime = currentTime.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            }
 
             const stopName = stopsData[sortedStops[i]].name
             const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]

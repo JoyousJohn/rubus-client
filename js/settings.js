@@ -101,6 +101,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
             console.log(`Show Bus IDs is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-bus-id'] = isChecked;
             showBusId = isChecked
+            
+            if (showBusId && popupBusId) {
+                $('.info-name').text(`${$('.info-name').text()} (${popupBusId}) | `)
+            }
+
             break;
 
         default:
@@ -135,7 +140,7 @@ $(document).ready(function() {
 
     if (settings['toggle-show-etas-in-seconds']) {
         showETAsInSeconds = settings['toggle-show-etas-in-seconds'];
-        
+
         // Start countdown timer for ETAs
         countdownInterval = setInterval(() => {
 
