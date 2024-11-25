@@ -76,7 +76,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             if (isChecked) {
                 countdownInterval = setInterval(() => {
 
-                    if (popupBusId && !busData[popupBusId].at_stop) {
+                    if (popupBusId && !busData[popupBusId].overtime) {
                         $('.next-stop-eta').each(function() {
                             let text = $(this).text();
                             // Check for "Xm Xs" format
@@ -161,7 +161,7 @@ $(document).ready(function() {
         // Start countdown timer for ETAs
         countdownInterval = setInterval(() => {
 
-            if (popupBusId && !busData[popupBusId].at_stop) {
+            if (popupBusId && !busData[popupBusId].overtime) { // && !busData[popupBusId].at_stop
                 $('.next-stop-eta').each(function() {
                     let text = $(this).text();
                     // Check for "Xm Xs" format

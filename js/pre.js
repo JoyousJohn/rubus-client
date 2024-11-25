@@ -195,11 +195,33 @@ function updateTimeToStops(busIds) {
                 let prevStopId;
                 let progress = 0;
 
-                if (i === 0) {
+                if (i === 0 && !data['at_stop']) {
                     prevStopId = sortedStops[sortedStops.length-1]
 
                     progress = progressToNextStop(busId)
+                    busData[busId]['progress'] = progress
                     console.log(`Progress for busId ${busId} (name: ${busData[busId].busName}): ${Math.round(progress*100)}%`)
+
+                } else if (i === 0 && data['at_stop']) {
+
+                    prevStopId = sortedStops[sortedStops.length-1]
+
+                    const timeArrived = new Date(data.timeArrived)
+                    let arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000)
+
+                    // if (arrivedAgoSeconds > 0) {
+
+                    const avgWaitAtStop = waits[prevStopId]
+
+                    if (arrivedAgoSeconds < avgWaitAtStop) {
+                        const expectedWaitAtStop = avgWaitAtStop - arrivedAgoSeconds
+
+                        currentETA += expectedWaitAtStop;
+                        busData[busId]['overtime'] = false;
+                    } else {
+                        busData[busId]['overtime'] = true;
+                    }
+                    // }
 
                 } else {
                     prevStopId = sortedStops[i-1]

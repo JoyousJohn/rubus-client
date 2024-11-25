@@ -84,6 +84,8 @@ function openRUBusSocket() {
                     startStoppedForTimer(busId)
                 }
 
+                busData[busId].progress = 0;
+
             } else if (eventData['event'] === 'departure') {
                 busData[busId]['at_stop'] = false
                 delete busData[busId]['timeArrived'];
@@ -93,6 +95,7 @@ function openRUBusSocket() {
                     clearInterval(stoppedForInterval)
                     $('.bus-stopped-for').slideUp();
                 }
+                delete busData[busId].overtime
             }
 
             updateTimeToStops([busId]) // updates bus's etas to all stops

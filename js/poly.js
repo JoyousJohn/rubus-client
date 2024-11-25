@@ -334,6 +334,4 @@ function progressToNextStop(busId) {
 
     return percentage
 
-
-
 }
