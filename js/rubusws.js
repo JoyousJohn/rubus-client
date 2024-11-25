@@ -143,9 +143,6 @@ function openRUBusSocket() {
 
             processEventData(eventData)
 
-            
-
-
         } catch (error) {
             console.error("Error parsing JSON:", error);
         }

@@ -760,7 +760,7 @@ function setDefaultSettings (){
 
 function updateSettings() {
     settings = localStorage.getItem('settings');
-    console.log(settings)
+    // console.log(settings)
     if (settings) {
 
         settings = JSON.parse(settings);

@@ -64,10 +64,19 @@ async function fetchBusData() {
             if (someId === '-1') continue;
 
             const bus = data.buses[someId][0]
+
+            if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
+                continue
+            }
+
             const busId = bus.busId
             activeBuses.push(busId)
 
             if (!(busId in busData)) {
+                if (busId === 6552) {
+                    alert()
+                    console.table(bus)
+                }
                 busData[busId] = {}
                 busData[busId].previousTime = new Date().getTime() - 5000;
             }
@@ -77,9 +86,7 @@ async function fetchBusData() {
             busData[busId].long = bus.longitude
             busData[busId].rotation = parseFloat(bus.calculatedCourse) //+ 45
 
-            if (Object.keys(excludedRouteMappings).includes(bus.routeId)) {
-                continue
-            }
+            
 
             if (bus.routeId in routeMapping) {
                 busData[busId].route = routeMapping[bus.routeId]
@@ -184,9 +191,9 @@ function updateTimeToStops(busIds) {
 
         let currentETA = 0
 
-        console.log(' ')
-        console.log(busId)
-        console.log('sortedStops: ',sortedStops)
+        // console.log(' ')
+        // console.log(busId)
+        // console.log('sortedStops: ',sortedStops)
 
         for (let i = 0; i < sortedStops.length; i++) {
 
@@ -200,7 +207,7 @@ function updateTimeToStops(busIds) {
 
                     progress = progressToNextStop(busId)
                     busData[busId]['progress'] = progress
-                    console.log(`Progress for busId ${busId} (name: ${busData[busId].busName}): ${Math.round(progress*100)}%`)
+                    // console.log(`Progress for busId ${busId} (name: ${busData[busId].busName}): ${Math.round(progress*100)}%`)
 
                 } else if (i === 0 && data['at_stop']) {
 

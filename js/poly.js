@@ -277,25 +277,25 @@ function makeBusesByRoutes() {
 
 function progressToNextStop(busId) {
 
-    console.log("Getting progressToNextStop(" + busId + ")")
+    // console.log("Getting progressToNextStop(" + busId + ")")
 
     if (!busData[busId]['next_stop']) {
-        console.log(`busId ${busId} doesn't have a .next_stop attribute.`);
-        console.log(busData[busId]['next_stop'])
+        // console.log(`busId ${busId} doesn't have a .next_stop attribute.`);
+        // console.log(busData[busId]['next_stop'])
         return 0
     }
 
     const nextStopId = String(busData[busId]['next_stop']);
 
     if (!percentageDistances[nextStopId]) {
-        console.log("nextStopId " + nextStopId + " not in percentageDistances for busId:", busId);
+        // console.log("nextStopId " + nextStopId + " not in percentageDistances for busId:", busId);
         return 0
     }
 
     const prevStopId = String(busData[busId]['stopId']);
 
     if (!percentageDistances[nextStopId]['from'][prevStopId]) {
-        console.log("prevStopId " + prevStopId + " not in percentageDistances.nextStopId for busId:", busId);
+        // console.log("prevStopId " + prevStopId + " not in percentageDistances.nextStopId for busId:", busId);
         return 0
     }
 
