@@ -79,10 +79,27 @@ $('.settings-toggle .toggle-input').on('change', function () {
                     if (popupBusId && !busData[popupBusId].at_stop) {
                         $('.next-stop-eta').each(function() {
                             let text = $(this).text();
-                            if (text.endsWith('s')) {
-                                let seconds = parseInt(text);
+                            // Check for "Xm Xs" format
+                            let matchMinutes = text.match(/(\d+)m\s+(\d+)s/);
+                            // Check for "Xs" format
+                            let matchSeconds = text.match(/^(\d+)s$/);
+                            
+                            if (matchMinutes) {
+                                let minutes = parseInt(matchMinutes[1]);
+                                let seconds = parseInt(matchMinutes[2]);
+                                
                                 if (seconds > 0) {
-                                    $(this).text((seconds - 1) + 's');
+                                    seconds--;
+                                } else if (minutes > 0) {
+                                    minutes--;
+                                    seconds = 59;
+                                }
+                                
+                                $(this).text(minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`);
+                            } else if (matchSeconds) {
+                                let seconds = parseInt(matchSeconds[1]);
+                                if (seconds > 0) {
+                                    $(this).text(`${seconds - 1}s`);
                                 }
                             }
                         });
@@ -147,10 +164,27 @@ $(document).ready(function() {
             if (popupBusId && !busData[popupBusId].at_stop) {
                 $('.next-stop-eta').each(function() {
                     let text = $(this).text();
-                    if (text.endsWith('s')) {
-                        let seconds = parseInt(text);
+                    // Check for "Xm Xs" format
+                    let matchMinutes = text.match(/(\d+)m\s+(\d+)s/);
+                    // Check for "Xs" format
+                    let matchSeconds = text.match(/^(\d+)s$/);
+                    
+                    if (matchMinutes) {
+                        let minutes = parseInt(matchMinutes[1]);
+                        let seconds = parseInt(matchMinutes[2]);
+                        
                         if (seconds > 0) {
-                            $(this).text((seconds - 1) + 's');
+                            seconds--;
+                        } else if (minutes > 0) {
+                            minutes--;
+                            seconds = 59;
+                        }
+                        
+                        $(this).text(minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`);
+                    } else if (matchSeconds) {
+                        let seconds = parseInt(matchSeconds[1]);
+                        if (seconds > 0) {
+                            $(this).text(`${seconds - 1}s`);
                         }
                     }
                 });

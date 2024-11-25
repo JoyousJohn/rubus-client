@@ -662,7 +662,7 @@ function popInfo(busId) {
 
         for (let i = 0; i < sortedStops.length-1; i++) {
 
-            const eta = Math.round((busETAs[busId][sortedStops[i]] + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
+            let eta = Math.round((busETAs[busId][sortedStops[i]] + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
             // console.log(sortedStops[i])
             const currentTime = new Date();
 
@@ -675,6 +675,11 @@ function popInfo(busId) {
                     second: '2-digit',
                     hour12: true
                 });
+
+                let minutes = Math.floor(eta / 60);
+                let seconds = eta % 60;
+                eta = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
             } else {
                 currentTime.setMinutes(currentTime.getMinutes() + eta);
                 formattedTime = currentTime.toLocaleTimeString('en-US', {
@@ -682,6 +687,8 @@ function popInfo(busId) {
                     minute: '2-digit',
                     hour12: true
                 });
+
+                eta += 'm'
             }
 
             const stopName = stopsData[sortedStops[i]].name
@@ -693,7 +700,7 @@ function popInfo(busId) {
                     <div class="next-stop-name">${stopName}</div>
                 </div>`).click(() => { flyToStop(sortedStops[i])}));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
-                <div class="next-stop-eta">${eta}${unit}</div>
+                <div class="next-stop-eta">${eta}</div>
                 <div class="next-stop-time">${formattedTime}</div>
             </div>`).click(() => { flyToStop(sortedStops[i])}));
         }

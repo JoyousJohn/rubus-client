@@ -820,7 +820,7 @@ function updateSettings() {
             let theme = $(this).attr('theme-option')
             if (theme === 'auto') {
                 const currentHour = new Date().getHours();
-                theme = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
+                theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'streets';
             }
 
             changeMapStyle(theme)
