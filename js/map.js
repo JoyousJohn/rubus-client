@@ -593,10 +593,8 @@ let stoppedForInterval;
 function popInfo(busId) {
 
     let secondsDivisor = 60;
-    let unit = 'm';
     if (showETAsInSeconds) {
         secondsDivisor = 1;
-        unit = 's';
     }
 
     $('.stop-info-popup, .route-panel').hide();
