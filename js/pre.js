@@ -90,7 +90,11 @@ async function fetchBusData() {
 
             plotBus(busId)
             calculateSpeed(busId)
-            updateTimeToStops([busId])
+
+            // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
+            if (Object.keys(etas).length > 0) {
+                updateTimeToStops([busId])
+            }
 
             makeBusesByRoutes()
             pollActiveRoutes.add(busData[busId].route)
@@ -160,6 +164,7 @@ function updateTimeToStops(busIds) {
         busData[busId].next_stop = nextStop
 
         let routeStops = stopLists[busRoute]
+        // console.log(routeStops.length)
         let sortedStops = []
 
         const nextStopIndex = routeStops.indexOf(nextStop);
@@ -167,18 +172,23 @@ function updateTimeToStops(busIds) {
             sortedStops = routeStops.slice(nextStopIndex)
                             .concat(routeStops.slice(0, nextStopIndex));
         }
+        // console.log(sortedStops.length)
 
-        if (nextStopIndex + 1 === routeStops.length) {
-            sortedStops.push(routeStops[0])
-        } else {
-            sortedStops.push(routeStops[nextStopIndex + 1])
-        }
+        // Figure out if I need this:
+        // if (nextStopIndex + 1 === routeStops.length) {
+        //     sortedStops.push(routeStops[0])
+        //     console.log('pushed ', routeStops[0])
+        // } else {
+        //     sortedStops.push(routeStops[nextStopIndex + 1])
+        // }
 
         let currentETA = 0
 
-        // console.log(busId)
+        console.log(' ')
+        console.log(busId)
+        console.log('sortedStops: ',sortedStops)
 
-        for (let i = 0; i < sortedStops.length-1; i++) {
+        for (let i = 0; i < sortedStops.length; i++) {
 
             if (etas) {
 
@@ -204,12 +214,14 @@ function updateTimeToStops(busIds) {
                 // console.table(etas[thisStopId])
 
                 if (etas[thisStopId] && prevStopId in etas[thisStopId]['from']) {
-                    currentETA += etas[thisStopId]['from'][prevStopId]
+                    currentETA += Math.round(etas[thisStopId]['from'][prevStopId] * (1 - progress))
+                    // console.log(Math.round(etas[thisStopId]['from'][prevStopId]))
                 } else {
                     // console.log(routeStops)
                     // console.log('nextStop: ', nextStop)
-                    // console.log(thisStopId + ' from  ' + prevStopId + ' not found. 1111111')
+                    console.log('i: ' + i + ' thisStopId -> [' + thisStopId + '][from][' + prevStopId + '] <- prevStopId' + ' not found.')
                     currentETA += 300
+                    // console.log(``)
                 }
 
                 if (waits[prevStopId]) {
@@ -223,9 +235,13 @@ function updateTimeToStops(busIds) {
                     busETAs[busId] = {};
                 }
 
-                
-                busETAs[busId][thisStopId] = Math.round(currentETA * (1 - progress))
+                // console.log(thisStopId)
+                busETAs[busId][thisStopId] = Math.round(currentETA)
             }
+        }
+
+        if (popupBusId === busId) {
+            popInfo(busId)
         }
 
     });

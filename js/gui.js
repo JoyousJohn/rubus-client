@@ -731,7 +731,9 @@ let settings = {}
 const toggleSettings = [
     'toggle-select-closest-stop',
     'toggle-show-arrival-times',
-    'toggle-show-stop-polygons'
+    'toggle-show-stop-polygons',
+    'toggle-show-etas-in-seconds',
+    'toggle-show-bus-id',
 ]
 
 let defaultSettings = {
@@ -742,7 +744,9 @@ let defaultSettings = {
     'toggle-show-arrival-times': true,
     
     // dev settings
-    'toggle-show-stop-polygons': false
+    'toggle-show-stop-polygons': false,
+    'toggle-show-etas-in-seconds': false,
+    'toggle-show-bus-id': false,
 };
 
 function setDefaultSettings (){

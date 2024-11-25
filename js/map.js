@@ -7,6 +7,10 @@ let popupBusId;
 let popupStopId;
 let busesDoneInit; // don't check for moves until map is done plotting
 
+// settings vars
+let showETAsInSeconds = false;
+let showBusId = false;
+
 const southWest = L.latLng(40.4550081,-74.4957839); // Define the southwest corner of the bounds
 const northEast = L.latLng(40.538852,-74.4074799); // Define the northeast corner of the bounds
 const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds object
@@ -587,16 +591,29 @@ const campusShortNamesMappings = {
 let stoppedForInterval;
 
 function popInfo(busId) {
+
+    let secondsDivisor = 60;
+    let unit = 'm';
+    if (showETAsInSeconds) {
+        secondsDivisor = 1;
+        unit = 's';
+    }
+
     $('.stop-info-popup, .route-panel').hide();
 
     const data = busData[busId]
     $('.info-route').text(data.route.toUpperCase()).css('color', colorMappings[data.route])
-    $('.info-bus-name').text(data.busName)
+    
+    let busNameElmText = data.busName
+    if (showBusId) {
+        busNameElmText += ' (' + busId + ')'
+    }
+    
     $('.info-campuses').text(campusMappings[data.route])
     if (showBusSpeeds) {
         $('.info-speed').text(parseInt(data.visualSpeed))
     }
-    $('.info-name').text(data.busName + ' | ')
+    $('.info-name').text(busNameElmText + ' | ')
     $('.info-capacity').text(data.capacity + '% capacity')
 
 
@@ -645,7 +662,9 @@ function popInfo(busId) {
 
         for (let i = 0; i < sortedStops.length-1; i++) {
 
-            const eta = Math.round((busETAs[busId][sortedStops[i]] + 20)/60);
+
+
+            const eta = Math.round((busETAs[busId][sortedStops[i]] + 20)/secondsDivisor);
             // console.log(sortedStops[i])
             const currentTime = new Date();
             currentTime.setMinutes(currentTime.getMinutes() + eta);
@@ -664,7 +683,7 @@ function popInfo(busId) {
                     <div class="next-stop-name">${stopName}</div>
                 </div>`).click(() => { flyToStop(sortedStops[i])}));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
-                <div class="next-stop-eta">${eta}m</div>
+                <div class="next-stop-eta">${eta}${unit}</div>
                 <div class="next-stop-time">${formattedTime}</div>
             </div>`).click(() => { flyToStop(sortedStops[i])}));
         }

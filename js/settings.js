@@ -68,6 +68,18 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-stop-polygons'] = isChecked;
             break;
 
+        case 'toggle-show-etas-in-seconds':
+            console.log(`Show ETAs in seconds is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-etas-in-seconds'] = isChecked;
+            showETAsInSeconds = isChecked
+            break;
+
+        case 'toggle-show-bus-id':
+            console.log(`Show Bus IDs is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-bus-id'] = isChecked;
+            showBusId = isChecked
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
@@ -94,6 +106,14 @@ $(document).ready(function() {
     if (settings['toggle-show-stop-polygons']) {
         makePolygons()
         togglePolygons(true)
+    }
+
+    if (settings['toggle-show-etas-in-seconds']) {
+        showETAsInSeconds = settings['toggle-show-etas-in-seconds'];
+    }
+
+    if (settings['toggle-show-bus-id']) {
+        showBusId = settings['toggle-show-bus-id'];
     }
 
 })
