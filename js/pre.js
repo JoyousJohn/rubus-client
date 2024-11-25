@@ -224,10 +224,10 @@ function updateTimeToStops(busIds) {
                     // console.log(``)
                 }
 
-                if (waits[prevStopId]) {
+                if (i !== 0 && waits[prevStopId]) {
                     currentETA += waits[prevStopId]
                     // console.log(`Adding ${waits[prevStopId]}s to currentETA to get to stopId ${thisStopId}`)
-                } else {
+                } else if (i !== 0) {
                     currentETA += 30
                 }
 
