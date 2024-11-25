@@ -165,15 +165,29 @@ function updateStopBuses(stopId) {
         });
 
         $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`).css('color', colorMappings[data.route]))
-        $('.stop-info-buses-grid').append(`<div class="stop-bus-id">${busData[busId].busName}</div>`)
+        
+        let stopHexagonVisibilityClass = 'none'
+        if (busData[busId].overtime) {
+            stopHexagonVisibilityClass = ''
+        }
+
+        $('.stop-info-buses-grid').append(`<div class="flex justify-between align-center">
+            <div class="stop-bus-id">${busData[busId].busName}</div>
+            <div class="stop-octagon ${stopHexagonVisibilityClass}"></div></div>`
+        )
+
+        
 
         if (data.eta === 0) {
             // $('.stop-info-buses-grid').append(`<div></div>`)
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">Here</div>`)
             $('.stop-info-buses-grid').append(`<div></div>`)
         } else {
+
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${(data.eta)}m</div>`)
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time">${formattedTime}</div>`)
+        
+            
         }
              
         $('.stop-info-buses-grid').children().slice(-4).click(function() {

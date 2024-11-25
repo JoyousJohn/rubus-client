@@ -73,10 +73,6 @@ async function fetchBusData() {
             activeBuses.push(busId)
 
             if (!(busId in busData)) {
-                if (busId === 6552) {
-                    alert()
-                    console.table(bus)
-                }
                 busData[busId] = {}
                 busData[busId].previousTime = new Date().getTime() - 5000;
             }

@@ -359,6 +359,20 @@ html, body {
     color: var(--theme-stop-bus-name)
 }
 
+.stop-octagon {
+    width: 2rem;
+    aspect-ratio: 1;
+    --o:calc(50%*tan(-22.5deg));
+    clip-path: polygon(
+        var(--o) 50%,50% var(--o),
+        calc(100% - var(--o)) 50%,
+        50% calc(100% - var(--o))
+    );
+    /* margin-top: 3px; */
+    background-color: rgb(241, 70, 70);
+    transform: rotate(90deg);
+}
+
 .stop-bus-eta {
     font-size: 1.8rem;
     font-weight: bold;

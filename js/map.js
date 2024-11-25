@@ -732,9 +732,9 @@ function startStoppedForTimer(busId) {
     if (secondsDifference > 59) {
         const minutes = Math.floor(secondsDifference / 60);
         const remainingSeconds = secondsDifference % 60;
-        $('.bus-stopped-for').text(`Stopped for ${minutes}m ${remainingSeconds}s`).show();
+        $('.bus-stopped-for').show().find('.time').text(`Stopped for ${minutes}m ${remainingSeconds}s`);
     } else if (secondsDifference > 0) {
-        $('.bus-stopped-for').text("Stopped for " + secondsDifference + "s").show();
+        $('.bus-stopped-for').show().find('.time').text("Stopped for " + secondsDifference + "s");
     }
     
     let seconds = secondsDifference
@@ -744,9 +744,9 @@ function startStoppedForTimer(busId) {
             if (seconds > 59) {
                 const minutes = Math.floor(seconds / 60);
                 const remainingSeconds = seconds % 60;
-                $('.bus-stopped-for').text(`Stopped for ${minutes}m ${remainingSeconds}s`).show();
+                $('.bus-stopped-for').show().find('.time').text(`Stopped for ${minutes}m ${remainingSeconds}s`);
             } else if (seconds > 0) {
-                $('.bus-stopped-for').text("Stopped for " + seconds + "s").show();
+                $('.bus-stopped-for').show().find('.time').text("Stopped for " + seconds + "s");
             }
         } else {
             clearInterval(stoppedForInterval);

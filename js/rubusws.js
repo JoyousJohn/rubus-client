@@ -78,7 +78,7 @@ function openRUBusSocket() {
             if (eventData['event'] === 'arrival') {
                 busData[busId]['at_stop'] = true
                 busData[busId]['timeArrived'] = eventData['time_arrived']
-                console.log(`[l] Bus ${busName} arrived at ${stopName}`)
+                console.log(`[l] Bus ${busName} (${busId}) arrived at ${stopName}`)
 
                 if (popupBusId === busId) {
                     startStoppedForTimer(busId)
