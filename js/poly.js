@@ -141,7 +141,7 @@ function updateStopBuses(stopId) {
             else if (busETAs[busId]) {
                 servicingBuses[busId] = {
                     'route': servicedRoute,
-                    'eta': Math.round(busETAs[busId][stopId]/60)
+                    'eta': Math.ceil(busETAs[busId][stopId]/60)
                 }
             }
         })
@@ -169,15 +169,15 @@ function updateStopBuses(stopId) {
 
         $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`).css('color', colorMappings[data.route]))
         
-        let stopHexagonVisibilityClass = 'none'
+        let stopOctaconVisibilityClass = 'none'
         if (busData[busId].overtime) {
-            stopHexagonVisibilityClass = ''
+            stopOctaconVisibilityClass = ''
         }
 
         $('.stop-info-buses-grid').append(`<div class="flex justify-between align-center">
             <div class="stop-bus-id">${busData[busId].busName}</div>
-            <div class="stop-octagon ${stopHexagonVisibilityClass}"></div></div>`
-        )
+            <div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div>
+        </div>`)
 
         
 

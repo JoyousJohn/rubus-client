@@ -371,6 +371,17 @@ html, body {
     /* margin-top: 3px; */
     background-color: rgb(241, 70, 70);
     transform: rotate(90deg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stop-octagon > div {
+    font-size: 1.7rem;
+    transform: rotate(-90deg);
+    font-weight: 900;
+    color: white;
+    font-family: 'PP Neue Montreal';
 }
 
 .stop-bus-eta {

@@ -156,6 +156,11 @@ function hideInfoBoxes() {
         thisClosestStopId = null;
     }
 
+    if (popupBusId) {
+        stopOvertimeCounter();
+        // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
+    }
+
     popupBusId = null;
     popupStopId = null;
 
@@ -599,6 +604,17 @@ function popInfo(busId) {
 
     $('.stop-info-popup, .route-panel').hide();
 
+
+    if (busData[busId]['overtime']) {
+        $('.bus-stopped-for .stop-octagon').show();
+        if (settings['toggle-show-bus-overtime-timer']) {
+            startOvertimeCounter(busId);
+        }
+    } else {
+        stopOvertimeCounter();
+        $('.bus-stopped-for .stop-octagon, .overtime-time').hide();
+    }
+    
     const data = busData[busId]
     $('.info-route').text(data.route.toUpperCase()).css('color', colorMappings[data.route])
     
@@ -849,3 +865,50 @@ function flyToBus(busId) {
 $('.zoom-scroll-bar').click(function() {
 
 })
+
+let overtimeInterval;
+let overtimeBusId;
+
+function startOvertimeCounter(busId) {
+
+    if (busId === overtimeBusId) {
+        return;
+    }
+
+    overtimeBusId = busId
+
+    if (overtimeInterval) {
+        clearInterval(overtimeInterval);
+    }
+
+    $('.overtime-time').show();
+    
+    const timeArrived = new Date(busData[busId].timeArrived);
+    const avgWaitAtStop = waits[busData[busId].stopId];
+    const arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000);
+    const overtimeSeconds = arrivedAgoSeconds - avgWaitAtStop;
+    const minutes = Math.floor(overtimeSeconds / 60);
+    const seconds = overtimeSeconds % 60;
+    $('.overtime-time').text((minutes > 0 ? minutes + 'm ' : '') + seconds + 's overtime');
+
+    overtimeInterval = setInterval(() => {
+        if (busData[busId] && busData[busId]['overtime']) {
+            const arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000);
+            const overtimeSeconds = arrivedAgoSeconds - avgWaitAtStop;
+            const minutes = Math.floor(overtimeSeconds / 60);
+            const seconds = overtimeSeconds % 60;
+            $('.overtime-time').text((minutes > 0 ? minutes + 'm ' : '') + seconds + 's overtime');
+        } else {
+            stopOvertimeCounter();
+        }
+    }, 1000);
+}
+
+function stopOvertimeCounter() {
+    if (overtimeInterval) {
+        clearInterval(overtimeInterval);
+        overtimeInterval = null;
+        overtimeBusId = null;
+        $('.overtime-time').text('').hide();;
+    }
+}

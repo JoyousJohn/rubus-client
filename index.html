@@ -110,7 +110,11 @@
                 </div>
 
                 <div class="bus-stopped-for">
-                    <div class="time">Stopped for Xm</div>
+                    <div class="flex justify-between">
+                        <div class="time">Stopped for Xm</div>
+                        <div class="overtime-time"></div>
+                        <div class="stop-octagon none"><div class="flex align-center justify-center">!</div></div>
+                    </div>
                 </div>
 
                 <div class="info-next-stops none">
@@ -385,6 +389,16 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-bus-progress" class="toggle-input">
                             <label for="toggle-show-bus-progress" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Show bus overtime timer</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-bus-overtime-timer" class="toggle-input">
+                            <label for="toggle-show-bus-overtime-timer" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>

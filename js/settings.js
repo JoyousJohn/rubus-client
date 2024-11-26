@@ -129,6 +129,17 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-bus-progress'] = isChecked;
             break;
 
+        case 'toggle-show-bus-overtime-timer':
+            settings['toggle-show-bus-overtime-timer'] = isChecked;
+
+            if (!isChecked) {
+                stopOvertimeCounter();
+            } else if (popupBusId && busData[popupBusId]['overtime']) {
+                startOvertimeCounter(popupBusId);
+            }
+
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;

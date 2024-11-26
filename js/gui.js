@@ -734,7 +734,8 @@ const toggleSettings = [
     'toggle-show-stop-polygons',
     'toggle-show-etas-in-seconds',
     'toggle-show-bus-id',
-    'toggle-show-bus-progress'
+    'toggle-show-bus-progress',
+    'toggle-show-bus-overtime-timer'
 ]
 
 let defaultSettings = {
@@ -749,6 +750,7 @@ let defaultSettings = {
     'toggle-show-etas-in-seconds': false,
     'toggle-show-bus-id': false,
     'toggle-show-bus-progress': false,
+    'toggle-show-bus-overtime-timer': false
 };
 
 function setDefaultSettings (){
