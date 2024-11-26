@@ -153,6 +153,9 @@ function updateStopBuses(stopId) {
 
     $('.stop-info-buses-grid').empty();
 
+    // const infoNextStopsScrollPosition = $('.info-next-stops').scrollTop();
+    // alert(infoNextStopsScrollPosition)
+
     sortedBusIds.forEach(busId => {
         const data = servicingBuses[busId]
 
@@ -195,6 +198,8 @@ function updateStopBuses(stopId) {
         });
     })
 
+    // $('.info-next-stops').scrollTop(infoNextStopsScrollPosition);
+
     const avgWait = waits[stopId]
     const waitStr = `${Math.round(avgWait / 60)}m ${avgWait % 60}s`
 
@@ -212,6 +217,7 @@ async function popStopInfo(stopId) {
     }
 
     popupStopId = stopId;
+    popupBusId = null;
     $('.bus-info-popup, .route-panel, .my-location-popup').hide();
 
     $('.info-stop-name').text(stopsData[stopId].name)

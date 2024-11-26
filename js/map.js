@@ -705,9 +705,11 @@ function popInfo(busId) {
 
         $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
 
-        setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
-            $('.info-next-stops').scrollTop(0)
-        }, 0);
+        if (popupBusId !== busId) {
+            setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
+                $('.info-next-stops').scrollTop(0)
+            }, 0);
+        }  
     }
 
     else {

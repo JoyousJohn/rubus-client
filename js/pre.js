@@ -149,6 +149,10 @@ async function fetchBusData() {
             updateBusOverview(Array.from(pollActiveRoutes))
         }
 
+        if (popupStopId) {
+            updateStopBuses(popupStopId)
+        }
+
     } catch (error) {
         console.error('Error fetching bus data:', error);
     }
