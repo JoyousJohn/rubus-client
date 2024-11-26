@@ -665,7 +665,7 @@ function popInfo(busId) {
             const currentTime = new Date();
 
             let formattedTime;
-            if (showETAsInSeconds) {
+            if (showETAsInSeconds && (eta < 600 || i === 0)) {
                 currentTime.setSeconds(currentTime.getSeconds() + eta);
                 formattedTime = currentTime.toLocaleTimeString('en-US', {
                     hour: 'numeric',
@@ -678,6 +678,17 @@ function popInfo(busId) {
                 let seconds = eta % 60;
                 eta = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
+            } else if (showETAsInSeconds && eta >= 600) {
+                currentTime.setMinutes(currentTime.getMinutes() + Math.floor(eta / 60));
+                formattedTime = currentTime.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                let minutes = Math.floor(eta / 60);
+                eta = `${minutes}m`;
+
             } else {
                 currentTime.setMinutes(currentTime.getMinutes() + eta);
                 formattedTime = currentTime.toLocaleTimeString('en-US', {
@@ -689,13 +700,17 @@ function popInfo(busId) {
                 eta += 'm'
             }
 
-            const stopName = stopsData[sortedStops[i]].name
+            let stopName = stopsData[sortedStops[i]].name
             const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]
+
+            if (i === 0 && settings['toggle-show-bus-progress']) {
+                stopName += `<div class="ml-0p5rem" style="color: #00abff;">(${Math.round(busData[busId].progress*100)}%)</div>`
+            }
 
             $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
                     <div class="next-stop-campus">${campusName}</div>
-                    <div class="next-stop-name">${stopName}</div>
+                    <div class="next-stop-name flex">${stopName}</div>
                 </div>`).click(() => { flyToStop(sortedStops[i])}));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
                 <div class="next-stop-eta">${eta}</div>

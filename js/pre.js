@@ -205,7 +205,7 @@ function updateTimeToStops(busIds) {
                 if (i === 0 && !data['at_stop']) {
                     prevStopId = sortedStops[sortedStops.length-1]
 
-                    progress = progressToNextStop(busId)
+                    progress = progressToNextStop(busId) // why does this trigger for arrived buses if at_stop is immediately set to true and progress reset to 0?
                     busData[busId]['progress'] = progress
                     // console.log(`Progress for busId ${busId} (name: ${busData[busId].busName}): ${Math.round(progress*100)}%`)
 

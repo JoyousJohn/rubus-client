@@ -125,6 +125,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
+        case 'toggle-show-bus-progress':
+            settings['toggle-show-bus-progress'] = isChecked;
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
