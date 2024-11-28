@@ -946,7 +946,7 @@ function findNearestStop(fly) {
             })
 
             $('.fly-closest-stop-wrapper').fadeIn();
-            if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible')) {
+            if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged) {
                 flyToStop(thisClosestStopId);
                 console.log("Flying to closest stop")
             }

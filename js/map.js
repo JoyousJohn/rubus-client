@@ -7,6 +7,8 @@ let popupBusId;
 let popupStopId;
 let busesDoneInit; // don't check for moves until map is done plotting
 
+let mapDragged = false;
+
 // settings vars
 let showETAsInSeconds = false;
 let showBusId = false;
@@ -105,6 +107,8 @@ $(document).ready(function() {
     let isFittingBounds = false;
 
     map.on('drag', function() {
+
+        mapDragged = true;
 
         if (isDesktop) {
             return;
@@ -239,6 +243,7 @@ function centerme() {
             duration: 0.3
         });
         hideInfoBoxes();
+        $('.my-location-popup').show();
         return;
     }
 
