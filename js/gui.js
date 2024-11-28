@@ -731,6 +731,8 @@ let settings = {}
 const toggleSettings = [
     'toggle-select-closest-stop',
     'toggle-show-arrival-times',
+    'toggle-show-bus-speeds',
+
     'toggle-show-stop-polygons',
     'toggle-show-etas-in-seconds',
     'toggle-show-bus-id',
@@ -744,6 +746,7 @@ let defaultSettings = {
     'theme': 'auto',
     'toggle-select-closest-stop': true,
     'toggle-show-arrival-times': true,
+    'toggle-show-bus-speeds': true,
     
     // dev settings
     'toggle-show-stop-polygons': false,
