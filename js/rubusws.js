@@ -69,6 +69,9 @@ function openRUBusSocket() {
             const busRoute = busData[busId].route
             const stopId = eventData.stopId
 
+            if (busData[busId]['stopId']) {
+                busData[busId]['prevStopId'] = busData[busId]['stopId']
+            }
             busData[busId]['stopId'] = stopId
             busData[busId]['next_stop'] = getNextStopId(busRoute, stopId)
 
@@ -102,7 +105,7 @@ function openRUBusSocket() {
 
             updateTimeToStops([busId]) // updates bus's etas to all stops
 
-            if (popupStopId) {
+            if (popupStopId && busLocations[busId]) { // also check if in busLocations to not show stops if no info. I think updateStopBuses already prevents this but it was still showing 'bus in service since Invalid Date'
                 updateStopBuses(popupStopId) // this is on the stops wrapper
             }
 

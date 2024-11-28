@@ -674,17 +674,22 @@ function popInfo(busId) {
                 .concat(routeStops.slice(0, nextStopIndex));
         }
 
-        if (nextStopIndex + 1 === routeStops.length) {
-            sortedStops.push(routeStops[0]);
-        } else {
-            sortedStops.push(routeStops[nextStopIndex + 1]);
-        }
+        for (let i = 0; i < sortedStops.length; i++) {
 
+            let eta;
 
-        for (let i = 0; i < sortedStops.length-1; i++) {
+            if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all') && sortedStops[i] === 3) { // special case
+                if (!busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
+                    delete busETAs[busId]
+                    console.log("I'm amazed this actually happened, wow")
+                    return
+                }
+                const prevStopId = i === 0 ? sortedStops[sortedStops.length - 1] : sortedStops[i-1]
+                eta = Math.round((busETAs[busId][3]['via'][prevStopId] + 10)/secondsDivisor);
+            } else {
+                eta = Math.round((busETAs[busId][sortedStops[i]] + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
+            }
 
-            let eta = Math.round((busETAs[busId][sortedStops[i]] + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
-            // console.log(sortedStops[i])
             const currentTime = new Date();
 
             let formattedTime;

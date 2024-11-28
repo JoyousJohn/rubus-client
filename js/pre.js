@@ -180,6 +180,25 @@ function updateTimeToStops(busIds) {
             sortedStops = routeStops.slice(nextStopIndex)
                             .concat(routeStops.slice(0, nextStopIndex));
         }
+
+        let via = null;
+        if ((busRoute === 'wknd1' || busRoute === 'all') && nextStop === 3) { // special case
+
+            if (!busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
+                delete busETAs[busId]
+                return
+            }
+
+            const prevStopId = busData[busId]['prevStopId']
+            via = prevStopId
+            console.log('special case')
+            if (prevStopId === 2) {
+                sortedStops = [3, 6, 9, 10, 12, 13, 14, 4, 17, 18, 19, 20, 21, 16, 22, 3, 1, 2] 
+            } else if (prevStopId === 22) {
+                sortedStops = [3, 1, 2, 3, 6, 9, 10, 12, 13, 14, 4, 17, 18, 19, 20, 21, 16, 22]
+            }
+        }
+
         // console.log(sortedStops.length)
 
         // Figure out if I need this:
@@ -269,7 +288,14 @@ function updateTimeToStops(busIds) {
                 }
 
                 // console.log(thisStopId)
-                busETAs[busId][thisStopId] = Math.round(currentETA)
+
+                if ((busRoute === 'wknd1' || busRoute === 'all') && thisStopId === 3) { // special case
+                    if (!busETAs[busId][thisStopId]) busETAs[busId][thisStopId] = {'via': {}}
+                    busETAs[busId][thisStopId]['via'][prevStopId] = Math.round(currentETA)
+                } else {
+                    busETAs[busId][thisStopId] = Math.round(currentETA)
+                }
+
             }
         }
 
@@ -358,7 +384,12 @@ $(document).ready(async function() {
             const validBusIds = []
             for (const busId in busLocations) {
                 if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
-                busData[busId]['stopId'] = parseInt(busLocations[busId])
+                                
+                busData[busId]['stopId'] = parseInt(busLocations[busId][0])
+                if (busLocations[busId].length === 2) {
+                    busData[busId]['prevStopId'] = parseInt(busLocations[busId][1])  
+                }
+
                 validBusIds.push(busId)
             }
 
@@ -380,7 +411,7 @@ $(document).ready(async function() {
                 throw new Error('Network response was not ok');
             }
             const joined_service = await response.json();
-            // console.log('Bus joined service times:', joined_service);
+            console.log('Bus joined service times:', joined_service);
 
             for (const busId in joined_service) {
                 if (!(busId in busData)) { continue; } 
