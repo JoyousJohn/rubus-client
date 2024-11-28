@@ -73,15 +73,19 @@ async function getPolylineData(routeName) {
         const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'lx', 'ftbl', 'all']
         if (!knownRoutes.includes(routeName)) return
 
-        let polylineData;
+        let polylineData = null;
 
         if (localStorage.getItem(`polylineData.${routeName}`) !== null) {
             polylineData = JSON.parse(localStorage.getItem(`polylineData.${routeName}`));
         } else {
             const response = await fetch('https://transloc.up.railway.app/r/' + routeName);
-            const data = await response.json();
-            localStorage.setItem(`polylineData.${routeName}`, JSON.stringify(data));
-            polylineData = data;
+            if (response.status === 200) {
+                const data = await response.json();
+                localStorage.setItem(`polylineData.${routeName}`, JSON.stringify(data));
+                polylineData = data;
+            } else {
+                console.error(`Error fetching polyline data for route ${routeName}:`, response.statusText);
+            }
         }
         return polylineData;
     } catch (error) {
