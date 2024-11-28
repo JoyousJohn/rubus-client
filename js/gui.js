@@ -21,7 +21,7 @@ function populateRouteSelectors(activeRoutes) {
         
         let color = 'darkgray'
 
-        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl']
+        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all']
 
         if (knownRoutes.includes(route)) {
             color = colorMappings[route]

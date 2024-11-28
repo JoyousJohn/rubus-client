@@ -559,6 +559,7 @@ const campusMappings = {
     'ftbl': 'Football',
     'wknd1': 'All Campus',
     'wknd2': 'All Campus',
+    'all': 'All Campus',
     'none': 'Unknown',
     'c': 'Busch Commuter',
     'rexl': 'Cook/Doug/Livi',
@@ -581,7 +582,8 @@ const colorMappings = {
     'wknd2': 'RebeccaPurple',
     'ftbl': 'gray',
     'none': 'lightgray',
-    'c': 'MediumVioletRed'
+    'c': 'MediumVioletRed',
+    'all': 'MediumSpringGreen'
 }
 
 const campusShortNamesMappings = {

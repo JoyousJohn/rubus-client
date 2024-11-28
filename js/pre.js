@@ -17,7 +17,8 @@ const routeMapping = {
     'ONWK2FS': 'on2',
     'Football Service Transition': 'ftbl',
     '43991': 'ftbl',
-    '4067': 'c'
+    '4067': 'c',
+    '37199': 'all'
 }
 
 const excludedRouteMappings = {

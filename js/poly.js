@@ -70,7 +70,7 @@ async function getPolylineData(routeName) {
 
     try {
 
-        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'lx', 'ftbl']
+        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'lx', 'ftbl', 'all']
         if (!knownRoutes.includes(routeName)) return
 
         let polylineData;
