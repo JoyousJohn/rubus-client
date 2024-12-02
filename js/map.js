@@ -256,15 +256,15 @@ function centerme() {
             const userLong = position.coords.longitude;
             userPosition = [userLat, userLong];
 
-            L.marker(userPosition, 
+            marker = L.marker(userPosition, 
                 { icon: L.icon({
                     iconUrl: 'img/location_marker.png',
                     iconSize: [24, 24],
                     iconAnchor: [12, 12],
                 })
-            }).addTo(map)
-
-            marker.on('click', function() {
+            })
+            .addTo(map)
+            .on('click', function() {
                 $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
                 $('.my-location-popup').show();
             })
