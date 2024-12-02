@@ -61,6 +61,7 @@ const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds ob
 let isDesktop;
 let tileLayer;
 
+
 const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1NzlxZDByYXIyam9kd2QybnB4ZzUifQ.2Ssy25qvKfJ70J4LpueDKA'
 
 $(document).ready(function() {
@@ -71,6 +72,8 @@ $(document).ready(function() {
         zoomControl: false,
         inertiaDeceleration: 1000,
         zoomSnap: 0,
+        edgeBufferTiles: 10,
+        // padding: [100, 100], // Add padding to preload tiles (in pixels)
         // maxBoundsViscosity: 1.0,
         // intertia: true,
         // updateWhenIdle: true,
@@ -679,7 +682,7 @@ function popInfo(busId) {
             let eta;
 
             if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all') && sortedStops[i] === 3) { // special case
-                if (!busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
+                if (busData[busId]['stopId'] && !busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
                     delete busETAs[busId]
                     console.log("I'm amazed this actually happened, wow")
                     return
