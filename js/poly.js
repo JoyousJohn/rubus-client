@@ -214,7 +214,7 @@ function updateStopBuses(stopId) {
     // $('.info-next-stops').scrollTop(infoNextStopsScrollPosition);
 
     const avgWait = waits[stopId]
-    const waitStr = `${Math.round(avgWait / 60)}m ${avgWait % 60}s`
+    const waitStr = `${Math.floor(avgWait / 60)}m ${avgWait % 60}s`
 
     if (!jQuery.isEmptyObject(busData)) {
         $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`)
@@ -242,6 +242,8 @@ async function popStopInfo(stopId) {
 
     if (sourceBusId) {
         $('.stop-info-back').show();
+    } else {
+        $('.stop-info-back').hide();
     }
 
     $('.stop-info-popup').show();

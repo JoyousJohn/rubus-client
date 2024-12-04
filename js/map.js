@@ -924,6 +924,9 @@ function startOvertimeCounter(busId) {
     const avgWaitAtStop = waits[busData[busId].stopId];
     const arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000);
     const overtimeSeconds = arrivedAgoSeconds - avgWaitAtStop;
+    // console.log(arrivedAgoSeconds)
+    // console.log(avgWaitAtStop)
+    // console.log(overtimeSeconds)
     const minutes = Math.floor(overtimeSeconds / 60);
     const seconds = overtimeSeconds % 60;
     $('.overtime-time').text((minutes > 0 ? minutes + 'm ' : '') + seconds + 's overtime');
