@@ -170,12 +170,12 @@ function hideInfoBoxes() {
     }
 
     if (sourceBusId) {
-        $('.stop-info-back').hide(); 
+        $('.stop-info-back').fadeOut(); 
         sourceBusId = null;
     }
 
     if (sourceStopId) {
-        $('.bus-info-back').hide(); 
+        $('.bus-info-back').fadeOut(); 
         sourceStopId = null;
     }
 
@@ -303,7 +303,7 @@ function centerme() {
     }
 }
 
-// Method to calculate Haversine distance between two points
+// Method to calculate Haversine distance between two points in miles
 function haversine(lat1, lon1, lat2, lon2) {
     const R = 3958.8; // Radius of Earth in miles
     const toRadians = (degree) => degree * (Math.PI / 180);
@@ -340,7 +340,15 @@ async function calculateSpeed(busId) {
 
     const previousData = busData[busId];
     const distance = haversine(previousData.previousLatitude, previousData.previousLongitude, currentLatitude, currentLongitude);
+
+    if (distance < 0.002) {
+        busData[busId].visualSpeed = 0;
+        return;
+    }
+
     const timeDiffHours = (currentTime - previousData.previousSpeedTime) / 3600;
+
+    console.log(distance)
 
     if (timeDiffHours === 0) {
         return;
