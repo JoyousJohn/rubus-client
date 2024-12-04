@@ -346,7 +346,8 @@ html, body {
 
 .stop-info-back, .bus-info-back {
     font-size: 2rem;
-    background-color: white;
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
     border-radius: 1rem;
     padding: 1rem 1.5rem;
     width: fit-content;
