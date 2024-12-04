@@ -275,6 +275,8 @@ function centerme() {
             .on('click', function() {
                 $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
                 $('.my-location-popup').show();
+                sourceStopId = null;
+                sourceBusId = null;
             })
 
             map.flyTo(userPosition, 18, {
@@ -535,6 +537,8 @@ function plotBus(busId) {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[busData[busId].route];
     
         busMarkers[busId].on('click', function() {
+            sourceStopId = null;
+            sourceBusId = null;
             selectBusMarker(busId)
             // busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'blue';
         });
@@ -751,14 +755,12 @@ function popInfo(busId) {
                     <div class="next-stop-campus">${campusName}</div>
                     <div class="next-stop-name flex">${stopName}</div>
                 </div>`).click(() => { 
-                    sourceBusId = busId;
                     flyToStop(sortedStops[i]); 
                 }));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
                 <div class="next-stop-eta">${eta}</div>
                 <div class="next-stop-time">${formattedTime}</div>
             </div>`).click(() => { 
-                sourceBusId = busId
                 flyToStop(sortedStops[i]);  
             }));
         }
@@ -779,7 +781,10 @@ function popInfo(busId) {
     
     if (sourceStopId) {
         $('.bus-info-back').show();
+    } else {
+        $('.bus-info-back').hide(); 
     }
+    sourceBusId = busId;
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
     $('.bus-info-popup').show();

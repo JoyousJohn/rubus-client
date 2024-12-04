@@ -283,6 +283,8 @@ async function addStopsToMap() {
         const marker = L.marker([lat, long], { icon: busStopIcon })
             .addTo(map) // Add the marker to the map
             .on('click', function() {
+                sourceStopId = null;
+                sourceBusId = null;
                 popStopInfo(stopId)
             })
 
