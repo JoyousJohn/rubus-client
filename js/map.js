@@ -341,11 +341,6 @@ async function calculateSpeed(busId) {
     const previousData = busData[busId];
     const distance = haversine(previousData.previousLatitude, previousData.previousLongitude, currentLatitude, currentLongitude);
 
-    if (distance < 0.002) {
-        busData[busId].visualSpeed = 0;
-        return;
-    }
-
     const timeDiffHours = (currentTime - previousData.previousSpeedTime) / 3600;
 
     console.log(distance)
@@ -429,7 +424,9 @@ async function calculateSpeed(busId) {
     // Update the previous data for this bus
     busData[busId].previousLatitude = currentLatitude;
     busData[busId].previousLongitude = currentLongitude;
-    busData[busId].previousSpeedTime = currentTime;
+    if (distance > 0.002) {
+        busData[busId].previousSpeedTime = currentTime;
+    }
     // busData[busId].secondsDiff = currentTime - previousData.previousTime;
 
 }
@@ -747,6 +744,8 @@ function popInfo(busId) {
                     minute: '2-digit',
                     hour12: true
                 });
+
+                if (eta === 0) { eta = 1 }
 
                 eta += 'm'
             }

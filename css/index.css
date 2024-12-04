@@ -45,7 +45,7 @@ html, body {
     font-family: var(--font-family);
 }
 
-.theme-modal > .grid > img {
+.theme-modal > .flex > .grid > img {
     width: 100%;
     border: 1px solid var(--theme-extra);
     cursor: pointer;
@@ -345,7 +345,7 @@ html, body {
 }
 
 .stop-info-back, .bus-info-back {
-    font-size: 2rem;
+    font-size: 1.7rem;
     background-color: var(--theme-bg);
     color: var(--theme-color);
     border-radius: 1rem;
