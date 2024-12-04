@@ -134,7 +134,6 @@ async function fetchBusData() {
                 const route = busData[busId].route
                 pollActiveRoutes.delete(route);
 
-                makeBusesByRoutes();
                 if (jQuery.isEmptyObject(busesByRoutes)) {
                     console.log(`[INFO] The last bus for route ${route} went out of service.`)
                     polylines[route].remove();
@@ -142,6 +141,8 @@ async function fetchBusData() {
                 }
 
                 delete busData[busId];   
+                makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
+
             }
 
         }

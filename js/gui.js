@@ -858,7 +858,13 @@ $(document).ready(function() {
 
     updateSettings();
 
-    
+    $('.stop-info-back').click(function() {
+        flyToBus(sourceBusId)
+    });
+
+    $('.bus-info-back').click(function() {
+        flyToStop(sourceStopId)
+    });
 
 })
 

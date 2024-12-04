@@ -165,11 +165,19 @@ function hideInfoBoxes() {
 
     if (popupBusId) {
         stopOvertimeCounter();
+        popupBusId = null;
         // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
     }
 
-    popupBusId = null;
-    popupStopId = null;
+    if (sourceBusId) {
+        $('.stop-info-back').hide(); 
+        sourceBusId = null;
+    }
+
+    if (sourceStopId) {
+        $('.bus-info-back').hide(); 
+        sourceStopId = null;
+    }
 
     if (selectedMarkerId && busMarkers[selectedMarkerId]) {
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
@@ -742,11 +750,17 @@ function popInfo(busId) {
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
                     <div class="next-stop-campus">${campusName}</div>
                     <div class="next-stop-name flex">${stopName}</div>
-                </div>`).click(() => { flyToStop(sortedStops[i])}));
+                </div>`).click(() => { 
+                    sourceBusId = busId;
+                    flyToStop(sortedStops[i]); 
+                }));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
                 <div class="next-stop-eta">${eta}</div>
                 <div class="next-stop-time">${formattedTime}</div>
-            </div>`).click(() => { flyToStop(sortedStops[i])}));
+            </div>`).click(() => { 
+                sourceBusId = busId
+                flyToStop(sortedStops[i]);  
+            }));
         }
 
         $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
@@ -763,6 +777,10 @@ function popInfo(busId) {
         $('.next-stops-grid > div').empty();
     }
     
+    if (sourceStopId) {
+        $('.bus-info-back').show();
+    }
+
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
     $('.bus-info-popup').show();
 }
@@ -823,7 +841,6 @@ function flyToBus(busId) {
         }
     );
    
-    // Then select the marker which will show the popup
     selectBusMarker(busId);
    
     // Wait for popup to appear and then adjust the map

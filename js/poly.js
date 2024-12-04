@@ -186,7 +186,7 @@ function updateStopBuses(stopId) {
             stopOctaconVisibilityClass = ''
         }
 
-        $('.stop-info-buses-grid').append(`<div class="flex justify-between align-center">
+        $('.stop-info-buses-grid').append(`<div class="flex justify-between align-center pointer">
             <div class="stop-bus-id">${busData[busId].busName}</div>
             <div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div>
         </div>`)
@@ -195,17 +195,18 @@ function updateStopBuses(stopId) {
 
         if (data.eta === 0) {
             // $('.stop-info-buses-grid').append(`<div></div>`)
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">Here</div>`)
-            $('.stop-info-buses-grid').append(`<div></div>`)
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`)
+            $('.stop-info-buses-grid').append(`<div class="pointer"></div>`)
         } else {
 
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta">${(data.eta)}m</div>`)
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-time">${formattedTime}</div>`)
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${(data.eta)}m</div>`)
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`)
         
             
         }
              
         $('.stop-info-buses-grid').children().slice(-4).click(function() {
+            sourceStopId = stopId
             flyToBus(busId)
         });
     })
@@ -219,6 +220,9 @@ function updateStopBuses(stopId) {
         $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`)
     }
 }
+
+let sourceBusId = null;
+let sourceStopId = null;
 
 async function popStopInfo(stopId) {
 
@@ -236,7 +240,12 @@ async function popStopInfo(stopId) {
 
     updateStopBuses(stopId);
 
-    $('.stop-info-popup').show().scrollTop(0);
+    if (sourceBusId) {
+        $('.stop-info-back').show();
+    }
+
+    $('.stop-info-popup').show();
+    $('.stop-info-popup-inner').scrollTop(0);
     
 }
 

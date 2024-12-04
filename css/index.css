@@ -316,7 +316,7 @@ html, body {
 
 
 
-.stop-info-popup, .my-location-popup {
+.my-location-popup {
     background-color: var(--theme-bg);
     border-radius: 1rem;
     margin: 1rem;
@@ -328,6 +328,36 @@ html, body {
     max-height: 40vh;
 }
 
+.stop-info-popup {
+    margin: 1rem;
+    font-family: var(--font-family);
+    display: none;
+    pointer-events: all;
+
+}
+
+.stop-info-popup-inner {
+    background-color: var(--theme-bg);
+    border-radius: 1rem;
+    overflow-y: scroll;
+    max-height: 40vh;
+    padding: 1rem;
+}
+
+.stop-info-back, .bus-info-back {
+    font-size: 2rem;
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    width: fit-content;
+    transition: 100ms;
+    display: none;
+}
+
+.stop-info-back:hover {
+    background-color: rgb(88, 88, 234);
+    color: rgb(242, 242, 242)
+}
 
 .info-stop-servicing {
     font-size: 1.5rem;
