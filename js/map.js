@@ -343,7 +343,7 @@ async function calculateSpeed(busId) {
 
     const timeDiffHours = (currentTime - previousData.previousSpeedTime) / 3600;
 
-    console.log(distance)
+    // console.log(distance)
 
     if (timeDiffHours === 0) {
         return;
@@ -435,77 +435,182 @@ const animationFrames = {}
 let pauseRotationUpdating = false;
 let wholePixelPositioning = false;
 
-// Update the marker's position during animation
+let busLines = {}
+let midpointCircle = {}
+
 const updateMarkerPosition = (busId) => {
     const loc = {lat: busData[busId].lat, long: busData[busId].long};
     const marker = busMarkers[busId];
 
-    if (animationFrames[busId]) {
-        cancelAnimationFrame(animationFrames[busId]);
-        delete animationFrames[busId];
+    let prevLatLng = undefined;
+    if (busData[busId].previousPositions.length >= 3) {
+        prevLatLng = {lat: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][0], lng: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][1]};
     }
-
-    // Get the start and end points
+    // console.log(busData[busId].previousPositions)
+    // console.log(prevLatLng)
+    // console.log('')
     const startLatLng = marker.getLatLng();
     const endLatLng = L.latLng(loc.lat, loc.long);
 
-    const duration = (new Date().getTime() - busData[busId].previousTime) + 2.5;
-    if (popupBusId === busId) console.log("duration: ", duration)
+    if (busLines[busId]) {
+        if (busLines[busId]['prev']) {
+            busLines[busId]['prev'].removeFrom(map);
+        }
+        if (busLines[busId]['curve']) {
+            busLines[busId]['curve'].removeFrom(map);
+        }
+        busLines[busId]['prev'] = busLines[busId]['curr'];
+        busLines[busId]['prev'].setStyle({color: 'red'});
+    } else {
+        busLines[busId] = {};
+    }
+
+
+    if (busLines[busId]['curr']) {
+        busLines[busId]['curr'] = L.polyline([busLines[busId]['curr']._latlngs[1], endLatLng], {color: 'blue', weight: 4}).addTo(map);
+    } else {
+        busLines[busId]['curr'] = L.polyline([startLatLng, endLatLng], {color: 'blue', weight: 7}).addTo(map); 
+    }
+
+    // Add Bézier curve if we have a previous position
+    if (prevLatLng) {
+        // Get our desired midpoint
+        const desiredMidpoint = {
+            lat: busLines[busId]['curr']._latlngs[0].lat,
+            lng: busLines[busId]['curr']._latlngs[0].lng
+        };
+        
+        // Calculate the control point that will make the curve pass through our desired midpoint
+        // For a quadratic Bézier curve to pass through a point at t=0.5, the control point should be:
+        // control = 2 * midpoint - 0.5 * (start + end)
+        const controlPoint = {
+            lat: 2 * desiredMidpoint.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
+            lng: 2 * desiredMidpoint.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
+        };
+        
+        const path = L.curve(['M', [prevLatLng.lat, prevLatLng.lng],
+                            'Q', [controlPoint.lat, controlPoint.lng],
+                                [endLatLng.lat, endLatLng.lng]],
+                           {color: 'purple', weight: 5, opacity: 1}).addTo(map);
+        busLines[busId]['curve'] = path;
+        
+        // Add a dot at the control point (startLatLng)
+        if (midpointCircle[busId]) midpointCircle[busId].removeFrom(map)
+        midpointCircle[busId] = L.circleMarker([busLines[busId]['curr']._latlngs[0].lat, busLines[busId]['curr']._latlngs[0].lng], {
+            radius: 4,
+            color: 'lime',
+            fillColor: 'lime',
+            fillOpacity: 1
+        }).addTo(map);
+
+    }
+
+    const duration = (new Date().getTime() - busData[busId].previousTime) + 2500
+    // console.log(duration)
+    // console.log(duration + 2.5)
     const startTime = performance.now();
 
-    busData[busId].previousTime = new Date().getTime()
+    busData[busId].previousTime = new Date().getTime();
 
-    // Get the start and end rotations
     const startRotation = parseFloat(marker.getElement().querySelector('.bus-icon-outer').style.transform.replace('rotate(', '').replace('deg)', '') || '0');
     const endRotation = busData[busId].rotation + 45;
 
-    // Function to animate the marker
-    const animateMarker = (currentTime) => {
+    // Function to calculate the Bézier point at a given t (0 <= t <= 1)
+    const calculateBezierPoint = (t) => {
+        if (!prevLatLng) return null;
+        
+        // Scale t to only traverse the second half of the curve (0.5 to 1.0)
+        const curveT = 0.5 + (t * 0.5);
+        
+        // Get our desired midpoint
+        const desiredMidpoint = {
+            lat: busLines[busId]['curr']._latlngs[0].lat,
+            lng: busLines[busId]['curr']._latlngs[0].lng
+        };
+        
+        // Calculate the control point that will make the curve pass through our desired midpoint
+        // For a quadratic Bézier curve to pass through a point at t=0.5, the control point should be:
+        // control = 2 * midpoint - 0.5 * (start + end)
+        const controlPoint = {
+            lat: 2 * desiredMidpoint.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
+            lng: 2 * desiredMidpoint.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
+        };
+        
+        // Calculate point on the curve using the same quadratic Bézier formula as the purple line
+        const x = (1 - curveT) ** 2 * prevLatLng.lat +
+                  2 * (1 - curveT) * curveT * controlPoint.lat +
+                  curveT ** 2 * endLatLng.lat;
+        const y = (1 - curveT) ** 2 * prevLatLng.lng +
+                  2 * (1 - curveT) * curveT * controlPoint.lng +
+                  curveT ** 2 * endLatLng.lng;
+        return { lat: x, lng: y };
+    };
 
+    const animateMarker = (currentTime) => {
         const elapsedTime = currentTime - startTime;
         const progress = Math.min(elapsedTime / duration, 1);
 
-        // Calculate current position
-        const currentLat = startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress;
-        const currentLng = startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress;
-
-        if (wholePixelPositioning) {
-            marker.setLatLng([currentLat, currentLng]);
+        // Determine the current position
+        let currentLatLng;
+        if (prevLatLng) {
+            // Use Bézier curve if prevLatLng is defined
+            const bezierPoint = calculateBezierPoint(progress);
+            if (bezierPoint) {
+                currentLatLng = L.latLng(bezierPoint.lat, bezierPoint.lng);
+            } else {
+                currentLatLng = L.latLng(
+                    startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress,
+                    startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress
+                );
+            }
         } else {
-            marker.setLatLngPrecise([currentLat, currentLng]);
+            // Straight line interpolation
+            currentLatLng = L.latLng(
+                startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress,
+                startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress
+            );
         }
 
-        let rotationChange = endRotation - startRotation
+        if (wholePixelPositioning) {
+            marker.setLatLng(currentLatLng);
+        } else {
+            marker.setLatLngPrecise([currentLatLng.lat, currentLatLng.lng]);
+        }
+
+        let rotationChange = endRotation - startRotation;
         if (rotationChange > 180) {
             rotationChange -= 360;
         } else if (rotationChange < -180) {
             rotationChange += 360;
         }
 
-        if (!busMarkers[busId]) { // bus went out of service
-            return
-        }
+        if (!busMarkers[busId]) return; // Bus went out of service
 
         if (!pauseRotationUpdating) {
             let currentRotation = startRotation + rotationChange * progress;
-
             const iconElement = marker.getElement().querySelector('.bus-icon-outer');
             if (iconElement) {
                 iconElement.style.transform = `rotate(${currentRotation}deg)`;
             }
         }
-        // Calculate and apply current rotation
-        
+
         if (progress < 1) {
             animationFrames[busId] = requestAnimationFrame(animateMarker);
         } else {
-            delete animationFrames[busId]; // Animation complete, clean up
+            console.log(`Updated bus ${busId} in ${(performance.now() - startTime) / 1000} seconds.`);
+
+            delete animationFrames[busId];
         }
     };
 
-    // Start the animation
+    if (animationFrames[busId]) {
+        cancelAnimationFrame(animationFrames[busId]);
+        delete animationFrames[busId];
+    }
+
     requestAnimationFrame(animateMarker);
 };
+
 
 // Add this function to handle map zooming and panning
 const handleMapInteraction = () => {

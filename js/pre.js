@@ -76,14 +76,19 @@ async function fetchBusData() {
             if (!(busId in busData)) {
                 busData[busId] = {}
                 busData[busId].previousTime = new Date().getTime() - 5000;
+                busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]]
             }
 
             busData[busId].busName = bus.busName
             busData[busId].lat = bus.latitude
             busData[busId].long = bus.longitude
-            busData[busId].rotation = parseFloat(bus.calculatedCourse) //+ 45
 
-            
+            const lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]
+            if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
+                busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)])
+            }
+
+            busData[busId].rotation = parseFloat(bus.calculatedCourse) //+ 45
 
             if (bus.routeId in routeMapping) {
                 busData[busId].route = routeMapping[bus.routeId]
