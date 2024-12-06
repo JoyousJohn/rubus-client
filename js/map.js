@@ -515,12 +515,11 @@ const updateMarkerPosition = (busId) => {
     const startRotation = parseFloat(marker.getElement().querySelector('.bus-icon-outer').style.transform.replace('rotate(', '').replace('deg)', '') || '0');
     const endRotation = busData[busId].rotation + 45;
 
-    // Function to calculate the Bézier point at a given t (0 <= t <= 1)
+    // Store the marker's starting position for the animation
+    const startPosition = marker.getLatLng();
+    
     const calculateBezierPoint = (t) => {
         if (!prevLatLng) return null;
-        
-        // Scale t to only traverse the second half of the curve (0.5 to 1.0)
-        const curveT = 0.5 + (t * 0.5);
         
         // Get our desired midpoint
         const desiredMidpoint = {
@@ -528,22 +527,39 @@ const updateMarkerPosition = (busId) => {
             lng: busLines[busId]['curr']._latlngs[0].lng
         };
         
-        // Calculate the control point that will make the curve pass through our desired midpoint
-        // For a quadratic Bézier curve to pass through a point at t=0.5, the control point should be:
-        // control = 2 * midpoint - 0.5 * (start + end)
+        // Calculate the control point for the Bézier curve
         const controlPoint = {
             lat: 2 * desiredMidpoint.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
             lng: 2 * desiredMidpoint.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
         };
         
-        // Calculate point on the curve using the same quadratic Bézier formula as the purple line
-        const x = (1 - curveT) ** 2 * prevLatLng.lat +
-                  2 * (1 - curveT) * curveT * controlPoint.lat +
-                  curveT ** 2 * endLatLng.lat;
-        const y = (1 - curveT) ** 2 * prevLatLng.lng +
-                  2 * (1 - curveT) * curveT * controlPoint.lng +
-                  curveT ** 2 * endLatLng.lng;
-        return { lat: x, lng: y };
+        // Calculate the point where we join the curve (at t=0.5 on the curve)
+        const curveJoinPoint = {
+            lat: 0.25 * prevLatLng.lat + 0.5 * controlPoint.lat + 0.25 * endLatLng.lat,
+            lng: 0.25 * prevLatLng.lng + 0.5 * controlPoint.lng + 0.25 * endLatLng.lng
+        };
+        
+        if (t <= 0.3) {
+            // First 30%: Linear path from current position to curve join point
+            const t1 = t / 0.3; // Scale 0-0.3 to 0-1
+            return {
+                lat: startPosition.lat + (curveJoinPoint.lat - startPosition.lat) * t1,
+                lng: startPosition.lng + (curveJoinPoint.lng - startPosition.lng) * t1
+            };
+        } else {
+            // Remaining 70%: Follow the Bézier curve
+            const t2 = (t - 0.3) / 0.7; // Scale 0.3-1 to 0-1
+            const curveT = 0.5 + (t2 * 0.5); // Scale to second half of curve
+            
+            return {
+                lat: (1 - curveT) ** 2 * prevLatLng.lat +
+                    2 * (1 - curveT) * curveT * controlPoint.lat +
+                    curveT ** 2 * endLatLng.lat,
+                lng: (1 - curveT) ** 2 * prevLatLng.lng +
+                    2 * (1 - curveT) * curveT * controlPoint.lng +
+                    curveT ** 2 * endLatLng.lng
+            };
+        }
     };
 
     const animateMarker = (currentTime) => {
