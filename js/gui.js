@@ -352,7 +352,7 @@ function selectedRoute(route) {
 
     if (!panelRoute) {
         $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight())
-        $('.panout, .buses-btn, .centerme').fadeOut('fast');
+        $('.panout, .buses-btn, .centerme, .fly-closest-stop').fadeOut('fast');
         $('.settings-btn').hide();
         $('.leaflet-control-attribution').hide();
         $('.route-panel').slideDown('fast');
@@ -367,6 +367,7 @@ function selectedRoute(route) {
 
     $('.route-stops-grid').empty();
 
+    let previousStopId = null;
     stopLists[route].forEach(stopId => {
 
         $('.route-stops-grid').append('<div class="next-stop-circle"></div>')
@@ -377,21 +378,37 @@ function selectedRoute(route) {
 
         // Sort bus IDs based on their ETA
         busesByRoutes[route]
-            .sort((a, b) => Math.round(busETAs[a][stopId] / 60) - Math.round(busETAs[b][stopId] / 60)) // Sort by ETA
+            .sort((a, b) => {
+                const getETA = (busId) => {
+                    if ((route === 'wknd1' || route === 'all') && stopId === 3 && busETAs[busId] && busETAs[busId][stopId] && previousStopId) {
+                        // Use the previous stop to determine which 'via' path to use
+                        return busETAs[busId][stopId]['via'][previousStopId] || Infinity;
+                    }
+                    return busETAs[busId] ? busETAs[busId][stopId] : Infinity;
+                };
+                return Math.round(getETA(a) / 60) - Math.round(getETA(b) / 60);
+            })
             .forEach(busId => {
+                if (busETAs[busId]) {
+                    const $gridElm = $stopElm.find('.route-buses-for-stop');
+                    $gridElm.append(`<div>${busData[busId].busName}</div>`);
+                    let eta;
+                    if ((route === 'wknd1' || route === 'all') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
+                        // Use the previous stop to determine which 'via' path to use
+                        eta = busETAs[busId][stopId]['via'][previousStopId];
+                    } else {
+                        eta = busETAs[busId][stopId];
+                    }
+                    if (eta !== undefined) {
+                        $gridElm.append(`<div class="bold">${Math.round(eta/60)}m</div>`);
+                        $gridElm.append(`<div class="align-right">x stops away</div>`);
+                    }
+                }
+            });
 
-            if (busETAs[busId]) {
-                const $gridElm = $stopElm.find('.route-buses-for-stop')
-                $gridElm.append(`<div>${busData[busId].busName}</div>`)
-                $gridElm.append(`<div class="bold">${Math.round(busETAs[busId][stopId]/60)}m</div>`)
-                $gridElm.append(`<div class="align-right">x stops away</div>`)
-            }
-
-        })
-
-        $('.route-stops-grid').append($stopElm)
-
-    })
+        $('.route-stops-grid').append($stopElm);
+        previousStopId = stopId;
+    });
 
     $('.route-stops-grid .next-stop-circle').css('background-color', colorMappings[route])
 
@@ -849,7 +866,7 @@ function updateSettings() {
             $toggleInput.prop('checked', isChecked);
         }
 
-    })
+    });
 
     getBuildNumber()
 }
