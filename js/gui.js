@@ -397,8 +397,27 @@ function selectedRoute(route) {
             .forEach(busId => {
 
                 const thisStopIndex = stopLists[route].indexOf(stopId);
-                const busIndex = stopLists[route].indexOf((busData[busId].stopId));
+                let busIndex = -1;
+                
+                if ((route === 'wknd1' || route === 'all') && busData[busId].prevStopId) {
+                    // For these routes, find where current stop follows the previous stop in the route
+                    for (let i = 1; i < stopLists[route].length; i++) {
+                        if (stopLists[route][i] === busData[busId].stopId && 
+                            stopLists[route][i-1] === busData[busId].prevStopId) {
+                            busIndex = i;
+                            break;
+                        }
+                    }
+                    // If not found, fall back to first occurrence
+                    if (busIndex === -1) {
+                        busIndex = stopLists[route].indexOf(busData[busId].stopId);
+                    }
+                } else {
+                    busIndex = stopLists[route].indexOf(busData[busId].stopId);
+                }
+
                 let stopsAway = thisStopIndex - busIndex - 1;
+                
                 if (stopsAway < 0) {
                     stopsAway = stopLists[route].length + stopsAway; 
                 }
@@ -435,7 +454,9 @@ function selectedRoute(route) {
 
                         let stopsAwayText = '';
 
-                        if (stopsAway === 0) {
+                        if (stopsAway === 0 && !(((route === 'wknd1' || route === 'all') 
+                            && stopId === 3 
+                            && previousStopId  == busData[busId].stopId[1])))  {
                             stopsAwayText = 'En route';
                         } else if (stopsAway === 1) {
                             stopsAwayText = stopsAway + ' stop away';
