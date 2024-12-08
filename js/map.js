@@ -749,8 +749,7 @@ function popInfo(busId) {
     if (showETAsInSeconds) {
         secondsDivisor = 1;
     }
-
-    $('.stop-info-popup, .route-panel').hide();
+    // $('.stop-info-popup, .route-panel').hide(); // why was i hiding these?
 
 
     if (busData[busId]['overtime']) {

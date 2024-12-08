@@ -469,10 +469,9 @@ html, body {
 
 
 .route-panel {
-    background-color: white;
+    background-color: var(--theme-bg);
     font-family: var(--font-family);
     padding: 1rem;
-    border-radius: 1rem;
     height: 100vh;
 }
 
@@ -483,20 +482,26 @@ html, body {
 
 .route-campuses {
     font-size: 2rem;
+    color: var(--theme-color)
 }
 
 .route-active-buses {
     font-size: 1.5rem;
-    color: gray;
+    color: var(--theme-color-lighter);
 }
 
 .route-bus-name {
     font-size: 1.7rem;
+    color: var(--theme-extra)
 }
 
 .route-bus-speed {
     font-size: 1.5rem;
-    color: rgb(94, 94, 94);
+    color: var(--theme-color-lighter)
+}
+
+.rbfs-bn {
+    color: var(--theme-extra);
 }
 
 .route-stops-grid {
@@ -513,6 +518,7 @@ html, body {
 
 .route-stop-name {
     font-size: 1.75rem;
+    color: var(--theme-color)
 }
 
 .route-buses-for-stop {
@@ -522,7 +528,9 @@ html, body {
     column-gap: 1rem;
 }
 
-
+.route-buses-for-stop {
+    color: var(--theme-color)
+}
 
 .buses-panel-wrapper {
     background-color: white;

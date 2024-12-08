@@ -411,17 +411,17 @@ function selectedRoute(route) {
 
                     if (busData[busId].at_stop && stopId == busData[busId].stopId) { 
                         eta = 0;
-                        $gridElm.append(`<div>${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn">${busData[busId].busName}</div>`);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                         return;
                     } else if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) { // wknd & all special case at sac nb
                         eta = 0;
-                        $gridElm.append(`<div>${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn">${busData[busId].busName}</div>`);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                     } else {
-                        $gridElm.append(`<div>${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn">${busData[busId].busName}</div>`);
                         if ((route === 'wknd1' || route === 'all') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
                             // Use the previous stop to determine which 'via' path to use
                             eta = busETAs[busId][stopId]['via'][previousStopId];
@@ -435,9 +435,7 @@ function selectedRoute(route) {
 
                         let stopsAwayText = '';
 
-                        if (busData[busId].at_stop && stopId === busData[busId].stopId) {
-                            stopsAwayText = 'Here';
-                        } else if (stopsAway === 0) {
+                        if (stopsAway === 0) {
                             stopsAwayText = 'En route';
                         } else if (stopsAway === 1) {
                             stopsAwayText = stopsAway + ' stop away';
