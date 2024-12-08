@@ -41,12 +41,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
             break;
 
         case 'toggle-pause-rotation-updating':
+            settings['toggle-pause-rotation-updating'] = isChecked;
             console.log(`Pause rotation updating now ${isChecked ? 'ON' : 'OFF'}`);
-            pauseRotationUpdating = isChecked
+            pauseRotationUpdating = isChecked;
             break;
 
         case 'toggle-whole-pixel-positioning':
             console.log(`Whole pixel positioning is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-whole-pixel-positioning'] = isChecked;
             wholePixelPositioning = isChecked
             break;
 

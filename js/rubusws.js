@@ -146,7 +146,7 @@ function openRUBusSocket() {
             const eventData = JSON.parse(event.data);
             console.log("Formatted message from server:", eventData);
 
-            processEventData(eventData)
+            // processEventData(eventData)
 
         } catch (error) {
             console.error("Error parsing JSON:", error);

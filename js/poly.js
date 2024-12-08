@@ -255,6 +255,9 @@ async function addStopsToMap() {
 
     activeStops = []
 
+
+    console.log(busesByRoutes)
+
     for (const activeRoute in busesByRoutes) {
         if (!(activeRoute in stopLists)) continue
         activeStops = [...activeStops, ...stopLists[activeRoute]]

@@ -18,7 +18,9 @@ const routeMapping = {
     'Football Service Transition': 'ftbl',
     '43991': 'ftbl',
     '4067': 'c',
-    '37199': 'all'
+    '37199': 'all',
+    'ONWK1FS': 'on1',
+    'ONWK2FS': 'on2',
 }
 
 const excludedRouteMappings = {
@@ -120,7 +122,7 @@ async function fetchBusData() {
 
         for (const busId in busData) { 
 
-            // console.log(busId)
+            console.log(busData)
             if (busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'on2') {
                 continue;
             }
@@ -318,6 +320,62 @@ $(document).ready(async function() {
 
     await fetchBusData();
 
+    if (!Object.keys(busData).length) {
+        wsClient.connect()
+
+        response = await fetch('https://transloc.up.railway.app/overnight');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        } else {
+            const data = await response.json();
+
+            for (const someId in data) {
+    
+                const bus = data[someId]
+    
+                if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
+                    continue
+                }
+    
+                const busId = bus.bus_id
+    
+                if (!(busId in busData)) {
+                    busData[busId] = {}
+                    busData[busId].previousTime = new Date().getTime() - 5000;
+                    busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]]
+                }
+    
+                busData[busId].busName = bus.name
+                busData[busId].lat = bus.lat
+                busData[busId].long = bus.lng
+    
+                busData[busId].rotation = parseFloat(bus.rotation)
+    
+                console.log(bus)
+
+                if (bus.route in routeMapping) {
+                    busData[busId].route = routeMapping[bus.route]
+                } else {
+                    busData[busId].route = bus.route
+                }            
+                activeRoutes.add(busData[busId].route)
+
+                busData[busId].capacity = bus.paxLoad
+    
+                plotBus(busId)
+                calculateSpeed(busId)
+    
+                makeBusesByRoutes()
+                // pollActiveRoutes.add(busData[busId].route)
+    
+            }
+
+            console.log(activeRoutes)
+            setPolylines(activeRoutes)
+
+        }
+    }
+
     for (const busId in busData) {
         const route = busData[busId].route
         if (route) activeRoutes.add(route);
@@ -444,7 +502,10 @@ $(document).ready(async function() {
 
     openRUBusSocket();
 
-    if (Object.keys(busData).length === 0) wsClient.connect();
+    if (Object.keys(busData).length === 0) {
+        
+        
+    };
 
     setTimeout(() => {
         fetchBusData();
