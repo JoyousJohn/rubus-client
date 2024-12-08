@@ -240,7 +240,7 @@ async function popStopInfo(stopId) {
 
     updateStopBuses(stopId);
 
-    if (sourceBusId) {
+    if (sourceBusId && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
         $('.stop-info-back').show();
     } else {
         $('.stop-info-back').hide();
