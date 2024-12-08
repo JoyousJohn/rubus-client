@@ -314,6 +314,15 @@
                         </div>
                     </div>
 
+                    <div class="settings-bus-positioning">
+                        <div class="settings-heading">BUS POSITIONING</div>
+                        <div class="settings-options grid grid-cols-3">
+                            <div class="settings-option" settings-option="bus-positioning" bus-positioning-option="exact">Naive Exact latLng()</div>
+                            <div class="settings-option" settings-option="bus-positioning" bus-positioning-option="bezier">Catmull-Rom Cubic Bezier</div>
+                            <div class="settings-option" settings-option="bus-positioning" bus-positioning-option="line-string">lineString subPath seg</div>
+                        </div>
+                    </div>
+
                     <div class="flex justify-between">
                         <div class="settings-heading">Pause updateMarkerPosition()</div>
                         <div class="settings-toggle">
@@ -419,6 +428,16 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-bus-overtime-timer" class="toggle-input">
                             <label for="toggle-show-bus-overtime-timer" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Show bus path</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-bus-path" class="toggle-input">
+                            <label for="toggle-show-bus-path" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>

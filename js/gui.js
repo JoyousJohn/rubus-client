@@ -817,7 +817,8 @@ const toggleSettings = [
     'toggle-show-etas-in-seconds',
     'toggle-show-bus-id',
     'toggle-show-bus-progress',
-    'toggle-show-bus-overtime-timer'
+    'toggle-show-bus-overtime-timer',
+    'toggle-show-bus-path'
 ]
 
 let defaultSettings = {
@@ -829,19 +830,22 @@ let defaultSettings = {
     'toggle-show-bus-speeds': true,
     
     // dev settings
+    'bus-positioning': 'exact',
     'toggle-show-stop-polygons': false,
     'toggle-show-etas-in-seconds': false,
     'toggle-show-bus-id': false,
     'toggle-show-bus-progress': false,
-    'toggle-show-bus-overtime-timer': false
+    'toggle-show-bus-overtime-timer': false,
+    'toggle-show-bus-path': false
 };
 
-function setDefaultSettings (){
+function setDefaultSettings () {
     delete defaultSettings['theme']
     settings = defaultSettings
     localStorage.setItem('settings', JSON.stringify(settings))
     $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
+    $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     // $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
 }
 
@@ -871,7 +875,8 @@ function updateSettings() {
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker_size']}"]`).addClass('settings-selected')
-    
+    $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
+
     if (!$('.theme-modal').is(':visible')) {
         $(`div.settings-option[theme-option="${settings['theme']}"]`).addClass('settings-selected')
     }
@@ -912,6 +917,10 @@ function updateSettings() {
 
             changeMapStyle(theme)
 
+        } else if (settingsOption === 'bus-positioning') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['bus-positioning'] = $(this).attr('bus-positioning-option')
         }
 
         if (settingsOption) { // don't reset ls if ls was cleared (that option doesn't currently have settingsOption). add some sort of attribute later as this will be in analytics

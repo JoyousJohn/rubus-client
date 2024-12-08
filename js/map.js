@@ -452,104 +452,117 @@ const updateMarkerPosition = (busId) => {
     const startLatLng = marker.getLatLng();
     const endLatLng = L.latLng(loc.lat, loc.long);
 
+    const positioningOption = settings['bus-positioning'];
+    const showPath = settings['toggle-show-bus-path'];
+
+    // Always maintain the data structure regardless of display setting
     if (busLines[busId]) {
-        if (busLines[busId]['prev']) {
+        if (busLines[busId]['prev'] && busLines[busId]['prev'].removeFrom) {
             busLines[busId]['prev'].removeFrom(map);
         }
-        if (busLines[busId]['curve']) {
+        if (busLines[busId]['curve'] && busLines[busId]['curve'].removeFrom) {
             busLines[busId]['curve'].removeFrom(map);
         }
-        busLines[busId]['prev'] = busLines[busId]['curr'];
-        busLines[busId]['prev'].setStyle({color: 'red'});
     } else {
         busLines[busId] = {};
     }
 
-
-    if (busLines[busId]['curr']) {
-        busLines[busId]['curr'] = L.polyline([busLines[busId]['curr']._latlngs[1], endLatLng], {color: 'blue', weight: 4}).addTo(map);
-    } else {
-        busLines[busId]['curr'] = L.polyline([startLatLng, endLatLng], {color: 'blue', weight: 7}).addTo(map); 
+    // Handle current path line
+    const prevPathEndpoint = busLines[busId]['curr'] ? busLines[busId]['curr']._latlngs[1] : startLatLng;
+    if (busLines[busId]['curr'] && busLines[busId]['curr'].removeFrom) {
+        busLines[busId]['curr'].removeFrom(map);
+    }
+    
+    // Store previous path data
+    if (busLines[busId]['curr'] && busLines[busId]['curr']._latlngs) {
+        busLines[busId]['prev'] = busLines[busId]['curr']._latlngs;
     }
 
-    // Add Bézier curve if we have a previous position
-    if (prevLatLng) {
+    // Always update the current line data
+    busLines[busId]['curr'] = {
+        _latlngs: [prevPathEndpoint, endLatLng]
+    };
+
+    // Only display the lines if showPath is true
+    if (showPath) {
+        // Display previous line (red)
+        if (busLines[busId]['prev']) {
+            const prevLine = L.polyline(busLines[busId]['prev'], {color: 'red', weight: 4}).addTo(map);
+            busLines[busId]['prev'] = prevLine;
+        }
+        
+        // Display current line (blue)
+        const currLine = L.polyline(busLines[busId]['curr']._latlngs, {color: 'blue', weight: 4}).addTo(map);
+        busLines[busId]['curr'] = currLine;
+    }
+
+    // Add Bézier curve only if positioning option is 'bezier'
+    if (prevLatLng && positioningOption === 'bezier') {
         // Get our desired midpoint
         const desiredMidpoint = {
             lat: busLines[busId]['curr']._latlngs[0].lat,
             lng: busLines[busId]['curr']._latlngs[0].lng
         };
         
-        // Calculate the control point that will make the curve pass through our desired midpoint
-        // For a quadratic Bézier curve to pass through a point at t=0.5, the control point should be:
-        // control = 2 * midpoint - 0.5 * (start + end)
         const controlPoint = {
             lat: 2 * desiredMidpoint.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
             lng: 2 * desiredMidpoint.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
         };
         
-        const path = L.curve(['M', [prevLatLng.lat, prevLatLng.lng],
-                            'Q', [controlPoint.lat, controlPoint.lng],
-                                [endLatLng.lat, endLatLng.lng]],
-                           {color: 'purple', weight: 5, opacity: 1}).addTo(map);
-        busLines[busId]['curve'] = path;
-        
-        // Add a dot at the control point (startLatLng)
-        if (midpointCircle[busId]) midpointCircle[busId].removeFrom(map)
-        midpointCircle[busId] = L.circleMarker([busLines[busId]['curr']._latlngs[0].lat, busLines[busId]['curr']._latlngs[0].lng], {
-            radius: 4,
-            color: 'lime',
-            fillColor: 'lime',
-            fillOpacity: 1
-        }).addTo(map);
-
+        // Only display the curve if showPath is true
+        if (showPath) {
+            const path = L.curve(['M', [prevLatLng.lat, prevLatLng.lng],
+                                'Q', [controlPoint.lat, controlPoint.lng],
+                                    [endLatLng.lat, endLatLng.lng]],
+                               {color: 'purple', weight: 5, opacity: 1}).addTo(map);
+            busLines[busId]['curve'] = path;
+            
+            // Add a dot at the control point
+            if (midpointCircle[busId]) midpointCircle[busId].removeFrom(map);
+            midpointCircle[busId] = L.circleMarker([busLines[busId]['curr']._latlngs[0].lat, busLines[busId]['curr']._latlngs[0].lng], {
+                radius: 4,
+                color: 'lime',
+                fillColor: 'lime',
+                fillOpacity: 1
+            }).addTo(map);
+        }
     }
 
-    const duration = (new Date().getTime() - busData[busId].previousTime) + 2500
-    // console.log(duration)
-    // console.log(duration + 2.5)
+    const duration = (new Date().getTime() - busData[busId].previousTime) + 2500;
     const startTime = performance.now();
-
     busData[busId].previousTime = new Date().getTime();
 
     const startRotation = parseFloat(marker.getElement().querySelector('.bus-icon-outer').style.transform.replace('rotate(', '').replace('deg)', '') || '0');
     const endRotation = busData[busId].rotation + 45;
-
-    // Store the marker's starting position for the animation
     const startPosition = marker.getLatLng();
-    
+
     const calculateBezierPoint = (t) => {
-        if (!prevLatLng) return null;
+        if (!prevLatLng || positioningOption !== 'bezier') return null;
         
-        // Get our desired midpoint
         const desiredMidpoint = {
             lat: busLines[busId]['curr']._latlngs[0].lat,
             lng: busLines[busId]['curr']._latlngs[0].lng
         };
         
-        // Calculate the control point for the Bézier curve
         const controlPoint = {
             lat: 2 * desiredMidpoint.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
             lng: 2 * desiredMidpoint.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
         };
         
-        // Calculate the point where we join the curve (at t=0.5 on the curve)
         const curveJoinPoint = {
             lat: 0.25 * prevLatLng.lat + 0.5 * controlPoint.lat + 0.25 * endLatLng.lat,
             lng: 0.25 * prevLatLng.lng + 0.5 * controlPoint.lng + 0.25 * endLatLng.lng
         };
         
         if (t <= 0.3) {
-            // First 30%: Linear path from current position to curve join point
-            const t1 = t / 0.3; // Scale 0-0.3 to 0-1
+            const t1 = t / 0.3;
             return {
                 lat: startPosition.lat + (curveJoinPoint.lat - startPosition.lat) * t1,
                 lng: startPosition.lng + (curveJoinPoint.lng - startPosition.lng) * t1
             };
         } else {
-            // Remaining 70%: Follow the Bézier curve
-            const t2 = (t - 0.3) / 0.7; // Scale 0.3-1 to 0-1
-            const curveT = 0.5 + (t2 * 0.5); // Scale to second half of curve
+            const t2 = (t - 0.3) / 0.7;
+            const curveT = 0.5 + (t2 * 0.5);
             
             return {
                 lat: (1 - curveT) ** 2 * prevLatLng.lat +
@@ -568,8 +581,8 @@ const updateMarkerPosition = (busId) => {
 
         // Determine the current position
         let currentLatLng;
-        if (prevLatLng) {
-            // Use Bézier curve if prevLatLng is defined
+        if (positioningOption === 'bezier' && prevLatLng) {
+            // Use Bézier curve if prevLatLng is defined and bezier option is selected
             const bezierPoint = calculateBezierPoint(progress);
             if (bezierPoint) {
                 currentLatLng = L.latLng(bezierPoint.lat, bezierPoint.lng);
@@ -580,7 +593,7 @@ const updateMarkerPosition = (busId) => {
                 );
             }
         } else {
-            // Straight line interpolation
+            // Straight line interpolation for 'exact' option
             currentLatLng = L.latLng(
                 startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress,
                 startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress
@@ -592,7 +605,7 @@ const updateMarkerPosition = (busId) => {
         } else {
             marker.setLatLngPrecise([currentLatLng.lat, currentLatLng.lng]);
         }
-
+        
         let rotationChange = endRotation - startRotation;
         if (rotationChange > 180) {
             rotationChange -= 360;

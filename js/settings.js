@@ -140,6 +140,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
+        case 'toggle-show-bus-path':
+            settings['toggle-show-bus-path'] = isChecked;
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
