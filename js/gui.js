@@ -380,28 +380,72 @@ function selectedRoute(route) {
         busesByRoutes[route]
             .sort((a, b) => {
                 const getETA = (busId) => {
+                    
                     if ((route === 'wknd1' || route === 'all') && stopId === 3 && busETAs[busId] && busETAs[busId][stopId] && previousStopId) {
+                        if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) {
+                            return 0;
+                        }
                         // Use the previous stop to determine which 'via' path to use
                         return busETAs[busId][stopId]['via'][previousStopId] || Infinity;
+                    } else if (busData[busId].at_stop && stopId == busData[busId].stopId) {
+                        return 0;
                     }
                     return busETAs[busId] ? busETAs[busId][stopId] : Infinity;
                 };
                 return Math.round(getETA(a) / 60) - Math.round(getETA(b) / 60);
             })
             .forEach(busId => {
+
+                const thisStopIndex = stopLists[route].indexOf(stopId);
+                const busIndex = stopLists[route].indexOf((busData[busId].stopId));
+                let stopsAway = thisStopIndex - busIndex - 1;
+                if (stopsAway < 0) {
+                    stopsAway = stopLists[route].length + stopsAway; 
+                }
+
                 if (busETAs[busId]) {
+
+                    let eta = undefined;
+
                     const $gridElm = $stopElm.find('.route-buses-for-stop');
-                    $gridElm.append(`<div>${busData[busId].busName}</div>`);
-                    let eta;
-                    if ((route === 'wknd1' || route === 'all') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
-                        // Use the previous stop to determine which 'via' path to use
-                        eta = busETAs[busId][stopId]['via'][previousStopId];
+
+                    if (busData[busId].at_stop && stopId == busData[busId].stopId) { 
+                        eta = 0;
+                        $gridElm.append(`<div>${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="bold">Here</div>`);
+                        $gridElm.append(`<div class="align-right">Arrived</div>`);
+                        return;
+                    } else if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) { // wknd & all special case at sac nb
+                        eta = 0;
+                        $gridElm.append(`<div>${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="bold">Here</div>`);
+                        $gridElm.append(`<div class="align-right">Arrived</div>`);
                     } else {
-                        eta = busETAs[busId][stopId];
+                        $gridElm.append(`<div>${busData[busId].busName}</div>`);
+                        if ((route === 'wknd1' || route === 'all') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
+                            // Use the previous stop to determine which 'via' path to use
+                            eta = busETAs[busId][stopId]['via'][previousStopId];
+                        } else {
+                            eta = busETAs[busId][stopId];
+                        }
                     }
+
                     if (eta !== undefined) {
-                        $gridElm.append(`<div class="bold">${Math.round(eta/60)}m</div>`);
-                        $gridElm.append(`<div class="align-right">x stops away</div>`);
+                        $gridElm.append(`<div class="bold">${Math.ceil(eta/60)}m</div>`);
+
+                        let stopsAwayText = '';
+
+                        if (busData[busId].at_stop && stopId === busData[busId].stopId) {
+                            stopsAwayText = 'Here';
+                        } else if (stopsAway === 0) {
+                            stopsAwayText = 'En route';
+                        } else if (stopsAway === 1) {
+                            stopsAwayText = stopsAway + ' stop away';
+                        } else {
+                            stopsAwayText = stopsAway + ' stops away';
+                        }
+
+                        $gridElm.append(`<div class="align-right">${stopsAwayText}</div>`);
                     }
                 }
             });
