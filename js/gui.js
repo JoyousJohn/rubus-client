@@ -813,6 +813,8 @@ const toggleSettings = [
     'toggle-show-arrival-times',
     'toggle-show-bus-speeds',
 
+    'toggle-pause-rotation-updating',
+    'toggle-whole-pixel-positioning',
     'toggle-show-stop-polygons',
     'toggle-show-etas-in-seconds',
     'toggle-show-bus-id',
