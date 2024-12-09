@@ -511,14 +511,8 @@ $(document).ready(async function() {
 
     openRUBusSocket();
 
-    if (!wsClient) {
-        setTimeout(() => {
-            fetchBusData();
-        }, 2000);
-
-        setInterval(async () => {
-            await fetchBusData();
-        }, 5000);
+    if (!wsClient.ws) {
+        startBusPolling();
     }
 
     setInterval(async () => {
@@ -526,6 +520,16 @@ $(document).ready(async function() {
     }, Math.floor(Math.random() * (1000 - 200 + 1)) + 200);
 
 })
+
+function startBusPolling() {
+    setTimeout(() => {
+        fetchBusData();
+    }, 2000);
+
+    setInterval(async () => {
+        await fetchBusData();
+    }, 5000);
+}
 
 async function randomStepBusSpeeds() {
 

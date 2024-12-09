@@ -50,6 +50,14 @@ class BusWebSocketClient {
         // alert(busId)
         console.log(`Received bus data for bus ${busId}:`, data);
         
+        // Passio reported a non-weekend bus, return to polling
+        if (data.route != 'ONWK1FS' && data.route != 'ONWK2FS') {
+            console.log('Passio reported a non-weekend bus, returning to polling');
+            wsClient.disconnect();
+            // busData = {}; Do I clear all buses? Implement ws checking until ON actually go Oos? Maybe they just turn into other routes? I guess I gotta clear route selectors nonetheless. Have to emulate sometime.
+            startBusPolling();
+        }
+
         if (!busData[busId]) {
             busData[busId] = {}
             busData[busId].busName = data.bus
