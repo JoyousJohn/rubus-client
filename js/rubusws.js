@@ -26,7 +26,7 @@ function openRUBusSocket() {
     }
 
     socket.addEventListener("open", (event) => {
-        console.log("WebSocket connection opened");
+        console.log("Passio WebSocket connection opened");
     });
 
     function processEventData(eventData) {
@@ -155,11 +155,11 @@ function openRUBusSocket() {
     });
 
     socket.addEventListener("close", (event) => {
-        console.log("WebSocket connection closed:", event);
+        console.log("Passio WebSocket connection closed:", event);
     });
 
     socket.addEventListener("error", (event) => {
-        console.error("WebSocket error:", event);
+        console.error("Passio WebSocket error:", event);
     });
 
 }

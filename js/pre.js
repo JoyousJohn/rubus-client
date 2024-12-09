@@ -336,6 +336,8 @@ $(document).ready(async function() {
         } else {
             const data = await response.json();
 
+            // console.table(data)
+
             for (const someId in data) {
     
                 const bus = data[someId]
@@ -349,7 +351,7 @@ $(document).ready(async function() {
                 if (!(busId in busData)) {
                     busData[busId] = {}
                     busData[busId].previousTime = new Date().getTime() - 5000;
-                    busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]]
+                    busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]]
                 }
     
                 busData[busId].busName = bus.name
@@ -358,7 +360,7 @@ $(document).ready(async function() {
     
                 busData[busId].rotation = parseFloat(bus.rotation)
     
-                console.log(bus)
+                // console.log(bus)
 
                 if (bus.route in routeMapping) {
                     busData[busId].route = routeMapping[bus.route]
@@ -367,7 +369,7 @@ $(document).ready(async function() {
                 }            
                 activeRoutes.add(busData[busId].route)
 
-                busData[busId].capacity = bus.paxLoad
+                busData[busId].capacity = bus.capacity
     
                 plotBus(busId)
                 calculateSpeed(busId)
@@ -377,7 +379,7 @@ $(document).ready(async function() {
     
             }
 
-            console.log(activeRoutes)
+            // console.log(activeRoutes)
             setPolylines(activeRoutes)
 
         }
@@ -416,7 +418,7 @@ $(document).ready(async function() {
             }
             const data = await response.json();
             etas = data;
-            console.log('ETAs fetched:', etas);
+            // console.log('ETAs fetched:', etas);
             // updateTimeToStops('all')
         } catch (error) {
             console.error('Error fetching ETAs:', error);
@@ -432,7 +434,7 @@ $(document).ready(async function() {
             }
             const data = await response.json();
             waits = data;
-            console.log('Waits fetched:', waits);
+            // console.log('Waits fetched:', waits);
             // updateTimeToStops('all')
         } catch (error) {
             console.error('Error fetching waits:', error);
@@ -482,7 +484,7 @@ $(document).ready(async function() {
                 throw new Error('Network response was not ok');
             }
             const joined_service = await response.json();
-            console.log('Bus joined service times:', joined_service);
+            // console.log('Bus joined service times:', joined_service);
 
             for (const busId in joined_service) {
                 if (!(busId in busData)) { continue; } 
@@ -509,18 +511,15 @@ $(document).ready(async function() {
 
     openRUBusSocket();
 
-    if (Object.keys(busData).length === 0) {
-        
-        
-    };
+    if (!wsClient) {
+        setTimeout(() => {
+            fetchBusData();
+        }, 2000);
 
-    setTimeout(() => {
-        fetchBusData();
-    }, 2000);
-
-    setInterval(async () => {
-        await fetchBusData();
-    }, 5000);
+        setInterval(async () => {
+            await fetchBusData();
+        }, 5000);
+    }
 
     setInterval(async () => {
         await randomStepBusSpeeds();
