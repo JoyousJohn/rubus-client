@@ -66,6 +66,8 @@ const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1NzlxZDByYXIyam9kd2Qy
 
 $(document).ready(function() {
 
+    settings = JSON.parse(localStorage.getItem('settings'));
+
     map = L.map('map', {
         maxBounds: bounds, // Set the maximum bounds
         maxBoundsViscosity: 1.3, // Optional: Adjust the stickiness of the bounds (1.0 is default)
@@ -73,20 +75,13 @@ $(document).ready(function() {
         inertiaDeceleration: 1000,
         zoomSnap: 0,
         edgeBufferTiles: 10,
-        // padding: [100, 100], // Add padding to preload tiles (in pixels)
-        // maxBoundsViscosity: 1.0,
-        // intertia: true,
-        // updateWhenIdle: true,
-        // updateWhenZooming: true,
-        // preferCanvas: true,
-
+        preferCanvas: settings && settings['map-renderer'] === 'canvas'
     }).setView([40.507476,-74.4541267], 14);
 
     map.setMinZoom(13);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
 
     let mapTheme
-    settings = JSON.parse(localStorage.getItem('settings'));
     if (settings && settings['theme']) {
 
         if (settings['theme'] === 'light') {
@@ -99,6 +94,10 @@ $(document).ready(function() {
         } 
     } else {
         mapTheme = 'streets-v11'
+    }
+
+    if (settings && settings['toggle-pause-update-marker']) {
+        pauseUpdateMarkerPositions = settings['toggle-pause-update-marker'];
     }
 
     tileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken, {

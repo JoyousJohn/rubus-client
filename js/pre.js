@@ -122,7 +122,7 @@ async function fetchBusData() {
 
         for (const busId in busData) { 
 
-            console.log(busData)
+            // console.log(busData)
             if (busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'on2') {
                 continue;
             }
@@ -317,6 +317,13 @@ function updateTimeToStops(busIds) {
 
 
 $(document).ready(async function() {
+    // Initialize settings before map is created
+    settings = localStorage.getItem('settings');
+    if (settings) {
+        settings = JSON.parse(settings);
+    } else {
+        settings = defaultSettings;
+    }
 
     await fetchBusData();
 

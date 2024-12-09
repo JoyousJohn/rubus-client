@@ -27,7 +27,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-pause-update-marker':
             console.log(`Pause update marker positions now ${isChecked ? 'ON' : 'OFF'}`);
-
+            settings['toggle-pause-update-marker'] = isChecked;
             if (isChecked) {
                 for (const busId in animationFrames) {
                     cancelAnimationFrame(animationFrames[busId]);

@@ -813,6 +813,7 @@ const toggleSettings = [
     'toggle-show-arrival-times',
     'toggle-show-bus-speeds',
 
+    'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
     'toggle-whole-pixel-positioning',
     'toggle-show-stop-polygons',
@@ -832,7 +833,9 @@ let defaultSettings = {
     'toggle-show-bus-speeds': true,
     
     // dev settings
+    'map-renderer': 'svg',
     'bus-positioning': 'exact',
+    'toggle-pause-update-marker': false,
     'toggle-show-stop-polygons': false,
     'toggle-show-etas-in-seconds': false,
     'toggle-show-bus-id': false,
@@ -847,6 +850,7 @@ function setDefaultSettings () {
     localStorage.setItem('settings', JSON.stringify(settings))
     $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
+    $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     // $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
 }
@@ -877,6 +881,7 @@ function updateSettings() {
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker_size']}"]`).addClass('settings-selected')
+    $(`div.settings-option[map-renderer-option="${settings['map-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
 
     if (!$('.theme-modal').is(':visible')) {
@@ -919,6 +924,19 @@ function updateSettings() {
 
             changeMapStyle(theme)
 
+        } else if (settingsOption === 'map-renderer') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['map-renderer'] = $(this).attr('map-renderer-option')
+            
+            // Set preferCanvas based on renderer choice
+            map.options.preferCanvas = settings['map-renderer'] === 'canvas'
+            
+            // Force map to refresh with new renderer
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+            map.setView(center, zoom);
+            
         } else if (settingsOption === 'bus-positioning') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
