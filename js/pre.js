@@ -36,7 +36,7 @@ async function fetchBusData() {
 
     const formData = '{"s0":"1268","sA":1}';
     // const formData = '{"s0":"1268","sA":1,"rA":15,"r0":"41231","r1":"4067","r2":"43711","r3":"43431","r4":"43440","r5":"43441","r6":"43398","r7":"43991","r8":"43990","r9":"43973","r10":"43397","r11":"4088","r12":"4063","r13":"4056","r14":"4098", "r15": "-1"}'
-    const url = `https://passiogo.com/mapGetData.php?getBuses=1&wTransloc=1&hideExcluded=0&showBusInOos=0&showBusesExcluded=1&json=${encodeURIComponent(formData)}`;
+    const url = `https://passiogo.com/mapGetData.php?getBuses=1&wTransloc=1&hideExcluded=0&showBusInOos=1&showBusesExcluded=1&json=${encodeURIComponent(formData)}`;
 
     try {
         const response = await fetch(url, {
