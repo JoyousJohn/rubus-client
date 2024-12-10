@@ -175,6 +175,10 @@ function updateTimeToStops(busIds) {
         const data = busData[busId]
         const stopId = data.stopId
 
+        if (!stopId) {
+            return;
+        }
+
         const busRoute = busData[busId].route
         const nextStop = getNextStopId(busRoute, stopId)
         busData[busId].next_stop = nextStop
