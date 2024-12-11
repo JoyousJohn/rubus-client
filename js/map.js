@@ -827,6 +827,31 @@ function popInfo(busId) {
                 .concat(routeStops.slice(0, nextStopIndex));
         }
 
+        if (busData[busId].at_stop) {
+
+            let stopId = busData[busId].stopId
+            if (Array.isArray(stopId)) {
+                stopId = stopId[0];
+            }
+
+            let stopName = stopsData[stopId].name
+            const campusName = campusShortNamesMappings[stopsData[stopId].campus]
+
+            $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
+                    <div class="next-stop-campus">${campusName}</div>
+                    <div class="next-stop-name flex">${stopName}</div>
+                </div>`).click(() => { 
+                    flyToStop(sortedStops[stopId]); 
+                }));
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
+                <div class="next-stop-eta">Here</div>
+            </div>`).click(() => { 
+                flyToStop(sortedStops[stopId]);  
+            }));
+
+        }
+
         for (let i = 0; i < sortedStops.length; i++) {
 
             let eta;
