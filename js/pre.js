@@ -173,7 +173,11 @@ function updateTimeToStops(busIds) {
     busIds.forEach(busId => {
         
         const data = busData[busId]
-        const stopId = data.stopId
+        let stopId = data.stopId
+
+        if (Array.isArray(stopId)) {
+            stopId = stopId[0]
+        }
 
         if (!stopId) {
             return;
@@ -182,6 +186,7 @@ function updateTimeToStops(busIds) {
         const busRoute = busData[busId].route
         const nextStop = getNextStopId(busRoute, stopId)
         busData[busId].next_stop = nextStop
+        // console.log(`next stop for bus ${busId} is ${nextStop}`)
 
         let routeStops = stopLists[busRoute]
         // console.log(routeStops.length)
