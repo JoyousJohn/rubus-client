@@ -622,7 +622,7 @@ const updateMarkerPosition = (busId) => {
         if (progress < 1) {
             animationFrames[busId] = requestAnimationFrame(animateMarker);
         } else {
-            console.log(`Updated bus ${busId} in ${(performance.now() - startTime) / 1000} seconds.`);
+            // console.log(`Updated bus ${busId} in ${(performance.now() - startTime) / 1000} seconds.`);
 
             delete animationFrames[busId];
         }

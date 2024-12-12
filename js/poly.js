@@ -58,11 +58,9 @@ async function setPolylines(activeRoutes) {
     if (fetchPromises.length === 0) return // no routes to populate
 
     Promise.all(fetchPromises).then(() => {
-        // Fit the map to show all polylines
         const group = new L.featureGroup(Object.values(polylines));
         polylineBounds = group.getBounds();
         map.fitBounds(polylineBounds, { padding: [10, 10] });
-        // addStopsToMap();
     });
 }
 
@@ -264,7 +262,7 @@ async function addStopsToMap() {
     }
 
     if (!activeStops.length) { // no buses running, show all stops
-        activeStops = Array.from({length: 22}, (_, i) => i + 1);
+        activeStops = Array.from({length: 25}, (_, i) => i + 1);
     }
 
     // console.log(activeStops)
@@ -296,6 +294,37 @@ async function addStopsToMap() {
     });
 
 }
+
+
+
+function removePreviouslyActiveStops() {
+    let newActiveStops = [];
+    for (const route in busesByRoutes) {
+        if (route in stopLists) {
+            newActiveStops = [...newActiveStops, ...stopLists[route]];
+        }
+    }
+    newActiveStops = [...new Set(newActiveStops)];
+
+    if (newActiveStops.length === 0) {
+        newActiveStops = Array.from({length: 25}, (_, i) => i + 1);
+    }
+
+    for (const stopId in busStopMarkers) {
+        if (!newActiveStops.includes(Number(stopId))) {
+            map.removeLayer(busStopMarkers[stopId]);
+            delete busStopMarkers[stopId];
+
+            if (popupStopId === stopId) {
+                hideInfoBoxes();
+                sourceStopId = null;
+            }
+
+        }
+    }
+}
+
+
 
 function routesServicing(stopId) {
     let routesServicing = []  
