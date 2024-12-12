@@ -306,9 +306,9 @@ function removePreviouslyActiveStops() {
     }
     newActiveStops = [...new Set(newActiveStops)];
 
-    if (newActiveStops.length === 0) {
-        newActiveStops = Array.from({length: 25}, (_, i) => i + 1);
-    }
+    // if (newActiveStops.length === 0) {
+    //     newActiveStops = Array.from({length: 25}, (_, i) => i + 1);
+    // }
 
     for (const stopId in busStopMarkers) {
         if (!newActiveStops.includes(Number(stopId))) {

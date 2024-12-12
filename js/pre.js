@@ -21,6 +21,20 @@ const routeMapping = {
     '37199': 'all',
     'ONWK1FS': 'on1',
     'ONWK2FS': 'on2',
+
+    // new route Ids
+    '36875': 'rexb',
+    '36874': 'lx',
+    '36873': 'h',
+    '31970': 'ee',
+    '31961': 'b',
+    '31651': 'f',
+    '31650': 'bhe',
+    '36877': 'rexl',
+    '31678': 'a',
+    '41540': 'c'
+
+
 }
 
 const excludedRouteMappings = {
@@ -92,7 +106,10 @@ async function fetchBusData() {
 
             busData[busId].rotation = parseFloat(bus.calculatedCourse) //+ 45
 
+            // let alphaRouteId = bus.routeId.replace(/[^a-zA-Z]/g, '')
+
             if (bus.routeId in routeMapping) {
+                console.log('yes')
                 busData[busId].route = routeMapping[bus.routeId]
             } else {
                 busData[busId].route = bus.route
@@ -150,6 +167,11 @@ async function fetchBusData() {
                 }
 
                 removePreviouslyActiveStops();
+
+                if (popupBusId === busId) {
+                    hideInfoBoxes();
+                    sourceBusId = null;
+                }
 
             }
 
@@ -346,8 +368,6 @@ $(document).ready(async function() {
         } else {
             const data = await response.json();
 
-            // console.table(data)
-
             for (const someId in data) {
     
                 const bus = data[someId]
@@ -375,8 +395,20 @@ $(document).ready(async function() {
                 if (bus.route in routeMapping) {
                     busData[busId].route = routeMapping[bus.route]
                 } else {
-                    busData[busId].route = bus.route
-                }            
+
+                    const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all']
+
+                    if (bus.route in routeMapping) {
+                        busData[busId].route = routeMapping[bus.route]
+                    }  else {
+                        let alphaRouteId = bus.route.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                        if (knownRoutes.includes(alphaRouteId)) {
+                            busData[busId].route = alphaRouteId;
+                        } else {
+                            busData[busId].route = bus.route
+                        }
+                    }
+                }           
                 activeRoutes.add(busData[busId].route)
 
                 busData[busId].capacity = bus.capacity

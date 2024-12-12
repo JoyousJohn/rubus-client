@@ -65,13 +65,18 @@ class BusWebSocketClient {
 
             if (!('route' in data)) { // sometimes none...
                 busData[busId].route = 'none'
-            } else if (data.route in routeMapping) {
-                busData[busId].route = routeMapping[data.route]
             } else {
-                // alert('a')
-                busData[busId].route = data.route
+
+                let alphaRouteId = bus.routeId.replace(/[^a-zA-Z]/g, '')
+
+                if (alphaRouteId in routeMapping) {
+                    busData[busId].route = routeMapping[alphaRouteId]
+                }  else {
+                    busData[busId].route = data.route
+                }
             }
         }
+
 
         busData[busId].lat = data.latitude
         busData[busId].long = data.longitude
