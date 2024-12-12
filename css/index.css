@@ -57,7 +57,7 @@ html, body {
     color: white;
     border-radius: 0.75rem;
     margin: 3rem;
-    padding: 1.5rem;
+    padding: 1rem;
     /* font-weight: bold; */
     border: 1px solid rgb(80, 80, 230);;
     background-color: rgb(144, 136, 234);
@@ -72,7 +72,7 @@ html, body {
 .theme-modal-confirm {
     background-color: rgb(64, 52, 205);
     margin: 3rem;
-    padding: 1.5rem;
+    padding: 1rem;
     font-size: 2rem;
     color: white;
     border-radius: 0.75rem;
