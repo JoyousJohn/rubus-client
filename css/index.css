@@ -89,48 +89,6 @@ html, body {
     background-color: var(--theme-bg);
 }
 
-.map-zoom-scroll-wrapper {
-    position: fixed;
-    right: 1rem;
-    top: 0;
-    z-index: 400;
-    height: 100%;
-    display: flex;
-    align-items: center;
-}
-
-.zoom-scroll-bar {
-    background-color: gray;
-    height: 80%;
-    width: 15px;
-    opacity: 0.5;
-    cursor: pointer;
-}
-
-.zoom-dot {
-    width: 15px;
-    height: 15px;
-    background-color: white;
-    border: 2px solid gray;
-    border-radius: 50%;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    cursor: grab;
-    display: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.zoom-dot.active {
-    display: block;
-    cursor: grabbing;
-}
-
-.zoom-scroll-bar:hover .zoom-dot {
-    display: block;
-}
-
 .bus-icon-outer {
     /* This class can be used to style the marker */
     background-color: red; /* Example color */

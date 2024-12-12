@@ -136,9 +136,6 @@ $(document).ready(function() {
         $('.panout').css('color', '#5b5b5b')
     });
 
-    map.on('zoomend', updateDotPosition);
-    updateDotPosition();
-
     isDesktop = $(window).width() > 992;
 
     $(window).resize(function() {
@@ -640,17 +637,6 @@ const updateMarkerPosition = (busId) => {
 };
 
 
-// Add this function to handle map zooming and panning
-const handleMapInteraction = () => {
-    for (const busId in busMarkers) {
-        const marker = busMarkers[busId];
-        const markerElement = marker.getElement();
-        const loc = {lat: busData[busId].lat, long: busData[busId].long};
-        const pixel = map.latLngToLayerPoint([loc.lat, loc.long]);
-        markerElement.style.transform = `translate(${pixel.x}px, ${pixel.y}px)`;
-    }
-};
-
 let selectedMarkerId
 let pauseUpdateMarkerPositions = false
 
@@ -1064,9 +1050,6 @@ function flyToBus(busId) {
     setTimeout(checkForPopupAndAdjust, 50);
 }
 
-$('.zoom-scroll-bar').click(function() {
-
-})
 
 let overtimeInterval;
 let overtimeBusId;
