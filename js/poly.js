@@ -133,7 +133,12 @@ function updateStopBuses(stopId) {
         // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);
         busesByRoutes[servicedRoute].forEach(busId => {
 
-            if (busData[busId]['at_stop'] && busData[busId]['stopId'] === stopId) {
+            let busStopId = busData[busId]['stopId']
+            if (Array.isArray(busStopId)) {
+                busStopId = busStopId[0];
+            }
+
+            if (busData[busId]['at_stop'] && busStopId === stopId) {
                 servicingBuses[busId] = {
                     'route': servicedRoute,
                     'eta': 0,
