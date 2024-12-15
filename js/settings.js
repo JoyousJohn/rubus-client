@@ -144,6 +144,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-show-bus-path':
             settings['toggle-show-bus-path'] = isChecked;
+
+            if (!isChecked) {
+                for (const busId in midpointCircle) {
+                    midpointCircle[busId].removeFrom(map)
+                }
+            }
+
             break;
 
         default:
