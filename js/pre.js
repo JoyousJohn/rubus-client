@@ -421,7 +421,7 @@ $(document).ready(async function() {
             }
 
             // console.log(activeRoutes)
-            setPolylines(activeRoutes)
+            // setPolylines(activeRoutes)
 
         }
     }
