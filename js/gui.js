@@ -1022,7 +1022,8 @@ function findNearestStop(fly) {
         let thisClosestStopId = null;
         let closestDistance = Infinity;
 
-        for (const stopId in stopsData) {
+        const stopIds = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
+        for (const stopId of stopIds) {
             const stop = stopsData[stopId];
             const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
 

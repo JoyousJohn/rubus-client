@@ -109,7 +109,6 @@ async function fetchBusData() {
             // let alphaRouteId = bus.routeId.replace(/[^a-zA-Z]/g, '')
 
             if (bus.routeId in routeMapping) {
-                console.log('yes')
                 busData[busId].route = routeMapping[bus.routeId]
             } else {
                 busData[busId].route = bus.route
