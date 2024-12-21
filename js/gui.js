@@ -370,13 +370,16 @@ function selectedRoute(route) {
     $('.route-stops-grid').empty();
 
     let previousStopId = null;
-    stopLists[route].forEach(stopId => {
+    stopLists[route].forEach((stopId, index) => {
 
         $('.route-stops-grid').append('<div class="next-stop-circle"></div>')
         const $stopElm = $(`<div class="flex flex-col">
             <div class="route-stop-name">${stopsData[stopId].name}</div>
             <div class="route-buses-for-stop"></div>
         </div>`)
+
+        let prevStopId;
+        let i = 0;
 
         // Sort bus IDs based on their ETA
         busesByRoutes[route]
@@ -398,15 +401,24 @@ function selectedRoute(route) {
             })
             .forEach(busId => {
 
-                const thisStopIndex = stopLists[route].indexOf(stopId);
+                let thisStopIndex = index;
+                // console.log(index);
                 let busIndex = -1;
                 
-                if ((route === 'wknd1' || route === 'all') && busData[busId].prevStopId) {
+                if ((route === 'wknd1' || route === 'all') && busData[busId].stopId == 3) {
                     // For these routes, find where current stop follows the previous stop in the route
-                    for (let i = 1; i < stopLists[route].length; i++) {
-                        if (stopLists[route][i] === busData[busId].stopId && 
-                            stopLists[route][i-1] === busData[busId].prevStopId) {
-                            busIndex = i;
+                    
+                    for (let j = 1; j < stopLists[route].length; j++) {
+
+                        // console.log('stopLists[route][i]: ', stopLists[route][j]);
+                        // console.log('busData[busId].stopId: ', busData[busId].stopId);
+                        // console.log('busData[busId].prevStopId: ', busData[busId].prevStopId);
+                        // console.log('previousStopId: ', previousStopId);
+                        
+                        if (
+                            stopLists[route][j] === busData[busId].stopId &&
+                            stopLists[route][j-1] === busData[busId].prevStopId) {
+                            busIndex = j;
                             break;
                         }
                     }
@@ -414,6 +426,7 @@ function selectedRoute(route) {
                     if (busIndex === -1) {
                         busIndex = stopLists[route].indexOf(busData[busId].stopId);
                     }
+
                 } else {
                     busIndex = stopLists[route].indexOf(busData[busId].stopId);
                 }
@@ -445,6 +458,7 @@ function selectedRoute(route) {
                         $gridElm.append(`<div class="rbfs-bn">${busData[busId].busName}</div>`);
                         if ((route === 'wknd1' || route === 'all') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
                             // Use the previous stop to determine which 'via' path to use
+                            // console.table(busETAs[busId][stopId]['via'])
                             eta = busETAs[busId][stopId]['via'][previousStopId];
                         } else {
                             eta = busETAs[busId][stopId];
@@ -456,10 +470,12 @@ function selectedRoute(route) {
 
                         let stopsAwayText = '';
 
-                        if (stopsAway === 0 && !(((route === 'wknd1' || route === 'all') 
-                            && stopId === 3 
-                            && previousStopId  == busData[busId].stopId[1])))  {
-                            stopsAwayText = 'En route';
+                        // if (stopsAway === 0 && !(((route === 'wknd1' || route === 'all') 
+                        //     && stopId === 3 
+                        //     && previousStopId  == busData[busId].stopId[1])))  {
+                        //     stopsAwayText = 'En route';
+                        if (stopsAway === 0) {
+                            stopsAwayText = "En route";
                         } else if (stopsAway === 1) {
                             stopsAwayText = stopsAway + ' stop away';
                         } else {
@@ -469,6 +485,10 @@ function selectedRoute(route) {
                         $gridElm.append(`<div class="align-right">${stopsAwayText}</div>`);
                     }
                 }
+
+                prevStopId = stopId;
+                i++;
+
             });
 
         $('.route-stops-grid').append($stopElm);
