@@ -178,6 +178,7 @@ function hideInfoBoxes() {
     if (selectedMarkerId && busMarkers[selectedMarkerId]) {
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
+        selectedMarkerId = null;
     }
 
     if ($('.buses-panel-wrapper').is(':visible')) {

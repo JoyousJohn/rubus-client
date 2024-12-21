@@ -296,6 +296,8 @@ function toggleRoute(route) {
 
     }
 
+    hideInfoBoxes();
+
     toggleRouteSelectors(route)
 
     function hideStopsExcept(excludedRoute) {
