@@ -732,7 +732,7 @@ const colorMappings = {
     'c': 'MediumVioletRed',
     'all': 'MediumSpringGreen',
     'winter1': 'SpringGreen',
-    'winter2': 'red'
+    'winter2': 'crimson'
 }
 
 const campusShortNamesMappings = {
