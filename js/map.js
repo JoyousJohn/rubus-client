@@ -708,7 +708,9 @@ const campusMappings = {
     'none': 'Unknown',
     'c': 'Busch Commuter',
     'rexl': 'Cook/Doug/Livi',
-    'rexb': 'Cook/Busch'
+    'rexb': 'Cook/Busch',
+    'winter1': 'Winter 1',
+    'winter2': 'Winter 2'
 } 
 
 const colorMappings = {
@@ -728,7 +730,9 @@ const colorMappings = {
     'ftbl': 'gray',
     'none': 'lightgray',
     'c': 'MediumVioletRed',
-    'all': 'MediumSpringGreen'
+    'all': 'MediumSpringGreen',
+    'winter1': 'SpringGreen',
+    'winter2': 'red'
 }
 
 const campusShortNamesMappings = {

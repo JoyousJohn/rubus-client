@@ -22,6 +22,9 @@ const routeMapping = {
     'ONWK1FS': 'on1',
     'ONWK2FS': 'on2',
 
+    '46583': 'winter1',
+    '46584': 'winter2',
+
     // new route Ids
     '36875': 'rexb',
     '36874': 'lx',
@@ -395,7 +398,7 @@ $(document).ready(async function() {
                     busData[busId].route = routeMapping[bus.route]
                 } else {
 
-                    const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all']
+                    const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2']
 
                     if (bus.route in routeMapping) {
                         busData[busId].route = routeMapping[bus.route]
