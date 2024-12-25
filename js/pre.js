@@ -224,7 +224,7 @@ function updateTimeToStops(busIds) {
         }
 
         let via = null;
-        if ((busRoute === 'wknd1' || busRoute === 'all') && nextStop === 3) { // special case
+        if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1') && nextStop === 3) { // special case
 
             if (!busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
                 delete busETAs[busId]
@@ -331,7 +331,7 @@ function updateTimeToStops(busIds) {
 
                 // console.log(thisStopId)
 
-                if ((busRoute === 'wknd1' || busRoute === 'all') && thisStopId === 3) { // special case
+                if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1') && thisStopId === 3) { // special case
                     if (!busETAs[busId][thisStopId]) busETAs[busId][thisStopId] = {'via': {}}
                     busETAs[busId][thisStopId]['via'][prevStopId] = Math.round(currentETA)
                 } else {

@@ -148,7 +148,7 @@ function updateStopBuses(stopId) {
             else if (busETAs[busId]) {
 
                 let eta;
-                if ((servicedRoute === 'wknd1' || servicedRoute === 'all') && stopId === 3) { // special case
+                if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1') && stopId === 3) { // special case
                     eta = Math.min(...Object.values(busETAs[busId][3]['via']));
                 } else {
                     eta = busETAs[busId][stopId]
