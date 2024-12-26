@@ -536,13 +536,22 @@ $(document).ready(async function() {
             }
 
             if (popupBusId) {
-                const formattedTime = new Date(joined_service[popupBusId]).toLocaleTimeString('en-US', {
+                const serviceDate = new Date(joined_service[popupBusId]);
+                const today = new Date();
+                const isToday = serviceDate.getDate() === today.getDate() && 
+                                serviceDate.getMonth() === today.getMonth() &&
+                                serviceDate.getFullYear() === today.getFullYear();
+
+                const formattedTime = serviceDate.toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
                     second: undefined,
                     hour12: true
                 });
-                $('.bus-joined-service').text('Joined service at ' + formattedTime);
+
+                const displayTime = isToday ? formattedTime : 
+                    `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
+                $('.bus-joined-service').text('Joined service at ' + displayTime);
                 $('.info-next-stops').show();
             }
 
