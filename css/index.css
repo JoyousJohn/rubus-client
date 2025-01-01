@@ -93,6 +93,7 @@ html, body {
     position: absolute;
     inset: 0;
     z-index: 401;
+    pointer-events: none;
 }
 
 .bus-icon-outer {
