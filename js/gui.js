@@ -601,6 +601,8 @@ let ridershipChart;
 
 async function makeRidershipChart() {
 
+    // const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
+
     const ctx = document.getElementById('ridership-chart').getContext('2d');
     ridershipChart = new Chart(ctx, {
         type: 'line',
@@ -655,6 +657,7 @@ async function makeRidershipChart() {
                     ticks: {
                         autoSkip: false,
                         maxRotation: 45,
+                        // color: themeColor,
                         callback: function(val, index) {
                             const time = this.getLabelForValue(val);
                             const hour = parseInt(time.split(':')[0]); 
