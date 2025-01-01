@@ -142,7 +142,7 @@ $(document).ready(function() {
         isDesktop = $(window).width() > 992;
     });
 
-    const fireworks = new Fireworks.default($('#map')[0], {
+    const fireworks = new Fireworks.default($('#fireworks')[0], {
         traceSpeed: 1,
         traceLength: 3,
         opacity: 0.8,
@@ -169,8 +169,8 @@ $(document).ready(function() {
                 max: 0.9
             }
         }
-    })
-    fireworks.start()
+    });
+    fireworks.start();
 
 });
 

@@ -89,6 +89,12 @@ html, body {
     background-color: var(--theme-bg);
 }
 
+#fireworks {
+    position: absolute;
+    inset: 0;
+    z-index: 401;
+}
+
 .bus-icon-outer {
     /* This class can be used to style the marker */
     background-color: red; /* Example color */
@@ -115,7 +121,7 @@ html, body {
     position: fixed;
     /* left: 0; */
     /* right: 0; */
-    z-index: 401;
+    z-index: 402;
 }
 
 .info-popup-wrapper {
@@ -557,7 +563,7 @@ html, body {
     flex-direction: column;
     display: flex;
     bottom: 0;
-    z-index: 401;
+    z-index: 402;
     /* padding: 0.5rem; */
     padding-bottom: 0;
     /* row-gap: 1rem; */
@@ -687,7 +693,7 @@ html, body {
     display: none;
     font-family: var(--font-family);
     padding: 2rem;
-    z-index: 401;
+    z-index: 402;
     position: fixed;
     inset: 0;
     overflow-y: scroll;
@@ -744,7 +750,7 @@ html, body {
     font-size: 2rem;
     border-radius: 50%;
     margin: 1rem;
-    z-index: 401;
+    z-index: 402;
 }
 
 .buses-close {
