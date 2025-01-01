@@ -142,6 +142,36 @@ $(document).ready(function() {
         isDesktop = $(window).width() > 992;
     });
 
+    const fireworks = new Fireworks.default($('#map')[0], {
+        traceSpeed: 1,
+        traceLength: 3,
+        opacity: 0.8,
+        acceleration: 1.01,
+        delay: {
+            min: 200,
+            max: 500
+        },
+        decay: {
+            min: 0.007,
+            max: 0.015
+        },
+        rocketsPoint: {
+            min: 10,
+            max: 90
+        },
+        lineWidth: {
+        //   explosion: {
+        //     min: 1,
+        //     max: 3
+        //   },
+            trace: {
+                min: 0.5,
+                max: 0.9
+            }
+        }
+    })
+    fireworks.start()
+
 });
 
 $(document).on('keydown', function(e) {
