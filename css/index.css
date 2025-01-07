@@ -39,7 +39,7 @@ html, body {
 .theme-modal {
     position: fixed;
     inset: 0;
-    z-index: 402;
+    z-index: 403;
     background-color: var(--theme-bg);
     color: var(--theme-color);
     font-family: var(--font-family);
