@@ -38,7 +38,7 @@ html, body {
 
 .theme-modal {
     position: fixed;
-    inset: 0;
+    /* inset: 0; */
     z-index: 403;
     background-color: var(--theme-bg);
     color: var(--theme-color);
@@ -56,7 +56,7 @@ html, body {
     font-size: 2rem;
     color: white;
     border-radius: 0.75rem;
-    margin: 3rem;
+    margin: 0 3rem;
     padding: 1rem;
     /* font-weight: bold; */
     border: 1px solid rgb(80, 80, 230);;
@@ -70,18 +70,25 @@ html, body {
 }
 
 .theme-modal-confirm {
-    background-color: rgb(64, 52, 205);
+    background-color: rgb(53, 101, 248);
     margin: 3rem;
-    padding: 1rem;
+    padding: 1rem 2rem;
     font-size: 2rem;
     color: white;
-    border-radius: 0.75rem;
+    border-radius: 3rem;
+    font-weight: 500;
+    margin: 1.5rem;
     /* border: 1px solid rgb(119, 109, 230); */
-    border: 1px solid rgb(80, 80, 230);
-    position: fixed;
+    /* border: 1px solid rgb(80, 80, 230); */
+    /* position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: 0; */
+    align-self: end;
+}
+
+.leaflet-control-attribution {
+    display: none;
 }
 
 #map {
