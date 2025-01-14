@@ -142,7 +142,9 @@ $(document).ready(function() {
         isDesktop = $(window).width() > 992;
     });
     
-    launchFireworks(12);
+    if (!$('.theme-modal').is(':visible')) {
+        launchFireworks(12);
+    }
 
 });
 
