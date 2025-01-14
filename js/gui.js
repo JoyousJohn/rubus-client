@@ -1217,6 +1217,8 @@ function changeThemeViaModal(newTheme) {
             changeMapStyle(selectedModalTheme);
         }, 0);
 
+        launchFireworks(12)
+
     } else {
         $('.theme-modal-auto').removeClass('theme-modal-selected');
         $(`img[theme-option="${newTheme}"]`).addClass('theme-modal-selected');

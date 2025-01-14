@@ -141,38 +141,47 @@ $(document).ready(function() {
     $(window).resize(function() {
         isDesktop = $(window).width() > 992;
     });
-
-    const fireworks = new Fireworks.default($('#fireworks')[0], {
-        traceSpeed: 1,
-        traceLength: 3,
-        opacity: 0.8,
-        acceleration: 1.01,
-        delay: {
-            min: 200,
-            max: 500
-        },
-        decay: {
-            min: 0.007,
-            max: 0.015
-        },
-        rocketsPoint: {
-            min: 10,
-            max: 90
-        },
-        lineWidth: {
-        //   explosion: {
-        //     min: 1,
-        //     max: 3
-        //   },
-            trace: {
-                min: 0.5,
-                max: 0.9
-            }
-        }
-    });
-    fireworks.start();
+    
+    launchFireworks(12);
 
 });
+
+const fireworks = new Fireworks.default($('#fireworks')[0], {
+    traceSpeed: 2,
+    traceLength: 3,
+    opacity: 0.8,
+    acceleration: 1.02,
+    delay: {
+        min: 50,
+        max: 50
+    },
+    decay: {
+        min: 0.007,
+        max: 0.015
+    },
+    rocketsPoint: {
+        min: 10,
+        max: 90
+    },
+    lineWidth: {
+        trace: {
+            min: 0.5,
+            max: 0.9
+        }
+    },
+});
+
+function launchFireworks(totalFireworks, currentCount = 0) {
+    if (currentCount >= totalFireworks) return;
+
+    // Random delay between 20 and 250ms
+    const randomDelay = Math.floor(Math.random() * (250 - 20 + 1)) + 20;
+
+    setTimeout(() => {
+        fireworks.launch(1);
+        launchFireworks(totalFireworks, currentCount + 1);
+    }, randomDelay);
+}
 
 $(document).on('keydown', function(e) {
     if (e.key === 'Escape') { hideInfoBoxes(); }
