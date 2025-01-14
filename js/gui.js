@@ -1072,6 +1072,11 @@ function findNearestStop(fly) {
             console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
             closestStopId = thisClosestStopId
 
+            if (closestDistance > 14) {
+                $('.centerme-wrapper').hide();
+                return;
+            }
+
             const marker = L.marker(userPosition, 
                 { icon: L.icon({
                     iconUrl: 'img/location_marker.png',
