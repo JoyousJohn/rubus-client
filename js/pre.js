@@ -398,7 +398,7 @@ $(document).ready(async function() {
                     busData[busId].route = routeMapping[bus.route]
                 } else {
 
-                    const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2']
+                    const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
 
                     if (bus.route in routeMapping) {
                         busData[busId].route = routeMapping[bus.route]
