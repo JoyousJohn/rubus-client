@@ -386,7 +386,7 @@ function selectedRoute(route) {
             .sort((a, b) => {
                 const getETA = (busId) => {
                     
-                    if ((route === 'wknd1' || route === 'all' || route === 'winter1') && stopId === 3 && busETAs[busId] && busETAs[busId][stopId] && previousStopId) {
+                    if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && stopId === 3 && busETAs[busId] && busETAs[busId][stopId] && previousStopId) {
                         if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) {
                             return 0;
                         }
@@ -405,7 +405,7 @@ function selectedRoute(route) {
                 // console.log(index);
                 let busIndex = -1;
                 
-                if ((route === 'wknd1' || route === 'all' || route === 'winter1') && busData[busId].stopId == 3) {
+                if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && busData[busId].stopId == 3) {
                     // For these routes, find where current stop follows the previous stop in the route
                     
                     for (let j = 1; j < stopLists[route].length; j++) {
@@ -456,7 +456,7 @@ function selectedRoute(route) {
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                     } else {
                         $gridElm.append(`<div class="rbfs-bn">${busData[busId].busName}</div>`);
-                        if ((route === 'wknd1' || route === 'all' || route === 'winter1') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
+                        if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
                             // Use the previous stop to determine which 'via' path to use
                             // console.table(busETAs[busId][stopId]['via'])
                             eta = busETAs[busId][stopId]['via'][previousStopId];
