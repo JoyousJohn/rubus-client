@@ -13,14 +13,12 @@ const routeMapping = {
     '43973': 'b',
     '45773': 'f', // used to be 43974
     '43990': 'ftbl', // 'Football Before Kickoff'
-    'ONWK1FS': 'on1',
-    'ONWK2FS': 'on2',
     'Football Service Transition': 'ftbl',
     '43991': 'ftbl',
     '4067': 'c',
     '37199': 'all',
-    'ONWK1FS': 'on1',
-    'ONWK2FS': 'on2',
+    'ONWK1T': 'on1',
+    'ONWK2T': 'on2',
 
     '46583': 'winter1',
     '46584': 'winter2',
