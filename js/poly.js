@@ -357,62 +357,93 @@ function makeBusesByRoutes() {
 }
 
 function progressToNextStop(busId) {
-
-    // console.log("Getting progressToNextStop(" + busId + ")")
-
     if (!busData[busId]['next_stop']) {
-        // console.log(`busId ${busId} doesn't have a .next_stop attribute.`);
-        // console.log(busData[busId]['next_stop'])
-        return 0
+        return 0;
     }
 
     const nextStopId = String(busData[busId]['next_stop']);
-
     if (!percentageDistances[nextStopId]) {
-        // console.log("nextStopId " + nextStopId + " not in percentageDistances for busId:", busId);
-        return 0
+        return 0;
     }
 
     const prevStopId = String(busData[busId]['stopId']);
-
     if (!percentageDistances[nextStopId]['from'][prevStopId]) {
-        // console.log("prevStopId " + prevStopId + " not in percentageDistances.nextStopId for busId:", busId);
-        return 0
+        return 0;
     }
 
+    const nextStopDistances = percentageDistances[nextStopId]['from'][prevStopId]['geometry']['coordinates'];
+    const percentages = percentageDistances[nextStopId]['from'][prevStopId]['properties']['percentages'];
 
-    // console.log(percentageDistances[nextStopId]['from'])
+    const busLat = busData[busId]['lat'];
+    const busLng = busData[busId]['long'];
 
-    const nextStopDistances = percentageDistances[nextStopId]['from'][prevStopId]['geometry']['coordinates']
-    let minDistance = Infinity
-    let minIndex = -1
-    for (let i = nextStopDistances.length - 1; i >= 0; i--) {
-        const busLat = busData[busId]['lat']
-        const busLng = busData[busId]['long']
-        const nextStopLat = nextStopDistances[i][1]
-        const nextStopLng = nextStopDistances[i][0]
+    // Step 1: Find the closest point
+    let closestIndex = -1;
+    let minDistance = Infinity;
+
+    for (let i = 0; i < nextStopDistances.length; i++) {
+        const pointLat = nextStopDistances[i][1];
+        const pointLng = nextStopDistances[i][0];
         const dist = Math.sqrt(
-            Math.pow(busLat - nextStopLat, 2) + 
-            Math.pow(busLng - nextStopLng, 2)
-        )
-        // console.log("busLat:", busLat)
-        // console.log("busLng:", busLng)
-        // console.log("nextStopLat:", nextStopLat)
-        // console.log("nextStopLng:", nextStopLng)
-        // console.log(dist)
-        // if (dist > minDistance) { // wish i could do this but messes up when curved
-        //     break
-        // }
+            Math.pow(busLat - pointLat, 2) +
+            Math.pow(busLng - pointLng, 2)
+        );
+
         if (dist < minDistance) {
-            minDistance = dist
-            minIndex = i
+            minDistance = dist;
+            closestIndex = i;
         }
     }
-    
-    const percentage = percentageDistances[nextStopId]['from'][prevStopId]['properties']['percentages'][minIndex]
 
-    // console.log(percentage)
+    // Step 2: Determine if the closest point is previous or future
+    let previousPointIndex, nextPointIndex;
 
-    return percentage
+    if (closestIndex === 0) {
+        previousPointIndex = 0;
+        nextPointIndex = 1;
+    } else if (closestIndex === nextStopDistances.length - 1) {
+        previousPointIndex = nextStopDistances.length - 2;
+        nextPointIndex = nextStopDistances.length - 1;
+    } else {
+        const previousPoint = nextStopDistances[closestIndex - 1];
+        const nextPoint = nextStopDistances[closestIndex + 1];
 
+        const distToPrevious = Math.sqrt(
+            Math.pow(busLat - previousPoint[1], 2) +
+            Math.pow(busLng - previousPoint[0], 2)
+        );
+
+        const distToNext = Math.sqrt(
+            Math.pow(busLat - nextPoint[1], 2) +
+            Math.pow(busLng - nextPoint[0], 2)
+        );
+
+        if (distToPrevious < distToNext) {
+            previousPointIndex = closestIndex - 1;
+            nextPointIndex = closestIndex;
+        } else {
+            previousPointIndex = closestIndex;
+            nextPointIndex = closestIndex + 1;
+        }
+    }
+
+    const previousPoint = nextStopDistances[previousPointIndex];
+    const nextPoint = nextStopDistances[nextPointIndex];
+    const previousPercentage = percentages[previousPointIndex];
+    const nextPercentage = percentages[nextPointIndex];
+
+    const distanceBetweenPoints = Math.sqrt(
+        Math.pow(nextPoint[1] - previousPoint[1], 2) +
+        Math.pow(nextPoint[0] - previousPoint[0], 2)
+    );
+
+    const distanceFromBusToPrevious = Math.sqrt(
+        Math.pow(busLat - previousPoint[1], 2) +
+        Math.pow(busLng - previousPoint[0], 2)
+    );
+
+    const progressBetweenPoints = distanceFromBusToPrevious / distanceBetweenPoints;
+    const interpolatedPercentage = previousPercentage + (nextPercentage - previousPercentage) * progressBetweenPoints;
+
+    return interpolatedPercentage;
 }
