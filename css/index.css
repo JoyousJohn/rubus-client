@@ -652,6 +652,13 @@ html, body {
     /* pointer-events: none; */
 }
 
+/* iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    .route-selector {
+        margin-bottom: 1rem;
+    }
+}
+
 .route-selector:last-child {
     margin-right: 1rem;
 }
