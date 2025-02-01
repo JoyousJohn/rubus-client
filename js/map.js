@@ -146,6 +146,10 @@ $(document).ready(function() {
         launchFireworks(12);
     }
 
+    if (window.location.hostname.includes('.dev')) {
+        $('.dev-build-popup').fadeIn().delay(7000).slideUp();
+    }
+
 });
 
 const fireworks = new Fireworks.default($('#fireworks')[0], {

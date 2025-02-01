@@ -93,3 +93,16 @@
     margin: 0 1.5rem;
     align-self: end;
 }
+
+.dev-build-popup {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #dc9716;
+    padding: 0.5rem 1.5rem 0.5rem 1.2rem;
+    border-radius: 15px;
+    color: white;
+    z-index: 401;
+    font-size: 1.5rem;
+}
