@@ -1,0 +1,88 @@
+.theme-slider {
+    display: flex;
+    background: var(--theme-line-bg);
+    padding: 0.3rem;
+    border-radius: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.theme-option {
+    flex: 1;
+    text-align: center;
+    padding: 0.8rem;
+    border-radius: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.2rem;
+}
+
+.theme-option.selected {
+    background: var(--theme-color);
+    color: var(--theme-bg);
+}
+
+.theme-preview {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 2vh 3rem;
+}
+
+.theme-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border: 1px solid var(--theme-extra);
+}
+
+.theme-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
+    font-family: var(--font-family);
+    padding: 3vh 0 1.5rem;
+    box-sizing: border-box;
+    z-index: 403;
+    overflow: hidden;
+}
+
+.theme-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.theme-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+
+.theme-controls {
+    /* controls take natural height */
+    padding: 0 3rem;
+}
+
+
+.theme-modal-confirm {
+    background-color: rgb(53, 101, 248);
+    padding: 1rem 2rem;
+    font-size: 2rem;
+    color: white;
+    border-radius: 3rem;
+    font-weight: 500;
+    margin: 0 1.5rem;
+    align-self: end;
+}

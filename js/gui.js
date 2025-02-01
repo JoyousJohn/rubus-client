@@ -1188,50 +1188,40 @@ async function getBuildNumber() {
 
 
 
-let selectedModalTheme = 'auto';
+let selectedTheme = 'auto';
 
-function changeThemeViaModal(newTheme) {
-
-    $('.theme-modal-selected').removeClass('theme-modal-selected')
-
-    if (newTheme === 'auto') {
-        const currentHour = new Date().getHours();
-        newTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
-        selectedModalTheme = newTheme;
-        $('.theme-modal-auto').addClass('theme-modal-selected');
-        settings['theme'] = 'auto'
-        localStorage.setItem('settings', JSON.stringify(settings))
-        
-    } else if (newTheme === 'confirm') {
+function selectTheme(theme) {
+    if (theme === 'confirm') {
         $('.theme-modal').fadeOut();
-        $(`div[settings-option="theme"]`).removeClass('settings-selected') // hack, I ain't refactoring this anytime soon
-        $(`div[theme-option="${selectedModalTheme}"]`).addClass('settings-selected')
-
-        setDefaultSettings(); // must do default settings first
-
-        settings['theme'] = selectedModalTheme;
+        setDefaultSettings();
+        settings['theme'] = selectedTheme;
         localStorage.setItem('settings', JSON.stringify(settings));
 
-        if (selectedModalTheme === 'auto') {
+        let activeTheme = selectedTheme;
+        if (selectedTheme === 'auto') {
             const currentHour = new Date().getHours();
-            selectedModalTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
+            activeTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
-        console.log("User's first theme selection is: " + selectedModalTheme)
-        setTimeout(() => {
-            document.documentElement.setAttribute('theme', selectedModalTheme);
-            changeMapStyle(selectedModalTheme);
-        }, 0);
 
-        launchFireworks(12)
-
-    } else {
-        $('.theme-modal-auto').removeClass('theme-modal-selected');
-        $(`img[theme-option="${newTheme}"]`).addClass('theme-modal-selected');
-        selectedModalTheme = newTheme;
-        settings['theme'] = selectedModalTheme;
-        localStorage.setItem('settings', JSON.stringify(settings));
+        document.documentElement.setAttribute('theme', activeTheme);
+        changeMapStyle(activeTheme);
+        launchFireworks(12);
+        return;
     }
 
-    changeMapStyle(newTheme);
-
+    // Update slider selection
+    document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    document.querySelector(`[data-theme="${theme}"]`).classList.add('selected');
+    
+    selectedTheme = theme;
+    let previewTheme = theme;
+    if (theme === 'auto') {
+        const currentHour = new Date().getHours();
+        previewTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
+    }
+    document.getElementById('theme-preview-img').src = `img/theme-select/${previewTheme}.png`;
+    
+    changeMapStyle(previewTheme);
 }

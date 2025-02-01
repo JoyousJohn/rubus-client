@@ -32,6 +32,7 @@
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/tailwind.css">
     <link rel="stylesheet" type="text/css" href="css/mobile.css">
+    <link rel="stylesheet" type="text/css" href="css/modal.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
 
@@ -41,56 +42,70 @@
     <script src="https://kit.fontawesome.com/9fec56898e.js" crossorigin="anonymous"></script>
     <link href="https://fonts.cdnfonts.com/css/pp-neue-montreal" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                
+        
+    <script>
+        (function() {
+            // Get stored settings, default to auto
+            let settings = localStorage.getItem('settings');
+            let selectedTheme = 'auto';
+      
+            if (settings) {
+                const parsed = JSON.parse(settings);
+                selectedTheme = parsed['theme'] || 'auto';
+            }
+      
+            let computedTheme = selectedTheme;
+            if (selectedTheme === 'auto') {
+                const currentHour = new Date().getHours();
+                computedTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
+            }
+      
+            document.documentElement.setAttribute('data-selected-theme', selectedTheme);
+            document.documentElement.setAttribute('theme', computedTheme);
+        })();
+    </script>
+
 </head>
 <body>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            let settings = localStorage.getItem('settings');
-            let theme;
-
-            if (settings) {
-                // Parse settings only if it exists
-                const parsedSettings = JSON.parse(settings);
-                theme = parsedSettings['theme'] || 'auto';
-            } else {
-                // If settings is null, set theme to 'auto'
-                theme = 'auto';
-            }
-
-            if (theme === 'auto') {
-                const currentHour = new Date().getHours();
-                theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
-            }
-
-            document.documentElement.setAttribute('theme', theme);
+            const selectedTheme = document.documentElement.getAttribute('data-selected-theme');
+            document.querySelectorAll('.theme-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.querySelector(`[data-theme="${selectedTheme}"]`).classList.add('selected');
         });
     </script>
 
     <div class="theme-modal flex flex-col justify-between h-100vh center">
-
-        <div>
-            <img class="theme-img pt-2rem" src="img/rubus-favicon-xmas.png" style="width: 20%;">
+        <div class="theme-header">
+            <img class="theme-img" src="img/rubus-favicon-xmas.png" style="width: 20%;">
         </div>
-
-        <div class="flex flex-col">
-            <div class="text-2p3rem">Pick your preferred theme</div>
-            <div class="text-1p7rem" style="color: var(--theme-extra);">You can change this later.</div>
-        
-            <div class="grid grid-cols-2 gap-x-2rem mx-3rem my-2rem">
-                <img class="br-1rem" src="img/theme-select/light.png" theme-option="light" onclick="changeThemeViaModal('light')">
-                <img class="br-1rem" src="img/theme-select/dark.png" theme-option="dark" onclick="changeThemeViaModal('dark')">
+        <div class="theme-body flex flex-col" style="flex:1; overflow:hidden;">
+            <div class="theme-controls">
+                <div class="text-2p3rem">Pick your preferred theme</div>
+                <div class="text-1p7rem" style="color: var(--theme-extra);">You can change this later.</div>
+                <div class="theme-slider mx-3rem my-2rem">
+                    <div class="theme-option" data-theme="light" onclick="selectTheme('light')">Light</div>
+                    <div class="theme-option selected" data-theme="auto" onclick="selectTheme('auto')">Auto</div>
+                    <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')">Dark</div>
+                </div>
             </div>
-            <div class="theme-modal-auto theme-modal-auto-mobile theme-modal-selected pointer" onclick="changeThemeViaModal('auto')">Auto</div>
-            <!-- <div class="theme-modal-confirm theme-modal-confirm-mobile pointer none" onclick="changeThemeViaModal('confirm')">Confirm</div> -->
+            <div class="theme-preview mx-3rem" style="flex:1; display:flex; align-items:center; justify-content:center;">
+                <img class="br-1rem w-100" src="img/theme-select/light.png" id="theme-preview-img">
+                <script>
+                    // Immediately update the preview image before painting
+                    (function() {
+                        const selectedTheme = document.documentElement.getAttribute('data-selected-theme');
+                        const computedTheme = document.documentElement.getAttribute('theme');
+                        const previewTheme = (selectedTheme === 'auto') ? computedTheme : selectedTheme;
+                        document.getElementById('theme-preview-img').src = `img/theme-select/${previewTheme}.png`;
+                    })();
+                </script>
+            </div>
         </div>
-
-
-        <!-- <div class="theme-modal-auto theme-modal-auto-mobile theme-modal-selected pointer" onclick="changeThemeViaModal('auto')">Auto</div> -->
-
-        <div class="theme-modal-confirm theme-modal-confirm-mobile pointer" onclick="changeThemeViaModal('confirm')">Confirm ➜</div>
-
+        <div class="theme-modal-confirm theme-modal-confirm-mobile pointer" onclick="selectTheme('confirm')">Confirm ➜</div>
     </div>
 
     <script>
@@ -129,7 +144,6 @@
                 </div>
 
                 <div class="info-next-stops none">
-                    <!-- <div class="next-stops-text">NEXT STOPS</div> -->
                     <div class="next-stops-grid none">
                         <div class="grid"></div>
                     </div>

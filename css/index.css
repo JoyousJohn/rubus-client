@@ -36,57 +36,6 @@ html, body {
     overscroll-behavior-y: none;
 }
 
-.theme-modal {
-    position: fixed;
-    /* inset: 0; */
-    z-index: 403;
-    background-color: var(--theme-bg);
-    color: var(--theme-color);
-    font-family: var(--font-family);
-}
-
-.theme-modal > .flex > .grid > img {
-    width: 100%;
-    border: 1px solid var(--theme-extra);
-    cursor: pointer;
-    /* object-fit: contain; */
-}
-
-.theme-modal-auto {
-    font-size: 2rem;
-    color: white;
-    border-radius: 0.75rem;
-    margin: 0 3rem;
-    padding: 1rem;
-    /* font-weight: bold; */
-    border: 1px solid rgb(80, 80, 230);;
-    background-color: rgb(144, 136, 234);
-}
-
-.theme-modal-selected {
-    /* border: 3px solid blue; */
-    box-shadow: 0 0 1.5rem var(--theme-color);
-    background-color: rgb(61, 61, 196);
-}
-
-.theme-modal-confirm {
-    background-color: rgb(53, 101, 248);
-    margin: 3rem;
-    padding: 1rem 2rem;
-    font-size: 2rem;
-    color: white;
-    border-radius: 3rem;
-    font-weight: 500;
-    margin: 1.5rem;
-    /* border: 1px solid rgb(119, 109, 230); */
-    /* border: 1px solid rgb(80, 80, 230); */
-    /* position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0; */
-    align-self: end;
-}
-
 .leaflet-control-attribution {
     display: none;
 }
