@@ -88,6 +88,8 @@
 
 .lh-12 { line-height: 1.2; }
 
+.lh-15 { line-height: 1.5; }
+
 .fw-600 { font-weight: 600; }
 
 .pt-2rem { padding-top: 2rem; }
@@ -236,7 +238,7 @@
 
 .gap-y-1rem { row-gap: 1rem; }
 
-.text-no-wrap { text-wrap: nowrap; }
+.no-wrap { text-wrap: nowrap; }
 
 .width-100 { width: 100%; }
 
