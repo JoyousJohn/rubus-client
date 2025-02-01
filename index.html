@@ -76,6 +76,14 @@
             });
             document.querySelector(`[data-theme="${selectedTheme}"]`).classList.add('selected');
         });
+
+        // Preload preview images
+        const preloadImages = ['img/theme-select/dark.png', 'img/theme-select/light.png'];
+        preloadImages.forEach(src => {
+            const img = new Image();
+            img.src = src;
+        });
+        
     </script>
 
     <div class="theme-modal flex flex-col justify-between h-100vh center">
