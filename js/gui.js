@@ -3,7 +3,6 @@ let longPressTimer
 function populateRouteSelectors(activeRoutes) {
     $('.route-selectors > div').not('.settings-btn').remove();
 
-    // Convert Set to Array if it's not already an array
     let routesArray = Array.from(activeRoutes);
 
     if (routesArray.includes('ftbl')) {
@@ -17,7 +16,13 @@ function populateRouteSelectors(activeRoutes) {
     routesArray.forEach(route => {
         // console.log(route)
 
-        const $routeElm = $(`<div class="route-selector" routeName="${route}">${route.toUpperCase()}</div>`)  
+        let routeFormatted = route;
+
+        if (route == 'bl') {
+            routeFormatted = 'b/l';
+        }
+
+        const $routeElm = $(`<div class="route-selector" routeName="${route}">${routeFormatted.toUpperCase()}</div>`)  
         
         let color = 'darkgray'
 
@@ -116,6 +121,8 @@ function populateRouteSelectors(activeRoutes) {
         $routeElm.css('background-color', color) 
         $('.settings-btn').before($routeElm)
     });
+
+    $('.route-selectors').scrollLeft(0)
 
 let isDragging = false;
 let startX, scrollLeft;
