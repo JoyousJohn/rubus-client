@@ -14,6 +14,12 @@
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 1.2rem;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.theme-option:focus {
+    outline: none;
 }
 
 .theme-option.selected {
@@ -55,6 +61,7 @@
     box-sizing: border-box;
     z-index: 403;
     overflow: hidden;
+    transition: 80ms;
 }
 
 .theme-header {

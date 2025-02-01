@@ -1191,6 +1191,11 @@ async function getBuildNumber() {
 let selectedTheme = 'auto';
 
 function selectTheme(theme) {
+
+    if (theme !== 'confirm' && theme === selectedTheme) {
+        return;
+    }
+
     if (theme === 'confirm') {
         $('.theme-modal').fadeOut();
         setDefaultSettings();
@@ -1223,5 +1228,4 @@ function selectTheme(theme) {
     }
     document.getElementById('theme-preview-img').src = `img/theme-select/${previewTheme}.png`;
     
-    changeMapStyle(previewTheme);
 }
