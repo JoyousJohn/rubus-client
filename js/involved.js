@@ -7,8 +7,11 @@ $('.events-link').click(function() {
         .then(data => {
             console.log(data);
 
-            data.forEach(event => {
-                
+            const currentDate = new Date();
+            const futureEventIndex = data.findIndex(event => new Date(event['start']) >= currentDate);
+            const futureEvents = futureEventIndex === -1 ? [] : data.slice(futureEventIndex);
+
+            futureEvents.forEach(event => {
                 const $imgElm = $(`<div id="event-img"></div>`).css('background-image', `url(https://se-images.campuslabs.com/clink/images/${event['img']})`)
                 $('.involved-grid').append($imgElm)
 
