@@ -341,6 +341,7 @@ function selectedRoute(route) {
 
     $('.route-name').text(route.toUpperCase()).css('color', colorMappings[route])
     $('.route-campuses').text(campusMappings[route])
+    $('.color-circle').css('background-color', colorMappings[route])
     $('.route-active-buses').text(busesByRoutes[route].length + ' buses running')
 
     $('.active-buses').empty();
@@ -507,6 +508,13 @@ function selectedRoute(route) {
     panelRoute = route
 
 }
+
+
+$('.color-circle').click(function() {
+    $('.color-select-route').text(shownRoute.toUpperCase()).css('color', colorMappings[shownRoute]);
+    $('.color-selection-modal').show();
+})
+
 
 let routeRiderships = {}
 function updateBusOverview(routes) {

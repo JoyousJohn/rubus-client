@@ -406,6 +406,32 @@ html, body {
     color: var(--theme-color)
 }
 
+.color-circle {
+    border-radius: 5rem;
+    background-color: red;
+    height: 100%;
+    aspect-ratio: 1;
+}
+
+.color-circle-select {
+    border-radius: 50%;
+    height: 100%;
+    aspect-ratio: 1;
+}
+
+.color-selection-modal {
+    background-color: var(--theme-bg);
+    position: fixed;
+    inset: 0;
+    z-index: 402;
+    height: 100vh;
+    width: 100%;
+    overflow-y: scroll;
+    font-family: var(--font-family);
+    color: var(--theme-color);
+    white-space: pre;
+}
+
 .route-active-buses {
     font-size: 1.5rem;
     color: var(--theme-color-lighter);

@@ -92,6 +92,14 @@
 
 .fw-600 { font-weight: 600; }
 
+.p-1rem { padding: 1rem; }
+
+.p-2rem { padding: 2rem; }
+
+.p-3rem { padding: 3rem; }
+
+.pt-0 { padding-top: 0; }
+
 .pt-2rem { padding-top: 2rem; }
 
 .pt-3rem { padding-top: 3rem; }
@@ -119,6 +127,8 @@
 .pb-8rem { padding-bottom: 8rem; }
 
 .pb-25rem { padding-bottom: 25rem; }
+
+.px-3rem { padding-left: 3rem; padding-right: 3rem; }
 
 .px-16rem { padding-left: 16rem; padding-right: 16rem; }
 
@@ -190,6 +200,8 @@
 
 .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
 
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
 .grid-cols-3-auto { grid-template-columns: repeat(3, auto);}
 
 .cols-2x-1fr { grid-template-columns: repeat(2, 1fr); }
@@ -214,7 +226,11 @@
 
 .align-end { align-items: end; }
 
-.gap-6rem { gap: 6rem; }
+.gap-1rem { gap: 1rem; }
+
+.gap-2rem { gap: 2rem; }
+
+.gap-3rem { gap: 3rem; }
 
 .gap-8rem { gap: 8rem; }
 
