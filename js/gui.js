@@ -569,7 +569,7 @@ function updateBusOverview(routes) {
                     $('.total-ridership').text(`${nowTotalRidership + ridersChange} riding`).css('color', color).css('transition', 'color 0.25s');
 
                     setTimeout(() => {
-                        $(`.bus-overview-ridership[route="${route}"], .total-ridership`).css('color', 'black').css('transition', 'color 1s');
+                        $(`.bus-overview-ridership[route="${route}"], .total-ridership`).css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
                     }, 1000);
                 }, Math.random() * 5000);
             }
