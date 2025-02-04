@@ -928,7 +928,7 @@ let defaultSettings = {
     'toggle-show-bus-overtime-timer': false,
     'toggle-show-bus-path': false,
 
-    'colorMappings': defaultColorMappings
+    'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
 
 };
 
