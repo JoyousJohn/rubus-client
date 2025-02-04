@@ -33,14 +33,14 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    margin: 2vh 3rem;
+    padding: 1vh 3rem 3vh 3rem;
 }
 
 .theme-preview img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    border: 1px solid var(--theme-extra);
+    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.7);
 }
 
 .theme-modal {
@@ -85,7 +85,7 @@
 
 .theme-modal-confirm {
     background-color: rgb(53, 101, 248);
-    padding: 1rem 2rem;
+    padding: 0.5rem 1.5rem;
     font-size: 2rem;
     color: white;
     border-radius: 3rem;
