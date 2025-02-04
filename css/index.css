@@ -430,6 +430,21 @@ html, body {
     font-family: var(--font-family);
     color: var(--theme-color);
     white-space: pre;
+    overflow: hidden;
+}
+
+.color-select-grid {
+    scrollbar-width: none;
+}
+
+.color-select-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.color-select-btns > div {
+    padding: 1rem;
+    border-radius: 3rem;
+    color: white;
 }
 
 .route-active-buses {

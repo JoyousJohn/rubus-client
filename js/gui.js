@@ -512,7 +512,14 @@ function selectedRoute(route) {
 
 $('.color-circle').click(function() {
     $('.color-select-route').text(shownRoute.toUpperCase()).css('color', colorMappings[shownRoute]);
-    $('.color-selection-modal').show();
+    $('.color-selection-modal').css('display', 'flex');
+})
+
+$('.color-circle-select').click(function() {
+
+    const color = $(this).css('background-color')
+    $('.color-select-route').css('color', color);
+
 })
 
 

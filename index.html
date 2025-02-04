@@ -537,9 +537,9 @@
         </div>
     </div>
 
-    <div class="color-selection-modal none">
-        <div class="text-3rem flex justify-center">Select color for <div class="color-select-route bold-500"></div> route</div>
-        <div class="grid grid-cols-4 gap-1rem px-3rem">
+    <div class="color-selection-modal flex-col none">
+        <div class="text-2rem flex justify-center p-2rem">Select color for <div class="color-select-route bold-500"></div> route</div>
+        <div class="color-select-grid grid grid-cols-4 gap-1p5rem px-3rem" style="overflow-y: scroll;">
             <div class="color-circle-select" style="background-color: #FF0000;"></div>
             <div class="color-circle-select" style="background-color: #FF2000;"></div>
             <div class="color-circle-select" style="background-color: #FF4000;"></div>
@@ -573,6 +573,13 @@
             <div class="color-circle-select" style="background-color: #FF0080;"></div>
             <div class="color-circle-select" style="background-color: #FF0040;"></div>
         </div>
+
+        <div class="color-select-btns grid grid-cols-3 gap-x-1rem text-2rem center m-2rem bold-500">
+            <div class="color-cancel" style="background-color: #d32828;">Cancel</div>
+            <div class="color-reset" style="background-color: #f98d1a;">Reset</div>
+            <div class="color-confirm" style="background-color: #34ca34;">Confirm</div>
+        </div>
+
     </div>
 
     <div class="involved-wrapper none">
