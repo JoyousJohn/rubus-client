@@ -342,7 +342,7 @@ function selectedRoute(route) {
     $('.route-name').text(route.toUpperCase()).css('color', colorMappings[route])
     $('.route-campuses').text(campusMappings[route])
     $('.color-circle').css('background-color', colorMappings[route])
-    $('.route-active-buses').text(busesByRoutes[route].length + ' buses running')
+    $('.route-active-buses').text(busesByRoutes[route].length === 1 ? '1 bus running' : busesByRoutes[route].length + ' buses running')
 
     $('.active-buses').empty();
     busesByRoutes[route].forEach(busId => {
