@@ -61,7 +61,7 @@
     box-sizing: border-box;
     z-index: 403;
     overflow: hidden;
-    transition: 80ms;
+    transition: 120ms;
 }
 
 .theme-header {

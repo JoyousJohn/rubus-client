@@ -519,6 +519,10 @@ $('.color-circle').click(function() {
             $(this).addClass('selected-color-choice').text('✔');
         }
     });
+
+    if (colorMappings[shownRoute] === defaultColorMappings[shownRoute]) {
+        $('.color-reset').css('background-color', 'gray')
+    }
     
     $('.color-selection-modal').css('display', 'flex');
 })
@@ -528,6 +532,7 @@ $('.color-circle-select').click(function() {
     $('.color-select-route').css('color', color);
     $('.selected-color-choice').text('').removeClass('selected-color-choice')
     $(this).text('✔').addClass('selected-color-choice')
+    $('.color-reset').css('background-color', '#f98d1a')
 })
 
 function updateColorMappingsSelection(selectedColor) {
@@ -550,6 +555,7 @@ $('.color-reset').click(function() {
     updateColorMappingsSelection(defaultColorMappings[shownRoute])
     $('.color-select-route').css('color', defaultColorMappings[shownRoute])
     $('.selected-color-choice').text('').removeClass('selected-color-choice')
+    $('.color-reset').css('background-color', 'gray')
 })
 
 $('.color-confirm').click(function() {
