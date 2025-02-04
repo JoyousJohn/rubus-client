@@ -417,6 +417,9 @@ html, body {
     border-radius: 50%;
     height: 100%;
     aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .color-selection-modal {

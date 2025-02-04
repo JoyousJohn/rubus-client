@@ -512,14 +512,52 @@ function selectedRoute(route) {
 
 $('.color-circle').click(function() {
     $('.color-select-route').text(shownRoute.toUpperCase()).css('color', colorMappings[shownRoute]);
+    
+    $('.color-circle-select').each(function() {
+        const color = $(this).css('background-color');
+        if (color === colorMappings[shownRoute]) {
+            $(this).addClass('selected-color-choice').text('✔');
+        }
+    });
+    
     $('.color-selection-modal').css('display', 'flex');
 })
 
 $('.color-circle-select').click(function() {
-
     const color = $(this).css('background-color')
     $('.color-select-route').css('color', color);
+    $('.selected-color-choice').text('').removeClass('selected-color-choice')
+    $(this).text('✔').addClass('selected-color-choice')
+})
 
+function updateColorMappingsSelection(selectedColor) {
+    colorMappings[shownRoute] = selectedColor
+    settings['colorMappings'] = colorMappings
+    localStorage.setItem('settings', JSON.stringify(settings))
+
+    // update shown element colors
+    $(`.color-circle, .next-stop-circle, .route-selector[routename="${shownRoute}"]`).css('background-color', selectedColor)
+    $('.route-name').css('color', selectedColor)
+    $(`.route-selector[routename="${shownRoute}"]`).css('box-shadow', `0 0 10px ${selectedColor}`)
+
+    busesByRoutes[shownRoute].forEach(busId => {
+        busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = selectedColor;
+        polylines[shownRoute].setStyle({ color: selectedColor });
+    })
+}
+
+$('.color-reset').click(function() {
+    updateColorMappingsSelection(defaultColorMappings[shownRoute])
+    $('.color-select-route').css('color', defaultColorMappings[shownRoute])
+    $('.selected-color-choice').text('').removeClass('selected-color-choice')
+})
+
+$('.color-confirm').click(function() {
+    if ($('.selected-color-choice').length) {
+        const selectedColor = $('.selected-color-choice').css('background-color');
+        updateColorMappingsSelection(selectedColor)
+    }
+    $('.color-selection-modal').css('display', 'none')
 })
 
 
@@ -888,7 +926,10 @@ let defaultSettings = {
     'toggle-show-bus-id': false,
     'toggle-show-bus-progress': false,
     'toggle-show-bus-overtime-timer': false,
-    'toggle-show-bus-path': false
+    'toggle-show-bus-path': false,
+
+    'colorMappings': defaultColorMappings
+
 };
 
 function setDefaultSettings () {
@@ -900,6 +941,7 @@ function setDefaultSettings () {
     $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     // $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
+    colorMappings = defaultColorMappings
 }
 
 function updateSettings() {
@@ -919,9 +961,13 @@ function updateSettings() {
                 delete settings[key];
             }
         }
+
         localStorage.setItem('settings', JSON.stringify(settings))
 
         document.documentElement.style.setProperty('--font-family', settings['font']);
+
+        colorMappings = settings['colorMappings']
+
     } else {
         setDefaultSettings();
     }

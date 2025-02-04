@@ -759,7 +759,9 @@ const campusMappings = {
     'winter2': 'Winter 2'
 } 
 
-const colorMappings = {
+let colorMappings;
+
+const defaultColorMappings = {
     'ee': 'red',
     'f': 'IndianRed',
     'h': 'RoyalBlue',
