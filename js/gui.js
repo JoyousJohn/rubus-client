@@ -941,7 +941,7 @@ function setDefaultSettings () {
     $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     // $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
-    colorMappings = defaultColorMappings
+    colorMappings = settings['colorMappings']
 }
 
 function updateSettings() {
