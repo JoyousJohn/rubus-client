@@ -1159,6 +1159,11 @@ function findNearestStop(fly) {
                 })
             }).addTo(map)
 
+            navigator.geolocation.watchPosition((position) => {
+                userPosition = [position.coords.latitude, position.coords.longitude];
+                marker.setLatLng(userPosition);
+            });
+
             marker.on('click', function() {
                 $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
                 $('.my-location-popup').show();
