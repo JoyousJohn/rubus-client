@@ -1160,8 +1160,27 @@ function findNearestStop(fly) {
             }).addTo(map)
 
             navigator.geolocation.watchPosition((position) => {
-                userPosition = [position.coords.latitude, position.coords.longitude];
-                marker.setLatLng(userPosition);
+                const newPosition = [position.coords.latitude, position.coords.longitude];
+                
+                const duration = 500;
+                const steps = 60;
+                const interval = duration / steps;
+                let stepCount = 0;
+
+                const animateMarker = () => {
+                    stepCount++;
+                    const lat = userPosition[0] + (newPosition[0] - userPosition[0]) * (stepCount / steps);
+                    const lng = userPosition[1] + (newPosition[1] - userPosition[1]) * (stepCount / steps);
+                    marker.setLatLngPrecise([lat, lng]);
+
+                    if (stepCount < steps) {
+                        setTimeout(animateMarker, interval);
+                    } else {
+                        userPosition = newPosition; // Update the userPosition after animation completes
+                    }
+                };
+
+                animateMarker(); // Start the animation
             });
 
             marker.on('click', function() {
