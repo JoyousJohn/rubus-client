@@ -193,11 +193,15 @@ $(document).on('keydown', function(e) {
     if (e.key === 'Escape') { hideInfoBoxes(); }
 })
 
-function hideInfoBoxes() {
+function hideInfoBoxes(instantly_hide) {
 
     // console.log('hideInfoBoxes() triggered')
 
-    $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').fadeOut();  
+    if (instantly_hide) {
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').hide();  
+    } else {
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').fadeOut();  
+    }
 
     if (popupStopId) {
         popupStopId = null;
@@ -295,7 +299,7 @@ function centerme() {
             animate: true,
             duration: 0.3
         });
-        hideInfoBoxes();
+        hideInfoBoxes(true);
         $('.my-location-popup').show();
         return;
     }
