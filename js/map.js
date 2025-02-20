@@ -75,7 +75,8 @@ $(document).ready(function() {
         inertiaDeceleration: 1000,
         zoomSnap: 0,
         edgeBufferTiles: 10,
-        preferCanvas: settings && settings['map-renderer'] === 'canvas'
+        preferCanvas: settings && settings['map-renderer'] === 'canvas',
+        scrollWheelZoom: false // Disable default scroll zoom
     }).setView([40.507476,-74.4541267], 14);
 
     map.setMinZoom(13);
@@ -149,6 +150,24 @@ $(document).ready(function() {
     if (window.location.hostname.includes('.dev')) {
         $('.dev-build-popup').fadeIn().delay(7000).slideUp();
     }
+
+    map.getContainer().addEventListener('wheel', function(e) {
+        if (e.deltaMode === 0) {
+            e.preventDefault();
+            const zoomAmount = e.deltaY < 0 ? 1 : -1;
+            const newZoom = map.getZoom() + zoomAmount * 1;
+            const mousePoint = map.mouseEventToContainerPoint(e);
+            const latLng = map.containerPointToLatLng(mousePoint);
+            map.setView(latLng, newZoom);
+        }
+    });
+    map.on('dragstart', function() {
+        map.scrollWheelZoom.disable();
+    });
+
+    map.on('dragend', function() {
+        map.scrollWheelZoom.enable();
+    });
 
 });
 
