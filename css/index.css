@@ -610,7 +610,7 @@ html, body {
 }
 
 .shoot-fireworks {
-    transition: background-color 0.2s ease;
+    transition: 0.2s ease;
 }
 
 .fa-gear {

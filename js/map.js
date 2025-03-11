@@ -210,9 +210,9 @@ function launchFireworks(totalFireworks, currentCount = 0) {
 
 $('.shoot-fireworks').click(function() {
     launchFireworks(12);
-    $('.shoot-fireworks').css('background-color', '#ca45fa')
+    $('.shoot-fireworks').css('background-color', '#ca45fa').css('color', '#f69ee0')
     setTimeout(() => {
-        $('.shoot-fireworks').css('background-color', '')
+        $('.shoot-fireworks').css('background-color', '').css('color', '')
     }, 200);
 });
 
@@ -732,7 +732,8 @@ function plotBus(busId) {
                 iconAnchor: [15, 15],
                 html: '<div class="bus-icon-outer" style="will-change: transform;"><div class="bus-icon-inner"></div></div>'
             }),
-            route: busData[busId].route
+            route: busData[busId].route,
+            zIndexOffset: 500
         }).addTo(map);
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[busData[busId].route];

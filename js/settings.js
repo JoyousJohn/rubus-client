@@ -25,6 +25,17 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-stops-above-buses':
+            settings['toggle-stops-above-buses'] = isChecked;
+
+            const zOffset = isChecked ? 1000 : 0;
+            for (const stopId in busStopMarkers) {
+                busStopMarkers[stopId].setZIndexOffset(zOffset);
+            }
+            break;
+        
+        // Dev settings
+
         case 'toggle-pause-update-marker':
             console.log(`Pause update marker positions now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-pause-update-marker'] = isChecked;

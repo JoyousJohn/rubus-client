@@ -287,7 +287,10 @@ async function addStopsToMap() {
         });
 
         // Create a marker for the current bus stop
-        const marker = L.marker([lat, long], { icon: busStopIcon })
+        const marker = L.marker([lat, long], { 
+            icon: busStopIcon,
+            zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0
+        })
             .addTo(map) // Add the marker to the map
             .on('click', function() {
                 sourceStopId = null;

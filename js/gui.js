@@ -903,6 +903,7 @@ const toggleSettings = [
     'toggle-select-closest-stop',
     'toggle-show-arrival-times',
     'toggle-show-bus-speeds',
+    'toggle-stops-above-buses',
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
@@ -923,6 +924,7 @@ let defaultSettings = {
     'toggle-select-closest-stop': true,
     'toggle-show-arrival-times': true,
     'toggle-show-bus-speeds': true,
+    'toggle-stops-above-buses': false,
     
     // dev settings
     'map-renderer': 'svg',
