@@ -1169,7 +1169,7 @@ function startOvertimeCounter(busId) {
     $('.overtime-time').show();
     
     const timeArrived = new Date(busData[busId].timeArrived);
-    const avgWaitAtStop = waits[busData[busId].stopId];
+    const avgWaitAtStop = waits[busData[busId].stopId[0]];
     const arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000);
     const overtimeSeconds = arrivedAgoSeconds - avgWaitAtStop;
     // console.log(arrivedAgoSeconds)
