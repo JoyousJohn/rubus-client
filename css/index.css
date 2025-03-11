@@ -584,6 +584,7 @@ html, body {
     display: flex;
     aspect-ratio: 1;
     pointer-events: all;
+    cursor: pointer;
 }
 
 .panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i {
