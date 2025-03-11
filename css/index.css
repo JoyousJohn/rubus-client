@@ -574,7 +574,7 @@ html, body {
     box-sizing: border-box;
 }
 
-.panout, .buses-btn, .centerme, .fly-closest-stop {
+.panout, .buses-btn, .centerme, .fly-closest-stop, .shoot-fireworks {
     background-color: var(--theme-bg);
     padding: 1.7rem;
     border-radius: 5rem;
@@ -586,7 +586,7 @@ html, body {
     pointer-events: all;
 }
 
-.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i {
+.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i {
     font-size: 2rem;
 }
 

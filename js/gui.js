@@ -912,7 +912,8 @@ const toggleSettings = [
     'toggle-show-bus-id',
     'toggle-show-bus-progress',
     'toggle-show-bus-overtime-timer',
-    'toggle-show-bus-path'
+    'toggle-show-bus-path',
+    'toggle-launch-fireworks-button'
 ]
 
 let defaultSettings = {
@@ -933,6 +934,7 @@ let defaultSettings = {
     'toggle-show-bus-progress': false,
     'toggle-show-bus-overtime-timer': false,
     'toggle-show-bus-path': false,
+    'toggle-launch-fireworks-button': false,
 
     'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
 

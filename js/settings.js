@@ -153,6 +153,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
+        case 'toggle-launch-fireworks-button':
+            settings['toggle-launch-fireworks-button'] = isChecked;
+
+            if (isChecked) {
+                $('.launch-fireworks-wrapper').show();
+            } else {
+                $('.launch-fireworks-wrapper').hide();
+            }
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
@@ -228,6 +238,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-bus-id']) {
         showBusId = settings['toggle-show-bus-id'];
+    }
+
+    if (settings['toggle-launch-fireworks-button']) {
+        $('.launch-fireworks-wrapper').show();
     }
 
 })

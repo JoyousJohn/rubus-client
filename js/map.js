@@ -208,6 +208,10 @@ function launchFireworks(totalFireworks, currentCount = 0) {
     }, randomDelay);
 }
 
+$('.shoot-fireworks').click(function() {
+    launchFireworks(12);
+});
+
 $(document).on('keydown', function(e) {
     if (e.key === 'Escape') { hideInfoBoxes(); }
 })
