@@ -609,6 +609,10 @@ html, body {
     right: 0.5rem
 }
 
+.shoot-fireworks {
+    transition: background-color 0.2s ease;
+}
+
 .fa-gear {
     padding: 1rem;
 }

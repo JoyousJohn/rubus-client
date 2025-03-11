@@ -210,6 +210,10 @@ function launchFireworks(totalFireworks, currentCount = 0) {
 
 $('.shoot-fireworks').click(function() {
     launchFireworks(12);
+    $('.shoot-fireworks').css('background-color', '#ca45fa')
+    setTimeout(() => {
+        $('.shoot-fireworks').css('background-color', '')
+    }, 200);
 });
 
 $(document).on('keydown', function(e) {
