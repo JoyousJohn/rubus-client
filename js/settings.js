@@ -174,6 +174,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-bus-log':
+            settings['toggle-show-bus-log'] = isChecked;
+
+            if (isChecked) {
+                $('.bus-log-wrapper').show();
+            } else {
+                $('.bus-log-wrapper').hide();
+            }
+            break;
+        
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
@@ -253,6 +263,10 @@ $(document).ready(function() {
 
     if (settings['toggle-launch-fireworks-button']) {
         $('.launch-fireworks-wrapper').show();
+    }
+
+    if (settings['toggle-show-bus-log']) {
+        $('.bus-log-wrapper').show();
     }
 
 })

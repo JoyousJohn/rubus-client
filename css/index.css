@@ -281,6 +281,30 @@ html, body {
     color: rgb(242, 242, 242)
 }
 
+.bus-log-wrapper {
+    padding: 1.5rem 2rem;
+    background-color: white;
+    border-radius: 1rem;
+    font-size: 1.2rem;
+    margin: 1rem;
+    font-family: var(--font-family);
+    max-height: 33vh;
+    height: min-content;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    z-index: 401;
+    position: fixed;
+    inset: 0;
+}
+
+.bus-log-wrapper::-webkit-scrollbar {
+    display: none;
+}   
+
+.bus-log {
+    grid-template-columns: auto 1fr;
+}
+
 .info-stop-servicing {
     font-size: 1.5rem;
     font-weight: bold;

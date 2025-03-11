@@ -91,6 +91,13 @@ function openRUBusSocket() {
 
                 busData[busId].progress = 0;
 
+                const $busLogElm = $(`
+                    <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                    <div><strong>${busName}</strong> arrived at ${stopName}</div>
+                `)
+                $('.bus-log').append($busLogElm);
+                $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+
             } else if (eventData['event'] === 'departure') {
                 busData[busId]['at_stop'] = false
                 delete busData[busId]['timeArrived'];
@@ -101,6 +108,13 @@ function openRUBusSocket() {
                     $('.bus-stopped-for').slideUp();
                 }
                 delete busData[busId].overtime
+
+                const $busLogElm = $(`
+                    <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                    <div><strong>${busName}</strong> deparated from ${stopName}</div>
+                `)
+                $('.bus-log').append($busLogElm);
+                $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
             }
 
             updateTimeToStops([busId]) // updates bus's etas to all stops

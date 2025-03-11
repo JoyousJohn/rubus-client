@@ -226,6 +226,8 @@
 
 .align-end { align-items: end; }
 
+.gap-0p5rem { gap: 0.5rem; }
+
 .gap-1rem { gap: 1rem; }
 
 .gap-1p5rem { gap: 1.5rem; }
