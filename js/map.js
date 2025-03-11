@@ -208,11 +208,17 @@ function launchFireworks(totalFireworks, currentCount = 0) {
     }, randomDelay);
 }
 
+let fireworksTimeout;
+
 $('.shoot-fireworks').click(function() {
     launchFireworks(12);
     $('.shoot-fireworks').css('background-color', '#ca45fa').css('color', '#f69ee0')
-    setTimeout(() => {
+    if (fireworksTimeout) {
+        clearTimeout(fireworksTimeout);
+    }
+    fireworksTimeout = setTimeout(() => {
         $('.shoot-fireworks').css('background-color', '').css('color', '')
+        fireworksTimeout = null;
     }, 200);
 });
 
