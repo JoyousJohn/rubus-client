@@ -1118,7 +1118,12 @@ let closestStopsMap;
 function findNearestStop(fly) {
     console.log("Trying to find nearest stop...")
 
+    $('.getting-location-popup').fadeIn(300);
+
     navigator.geolocation.getCurrentPosition((position) => {
+
+        $('.getting-location-popup').fadeOut(300);
+
         const userLat = position.coords.latitude;
         const userLong = position.coords.longitude;
         userPosition = [userLat, userLong];
@@ -1221,6 +1226,8 @@ function checkIfLocationShared() {
     const lsLocationShared = localStorage.getItem('locationShared');
 
     locationShared = lsLocationShared === 'true';
+
+    console.log("Location shared: ", locationShared)
 
     if (locationShared) {
         if (navigator.geolocation) {

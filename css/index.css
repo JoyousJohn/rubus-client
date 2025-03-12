@@ -103,6 +103,33 @@ html, body {
     display: none;
 }
 
+.getting-location-popup {
+    margin: 1rem;
+    padding: 0.5rem 1.5rem;
+    background-color: rgb(255, 167, 0);
+    color: white;
+    border-radius: 2rem;
+    font-size: 1.7rem;
+    font-family: var(--font-family);
+    text-align: center;
+    width: fit-content;
+    float: right;
+    display: none;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        background-color: rgb(255, 167, 0);
+    }
+    50% {
+        background-color: rgb(229, 151, 6);
+    }
+    100% {
+        background-color: rgb(255, 167, 0);
+    }
+} 
+
 .info-main {
     column-gap: 1rem;
     /* justify-content: center; */
@@ -557,6 +584,7 @@ html, body {
 .ridership-super-wrapper {
     display: none;
     margin-bottom: 5rem;
+
 }
 
 .ridership-title {
@@ -572,10 +600,12 @@ html, body {
 }
 
 .ridership-history-title {
-    font-size: 2rem;
+    font-size: 1.8rem;
     margin-top: 3rem;
-    text-decoration: underline;
-    color: var(--theme-color);
+    color: var(--theme-bg);
+    background-color: var(--theme-color);
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.8rem;
 }
 
 .ridership-avg, .ridership-max {
