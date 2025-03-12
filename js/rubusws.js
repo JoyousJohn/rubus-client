@@ -100,6 +100,22 @@ function openRUBusSocket() {
 
             } else if (eventData['event'] === 'departure') {
                 busData[busId]['at_stop'] = false
+
+                let stoppedFor = Math.floor((new Date() - new Date(busData[busId]['timeArrived'])) / 1000);
+
+                let stoppedDiff = Math.floor((stoppedFor - waits[stopId])/waits[stopId]*100)
+                if (stoppedDiff > 0) {
+                    stoppedDiff = '+' + stoppedDiff
+                }
+
+                if (stoppedFor < 60) {
+                    stoppedFor = `${stoppedFor}s`;
+                } else {
+                    const minutes = Math.floor(stoppedFor / 60);
+                    const seconds = stoppedFor % 60;
+                    stoppedFor = `${minutes}m${seconds}s`;
+                }
+
                 delete busData[busId]['timeArrived'];
                 console.log(`[Departure] Bus ${busName} departed from ${stopName}`)
 
@@ -111,7 +127,7 @@ function openRUBusSocket() {
 
                 const $busLogElm = $(`
                     <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-                    <div><strong>${busName}</strong> <span style="color: #ec5050;">deparated</span> from ${stopName}</div>
+                    <div><strong>${busName}</strong> <span style="color: #ec5050;">deparated</span> ${stopName} after ${stoppedFor} (${stoppedDiff}%)</div>
                 `)
                 $('.bus-log').append($busLogElm);
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
