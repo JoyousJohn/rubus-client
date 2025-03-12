@@ -283,7 +283,8 @@ html, body {
 
 .bus-log-wrapper {
     padding: 1.5rem 2rem;
-    background-color: white;
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
     border-radius: 1rem;
     font-size: 1.2rem;
     margin: 1rem;
