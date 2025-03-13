@@ -44,3 +44,6 @@ function formatDate(dateString) {
 }
 
 
+$('.events-close').click(function() {
+    $('.involved-wrapper').hide();
+})

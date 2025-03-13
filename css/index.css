@@ -806,7 +806,7 @@ html, body {
     border-left: 1px solid rgb(185, 185, 185);
 }
 
-.settings-close > div, .buses-close {
+.settings-close > div, .buses-close, .events-close {
     background-color: rgb(208, 77, 77);
     position: fixed;
     bottom: 0;
