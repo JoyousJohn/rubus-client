@@ -842,7 +842,6 @@ function popInfo(busId) {
     
     $('.stop-info-popup').hide();
 
-
     if (busData[busId]['overtime']) {
         $('.bus-stopped-for .stop-octagon').show();
         if (settings['toggle-show-bus-overtime-timer']) {

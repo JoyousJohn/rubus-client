@@ -1115,12 +1115,122 @@ let closestStopDistances = {};
 let sortedClosestStopDistances = {};
 let closestStopsMap;
 
+
+function handleNearestStop(fly) {
+
+    let closestStop = null;
+    let thisClosestStopId = null;
+    let closestDistance = Infinity;
+
+    const stopIds = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
+
+    const userLat = userPosition[0]
+    const userLong = userPosition[1]
+
+    for (const stopId of stopIds) {
+        const stop = stopsData[stopId];
+        console.log('b')
+        const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
+
+        console.log('c')
+
+        closestStopDistances[stopId] = distance;
+
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestStop = stop;
+            thisClosestStopId = stopId;
+        }
+    }
+
+    closestStopsMap = new Map(
+        Object.entries(closestStopDistances)
+            .sort(([, distanceA], [, distanceB]) => distanceA - distanceB)
+    );
+
+    populateMeClosestStops()
+
+    if (closestStop) {
+
+        console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
+        closestStopId = thisClosestStopId
+
+        if (closestDistance > 14) {
+            $('.centerme-wrapper').hide();
+            return;
+        }
+
+        const marker = L.marker(userPosition, 
+            { icon: L.icon({
+                iconUrl: 'img/location_marker.png',
+                iconSize: [24, 24],
+                iconAnchor: [12, 12],
+            })
+        }).addTo(map)
+
+        navigator.geolocation.watchPosition((position) => {
+            const newPosition = [position.coords.latitude, position.coords.longitude];
+            
+            const duration = 500;
+            const steps = 60;
+            const interval = duration / steps;
+            let stepCount = 0;
+
+            const animateMarker = () => {
+                stepCount++;
+                const lat = userPosition[0] + (newPosition[0] - userPosition[0]) * (stepCount / steps);
+                const lng = userPosition[1] + (newPosition[1] - userPosition[1]) * (stepCount / steps);
+                marker.setLatLngPrecise([lat, lng]);
+
+                if (stepCount < steps) {
+                    setTimeout(animateMarker, interval);
+                } else {
+                    userPosition = newPosition; // Update the userPosition after animation completes
+                }
+            };
+
+            animateMarker(); // Start the animation
+        });
+
+        marker.on('click', function() {
+            $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
+            $('.my-location-popup').show();
+            // map.flyTo(userPosition, 18, {
+            //     animate: true,
+            //     duration: 0.3
+            // });
+        })
+
+        $('.fly-closest-stop-wrapper').fadeIn();
+        if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3) {
+            sourceStopId = null;
+            sourceBusId = null;
+            flyToStop(thisClosestStopId);
+            console.log("Flying to closest stop")
+        }
+        $('.closest-stop').show('none');
+    } else {
+        console.log('No stops found within the given data.');
+    }
+}
+
+
 function findNearestStop(fly) {
+    
     console.log("Trying to find nearest stop...")
 
     $('.getting-location-popup').fadeIn(300);
 
+    if (userPosition) {
+        console.log("User position already exists")
+        handleNearestStop(fly);
+        return;
+    }
+
+    console.log("Trying getCurrentPosition")
     navigator.geolocation.getCurrentPosition((position) => {
+
+        console.log("Got position!")
 
         $('.getting-location-popup').fadeOut(300);
 
@@ -1128,113 +1238,31 @@ function findNearestStop(fly) {
         const userLong = position.coords.longitude;
         userPosition = [userLat, userLong];
 
-        let closestStop = null;
-        let thisClosestStopId = null;
-        let closestDistance = Infinity;
+        handleNearestStop(fly);
 
-        const stopIds = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
-        for (const stopId of stopIds) {
-            const stop = stopsData[stopId];
-            const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
-
-            closestStopDistances[stopId] = distance;
-
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestStop = stop;
-                thisClosestStopId = stopId;
-            }
-        }
-
-        closestStopsMap = new Map(
-            Object.entries(closestStopDistances)
-                .sort(([, distanceA], [, distanceB]) => distanceA - distanceB)
-        );
-        populateMeClosestStops()
-
-        if (closestStop) {
-
-            console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
-            closestStopId = thisClosestStopId
-
-            if (closestDistance > 14) {
-                $('.centerme-wrapper').hide();
-                return;
-            }
-
-            const marker = L.marker(userPosition, 
-                { icon: L.icon({
-                    iconUrl: 'img/location_marker.png',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12],
-                })
-            }).addTo(map)
-
-            navigator.geolocation.watchPosition((position) => {
-                const newPosition = [position.coords.latitude, position.coords.longitude];
-                
-                const duration = 500;
-                const steps = 60;
-                const interval = duration / steps;
-                let stepCount = 0;
-
-                const animateMarker = () => {
-                    stepCount++;
-                    const lat = userPosition[0] + (newPosition[0] - userPosition[0]) * (stepCount / steps);
-                    const lng = userPosition[1] + (newPosition[1] - userPosition[1]) * (stepCount / steps);
-                    marker.setLatLngPrecise([lat, lng]);
-
-                    if (stepCount < steps) {
-                        setTimeout(animateMarker, interval);
-                    } else {
-                        userPosition = newPosition; // Update the userPosition after animation completes
-                    }
-                };
-
-                animateMarker(); // Start the animation
-            });
-
-            marker.on('click', function() {
-                $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
-                $('.my-location-popup').show();
-                // map.flyTo(userPosition, 18, {
-                //     animate: true,
-                //     duration: 0.3
-                // });
-            })
-
-            $('.fly-closest-stop-wrapper').fadeIn();
-            if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3) {
-                sourceStopId = null;
-                sourceBusId = null;
-                flyToStop(thisClosestStopId);
-                console.log("Flying to closest stop")
-            }
-            $('.closest-stop').show('none');
-        } else {
-            console.log('No stops found within the given data.');
-        }
+        localStorage.setItem('locationShared', 'true')
 
         // generate closestStopDistances object where the keys are stop ids and values are distances
 
     }, (error) => {
+        $('.getting-location-popup').fadeOut(300);
         console.error('Error getting user location:', error);
+        console.log(error.code)
+        if (error.code === 1) {
+            localStorage.setItem('locationShared', 'false')
+        }
     });
 }
 
-function checkIfLocationShared() {
+async function checkIfLocationShared() {
+    const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+
     const lsLocationShared = localStorage.getItem('locationShared');
-
     locationShared = lsLocationShared === 'true';
-
-    console.log("Location shared: ", locationShared)
-
-    if (locationShared) {
-        if (navigator.geolocation) {
-            findNearestStop(true);
-        } else {
-            console.error('Geolocation is not supported by this browser.');
-        }
+    console.log("(localStorage) Location shared: ", locationShared)
+    console.log("geolocation permission state: ", permissionStatus.state)
+    if (permissionStatus.state === 'granted' || locationShared) {
+        findNearestStop(true);
     }
 }
 

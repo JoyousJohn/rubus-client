@@ -182,9 +182,7 @@ async function fetchBusData() {
                     hideInfoBoxes();
                     sourceBusId = null;
                 }
-
             }
-
         }
 
         if ($('.buses-panel-wrapper').is(':visible')) {
@@ -521,6 +519,11 @@ $(document).ready(async function() {
             if (popupStopId) {
                 updateStopBuses(popupStopId)
             }
+
+            if (popupBusId) {
+                popInfo(popupBusId)
+            }
+
         } catch (error) {
             console.error('Error fetching bus locations:', error);
         }
@@ -578,6 +581,12 @@ $(document).ready(async function() {
     setInterval(async () => {
         await randomStepBusSpeeds();
     }, Math.floor(Math.random() * (1000 - 200 + 1)) + 200);
+
+    document.addEventListener('visibilitychange', async function() {
+        if (document.visibilityState === 'visible') {
+            await fetchWhere();
+        }
+    });
 
 })
 
