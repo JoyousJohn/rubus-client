@@ -629,7 +629,7 @@ html, body {
     box-sizing: border-box;
 }
 
-.panout, .buses-btn, .centerme, .fly-closest-stop, .shoot-fireworks {
+.panout, .buses-btn, .centerme, .fly-closest-stop, .shoot-fireworks, .satellite-btn {
     background-color: var(--theme-bg);
     padding: 1.7rem;
     border-radius: 5rem;
