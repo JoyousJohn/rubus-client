@@ -17,52 +17,10 @@ const southWest = L.latLng(40.4550081,-74.4957839); // Define the southwest corn
 const northEast = L.latLng(40.538852,-74.4074799); // Define the northeast corner of the bounds
 const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds object
 
-// const originalOnDown = L.Draggable.prototype._onDown;
-
-// // Override the _onDown method
-// L.Draggable.prototype._onDown = function(e) {
-//     console.log('Draggable _onDown called with event:', {
-//         type: e.type,
-//         touches: e.touches ? e.touches.length : 0,
-//         which: e.which,
-//         button: e.button,
-//         shiftKey: e.shiftKey,
-//         _dragging: L.Draggable._dragging,
-//         _enabled: this._enabled
-//     });
-
-//     this._moved = false;
-
-//     // Check if dragging is already in progress or if conditions to block dragging are met
-//     if (L.Draggable._dragging || e.shiftKey || ((e.which !== 1) && (e.button !== 1) && !e.touches) || !this._enabled) {
-//         console.log('Blocked: dragging conditions not met');
-//         return;
-//     }
-
-//     // Allow dragging if the zoom animation class is not present
-//     if (L.DomUtil.hasClass(this._element, 'leaflet-zoom-anim')) {
-//         console.log('Blocked: zoom animation class present');
-//         return;
-//     }
-
-//     // If we get here, drag should be allowed
-//     console.log('All checks passed, initializing drag');
-//     L.Draggable._dragging = true;  // Prevent dragging multiple objects at once.
-
-//     if (this._preventOutline) {
-//         L.DomUtil.preventOutline(this._element);
-//     }
-
-//     L.DomUtil.disableImageDrag();
-//     L.DomUtil.disableTextSelection();
-//     console.log('Drag initialized successfully');
-// };
-
 let isDesktop;
 let tileLayer;
 
-
-const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1MXE0ZTBpYmEyeG83OHhpZDE0MngifQ.0agtew4qq5sWFEBl2gIVgA'
+const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1NzlxZDByYXIyam9kd2QybnB4ZzUifQ.2Ssy25qvKfJ70J4LpueDKA'
 
 $(document).ready(function() {
 
