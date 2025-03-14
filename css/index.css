@@ -596,6 +596,14 @@ html, body {
     color: var(--theme-color)
 }
 
+.live-overview {
+    padding: 0.2rem 1.3rem;
+    font-size: 1.3rem;
+    color: white;
+    background-color: #2adb2a;
+    border-radius: 0.5rem;
+}
+
 .ridership-chart-wrapper {
     margin: 1rem;
     /* margin-top: 2rem; */
