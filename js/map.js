@@ -62,7 +62,7 @@ let isDesktop;
 let tileLayer;
 
 
-const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1NzlxZDByYXIyam9kd2QybnB4ZzUifQ.2Ssy25qvKfJ70J4LpueDKA'
+const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1MXE0ZTBpYmEyeG83OHhpZDE0MngifQ.0agtew4qq5sWFEBl2gIVgA'
 
 $(document).ready(function() {
 
@@ -1215,9 +1215,13 @@ $('.satellite-btn').click(function() {
         $(this).css('background-color', '#3155c1')
     }
 
-    const currentCenter = map.getCenter();
     const currentZoom = map.getZoom();
-    map.setView([0, 0], 1, { animate: false });
-    map.setView(currentCenter, currentZoom, { animate: true });
+    map.setZoom(currentZoom + 0.0001, { animate: false });
+    // setTimeout(() => {
+    map.setZoom(currentZoom, { animate: false });
+    map.invalidateSize();
+    tileLayer.redraw();
+    map._onResize();
+    // }, 50);
 
 });
