@@ -118,6 +118,19 @@ html, body {
     animation: pulse 1s infinite;
 }
 
+.updating-buses {
+    margin: 1rem;
+    padding: 0.5rem 1.5rem;
+    background-color: rgb(255, 167, 0);
+    color: white;
+    border-radius: 2rem;
+    font-size: 1.7rem;
+    font-family: var(--font-family);
+    text-align: center;
+    width: fit-content;
+    display: none;
+}
+
 @keyframes pulse {
     0% {
         background-color: rgb(255, 167, 0);

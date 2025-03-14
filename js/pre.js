@@ -355,6 +355,43 @@ function updateTimeToStops(busIds) {
 }
 
 
+async function fetchWhere() {
+    try {
+        const response = await fetch('https://transloc.up.railway.app/where');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        const busLocations = data;
+        console.log('Bus locations fetched:', busLocations);
+
+        const validBusIds = []
+        for (const busId in busLocations) {
+            if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
+                            
+            busData[busId]['stopId'] = parseInt(busLocations[busId][0])
+            if (busLocations[busId].length === 2) {
+                busData[busId]['prevStopId'] = parseInt(busLocations[busId][1])  
+            }
+
+            validBusIds.push(busId)
+        }
+
+        updateTimeToStops(validBusIds)
+        if (popupStopId) {
+            updateStopBuses(popupStopId)
+        }
+
+        if (popupBusId) {
+            popInfo(popupBusId)
+        }
+
+    } catch (error) {
+        console.error('Error fetching bus locations:', error);
+    }
+}
+
+
 $(document).ready(async function() {
     // Initialize settings before map is created
     settings = localStorage.getItem('settings');
@@ -493,42 +530,6 @@ $(document).ready(async function() {
 
     await fetchETAs();
 
-    async function fetchWhere() {
-        try {
-            const response = await fetch('https://transloc.up.railway.app/where');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            busLocations = data;
-            console.log('Bus locations fetched:', busLocations);
-
-            const validBusIds = []
-            for (const busId in busLocations) {
-                if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
-                                
-                busData[busId]['stopId'] = parseInt(busLocations[busId][0])
-                if (busLocations[busId].length === 2) {
-                    busData[busId]['prevStopId'] = parseInt(busLocations[busId][1])  
-                }
-
-                validBusIds.push(busId)
-            }
-
-            updateTimeToStops(validBusIds)
-            if (popupStopId) {
-                updateStopBuses(popupStopId)
-            }
-
-            if (popupBusId) {
-                popInfo(popupBusId)
-            }
-
-        } catch (error) {
-            console.error('Error fetching bus locations:', error);
-        }
-    }
-
     await fetchWhere();
 
     async function fetchJoinTimes() {
@@ -584,7 +585,9 @@ $(document).ready(async function() {
 
     document.addEventListener('visibilitychange', async function() {
         if (document.visibilityState === 'visible') {
+            $('.updating-buses').fadeIn();
             await fetchWhere();
+            $('.updating-buses').slideUp();
         }
     });
 

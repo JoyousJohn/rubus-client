@@ -170,6 +170,7 @@
 
         <div class="notif-popup"></div>
         <div class="getting-location-popup">Getting location...</div>
+        <div class="updating-buses">Updating bases...</div>
 
         <div class="stop-info-popup">
 
@@ -505,6 +506,20 @@
                         <div class="settings-heading">REMOVE localStorage.SETTINGS</div>
                         <div class="settings-options grid">
                             <div class="settings-option" onclick="localStorage.removeItem('settings'); $('div.settings-reset-settings div.settings-option').text('Restart for changes to take effect.').css('background-color', 'lightgray')">Reset (restart needed)</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="settings-heading">fetchWhere() (+ updateTimeToStops())</div>
+                        <div class="settings-options grid">
+                            <div class="settings-option" onclick="fetchWhere()">Execute function</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="settings-heading">updateTimeToStops([all buses])</div>
+                        <div class="settings-options grid">
+                            <div class="settings-option" onclick="updateTimeToStops(Object.keys(busData))">Execute function</div>
                         </div>
                     </div>
                         
