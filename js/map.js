@@ -189,7 +189,7 @@ function hideInfoBoxes(instantly_hide) {
     // console.log('hideInfoBoxes() triggered')
 
     if (instantly_hide) {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').hide();  
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').hide(); 
     } else {
         $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').fadeOut();  
     }
@@ -717,7 +717,7 @@ function plotBus(busId) {
 
 function selectBusMarker(busId) {
 
-    popInfo(busId);
+    popInfo(busId, true);
     // console.log(busId + ': ')
     // console.table(busData[busId])
     popupBusId = busId
@@ -791,7 +791,7 @@ const campusShortNamesMappings = {
 
 let stoppedForInterval;
 
-function popInfo(busId) {
+function popInfo(busId, resetCampusFontSize) {
 
     let secondsDivisor = 60;
     if (showETAsInSeconds) {
@@ -818,7 +818,18 @@ function popInfo(busId) {
         busNameElmText += ' (' + busId + ')'
     }
     
-    $('.info-campuses').text(campusMappings[data.route])
+    if (resetCampusFontSize === true) {
+        $('.info-campuses').css('font-size', '2.5rem');
+    }
+    const campusesElement = $('.info-campuses');
+    campusesElement.text(campusMappings[data.route]);
+    
+    setTimeout(() => {
+        while (campusesElement[0].scrollWidth > campusesElement[0].clientWidth && parseInt(campusesElement.css('font-size')) > 12) {
+            campusesElement.css('font-size', (parseInt(campusesElement.css('font-size')) - 1) + 'px');
+        }  
+    }, 0);    
+
     if (showBusSpeeds) {
         $('.info-speed').text(parseInt(data.visualSpeed))
     }
@@ -1165,9 +1176,6 @@ $('.satellite-btn').click(function() {
         
         tileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/${newTheme}/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`, {
             id: 'mapbox/' + newTheme,
-            tileSize: 512,
-            zoomOffset: -1,
-            attribution: '© Mapbox'
         }).addTo(map);
         
         $(this).css('background-color', '');
@@ -1175,9 +1183,6 @@ $('.satellite-btn').click(function() {
         map.removeLayer(tileLayer);
         tileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`, {
             id: 'mapbox/satellite-streets-v12',
-            tileSize: 512,
-            zoomOffset: -1,
-            attribution: '© Mapbox'
         }).addTo(map);
         
         $(this).css('background-color', '#3155c1');
