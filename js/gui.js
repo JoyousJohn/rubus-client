@@ -362,9 +362,8 @@ function selectedRoute(route) {
 
     if (!panelRoute) {
         $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight())
-        $('.panout, .buses-btn, .centerme, .fly-closest-stop').fadeOut('fast');
+        $('.panout, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks').fadeOut('fast');
         $('.settings-btn').hide();
-        $('.leaflet-control-attribution').hide();
         $('.route-panel').slideDown('fast');
 
         if (isDesktop) {
@@ -846,7 +845,7 @@ function calculateLoopTimes() {
 
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
-    $('.panout, .settings-btn, .buses-btn, .centerme').show();
+    $('.panout, .settings-btn, .buses-btn, .centerme, .satellite-btn, .shoot-fireworks').show();
     $(this).hide();
     $('.route-close').hide();
 
