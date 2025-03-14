@@ -1157,29 +1157,29 @@ function stopOvertimeCounter() {
         $('.overtime-time').text('').hide();;
     }
 }
-
 $('.satellite-btn').click(function() {
     const currentId = tileLayer.options.id;
-
     if (currentId.includes('satellite')) {
         const newTheme = settings['theme'] === 'dark' ? 'dark-v11' : 'streets-v11';
-        console.log(newTheme)
-        tileLayer.setUrl(`https://api.mapbox.com/styles/v1/mapbox/${newTheme}/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`);
-        tileLayer.options.id = 'mapbox/' + newTheme;
-        $(this).css('background-color', '')
+        map.removeLayer(tileLayer);
+        
+        tileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/${newTheme}/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`, {
+            id: 'mapbox/' + newTheme,
+            tileSize: 512,
+            zoomOffset: -1,
+            attribution: '© Mapbox'
+        }).addTo(map);
+        
+        $(this).css('background-color', '');
     } else {
-        tileLayer.setUrl(`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`);
-        tileLayer.options.id = 'mapbox/satellite-streets-v12';
-        $(this).css('background-color', '#3155c1')
+        map.removeLayer(tileLayer);
+        tileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`, {
+            id: 'mapbox/satellite-streets-v12',
+            tileSize: 512,
+            zoomOffset: -1,
+            attribution: '© Mapbox'
+        }).addTo(map);
+        
+        $(this).css('background-color', '#3155c1');
     }
-
-    const currentZoom = map.getZoom();
-    map.setZoom(currentZoom + 0.0001, { animate: false });
-    // setTimeout(() => {
-    map.setZoom(currentZoom, { animate: false });
-    map.invalidateSize();
-    tileLayer.redraw();
-    map._onResize();
-    // }, 50);
-
 });
