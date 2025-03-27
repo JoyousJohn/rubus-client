@@ -131,6 +131,20 @@ html, body {
     display: none;
 }
 
+.knight-mover {
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
+    padding: 1rem 2rem;
+    border-radius: 2rem;
+    font-size: 1.7rem;
+    font-family: var(--font-family);
+    display: none;
+}
+
+.knight-mover .call {
+    color: lime;
+}
+
 @keyframes pulse {
     0% {
         background-color: rgb(255, 167, 0);

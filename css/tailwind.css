@@ -22,6 +22,8 @@
 
 .bold { font-weight: bold; }
 
+.text-1p4rem { font-size: 1.4rem; }
+
 .text-1p5rem { font-size: 1.5rem; }
 
 .text-1p7rem { font-size: 1.7rem; }
@@ -279,6 +281,8 @@
 .gray777777 { color: #777777 }
 
 .gray818181 { color: #818181; } 
+
+.lime { color: lime; }
 
 .chevron-black {
     color: rgb(178 178 178);
