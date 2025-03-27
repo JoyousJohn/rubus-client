@@ -1128,10 +1128,7 @@ function handleNearestStop(fly) {
 
     for (const stopId of stopIds) {
         const stop = stopsData[stopId];
-        console.log('b')
         const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
-
-        console.log('c')
 
         closestStopDistances[stopId] = distance;
 
@@ -1218,15 +1215,16 @@ function findNearestStop(fly) {
     
     console.log("Trying to find nearest stop...")
 
-    $('.getting-location-popup').fadeIn(300);
-
     if (userPosition) {
         console.log("User position already exists")
+        $('.getting-location-popup').fadeOut(300);
         handleNearestStop(fly);
         return;
     }
 
     console.log("Trying getCurrentPosition")
+    $('.getting-location-popup').fadeIn(300);
+
     navigator.geolocation.getCurrentPosition((position) => {
 
         console.log("Got position!")

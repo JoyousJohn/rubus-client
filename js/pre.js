@@ -476,7 +476,7 @@ $(document).ready(async function() {
         if (route) activeRoutes.add(route);
     }
 
-    if (activeRoutes.size < 0) {
+    if (activeRoutes.size > 0) {
         setPolylines(activeRoutes)
         populateRouteSelectors(activeRoutes)
         $('.info-mph').text('MPH')
@@ -487,7 +487,6 @@ $(document).ready(async function() {
         setTimeout(() => {
             $('.bus-info-popup').hide();
             $('.knight-mover').show();
-            
         }, 5000);
         $('.centerme-wrapper').addClass('centerme-bottom-right')
     }

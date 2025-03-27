@@ -296,6 +296,10 @@ function centerme() {
     }
 
     if (navigator.geolocation) {
+
+        console.log("Trying to get location...")
+        $('.getting-location-popup').fadeIn(300);
+
         navigator.geolocation.getCurrentPosition((position) => {
             const userLat = position.coords.latitude;
             const userLong = position.coords.longitude;
