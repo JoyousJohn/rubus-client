@@ -516,6 +516,13 @@
                         </div>
                     </div>
 
+                    <div class="settings-reset-location">
+                        <div class="settings-heading">REMOVE localStorage.locationShared</div>
+                        <div class="settings-options grid">
+                            <div class="settings-option" onclick="localStorage.removeItem('locationShared'); $('div.settings-reset-location div.settings-option').text('Restart for changes to take effect.').css('background-color', 'lightgray')">Reset</div>
+                        </div>
+                    </div>
+
                     <div>
                         <div class="settings-heading">fetchWhere() (+updateTimeToStops(validBusIds))</div>
                         <div class="settings-options grid">
