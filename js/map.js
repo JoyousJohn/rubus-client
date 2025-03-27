@@ -338,6 +338,7 @@ function centerme() {
 
         }, (error) => {
             console.error('Error getting user location:', error);
+            $('.getting-location-popup').hide();
         });
     } else {
         console.error('Geolocation is not supported by this browser.');

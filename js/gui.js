@@ -1256,6 +1256,7 @@ async function checkIfLocationShared() {
 
     const lsLocationShared = localStorage.getItem('locationShared');
     locationShared = lsLocationShared === 'true';
+    
     console.log("(localStorage) Location shared: ", locationShared)
     console.log("geolocation permission state: ", permissionStatus.state)
     if (permissionStatus.state === 'granted' || locationShared) {
