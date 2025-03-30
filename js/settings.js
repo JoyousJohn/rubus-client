@@ -194,6 +194,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-stop-id':
+            settings['toggle-show-stop-id'] = isChecked;
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
