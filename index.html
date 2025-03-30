@@ -321,30 +321,30 @@
             </div>
 
             <div class="settings- flex justify-between">
-                <div class="settings-heading">Show Arrival Times</div>
+                <div class="settings-heading">Place Stops Above Buses</div>
                 <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-show-arrival-times" class="toggle-input">
-                    <label for="toggle-show-arrival-times" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div> 
-
-            <div class="settings- flex justify-between">
-                <div class="settings-heading">Show Bus Speeds</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-show-bus-speeds" class="toggle-input">
-                    <label for="toggle-show-bus-speeds" class="toggle-label">
+                    <input type="checkbox" id="toggle-stops-above-buses" class="toggle-input">
+                    <label for="toggle-stops-above-buses" class="toggle-label">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
             </div>
 
             <div class="settings- flex justify-between">
-                <div class="settings-heading">Place Stops Above Buses</div>
+                <div class="settings-heading">Show ETAs in seconds</div>
                 <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-stops-above-buses" class="toggle-input">
-                    <label for="toggle-stops-above-buses" class="toggle-label">
+                    <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
+                    <label for="toggle-show-etas-in-seconds" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <div class="settings-heading">Launch fireworks button</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
+                    <label for="toggle-launch-fireworks-button" class="toggle-label">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
@@ -369,6 +369,26 @@
                             <div class="settings-option" settings-option="bus-positioning" bus-positioning-option="exact">Naive Exact latLng()</div>
                             <div class="settings-option" settings-option="bus-positioning" bus-positioning-option="bezier">Catmull-Rom Cubic Bezier</div>
                             <div class="settings-option" settings-option="bus-positioning" bus-positioning-option="line-string">lineString subPath seg</div>
+                        </div>
+                    </div>
+
+                    <div class="settings- flex justify-between">
+                        <div class="settings-heading">Show Arrival Times</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-arrival-times" class="toggle-input">
+                            <label for="toggle-show-arrival-times" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div> 
+        
+                    <div class="settings- flex justify-between">
+                        <div class="settings-heading">Show Bus Speeds</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-bus-speeds" class="toggle-input">
+                            <label for="toggle-show-bus-speeds" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
 
@@ -443,16 +463,6 @@
                     </div>
 
                     <div class="settings- flex justify-between">
-                        <div class="settings-heading">Show ETAs in seconds</div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
-                            <label for="toggle-show-etas-in-seconds" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="settings- flex justify-between">
                         <div class="settings-heading">Show busId alongside bus name</div>
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-bus-id" class="toggle-input">
@@ -487,16 +497,6 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-bus-path" class="toggle-input">
                             <label for="toggle-show-bus-path" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between">
-                        <div class="settings-heading">Launch fireworks button</div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
-                            <label for="toggle-launch-fireworks-button" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
