@@ -338,7 +338,7 @@ function centerme() {
 
         }, (error) => {
             console.error('Error getting user location:', error);
-            $('.getting-location-popup').hide();
+            $('.getting-location-popup').slideUp();
         });
     } else {
         console.error('Geolocation is not supported by this browser.');
@@ -1173,10 +1173,17 @@ function stopOvertimeCounter() {
         $('.overtime-time').text('').hide();;
     }
 }
+
 $('.satellite-btn').click(function() {
     const currentId = tileLayer.options.id;
     if (currentId.includes('satellite')) {
-        const newTheme = settings['theme'] === 'dark' ? 'dark-v11' : 'streets-v11';
+        let theme = settings['theme'];
+        if (theme === 'auto') {
+            const currentHour = new Date().getHours();
+            theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
+        }
+        
+        const newTheme = theme === 'dark' ? 'dark-v11' : 'streets-v11';
         map.removeLayer(tileLayer);
         
         tileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/${newTheme}/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`, {
@@ -1190,7 +1197,6 @@ $('.satellite-btn').click(function() {
             id: 'mapbox/satellite-streets-v12',
         }).addTo(map);
         
-
         let theme = settings['theme']
         if (theme === 'auto') {
             const currentHour = new Date().getHours();
