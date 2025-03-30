@@ -297,7 +297,12 @@ html, body {
     color: gray;
 }
 
-
+.bus-data-extra {
+    font-size: 1.3rem;
+    color: var(--theme-color);
+    margin-top: 1rem;
+    overflow-x: scroll;
+}
 
 
 .my-location-popup {

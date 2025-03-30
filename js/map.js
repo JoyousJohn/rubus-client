@@ -860,6 +860,17 @@ function popInfo(busId, resetCampusFontSize) {
             `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
         $('.bus-joined-service').text('Joined service at ' + displayTime);
         $('.info-next-stops').show();
+            
+        $('.bus-data-extra').empty();
+        let extraDataHtml = `<div class="center mb-0p5rem">Bus ID: ${busId}</div>`;
+        for (const [key, value] of Object.entries(busData[busId])) {
+            // Format all values including arrays
+            if (value !== null) {
+                extraDataHtml += `<div>${key}: <span style="opacity: 0.7">${value}</span></div>`;
+            }
+        }
+        $('.bus-data-extra').html(extraDataHtml);
+
     }
     if ('at_stop' in busData[busId] && busData[busId].at_stop === true) {
         startStoppedForTimer(busId)

@@ -184,6 +184,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
         
+        case 'toggle-show-extra-bus-data':
+            settings['toggle-show-extra-bus-data'] = isChecked;
+
+            if (isChecked) {
+                $('.bus-data-extra').show();
+            } else {
+                $('.bus-data-extra').hide();
+            }
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
@@ -267,6 +277,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-bus-log']) {
         $('.bus-log-wrapper').show();
+    }
+
+    if (settings['toggle-show-extra-bus-data']) {
+        $('.bus-data-extra').show();
     }
 
 })
