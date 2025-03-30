@@ -4,6 +4,7 @@ let etas = {}
 let waits = {}
 let busLocations = {}
 let busETAs = {}
+let socket = null;
 
 function updateETAs(etasData) {
     etas = etasData
@@ -16,9 +17,19 @@ function updateWaits(waitsData) {
     // console.log(waitsData)
 }
 
+function closeRUBusSocket() {
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+        console.log("Passio WebSocket connection closed");
+    }
+}
+
 function openRUBusSocket() {
 
-    let socket;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        closeRUBusSocket();
+    }
+
     if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") { // window.location.hostname === ""
         socket = new WebSocket('ws://127.0.0.1:5000/ws');
     } else {
@@ -193,3 +204,4 @@ function openRUBusSocket() {
     });
 
 }
+

@@ -587,7 +587,9 @@ $(document).ready(async function() {
     document.addEventListener('visibilitychange', async function() {
         if (document.visibilityState === 'visible') {
             $('.updating-buses').fadeIn();
+            hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
             await fetchWhere();
+            openRUBusSocket();
             $('.updating-buses').slideUp();
         }
     });
