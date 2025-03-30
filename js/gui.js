@@ -866,10 +866,13 @@ $('.route-close').click(function() {
 $('.settings-btn').on('touchstart click', function() { // why do i need touchstart here but not below? idk
     $('.leaflet-control-attribution').hide();
     $('.settings-panel').show();
-    // if (isDesktop) {
-        $('.bottom').hide();
+    // if (!isDesktop) {
+    $('.bottom').hide();
     // }
     $('.settings-close').show();
+    if (isDesktop && $('.buses-panel-wrapper').is(':visible')) {
+        $('.buses-panel-wrapper').slideUp();
+    }
 })
 
 $('.settings-close').click(function() {

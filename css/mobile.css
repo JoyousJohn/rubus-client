@@ -48,14 +48,25 @@
         padding: 0.15rem;
     }
 
-    .buses-panel-wrapper {
+    .buses-panel-wrapper, .settings-panel {
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* IE & Edge */
     }
     
     /* Hide scrollbar for Chrome, Safari, and Opera */
-    .buses-panel-wrapper::-webkit-scrollbar {
+    .buses-panel-wrapper::-webkit-scrollbar, .settings-panel::-webkit-scrollbar {
         display: none;
+    }
+
+    .settings-panel {
+        max-width: 25%;
+        margin: 2rem;
+        border-radius: 1rem;
+    }
+
+    .settings-close > div {
+        left: 2rem;
+        bottom: 2rem;
     }
 
     .settings-heading {

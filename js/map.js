@@ -181,7 +181,12 @@ $('.shoot-fireworks').click(function() {
 });
 
 $(document).on('keydown', function(e) {
-    if (e.key === 'Escape') { hideInfoBoxes(); }
+    if (e.key === 'Escape') { 
+        hideInfoBoxes(); 
+        $('.settings-panel').fadeOut('fast');
+        $('.bottom').fadeIn('fast'); // this is being hidden due to settings-btn click?... Why tho
+        $('.settings-close').hide();
+    }
 })
 
 function hideInfoBoxes(instantly_hide) {
