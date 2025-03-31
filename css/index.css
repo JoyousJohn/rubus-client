@@ -198,7 +198,7 @@ html, body {
 
 .bus-oos {
     padding: 0.3rem 0.8rem;
-    background-color: red;
+    background-color: rgb(234, 62, 62);
     color: white;
     font-size: 1.2rem;
     border-radius: 0.5rem;

@@ -827,36 +827,40 @@ function calculateLoopTimes() {
             if (etas[thisStop] && prevStop in etas[thisStop]['from']) { // investigate why I need the first condition
                 eta += etas[thisStop]['from'][prevStop]
             } else {
-                eta += 300
+                eta += 300;
             }
 
             if (waits[thisStop]) {
-                eta += waits[thisStop]
+                eta += waits[thisStop];
             } else {
-                eta += 20
+                eta += 20;
             }
         }
 
-        loopTimes[route] = Math.round(eta/60)
+        loopTimes[route] = Math.round(eta/60);
     }
-    return loopTimes
+    return loopTimes;
 }
 
 
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
     $('.panout, .settings-btn, .buses-btn, .centerme, .satellite-btn, .shoot-fireworks').show();
+    if (userLocation) {
+        $('.fly-closest-stop-wrapper').show();
+    }
+
     $(this).hide();
     $('.route-close').hide();
 
     if (shownBeforeRoute && shownBeforeRoute !== panelRoute) {
-        toggleRoute(shownBeforeRoute)
-        shownBeforeRoute = undefined
+        toggleRoute(shownBeforeRoute);
+        shownBeforeRoute = undefined;
     } else if (!shownBeforeRoute) {
-        toggleRouteSelectors(panelRoute)
+        toggleRouteSelectors(panelRoute);
     }
 
-    panelRoute = undefined
+    panelRoute = undefined;
 }
 
 $('.route-close').click(function() {
@@ -951,9 +955,9 @@ let defaultSettings = {
 };
 
 function setDefaultSettings () {
-    delete defaultSettings['theme']
-    settings = defaultSettings
-    localStorage.setItem('settings', JSON.stringify(settings))
+    delete defaultSettings['theme'];
+    settings = defaultSettings;
+    localStorage.setItem('settings', JSON.stringify(settings));
     $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
