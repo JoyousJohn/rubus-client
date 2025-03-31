@@ -101,41 +101,43 @@ async function fetchBusData() {
             activeBuses.push(busId)
 
             if (!(busId in busData)) {
-                busData[busId] = {}
+                busData[busId] = {};
                 busData[busId].previousTime = new Date().getTime() - 5000;
-                busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]]
+                busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]];
             }
 
-            busData[busId].busName = bus.busName
-            busData[busId].lat = bus.latitude
-            busData[busId].long = bus.longitude
+            busData[busId].busName = bus.busName;
+            busData[busId].lat = bus.latitude;
+            busData[busId].long = bus.longitude;
 
             const lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
                 busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)])
             }
 
-            busData[busId].rotation = parseFloat(bus.calculatedCourse) //+ 45
+            busData[busId].rotation = parseFloat(bus.calculatedCourse); //+ 45
 
             // let alphaRouteId = bus.routeId.replace(/[^a-zA-Z]/g, '')
 
             if (bus.routeId in routeMapping) {
                 busData[busId].route = routeMapping[bus.routeId]
             } else {
-                busData[busId].route = bus.route
+                busData[busId].route = bus.route;
             }            
-            busData[busId].capacity = bus.paxLoad
+            busData[busId].capacity = bus.paxLoad;
 
-            plotBus(busId)
-            calculateSpeed(busId)
+            busData[busId].oos = bus.outOfService === 1; 
+
+            plotBus(busId);
+            calculateSpeed(busId);
 
             // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
             if (Object.keys(etas).length > 0) {
-                updateTimeToStops([busId])
+                updateTimeToStops([busId]);
             }
 
-            makeBusesByRoutes()
-            pollActiveRoutes.add(busData[busId].route)
+            makeBusesByRoutes();
+            pollActiveRoutes.add(busData[busId].route);
             
             if (busId === popupBusId) {
                 $('.info-capacity').text(bus.paxLoad + '% capacity');

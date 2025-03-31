@@ -846,6 +846,11 @@ function popInfo(busId, resetCampusFontSize) {
     $('.info-name').text(busNameElmText + ' | ')
     $('.info-capacity').text(data.capacity + '% capacity')
 
+    if (busData[busId].oos) {
+        $('.bus-oos').show();
+    } else {
+        $('.bus-oos').hide();
+    }
 
     if (data.joined_service) {
         const serviceDate = new Date(data.joined_service);
