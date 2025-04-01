@@ -814,6 +814,10 @@ function calculateLoopTimes() {
         let eta = 0
         const stopList = stopLists[route]
 
+        if (!stopList) { // for unkwown bus types (e.g. cc, penn station, have to remove adding these to bus data sometime, or add option in dev settings to show unknown bus routes.)
+            continue;
+        }
+
         for (let i = 0; i < stopList.length - 1; i++) {
             const thisStop = stopList[i]
 
@@ -924,6 +928,7 @@ const toggleSettings = [
     'toggle-show-bus-log',
     'toggle-show-extra-bus-data',
     'toggle-show-stop-id',
+    'toggle-show-knight-mover',
 ]
 
 let defaultSettings = {
@@ -949,6 +954,7 @@ let defaultSettings = {
     'toggle-show-bus-log': false,
     'toggle-show-extra-bus-data': false,
     'toggle-show-stop-id': false,
+    'toggle-show-knight-mover': false,
 
     'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
 
@@ -1134,8 +1140,8 @@ function handleNearestStop(fly) {
 
     const stopIds = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
 
-    const userLat = userPosition[0]
-    const userLong = userPosition[1]
+    const userLat = userPosition[0];
+    const userLong = userPosition[1];
 
     for (const stopId of stopIds) {
         const stop = stopsData[stopId];
@@ -1155,12 +1161,12 @@ function handleNearestStop(fly) {
             .sort(([, distanceA], [, distanceB]) => distanceA - distanceB)
     );
 
-    populateMeClosestStops()
+    populateMeClosestStops();
 
     if (closestStop) {
 
         console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
-        closestStopId = thisClosestStopId
+        closestStopId = thisClosestStopId;
 
         if (closestDistance > 14) {
             $('.centerme-wrapper').hide();
@@ -1173,7 +1179,7 @@ function handleNearestStop(fly) {
                 iconSize: [24, 24],
                 iconAnchor: [12, 12],
             })
-        }).addTo(map)
+        }).addTo(map);
 
         navigator.geolocation.watchPosition((position) => {
             const newPosition = [position.coords.latitude, position.coords.longitude];
@@ -1213,7 +1219,7 @@ function handleNearestStop(fly) {
             sourceStopId = null;
             sourceBusId = null;
             flyToStop(thisClosestStopId);
-            console.log("Flying to closest stop")
+            console.log("Flying to closest stop");
         }
         $('.closest-stop').show('none');
     } else {
@@ -1224,21 +1230,21 @@ function handleNearestStop(fly) {
 
 function findNearestStop(fly) {
     
-    console.log("Trying to find nearest stop...")
+    console.log("Trying to find nearest stop...");
 
     if (userPosition) {
-        console.log("User position already exists")
+        console.log("User position already exists");
         $('.getting-location-popup').fadeOut(300);
         handleNearestStop(fly);
         return;
     }
 
-    console.log("Trying getCurrentPosition")
+    console.log("Trying getCurrentPosition");
     $('.getting-location-popup').fadeIn(300);
 
     navigator.geolocation.getCurrentPosition((position) => {
 
-        console.log("Got position!")
+        console.log("Got position!");
 
         $('.getting-location-popup').fadeOut(300);
 
@@ -1248,7 +1254,7 @@ function findNearestStop(fly) {
 
         handleNearestStop(fly);
 
-        localStorage.setItem('locationShared', 'true')
+        localStorage.setItem('locationShared', 'true');
 
         // generate closestStopDistances object where the keys are stop ids and values are distances
 

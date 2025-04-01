@@ -130,7 +130,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-show-bus-id':
             console.log(`Show Bus IDs is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-bus-id'] = isChecked;
-            showBusId = isChecked
+            showBusId = isChecked;
             
             if (showBusId && popupBusId) {
                 $('.info-name').text(`${$('.info-name').text()} (${popupBusId}) | `)
@@ -198,12 +198,19 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-stop-id'] = isChecked;
             break;
 
+        case 'toggle-show-knight-mover':
+            settings['toggle-show-knight-mover'] = isChecked;
+
+            isChecked ? $('.knight-mover').show() : $('.knight-mover').hide();
+
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
     }
 
-    localStorage.setItem('settings', JSON.stringify(settings))
+    localStorage.setItem('settings', JSON.stringify(settings));
 
 });
 
@@ -224,8 +231,8 @@ $(document).ready(function() {
     }
 
     if (settings['toggle-show-stop-polygons']) {
-        makePolygons()
-        togglePolygons(true)
+        makePolygons();
+        togglePolygons(true);
     }
 
     if (settings['toggle-show-etas-in-seconds']) {
@@ -285,6 +292,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-extra-bus-data']) {
         $('.bus-data-extra').show();
+    }
+
+    if (settings['toggle-show-knight-mover']) {
+        $('.knight-mover').show();
     }
 
 })
