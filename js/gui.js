@@ -385,11 +385,17 @@ function selectedRoute(route) {
             <div class="route-buses-for-stop"></div>
         </div>`)
 
-        let prevStopId;
         let i = 0;
 
+        let positiveBuses = [];
+        busesByRoutes[route].forEach(busId => {
+            if (progressToNextStop(busId) < 1) { // have to debug why some stops are missed - prob a passio location issue, right?
+                positiveBuses.push(busId);
+            }
+        })
+
         // Sort bus IDs based on their ETA
-        busesByRoutes[route]
+        positiveBuses
             .sort((a, b) => {
                 const getETA = (busId) => {
                     
@@ -399,7 +405,7 @@ function selectedRoute(route) {
                         }
                         // Use the previous stop to determine which 'via' path to use
                         return busETAs[busId][stopId]['via'][previousStopId] || Infinity;
-                    } else if (busData[busId].at_stop && stopId == busData[busId].stopId) {
+                    } else if (busData[busId].at_stop && (Array.isArray(busData[busId].stopId) ? stopId === busData[busId].stopId[0] : stopId === busData[busId].stopId)) {
                         return 0;
                     }
                     return busETAs[busId] ? busETAs[busId][stopId] : Infinity;
@@ -426,6 +432,7 @@ function selectedRoute(route) {
                             stopLists[route][j] === busData[busId].stopId &&
                             stopLists[route][j-1] === busData[busId].prevStopId) {
                             busIndex = j;
+                            alert('what is this')
                             break;
                         }
                     }
@@ -438,11 +445,11 @@ function selectedRoute(route) {
                     busIndex = stopLists[route].indexOf(busData[busId].stopId);
                 }
 
-                let stopsAway = thisStopIndex - busIndex - 1;
-                
-                if (stopsAway < 0) {
-                    stopsAway = stopLists[route].length + stopsAway; 
-                }
+                let stopsAway = thisStopIndex > busIndex 
+                    ? thisStopIndex - busIndex - 1
+                    : (stopLists[route].length - busIndex) + thisStopIndex - 1;
+
+                console.log(stopsAway)
 
                 if (busETAs[busId]) {
 
@@ -450,19 +457,19 @@ function selectedRoute(route) {
 
                     const $gridElm = $stopElm.find('.route-buses-for-stop');
 
-                    if (busData[busId].at_stop && stopId == busData[busId].stopId) { 
+                    if (busData[busId].at_stop && (Array.isArray(busData[busId].stopId) ? stopId === busData[busId].stopId[0] : stopId === busData[busId].stopId)) { 
                         eta = 0;
-                        $gridElm.append(`<div class="rbfs-bn">${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                         return;
                     } else if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) { // wknd & all special case at sac nb
                         eta = 0;
-                        $gridElm.append(`<div class="rbfs-bn">${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                     } else {
-                        $gridElm.append(`<div class="rbfs-bn">${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
                         if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
                             // Use the previous stop to determine which 'via' path to use
                             // console.table(busETAs[busId][stopId]['via'])
@@ -481,7 +488,7 @@ function selectedRoute(route) {
                         //     && stopId === 3 
                         //     && previousStopId  == busData[busId].stopId[1])))  {
                         //     stopsAwayText = 'En route';
-                        if (stopsAway === 0) {
+                        if (!busData[busId].at_stop && stopsAway === 0) {
                             stopsAwayText = "En route";
                         } else if (stopsAway === 1) {
                             stopsAwayText = stopsAway + ' stop away';
@@ -495,8 +502,9 @@ function selectedRoute(route) {
 
                 prevStopId = stopId;
                 i++;
-
             });
+
+        console.log('---')
 
         $('.route-stops-grid').append($stopElm);
         previousStopId = stopId;
