@@ -56,8 +56,21 @@ const excludedRouteMappings = {
     '4098': 'Penn Station Express'
 }
 
+function getRouteStr(route) {
+    if (route in routeMapping) {
+        return [routeMapping[route], true]
+    } else {
+        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
+        let alphaRouteId = bus.route.replace(/[^a-zA-Z]/g, '').toLowerCase();
+        if (knownRoutes.includes(alphaRouteId)) {
+            return [alphaRouteId, true];
+        } else {
+            return [route, false] // unknown route
+        }
+    }     
+}
 
-async function fetchBusData() {
+async function fetchBusData(immediatelyUpdate) {
 
     const formData = '{"s0":"1268","sA":1}';
     // const formData = '{"s0":"1268","sA":1,"rA":15,"r0":"41231","r1":"4067","r2":"43711","r3":"43431","r4":"43440","r5":"43441","r6":"43398","r7":"43991","r8":"43990","r9":"43973","r10":"43397","r11":"4088","r12":"4063","r13":"4056","r14":"4098", "r15": "-1"}'
@@ -86,6 +99,7 @@ async function fetchBusData() {
 
         let activeBuses = []
         let pollActiveRoutes = new Set()
+
 
         for (const someId in data.buses) {
 
@@ -119,16 +133,15 @@ async function fetchBusData() {
 
             // let alphaRouteId = bus.routeId.replace(/[^a-zA-Z]/g, '')
 
-            if (bus.routeId in routeMapping) {
-                busData[busId].route = routeMapping[bus.routeId]
-            } else {
-                busData[busId].route = bus.route;
-            }            
+            const [routeStr, isKnown] = getRouteStr(bus.routeId)
+            busData[busId].route = routeStr
+            busData[busId].isKnown = isKnown
+
             busData[busId].capacity = bus.paxLoad;
 
             busData[busId].oos = bus.outOfService === 1; 
 
-            plotBus(busId);
+            plotBus(busId, immediatelyUpdate);
             calculateSpeed(busId);
 
             // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
@@ -437,24 +450,9 @@ $(document).ready(async function() {
                 busData[busId].rotation = parseFloat(bus.rotation)
     
                 // console.log(bus)
-
-                if (bus.route in routeMapping) {
-                    busData[busId].route = routeMapping[bus.route]
-                } else {
-
-                    const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
-
-                    if (bus.route in routeMapping) {
-                        busData[busId].route = routeMapping[bus.route]
-                    }  else {
-                        let alphaRouteId = bus.route.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                        if (knownRoutes.includes(alphaRouteId)) {
-                            busData[busId].route = alphaRouteId;
-                        } else {
-                            busData[busId].route = bus.route
-                        }
-                    }
-                }           
+                const [routeStr, isKnown] = getRouteStr(bus.route)
+                busData[busId].route = routeStr
+                busData[busId].isKnown = isKnown
                 activeRoutes.add(busData[busId].route)
 
                 busData[busId].capacity = bus.capacity
@@ -550,6 +548,7 @@ $(document).ready(async function() {
             }
 
             if (popupBusId) {
+                // alert(joined_service[popupBusId])
                 const serviceDate = new Date(joined_service[popupBusId]);
                 const today = new Date();
                 const isToday = serviceDate.getDate() === today.getDate() && 

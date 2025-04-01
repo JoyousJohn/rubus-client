@@ -485,9 +485,36 @@ let wholePixelPositioning = false;
 let busLines = {}
 let midpointCircle = {}
 
-const updateMarkerPosition = (busId) => {
+const updateMarkerPosition = (busId, immediatelyUpdate) => {
     const loc = {lat: busData[busId].lat, long: busData[busId].long};
     const marker = busMarkers[busId];
+
+    // Cancel any existing animations for this bus
+    if (animationFrames[busId]) {
+        cancelAnimationFrame(animationFrames[busId]);
+        delete animationFrames[busId];
+    }
+
+    // If immediatelyUpdate is true, skip animation and set position directly
+    if (immediatelyUpdate) {
+        const endLatLng = L.latLng(loc.lat, loc.long);
+        
+        if (wholePixelPositioning) {
+            marker.setLatLng(endLatLng);
+        } else {
+            marker.setLatLngPrecise([endLatLng.lat, endLatLng.lng]);
+        }
+        
+        // Update rotation immediately as well
+        if (!pauseRotationUpdating) {
+            const iconElement = marker.getElement().querySelector('.bus-icon-outer');
+            if (iconElement) {
+                iconElement.style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
+            }
+        }
+        
+        return; // Exit early - no animation needed
+    }
 
     let prevLatLng = undefined;
     if (busData[busId].previousPositions.length >= 3) {
@@ -679,19 +706,15 @@ const updateMarkerPosition = (busId) => {
         }
     };
 
-    if (animationFrames[busId]) {
-        cancelAnimationFrame(animationFrames[busId]);
-        delete animationFrames[busId];
-    }
-
+    // Animation frame already canceled at the top of the function
+    
     requestAnimationFrame(animateMarker);
 };
-
 
 let selectedMarkerId
 let pauseUpdateMarkerPositions = false
 
-function plotBus(busId) {
+function plotBus(busId, immediatelyUpdate) {
 
     // console.log('plotting bus with id:', busId)
 
@@ -721,7 +744,7 @@ function plotBus(busId) {
 
     } else if (!pauseUpdateMarkerPositions) {
         // Update the existing marker's position
-        updateMarkerPosition(busId);
+        updateMarkerPosition(busId, immediatelyUpdate);
     }
 }
 
