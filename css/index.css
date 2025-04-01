@@ -148,10 +148,6 @@ html, body {
     user-select: none;
 }
 
-.knight-mover .call {
-    color: lime;
-}
-
 @keyframes pulse {
     0% {
         background-color: rgb(255, 167, 0);

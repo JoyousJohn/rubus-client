@@ -130,9 +130,13 @@
 
 .pb-25rem { padding-bottom: 25rem; }
 
+.px-1rem { padding-left: 1rem; padding-right: 1rem; }
+
 .px-3rem { padding-left: 3rem; padding-right: 3rem; }
 
 .px-16rem { padding-left: 16rem; padding-right: 16rem; }
+
+.py-0p5rem { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 
 .py-8rem { padding-top: 8rem; padding-bottom: 8rem; }
 
@@ -286,6 +290,8 @@
 
 .lime { color: lime; }
 
+.bg-lime { background-color: lime; }
+
 .chevron-black {
     color: rgb(178 178 178);
     margin-right: 24rem;
@@ -299,7 +305,7 @@
     color: darkgray;
 }
 
-.br-20px { border-radius: 20px; }
+.br-0p5rem { border-radius: 0.5rem; }
 
 .br-1rem { border-radius: 1rem; }
 
