@@ -419,7 +419,6 @@ $(document).ready(async function() {
     await fetchBusData();
 
     if (!Object.keys(busData).length) {
-        wsClient.connect()
 
         response = await fetch('https://transloc.up.railway.app/overnight');
         if (!response.ok) {
@@ -427,42 +426,48 @@ $(document).ready(async function() {
         } else {
             const data = await response.json();
 
-            for (const someId in data) {
-    
-                const bus = data[someId]
-    
-                if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
-                    continue
-                }
-    
-                const busId = bus.bus_id
-    
-                if (!(busId in busData)) {
-                    busData[busId] = {}
-                    busData[busId].previousTime = new Date().getTime() - 5000;
-                    busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]]
-                }
-    
-                busData[busId].busName = bus.name
-                busData[busId].lat = bus.lat
-                busData[busId].long = bus.lng
-    
-                busData[busId].rotation = parseFloat(bus.rotation)
-    
-                // console.log(bus)
-                const [routeStr, isKnown] = getRouteStr(bus.route)
-                busData[busId].route = routeStr
-                busData[busId].isKnown = isKnown
-                activeRoutes.add(busData[busId].route)
+            if (Object.keys(data).length) {
+                wsClient.connect()
+                
+                for (const someId in data) {
+        
+                    const bus = data[someId]
+        
+                    if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
+                        continue
+                    }
+        
+                    const busId = bus.bus_id
+        
+                    if (!(busId in busData)) {
+                        busData[busId] = {}
+                        busData[busId].previousTime = new Date().getTime() - 5000;
+                        busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]]
+                    }
+        
+                    busData[busId].busName = bus.name
+                    busData[busId].lat = bus.lat
+                    busData[busId].long = bus.lng
+        
+                    busData[busId].rotation = parseFloat(bus.rotation)
+        
+                    // console.log(bus)
+                    const [routeStr, isKnown] = getRouteStr(bus.route)
+                    busData[busId].route = routeStr
+                    busData[busId].isKnown = isKnown
+                    activeRoutes.add(busData[busId].route)
 
-                busData[busId].capacity = bus.capacity
-    
-                plotBus(busId)
-                calculateSpeed(busId)
-    
-                makeBusesByRoutes()
-                // pollActiveRoutes.add(busData[busId].route)
-    
+                    busData[busId].capacity = bus.capacity
+        
+                    plotBus(busId)
+                    calculateSpeed(busId)
+        
+                    makeBusesByRoutes()
+                    // pollActiveRoutes.add(busData[busId].route)
+        
+                }
+            } else {
+
             }
 
             // console.log(activeRoutes)
@@ -482,12 +487,12 @@ $(document).ready(async function() {
         $('.info-mph').text('MPH')
         updateMarkerSize() // set correct html marker size before plotting
     } else {
-        $('.bus-info-popup').show().find('.info-campuses').text('Checking for buses...').addClass('pulsate');
+        // $('.bus-info-popup').show().find('.info-campuses').text('Checking for buses...').addClass('pulsate');
         $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
-        setTimeout(() => {
-            $('.bus-info-popup').hide();
-            $('.knight-mover').show();
-        }, 5000);
+        // setTimeout(() => {
+            // $('.bus-info-popup').hide();
+        $('.knight-mover').show();
+        // }, 5000);
         $('.centerme-wrapper').addClass('centerme-bottom-right')
     }
     $('.centerme-wrapper').fadeIn();
