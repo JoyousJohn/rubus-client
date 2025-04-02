@@ -7,6 +7,10 @@
         margin-right: 1rem;
     }
 
+    .getting-location-popup {
+        margin-top: 0;
+    }
+
     .info-next-stops {
         max-height: 100%;
         margin-bottom: 4rem; /* Not sure why needed, look into .bus-info-popup 1rem marigin */
@@ -29,8 +33,17 @@
         margin-right: 0; /* For settings */
     }
 
-    .panout {
+    .left-btns {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        column-gap: 0.8rem;
+    }
+
+    .left-btns > div {
         margin-bottom: 1rem;
+        align-items: center;
+        width: auto;
+        justify-content: center;
     }
 
     .buses-panel-wrapper {
