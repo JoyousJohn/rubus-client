@@ -382,6 +382,7 @@ async function fetchWhere() {
 
         const validBusIds = []
         for (const busId in busLocations) {
+
             if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
                             
             busData[busId]['stopId'] = parseInt(busLocations[busId][0])
@@ -407,6 +408,62 @@ async function fetchWhere() {
 }
 
 
+async function startOvernight() {
+
+    response = await fetch('https://transloc.up.railway.app/overnight');
+
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+
+    } else {
+        const data = await response.json();
+
+        if (Object.keys(data).length) {
+            wsClient.connect()
+            
+            for (const someId in data) {
+    
+                const bus = data[someId]
+    
+                if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
+                    continue
+                }
+    
+                const busId = bus.bus_id
+    
+                if (!(busId in busData)) {
+                    busData[busId] = {}
+                    busData[busId].previousTime = new Date().getTime() - 5000;
+                    busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]]
+                }
+    
+                busData[busId].busName = bus.name
+                busData[busId].lat = bus.lat
+                busData[busId].long = bus.lng
+    
+                busData[busId].rotation = parseFloat(bus.rotation)
+    
+                const [routeStr, isKnown] = getRouteStr(bus.route)
+                busData[busId].route = routeStr
+                busData[busId].isKnown = isKnown
+                activeRoutes.add(busData[busId].route)
+
+                busData[busId].capacity = bus.capacity
+    
+                plotBus(busId)
+                calculateSpeed(busId)
+    
+                makeBusesByRoutes()
+    
+            }
+        }
+
+        // console.log(activeRoutes)
+        // setPolylines(activeRoutes)
+
+    }
+}
+
 $(document).ready(async function() {
     // Initialize settings before map is created
     settings = localStorage.getItem('settings');
@@ -419,61 +476,7 @@ $(document).ready(async function() {
     await fetchBusData();
 
     if (!Object.keys(busData).length) {
-
-        response = await fetch('https://transloc.up.railway.app/overnight');
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        } else {
-            const data = await response.json();
-
-            if (Object.keys(data).length) {
-                wsClient.connect()
-                
-                for (const someId in data) {
-        
-                    const bus = data[someId]
-        
-                    if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
-                        continue
-                    }
-        
-                    const busId = bus.bus_id
-        
-                    if (!(busId in busData)) {
-                        busData[busId] = {}
-                        busData[busId].previousTime = new Date().getTime() - 5000;
-                        busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]]
-                    }
-        
-                    busData[busId].busName = bus.name
-                    busData[busId].lat = bus.lat
-                    busData[busId].long = bus.lng
-        
-                    busData[busId].rotation = parseFloat(bus.rotation)
-        
-                    // console.log(bus)
-                    const [routeStr, isKnown] = getRouteStr(bus.route)
-                    busData[busId].route = routeStr
-                    busData[busId].isKnown = isKnown
-                    activeRoutes.add(busData[busId].route)
-
-                    busData[busId].capacity = bus.capacity
-        
-                    plotBus(busId)
-                    calculateSpeed(busId)
-        
-                    makeBusesByRoutes()
-                    // pollActiveRoutes.add(busData[busId].route)
-        
-                }
-            } else {
-
-            }
-
-            // console.log(activeRoutes)
-            // setPolylines(activeRoutes)
-
-        }
+        startOvernight();
     }
 
     for (const busId in busData) {
@@ -596,6 +599,11 @@ $(document).ready(async function() {
             hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
             await fetchWhere();
             openRUBusSocket();
+
+            if (!Object.keys(busData).length) {
+                startOvernight();
+            }
+
             $('.updating-buses').slideUp();
         }
     });
