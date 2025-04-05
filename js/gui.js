@@ -520,6 +520,8 @@ function selectedRoute(route) {
 $('.color-circle').click(function() {
     $('.color-select-route').text(shownRoute.toUpperCase()).css('color', colorMappings[shownRoute]);
     
+    $('.color-circle-select-default').css('background-color', defaultColorMappings[shownRoute])
+
     $('.color-circle-select').each(function() {
         const color = $(this).css('background-color');
         if (color === colorMappings[shownRoute]) {
@@ -559,9 +561,7 @@ function updateColorMappingsSelection(selectedColor) {
 }
 
 $('.color-reset').click(function() {
-    updateColorMappingsSelection(defaultColorMappings[shownRoute])
-    $('.color-select-route').css('color', defaultColorMappings[shownRoute])
-    $('.selected-color-choice').text('').removeClass('selected-color-choice')
+    $('.color-circle-select-default').click();
     $('.color-reset').css('background-color', 'gray')
 })
 
