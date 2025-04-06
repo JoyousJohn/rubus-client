@@ -835,6 +835,11 @@ function popInfo(busId, resetCampusFontSize) {
     }
     
     $('.stop-info-popup').hide();
+    if (popupStopId) {
+        busStopMarkers[popupStopId].setIcon(L.icon({
+            iconUrl: 'img/stop_marker.png',
+        }));
+    }
 
     if (busData[busId]['overtime']) {
         $('.bus-stopped-for .stop-octagon').show();
