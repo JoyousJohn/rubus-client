@@ -47,8 +47,7 @@ async function setPolylines(activeRoutes) {
             smoothFactor: 1
         };
 
-        // Apply SVG renderer with padding only if the setting is enabled
-        if (settings && settings['toggle-polyline-padding']) {
+        if (settings['toggle-polyline-padding']) {
             polylineOptions.renderer = L.svg({ padding: 1.0 });
         }
 

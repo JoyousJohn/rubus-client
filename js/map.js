@@ -907,7 +907,11 @@ function popInfo(busId, resetCampusFontSize) {
         for (const [key, value] of Object.entries(busData[busId])) {
             // Format all values including arrays
             if (value !== null) {
-                extraDataHtml += `<div>${key}: <span style="opacity: 0.7">${value}</span></div>`;
+                let extraDataVal = value
+                if (key === 'stopId' || key === 'prevStopId' || key === 'next_stop') {
+                    extraDataVal += ' (' + stopsData[value].name + ')'
+                }
+                extraDataHtml += `<div>${key}: <span style="opacity: 0.7">${extraDataVal}</span></div>`;
             }
         }
         $('.bus-data-extra').html(extraDataHtml);
