@@ -61,7 +61,7 @@ $(document).ready(function() {
 
     tileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken, {
         maxZoom: 20,
-        id: 'mapbox/' + mapTheme,
+        id: 'mapbox/' + mapTheme
     }).addTo(map);
 
     let isTransitioning = false; // Flag to track if the map is transitioning

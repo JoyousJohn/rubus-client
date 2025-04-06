@@ -939,6 +939,7 @@ const toggleSettings = [
     'toggle-show-extra-bus-data',
     'toggle-show-stop-id',
     'toggle-show-knight-mover',
+    'toggle-polyline-padding'
 ]
 
 let defaultSettings = {
@@ -965,6 +966,7 @@ let defaultSettings = {
     'toggle-show-extra-bus-data': false,
     'toggle-show-stop-id': false,
     'toggle-show-knight-mover': false,
+    'toggle-polyline-padding': false,
 
     'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
 

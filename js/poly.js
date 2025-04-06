@@ -40,13 +40,19 @@ async function setPolylines(activeRoutes) {
         //     smoothFactor: 1 
         // }).addTo(map);
 
-        const polyline = L.polyline(coordinates, {
+        const polylineOptions = {
             color: colorMappings[routeName],
             weight: 4,
             opacity: 1,
-            smoothFactor: 1,
-            renderer: L.canvas({ padding: 1 })
-        });
+            smoothFactor: 1
+        };
+
+        // Apply SVG renderer with padding only if the setting is enabled
+        if (settings && settings['toggle-polyline-padding']) {
+            polylineOptions.renderer = L.svg({ padding: 1.0 });
+        }
+
+        const polyline = L.polyline(coordinates, polylineOptions);
 
         // Add the polyline to the map
         polyline.addTo(map);

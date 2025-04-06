@@ -202,7 +202,30 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-knight-mover'] = isChecked;
 
             isChecked ? $('.knight-mover').show() : $('.knight-mover').hide();
+            break;
 
+        case 'toggle-polyline-padding':
+            settings['toggle-polyline-padding'] = isChecked;
+
+            if (isChecked) {
+                for (const routeName in polylines) {
+                    const polyline = polylines[routeName];
+                    polyline.removeFrom(map);
+                    polyline.setStyle({
+                        renderer: L.svg({ padding: 1.0 })
+                    });
+                    polyline.addTo(map);
+                }
+            } else {
+                for (const routeName in polylines) {
+                    const polyline = polylines[routeName];
+                    polyline.removeFrom(map);
+                    polyline.setStyle({
+                        renderer: undefined
+                    });
+                    polyline.addTo(map);
+                }
+            }
             break;
 
         default:
