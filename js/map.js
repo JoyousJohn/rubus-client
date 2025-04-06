@@ -200,6 +200,9 @@ function hideInfoBoxes(instantly_hide) {
     }
 
     if (popupStopId) {
+        busStopMarkers[popupStopId].setIcon(L.icon({
+            iconUrl: 'img/stop_marker.png',
+        }));
         popupStopId = null;
         thisClosestStopId = null;
     }

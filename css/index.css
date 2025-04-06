@@ -687,7 +687,7 @@ html, body {
     padding: 1.7rem;
     border-radius: 5rem;
     font-size: 2.5rem;
-    width: min-content;
+    /* width: min-content; */
     color: var(--theme-color);
     display: flex;
     aspect-ratio: 1;

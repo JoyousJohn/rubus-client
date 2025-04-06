@@ -229,6 +229,16 @@ let sourceStopId = null;
 
 async function popStopInfo(stopId) {
 
+    if (popupStopId) {
+        busStopMarkers[popupStopId].setIcon(L.icon({
+            iconUrl: 'img/stop_marker.png',
+        }));
+    }
+
+    busStopMarkers[stopId].setIcon(L.icon({
+        iconUrl: 'img/stop_marker_selected.png',
+    }));
+
     if (Number(closestStopId) === stopId) {
         $('.closest-stop').show();
     } else {
