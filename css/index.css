@@ -319,6 +319,11 @@ html, body {
     pointer-events: all;
     overflow-y: scroll;
     max-height: 40vh;
+    scrollbar-width: none;
+}
+
+.my-location-popup::-webkit-scrollbar {
+    display: none;
 }
 
 .stop-info-popup {

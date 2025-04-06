@@ -44,7 +44,8 @@ async function setPolylines(activeRoutes) {
             color: colorMappings[routeName],
             weight: 4,
             opacity: 1,
-            smoothFactor: 1
+            smoothFactor: 1,
+            renderer: L.canvas({ padding: 1 })
         });
 
         // Add the polyline to the map
