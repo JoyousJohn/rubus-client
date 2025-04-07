@@ -100,7 +100,6 @@ async function fetchBusData(immediatelyUpdate) {
         let activeBuses = []
         let pollActiveRoutes = new Set()
 
-
         for (const someId in data.buses) {
 
             if (someId === '-1') continue;
@@ -147,6 +146,13 @@ async function fetchBusData(immediatelyUpdate) {
             // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
             if (Object.keys(etas).length > 0) {
                 updateTimeToStops([busId]);
+            }
+
+            const newRoutes = pollActiveRoutes.difference(activeRoutes);
+            if (newRoutes.size > 0) {
+                setPolylines(newRoutes);
+                populateRouteSelectors(newRoutes);
+                activeRoutes.union(newRoutes)
             }
 
             makeBusesByRoutes();
