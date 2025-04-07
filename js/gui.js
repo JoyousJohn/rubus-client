@@ -124,14 +124,14 @@ function populateRouteSelectors(activeRoutes) {
 
     $('.route-selectors').scrollLeft(0)
 
-let isDragging = false;
-let startX, scrollLeft;
-let velocity = 0;
-let lastX = 0;
-let lastTime = 0;
-let animationFrame = null;
+    let isDragging = false;
+    let startX, scrollLeft;
+    let velocity = 0;
+    let lastX = 0;
+    let lastTime = 0;
+    let animationFrame = null;
 
-$('.route-selectors')
+    $('.route-selectors')
     .on('mousedown touchstart', function(e) {
         isDragging = true;
         startX = e.pageX || e.originalEvent.touches[0].pageX;

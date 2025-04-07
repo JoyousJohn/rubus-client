@@ -148,15 +148,16 @@ async function fetchBusData(immediatelyUpdate) {
                 updateTimeToStops([busId]);
             }
 
+            pollActiveRoutes.add(busData[busId].route);
             const newRoutes = pollActiveRoutes.difference(activeRoutes);
             if (newRoutes.size > 0) {
+                console.log("New buses: ", newRoutes)
                 setPolylines(newRoutes);
-                populateRouteSelectors(newRoutes);
-                activeRoutes.union(newRoutes)
+                populateRouteSelectors(activeRoutes); // this adds selectos for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all
+                newRoutes.forEach(item => activeRoutes.add(item))
             }
 
             makeBusesByRoutes();
-            pollActiveRoutes.add(busData[busId].route);
             
             if (busId === popupBusId) {
                 $('.info-capacity').text(bus.paxLoad + '% capacity');
@@ -176,33 +177,8 @@ async function fetchBusData(immediatelyUpdate) {
             }
 
             if (!activeBuses.includes(parseInt(busId))) {
-
                 console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`)
-
-                if (busMarkers[busId]) { // investigate why this would occur
-                    busMarkers[busId].remove();
-                    console.log('removing')
-                }
-                delete busMarkers[busId];
-                delete busETAs[busId];   
-
-                const route = busData[busId].route
-
-                delete busData[busId];   
-                makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
-
-                if (!busesByRoutes[route]) {
-                    console.log(`[INFO] The last bus for route ${route} went out of service.`)
-                    polylines[route].remove();
-                    $(`.route-selector[routename="${route}"]`).remove();
-                }
-
-                removePreviouslyActiveStops();
-
-                if (popupBusId === busId) {
-                    hideInfoBoxes();
-                    sourceBusId = null;
-                }
+                makeOoS(busId)
             }
         }
 
@@ -216,6 +192,36 @@ async function fetchBusData(immediatelyUpdate) {
 
     } catch (error) {
         console.error('Error fetching bus data:', error);
+    }
+}
+
+
+function makeOoS(busId) {
+    if (busMarkers[busId]) { // investigate why this would occur
+        busMarkers[busId].remove();
+        console.log('removing')
+    }
+    delete busMarkers[busId];
+    delete busETAs[busId];   
+
+    const route = busData[busId].route
+
+    delete busData[busId];   
+    makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
+
+    if (!busesByRoutes[route]) {
+        console.log(`[INFO] The last bus for route ${route} went out of service.`)
+        activeRoutes.delete(route);
+        polylines[route].remove();
+        $(`.route-selector[routename="${route}"]`).remove();
+        
+    }
+
+    removePreviouslyActiveStops();
+
+    if (popupBusId === busId) {
+        hideInfoBoxes();
+        sourceBusId = null;
     }
 }
 
@@ -491,8 +497,6 @@ $(document).ready(async function() {
     }
 
     if (activeRoutes.size > 0) {
-        setPolylines(activeRoutes)
-        populateRouteSelectors(activeRoutes)
         $('.info-mph').text('MPH')
         updateMarkerSize() // set correct html marker size before plotting
     } else {
