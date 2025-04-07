@@ -910,9 +910,12 @@ function popInfo(busId, resetCampusFontSize) {
                 let extraDataVal = value
                 if (key === 'stopId') {
                     if (Array.isArray(value)) {
-                        extraDataVal = value.map(id => 
-                            `${id} (${stopsData[id] ? stopsData[id].name : 'Unknown'})`
-                        ).join(', ');
+                        const formattedStops = [];
+                        for (const id of value) {
+                            const stopName = stopsData[id] ? stopsData[id].name : 'Unknown';
+                            formattedStops.push(`${id} (${stopName})`);
+                        }
+                        extraDataVal = formattedStops.join(', ');
                     } else {
                         extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
                     }
