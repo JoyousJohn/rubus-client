@@ -151,7 +151,6 @@ async function fetchBusData(immediatelyUpdate) {
             pollActiveRoutes.add(busData[busId].route);
             const newRoutes = pollActiveRoutes.difference(activeRoutes);
             if (newRoutes.size > 0) {
-                console.log("New buses: ", newRoutes)
                 setPolylines(newRoutes);
                 populateRouteSelectors(activeRoutes); // this adds selectos for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all
                 newRoutes.forEach(item => activeRoutes.add(item))

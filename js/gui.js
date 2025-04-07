@@ -1329,6 +1329,18 @@ function populateMeClosestStops() {
         $('.closest-stops-list').append(stopNameDiv);
         $('.closest-stops-list').append(stopDistDiv);
 
+        const $routesHereDiv = $(`<div class="flex gap-x-0p5rem"></div>`)
+
+        console.log(stopId)
+        const busesHere = routesServicing(parseInt(stopId))
+        console.log(busesHere)
+        busesHere.forEach(route => {
+            $routesHereDiv.append($(`<div class="route-here">${route.toUpperCase()}</div>`).css('background-color', colorMappings[route]))
+        })
+
+        $('.closest-stops-list').append($routesHereDiv)
+        $('.closest-stops-list').append('<div></div>')
+
         count++;
     }
 }

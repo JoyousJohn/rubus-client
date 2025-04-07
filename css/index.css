@@ -489,6 +489,12 @@ html, body {
     font-size: 1.7rem;
 }
 
+.route-here {
+    border-radius: 0.5rem;
+    padding: 0.25rem 1.3rem;
+    color: white;
+    font-size: 1.5rem;
+}
 
 
 .route-panel {
