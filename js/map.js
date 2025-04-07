@@ -908,8 +908,16 @@ function popInfo(busId, resetCampusFontSize) {
             // Format all values including arrays
             if (value !== null) {
                 let extraDataVal = value
-                if (key === 'stopId' || key === 'prevStopId' || key === 'next_stop') {
-                    extraDataVal += ' (' + stopsData[value].name + ')'
+                if (key === 'stopId') {
+                    if (Array.isArray(value)) {
+                        extraDataVal = value.map(id => 
+                            `${id} (${stopsData[id] ? stopsData[id].name : 'Unknown'})`
+                        ).join(', ');
+                    } else {
+                        extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
+                    }
+                } else if (key === 'prevStopId' || key === 'next_stop') {
+                    extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
                 }
                 extraDataHtml += `<div>${key}: <span style="opacity: 0.7">${extraDataVal}</span></div>`;
             }
