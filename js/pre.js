@@ -519,7 +519,6 @@ $(document).ready(async function() {
     }
 
     if (activeRoutes.size > 0) {
-        $('.info-mph').text('MPH');
         updateMarkerSize(); // set correct html marker size before plotting
         checkMinRoutes();
     } else {

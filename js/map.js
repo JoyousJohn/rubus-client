@@ -403,11 +403,12 @@ async function calculateSpeed(busId) {
     // console.log('realSpeed: ', realSpeed)
 
     if (!('visualSpeed' in busData[busId])) {
-        busData[busId].speed = realSpeed
-        busData[busId].visualSpeed = realSpeed
+        busData[busId].speed = realSpeed;
+        busData[busId].visualSpeed = realSpeed;
         if (popupBusId === busId && showBusSpeeds) {
             console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
-            $('.info-speed').text(Math.round(busData[busId].visualSpeed))
+            $('.info-speed').text(Math.round(busData[busId].visualSpeed));
+            $('.info-mph').text('MPH');
         }
         busData[busId].previousLatitude = currentLatitude;
         busData[busId].previousLongitude = currentLongitude;
@@ -871,11 +872,11 @@ function popInfo(busId, resetCampusFontSize) {
         }  
     }, 0);    
 
-    if (showBusSpeeds) {
-        $('.info-speed').text(parseInt(data.visualSpeed))
+    if (showBusSpeeds && !Number.isNaN(parseInt(data.visualSpeed))) {
+        $('.info-speed').text(parseInt(data.visualSpeed));
     }
-    $('.info-name').text(busNameElmText + ' | ')
-    $('.info-capacity').text(data.capacity + '% capacity')
+    $('.info-name').text(busNameElmText + ' | ');
+    $('.info-capacity').text(data.capacity + '% capacity');
 
     if (busData[busId].oos) {
         $('.bus-oos').show();
