@@ -916,6 +916,21 @@ html, body {
     z-index: 402;
 }
 
+.span-i {
+    padding: 0.7rem;
+    color: white;
+    background: rgb(200, 200, 200);
+    border-radius: 50%;
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4rem;
+    font-style: italic;
+    min-height: max-content;
+    margin-left: 0.7rem;
+}
+
 .buses-close {
     display: none;
 }
@@ -1023,7 +1038,9 @@ html, body {
     font-size: 1.25rem;
 }
 
-
+.preload-explain {
+    
+}
 
 
 
