@@ -1,10 +1,10 @@
-
 class BusWebSocketClient {
     constructor(wsUrl) {
         this.wsUrl = wsUrl;
         this.ws = null;
         this.wsUserIds = [];
         this.buses = {};  // Store previous data for each bus by busId
+        this.manualDisconnect = false;
     }
 
     // Method to subscribe and send data to the WebSocket server
@@ -112,7 +112,6 @@ class BusWebSocketClient {
 
     }
 
-    // Establish connection to WebSocket
     connect() {
         this.ws = new WebSocket(this.wsUrl);
 
@@ -126,8 +125,11 @@ class BusWebSocketClient {
         };
 
         this.ws.onclose = () => {
-            console.log("WebSocket connection closed, retrying...");
-            setTimeout(() => this.connect(), 5000);  // Retry after 5 seconds
+            console.log("WebSocket connection closed.");
+            if (!this.manualDisconnect) {
+                console.log("Retrying connection...");
+                setTimeout(() => this.connect(), 5000);
+            }
         };
 
         this.ws.onerror = (error) => {
@@ -135,6 +137,15 @@ class BusWebSocketClient {
             this.ws.close();
         };
     }
+
+    disconnect() {
+        this.manualDisconnect = true;
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+        }
+    }
+    
 }
 
 // Instantiate the WebSocket client

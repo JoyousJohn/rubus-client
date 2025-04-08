@@ -36,6 +36,10 @@ html, body {
     overscroll-behavior-y: none;
 }
 
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
 .leaflet-control-attribution {
     display: none;
 }
