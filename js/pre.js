@@ -149,11 +149,15 @@ async function fetchBusData(immediatelyUpdate) {
             }
 
             pollActiveRoutes.add(busData[busId].route);
+            // console.log('-')
+            // console.log(pollActiveRoutes)
             const newRoutes = pollActiveRoutes.difference(activeRoutes);
             if (newRoutes.size > 0) {
+                // console.log(newRoutes)
+                // console.log(activeRoutes)
                 setPolylines(newRoutes);
-                populateRouteSelectors(activeRoutes); // this adds selectos for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all
                 newRoutes.forEach(item => activeRoutes.add(item))
+                populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all
             }
 
             makeBusesByRoutes();
@@ -212,8 +216,7 @@ function makeOoS(busId) {
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
         polylines[route].remove();
-        $(`.route-selector[routename="${route}"]`).remove();
-        
+        $(`.route-selector[routename="${route}"]`).remove(); 
     }
 
     removePreviouslyActiveStops();

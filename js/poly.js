@@ -5,6 +5,7 @@ async function setPolylines(activeRoutes) {
     const fetchPromises = [];
 
     for (const routeName of activeRoutes) {
+        
         let coordinates = await getPolylineData(routeName);
 
         if (!coordinates) continue // if undefined

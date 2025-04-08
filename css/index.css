@@ -490,10 +490,11 @@ html, body {
 }
 
 .route-here {
-    border-radius: 0.5rem;
-    padding: 0.25rem 1.3rem;
+    border-radius: 0.7rem;
+    padding: 0.25rem 1.2rem;
     color: white;
     font-size: 1.5rem;
+    font-weight: 500;
 }
 
 
@@ -701,6 +702,8 @@ html, body {
     /* width: min-content; */
     color: var(--theme-color);
     display: flex;
+    justify-content: center;
+    align-items: center;
     aspect-ratio: 1;
     pointer-events: all;
     cursor: pointer;
