@@ -937,7 +937,8 @@ const toggleSettings = [
     'toggle-show-extra-bus-data',
     'toggle-show-stop-id',
     'toggle-show-knight-mover',
-    'toggle-polyline-padding'
+    'toggle-polyline-padding',
+    'toggle-show-invalid-etas',
 ]
 
 let defaultSettings = {
@@ -965,6 +966,7 @@ let defaultSettings = {
     'toggle-show-stop-id': false,
     'toggle-show-knight-mover': false,
     'toggle-polyline-padding': false,
+    'toggle-show-invalid-etas': false,
 
     'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
 
@@ -1099,25 +1101,24 @@ $(document).ready(function() {
     updateSettings();
 
     $('.stop-info-back').click(function() {
-        flyToBus(sourceBusId)
+        flyToBus(sourceBusId);
     });
 
     $('.bus-info-back').click(function() {
-        flyToStop(sourceStopId)
+        flyToStop(sourceStopId);
     });
 
 })
 
 function toggleDevOptions() {
 
-    const $devWrapper = $('.dev-options-wrapper')
-    const $devTitle = $('.dev-options-head')
-    const optionsShown = $devWrapper.is(':visible')
-    console.log(optionsShown)
+    const $devWrapper = $('.dev-options-wrapper');
+    const $devTitle = $('.dev-options-head');
+    const optionsShown = $devWrapper.is(':visible');
 
     if(!optionsShown) {
         $devWrapper.slideDown();
-        $devTitle.text('Hide Developer Options ▲')
+        $devTitle.text('Hide Developer Options ▲');
     } else {
         $devWrapper.slideUp();
         $devTitle.text('Show Developer Options ▼');

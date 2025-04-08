@@ -228,6 +228,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-invalid-etas':
+            settings['toggle-show-invalid-etas'] = isChecked;
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
