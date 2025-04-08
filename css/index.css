@@ -230,6 +230,25 @@ html, body {
     margin-bottom: 1rem;
 }
 
+.closest-stop-circle {
+    width: 10px;
+    height: 10px;
+    background-color: rgb(162, 162, 162);
+    border-radius: 50%;
+}
+
+.closest-stop-divider {
+    grid-column: 1 / -1;
+}
+
+.closest-stop-divider > hr {
+    width: 50%;
+    height: 2px;
+    background-color: var(--theme-line-bg);
+    border-radius: 1rem;
+    border: none;
+}
+
 .next-stop-circle {
     width: 10px;
     height: 10px;
@@ -243,7 +262,7 @@ html, body {
     position: absolute;
     width: 8px;
     height: 4rem; /* Adjusts to your grid gap */
-    background: var(--theme-line-bg);
+    /* background: var(--theme-line-bg); */
     left: 50%;
     transform: translateX(-50%);
     top: 100%;
@@ -254,7 +273,7 @@ html, body {
     position: absolute;
     width: 8px;
     height: 3rem; /* Adjusts to your grid gap */
-    background: var(--theme-line-bg);
+    /* background: var(--theme-line-bg); */
     left: 50%;
     transform: translateX(-50%) translateY(-100%);
 }
@@ -272,6 +291,14 @@ html, body {
     color: gray;
     font-weight: bold;
     line-height: 0.8;
+}
+
+.next-stop-closest {
+    background-color: black;
+    color: white;
+    padding: 0.3rem 0.57rem;
+    border-radius: 0.5rem;
+    width: max-content;
 }
 
 .next-stop-name {
@@ -490,10 +517,10 @@ html, body {
 }
 
 .route-here {
-    border-radius: 0.7rem;
+    border-radius: 0.6rem;
     padding: 0.25rem 1.2rem;
     color: white;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 500;
 }
 

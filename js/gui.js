@@ -13,13 +13,9 @@ function populateRouteSelectors(activeRoutes) {
     routesArray = routesArray.map(route => route || 'undefined');
     routesArray.sort((a, b) => a === 'undefined' ? 1 : b === 'undefined' ? -1 : 0);
 
-    console.log('-')
-
     routesArray.forEach(route => {
-        console.log(route)
 
         let routeFormatted = route;
-
         if (route == 'bl') {
             routeFormatted = 'b/l';
         }
@@ -1331,7 +1327,7 @@ function populateMeClosestStops() {
         $('.closest-stops-list').append(stopNameDiv);
         $('.closest-stops-list').append(stopDistDiv);
 
-        const $routesHereDiv = $(`<div class="flex gap-x-0p5rem mb-1rem"></div>`)
+        const $routesHereDiv = $(`<div class="flex gap-x-0p5rem mb-0p5rem"></div>`)
 
         // console.log(stopId)
         const busesHere = routesServicing(parseInt(stopId))

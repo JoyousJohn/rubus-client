@@ -941,6 +941,23 @@ function popInfo(busId, resetCampusFontSize) {
     if ('next_stop' in data) {
         $('.next-stops-grid > div').empty();
 
+        if (closestStopId) {
+            $('.next-stops-grid > div').append($('<div class="closest-stop-circle"></div>').css('background-color', colorMappings[data.route]))
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
+                <div class="next-stop-closest">Closest Stop</div>
+                <div class="next-stop-name flex">${stopsData[closestStopId].name}</div>
+            </div>`).click(() => { 
+                flyToStop(closestStopId); 
+            }));
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
+                <div class="next-stop-eta closest-stop-eta">XX</div>
+                <div class="next-stop-time closest-stop-time">XX:XX</div>
+            </div>`).click(() => { 
+                flyToStop(closestStopId);  
+            }));
+            $('.next-stops-grid > div').append('<div class="closest-stop-divider"><hr></div>')
+        }
+
         const nextStop = data.next_stop
         let routeStops = stopLists[data.route]
         let sortedStops = []
@@ -1054,6 +1071,16 @@ function popInfo(busId, resetCampusFontSize) {
             </div>`).click(() => { 
                 flyToStop(sortedStops[i]);  
             }));
+
+            if (closestStopId && closestStopId === sortedStops[i]) {
+                if (busData[busId].at_stop && closestStopId === busData[busId].stopId) {
+                    $('.closest-stop-eta').text('Here')
+                    $('.closest-stop-time').hide();
+                } else {
+                    $('.closest-stop-eta').text(eta)
+                    $('.closest-stop-time').text(formattedTime)
+                }     
+            }
         }
 
         $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
