@@ -1013,7 +1013,7 @@ function popInfo(busId, resetCampusFontSize) {
                 eta = Math.round((busETAs[busId][sortedStops[i]] + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
             }
 
-            if (eta < 0 && settings['toggle-show-invalid-etas']) {
+            if (eta < 0 && !settings['toggle-show-invalid-etas']) {
                 negativeETA = true;
                 break;
             }

@@ -197,12 +197,18 @@ function updateStopBuses(stopId) {
             stopOctaconVisibilityClass = ''
         }
 
+        let stopOoSVisibilityClass = 'none'
+        if (busData[busId].oos) {
+            stopOoSVisibilityClass = ''
+        }
+
         $('.stop-info-buses-grid').append(`<div class="flex justify-between align-center pointer">
-            <div class="stop-bus-id">${busData[busId].busName}</div>
+            <div class="flex gap-x-0p5rem">
+                <div class="stop-bus-id">${busData[busId].busName}</div>
+                <div class="stop-oos" ${stopOoSVisibilityClass}>OOS</div>
+            </div>
             <div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div>
         </div>`)
-
-        
 
         if (data.eta === 0) {
             // $('.stop-info-buses-grid').append(`<div></div>`)

@@ -90,6 +90,8 @@ html, body {
     font-family: var(--font-family);
     margin: 1rem;
     pointer-events: all;
+    position: relative; /* So appears over btns/infos like knight mover mini */
+    z-index: 401;
 }
 
 .notif-popup {
@@ -156,6 +158,7 @@ html, body {
     padding: 0.5rem 1.5rem;
     font-size: 1.7rem;
     font-family: var(--font-family);
+    pointer-events: all;
 }
 
 @keyframes pulse {
@@ -369,6 +372,7 @@ html, body {
     font-family: var(--font-family);
     display: none;
     pointer-events: all;
+    position: relative; /* So appears over btns/infos like knight mover mini */
 
 }
 
@@ -474,6 +478,15 @@ html, body {
     font-weight: 900;
     color: white;
     font-family: 'PP Neue Montreal';
+}
+
+.stop-oos {
+    color: white;
+    padding: 0.25rem 0.8rem;
+    font-size: 1.18rem;
+    font-weight: 500;
+    background-color: rgb(218, 49, 49);
+    border-radius: 0.5rem;
 }
 
 .stop-bus-eta {

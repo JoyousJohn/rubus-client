@@ -217,6 +217,7 @@ function makeOoS(busId) {
         activeRoutes.delete(route);
         polylines[route].remove();
         $(`.route-selector[routename="${route}"]`).remove(); 
+        checkMinRoutes();
     } else if (!route) {
         alert("Undefined route went OoS!")
         console.log("A bus with an undefined route claimed to go out of service... busData:");
@@ -486,6 +487,13 @@ async function startOvernight() {
     }
 }
 
+function checkMinRoutes() {
+    const minRoutes = ["ee", "lx", "h"];
+    if(!minRoutes.every(str => activeRoutes.has(str))) {
+        $('.knight-mover-mini').css('display', 'flex');
+    }
+}
+
 $(document).ready(async function() {
     // Initialize settings before map is created
     settings = localStorage.getItem('settings');
@@ -502,18 +510,14 @@ $(document).ready(async function() {
     }
 
     for (const busId in busData) {
-        const route = busData[busId].route
+        const route = busData[busId].route;
         if (route) activeRoutes.add(route);
     }
 
     if (activeRoutes.size > 0) {
-        $('.info-mph').text('MPH')
-        updateMarkerSize() // set correct html marker size before plotting
-
-        const minRoutes = ["ee", "lx", "h"];
-        if(!minRoutes.every(str => activeRoutes.has(str))) {
-            $('.knight-mover-mini').css('display', 'flex');
-        }
+        $('.info-mph').text('MPH');
+        updateMarkerSize(); // set correct html marker size before plotting
+        checkMinRoutes();
     } else {
         // $('.bus-info-popup').show().find('.info-campuses').text('Checking for buses...').addClass('pulsate');
         $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
