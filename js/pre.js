@@ -209,7 +209,12 @@ function makeOoS(busId) {
     delete busETAs[busId];   
 
     const route = busData[busId].route
+    console.log(route)
+    console.log(!busesByRoutes[route])
 
+    const busDataCopy = JSON.parse(JSON.stringify(busData[busId]))
+
+    delete busData[busId];   
     makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
 
     if (route && !busesByRoutes[route]) { // for some reason route can be undefined, investigate.
@@ -221,9 +226,8 @@ function makeOoS(busId) {
     } else if (!route) {
         alert("Undefined route went OoS!")
         console.log("A bus with an undefined route claimed to go out of service... busData:");
-        console.log(busData)
+        console.log(busDataCopy)
     }
-    delete busData[busId];   
 
     removePreviouslyActiveStops();
 
