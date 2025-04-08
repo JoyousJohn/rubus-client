@@ -247,6 +247,7 @@ html, body {
     background-color: var(--theme-line-bg);
     border-radius: 1rem;
     border: none;
+    opacity: 0.7;
 }
 
 .next-stop-circle {

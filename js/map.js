@@ -941,7 +941,7 @@ function popInfo(busId, resetCampusFontSize) {
     if ('next_stop' in data) {
         $('.next-stops-grid > div').empty();
 
-        if (closestStopId) {
+        if (closestStopId && routesServicing(closestStopId).includes(data.route)) {
             $('.next-stops-grid > div').append($('<div class="closest-stop-circle"></div>').css('background-color', colorMappings[data.route]))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
                 <div class="next-stop-closest">Closest Stop</div>
@@ -1072,7 +1072,7 @@ function popInfo(busId, resetCampusFontSize) {
                 flyToStop(sortedStops[i]);  
             }));
 
-            if (closestStopId && closestStopId === sortedStops[i]) {
+            if (closestStopId && closestStopId === sortedStops[i] && routesServicing(closestStopId).includes(data.route)) {
                 if (busData[busId].at_stop && closestStopId === busData[busId].stopId) {
                     $('.closest-stop-eta').text('Here')
                     $('.closest-stop-time').hide();
