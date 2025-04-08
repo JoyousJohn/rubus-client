@@ -1312,6 +1312,8 @@ function flyToStop(stopId) {
 
 function populateMeClosestStops() {
 
+    if (!closestStopsMap) { return; }
+
     $('.closest-stops-list').empty();
     
     let count = 0;

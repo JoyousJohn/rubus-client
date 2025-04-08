@@ -148,6 +148,16 @@ html, body {
     user-select: none;
 }
 
+.knight-mover-mini {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    border-radius: 2rem;
+    padding: 0.5rem 1.5rem;
+    font-size: 1.7rem;
+    font-family: var(--font-family);
+}
+
 @keyframes pulse {
     0% {
         background-color: rgb(255, 167, 0);

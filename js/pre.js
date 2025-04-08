@@ -117,6 +117,7 @@ async function fetchBusData(immediatelyUpdate) {
                 busData[busId] = {};
                 busData[busId].previousTime = new Date().getTime() - 5000;
                 busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]];
+                populateMeClosestStops();
             }
 
             busData[busId].busName = bus.busName;
@@ -209,15 +210,19 @@ function makeOoS(busId) {
 
     const route = busData[busId].route
 
-    delete busData[busId];   
     makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
 
-    if (!busesByRoutes[route]) {
+    if (route && !busesByRoutes[route]) { // for some reason route can be undefined, investigate.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
         polylines[route].remove();
         $(`.route-selector[routename="${route}"]`).remove(); 
+    } else if (!route) {
+        alert("Undefined route went OoS!")
+        console.log("A bus with an undefined route claimed to go out of service... busData:");
+        console.log(busData)
     }
+    delete busData[busId];   
 
     removePreviouslyActiveStops();
 
@@ -225,6 +230,9 @@ function makeOoS(busId) {
         hideInfoBoxes();
         sourceBusId = null;
     }
+
+    populateMeClosestStops();
+
 }
 
 
@@ -501,6 +509,11 @@ $(document).ready(async function() {
     if (activeRoutes.size > 0) {
         $('.info-mph').text('MPH')
         updateMarkerSize() // set correct html marker size before plotting
+
+        const minRoutes = ["ee", "lx", "h"];
+        if(!minRoutes.every(str => activeRoutes.has(str))) {
+            $('.knight-mover-mini').css('display', 'flex');
+        }
     } else {
         // $('.bus-info-popup').show().find('.info-campuses').text('Checking for buses...').addClass('pulsate');
         $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
