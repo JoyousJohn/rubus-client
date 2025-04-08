@@ -995,20 +995,27 @@ function popInfo(busId, resetCampusFontSize) {
 
         }
 
+        let negativeETA = false;
+
         for (let i = 0; i < sortedStops.length; i++) {
 
             let eta;
 
             if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1') && sortedStops[i] === 3) { // special case
                 if (busData[busId]['stopId'] && !busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
-                    delete busETAs[busId]
-                    console.log("I'm amazed this actually happened, wow")
-                    return
+                    delete busETAs[busId];
+                    console.log("I'm amazed this actually happened, wow");
+                    return;
                 }
                 const prevStopId = i === 0 ? sortedStops[sortedStops.length - 1] : sortedStops[i-1]
                 eta = Math.round((busETAs[busId][3]['via'][prevStopId] + 10)/secondsDivisor);
             } else {
                 eta = Math.round((busETAs[busId][sortedStops[i]] + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
+            }
+
+            if (eta < 0) {
+                negativeETA = true;
+                break;
             }
 
             const currentTime = new Date();
@@ -1083,13 +1090,16 @@ function popInfo(busId, resetCampusFontSize) {
             }
         }
 
-        $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
+        if (!negativeETA) {
 
-        if (popupBusId !== busId) {
-            setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
-                $('.info-next-stops').scrollTop(0)
-            }, 0);
-        }  
+            $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
+
+            if (popupBusId !== busId) {
+                setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
+                    $('.info-next-stops').scrollTop(0)
+                }, 0);
+            }  
+        }
     }
 
     else {
