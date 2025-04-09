@@ -196,6 +196,8 @@
 
 .mr-0 { margin-right: 0; }
 
+.mr-0p5rem { margin-right: 0.5rem; }
+
 .mr-16rem { margin-right: 16rem; }
 
 .ml-0 { margin-left: 0; }
@@ -227,6 +229,8 @@
 .grid-cols-3-auto { grid-template-columns: repeat(3, auto);}
 
 .cols-2x-1fr { grid-template-columns: repeat(2, 1fr); }
+
+.fixed { position: fixed; }
 
 .flex { display: flex; }
 

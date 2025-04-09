@@ -81,9 +81,6 @@ $(document).ready(function() {
         } else {
             isTransitioning = true;
 
-            if (Object.keys(busData).length === 0) { // don't hide no buses running notification // can && and check if no-bus is visible to show the message again after user clicks on a stop
-                return;
-            }
             hideInfoBoxes();
         }
 
@@ -877,6 +874,7 @@ function popInfo(busId, resetCampusFontSize) {
 
     if (showBusSpeeds && !Number.isNaN(parseInt(data.visualSpeed))) {
         $('.info-speed').text(parseInt(data.visualSpeed));
+        $('.info-mph').text('MPH');
     }
     $('.info-name').text(busNameElmText + ' | ');
     $('.info-capacity').text(data.capacity + '% capacity');
@@ -1128,6 +1126,12 @@ function popInfo(busId, resetCampusFontSize) {
         $('.bus-info-back').hide(); 
     }
     sourceBusId = busId;
+
+    if (favBuses.includes(busId)) {
+        $('.bus-star > i').css('color', 'gold').removeClass('fa-regular').addClass('fa-solid')
+    } else {
+        $('.bus-star > i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
+    }
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
     $('.bus-info-popup').show();

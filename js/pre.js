@@ -61,7 +61,7 @@ function getRouteStr(route) {
         return [routeMapping[route], true]
     } else {
         const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
-        let alphaRouteId = bus.route.replace(/[^a-zA-Z]/g, '').toLowerCase();
+        let alphaRouteId = route.replace(/[^a-zA-Z]/g, '').toLowerCase();
         if (knownRoutes.includes(alphaRouteId)) {
             return [alphaRouteId, true];
         } else {
@@ -224,7 +224,9 @@ function makeOoS(busId) {
     if (route && !busesByRoutes[route]) { // for some reason route can be undefined, investigate.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
-        polylines[route].remove();
+        if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polelines, have to ensure code works flawlessly!
+            polylines[route].remove();
+        }
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
         checkMinRoutes();
@@ -540,6 +542,7 @@ $(document).ready(async function() {
     addStopsToMap()
     $('.buses-btn').css('display', 'flex');
 
+    populateFavs()
     makeRidershipChart()
 
     async function fetchETAs() {

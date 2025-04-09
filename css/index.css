@@ -148,7 +148,7 @@ html, body {
     font-size: 1.7rem;
     font-family: var(--font-family);
     display: none;
-    position: fixed;
+    /* position: fixed; */
     margin: 1rem;
     inset: 0;
     pointer-events: all;
@@ -157,14 +157,26 @@ html, body {
 }
 
 .knight-mover-mini {
-    position: fixed;
-    left: 1rem;
-    top: 1rem;
     border-radius: 2rem;
     padding: 0.5rem 1.5rem;
     font-size: 1.7rem;
     font-family: var(--font-family);
     pointer-events: all;
+}
+
+.favs > div {
+    font-family: var(--font-family);
+    font-size: 1.5rem;
+    border-radius: 2rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--theme-color);
+    color: var(--theme-bg);
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.favs span {
+    margin-right: 0.25rem;
 }
 
 @keyframes pulse {
@@ -238,7 +250,7 @@ html, body {
 }
 
 .info-next-stops {
-    /* max-height: 40vh; */
+    max-height: 35vh;
     overflow-y: scroll;
     display: none;
 }
@@ -415,9 +427,13 @@ html, body {
 .bus-star, .bus-share {
     color: var(--theme-color);
     background-color: var(--theme-bg);
-    font-size: 2rem;
+    font-size: 1.7rem;
     aspect-ratio: 1;
     min-height: fit-content;
+}
+
+.bus-share > i {
+    aspect-ratio: 1;
 }
 
 .bus-log-wrapper {
@@ -752,6 +768,7 @@ html, body {
 .wait-times {
     width: max-content;
     font-size: 1.4rem;
+    color: var(--theme-color)
 }
 
 

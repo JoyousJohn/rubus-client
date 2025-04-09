@@ -29,81 +29,46 @@ function populateRouteSelectors(activeRoutes) {
         if (knownRoutes.includes(route)) {
             color = colorMappings[route]
 
-            let isDraggingTemp = false; // Temporary flag to track dragging state
-
             let initialX; // Declare initialX outside to access it later
-
-            // let initialScrollLeft; // Declare initialScrollLeft to store the initial scroll position
 
             $routeElm.on('touchstart mousedown', function(event) {
                 event.preventDefault();
 
                 initialX = event.pageX || event.originalEvent.touches[0].pageX; // Store initial position
-                // initialScrollLeft = $('.route-selectors').scrollLeft(); // Store initial scroll position
-                // isDraggingTemp = false; // Reset temporary dragging flag
+              
 
                 longPressTimer = setTimeout(() => {
 
-                    // console.log('isDraggingTemp: ' , isDraggingTemp)
+                    
+                isLongPress = true;
+                if (shownRoute) {
+                    shownBeforeRoute = shownRoute
+                }
 
-                    // if (!longPressTimer) { console.log('none ')}
-
-                    // console.log('123')
-
-                    // Check if the user is dragging
-                    // if (!isDraggingTemp) {
-                        // const currentScrollLeft = $('.route-selectors').scrollLeft(); // Get current scroll position
-                        // console.log(currentScrollLeft)
-                        // console.log(initialScrollLeft)
-                        // console.log(initialX)
-                        // console.log(event.pageX || event.originalEvent.touches[0].pageX)
-                        // const scrolled = currentScrollLeft !== initialScrollLeft; // Check if the scroll position has changed
-                        
-                        // if (!scrolled) {
-
-                            isLongPress = true;
-                            if (shownRoute) {
-                                shownBeforeRoute = shownRoute
-                            }
-
-                            if (panelRoute !== route) {
-                                selectedRoute(route);
-                            }
-                        // }
-                    // }
+                if (panelRoute !== route) {
+                    selectedRoute(route);
+                }
+                    
                 }, 500); 
             });
 
             $routeElm.on('touchmove', function(event) {
-                
-                // console.log(initialX)
-                // console.log(event.changedTouches[0].clientX)
-                const moved = Math.abs(initialX - event.changedTouches[0].clientX) > 10
+        
+                const moved = Math.abs(initialX - event.changedTouches[0].clientX) > 10;
                 if (!moved) { return; }
-                // console.log(moved)
 
                 clearTimeout(longPressTimer);
-                // console.log('cleared timeout')
-                // isDraggingTemp = true
             })
 
             $routeElm.on('touchend touchcancel mouseup', function() {
                 clearTimeout(longPressTimer);
-                // isDraggingTemp = false
             });
 
             $routeElm.on('click touchend', function(event) {
 
-                // console.log(event.changedTouches[0].clientX)
-                // console.log(initialX)
-
-                // console.log(initialX - event.changedTouches[0].clientX)
-                const moved = Math.abs(initialX - (event.originalEvent.clientX || event.changedTouches[0].clientX)) > 10
+                const moved = Math.abs(initialX - (event.originalEvent.clientX || event.changedTouches[0].clientX)) > 10;
 
                 if (!isLongPress && !moved) {
-
-                    // const currentScrollLeft = $('.route-selectors').scrollLeft();
-                    // if (initialScrollLeft !== currentScrollLeft) { return; }
 
                     if (panelRoute) {
                         selectedRoute(route)
@@ -112,15 +77,15 @@ function populateRouteSelectors(activeRoutes) {
                     }
 
                 }
-                isLongPress = false
+                isLongPress = false;
             })
         }
 
-        $routeElm.css('background-color', color) 
-        $('.settings-btn').before($routeElm)
+        $routeElm.css('background-color', color);
+        $('.settings-btn').before($routeElm);
     });
 
-    $('.route-selectors').scrollLeft(0)
+    $('.route-selectors').scrollLeft(0);
 
     let isDragging = false;
     let startX, scrollLeft;
@@ -138,7 +103,6 @@ function populateRouteSelectors(activeRoutes) {
         lastTime = Date.now();
         velocity = 0;
         
-        // Cancel any ongoing animation
         if (animationFrame) {
             cancelAnimationFrame(animationFrame);
             animationFrame = null;
@@ -184,7 +148,6 @@ function populateRouteSelectors(activeRoutes) {
     })
     .on('mousemove touchmove', function(e) {
         if (!isDragging) return;
-        // isDraggingTemp = true; // Set temporary dragging flag if user moves
         
         const x = e.pageX || e.originalEvent.touches[0].pageX;
         const walk = x - startX; // Calculate the distance moved
@@ -876,10 +839,11 @@ const stopsByCampus = {
 function updateWaitTimes() {
     $('.wait-times').empty();
     for (const campus in stopsByCampus) {
+        let hasStops = false;
         $('.wait-times').append($(`<div class="mt-1rem center underline text-1p5rem underline" style="grid-column: span 2;">${campus}</div>`))
         const stops = stopsByCampus[campus];
         stops.forEach(stopId => {
-            if (activeStops.includes(stopId)) {
+            if (activeStops.includes(stopId) && waits[stopId]) { // need to also check waits[stopId] because I'm deciding (for some reason) to show all stops when no buses are active...
                 let waitSeconds = waits[stopId];
                 if (waitSeconds > 60) {
                     const minutes = Math.floor(waitSeconds / 60);
@@ -889,9 +853,21 @@ function updateWaitTimes() {
                     waitSeconds += 's'
                 }
                 $('.wait-times').append(`</div>${stopsData[stopId].name}</div>`).append(`<div>${waitSeconds}</div}`)
+                hasStops = true;
             }
         })
+
+        if (!hasStops) {
+            $('.wait-times').children().last().remove();
+        }
     }
+
+    if ($('.wait-times').children().length === 0) {
+        $('.wait-title').hide();
+    } else { // if buses come into service from when there were no buses and app is open...
+        $('.wait-title').show(); 
+    }
+
 }
 
 

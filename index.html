@@ -26,6 +26,7 @@
     <script defer src="js/pre.js"></script>
     <script defer src="js/settings.js"></script>
     <script defer src="js/involved.js"></script>
+    <script defer src="js/fav.js"></script>
 
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -176,19 +177,20 @@
                     </div>
                     <div></div> <!-- So star floats right -->
                     <div class="flex gap-x-0p5rem">  
-                        <div class="bus-share p-1rem br-1rem flex align-center">
+                        <div class="bus-share p-1rem br-1rem align-center none pointer">
                             <i class="fa-solid fa-share-nodes"></i>
                         </div>
                         <script>
+                            if (navigator.share) { $('.bus-share').css('display', 'flex'); }
                             $('.bus-share').click(function() {
                                 navigator.share({
                                     title: 'Share This Bus',
-                                    text: `Bus # ${busData[popupBusId].busName}`,
+                                    text: `${busData[popupBusId].route} #${busData[popupBusId].busName}`,
                                     url: 'https://rubus.live/?bus=' + popupBusId,
                                 });
                             })
                         </script>
-                        <div class="bus-star p-1rem br-1rem flex align-center">
+                        <div class="bus-star p-1rem br-1rem flex align-center pointer">
                             <i class="fa-regular fa-star"></i>
                         </div>
                     </div>
@@ -208,7 +210,15 @@
                 </div>
             </div>   
         </div>
-        <div class="knight-mover-mini bg-ckm white align-center gap-x-0p5rem none pointer" onclick="window.location.href='tel:7329327433'"><i class="fa-solid fa-phone text-1p4rem white"></i>Call Knight Mover</div>
+
+        <div class="fixed" style="left: 1rem; top: 1rem;">
+            <div class="flex flex-col gap-y-1rem">
+                <div class="knight-mover-mini bg-ckm white align-center gap-x-0p5rem none pointer" onclick="window.location.href='tel:7329327433'"><i class="fa-solid fa-phone text-1p4rem white"></i>Call Knight Mover</div>
+                <div class="favs flex flex-col gap-y-0p5rem"></div>
+            </div>
+        </div>
+
+        
 
         <div class="stop-info-popup">
 
@@ -305,7 +315,7 @@
 
         <div class="busy-wrapper flex flex-col align-center mb-8rem">
             <div class="flex justify-center">
-                <div class="ridership-history-title center">Stop Wait Times</div>
+                <div class="ridership-history-title wait-title center">Stop Wait Times</div>
             </div>
             <div class="wait-times grid grid-cols-2-auto gap-x-1rem">
 
