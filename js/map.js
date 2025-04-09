@@ -429,10 +429,10 @@ async function calculateSpeed(busId) {
     
     const updateIntervalMs = Math.abs(totalUpdateSeconds*1000 / speedDiff);
 
-    if (popupBusId === busId) {
-        console.log("speedDiff: ", speedDiff);
-        console.log("updateIntervalMs: ", updateIntervalMs)
-    }
+    // if (popupBusId === busId) {
+    //     console.log("speedDiff: ", speedDiff);
+    //     console.log("updateIntervalMs: ", updateIntervalMs)
+    // }
 
     // console.log(updateIntervalMs)
 

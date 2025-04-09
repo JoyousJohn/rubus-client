@@ -1145,9 +1145,7 @@ let closestStopDistances = {};
 let sortedClosestStopDistances = {};
 let closestStopsMap;
 
-
-function handleNearestStop(fly) {
-
+function updateNearestStop() {
     let closestStop = null;
     let thisClosestStopId = null;
     let closestDistance = Infinity;
@@ -1174,6 +1172,18 @@ function handleNearestStop(fly) {
         Object.entries(closestStopDistances)
             .sort(([, distanceA], [, distanceB]) => distanceA - distanceB)
     );
+
+    if (popupStopId && popupStopId === thisClosestStopId) {
+        $('.closest-stop').show();
+    }
+
+    return [closestStop, thisClosestStopId, closestDistance]
+
+}
+ 
+function handleNearestStop(fly) {
+
+    const [closestStop, thisClosestStopId, closestDistance] = updateNearestStop()    
 
     populateMeClosestStops();
 
@@ -1213,7 +1223,7 @@ function handleNearestStop(fly) {
                     setTimeout(animateMarker, interval);
                 } else {
                     userPosition = newPosition; // Update the userPosition after animation completes
-                    handleNearestStop();
+                    updateNearestStop();
                 }
             };
 
@@ -1237,9 +1247,10 @@ function handleNearestStop(fly) {
             console.log("Flying to closest stop");
         }
 
-        if (Number(closestStopId) === stopId) { // confirm this if statement works
-            $('.closest-stop').show();
-        }
+        // console.log(popupStopId)
+        // console.log(thisClosestStopId)
+        // console.log(popupStopId === thisClosestStopId)
+
     } else {
         console.log('No stops found within the given data.');
     }

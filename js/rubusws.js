@@ -20,7 +20,6 @@ function updateWaits(waitsData) {
 function closeRUBusSocket() {
     if (socket.readyState === WebSocket.OPEN) {
         socket.close();
-        console.log("Passio WebSocket connection closed");
     }
 }
 
