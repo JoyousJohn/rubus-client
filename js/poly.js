@@ -205,7 +205,7 @@ function updateStopBuses(stopId) {
         $('.stop-info-buses-grid').append(`<div class="flex justify-between align-center pointer">
             <div class="flex gap-x-0p5rem">
                 <div class="stop-bus-id">${busData[busId].busName}</div>
-                <div class="stop-oos" ${stopOoSVisibilityClass}>OOS</div>
+                <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
             </div>
             <div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div>
         </div>`)

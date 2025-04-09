@@ -1236,7 +1236,10 @@ function handleNearestStop(fly) {
             flyToStop(thisClosestStopId);
             console.log("Flying to closest stop");
         }
-        $('.closest-stop').show('none');
+
+        if (Number(closestStopId) === stopId) { // confirm this if statement works
+            $('.closest-stop').show();
+        }
     } else {
         console.log('No stops found within the given data.');
     }

@@ -747,7 +747,7 @@ html, body {
     bottom: 0;
     z-index: 402;
     /* padding: 0.5rem; */
-    padding-bottom: 1rem;
+    padding-bottom: 0.7rem;
     /* row-gap: 1rem; */
     width: 100%;
     row-gap: 0.8rem;
