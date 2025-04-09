@@ -7,8 +7,9 @@
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet-pip@1.1.0/leaflet-pip.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-pip@1.1.0/leaflet-pip.js"></script>
+    
     <script src='https://unpkg.com/leaflet.marker.slideto@0.2.0/Leaflet.Marker.SlideTo.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/@elfalem/leaflet-curve@0.9.2/dist/leaflet.curve.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/l-subpixel-position@1.0.0/index.js"></script>
@@ -317,6 +318,16 @@
             </div>
 
             <div class="settings- flex justify-between">
+                <div class="settings-heading">Show ETAs in Seconds</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
+                    <label for="toggle-show-etas-in-seconds" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings- flex justify-between">
                 <div class="settings-heading">Select Closest Stop on Open</div>
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-select-closest-stop" class="toggle-input">
@@ -331,16 +342,6 @@
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-stops-above-buses" class="toggle-input">
                     <label for="toggle-stops-above-buses" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="settings- flex justify-between">
-                <div class="settings-heading">Show ETAs in Seconds</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
-                    <label for="toggle-show-etas-in-seconds" class="toggle-label">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
@@ -390,7 +391,7 @@
                         </div>
                     </div>
 
-                    <div class="settings- flex justify-between">
+                    <!-- <div class="settings- flex justify-between">
                         <div class="settings-heading">Show arrival times</div>
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-arrival-times" class="toggle-input">
@@ -398,7 +399,7 @@
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                    </div> 
+                    </div>  -->
         
                     <div class="settings- flex justify-between">
                         <div class="settings-heading">Show bus speeds</div>

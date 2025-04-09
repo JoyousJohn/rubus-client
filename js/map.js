@@ -34,7 +34,7 @@ $(document).ready(function() {
         zoomSnap: 0,
         edgeBufferTiles: 10,
         preferCanvas: settings && settings['map-renderer'] === 'canvas',
-        scrollWheelZoom: false // Disable default scroll zoom
+        scrollWheelZoom: false, // Disable default scroll zoom
     }).setView([40.507476,-74.4541267], 14);
 
     map.setMinZoom(13);
@@ -202,6 +202,8 @@ function hideInfoBoxes(instantly_hide) {
     if (popupStopId) {
         busStopMarkers[popupStopId].setIcon(L.icon({
             iconUrl: 'img/stop_marker.png',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
         }));
         popupStopId = null;
         thisClosestStopId = null;
@@ -460,6 +462,7 @@ async function calculateSpeed(busId) {
         if (popupBusId === busId && showBusSpeeds) {
             // console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
             $('.info-speed').text(Math.round(busData[busId].visualSpeed))
+            $('.info-mph').text('MPH');
         }
 
         if (panelRoute === busData[busId].route) {
