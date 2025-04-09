@@ -185,7 +185,7 @@
                             $('.bus-share').click(function() {
                                 navigator.share({
                                     title: 'Share This Bus',
-                                    text: `${busData[popupBusId].route} #${busData[popupBusId].busName}`,
+                                    text: `${busData[popupBusId].route.toUpperCase()} #${busData[popupBusId].busName}`,
                                     url: 'https://rubus.live/?bus=' + popupBusId,
                                 });
                             })

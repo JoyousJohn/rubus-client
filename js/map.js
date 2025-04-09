@@ -1008,8 +1008,6 @@ function popInfo(busId, resetCampusFontSize) {
 
         for (let i = 0; i < sortedStops.length; i++) {
 
-            if (i === 0 && closestStopId === sortedStops[i]) { continue; } // don't show duplicates if next bus stop is closest stop
-
             let eta;
 
             if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1') && sortedStops[i] === 3) { // special case
@@ -1076,6 +1074,18 @@ function popInfo(busId, resetCampusFontSize) {
                 stopName += `<div class="ml-0p5rem" style="color: #00abff;">(${Math.round(busData[busId].progress*100)}%)</div>`
             }
 
+            if (closestStopId && closestStopId === sortedStops[i] && routesServicing(closestStopId).includes(data.route)) {
+                if (busData[busId].at_stop && closestStopId === busData[busId].stopId) {
+                    $('.closest-stop-eta').text('Here')
+                    $('.closest-stop-time').hide();
+                } else {
+                    $('.closest-stop-eta').text(eta)
+                    $('.closest-stop-time').text(formattedTime)
+                }     
+            }
+
+            if (i === 0 && closestStopId === sortedStops[i] && !busData[busId].at_stop) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
+
             $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
                     <div class="next-stop-campus">${campusName}</div>
@@ -1090,15 +1100,6 @@ function popInfo(busId, resetCampusFontSize) {
                 flyToStop(sortedStops[i]);  
             }));
 
-            if (closestStopId && closestStopId === sortedStops[i] && routesServicing(closestStopId).includes(data.route)) {
-                if (busData[busId].at_stop && closestStopId === busData[busId].stopId) {
-                    $('.closest-stop-eta').text('Here')
-                    $('.closest-stop-time').hide();
-                } else {
-                    $('.closest-stop-eta').text(eta)
-                    $('.closest-stop-time').text(formattedTime)
-                }     
-            }
         }
 
         if (!negativeETA) {

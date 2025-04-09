@@ -169,8 +169,8 @@ html, body {
     font-size: 1.5rem;
     border-radius: 2rem;
     padding: 0.5rem 1rem;
-    background-color: var(--theme-color);
-    color: var(--theme-bg);
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
     pointer-events: auto;
     cursor: pointer;
 }
