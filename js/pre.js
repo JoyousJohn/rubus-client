@@ -629,7 +629,13 @@ $(document).ready(async function() {
     document.addEventListener('visibilitychange', async function() {
         if (document.visibilityState === 'visible') {
             $('.updating-buses').fadeIn();
+
             hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
+
+            if ($('.buses-panel-wrapper').is(':visible')) { // hide info boxes closes this so we should show it again immediately as it shouldn't be included in the panels being hidden
+                $('.buses-panel-wrapper').stop(true, true).show(); // true true to cancel slideup (which is already in progress) animation which completes *after* this .show, thus overrides
+            }
+
             await fetchWhere();
             openRUBusSocket();
 

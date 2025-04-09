@@ -891,7 +891,7 @@ function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
     $('.panout, .settings-btn, .buses-btn, .centerme, .satellite-btn, .shoot-fireworks').show();
     if (userLocation) {
-        $('.fly-closest-stop-wrapper').show();
+        $('.fly-closest-stop').show();
     }
 
     $(this).hide();
