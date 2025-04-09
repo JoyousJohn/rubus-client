@@ -352,9 +352,18 @@ function selectedRoute(route) {
         speed += ' | ' + busData[busId].capacity + '% full'
 
         const $busElm = $(`<div class="flex justify-between">
-            <div class="route-bus-name">${busData[busId].busName}</div>
+            <div class="route-bus-name flex align-center gap-x-0p5rem">${busData[busId].busName}</div>
             <div class="route-bus-speed" bus-id="${busId}">${speed}</div>
         </div>`)
+
+        if (busData[busId].oos) {
+            $busElm.find('.route-bus-name').append(`<div class="bus-oos white br-0p5rem text-1p4rem">OOS</div>`)
+        }
+
+        if (busData[busId].atDepot) {
+            $busElm.find('.route-bus-name').append(`<div class="bus-depot white br-0p5rem text-1p4rem">Depot</div>`)
+        }
+        
         $('.active-buses').append($busElm)
     })
 

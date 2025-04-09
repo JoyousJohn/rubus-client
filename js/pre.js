@@ -141,6 +141,10 @@ async function fetchBusData(immediatelyUpdate) {
 
             busData[busId].oos = bus.outOfService === 1; 
 
+            if (isAtDepot(bus.longitude, bus.latitude)) {
+                busData[busId].atDepot = true;
+            }
+
             plotBus(busId, immediatelyUpdate);
             calculateSpeed(busId);
 

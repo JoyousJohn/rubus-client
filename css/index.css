@@ -214,9 +214,11 @@ html, body {
 .bus-oos {
     padding: 0.3rem 0.8rem;
     background-color: rgb(234, 62, 62);
-    color: white;
-    font-size: 1.2rem;
-    border-radius: 0.5rem;
+}
+
+.bus-depot {
+    padding: 0.3rem 0.8rem;
+    background-color: rgb(227, 178, 16);
 }
 
 .bus-info-main, .info-next-stops {
@@ -236,7 +238,7 @@ html, body {
 }
 
 .info-next-stops {
-    max-height: 40vh;
+    /* max-height: 40vh; */
     overflow-y: scroll;
     display: none;
 }
@@ -408,6 +410,12 @@ html, body {
 .stop-info-back:hover {
     background-color: rgb(88, 88, 234);
     color: rgb(242, 242, 242)
+}
+
+.bus-star {
+    color: var(--theme-color);
+    background-color: var(--theme-bg);
+    font-size: 2rem;
 }
 
 .bus-log-wrapper {

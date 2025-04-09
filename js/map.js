@@ -887,6 +887,12 @@ function popInfo(busId, resetCampusFontSize) {
         $('.bus-oos').hide();
     }
 
+    if (busData[busId].atDepot) {
+        $('.bus-depot').show();
+    } else {
+        $('.bus-depot').hide();
+    }
+
     if (data.joined_service) {
         const serviceDate = new Date(data.joined_service);
         const today = new Date();
