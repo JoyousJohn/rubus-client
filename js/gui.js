@@ -311,6 +311,7 @@ function toggleRoute(route) {
             const stopIdsForRoute = stopLists[polyline]
             stopIdsForRoute.forEach(stopId => {
                 if (!(stopIdsForSelectedRoute).includes(stopId)) {
+                    console.log(stopId)
                     busStopMarkers[stopId].remove();
                 }
             })

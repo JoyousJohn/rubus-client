@@ -221,6 +221,7 @@ function makeOoS(busId) {
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
         polylines[route].remove();
+        delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
         checkMinRoutes();
     } else if (!route) {
