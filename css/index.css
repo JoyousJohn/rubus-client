@@ -10,6 +10,7 @@
     --theme-line-bg: rgb(99, 99, 99);
     --theme-stop-bus-name: rgb(105, 105, 105);
     --theme-stop-bus-time: rgb(127, 127, 127);
+    --theme-bg-closest-stop: rgb(68, 68, 68);
 }
 
 [theme="light"] {
@@ -20,6 +21,7 @@
     --theme-line-bg: rgb(240, 240, 240);
     --theme-stop-bus-name: rgb(60, 60, 60);
     --theme-stop-bus-time: rgb(105, 105, 105);
+    --theme-bg-closest-stop: rgb(240, 240, 240);
 }
 
 body {
@@ -245,6 +247,10 @@ html, body {
     row-gap: 1.5rem;
     align-items: center;
     margin-bottom: 1rem;
+}
+
+.closest-stop-bg {
+    background-color: var(--theme-bg-closest-stop);
 }
 
 .closest-stop-circle {
@@ -741,7 +747,7 @@ html, body {
     bottom: 0;
     z-index: 402;
     /* padding: 0.5rem; */
-    padding-bottom: 0;
+    padding-bottom: 1rem;
     /* row-gap: 1rem; */
     width: 100%;
     row-gap: 0.8rem;

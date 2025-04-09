@@ -644,11 +644,11 @@ $(document).ready(async function() {
 
 function startBusPolling() {
     setTimeout(() => {
-        fetchBusData();
+        if (!settings['toggle-pause-passio-polling']) { fetchBusData();; }
     }, 2000);
 
     setInterval(async () => {
-        await fetchBusData();
+        if (!settings['toggle-pause-passio-polling']) { fetchBusData();; }
     }, 5000);
 }
 

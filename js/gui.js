@@ -926,6 +926,7 @@ const toggleSettings = [
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
     'toggle-whole-pixel-positioning',
+    'toggle-pause-passio-polling',
     'toggle-show-stop-polygons',
     'toggle-show-etas-in-seconds',
     'toggle-show-bus-id',
@@ -954,6 +955,8 @@ let defaultSettings = {
     'map-renderer': 'svg',
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
+    'toggle-whole-pixel-positioning': false, /* this might not be needed? */
+    'toggle-pause-passio-polling': false,
     'toggle-show-stop-polygons': false,
     'toggle-show-etas-in-seconds': false,
     'toggle-show-bus-id': false,

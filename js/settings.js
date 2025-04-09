@@ -65,6 +65,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-pause-passio-polling':
             console.log(`Pause Passio Polling is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-pause-passio-polling'] = isChecked;
             break;
 
         case 'toggle-disconnect-rubus':
@@ -75,7 +76,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             console.log(`Show Stop Polygons is now ${isChecked ? 'ON' : 'OFF'}`);
 
             if (Object.keys(polygons).length === 0) {
-                makePolygons()
+                makePolygons();
             }
             togglePolygons(isChecked)
             settings['toggle-show-stop-polygons'] = isChecked;
