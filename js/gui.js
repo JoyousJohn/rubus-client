@@ -13,7 +13,7 @@ function populateRouteSelectors(activeRoutes) {
     routesArray = routesArray.map(route => route || 'undefined');
     routesArray.sort((a, b) => a === 'undefined' ? 1 : b === 'undefined' ? -1 : 0);
 
-    routesArray.forEach(route => {
+    routesArray.sort().forEach(route => {
 
         let routeFormatted = route;
         if (route == 'bl') {
@@ -873,7 +873,7 @@ function updateWaitTimes() {
 
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
-    $('.panout, .settings-btn, .buses-btn, .centerme, .satellite-btn, .shoot-fireworks').show();
+    $('.panout, .settings-btn, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks').show();
     if (userLocation) {
         $('.fly-closest-stop').show();
     }

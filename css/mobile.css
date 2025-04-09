@@ -37,6 +37,7 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         column-gap: 0.8rem;
+        margin-left: 1rem;
     }
 
     .left-btns > div {
