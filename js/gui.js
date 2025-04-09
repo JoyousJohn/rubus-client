@@ -1184,7 +1184,7 @@ function handleNearestStop(fly) {
             return;
         }
 
-        const marker = L.marker(userPosition, 
+        const locationMarker = L.marker(userPosition, 
             { icon: L.icon({
                 iconUrl: 'img/location_marker.png',
                 iconSize: [24, 24],
@@ -1204,19 +1204,20 @@ function handleNearestStop(fly) {
                 stepCount++;
                 const lat = userPosition[0] + (newPosition[0] - userPosition[0]) * (stepCount / steps);
                 const lng = userPosition[1] + (newPosition[1] - userPosition[1]) * (stepCount / steps);
-                marker.setLatLngPrecise([lat, lng]);
+                locationMarker.setLatLngPrecise([lat, lng]);
 
                 if (stepCount < steps) {
                     setTimeout(animateMarker, interval);
                 } else {
                     userPosition = newPosition; // Update the userPosition after animation completes
+                    handleNearestStop();
                 }
             };
 
             animateMarker(); // Start the animation
         });
 
-        marker.on('click', function() {
+        locationMarker.on('click', function() {
             $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
             $('.my-location-popup').show();
             // map.flyTo(userPosition, 18, {
