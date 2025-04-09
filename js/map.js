@@ -947,14 +947,14 @@ function popInfo(busId, resetCampusFontSize) {
 
         if (closestStopId && routesServicing(closestStopId).includes(data.route)) {
             const $circle = $('<div class="closest-stop-circle closest-stop-bg" style="margin-right: 1rem;"></div>').css('background-color', colorMappings[data.route])
-            $('.next-stops-grid > div').append($(`<div class="flex justify-center align-center closest-stop-bg h-100" style="margin-right: -2rem; margin-left: -1rem; border-radius: 0.7rem 0 0 0.7rem;"></div>`).append($circle))
+            $('.next-stops-grid > div').append($(`<div class="flex justify-center align-center closest-stop-bg h-100" style="margin-right: -2rem; margin-left: -1rem; border-radius: 0.8rem 0 0 0.8rem;"></div>`).append($circle))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;">
                 <div class="next-stop-closest closest-stop">Closest Stop</div>
                 <div class="next-stop-name flex">${stopsData[closestStopId].name}</div>
             </div>`).click(() => { 
                 flyToStop(closestStopId); 
             }));
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.7rem 0.7rem 0; padding-right: 1rem;">
+            $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
                 <div class="next-stop-eta closest-stop-eta">XX</div>
                 <div class="next-stop-time closest-stop-time">XX:XX</div>
             </div>`).click(() => { 
@@ -1003,6 +1003,8 @@ function popInfo(busId, resetCampusFontSize) {
         let negativeETA = false;
 
         for (let i = 0; i < sortedStops.length; i++) {
+
+            if (i === 0 && closestStopId === sortedStops[i]) { continue; } // don't show duplicates if next bus stop is closest stop
 
             let eta;
 
