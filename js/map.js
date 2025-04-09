@@ -1173,8 +1173,16 @@ function startStoppedForTimer(busId) {
 }
 
 function flyToBus(busId) {
-    if (!busId || !busData || !busData[busId]) {
-        console.error('Invalid bus ID or missing bus data');
+    if (!busId) {
+        console.error(`Invalid bus ID: busId is undefined or null. Input bus ID: ${busId}`);
+        return;
+    }
+    if (!busData) {
+        console.error('Missing bus data: busData is undefined or null');
+        return;
+    }
+    if (!busData[busId]) {
+        console.error(`Invalid bus data for bus ID ${busId}: busData[${busId}] is undefined or null`);
         return;
     }
 
