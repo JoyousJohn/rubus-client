@@ -218,7 +218,7 @@ html, body {
 
 .bus-depot {
     padding: 0.3rem 0.8rem;
-    background-color: rgb(227, 178, 16);
+    background-color: rgb(246, 179, 10);
 }
 
 .bus-info-main, .info-next-stops {
@@ -412,10 +412,12 @@ html, body {
     color: rgb(242, 242, 242)
 }
 
-.bus-star {
+.bus-star, .bus-share {
     color: var(--theme-color);
     background-color: var(--theme-bg);
     font-size: 2rem;
+    aspect-ratio: 1;
+    min-height: fit-content;
 }
 
 .bus-log-wrapper {

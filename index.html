@@ -170,15 +170,29 @@
 
                 </div>
 
-                <div class="bus-info-bottom">
+                <div class="bus-info-bottom flex justify-between">
                     <div class="bus-info-back pointer">
                         <i class="fa-solid fa-arrow-left"></i> BACK
                     </div>
-                    <div class="bus-star">
-                        <i class="fa-regular fa-star"></i>
+                    <div></div> <!-- So star floats right -->
+                    <div class="flex gap-x-0p5rem">  
+                        <div class="bus-share p-1rem br-1rem flex align-center">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </div>
+                        <script>
+                            $('.bus-share').click(function() {
+                                navigator.share({
+                                    title: 'Share This Bus',
+                                    text: `Bus # ${busData[popupBusId].busName}`,
+                                    url: 'https://rubus.live/?bus=' + popupBusId,
+                                });
+                            })
+                        </script>
+                        <div class="bus-star p-1rem br-1rem flex align-center">
+                            <i class="fa-regular fa-star"></i>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
 
