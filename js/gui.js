@@ -668,6 +668,7 @@ function busesOverview() {
     
     updateBusOverview();
     updateRidershipChart();
+    updateWaitTimes();
 }
 
 let ridershipChart;
@@ -852,6 +853,36 @@ function calculateLoopTimes() {
         loopTimes[route] = Math.round(eta/60);
     }
     return loopTimes;
+}
+
+
+const stopsByCampus = {
+    'College Ave': [1, 2, 3, 4],
+    'Busch': [5, 6, 7, 8, 9, 10, 11, 26],
+    'Livingston': [12, 13, 14, 15, 24],
+    'Cook': [16, 17, 18, 19, 20, 21],
+    'Downtown': [22, 23]
+}
+
+function updateWaitTimes() {
+    $('.wait-times').empty();
+    for (const campus in stopsByCampus) {
+        $('.wait-times').append($(`<div class="mt-1rem center underline text-1p5rem underline" style="grid-column: span 2;">${campus}</div>`))
+        const stops = stopsByCampus[campus];
+        stops.forEach(stopId => {
+            if (activeStops.includes(stopId)) {
+                let waitSeconds = waits[stopId];
+                if (waitSeconds > 60) {
+                    const minutes = Math.floor(waitSeconds / 60);
+                    const seconds = waitSeconds % 60;
+                    waitSeconds = seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
+                } else {
+                    waitSeconds += 's'
+                }
+                $('.wait-times').append(`</div>${stopsData[stopId].name}</div>`).append(`<div>${waitSeconds}</div}`)
+            }
+        })
+    }
 }
 
 

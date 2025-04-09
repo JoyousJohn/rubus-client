@@ -554,7 +554,7 @@ html, body {
     border-radius: 0.6rem;
     padding: 0.25rem 1.2rem;
     color: white;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 500;
 }
 
@@ -727,7 +727,6 @@ html, body {
 
 .ridership-history-title {
     font-size: 1.8rem;
-    margin-top: 3rem;
     color: var(--theme-bg);
     background-color: var(--theme-color);
     padding: 0.5rem 1.5rem;
@@ -737,6 +736,12 @@ html, body {
 .ridership-avg, .ridership-max {
     font-size: 1.5rem;
     color: gray;
+}
+
+
+.wait-times {
+    width: max-content;
+    font-size: 1.4rem;
 }
 
 

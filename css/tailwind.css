@@ -22,6 +22,8 @@
 
 .bold { font-weight: bold; }
 
+.underline { text-decoration: underline; }
+
 .text-1p2rem { font-size: 1.2rem; }
 
 .text-1p3rem { font-size: 1.3rem; }
@@ -162,6 +164,8 @@
 
 .mt-2rem { margin-top: 2rem; }
 
+.mt-3rem { margin-top: 3rem; }
+
 .mt-4rem { margin-top: 4rem; }
 
 .mt-5rem { margin-top: 5rem; }
@@ -215,6 +219,8 @@
 .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
 
 .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.grid-cols-2-auto { grid-template-columns: repeat(2, auto);}
 
 .grid-cols-3-auto { grid-template-columns: repeat(3, auto);}
 
