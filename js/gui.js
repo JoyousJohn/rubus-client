@@ -840,26 +840,30 @@ function updateWaitTimes() {
     $('.wait-times').empty();
     for (const campus in stopsByCampus) {
         let hasStops = false;
-        $('.wait-times').append($(`<div class="mt-1rem center underline text-1p5rem underline" style="grid-column: span 2;">${campus}</div>`))
+        const $waitWrapper = $('<div class="grid grid-cols-2-auto gap-x-1rem"></div>')
+        $waitWrapper.append($(`<div class="mt-1rem center bold-500 text-1p5rem mb-0p5rem" style="grid-column: span 2;">${campus}</div>`))
         const stops = stopsByCampus[campus];
         stops.forEach(stopId => {
-            if (activeStops.includes(stopId) && waits[stopId]) { // need to also check waits[stopId] because I'm deciding (for some reason) to show all stops when no buses are active...
+            // if (activeStops.includes(stopId) && waits[stopId]) { // need to also check waits[stopId] because I'm deciding (for some reason) to show all stops when no buses are active...
                 let waitSeconds = waits[stopId];
-                if (waitSeconds > 60) {
-                    const minutes = Math.floor(waitSeconds / 60);
-                    const seconds = waitSeconds % 60;
-                    waitSeconds = seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
-                } else {
-                    waitSeconds += 's'
+                if (waitSeconds) { // unsure why this is null sometimes - maybe switching to ws clears wait times? or is this at a certain time?
+                    if (waitSeconds > 60) {
+                        const minutes = Math.floor(waitSeconds / 60);
+                        const seconds = waitSeconds % 60;
+                        waitSeconds = seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
+                    } else {
+                        waitSeconds += 's'
+                    }
+                    $waitWrapper.append(`</div>${stopsData[stopId].name}</div>`).append(`<div>${waitSeconds}</div}`)
+                    hasStops = true;
                 }
-                $('.wait-times').append(`</div>${stopsData[stopId].name}</div>`).append(`<div>${waitSeconds}</div}`)
-                hasStops = true;
-            }
+                
+            // }
         })
 
-        if (!hasStops) {
-            $('.wait-times').children().last().remove();
-        }
+        // if (hasStops) {
+            $('.wait-times').append($waitWrapper)
+        // }
     }
 
     if ($('.wait-times').children().length === 0) {

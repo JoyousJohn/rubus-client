@@ -766,9 +766,18 @@ html, body {
 
 
 .wait-times {
-    width: max-content;
     font-size: 1.4rem;
-    color: var(--theme-color)
+    color: var(--theme-color);
+    margin: 1rem;
+    column-count: 2;
+}
+
+.wait-times > div {
+    background-color: var(--theme-bg-closest-stop);
+    break-inside: avoid;
+    margin-bottom: 1rem;
+    border-radius: 1rem;
+    padding: 1rem 1.8rem;
 }
 
 
