@@ -243,6 +243,7 @@ function makeOoS(busId) {
         sourceBusId = null;
     }
 
+
     populateMeClosestStops();
 
 }

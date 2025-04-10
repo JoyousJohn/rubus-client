@@ -225,8 +225,8 @@ function hideInfoBoxes(instantly_hide) {
     if (selectedMarkerId && busMarkers[selectedMarkerId]) {
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
         busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
-        selectedMarkerId = null;
     }
+    selectedMarkerId = null;
 
     if ($('.buses-panel-wrapper').is(':visible')) {
         $('.buses-panel-wrapper').slideUp('fast');
@@ -943,7 +943,6 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     // console.log('data: ', data)
-
     // console.log('next_stop' in data)
 
     if ('next_stop' in data) {

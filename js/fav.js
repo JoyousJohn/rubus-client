@@ -25,7 +25,9 @@ $('.bus-star').click(function() {
 
 function populateFavs() {
     favBuses.forEach(favId => {
-        const $thisFav = $(`<div class="br-1rem" data-fav-id="${favId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[favId].route]}">${busData[favId].route.toUpperCase()}</span>${busData[favId].busName}</div>`).click(function() { flyToBus(favId); closeRouteMenu(); })
-        $('.favs').append($thisFav)
+        if (busData[favId]) {
+            const $thisFav = $(`<div class="br-1rem" data-fav-id="${favId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[favId].route]}">${busData[favId].route.toUpperCase()}</span>${busData[favId].busName}</div>`).click(function() { flyToBus(favId); closeRouteMenu(); })
+            $('.favs').append($thisFav)
+        }
     })
 }

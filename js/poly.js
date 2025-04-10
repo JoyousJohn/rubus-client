@@ -261,6 +261,13 @@ async function popStopInfo(stopId) {
 
     popupStopId = stopId;
     popupBusId = null;
+
+    if (selectedMarkerId && busMarkers[selectedMarkerId] ) { 
+        busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
+        busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
+        selectedMarkerId = null;
+    }
+
     $('.bus-info-popup, .route-panel, .my-location-popup').hide();
 
     const stopName = stopsData[stopId].name;
@@ -306,7 +313,7 @@ async function addStopsToMap() {
         const long = thisStop['longitude'];
         const busStopIcon = L.icon({
             iconUrl: 'img/stop_marker.png',
-            iconSize: [18, 18], // Customize icon size as needed
+            iconSize: [18, 18],
             iconAnchor: [9, 9], // Center the icon
             // popupAnchor: [0, -15] // Adjust the popup location
         });
@@ -315,8 +322,8 @@ async function addStopsToMap() {
         const marker = L.marker([lat, long], { 
             icon: busStopIcon,
             zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
-        })
-            .addTo(map) // Add the marker to the map
+            })
+            .addTo(map)
             .on('click', function() {
                 sourceStopId = null;
                 sourceBusId = null;
@@ -363,23 +370,23 @@ function routesServicing(stopId) {
     let routesServicing = []  
     activeRoutes.forEach(activeRoute => {
         if (activeRoute in stopLists && stopLists[activeRoute].includes(stopId)) { // remove activeRoute in stopLists check after adding football routes + stops
-            routesServicing.push(activeRoute)
+            routesServicing.push(activeRoute);
         }
     })
-    return routesServicing
+    return routesServicing;
 }
 
-let busesByRoutes = {}
+let busesByRoutes = {};
 
 function makeBusesByRoutes() {
-    busesByRoutes = {}
+    busesByRoutes = {};
     for (const bus in busData) {
-        const route = busData[bus].route 
+        const route = busData[bus].route;
         // console.log(route)
         if (!busesByRoutes.hasOwnProperty(route)) {
-            busesByRoutes[route] = []
+            busesByRoutes[route] = [];
         }
-        busesByRoutes[route].push(bus)
+        busesByRoutes[route].push(bus);
         // console.log(busesByRoutes[route])
     }
 }
