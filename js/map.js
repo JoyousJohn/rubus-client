@@ -165,7 +165,27 @@ function launchFireworks(totalFireworks, currentCount = 0) {
 
 let fireworksTimeout;
 
+let clickTimes = [];
+const CLICKS_PER_SECOND_THRESHOLD = 7;
+const CLICK_WINDOW_MS = 1000;
+
+function trackClick() {
+    const now = Date.now();
+    clickTimes.push(now);
+    
+    clickTimes = clickTimes.filter(time => now - time <= CLICK_WINDOW_MS);
+    
+    const clicksPerSecond = clickTimes.length;
+    
+    if (clicksPerSecond >= CLICKS_PER_SECOND_THRESHOLD) {
+        animatePikachu();
+        clickTimes = [];
+    }
+}
+
+// Add click event listener to the fireworks button
 $('.shoot-fireworks').click(function() {
+    trackClick();
     launchFireworks(12);
     $('.shoot-fireworks').css('background-color', '#ca45fa').css('color', '#f69ee0')
     if (fireworksTimeout) {
@@ -1341,3 +1361,42 @@ $('.satellite-btn').click(function() {
         }
     }
 });
+
+function animatePikachu() {
+    const pikaSound = new Audio('img/pika.mp3');
+
+    setTimeout(() => {
+        pikaSound.play();
+    }, 100);
+
+    const pika = document.createElement('img');
+    pika.src = 'img/pika.gif';
+    pika.style.position = 'fixed';
+    pika.style.top = '50%';
+    pika.style.transform = 'translateY(-50%)';
+    pika.style.left = '-100px';
+    pika.style.width = '100px';
+    pika.style.height = 'auto';
+    pika.style.zIndex = '1000';
+    document.body.appendChild(pika);
+
+    const startTime = performance.now();
+    const duration = 1800;
+    const screenWidth = window.innerWidth;
+
+    function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const newPosition = -100 + (screenWidth + 200) * progress;
+        pika.style.left = `${newPosition}px`;
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            pika.remove();
+        }
+    }
+
+    requestAnimationFrame(animate);
+}

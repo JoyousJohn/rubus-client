@@ -59,7 +59,6 @@ class BusWebSocketClient {
         }
 
         if (!busData[busId]) {
-
             busData[busId] = {}
             busData[busId].busName = data.bus
             busData[busId].previousTime = new Date().getTime() - 5000;

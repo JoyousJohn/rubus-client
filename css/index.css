@@ -794,6 +794,7 @@ html, body {
     row-gap: 0.8rem;
     pointer-events: none;
     box-sizing: border-box;
+    padding: 0.5rem;
 }
 
 .panout, .buses-btn, .centerme, .fly-closest-stop, .shoot-fireworks, .satellite-btn {
@@ -830,8 +831,14 @@ html, body {
 
 .centerme-bottom-right {
     position: absolute;
-    bottom: 0.5rem;
+    bottom: 2rem;
     right: 0.5rem
+}
+
+.right-btns-bottom {
+    position: absolute;
+    bottom: 2rem;
+    right: 2rem
 }
 
 .shoot-fireworks {

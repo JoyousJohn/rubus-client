@@ -97,14 +97,14 @@ async function fetchBusData(immediatelyUpdate) {
         const data = await response.json();
         // console.log('Response data:', data);
 
-        let activeBuses = []
-        let pollActiveRoutes = new Set()
+        let activeBuses = [];
+        let pollActiveRoutes = new Set();
 
         for (const someId in data.buses) {
 
             if (someId === '-1') continue;
 
-            const bus = data.buses[someId][0]
+            const bus = data.buses[someId][0];
 
             if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
                 continue
@@ -124,18 +124,18 @@ async function fetchBusData(immediatelyUpdate) {
             busData[busId].lat = bus.latitude;
             busData[busId].long = bus.longitude;
 
-            const lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]
+            const lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1];
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
-                busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)])
+                busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
             }
 
             busData[busId].rotation = parseFloat(bus.calculatedCourse); //+ 45
 
             // let alphaRouteId = bus.routeId.replace(/[^a-zA-Z]/g, '')
 
-            const [routeStr, isKnown] = getRouteStr(bus.routeId)
-            busData[busId].route = routeStr
-            busData[busId].isKnown = isKnown
+            const [routeStr, isKnown] = getRouteStr(bus.routeId);
+            busData[busId].route = routeStr;
+            busData[busId].isKnown = isKnown;
 
             busData[busId].capacity = bus.paxLoad;
 
@@ -185,17 +185,23 @@ async function fetchBusData(immediatelyUpdate) {
             }
 
             if (!activeBuses.includes(parseInt(busId))) {
-                console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`)
-                makeOoS(busId)
+                console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`);
+                makeOoS(busId);
             }
         }
 
         if ($('.buses-panel-wrapper').is(':visible')) {
-            updateBusOverview(Array.from(pollActiveRoutes))
+            updateBusOverview(Array.from(pollActiveRoutes));
         }
 
         if (popupStopId) {
-            updateStopBuses(popupStopId)
+            updateStopBuses(popupStopId);
+        }
+
+        if (activeBuses) {
+            $('.right-btns').removeClass('right-btns-bottom');
+            $('.knight-mover').hide();
+            checkMinRoutes();
         }
 
     } catch (error) {
@@ -503,6 +509,8 @@ function checkMinRoutes() {
     const minRoutes = ["ee", "lx", "h"];
     if(!minRoutes.every(str => activeRoutes.has(str))) {
         $('.knight-mover-mini').css('display', 'flex');
+    } else {
+        $('.knight-mover-mini').hide();
     }
 }
 
@@ -536,7 +544,8 @@ $(document).ready(async function() {
             // $('.bus-info-popup').hide();
         $('.knight-mover').show();
         // }, 5000);
-        $('.centerme-wrapper').addClass('centerme-bottom-right')
+        // $('.centerme-wrapper').addClass('centerme-bottom-right')
+        $('.right-btns').addClass('right-btns-bottom')
     }
     $('.centerme-wrapper').fadeIn();
 
