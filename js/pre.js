@@ -579,8 +579,8 @@ $(document).ready(async function() {
             }
             const data = await response.json();
             waits = data;
+            updateWaitTimes();
             // console.log('Waits fetched:', waits);
-            // updateTimeToStops('all')
         } catch (error) {
             console.error('Error fetching waits:', error);
         }

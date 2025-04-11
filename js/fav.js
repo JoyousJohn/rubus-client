@@ -2,7 +2,6 @@ let favBuses = JSON.parse(localStorage.getItem('favs')) || [];
 
 $('.bus-star').click(function() {
     const currentBusId = popupBusId;
-    const route = busData[currentBusId].route;
 
     if (!favBuses.includes(currentBusId)) {
         favBuses.push(currentBusId);
