@@ -986,6 +986,9 @@ function popInfo(busId, resetCampusFontSize) {
             // $('.next-stops-grid > div').append('<div class="closest-stop-divider"><hr></div>')
         }
 
+        let firstCircle = null;
+        let lastCircle = null;
+
         const nextStop = data.next_stop
         let routeStops = stopLists[data.route]
         let sortedStops = []
@@ -1020,6 +1023,10 @@ function popInfo(busId, resetCampusFontSize) {
             </div>`).click(() => { 
                 flyToStop(stopId);  
             }));
+
+            if (!firstCircle) {
+                firstCircle = $('.next-stop-circle').last();
+            }
 
         }
 
@@ -1119,6 +1126,14 @@ function popInfo(busId, resetCampusFontSize) {
                 flyToStop(sortedStops[i]);  
             }));
 
+            if (!firstCircle) {
+                firstCircle = $('.next-stop-circle').last();
+            }
+
+            if (i === sortedStops.length - 1) {
+                lastCircle = $('.next-stop-circle').last();
+            }
+
         }
 
         if (!negativeETA) {
@@ -1130,6 +1145,16 @@ function popInfo(busId, resetCampusFontSize) {
                     $('.info-next-stops').scrollTop(0)
                 }, 0);
             }  
+
+            setTimeout(() => {
+                const firstRect = firstCircle[0].getBoundingClientRect();
+                const lastRect = lastCircle[0].getBoundingClientRect();
+                const heightDiff = Math.abs(lastRect.top - firstRect.top);
+                firstCircle.addClass('connecting-line');
+                firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
+            }, 0);
+            
+
         } else {
             $('.info-next-stops').hide(); // For some reason *only* the closest stop at top of next stops remains visible if negative ETA, and only if negative ETA happens while site was open. Investigate why, unsure if this fixes. The closest stop should be part of the element, so I'm confused...
         }

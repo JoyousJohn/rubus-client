@@ -306,6 +306,11 @@ html, body {
     top: 100%;
 }
 
+.next-stop-circle.connecting-line::after {
+    height: var(--connecting-line-height);
+    background: var(--theme-line-bg);
+}
+
 .next-stop-circle::before {
     content: '';
     position: absolute;
@@ -865,6 +870,7 @@ html, body {
     scrollbar-width: none;
     pointer-events: all;
     line-height: 1.6;
+    padding-right: 1rem;
 }
 
 /* Hide scrollbar for WebKit browsers */
