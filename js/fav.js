@@ -2,14 +2,20 @@ let favBuses = JSON.parse(localStorage.getItem('favs')) || [];
 
 $('.bus-star').click(function() {
     const currentBusId = popupBusId;
+    const route = busData[currentBusId].route;
 
     if (!favBuses.includes(currentBusId)) {
         favBuses.push(currentBusId);
         $(this).find('i').css('color', 'gold').removeClass('fa-regular').addClass('fa-solid')
         const $thisFav = $(`<div class="br-1rem" data-fav-id="${currentBusId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[currentBusId].route]}">${busData[currentBusId].route.toUpperCase()}</span>${busData[currentBusId].busName}</div>`)
         $thisFav.click(function() {
-            flyToBus(currentBusId); 
-            closeRouteMenu(); 
+            if (busData[currentBusId]) {
+                const favRoute = busData[currentBusId].route;
+                if (shownRoute && shownRoute !== favRoute) {
+                    toggleRoute(favRoute);
+                }
+                flyToBus(currentBusId);
+            }
         })
         $('.favs').append($thisFav)
 
@@ -26,7 +32,16 @@ $('.bus-star').click(function() {
 function populateFavs() {
     favBuses.forEach(favId => {
         if (busData[favId]) {
-            const $thisFav = $(`<div class="br-1rem" data-fav-id="${favId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[favId].route]}">${busData[favId].route.toUpperCase()}</span>${busData[favId].busName}</div>`).click(function() { flyToBus(favId); closeRouteMenu(); })
+            const $thisFav = $(`<div class="br-1rem" data-fav-id="${favId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[favId].route]}">${busData[favId].route.toUpperCase()}</span>${busData[favId].busName}</div>`)
+            $thisFav.click(function() {
+                if (busData[favId]) {
+                    const favRoute = busData[favId].route;
+                    if (shownRoute && shownRoute !== favRoute) {
+                        toggleRoute(favRoute);
+                    }
+                    flyToBus(favId);
+                }
+            })
             $('.favs').append($thisFav)
         }
     })

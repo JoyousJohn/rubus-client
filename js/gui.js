@@ -198,7 +198,6 @@ function toggleRouteSelectors(route) {
         $(`.route-selector[routeName="${shownRoute}"]`).css('box-shadow', '')
         shownRoute = route
 
-        // Add scrolling code here
         const container = $('.route-selectors');
         const element = $(`.route-selector[routeName="${route}"]`);
         const containerWidth = container.width();
