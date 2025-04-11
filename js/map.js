@@ -725,7 +725,6 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
             animationFrames[busId] = requestAnimationFrame(animateMarker);
         } else {
             // console.log(`Updated bus ${busId} in ${(performance.now() - startTime) / 1000} seconds.`);
-
             delete animationFrames[busId];
         }
     };
@@ -735,8 +734,8 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
     requestAnimationFrame(animateMarker);
 };
 
-let selectedMarkerId
-let pauseUpdateMarkerPositions = false
+let selectedMarkerId;
+let pauseUpdateMarkerPositions = false;
 
 function plotBus(busId, immediatelyUpdate) {
 
@@ -759,15 +758,17 @@ function plotBus(busId, immediatelyUpdate) {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[busData[busId].route];
     
+        if (shownRoute && shownRoute !== busData[busId].route) {
+            busMarkers[busId].getElement().style.display = '';
+        }
+
         busMarkers[busId].on('click', function() {
             sourceStopId = null;
             sourceBusId = null;
             selectBusMarker(busId)
-            // busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'blue';
         });
 
     } else if (!pauseUpdateMarkerPositions) {
-        // Update the existing marker's position
         updateMarkerPosition(busId, immediatelyUpdate);
     }
 }

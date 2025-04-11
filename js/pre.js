@@ -131,8 +131,6 @@ async function fetchBusData(immediatelyUpdate) {
 
             busData[busId].rotation = parseFloat(bus.calculatedCourse); //+ 45
 
-            // let alphaRouteId = bus.routeId.replace(/[^a-zA-Z]/g, '')
-
             const [routeStr, isKnown] = getRouteStr(bus.routeId);
             busData[busId].route = routeStr;
             busData[busId].isKnown = isKnown;
