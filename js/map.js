@@ -1400,7 +1400,10 @@ function animatePikachu() {
     }, 100);
 
     const pika = document.createElement('img');
-    pika.src = 'img/pika.gif';
+    pika.src = Math.random() < 0.5 ? 'img/pika.gif' : 'img/jolteon.gif';
+    if (pika.src.includes('jolteon.gif')) {
+        pika.style.transform += ' scaleX(-1)';
+    }
     pika.style.position = 'fixed';
     pika.style.top = '50%';
     pika.style.transform = 'translateY(-50%)';
