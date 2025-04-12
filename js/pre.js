@@ -540,6 +540,8 @@ $(document).ready(async function() {
 
     await fetchBusData();
 
+    checkShared();
+
     if (!Object.keys(busData).length) {
         await startOvernight();
     }

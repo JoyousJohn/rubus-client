@@ -166,6 +166,17 @@ html, body {
     pointer-events: all;
 }
 
+.shared {
+    border-radius: 2rem;
+    font-family: var(--font-family);
+    font-size: 1.5rem;
+    padding: 0.5rem 1rem;
+    color: white;
+    background-color: black;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
 .favs > div {
     font-family: var(--font-family);
     font-size: 1.5rem;
@@ -242,6 +253,12 @@ html, body {
     color: var(--theme-color) /* in light theme this is already black by default */
 }
 
+.info-shared-bus {
+    padding: 0.5rem 1.3rem;
+    border-radius: 2rem;
+    background-color: black;
+}
+
 .bus-stopped-for {
     background-color: var(--theme-bg);
     border-radius: 1rem;
@@ -301,7 +318,6 @@ html, body {
     content: '';
     position: absolute;
     width: 8px;
-    height: 4rem; /* Adjusts to your grid gap */
     /* background: var(--theme-line-bg); */
     left: 50%;
     transform: translateX(-50%);
@@ -311,24 +327,7 @@ html, body {
 .next-stop-circle.connecting-line::after {
     height: var(--connecting-line-height);
     background: var(--theme-line-bg);
-}
-
-.next-stop-circle::before {
-    content: '';
-    position: absolute;
-    width: 8px;
-    height: 3rem; /* Adjusts to your grid gap */
-    /* background: var(--theme-line-bg); */
-    left: 50%;
-    transform: translateX(-50%) translateY(-100%);
-}
-
-.next-stop-circle:first-child:before {
-    display: none;
-}
-
-.next-stops-grid .next-stop-circle:nth-last-child(3)::after {
-    display: none;
+    top: 4px;
 }
 
 .next-stop-campus {

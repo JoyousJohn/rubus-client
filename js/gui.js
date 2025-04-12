@@ -1278,8 +1278,10 @@ function handleNearestStop(fly) {
         if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3) {
             sourceStopId = null;
             sourceBusId = null;
-            flyToStop(thisClosestStopId);
-            console.log("Flying to closest stop");
+            if (!sharedBus) {
+                flyToStop(thisClosestStopId);
+                console.log("Flying to closest stop");
+            }    
         }
 
         // console.log(popupStopId)
