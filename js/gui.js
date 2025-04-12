@@ -1198,6 +1198,8 @@ function updateNearestStop() {
         $('.closest-stop').show();
     }
 
+    $('.fly-closest-stop').off('click').click(function() { flyToStop(thisClosestStopId) });
+
     return [closestStop, thisClosestStopId, closestDistance]
 
 }

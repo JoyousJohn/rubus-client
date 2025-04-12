@@ -166,7 +166,7 @@ function launchFireworks(totalFireworks, currentCount = 0) {
 let fireworksTimeout;
 
 let clickTimes = [];
-const CLICKS_PER_SECOND_THRESHOLD = 7;
+const CLICKS_PER_SECOND_THRESHOLD = 5;
 const CLICK_WINDOW_MS = 1000;
 
 function trackClick() {
