@@ -223,8 +223,6 @@ function makeOoS(busId) {
     delete busETAs[busId];   
 
     const route = busData[busId].route;
-    console.log(route);
-    console.log(!busesByRoutes[route]);
 
     const busDataCopy = JSON.parse(JSON.stringify(busData[busId]));
 
@@ -510,8 +508,8 @@ async function startOvernight() {
 }
 
 function checkMinRoutes() {
-    const ONRoutes = ['on1', 'on2'];
-    if (ONRoutes.some(route => activeRoutes.has(route))) { return; }
+    const excludeRoutes = ['on1', 'on2', 'wknd1', 'wknd2'];
+    if (excludeRoutes.some(route => activeRoutes.has(route))) { return; }
 
     const minRoutes = ["ee", "lx", "h"];
     if(!minRoutes.every(str => activeRoutes.has(str))) {
