@@ -122,8 +122,9 @@ async function fetchBusData(immediatelyUpdate) {
                 populateMeClosestStops();
                 busData[busId].route = routeStr;
             } else {
-                if (busData[busId].rote !== routeStr) { // Route changed for existing bus...
+                if (busData[busId].route !== routeStr) { // Route changed for existing bus...
                     busData[busId].route = routeStr;
+                    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
                     makeActiveRoutes();
                 }
             }
@@ -199,7 +200,7 @@ async function fetchBusData(immediatelyUpdate) {
         }
 
         if (popupStopId) {
-            updateStopBuses(popupStopId);
+            updateStopBuses(popupStopId, shownRoute);
         }
 
         if (activeBuses.size) {
@@ -217,16 +218,15 @@ async function fetchBusData(immediatelyUpdate) {
 function makeOoS(busId) {
     if (busMarkers[busId]) { // investigate why this would occur
         busMarkers[busId].remove();
-        console.log('removing')
     }
     delete busMarkers[busId];
     delete busETAs[busId];   
 
-    const route = busData[busId].route
-    console.log(route)
-    console.log(!busesByRoutes[route])
+    const route = busData[busId].route;
+    console.log(route);
+    console.log(!busesByRoutes[route]);
 
-    const busDataCopy = JSON.parse(JSON.stringify(busData[busId]))
+    const busDataCopy = JSON.parse(JSON.stringify(busData[busId]));
 
     delete busData[busId];   
     makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData

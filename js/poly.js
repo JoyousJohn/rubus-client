@@ -118,8 +118,6 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     $('.info-stop-servicing').empty();
 
-    console.log(stopId)
-
     const servicedRoutes = routesServicing(stopId)
 
     console.log('servicedRoutes:', servicedRoutes)
