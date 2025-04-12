@@ -190,16 +190,16 @@ function updateStopBuses(stopId) {
             hour12: true
         });
 
-        $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`).css('color', colorMappings[data.route]))
-        
+        $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`));
+
         let stopOctaconVisibilityClass = 'none'
         if (busData[busId].overtime) {
             stopOctaconVisibilityClass = ''
         }
 
-        let stopOoSVisibilityClass = 'none'
+        let stopOoSVisibilityClass = 'none';
         if (busData[busId].oos) {
-            stopOoSVisibilityClass = ''
+            stopOoSVisibilityClass = '';
         }
 
         $('.stop-info-buses-grid').append(`<div class="flex justify-between align-center pointer">
@@ -208,33 +208,35 @@ function updateStopBuses(stopId) {
                 <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
             </div>
             <div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div>
-        </div>`)
+        </div>`);
 
         if (data.eta === 0) {
             // $('.stop-info-buses-grid').append(`<div></div>`)
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`)
-            $('.stop-info-buses-grid').append(`<div class="pointer"></div>`)
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
+            $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
         } else {
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${(data.eta)}m</div>`);
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
+        }
 
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${(data.eta)}m</div>`)
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`)
-        
-            
+        if (shownRoute && shownRoute !== data.route) {
+            $('.stop-bus-route').last().css('color', 'gray');
+            $('.stop-bus-eta').last().css('color', 'gray');
+        } else {
+            $('.stop-bus-route').last().css('color', colorMappings[data.route]);
         }
              
         $('.stop-info-buses-grid').children().slice(-4).click(function() {
-            sourceStopId = stopId
-            flyToBus(busId)
+            sourceStopId = stopId;
+            flyToBus(busId);
         });
     })
 
-    // $('.info-next-stops').scrollTop(infoNextStopsScrollPosition);
-
-    const avgWait = waits[stopId]
-    const waitStr = `${Math.floor(avgWait / 60)}m ${avgWait % 60}s`
+    const avgWait = waits[stopId];
+    const waitStr = `${Math.floor(avgWait / 60)}m ${avgWait % 60}s`;
 
     if (!jQuery.isEmptyObject(busData)) {
-        $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`)
+        $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`);
     }
 }
 

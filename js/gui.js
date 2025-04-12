@@ -190,26 +190,28 @@ function toggleRouteSelectors(route) {
     else {
         for (const polyline in polylines) {
             if (polyline !== route) {
-                $(`.route-selector[routeName="${polyline}"]`).css('background-color', 'gray')
+                $(`.route-selector[routeName="${polyline}"]`).css('background-color', 'gray');
             }
         }
 
         $(`.route-selector[routeName="${route}"]`).css('background-color', colorMappings[route]).css('box-shadow', `0 0 10px ${colorMappings[route]}`)
-        $(`.route-selector[routeName="${shownRoute}"]`).css('box-shadow', '')
-        shownRoute = route
+        $(`.route-selector[routeName="${shownRoute}"]`).css('box-shadow', '');
+        shownRoute = route;
 
         const container = $('.route-selectors');
-        const element = $(`.route-selector[routeName="${route}"]`);
-        const containerWidth = container.width();
-        const elementWidth = element.outerWidth();
-        
-        // Calculate scroll position to center the element
-        const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
-        
-        // Smooth scroll to the calculated position
-        container.animate({
-            scrollLeft: scrollTo
-        }, 180);
+
+        if (container[0].scrollWidth > $(document).width()) {
+
+            const element = $(`.route-selector[routeName="${route}"]`);
+            const containerWidth = container.width();
+            const elementWidth = element.outerWidth();
+            
+            const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
+            
+            container.animate({
+                scrollLeft: scrollTo
+            }, 180);
+        }
 
     }
 }
