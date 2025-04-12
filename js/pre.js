@@ -196,7 +196,7 @@ async function fetchBusData(immediatelyUpdate) {
             updateStopBuses(popupStopId);
         }
 
-        if (activeBuses) {
+        if (activeBuses.size) {
             $('.right-btns').removeClass('right-btns-bottom');
             $('.knight-mover').hide();
             checkMinRoutes();
@@ -496,6 +496,8 @@ async function startOvernight() {
     
             }
 
+            console.log(activeRoutes)
+
             setPolylines(activeRoutes);
             populateRouteSelectors(activeRoutes); 
         }
@@ -503,6 +505,9 @@ async function startOvernight() {
 }
 
 function checkMinRoutes() {
+    const ONRoutes = ['on1', 'on2'];
+    if (ONRoutes.some(route => activeRoutes.has(route))) { return; }
+
     const minRoutes = ["ee", "lx", "h"];
     if(!minRoutes.every(str => activeRoutes.has(str))) {
         $('.knight-mover-mini').css('display', 'flex');
@@ -523,13 +528,15 @@ $(document).ready(async function() {
     await fetchBusData();
 
     if (!Object.keys(busData).length) {
-        startOvernight();
+        await startOvernight();
     }
 
     for (const busId in busData) {
         const route = busData[busId].route;
         if (route) activeRoutes.add(route);
     }
+
+    console.log(activeRoutes)
 
     if (activeRoutes.size > 0) {
         updateMarkerSize(); // set correct html marker size before plotting
@@ -603,7 +610,6 @@ $(document).ready(async function() {
             }
 
             if (popupBusId) {
-                // alert(joined_service[popupBusId])
                 const serviceDate = new Date(joined_service[popupBusId]);
                 const today = new Date();
                 const isToday = serviceDate.getDate() === today.getDate() && 
