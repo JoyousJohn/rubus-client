@@ -293,6 +293,8 @@ async function popStopInfo(stopId) {
 
     $('.stop-info-popup').show();
     $('.stop-info-popup-inner').scrollTop(0);
+
+    $('.bus-log-wrapper').hide();
     
 }
 

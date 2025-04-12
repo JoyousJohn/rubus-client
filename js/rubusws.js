@@ -69,35 +69,33 @@ function openRUBusSocket() {
 
             // }
 
-            const busId = parseInt(eventData.busId)
+            const busId = parseInt(eventData.busId);
 
             if (!(busId in busData)) {// shouldn't happen
-                console.log('this shouldnt happen')
+                console.log('this shouldnt happen');
                 // busData[busId] = {}
                 return
             }
 
-            const busRoute = busData[busId].route
-            const stopId = eventData.stopId
+            const busRoute = busData[busId].route;
+            const stopId = eventData.stopId;
 
             if (busData[busId]['stopId']) {
-                busData[busId]['prevStopId'] = busData[busId]['stopId']
+                busData[busId]['prevStopId'] = busData[busId]['stopId'];
             }
-            busData[busId]['stopId'] = stopId
-            busData[busId]['next_stop'] = getNextStopId(busRoute, stopId)
+            busData[busId]['stopId'] = stopId;
+            busData[busId]['next_stop'] = getNextStopId(busRoute, stopId);
 
-            const stopName = stopsData[stopId].name
-            const busName = busData[busId].busName
+            const stopName = stopsData[stopId].name;
+            const busName = busData[busId].busName;
 
             if (eventData['event'] === 'arrival') {
-                busData[busId]['at_stop'] = true
-                busData[busId]['timeArrived'] = eventData['time_arrived']
-                // console.log(new Date(eventData['time_arrived']))
-                // console.log(new Date())
-                console.log(`[l] Bus ${busName} (${busId}) arrived at ${stopName}`)
+                busData[busId]['at_stop'] = true;
+                busData[busId]['timeArrived'] = eventData['time_arrived'];
+                // console.log(`[l] Bus ${busName} (${busId}) arrived at ${stopName}`)
 
                 if (popupBusId === busId) {
-                    startStoppedForTimer(busId)
+                    startStoppedForTimer(busId);
                 }
 
                 busData[busId].progress = 0;
@@ -128,7 +126,7 @@ function openRUBusSocket() {
                 }
 
                 delete busData[busId]['timeArrived'];
-                console.log(`[Departure] Bus ${busName} departed from ${stopName}`)
+                // console.log(`[Departure] Bus ${busName} departed from ${stopName}`)
 
                 if ($('.bus-stopped-for').is(':visible') && popupBusId === busId) {
                     clearInterval(stoppedForInterval)

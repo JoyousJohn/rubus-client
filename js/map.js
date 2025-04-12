@@ -80,8 +80,11 @@ $(document).ready(function() {
 
         } else {
             isTransitioning = true;
-
             hideInfoBoxes();
+
+            if (settings['toggle-show-bus-log']) {
+                $('.bus-log-wrapper').show();
+            }
         }
 
     });
@@ -786,7 +789,9 @@ function selectBusMarker(busId) {
     
     busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '0 0 10px ' + colorMappings[busData[busId].route];
 
-    selectedMarkerId = busId
+    selectedMarkerId = busId;
+
+    $('.bus-log-wrapper').hide();
 }
 
 const campusMappings = {
