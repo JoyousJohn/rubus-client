@@ -48,7 +48,7 @@ class BusWebSocketClient {
         const busId = data.busId;
 
         // alert(busId)
-        console.log(`Received bus data for bus ${busId}:`, data);
+        // console.log(`Received bus data for bus ${busId}:`, data);
         
         // Passio reported a non-weekend bus, return to polling
         if (data.route && !data.route.includes('ONWK')) {

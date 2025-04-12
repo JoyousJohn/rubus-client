@@ -237,7 +237,7 @@ function toggleRoute(route) {
             map.fitBounds(bounds) 
         }
         else {
-            updateStopBuses(popupStopId, route);
+            updateStopBuses(popupStopId);
         }
 
     // Hide other polylines and buses
