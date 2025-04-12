@@ -140,7 +140,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         
         const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`);
         if (actuallyShownRoute && actuallyShownRoute !== servicedRoute) {
-            $serviedRouteElm.css('color', 'gray');
+            $serviedRouteElm.css('color', 'var(--theme-hidden-route-col)');
         } else {
             $serviedRouteElm.css('color', colorMappings[servicedRoute]);
         }
@@ -218,6 +218,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             <div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div>
         </div>`);
 
+        if (actuallyShownRoute && actuallyShownRoute !== data.route) {
+            $('.stop-octagon').last().css('background-color', 'var(--theme-hidden-route-col)');
+        }
+
         if (data.eta === 0) {
             // $('.stop-info-buses-grid').append(`<div></div>`)
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
@@ -228,8 +232,8 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         }
 
         if (actuallyShownRoute && actuallyShownRoute !== data.route) {
-            $('.stop-bus-route').last().css('color', 'gray');
-            $('.stop-bus-eta').last().css('color', 'gray');
+            $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
+            $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
         } else {
             $('.stop-bus-route').last().css('color', colorMappings[data.route]);
         }
