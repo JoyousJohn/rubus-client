@@ -231,7 +231,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-show-invalid-etas':
             settings['toggle-show-invalid-etas'] = isChecked;
-            if (isChecked && popupBusId) {
+            if (isChecked && popupBusId) { // doesn't work for some reason
                 $('.info-next-stops, .next-stops-grid').show(); // if a negative eta is already selected (thus hidden) when this setting is being enabled
             }
             break;

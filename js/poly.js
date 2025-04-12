@@ -112,14 +112,17 @@ function getNextStopId(route, stopId) {
     return nextStopId
 }
 
-function updateStopBuses(stopId) {
+function updateStopBuses(stopId, actuallyShownRoute) {
+
     let servicingBuses = {}
 
     $('.info-stop-servicing').empty();
 
+    console.log(stopId)
+
     const servicedRoutes = routesServicing(stopId)
 
-    // console.log('servicedRoutes:', servicedRoutes)
+    console.log('servicedRoutes:', servicedRoutes)
 
     if (!servicedRoutes.length) {
 
@@ -136,7 +139,14 @@ function updateStopBuses(stopId) {
     }
 
     servicedRoutes.forEach(servicedRoute => {
-        const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`).css('color', colorMappings[servicedRoute])
+        
+        const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`);
+        if (actuallyShownRoute && actuallyShownRoute !== servicedRoute) {
+            $serviedRouteElm.css('color', 'gray');
+        } else {
+            $serviedRouteElm.css('color', colorMappings[servicedRoute]);
+        }
+        
         $('.info-stop-servicing').append($serviedRouteElm)
         // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);
         busesByRoutes[servicedRoute].forEach(busId => {
@@ -219,7 +229,7 @@ function updateStopBuses(stopId) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
         }
 
-        if (shownRoute && shownRoute !== data.route) {
+        if (actuallyShownRoute && actuallyShownRoute !== data.route) {
             $('.stop-bus-route').last().css('color', 'gray');
             $('.stop-bus-eta').last().css('color', 'gray');
         } else {
@@ -275,7 +285,7 @@ async function popStopInfo(stopId) {
     const stopName = stopsData[stopId].name;
     $('.info-stop-name').text(settings['toggle-show-stop-id'] ? `${stopName} (#${stopId})` : stopName);
 
-    updateStopBuses(stopId);
+    updateStopBuses(stopId, shownRoute);
 
     if (sourceBusId && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
         $('.stop-info-back').show();

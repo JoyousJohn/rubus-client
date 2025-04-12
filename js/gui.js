@@ -205,7 +205,7 @@ function toggleRouteSelectors(route) {
             const element = $(`.route-selector[routeName="${route}"]`);
             const containerWidth = container.width();
             const elementWidth = element.outerWidth();
-            
+
             const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
             
             container.animate({
@@ -233,7 +233,12 @@ function toggleRoute(route) {
         }
 
         showAllStops();
-        map.fitBounds(bounds)
+        if (!popupStopId) {
+            map.fitBounds(bounds) 
+        }
+        else {
+            updateStopBuses(popupStopId, route);
+        }
 
     // Hide other polylines and buses
     } else {
@@ -259,13 +264,18 @@ function toggleRoute(route) {
 
         polylines[route].addTo(map) // show this one if it was prev hidden
 
-        $('.bus-info-popup, .stop-info-popup').hide();
-
-        map.fitBounds(polylines[route].getBounds(), { padding: [10, 10] });
-
+        if (!popupStopId) {
+            map.fitBounds(polylines[route].getBounds(), { padding: [10, 10] });
+            $('.bus-info-popup, .stop-info-popup').hide();
+        }
+        else {
+            updateStopBuses(popupStopId, route);
+        }
     }
 
-    hideInfoBoxes();
+    if (!popupStopId) {
+        hideInfoBoxes();
+    }
 
     toggleRouteSelectors(route)
 
@@ -841,7 +851,7 @@ function updateWaitTimes() {
     $('.wait-times').empty();
     for (const campus in stopsByCampus) {
         let hasStops = false;
-        const $waitWrapper = $('<div class="grid grid-cols-2-auto gap-x-1rem"></div>')
+        const $waitWrapper = $('<div class="grid grid-cols-2-auto gap-x-1rem gap-y-0p5rem"></div>')
         $waitWrapper.append($(`<div class="mt-1rem center bold-500 text-1p5rem mb-0p5rem" style="grid-column: span 2;">${campus}</div>`))
         const stops = stopsByCampus[campus];
         
@@ -862,7 +872,7 @@ function updateWaitTimes() {
                 } else {
                     waitSeconds += 's'
                 }
-                $waitWrapper.append(`</div>${stopsData[stopId].name}</div>`).append(`<div>${waitSeconds}</div}`)
+                $waitWrapper.append(`</div>${stopsData[stopId].name}</div>`).append(`<div class="width-max flex align-center">${waitSeconds}</div}`)
                 hasStops = true;
             }
         })
