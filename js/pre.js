@@ -495,11 +495,10 @@ async function startOvernight() {
                 makeBusesByRoutes()
     
             }
+
+            setPolylines(activeRoutes);
+            populateRouteSelectors(activeRoutes); 
         }
-
-        // console.log(activeRoutes)
-        // setPolylines(activeRoutes)
-
     }
 }
 
