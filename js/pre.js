@@ -113,11 +113,19 @@ async function fetchBusData(immediatelyUpdate) {
             const busId = bus.busId
             activeBuses.push(busId)
 
+            const [routeStr, isKnown] = getRouteStr(bus.routeId);
+
             if (!(busId in busData)) {
                 busData[busId] = {};
                 busData[busId].previousTime = new Date().getTime() - 5000;
                 busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]];
                 populateMeClosestStops();
+                busData[busId].route = routeStr;
+            } else {
+                if (busData[busId].rote !== routeStr) { // Route changed for existing bus...
+                    busData[busId].route = routeStr;
+                    makeActiveRoutes();
+                }
             }
 
             busData[busId].busName = bus.busName;
@@ -131,8 +139,6 @@ async function fetchBusData(immediatelyUpdate) {
 
             busData[busId].rotation = parseFloat(bus.calculatedCourse); //+ 45
 
-            const [routeStr, isKnown] = getRouteStr(bus.routeId);
-            busData[busId].route = routeStr;
             busData[busId].isKnown = isKnown;
 
             busData[busId].capacity = bus.paxLoad;
@@ -246,7 +252,6 @@ function makeOoS(busId) {
         hideInfoBoxes();
         sourceBusId = null;
     }
-
 
     populateMeClosestStops();
 
@@ -516,6 +521,16 @@ function checkMinRoutes() {
     }
 }
 
+function makeActiveRoutes() {
+    activeRoutes.clear();
+    for (const busId in busData) {
+        const route = busData[busId].route;
+        if (route) activeRoutes.add(route);
+    }
+    setPolylines(activeRoutes);
+    populateRouteSelectors(activeRoutes); 
+}
+
 $(document).ready(async function() {
     // Initialize settings before map is created
     settings = localStorage.getItem('settings');
@@ -531,10 +546,7 @@ $(document).ready(async function() {
         await startOvernight();
     }
 
-    for (const busId in busData) {
-        const route = busData[busId].route;
-        if (route) activeRoutes.add(route);
-    }
+    makeActiveRoutes();
 
     console.log(activeRoutes)
 
