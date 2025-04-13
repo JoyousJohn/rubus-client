@@ -2,6 +2,8 @@ let polylineBounds;
 
 async function setPolylines(activeRoutes) {
 
+    console.log(activeRoutes)
+
     const fetchPromises = [];
 
     for (const routeName of activeRoutes) {

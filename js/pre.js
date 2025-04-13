@@ -163,7 +163,7 @@ async function fetchBusData(immediatelyUpdate) {
             // console.log(pollActiveRoutes)
             const newRoutes = pollActiveRoutes.difference(activeRoutes);
             if (newRoutes.size > 0) {
-                // console.log(newRoutes)
+                // console.log('newRoutes: ', newRoutes)
                 // console.log(activeRoutes)
                 setPolylines(newRoutes);
                 newRoutes.forEach(item => activeRoutes.add(item))
@@ -499,10 +499,11 @@ async function startOvernight() {
     
             }
 
-            console.log(activeRoutes)
-
-            setPolylines(activeRoutes);
-            populateRouteSelectors(activeRoutes); 
+            // console.log(activeRoutes)
+            // console.log(polylines)
+            // setPolylines(activeRoutes);
+            // console.log(polylines)
+            // populateRouteSelectors(activeRoutes); 
         }
     }
 }
@@ -548,7 +549,7 @@ $(document).ready(async function() {
 
     makeActiveRoutes();
 
-    console.log(activeRoutes)
+    // console.log(activeRoutes)
 
     if (activeRoutes.size > 0) {
         updateMarkerSize(); // set correct html marker size before plotting
@@ -683,11 +684,11 @@ $(document).ready(async function() {
 
 function startBusPolling() {
     setTimeout(() => {
-        if (!settings['toggle-pause-passio-polling']) { fetchBusData();; }
+        if (!settings['toggle-pause-passio-polling']) { fetchBusData(); }
     }, 2000);
 
     setInterval(async () => {
-        if (!settings['toggle-pause-passio-polling']) { fetchBusData();; }
+        if (!settings['toggle-pause-passio-polling']) { fetchBusData(); }
     }, 5000);
 }
 
@@ -699,12 +700,12 @@ async function randomStepBusSpeeds() {
         const randChange = Math.random() < 0.5 ? -1 : 1;
         busData[busId].visualSpeed += randChange;
         if (popupBusId == busId && showBusSpeeds) {
-            $('.info-speed').text(Math.round(busData[busId].visualSpeed))
-            // console.log('changed speed to ' + busData[busId].visualSpeed)
+            $('.info-speed').text(Math.round(busData[busId].visualSpeed));
+            $('.info-mph').text('MPH');
         }
 
         if (panelRoute === busData[busId].route) {
-            $(`.route-bus-speed[bus-id="${busId}"]`).text(parseInt(busData[busId].visualSpeed) + 'mph | ' + busData[busId].capacity + '% full')
+            $(`.route-bus-speed[bus-id="${busId}"]`).text(parseInt(busData[busId].visualSpeed) + 'mph | ' + busData[busId].capacity + '% full');
         }
     }
 }

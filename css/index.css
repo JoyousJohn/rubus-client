@@ -257,6 +257,7 @@ html, body {
     padding: 0.5rem 1.3rem;
     border-radius: 2rem;
     background-color: black;
+    margin-top: -0.5rem;
 }
 
 .bus-stopped-for {
