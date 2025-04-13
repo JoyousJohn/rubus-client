@@ -18,14 +18,16 @@ $('.bus-star').click(function() {
         })
         $('.favs').append($thisFav)
 
+        busMarkers[currentBusId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+
     } else {
         favBuses = favBuses.filter(busId => busId !== currentBusId);
         $(this).find('i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
         $(`div[data-fav-id="${currentBusId}"]`).remove();
+        busMarkers[currentBusId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'white';
     }
 
     localStorage.setItem('favs', JSON.stringify(favBuses))
-
 })
 
 function populateFavs() {
@@ -42,6 +44,9 @@ function populateFavs() {
                 }
             })
             $('.favs').append($thisFav)
+
+            busMarkers[favId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+
         }
     })
 }
