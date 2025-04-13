@@ -1031,6 +1031,8 @@ function popInfo(busId, resetCampusFontSize) {
 
             if (!firstCircle) {
                 firstCircle = $('.next-stop-circle').last();
+                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+
             }
 
         }
@@ -1133,6 +1135,7 @@ function popInfo(busId, resetCampusFontSize) {
 
             if (!firstCircle) {
                 firstCircle = $('.next-stop-circle').last();
+                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
             }
 
             if (i === sortedStops.length - 1) {
