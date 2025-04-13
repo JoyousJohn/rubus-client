@@ -24,6 +24,8 @@ function checkShared() {
             .css('display', 'flex')
             .find('span').css('color', colorMappings[busData[sharedBus].route]);
 
+            $('.info-shared-bus').show();
+
         }, 0);
 
     }
