@@ -1184,7 +1184,12 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
+
     $('.bus-info-popup').show();
+
+    const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bottom').innerHeight()
+    $('.info-next-stops').css('max-height', maxHeight - 40) // 1.5rem*2 = vertical padding on .info-next-stops, plus 10rem gap to be above .bottom
+
 }
 
 function startStoppedForTimer(busId) {
