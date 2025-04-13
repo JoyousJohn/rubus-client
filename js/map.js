@@ -1190,8 +1190,8 @@ function popInfo(busId, resetCampusFontSize) {
 
     $('.bus-info-popup').show();
 
-    const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 40) // 1.5rem*2 = vertical padding on .info-next-stops, plus 10rem gap to be above .bottom
+    const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
+    $('.info-next-stops').css('max-height', maxHeight - 45) // 1.5rem*2 = vertical padding on .info-next-stops, plus 1.5rem gap to be above .bottom
 
 }
 
