@@ -17,6 +17,7 @@ $('.events-link').click(function() {
 
                 const $eventElm = $(`
                     <div class="flex flex-col">
+                        <div class="benefits flex gap-x-0p5rem"></div>
                         <div class="text-1p2rem bold-500 gray818181">${event['org']}</div>
                         <div class="text-1p5rem lh-1">${event['name']}</div>
                         <div class="flex justify-between gap-x-1rem">
@@ -25,6 +26,12 @@ $('.events-link').click(function() {
                         </div>
                     </div>
                 `)
+
+                if (event.benefits) {
+                    event.benefits.forEach(benefit => {
+                        $eventElm.find('.benefits').append(`<div class="benefit bg-lime white" style="padding: 0.2rem 0.5rem; border-radius: 0.3rem;">${benefit}</div>`)
+                    })
+                }
 
                 $('.involved-grid').append($eventElm)
 

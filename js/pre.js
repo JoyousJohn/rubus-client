@@ -524,6 +524,13 @@ async function startOvernight() {
 }
 
 function checkMinRoutes() {
+
+    if (!activeRoutes.length) {
+        $('.knight-mover').show();
+        $('.knight-mover-mini').hide();
+        return;
+    }
+
     const excludeRoutes = ['on1', 'on2'];
     const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
     const isWeekend = new Date(today).getDay() === 0 || new Date(today).getDay() === 6;
