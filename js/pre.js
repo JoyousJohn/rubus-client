@@ -512,7 +512,13 @@ async function startOvernight() {
 }
 
 function checkMinRoutes() {
-    const excludeRoutes = ['on1', 'on2', 'wknd1', 'wknd2'];
+    const excludeRoutes = ['on1', 'on2'];
+    const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+    const isWeekend = new Date(today).getDay() === 0 || new Date(today).getDay() === 6;
+    if (isWeekend) {
+        excludeRoutes.push('wknd1', 'wknd2');
+    }
+
     if (excludeRoutes.some(route => activeRoutes.has(route))) { return; }
 
     const minRoutes = ["ee", "lx", "h"];

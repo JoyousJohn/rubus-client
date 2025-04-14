@@ -164,7 +164,9 @@ function openRUBusSocket() {
                     console.log(busId)
                     console.log('this shouldnt happen 2')
                     // busData[busId] = {}
+                    console.log(eventData)
                     continue
+
                 }
 
                 const busInfo = eventData[busId]
