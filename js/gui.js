@@ -539,6 +539,16 @@ function updateColorMappingsSelection(selectedColor) {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = selectedColor;
         polylines[shownRoute].setStyle({ color: selectedColor });
     })
+
+    if (popupStopId) {
+        updateStopBuses(popupStopId)
+    }
+
+    populateFavs();
+
+    if (sharedBus && busData[sharedBus].route === shownRoute) {
+        $('.shared > span').css('color', selectedColor)
+    }
 }
 
 $('.color-reset').click(function() {
@@ -1377,11 +1387,25 @@ function populateMeClosestStops() {
     for (const [stopId, distance] of closestStopsMap) {
 
         if (!activeStops.includes(parseInt(stopId))) continue;
-        if (count >= 5) break;
         
         const stopNameDiv = $(`<div class="name pointer">${stopsData[stopId].name}</div>`).click(() => { flyToStop(stopId)})
         const stopDistDiv = $(`<div class="dist bold pointer">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>`).click(() => { flyToStop(stopId)}) // add meter option later
             
+        if (count === 3) {
+            const $showAllStops = $(`<div class="center m-1rem text-1p3rem pointer" style="grid-column: span 2; color: var(--theme-color)">▼ Show All Stops</div>`)
+            .click(function() {
+                $('.closest-stops-list > div').slideDown();
+                $(this).hide();
+            })
+
+            $('.closest-stops-list').append($showAllStops);
+        }
+
+        if (count >= 3) {
+            stopNameDiv.hide();
+            stopDistDiv.hide();
+        }
+
         $('.closest-stops-list').append(stopNameDiv);
         $('.closest-stops-list').append(stopDistDiv);
 
@@ -1393,6 +1417,10 @@ function populateMeClosestStops() {
         busesHere.forEach(route => {
             $routesHereDiv.append($(`<div class="route-here">${route.toUpperCase()}</div>`).css('background-color', colorMappings[route]))
         })
+
+        if (count >= 3) {
+            $routesHereDiv.hide();
+        }
 
         $('.closest-stops-list').append($routesHereDiv)
         $('.closest-stops-list').append('<div></div>')

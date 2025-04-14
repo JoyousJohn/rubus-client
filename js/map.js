@@ -1191,7 +1191,7 @@ function popInfo(busId, resetCampusFontSize) {
     $('.bus-info-popup').show();
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 55) // 1.5rem*2 = vertical padding on .info-next-stops, plus 3.5rem gap to be above .bottom
+    $('.info-next-stops').css('max-height', maxHeight - 75) // 1.5rem*2 = vertical padding on .info-next-stops, plus 5.5rem gap to be above .bottom
 
 }
 
@@ -1212,6 +1212,9 @@ function startStoppedForTimer(busId) {
     } else if (secondsDifference > 0) {
         $('.bus-stopped-for').show().find('.time').text("Stopped for " + secondsDifference + "s");
     }
+
+    const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
+    $('.info-next-stops').css('max-height', maxHeight - 75)
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {
