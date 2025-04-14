@@ -50,12 +50,12 @@ class BusWebSocketClient {
         // alert(busId)
         // console.log(`Received bus data for bus ${busId}:`, data);
         
-        // Passio reported a non-weekend bus, return to polling
         if (data.route && !data.route.includes('ONWK')) {
-            console.log('Passio reported a non-weekend bus, returning to polling');
+            console.log('Passio reported a non-overnight bus, returning to polling');
             wsClient.disconnect();
-            // busData = {}; Do I clear all buses? Implement ws checking until ON actually go Oos? Maybe they just turn into other routes? I guess I gotta clear route selectors nonetheless. Have to emulate sometime.
+            // busData = {}; Do I clear all buses? Implement ws checking until ON actually go Oos? Maybe they just turn into other routes? I guess I gotta clear route selectors nonetheless. Have to emulate sometime. // ok, looks like busData updating is successfully handled elsewhere. I just need to remove ON polylines here. - I take this back... ON buses are successfully being detected as going out of servvice, but not that they're the last bus that went out? the (route && !busesByRoutes[route]) condition in makeOoS has to be failing somewhere.
             startBusPolling();
+
         }
 
         if (!busData[busId]) {

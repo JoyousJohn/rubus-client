@@ -126,6 +126,7 @@ async function fetchBusData(immediatelyUpdate) {
                     busData[busId].route = routeStr;
                     busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
                     makeActiveRoutes();
+                    setPolylines([routeStr]);
                 }
             }
 
@@ -227,7 +228,9 @@ function makeOoS(busId) {
     const busDataCopy = JSON.parse(JSON.stringify(busData[busId]));
 
     delete busData[busId];   
+    console.log("makeOos() busesByRoutes before: ", busesByRoutes)
     makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
+    console.log("makeOos() busesByRoutes after: ", busesByRoutes)
 
     if (route && !busesByRoutes[route]) { // for some reason route can be undefined, investigate.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
@@ -526,7 +529,6 @@ function makeActiveRoutes() {
         const route = busData[busId].route;
         if (route) activeRoutes.add(route);
     }
-    setPolylines(activeRoutes);
     populateRouteSelectors(activeRoutes); 
 }
 
@@ -548,6 +550,7 @@ $(document).ready(async function() {
     }
 
     makeActiveRoutes();
+    // setPolylines(activeRoutes);
 
     // console.log(activeRoutes)
 
