@@ -1418,7 +1418,7 @@ function populateMeClosestStops() {
             $routesHereDiv.append($(`<div class="route-here pointer">${route.toUpperCase()}</div>`)
             .css('background-color', colorMappings[route]))
             .click(function() {
-                $('.closest-stops-list').hide(); // instead of slow fade out
+                $('.my-location-popup').hide(); // instead of slow fade out
                 toggleRoute(route);
             })
         })
