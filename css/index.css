@@ -422,10 +422,10 @@ html, body {
     background-color: var(--theme-bg);
     color: var(--theme-color);
     border-radius: 1rem;
-    padding: 1rem 1.5rem;
-    width: fit-content;
+    padding: 0 1.5rem 0 0.5rem;
     transition: 100ms;
     display: none;
+    height: 3.5rem;
 }
 
 .stop-info-back:hover {
@@ -448,7 +448,7 @@ html, body {
     display: flex;
     justify-content: center;
     /* max-height: 100%; */
-    width: 4rem;
+    width: 3.5rem;
 }
 
 .bus-info-bottom i {
