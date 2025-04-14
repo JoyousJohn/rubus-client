@@ -572,7 +572,9 @@ $(document).ready(async function() {
     addStopsToMap()
     $('.buses-btn').css('display', 'flex');
 
-    populateFavs()
+    setTimeout(() => {
+        populateFavs()
+    }, 1);
     makeRidershipChart()
 
     async function fetchETAs() {

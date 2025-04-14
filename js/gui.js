@@ -13,6 +13,10 @@ function populateRouteSelectors(activeRoutes) {
     routesArray = routesArray.map(route => route || 'undefined');
     routesArray.sort((a, b) => a === 'undefined' ? 1 : b === 'undefined' ? -1 : 0);
 
+    if ($('.favs > div').length) {
+        routesArray.unshift('fav');
+    }
+
     routesArray.sort().forEach(route => {
 
         let routeFormatted = route;
@@ -20,11 +24,17 @@ function populateRouteSelectors(activeRoutes) {
             routeFormatted = 'b/l';
         }
 
-        const $routeElm = $(`<div class="route-selector" routeName="${route}">${routeFormatted.toUpperCase()}</div>`)  
-        
+        let $routeElm;
+
+        if (route === 'fav') {
+            $routeElm = $(`<div class="route-selector flex justify-center align-center" routeName="${route}" style="padding: 0.5rem; aspect-ratio: 1;"><i class="fa-solid fa-star"></i></div>`).css('background-color', 'gold')  
+        } else {
+            $routeElm = $(`<div class="route-selector" routeName="${route}">${routeFormatted.toUpperCase()}</div>`)  
+        }
+
         let color = 'darkgray'
 
-        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
+        const knownRoutes = ['fav', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
 
         if (knownRoutes.includes(route)) {
             color = colorMappings[route]
@@ -36,18 +46,16 @@ function populateRouteSelectors(activeRoutes) {
 
                 initialX = event.pageX || event.originalEvent.touches[0].pageX; // Store initial position
               
-
                 longPressTimer = setTimeout(() => {
+    
+                    isLongPress = true;
+                    if (shownRoute) {
+                        shownBeforeRoute = shownRoute;
+                    }
 
-                    
-                isLongPress = true;
-                if (shownRoute) {
-                    shownBeforeRoute = shownRoute
-                }
-
-                if (panelRoute !== route) {
-                    selectedRoute(route);
-                }
+                    if (panelRoute !== route && route !== 'fav') {
+                        selectedRoute(route);
+                    }
                     
                 }, 500); 
             });
@@ -70,10 +78,13 @@ function populateRouteSelectors(activeRoutes) {
 
                 if (!isLongPress && !moved) {
 
-                    if (panelRoute) {
+                    if (panelRoute && route !== 'fav') {
                         selectedRoute(route)
-                    } else {
+                    } else if (route !== 'fav') {
                         toggleRoute(route);
+                    } else if (!panelRoute && route === 'fav') {
+                        toggleRouteSelectors('fav');
+                        toggleFavorites();
                     }
 
                 }
@@ -176,7 +187,13 @@ let shownBeforeRoute = undefined
 let isLongPress = false; // Flag to track if a long press occurred
 
 function toggleRouteSelectors(route) {
+
+    console.log("Toggline for: " + route)
+
     if (shownRoute === route) {
+
+        console.log('1')
+
         for (const polyline in polylines) {
             if (polyline !== route) {
                 $(`.route-selector[routeName="${polyline}"]`).css('background-color', colorMappings[polyline])
@@ -185,14 +202,18 @@ function toggleRouteSelectors(route) {
         $(`.route-selector[routeName="${route}"]`).css('box-shadow', '')
         shownRoute = undefined  
         shownBeforeRoute = undefined
+
+        $(`.route-selector[routeName="fav"]`).css('background-color', 'gold');
     }
 
     else {
+
         for (const polyline in polylines) {
             if (polyline !== route) {
                 $(`.route-selector[routeName="${polyline}"]`).css('background-color', 'gray');
             }
         }
+        $(`.route-selector[routeName="fav"]`).css('background-color', 'gray');
 
         $(`.route-selector[routeName="${route}"]`).css('background-color', colorMappings[route]).css('box-shadow', `0 0 10px ${colorMappings[route]}`)
         $(`.route-selector[routeName="${shownRoute}"]`).css('box-shadow', '');
@@ -217,6 +238,8 @@ function toggleRouteSelectors(route) {
 }
 
 function toggleRoute(route) {
+
+    if (route === 'fav') { toggleFavorites(); return; }
 
     // Show all polylines and buses
     if (shownRoute === route) {

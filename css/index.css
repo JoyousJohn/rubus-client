@@ -433,7 +433,7 @@ html, body {
     color: rgb(242, 242, 242)
 }
 
-.bus-star, .bus-share, .bus-comment {
+.bus-star, .bus-share, .bus-comment, .bus-follow {
     color: var(--theme-color);
     background-color: var(--theme-bg);
     font-size: 1.7rem;
