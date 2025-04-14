@@ -433,13 +433,27 @@ html, body {
     color: rgb(242, 242, 242)
 }
 
+.bus-btns {
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
 .bus-star, .bus-share, .bus-comment, .bus-follow {
     color: var(--theme-color);
     background-color: var(--theme-bg);
     font-size: 1.7rem;
     aspect-ratio: 1;
     min-height: fit-content;
+    display: flex;
+    justify-content: center;
     /* max-height: 100%; */
+    width: 4rem;
+}
+
+.bus-info-bottom i {
+    aspect-ratio: 1;
+    padding: 1rem;
 }
 
 .bus-share > i {

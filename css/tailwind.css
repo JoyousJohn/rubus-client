@@ -232,6 +232,8 @@
 
 .fixed { position: fixed; }
 
+.relative { position: relative; }
+
 .flex { display: flex; }
 
 .flex-0 { flex: 0; }

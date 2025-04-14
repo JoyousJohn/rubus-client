@@ -1445,12 +1445,12 @@ function populateMeClosestStops() {
         // console.log(busesHere)
         busesHere.forEach(route => {
             $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()}</div>`)
-            .css('background-color', colorMappings[route]))
+            .css('background-color', colorMappings[route])
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
                 toggleRoute(route);
                 flyToStop(stopId);
-            })
+            }))
         })
 
         if (count >= 3) {
