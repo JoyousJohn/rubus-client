@@ -54,23 +54,23 @@ const excludedRouteMappings = {
     '4088': 'Campus Connect Express',
     '41231': 'Camden',
     '4098': 'Penn Station Express'
-}
+};
 
 function getRouteStr(route) {
     if (route in routeMapping) {
-        return [routeMapping[route], true]
+        return [routeMapping[route], true];
     } else {
         const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
         let alphaRouteId = route.replace(/[^a-zA-Z]/g, '').toLowerCase();
         if (knownRoutes.includes(alphaRouteId)) {
             return [alphaRouteId, true];
         } else {
-            return [route, false] // unknown route
+            return [route, false]; // unknown route
         }
     }     
 }
 
-async function fetchBusData(immediatelyUpdate) {
+async function fetchBusData(immediatelyUpdate, isInitial) {
 
     const formData = '{"s0":"1268","sA":1}';
     // const formData = '{"s0":"1268","sA":1,"rA":15,"r0":"41231","r1":"4067","r2":"43711","r3":"43431","r4":"43440","r5":"43441","r6":"43398","r7":"43991","r8":"43990","r9":"43973","r10":"43397","r11":"4088","r12":"4063","r13":"4056","r14":"4098", "r15": "-1"}'
@@ -107,11 +107,11 @@ async function fetchBusData(immediatelyUpdate) {
             const bus = data.buses[someId][0];
 
             if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
-                continue
+                continue;
             }
 
-            const busId = bus.busId
-            activeBuses.push(busId)
+            const busId = bus.busId;
+            activeBuses.push(busId);
 
             const [routeStr, isKnown] = getRouteStr(bus.routeId);
 
@@ -123,14 +123,13 @@ async function fetchBusData(immediatelyUpdate) {
                 busData[busId].route = routeStr;
 
                 if (joined_service[busId]) {
-                    busData[busId].joined_service = joined_service[busId]
+                    busData[busId].joined_service = joined_service[busId];
                 } else {
-                    busData[busId].joined_service = new Date().toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: undefined,
-                        hour12: true
-                    });
+                    busData[busId].joined_service = new Date();
+                }
+
+                if (!isInitial) {
+                    addStopsToMap();
                 }
 
             } else {
@@ -528,6 +527,7 @@ function checkMinRoutes() {
     if (!activeRoutes.length === 0) {
         $('.knight-mover').show();
         $('.knight-mover-mini').hide();
+        populateRouteSelectors(); // to remove favs
         return;
     }
 
@@ -584,7 +584,7 @@ $(document).ready(async function() {
 
     await fetchJoinTimes();
 
-    await fetchBusData();
+    await fetchBusData(false, true);
 
     checkShared();
 

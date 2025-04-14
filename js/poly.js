@@ -313,7 +313,7 @@ async function addStopsToMap() {
     console.log(busesByRoutes)
 
     for (const activeRoute in busesByRoutes) {
-        if (!(activeRoute in stopLists)) continue
+        if (!(activeRoute in stopLists)) continuev // why would this trigger?
         activeStops = [...activeStops, ...stopLists[activeRoute]]
         activeStops = [...new Set(activeStops)]
     }
@@ -328,31 +328,32 @@ async function addStopsToMap() {
 
     activeStops.forEach(stopId => {
 
-        const thisStop = stopsData[stopId];
-        const lat = thisStop['latitude'];
-        const long = thisStop['longitude'];
-        const busStopIcon = L.icon({
-            iconUrl: 'img/stop_marker.png',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9], // Center the icon
-            // popupAnchor: [0, -15] // Adjust the popup location
-        });
-
-        // Create a marker for the current bus stop
-        const marker = L.marker([lat, long], { 
-            icon: busStopIcon,
-            zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
-            })
-            .addTo(map)
-            .on('click', function() {
-                sourceStopId = null;
-                sourceBusId = null;
-                popStopInfo(stopId)
-            })
-
-        busStopMarkers[stopId] = marker;
+        if (!busStopMarkers[stopId]) { // Adding stops from new buses, need to exclude existing stops
+            const thisStop = stopsData[stopId];
+            const lat = thisStop['latitude'];
+            const long = thisStop['longitude'];
+            const busStopIcon = L.icon({
+                iconUrl: 'img/stop_marker.png',
+                iconSize: [18, 18],
+                iconAnchor: [9, 9], // Center the icon
+                // popupAnchor: [0, -15] // Adjust the popup location
+            });
+    
+            // Create a marker for the current bus stop
+            const marker = L.marker([lat, long], { 
+                icon: busStopIcon,
+                zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
+                })
+                .addTo(map)
+                .on('click', function() {
+                    sourceStopId = null;
+                    sourceBusId = null;
+                    popStopInfo(stopId)
+                })
+    
+            busStopMarkers[stopId] = marker;
+        }
     });
-
 }
 
 
