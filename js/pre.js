@@ -121,6 +121,18 @@ async function fetchBusData(immediatelyUpdate) {
                 busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]];
                 populateMeClosestStops();
                 busData[busId].route = routeStr;
+
+                if (joined_service[busId]) {
+                    busData[busId].joined_service = joined_service[busId]
+                } else {
+                    busData[busId].joined_service = new Date().toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: undefined,
+                        hour12: true
+                    });
+                }
+
             } else {
                 if (busData[busId].route !== routeStr) { // Route changed for existing bus...
                     busData[busId].route = routeStr;
@@ -538,6 +550,8 @@ function makeActiveRoutes() {
     populateRouteSelectors(activeRoutes); 
 }
 
+let joined_service = {};
+
 $(document).ready(async function() {
     // Initialize settings before map is created
     settings = localStorage.getItem('settings');
@@ -546,6 +560,22 @@ $(document).ready(async function() {
     } else {
         settings = defaultSettings;
     }
+
+    async function fetchJoinTimes() {
+        try {
+            const response = await fetch('https://transloc.up.railway.app/joined_service');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            joined_service = await response.json();
+            console.log('Bus joined service times:', joined_service);
+
+        } catch (error) {
+            console.error('Error fetching joined service times:', error);
+        }
+    }
+
+    await fetchJoinTimes();
 
     await fetchBusData();
 
@@ -619,46 +649,28 @@ $(document).ready(async function() {
 
     await fetchWhere();
 
-    async function fetchJoinTimes() {
-        try {
-            const response = await fetch('https://transloc.up.railway.app/joined_service');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const joined_service = await response.json();
-            // console.log('Bus joined service times:', joined_service);
+    function populateJoinedService() {
+        if (popupBusId) {
+            const serviceDate = new Date(joined_service[popupBusId]);
+            const today = new Date();
+            const isToday = serviceDate.getDate() === today.getDate() && 
+                            serviceDate.getMonth() === today.getMonth() &&
+                            serviceDate.getFullYear() === today.getFullYear();
 
-            for (const busId in joined_service) {
-                if (!(busId in busData)) { continue; } 
-                busData[busId]['joined_service'] = joined_service[busId]
-            }
+            const formattedTime = serviceDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: undefined,
+                hour12: true
+            });
 
-            if (popupBusId) {
-                const serviceDate = new Date(joined_service[popupBusId]);
-                const today = new Date();
-                const isToday = serviceDate.getDate() === today.getDate() && 
-                                serviceDate.getMonth() === today.getMonth() &&
-                                serviceDate.getFullYear() === today.getFullYear();
-
-                const formattedTime = serviceDate.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: undefined,
-                    hour12: true
-                });
-
-                const displayTime = isToday ? formattedTime : 
-                    `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
-                $('.bus-joined-service').text('Joined service at ' + displayTime);
-                $('.info-next-stops').show();
-            }
-
-        } catch (error) {
-            console.error('Error fetching joined service times:', error);
+            const displayTime = isToday ? formattedTime : 
+                `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
+            $('.bus-joined-service').text('Joined service at ' + displayTime);
+            $('.info-next-stops').show();
         }
     }
-
-    fetchJoinTimes();
+    populateJoinedService();
 
     openRUBusSocket();
 
