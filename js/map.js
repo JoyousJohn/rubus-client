@@ -85,6 +85,7 @@ $(document).ready(function() {
             if (settings['toggle-show-bus-log']) {
                 $('.bus-log-wrapper').show();
             }
+            $('.favs').show();
         }
 
     });
@@ -231,6 +232,7 @@ function hideInfoBoxes(instantly_hide) {
     if (popupBusId) {
         stopOvertimeCounter();
         popupBusId = null;
+        $('.info-shared-bus').hide();
         // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
     }
 
@@ -862,10 +864,12 @@ function popInfo(busId, resetCampusFontSize) {
         secondsDivisor = 1;
     }
     
-    $('.stop-info-popup').hide();
+    $('.stop-info-popup, .favs').hide();
     if (popupStopId) {
         busStopMarkers[popupStopId].setIcon(L.icon({
             iconUrl: 'img/stop_marker.png',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
         }));
     }
 
@@ -916,6 +920,10 @@ function popInfo(busId, resetCampusFontSize) {
         $('.bus-depot').show();
     } else {
         $('.bus-depot').hide();
+    }
+
+    if (sharedBus && sharedBus === busId) {
+        $('.info-shared-bus').show();
     }
 
     if (data.joined_service) {
@@ -1191,7 +1199,7 @@ function popInfo(busId, resetCampusFontSize) {
     $('.bus-info-popup').show();
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 75) // 1.5rem*2 = vertical padding on .info-next-stops, plus 5.5rem gap to be above .bottom
+    $('.info-next-stops').css('max-height', maxHeight - 85) // 1.5rem*2 = vertical padding on .info-next-stops, plus 5.5rem gap to be above .bottom
 
 }
 
@@ -1214,7 +1222,7 @@ function startStoppedForTimer(busId) {
     }
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 75)
+    $('.info-next-stops').css('max-height', maxHeight - 85)
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {

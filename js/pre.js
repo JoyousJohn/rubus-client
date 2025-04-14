@@ -115,6 +115,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             const [routeStr, isKnown] = getRouteStr(bus.routeId);
 
+            let isNew = false;
+
             if (!(busId in busData)) {
                 busData[busId] = {};
                 busData[busId].previousTime = new Date().getTime() - 5000;
@@ -132,12 +134,19 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     addStopsToMap();
                 }
 
+                populateFavs();
+
+                isNew = true;
+
             } else {
                 if (busData[busId].route !== routeStr) { // Route changed for existing bus...
                     busData[busId].route = routeStr;
                     busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
                     makeActiveRoutes();
-                    setPolylines([routeStr]);
+                    // if (!polylines[routeStr]) {
+                    //     setPolylines([routeStr]);
+                    // } // do i not need his bc new route will be caght in setpolylines below?
+                    populateFavs();
                 }
             }
 
@@ -164,6 +173,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             plotBus(busId, immediatelyUpdate);
             calculateSpeed(busId);
+
+            if (isNew && shownRoute && shownRoute !== routeStr) { // may have to timeout 0s this
+                busMarkers[busId].getElement().style.display = 'none';
+            }
 
             // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
             if (Object.keys(etas).length > 0) {

@@ -133,9 +133,9 @@
     <div class="info-popup-wrapper h-100">
 
         <div class="bus-info-popup">
-            <div class="flex flex-col gap-y-0p5rem h-100">
+            <div class="flex flex-col gap-y-0p5rem h-100 ">
                 <div class="bus-info-main">
-                    <div class="flex justify-center white text-1p2rem mb-0p5rem">
+                    <div class="flex justify-center white text-1p1rem">
                         <div class="info-shared-bus none">Shared With You</div>
                     </div>
                     <div class="flex justify-center white text-1p2rem gap-x-0p5rem">
@@ -208,28 +208,29 @@
             </div>
         </div>
 
-        <div class="notif-popup"></div>
-        <div class="getting-location-popup">Getting location...</div>
-        <div class="updating-buses">Updating bases...</div>
-        <div class="knight-mover">
-            <div class="center">ⓘ No buses running</div>
-            <div class="flex justify-center mt-0p5rem mb-0p5rem">
-                <div class="flex gap-x-0p5rem align-center justify-center bg-ckm max-content px-1rem py-0p5rem br-0p5rem" onclick="window.location.href='tel:7329327433'">
-                    <i class="fa-solid fa-phone text-1p4rem white"></i>
-                    <div class="call white">Call Knight Mover</div>
-                </div>
-            </div>   
-        </div>
+        <div class="fixed" style="top: 1rem;">
+            <div class="knight-mover">
+                <div class="center">ⓘ No buses running</div>
+                <div class="flex justify-center mt-0p5rem mb-0p5rem">
+                    <div class="flex gap-x-0p5rem align-center justify-center bg-ckm max-content px-1rem py-0p5rem br-0p5rem" onclick="window.location.href='tel:7329327433'">
+                        <i class="fa-solid fa-phone text-1p4rem white"></i>
+                        <div class="call white">Call Knight Mover</div>
+                    </div>
+                </div>   
+            </div>
 
-        <div class="fixed" style="left: 1rem; top: 1rem;">
-            <div class="flex flex-col gap-y-0p5rem">
+            <div class="info-top-left flex flex-col gap-y-1rem">
                 <div class="knight-mover-mini bg-ckm white align-center gap-x-0p5rem none pointer" onclick="window.location.href='tel:7329327433'"><i class="fa-solid fa-phone text-1p4rem white"></i>Call Knight Mover</div>
                 <div class="shared none gap-x-0p5rem w-max"></div>
                 <div class="favs flex flex-col gap-y-0p5rem w-max"></div>
             </div>
-        </div>
 
-        
+            <div class="info-top-right flex flex-col gap-y-1rem align-end">
+                <div class="notif-popup"></div>
+                <div class="getting-location-popup">Getting location...</div>
+                <div class="updating-buses">Updating bases...</div>
+            </div>
+        </div>
 
         <div class="stop-info-popup">
 

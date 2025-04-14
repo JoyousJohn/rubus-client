@@ -1,10 +1,13 @@
 let favBuses = JSON.parse(localStorage.getItem('favs')) || [];
 
 $('.bus-star').click(function() {
-    const currentBusId = popupBusId;
+    const currentBusId = parseInt(popupBusId); // don't know why I need to parse sometimes
 
     if (!favBuses.includes(currentBusId)) {
-        favBuses.push(currentBusId);
+
+        console.log('hmm')
+
+        favBuses.push(parseInt(currentBusId)); 
         $(this).find('i').css('color', 'gold').removeClass('fa-regular').addClass('fa-solid')
         const $thisFav = $(`<div class="br-1rem" data-fav-id="${currentBusId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[currentBusId].route]}">${busData[currentBusId].route.toUpperCase()}</span>${busData[currentBusId].busName}</div>`)
         $thisFav.click(function() {
@@ -31,6 +34,9 @@ $('.bus-star').click(function() {
 
 
     } else {
+
+        console.log('hmm2')
+
         favBuses = favBuses.filter(busId => busId !== currentBusId);
         $(this).find('i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
         $(`div[data-fav-id="${currentBusId}"]`).remove();
@@ -41,14 +47,52 @@ $('.bus-star').click(function() {
                 const previousShownRoute = JSON.parse(JSON.stringify(shownRoute));
                 populateRouteSelectors(activeRoutes);
                 shownRoute = null;
-                toggleRouteSelectors(previousShownRoute);
+                console.log(previousShownRoute)
+                // toggleRouteSelectors(previousShownRoute);
             } else {
                 populateRouteSelectors(activeRoutes);
             }
         } else {
             favsShown = false;
         }
+
+        let favRoutes = new Set([]);
+        favBuses.forEach(favId => {
+            if (busData[favId]) {
+                favRoutes.add(busData[favId].route);
+            }
+        });
+
+        console.log('1')
+        console.log(favRoutes)
+
+        if (shownRoute && shownRoute === 'fav') {
+            busMarkers[currentBusId].getElement().style.display = 'none';
+            $('.bus-info-popup').hide();
+            popupBusId = null;
+            if (!favRoutes.has(busData[currentBusId].route)) {
+                polylines[busData[currentBusId].route].remove();
+            }
+        }
+
+        if (favRoutes.size === 0) {
+            for (const polyline in polylines) {
+                if (!map.hasLayer(polylines[polyline])) { // needed?
+                    polylines[polyline].addTo(map);
+                }
+            }  
+            for (const marker in busMarkers) {
+                busMarkers[marker].getElement().style.display = '';
+            }
     
+            for (const stopId in busStopMarkers) {
+                busStopMarkers[stopId].addTo(map);
+            }
+
+            map.fitBounds(bounds);
+            $('.favs').show();
+
+        }
     }
 
     localStorage.setItem('favs', JSON.stringify(favBuses))
@@ -72,7 +116,9 @@ function populateFavs() {
             })
             $('.favs').append($thisFav)
 
-            busMarkers[favId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+            setTimeout(() => {
+                busMarkers[favId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+            }, 0);
 
         }
     })
@@ -86,7 +132,13 @@ function populateFavs() {
 let favsShown = false;
 
 function toggleFavorites() {
-    if (!favsShown) {
+
+    console.log(shownRoute)
+
+    if (shownRoute === 'fav') {
+
+        hideInfoBoxes(); // or just hide the bus info box and set popupBusId to undefined
+
         let favRoutes = new Set([]);
         favBuses.forEach(busId => {
             if (busData[busId]) {
@@ -94,24 +146,42 @@ function toggleFavorites() {
             }
         });
 
+        console.log(favRoutes)
+
         const visibleBounds = L.latLngBounds();
 
         for (const polyline in polylines) {
             if (!favRoutes.has(polyline)) {
                 polylines[polyline].remove();
             } else {
+                if (!map.hasLayer(polylines[polyline])) {
+                    polylines[polyline].addTo(map);
+                }
                 visibleBounds.extend(polylines[polyline].getBounds());
             }
         }
         for (const marker in busMarkers) {
             if (!favBuses.includes(parseInt(marker))) {
                 busMarkers[marker].getElement().style.display = 'none';
+            } else {
+                busMarkers[marker].getElement().style.display = '';
             }
         }
 
         hideStopsExcept(Array.from(favRoutes));
 
-        map.fitBounds(visibleBounds);
+        console.log('a')
+
+        if (visibleBounds.isValid()) {
+            console.log('has bound');
+            map.fitBounds(visibleBounds);
+        } else { // last fav bus was removed
+            console.log('no buses left')
+            console.log(bounds)
+            map.fitBounds(bounds);
+            
+        }
+        
         $('.bus-info-popup, .stop-info-popup').hide();
         if (selectedMarkerId) {
             busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';

@@ -11,13 +11,17 @@ function populateRouteSelectors(activeRoutes) {
     }
 
     routesArray = routesArray.map(route => route || 'undefined');
-    routesArray.sort((a, b) => a === 'undefined' ? 1 : b === 'undefined' ? -1 : 0);
+    routesArray.sort((a, b) => {
+        if (a === 'undefined') return 1;
+        if (b === 'undefined') return -1;
+        return a.localeCompare(b);
+    });
 
     if ($('.favs > div').length) {
         routesArray.unshift('fav');
     }
 
-    routesArray.sort().forEach(route => {
+    routesArray.forEach(route => {
 
         let routeFormatted = route;
         if (route == 'bl') {
@@ -27,7 +31,7 @@ function populateRouteSelectors(activeRoutes) {
         let $routeElm;
 
         if (route === 'fav') {
-            $routeElm = $(`<div class="route-selector flex justify-center align-center" routeName="${route}" style="padding: 0.5rem; aspect-ratio: 1;"><i class="fa-solid fa-star"></i></div>`).css('background-color', 'gold')  
+            $routeElm = $(`<div class="route-selector flex justify-center align-center" routeName="${route}" style="padding: 0.5rem; aspect-ratio: 1;"><i class="fa-solid fa-star gold"></i></div>`).css('background-color', 'white')  
         } else {
             $routeElm = $(`<div class="route-selector" routeName="${route}">${routeFormatted.toUpperCase()}</div>`)  
         }
@@ -203,7 +207,7 @@ function toggleRouteSelectors(route) {
         shownRoute = undefined  
         shownBeforeRoute = undefined
 
-        $(`.route-selector[routeName="fav"]`).css('background-color', 'gold');
+        $(`.route-selector[routeName="fav"]`).css('background-color', 'white');
     }
 
     else {
@@ -249,7 +253,7 @@ function toggleRoute(route) {
             }
         }  
         for (const marker in busMarkers) {
-            if (busMarkers[marker].options.route !== route) {
+            if (busMarkers[marker].options.route !== route) { // unncessary?
                 // busMarkers[marker].addTo(map)
                 busMarkers[marker].getElement().style.display = '';
             }

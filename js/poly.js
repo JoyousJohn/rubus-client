@@ -2,7 +2,7 @@ let polylineBounds;
 
 async function setPolylines(activeRoutes) {
 
-    console.log(activeRoutes)
+    // console.log(activeRoutes)
 
     const fetchPromises = [];
 
@@ -122,7 +122,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     const servicedRoutes = routesServicing(stopId)
 
-    console.log('servicedRoutes:', servicedRoutes)
+    // console.log('servicedRoutes:', servicedRoutes)
 
     if (!servicedRoutes.length) {
 
@@ -366,6 +366,7 @@ function removePreviouslyActiveStops() {
         }
     }
     newActiveStops = [...new Set(newActiveStops)];
+    activeStops = newActiveStops; // confirm this work
 
     // if (newActiveStops.length === 0) {
     //     newActiveStops = Array.from({length: 25}, (_, i) => i + 1);
@@ -377,6 +378,7 @@ function removePreviouslyActiveStops() {
             delete busStopMarkers[stopId];
 
             if (popupStopId === stopId) {
+                popupStopId = null;
                 hideInfoBoxes();
                 sourceStopId = null;
             }
