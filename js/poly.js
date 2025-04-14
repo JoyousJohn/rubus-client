@@ -221,7 +221,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         </div>`);
 
         if (actuallyShownRoute && actuallyShownRoute !== data.route) {
-            $('.stop-octagon').last().css('background-color', 'var(--theme-hidden-route-col)');
+            $('.stop-octagon').last().css('background-color', 'var(--theme-hidden-route-col)').find('div').css('color', 'gray');
         }
 
         if (data.eta === 0) {
@@ -267,6 +267,8 @@ async function popStopInfo(stopId) {
 
     busStopMarkers[stopId].setIcon(L.icon({
         iconUrl: 'img/stop_marker_selected.png',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
     }));
 
     if (Number(closestStopId) === stopId) {

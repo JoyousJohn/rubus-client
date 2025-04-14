@@ -1160,7 +1160,7 @@ function popInfo(busId, resetCampusFontSize) {
                 const heightDiff = Math.abs(lastRect.top - firstRect.top);
                 firstCircle.addClass('connecting-line');
                 firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
-            }, 0);
+            }, 1);
             
 
         } else {

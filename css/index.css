@@ -127,6 +127,7 @@ html, body {
     animation: pulse 1s infinite;
     position: fixed;
     right: 0;
+    top: 0;
 }
 
 .updating-buses {
@@ -584,8 +585,14 @@ html, body {
     font-size: 1.7rem;
 }
 
+.dist {
+    grid-row: span 2;
+    display: flex;
+    align-items: center;
+}
+
 .route-here {
-    border-radius: 0.6rem;
+    border-radius: 0.5rem;
     padding: 0.25rem 1rem;
     color: white;
     font-size: 1.3rem;
