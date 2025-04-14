@@ -1162,7 +1162,6 @@ function popInfo(busId, resetCampusFontSize) {
                 firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
             }, 0);
             
-
         } else {
             $('.info-next-stops').hide(); // For some reason *only* the closest stop at top of next stops remains visible if negative ETA, and only if negative ETA happens while site was open. Investigate why, unsure if this fixes. The closest stop should be part of the element, so I'm confused...
         }

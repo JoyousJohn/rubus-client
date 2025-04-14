@@ -549,6 +549,12 @@ function updateColorMappingsSelection(selectedColor) {
     if (sharedBus && busData[sharedBus].route === shownRoute) {
         $('.shared > span').css('color', selectedColor)
     }
+
+    $('.route-here').each(function() {
+        if ($(this).hasClass('route-here-' + shownRoute)) {
+            $(this).css('background-color', colorMappings[shownRoute]);
+        }
+    })
 }
 
 $('.color-reset').click(function() {
@@ -1415,7 +1421,7 @@ function populateMeClosestStops() {
         const busesHere = routesServicing(parseInt(stopId))
         // console.log(busesHere)
         busesHere.forEach(route => {
-            $routesHereDiv.append($(`<div class="route-here pointer">${route.toUpperCase()}</div>`)
+            $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()}</div>`)
             .css('background-color', colorMappings[route]))
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
