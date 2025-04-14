@@ -853,8 +853,6 @@ const campusShortNamesMappings = {
 
 let stoppedForInterval;
 
-let firstCircle = null;
-let lastCircle = null;
 
 function popInfo(busId, resetCampusFontSize) {
 
@@ -994,8 +992,8 @@ function popInfo(busId, resetCampusFontSize) {
             // $('.next-stops-grid > div').append('<div class="closest-stop-divider"><hr></div>')
         }
 
-        firstCircle = null;
-        lastCircle = null;
+        let firstCircle = null;
+        let lastCircle = null;
 
         const nextStop = data.next_stop
         let routeStops = stopLists[data.route]
@@ -1034,7 +1032,6 @@ function popInfo(busId, resetCampusFontSize) {
 
             if (!firstCircle) {
                 firstCircle = $('.next-stops-grid .next-stop-circle').last().css('background-color', 'red');
-                console.log('1 first circle set')
                 firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
             }
 
@@ -1138,12 +1135,10 @@ function popInfo(busId, resetCampusFontSize) {
 
             if (!firstCircle) {
                 firstCircle = $('.next-stops-grid .next-stop-circle').last();
-                console.log('2 first circle set')
                 firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
             }
 
             if (i === sortedStops.length - 1) {
-                console.log('1 last circle set')
                 lastCircle = $('.next-stop-circle').last();
             }
 
@@ -1159,21 +1154,10 @@ function popInfo(busId, resetCampusFontSize) {
                 }, 0);
             }  
 
-            // Clean up any existing connecting lines
-            console.log($('.connecting-line').length)
-            // $('.next-stop-circle').removeClass('connecting-line');
-            
             setTimeout(() => {
                 const firstRect = firstCircle[0].getBoundingClientRect();
-                console.log(firstRect)
-                console.log(firstRect.top)
                 const lastRect = lastCircle[0].getBoundingClientRect();
-                console.log(lastRect)
-                console.log(lastRect.top)
                 const heightDiff = Math.abs(lastRect.top - firstRect.top);
-                console.log('heightDiff: ', heightDiff)
-                
-                // Add the connecting line class to the first circle
                 firstCircle.addClass('connecting-line');
                 firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
             }, 0);

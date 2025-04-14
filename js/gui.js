@@ -1420,6 +1420,7 @@ function populateMeClosestStops() {
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
                 toggleRoute(route);
+                flyToStop(stopId);
             })
         })
 
