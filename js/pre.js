@@ -525,7 +525,7 @@ async function startOvernight() {
 
 function checkMinRoutes() {
 
-    if (!activeRoutes.length) {
+    if (!activeRoutes.length === 0) {
         $('.knight-mover').show();
         $('.knight-mover-mini').hide();
         return;
