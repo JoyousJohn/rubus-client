@@ -181,8 +181,16 @@ function updateStopBuses(stopId, actuallyShownRoute) {
     })
 
     const sortedBusIds = Object.entries(servicingBuses)
-        .sort(([, a], [, b]) => a.eta - b.eta)
-        .map(([busId]) => busId);
+    .sort(([busIdA, a], [busIdB, b]) => {
+        const aDepot = busData[busIdA]?.atDepot;
+        const bDepot = busData[busIdB]?.atDepot;
+
+        if (aDepot && !bDepot) return 1;
+        if (!aDepot && bDepot) return -1;
+
+        return a.eta - b.eta;
+    })
+    .map(([busId]) => busId);
 
     $('.stop-info-buses-grid').empty();
 
@@ -212,13 +220,20 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             stopOoSVisibilityClass = '';
         }
 
-        $('.stop-info-buses-grid').append(`<div class="flex justify-between align-center pointer">
+        let stopDepotVisibilityClass = 'none';
+        if (busData[busId].atDepot) {
+            stopDepotVisibilityClass = '';
+        }
+
+        const $stopBusElm = $(`<div class="flex justify-between align-center pointer">
             <div class="flex gap-x-0p5rem">
                 <div class="stop-bus-id">${busData[busId].busName}</div>
                 <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
+                <div class="stop-depot ${stopDepotVisibilityClass}">Depot</div>
             </div>
             <div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div>
-        </div>`);
+        </div>`)
+        $('.stop-info-buses-grid').append($stopBusElm);
 
         if (actuallyShownRoute && actuallyShownRoute !== data.route) {
             $('.stop-octagon').last().css('background-color', 'var(--theme-hidden-route-col)').find('div').css('color', 'gray');
@@ -228,9 +243,12 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             // $('.stop-info-buses-grid').append(`<div></div>`)
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
             $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
-        } else {
+        } else if (!busData[busId].atDepot) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${(data.eta)}m</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
+        } else if (busData[busId].atDepot) {
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">X</div>`);
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
         }
 
         if (actuallyShownRoute && actuallyShownRoute !== data.route) {
