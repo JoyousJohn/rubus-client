@@ -1,0 +1,3 @@
+$('.rubus-ai').click(function() {
+    
+})

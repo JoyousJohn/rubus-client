@@ -1,0 +1,31 @@
+.ai-wrapper {
+    background: #ffb6b6;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 402;
+    font-family: var(--font-family);
+}
+
+.ai-exp {
+    color: purple;
+    margin-left: 1.5rem;
+}
+
+.ai-title-big {
+    padding: 0 2.5rem 0 1.5rem;
+    font-family: Firegrant Stinklez;
+    background: linear-gradient(135deg, #ff128c, #1400ff);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+.ai-big-logo {
+    background-image: url('../img/ai.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
+    aspect-ratio: 1;
+}

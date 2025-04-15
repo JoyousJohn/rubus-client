@@ -28,6 +28,7 @@
     <script defer src="js/involved.js"></script>
     <script defer src="js/fav.js"></script>
     <script src="js/share.js"></script>
+    <script src="js/ai.js"></script>
 
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -39,6 +40,7 @@
     <link rel="stylesheet" type="text/css" href="css/mobile.css">
     <link rel="stylesheet" type="text/css" href="css/modal.css">
     <link rel="stylesheet" type="text/css" href="css/involved.css">
+    <link rel="stylesheet" type="text/css" href="css/ai.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
 
@@ -422,7 +424,7 @@
             <div class="preload-explain none ml-0p5rem text-1p3rem dimgray">Pre-render route lines on the entire map, even outside of view, to avoid having to load them when panning the map. May heavily impact performance on some devices.</div>
             <script>$('.span-i').click(function() {$('.preload-explain').slideDown();})</script>
 
-            <div class="dev-options-head settings-heading mt-2rem center" onclick="toggleDevOptions()">Show Developer Options ▼</div>
+            <div class="dev-options-head settings-heading mt-2rem center pointer" onclick="toggleDevOptions()">Show Developer Options ▼</div>
             <div class="dev-options-wrapper none mb-2rem">
 
                 <div class="flex flex-col gap-y-1rem">
@@ -659,13 +661,13 @@
 
             <div class="settings-rubus"></div>
 
-            <div class="rubus-ai">
+            <div class="rubus-ai" onclick="$('.ai-wrapper').show()">
                 <div class="flex justify-center p-0p5rem">
                     <div class="ai-logo"></div>
                 </div>
-                <div>
+                <div class="select-none">
                     <div class="ai-title white bold-500">RUBus AI</div>
-                    <div class="white text-1p4rem">Schedule-learning & automatic notifying. <u>Pre-register.</u></div>
+                    <div class="white text-1p4rem">Schedule self-learning & automatic notifying. <u>Pre-enroll.</u></div>
                 </div>
             </div>
 
@@ -775,6 +777,35 @@
             <div class="involved-grid"></div>
         </div>
         <div class="flex events-close justify-center align-center">X</div>
+    </div>
+
+    <div class="ai-wrapper none">
+        <div class="flex flex-col gap-y-1rem m-5rem text-1p5rem white">
+
+            <div class="flex select-none">
+                <div class="ai-big-logo"></div>
+                <div class="flex flex-col">
+                    <div class="text-1p3rem ai-exp bold-500"><i class="fa-solid fa-filter mr-0p5rem"></i>Experiment</div>
+                    <div class="text-3rem ai-title-big w-fit white br-1rem">RUBus AI</div>
+                </div>
+            </div>
+
+            
+            
+            <div class="mt-5rem py-2rem px-3rem br-2rem" style="background: linear-gradient(135deg, #f24160, purple);">Let RUBus learn from your travel and usage habits to compose your expected bus schedule and send notifications when it's time to leave.</div>
+
+            <div class="flex flex-col gap-y-0p5rem py-2rem px-3rem br-2rem" style="background: linear-gradient(135deg, #f24160, purple);">
+                <div class="bold-500">For example, automatically get...</div>
+                <div class="flex flex-col ml-1rem">
+                    <div>• Notified when it's time to walk to a bus stop to make your class on another campus.</div>
+                    <div>• Reminded to leave early on days with increased traffic or closed stops.</div>
+                    <div>• Alerted when an earlier bus could help you avoid delays or overcrowding.</div>
+                </div>
+            </div>
+
+            <div class="bold-500 text-2rem mt-5rem underline center pointer" style="color: #a624ff">Pre-enroll</div>
+
+        </div>
     </div>
 
     <div id="map">        

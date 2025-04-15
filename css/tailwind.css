@@ -150,6 +150,8 @@
 
 .py-0p5rem { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 
+.py-2rem { padding-top: 2rem; padding-bottom: 2rem; }
+
 .py-8rem { padding-top: 8rem; padding-bottom: 8rem; }
 
 .m-1rem { margin: 1rem; }
@@ -208,7 +210,7 @@
 
 .ml-0p5rem { margin-left: 0.5rem; }
 
-.ml-16rem { margin-left: 16rem; }
+.ml-1rem { margin-left: 1rem; }
 
 .mx-3rem { margin-left: 3rem; margin-right: 3rem; }
 
@@ -305,6 +307,8 @@
 
 .w-auto { width: auto; }
 
+.w-fit { width: fit-content; }
+
 .h-100 { height: 100%; }
 
 .h-100vh { height: 100vh; }
@@ -347,6 +351,8 @@
 .br-0p5rem { border-radius: 0.5rem; }
 
 .br-1rem { border-radius: 1rem; }
+
+.br-2rem { border-radius: 2rem; }
 
 .select-none { user-select: none; }
 
