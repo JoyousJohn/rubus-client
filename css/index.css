@@ -454,6 +454,7 @@ html, body {
     justify-content: center;
     /* max-height: 100%; */
     width: 3.5rem;
+    transition: 80ms;
 }
 
 .bus-info-bottom i {

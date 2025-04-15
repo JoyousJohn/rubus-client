@@ -195,7 +195,15 @@
                             <i class="fa-solid fa-share-nodes"></i>
                         </div>
                         <script>
-                            if (navigator.share) { $('.bus-share').css('display', 'flex'); }
+                            if (navigator.share) { 
+                                $('.bus-share').css('display', 'flex')
+                                                .click(function() {
+                                                    $('.bus-share').css('background-color', '#565fe5');
+                                                    setTimeout(() => {
+                                                        $('.bus-share').css('background-color', 'var(--theme-bg)');
+                                                    }, 250);
+                                                })
+                            }
                             $('.bus-share').click(function() {
                                 navigator.share({
                                     title: 'Share This Bus',
