@@ -1126,7 +1126,7 @@ function popInfo(busId, resetCampusFontSize) {
                 }     
             }
 
-            if (i === 0 && closestStopId === sortedStops[i] && !busData[busId].at_stop) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
+            if (i === 0 && closestStopId === sortedStops[i]) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
 
             $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
@@ -1199,7 +1199,7 @@ function popInfo(busId, resetCampusFontSize) {
     $('.bus-info-popup').show();
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 85) // 1.5rem*2 = vertical padding on .info-next-stops, plus 5.5rem gap to be above .bottom
+    $('.info-next-stops').css('max-height', maxHeight - 105) // 1.5rem*2 = vertical padding on .info-next-stops, plus 7.5rem gap to be above .bottom
 
 }
 
@@ -1222,7 +1222,7 @@ function startStoppedForTimer(busId) {
     }
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 85)
+    $('.info-next-stops').css('max-height', maxHeight - 105)
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {
