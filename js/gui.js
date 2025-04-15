@@ -133,7 +133,8 @@ function populateRouteSelectors(activeRoutes) {
         const timeDiff = currentTime - lastTime;
         if (timeDiff > 0) {
             // Apply inertia only if the last movement wasn't too long ago
-            if (timeDiff < 50) {
+            // console.log(scrollLeft - $(this).scrollLeft())
+            if (timeDiff < 50 && Math.abs(scrollLeft - $(this).scrollLeft()) > 70) { // Check if the scroll distance is small
                 const container = $(this);
                 const startVelocity = velocity;
                 const startTime = currentTime;
@@ -143,7 +144,7 @@ function populateRouteSelectors(activeRoutes) {
                     const elapsed = now - startTime;
                     
                     // Deceleration formula
-                    const deceleration = 0.95; // Adjust this value to change how quickly it slows down
+                    const deceleration = 0.75; // Adjust this value to change how quickly it slows down
                     const currentVelocity = startVelocity * Math.pow(deceleration, elapsed / 16);
                     
                     // Stop animation when velocity is very low
