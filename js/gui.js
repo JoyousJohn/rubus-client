@@ -257,10 +257,10 @@ function toggleRoute(route) {
             }
         }  
         for (const marker in busMarkers) {
-            if (busMarkers[marker].options.route !== route) { // unncessary?
+            // if (busMarkers[marker].options.route !== route) { // unncessary?
                 // busMarkers[marker].addTo(map)
                 busMarkers[marker].getElement().style.display = '';
-            }
+            // }
         }
 
         showAllStops();
@@ -283,7 +283,7 @@ function toggleRoute(route) {
         }
 
         for (const marker in busMarkers) {
-            if (busMarkers[marker].options.route !== route) {
+            if (busData[marker].route !== route) {
                 // busMarkers[marker].remove()
                 busMarkers[marker].getElement().style.display = 'none';
             } else {
