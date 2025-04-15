@@ -544,7 +544,7 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         return; // Exit early - no animation needed
     }
 
-    let prevLatLng = undefined;
+    let prevLatLng;
     if (busData[busId].previousPositions.length >= 3) {
         prevLatLng = {lat: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][0], lng: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][1]};
     }

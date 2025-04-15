@@ -102,6 +102,8 @@
 
 .fw-600 { font-weight: 600; }
 
+.p-0p5rem { padding: 0.5rem; }
+
 .p-1rem { padding: 1rem; }
 
 .p-2rem { padding: 2rem; }
@@ -109,6 +111,8 @@
 .p-3rem { padding: 3rem; }
 
 .pt-0 { padding-top: 0; }
+
+.pt-1rem { padding-top: 1rem; }
 
 .pt-2rem { padding-top: 2rem; }
 
@@ -294,6 +298,8 @@
 .no-wrap { text-wrap: nowrap; }
 
 .width-100 { width: 100%; }
+
+.w-full { width: 100%; }
 
 .w-max { width: max-content; }
 

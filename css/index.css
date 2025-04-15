@@ -1150,11 +1150,62 @@ html, body {
 .settings-rubus-attribution {
     font-size: 1.25rem;
 }
-
-.preload-explain {
-
+.rubus-ai {
+    display: grid;
+    grid-template-columns: 1fr 5fr;
+    column-gap: 2rem;
+    padding: 1.5rem;
+    border-radius: 2rem;
+    background: linear-gradient(135deg, #2e003e, #4c1a57, #7a14ce);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
 }
 
+.rubus-ai::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        120deg,
+        rgba(255, 255, 255, 0) 25%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0) 75%
+    );
+    background-size: 200% 100%;
+    background-position: -100% 0;
+    animation: shimmer-overlay 5s linear infinite;
+    z-index: 2;
+    pointer-events: none;
+}
+
+@keyframes shimmer-overlay {
+    0% {
+        background-position: -100% 0;
+    }
+    100% {
+        background-position: 100% 0;
+    }
+}
+
+
+.ai-logo {
+    background-image: url('../img/ai.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
+    aspect-ratio: 1;
+    margin: 0.5rem;
+}
+
+.ai-title {
+    font-size: 1.8rem;
+    font-family: Firegrant Stinklez;
+    /* font-family: Sidecar; */
+}
 
 
 

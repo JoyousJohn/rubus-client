@@ -274,11 +274,21 @@ function makeOoS(busId) {
     removePreviouslyActiveStops();
 
     if (popupBusId === busId) {
+        console.log("Selected bus went OOS")
+        print(popupBusId)
+        print(busId)
+        print(sourceBusId)
         hideInfoBoxes();
         sourceBusId = null;
     }
 
+    if (sharedBus && sharedBus === busId) {
+        $('.shared, .info-shared').hide();
+        sharedBus = null;
+    }
+
     populateMeClosestStops();
+    // populateFavs(); Do I need this?
 
 }
 

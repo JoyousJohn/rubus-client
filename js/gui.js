@@ -31,7 +31,7 @@ function populateRouteSelectors(activeRoutes) {
         let $routeElm;
 
         if (route === 'fav') {
-            $routeElm = $(`<div class="route-selector flex justify-center align-center" routeName="${route}" style="padding: 0.5rem; aspect-ratio: 1;"><i class="fa-solid fa-star gold"></i></div>`).css('background-color', 'white')  
+            $routeElm = $(`<div class="route-selector flex justify-center align-center" routeName="${route}" style="padding: 0.5rem; aspect-ratio: 1;"><i class="fa-solid fa-star"></i></div>`).css('background-color', 'gold')  
         } else {
             $routeElm = $(`<div class="route-selector" routeName="${route}">${routeFormatted.toUpperCase()}</div>`)  
         }
@@ -186,28 +186,28 @@ function populateRouteSelectors(activeRoutes) {
 
 }
 
-let shownRoute = undefined  
-let shownBeforeRoute = undefined
+let shownRoute;  
+let shownBeforeRoute;
 let isLongPress = false; // Flag to track if a long press occurred
 
 function toggleRouteSelectors(route) {
 
-    console.log("Toggline for: " + route)
+    console.log("Toggline for: " + route);
 
     if (shownRoute === route) {
 
-        console.log('1')
+        console.log('1');
 
         for (const polyline in polylines) {
             if (polyline !== route) {
-                $(`.route-selector[routeName="${polyline}"]`).css('background-color', colorMappings[polyline])
+                $(`.route-selector[routeName="${polyline}"]`).css('background-color', colorMappings[polyline]);
             }
         }
-        $(`.route-selector[routeName="${route}"]`).css('box-shadow', '')
-        shownRoute = undefined  
-        shownBeforeRoute = undefined
+        $(`.route-selector[routeName="${route}"]`).css('box-shadow', '');
+        shownRoute = null;  
+        shownBeforeRoute = null;
 
-        $(`.route-selector[routeName="fav"]`).css('background-color', 'white');
+        // $(`.route-selector[routeName="fav"]`).css('background-color', 'white');
     }
 
     else {
@@ -239,6 +239,8 @@ function toggleRouteSelectors(route) {
         }
 
     }
+
+    $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
 
 function toggleRoute(route) {
@@ -462,7 +464,7 @@ function selectedRoute(route) {
 
                 if (busETAs[busId]) {
 
-                    let eta = undefined;
+                    let eta;
 
                     const $gridElm = $stopElm.find('.route-buses-for-stop');
 
@@ -944,12 +946,12 @@ function closeRouteMenu() {
 
     if (shownBeforeRoute && shownBeforeRoute !== panelRoute) {
         toggleRoute(shownBeforeRoute);
-        shownBeforeRoute = undefined;
+        shownBeforeRoute = null;
     } else if (!shownBeforeRoute) {
         toggleRouteSelectors(panelRoute);
     }
 
-    panelRoute = undefined;
+    panelRoute = null;
 }
 
 $('.route-close').click(function() {
