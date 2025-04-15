@@ -1007,6 +1007,7 @@ const toggleSettings = [
     'toggle-whole-pixel-positioning',
     'toggle-pause-passio-polling',
     'toggle-show-stop-polygons',
+    'toggle-show-dev-options',
     'toggle-show-etas-in-seconds',
     'toggle-show-bus-id',
     'toggle-show-bus-progress',
@@ -1037,6 +1038,7 @@ let defaultSettings = {
     'toggle-whole-pixel-positioning': false, /* this might not be needed? */
     'toggle-pause-passio-polling': false,
     'toggle-show-stop-polygons': false,
+    'toggle-show-dev-options': false,
     'toggle-show-etas-in-seconds': false,
     'toggle-show-bus-id': false,
     'toggle-show-bus-progress': false,

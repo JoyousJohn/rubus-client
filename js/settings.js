@@ -82,6 +82,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-stop-polygons'] = isChecked;
             break;
 
+        case 'toggle-show-dev-options':
+            settings['toggle-show-dev-options'] = isChecked;
+            break;
+
         case 'toggle-show-etas-in-seconds':
             console.log(`Show ETAs in seconds is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-etas-in-seconds'] = isChecked;
@@ -264,6 +268,10 @@ $(document).ready(function() {
     if (settings['toggle-show-stop-polygons']) {
         makePolygons();
         togglePolygons(true);
+    }
+
+    if (settings['toggle-show-dev-options']) {
+        toggleDevOptions();
     }
 
     if (settings['toggle-show-etas-in-seconds']) {
