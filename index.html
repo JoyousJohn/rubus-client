@@ -414,15 +414,22 @@
 
             <div class="flex justify-between">
                 <div class="settings-heading flex flex-1 align-center">Preload Map Routes<span class="span-i pointer select-none">i</span></div>
-                <div class="settings-toggle">
+                <div class="settings-toggle toggle-polyline-padding">
                     <input type="checkbox" id="toggle-polyline-padding" class="toggle-input">
                     <label for="toggle-polyline-padding" class="toggle-label">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
             </div>
+            <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
             <div class="preload-explain none ml-0p5rem text-1p3rem dimgray">Pre-render route lines on the entire map, even outside of view, to avoid having to load them when panning the map. May heavily impact performance on some devices.</div>
-            <script>$('.span-i').click(function() {$('.preload-explain').slideDown();})</script>
+            <script>
+            $('.span-i').click(function() {$('.preload-explain').slideToggle();})
+            if (/iPhone/i.test(navigator.userAgent)) {
+                $('.toggle-polyline-padding').css('pointer-events', 'none');
+                $('.toggle-polyline-padding-unavailable').show();
+            }
+            </script>
 
             <div class="dev-options-head settings-heading mt-2rem center pointer" onclick="toggleDevOptions()">Show Developer Options ▼</div>
             <div class="dev-options-wrapper none mb-2rem">
@@ -661,7 +668,7 @@
 
             <div class="settings-rubus"></div>
 
-            <div class="rubus-ai" onclick="$('.ai-wrapper').show()">
+            <div class="rubus-ai" onclick="$('.ai-wrapper').show(); $('.ai-wrapper').scrollTop(0);">
                 <div class="flex justify-center p-0p5rem">
                     <div class="ai-logo"></div>
                 </div>
@@ -780,7 +787,10 @@
     </div>
 
     <div class="ai-wrapper none">
-        <div class="flex flex-col gap-y-1rem m-5rem text-1p5rem white">
+
+        <div class="fixed p-0p5rem text-1p7rem bold-500 white flex justify-center align-center pointer" style="bottom: 4rem; right: 4rem; aspect-ratio: 1; border-radius: 50%; width: 3rem; background-color: purple;" onclick="$('.ai-wrapper').hide();">X</div>
+
+        <div class="flex flex-col gap-y-1rem m-5rem white">
 
             <div class="flex select-none">
                 <div class="ai-big-logo"></div>
@@ -789,21 +799,31 @@
                     <div class="text-3rem ai-title-big w-fit white br-1rem">RUBus AI</div>
                 </div>
             </div>
-
             
-            
-            <div class="mt-5rem py-2rem px-3rem br-2rem" style="background: linear-gradient(135deg, #f24160, purple);">Let RUBus learn from your travel and usage habits to compose your expected bus schedule and send notifications when it's time to leave.</div>
+            <div class="mt-5rem py-2rem px-3rem br-2rem text-1p6rem" style="background: linear-gradient(135deg, #f24160, purple);">Let RUBus learn your travel habits and notify you when it's time to leave.</div>
 
-            <div class="flex flex-col gap-y-0p5rem py-2rem px-3rem br-2rem" style="background: linear-gradient(135deg, #f24160, purple);">
+            <div class="flex flex-col gap-y-0p5rem py-2rem px-3rem br-2rem text-1p5rem" style="background: linear-gradient(135deg, #f24160, purple);">
                 <div class="bold-500">For example, automatically get...</div>
                 <div class="flex flex-col ml-1rem">
-                    <div>• Notified when it's time to walk to a bus stop to make your class on another campus.</div>
-                    <div>• Reminded to leave early on days with increased traffic or closed stops.</div>
+                    <div>• Notified when to leave for a bus stop to make a class on another campus.</div>
+                    <div>• Reminded to leave early on days with increased traffic or bus shortages.</div>
                     <div>• Alerted when an earlier bus could help you avoid delays or overcrowding.</div>
+                    <div>• Provided alternative leave times to arrive at your destination on time</div>
                 </div>
             </div>
 
-            <div class="bold-500 text-2rem mt-5rem underline center pointer" style="color: #a624ff">Pre-enroll</div>
+            <div class="flex flex-col gap-y-0p5rem py-2rem px-3rem br-2rem text-1p5rem" style="background: linear-gradient(135deg, #f24160, purple);">
+                <div class="bold-500">RUBus AI will:</div>
+                <div class="flex flex-col ml-1rem">
+                    <div>• Find the best bus or combination of buses for your trip</div>
+                    <div>• Pick the optimal stops to get on and off</div>
+                    <div>• Calculate walking distance and time to your nearest stop</div>
+                    <div>• Factor in expected wait times</div>
+                    <div>• Ensure you arrive by your target time</div>
+                </div>
+            </div>
+
+            <div class="bold-500 text-2rem mt-5rem underline center pointer mb-5rem" style="color: #a624ff">Pre-enroll</div>
 
         </div>
     </div>

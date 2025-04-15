@@ -34,6 +34,8 @@
 
 .text-1p5rem { font-size: 1.5rem; }
 
+.text-1p6rem { font-size: 1.6rem; }
+
 .text-1p7rem { font-size: 1.7rem; }
 
 .text-1p8rem { font-size: 1.8rem; }
@@ -318,6 +320,8 @@
 .max-content { inline-size:  max-content; }
 
 .white { color: white; }
+
+.red { color: red; }
 
 .gray545454 { color: #545454 }
 

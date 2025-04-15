@@ -91,6 +91,7 @@ $('.bus-star').click(function() {
 
             map.fitBounds(bounds);
             $('.favs').show();
+            $('.bus-info-popup').hide();
 
         }
     }

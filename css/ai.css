@@ -5,6 +5,7 @@
     height: 100%;
     z-index: 402;
     font-family: var(--font-family);
+    overflow-y: scroll;
 }
 
 .ai-exp {
@@ -28,4 +29,6 @@
     background-size: contain;
     background-position: center center;
     aspect-ratio: 1;
+    height: auto;
+    width: max-content;
 }
