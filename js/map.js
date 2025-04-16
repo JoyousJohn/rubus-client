@@ -100,6 +100,12 @@ $(document).ready(function() {
                 showAllStops();
                 showAllBuses();
                 showAllPolylines();
+            } else if (settings['toggle-hide-other-routes'] && shownRoute) {
+                for (const marker in busMarkers) {
+                    if (busData[marker].route === shownRoute) {
+                        busMarkers[marker].getElement().style.display = '';
+                    }
+                }
             }
 
 
@@ -1014,7 +1020,7 @@ function popInfo(busId, resetCampusFontSize) {
                 flyToStop(closestStopId); 
             }));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
-                <div class="next-stop-eta closest-stop-eta">temp</div>
+                <div class="next-stop-eta closest-stop-eta" data-stop-id="${closestStopId}">temp</div>
                 <div class="next-stop-time closest-stop-time">temp:temp</div>
             </div>`).click(() => { 
                 flyToStop(closestStopId);  
@@ -1055,7 +1061,7 @@ function popInfo(busId, resetCampusFontSize) {
                     flyToStop(stopId); 
                 }));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
-                <div class="next-stop-eta">Here</div>
+                <div class="next-stop-eta" data-stop-id="${stopId}">Here</div>
             </div>`).click(() => { 
                 flyToStop(stopId);  
             }));
@@ -1158,7 +1164,7 @@ function popInfo(busId, resetCampusFontSize) {
                     flyToStop(sortedStops[i]); 
                 }));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
-                <div class="next-stop-eta">${eta}</div>
+                <div class="next-stop-eta" data-stop-id="${sortedStops[i]}">${eta}</div>
                 <div class="next-stop-time">${formattedTime}</div>
             </div>`).click(() => { 
                 flyToStop(sortedStops[i]);  

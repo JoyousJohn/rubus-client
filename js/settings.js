@@ -294,6 +294,8 @@ $(document).ready(function() {
                     // Check for "Xs" format
                     let matchSeconds = text.match(/^(\d+)s$/);
                     
+                    let ETAText;
+
                     if (matchMinutes) {
                         let minutes = parseInt(matchMinutes[1]);
                         let seconds = parseInt(matchMinutes[2]);
@@ -305,13 +307,18 @@ $(document).ready(function() {
                             seconds = 59;
                         }
                         
-                        $(this).text(minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`);
+                        ETAText = (minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`);
                     } else if (matchSeconds) {
                         let seconds = parseInt(matchSeconds[1]);
                         if (seconds > 0) {
-                            $(this).text(`${seconds - 1}s`);
+                            ETAText = (`${seconds - 1}s`);
                         }
                     }
+
+                    $(this).text(ETAText)
+
+                    $(`[stop-eta="${$(this).attr('data-stop-id')}"]`).text(ETAText);
+
                 });
             }
 
