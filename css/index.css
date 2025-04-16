@@ -76,7 +76,7 @@ html, body {
 .bus-icon-inner {
     width: 13px;
     height: 13px;
-    background-color: white;
+    background-color: var(--theme-bg);
     border: 2px solid black;
     border-radius: 50%;
 }
