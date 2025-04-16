@@ -900,7 +900,7 @@ function popInfo(busId, resetCampusFontSize) {
         }
     } else {
         stopOvertimeCounter();
-        $('.bus-stopped-for').slideUp();
+        $('.bus-stopped-for').hide();
         $('.stop-octagon, .overtime-time').hide();
     }
     

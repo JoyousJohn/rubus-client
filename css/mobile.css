@@ -13,7 +13,7 @@
 
     .info-next-stops {
         max-height: 100%;
-        margin-bottom: 4rem; /* Not sure why needed, look into .bus-info-popup 1rem marigin */
+        margin-bottom: 1rem;
     }
 
     .route-selectors {
@@ -31,6 +31,11 @@
 
     .route-selector:last-child {
         margin-right: 0; /* For settings */
+    }
+
+    .route-selector[routename="fav"] {
+        padding: 1rem !important;
+        aspect-ratio: auto !important;
     }
 
     .left-btns {
