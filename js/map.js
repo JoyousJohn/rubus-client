@@ -37,7 +37,7 @@ $(document).ready(function() {
         scrollWheelZoom: false, // Disable default scroll zoom
     }).setView([40.507476,-74.4541267], 14);
 
-    map.setMinZoom(13);
+    map.setMinZoom(12);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
 
     let mapTheme
@@ -82,7 +82,7 @@ $(document).ready(function() {
             isTransitioning = true;
 
             if (popupBusId && !isDesktop) {
-                const minZoomLevel = 13;
+                const minZoomLevel = 12;
                 map.setMinZoom(minZoomLevel);
                 if (map.getZoom() < minZoomLevel) {
                     map.setZoom(minZoomLevel);
@@ -1222,7 +1222,7 @@ function popInfo(busId, resetCampusFontSize) {
         hidePolylinesExcept(data.route)
 
         for (const marker in busMarkers) {
-            if (busData[marker].route !== data.route) {
+            if (marker !== busId.toString()) {
                 busMarkers[marker].getElement().style.display = 'none';
             }
         }
@@ -1231,7 +1231,7 @@ function popInfo(busId, resetCampusFontSize) {
     if (!isDesktop) {
         const currentSouthWest = bounds.getSouthWest();
         const currentNorthEast = bounds.getNorthEast();
-        const factor = 2.5;
+        const factor = 2.8;
         const newSouthWest = L.latLng(
             currentSouthWest.lat - (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
             currentSouthWest.lng - (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
