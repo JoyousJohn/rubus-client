@@ -352,25 +352,28 @@ async function addStopsToMap() {
             const thisStop = stopsData[stopId];
             const lat = thisStop['latitude'];
             const long = thisStop['longitude'];
-            const busStopIcon = L.icon({
-                iconUrl: 'img/stop_marker.png',
-                iconSize: [18, 18],
-                iconAnchor: [9, 9], // Center the icon
-                // popupAnchor: [0, -15] // Adjust the popup location
-            });
-    
-            // Create a marker for the current bus stop
+
             const marker = L.marker([lat, long], { 
-                icon: busStopIcon,
+                icon: L.divIcon({
+                    className: 'custom-stop-icon',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    html: `
+                        <div class="marker-wrapper">
+                            <img src="img/stop_marker.png" width="18" height="18" />
+                            <div class="corner-label none" stop-eta="${stopId}">xm</div>
+                        </div>
+                    `
+                }),
                 zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
-                })
-                .addTo(map)
-                .on('click', function() {
-                    sourceStopId = null;
-                    sourceBusId = null;
-                    popStopInfo(stopId)
-                })
-    
+            })
+            .addTo(map)
+            .on('click', function() {
+                sourceStopId = null;
+                sourceBusId = null;
+                popStopInfo(stopId);
+            });
+            
             busStopMarkers[stopId] = marker;
         }
     });

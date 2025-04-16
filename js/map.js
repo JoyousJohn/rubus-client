@@ -81,7 +81,7 @@ $(document).ready(function() {
         } else {
             isTransitioning = true;
 
-            if (popupBusId) {
+            if (popupBusId && !isDesktop) {
                 const minZoomLevel = 13;
                 map.setMinZoom(minZoomLevel);
                 if (map.getZoom() < minZoomLevel) {
@@ -89,7 +89,7 @@ $(document).ready(function() {
                 }
                 map.setMaxBounds(bounds);
             }
-            
+
             hideInfoBoxes();
 
             if (settings['toggle-show-bus-log']) {
@@ -102,7 +102,6 @@ $(document).ready(function() {
                 showAllPolylines();
             }
 
-            
 
             $('.favs').show();
         }
@@ -247,6 +246,8 @@ function hideInfoBoxes(instantly_hide) {
         popupStopId = null;
         thisClosestStopId = null;
     }
+
+    $('[stop-eta]').text('').hide();
 
     if (popupBusId) {
         stopOvertimeCounter();
@@ -1143,7 +1144,8 @@ function popInfo(busId, resetCampusFontSize) {
                 } else {
                     $('.closest-stop-eta').text(eta)
                     $('.closest-stop-time').text(formattedTime)
-                }     
+                    $(`[stop-eta="${sortedStops[i]}"]`).text(eta).show();
+                }
             }
 
             if (i === 0 && closestStopId === sortedStops[i] && !busData[busId].at_stop) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
@@ -1161,6 +1163,7 @@ function popInfo(busId, resetCampusFontSize) {
             </div>`).click(() => { 
                 flyToStop(sortedStops[i]);  
             }));
+            $(`[stop-eta="${sortedStops[i]}"]`).text(eta).show();
 
             if (!firstCircle) {
                 firstCircle = $('.next-stops-grid .next-stop-circle').last();
@@ -1225,20 +1228,22 @@ function popInfo(busId, resetCampusFontSize) {
         }
     }
 
-    const currentSouthWest = bounds.getSouthWest();
-    const currentNorthEast = bounds.getNorthEast();
-    const factor = 2;
-    const newSouthWest = L.latLng(
-        currentSouthWest.lat - (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
-        currentSouthWest.lng - (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
-    );
-    const newNorthEast = L.latLng(
-        currentNorthEast.lat + (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
-        currentNorthEast.lng + (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
-    );
-    const expandedBounds = L.latLngBounds(newSouthWest, newNorthEast);
-    map.setMaxBounds(expandedBounds);
-    map.setMinZoom(9)
+    if (!isDesktop) {
+        const currentSouthWest = bounds.getSouthWest();
+        const currentNorthEast = bounds.getNorthEast();
+        const factor = 2.5;
+        const newSouthWest = L.latLng(
+            currentSouthWest.lat - (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
+            currentSouthWest.lng - (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
+        );
+        const newNorthEast = L.latLng(
+            currentNorthEast.lat + (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
+            currentNorthEast.lng + (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
+        );
+        const expandedBounds = L.latLngBounds(newSouthWest, newNorthEast);
+        map.setMaxBounds(expandedBounds);
+        map.setMinZoom(9)
+    }
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
 
@@ -1379,7 +1384,7 @@ function startOvertimeCounter(busId) {
         return;
     }
 
-    overtimeBusId = busId
+    overtimeBusId = busId;
 
     if (overtimeInterval) {
         clearInterval(overtimeInterval);
