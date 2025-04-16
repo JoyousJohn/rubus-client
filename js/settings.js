@@ -179,6 +179,12 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-hide-other-routes':
+            settings['toggle-hide-other-routes'] = isChecked;
+            break;
+
+            // implement logic here to hide/show other routes if bus already selected: if (popupBus)...
+
         case 'toggle-show-bus-log':
             settings['toggle-show-bus-log'] = isChecked;
 

@@ -117,7 +117,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             let isNew = false;
 
-            if (!(busId in busData)) {
+            if (!busData[busId]) {
                 busData[busId] = {};
                 busData[busId].previousTime = new Date().getTime() - 5000;
                 busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]];

@@ -245,25 +245,55 @@ function toggleRouteSelectors(route) {
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
 
+
+function hideStopsExcept(excludedRoute) {
+    const stopIdsForSelectedRoute = stopLists[excludedRoute]
+    for (const polyline in polylines) {
+        const stopIdsForRoute = stopLists[polyline]
+        stopIdsForRoute.forEach(stopId => {
+            if (!(stopIdsForSelectedRoute).includes(stopId)) {
+                busStopMarkers[stopId].remove();
+            }
+        })
+    }    
+}
+
+function hidePolylinesExcept(route) {
+    for (const polyline in polylines) {
+        if (polyline !== route) {
+            polylines[polyline].remove()
+        }
+    }
+}
+
+function showAllStops() {
+    for (const stopId in busStopMarkers) {
+        busStopMarkers[stopId].addTo(map);
+    }
+}
+
+function showAllBuses() {
+    for (const marker in busMarkers) {
+        busMarkers[marker].getElement().style.display = '';
+    }
+}
+
+function showAllPolylines() {
+    for (const polyline in polylines) {
+        polylines[polyline].addTo(map)
+    }
+}
+
 function toggleRoute(route) {
 
     if (route === 'fav') { toggleFavorites(); return; }
 
     // Show all polylines and buses
     if (shownRoute === route) {
-        for (const polyline in polylines) {
-            if (polyline !== route) {
-                polylines[polyline].addTo(map)
-            }
-        }  
-        for (const marker in busMarkers) {
-            // if (busMarkers[marker].options.route !== route) { // unncessary?
-                // busMarkers[marker].addTo(map)
-                busMarkers[marker].getElement().style.display = '';
-            // }
-        }
-
+        showAllPolylines();  
+        showAllBuses();
         showAllStops();
+        
         if (!popupStopId) {
             map.fitBounds(bounds) 
         }
@@ -276,11 +306,7 @@ function toggleRoute(route) {
 
         showAllStops();
 
-        for (const polyline in polylines) {
-            if (polyline !== route) {
-                polylines[polyline].remove()
-            }
-        }
+        hidePolylinesExcept(route);
 
         for (const marker in busMarkers) {
             if (busData[marker].route !== route) {
@@ -310,23 +336,6 @@ function toggleRoute(route) {
 
     toggleRouteSelectors(route)
 
-    function hideStopsExcept(excludedRoute) {
-        const stopIdsForSelectedRoute = stopLists[excludedRoute]
-        for (const polyline in polylines) {
-            const stopIdsForRoute = stopLists[polyline]
-            stopIdsForRoute.forEach(stopId => {
-                if (!(stopIdsForSelectedRoute).includes(stopId)) {
-                    busStopMarkers[stopId].remove();
-                }
-            })
-        }    
-    }
-
-    function showAllStops() {
-        for (const stopId in busStopMarkers) {
-            busStopMarkers[stopId].addTo(map);
-        }
-    }
 }
 
 let panelRoute;
@@ -1015,6 +1024,7 @@ const toggleSettings = [
     'toggle-show-bus-overtime-timer',
     'toggle-show-bus-path',
     'toggle-launch-fireworks-button',
+    'toggle-hide-other-routes',
     'toggle-show-bus-log',
     'toggle-show-extra-bus-data',
     'toggle-show-stop-id',
@@ -1046,6 +1056,7 @@ let defaultSettings = {
     'toggle-show-bus-overtime-timer': false,
     'toggle-show-bus-path': false,
     'toggle-launch-fireworks-button': false,
+    'toggle-hide-other-routes': true,
     'toggle-show-bus-log': false,
     'toggle-show-extra-bus-data': false,
     'toggle-show-stop-id': false,

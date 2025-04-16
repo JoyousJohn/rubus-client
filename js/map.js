@@ -85,6 +85,13 @@ $(document).ready(function() {
             if (settings['toggle-show-bus-log']) {
                 $('.bus-log-wrapper').show();
             }
+
+            if (settings['toggle-hide-other-routes']) {
+                showAllStops();
+                showAllBuses();
+                showAllPolylines();
+            }
+
             $('.favs').show();
         }
 
@@ -762,7 +769,7 @@ function plotBus(busId, immediatelyUpdate) {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[busData[busId].route];
     
-        if (shownRoute && shownRoute !== busData[busId].route) {
+        if ((shownRoute && shownRoute !== busData[busId].route) || (settings['toggle-hide-other-routes'] && popupBusId && busData[popupBusId].route !== busData[busId].route)) {
             busMarkers[busId].getElement().style.display = '';
         }
 
@@ -1194,6 +1201,20 @@ function popInfo(busId, resetCampusFontSize) {
     } else {
         $('.bus-star > i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
     }
+
+    if (settings['toggle-hide-other-routes']) {
+
+        hideStopsExcept(data.route)
+        hidePolylinesExcept(data.route)
+
+        for (const marker in busMarkers) {
+            if (busData[marker].route !== data.route) {
+                busMarkers[marker].getElement().style.display = 'none';
+            }
+        }
+
+    }
+
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
 
