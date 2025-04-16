@@ -86,10 +86,19 @@ $(document).ready(function() {
                 $('.bus-log-wrapper').show();
             }
 
-            if (settings['toggle-hide-other-routes']) {
+            if (settings['toggle-hide-other-routes'] && !shownRoute) {
                 showAllStops();
                 showAllBuses();
                 showAllPolylines();
+            }
+
+            if (popupBusId) {
+                const minZoomLevel = 13;
+                map.setMaxZoom(minZoomLevel);
+                if (map.getZoom() < minZoomLevel) {
+                    map.setZoom(minZoomLevel);
+                }
+                map.setMaxBounds(bounds);
             }
 
             $('.favs').show();
@@ -1001,8 +1010,8 @@ function popInfo(busId, resetCampusFontSize) {
                 flyToStop(closestStopId); 
             }));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
-                <div class="next-stop-eta closest-stop-eta">XX</div>
-                <div class="next-stop-time closest-stop-time">XX:XX</div>
+                <div class="next-stop-eta closest-stop-eta">temp</div>
+                <div class="next-stop-time closest-stop-time">temp:temp</div>
             </div>`).click(() => { 
                 flyToStop(closestStopId);  
             }));
@@ -1203,7 +1212,6 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     if (settings['toggle-hide-other-routes']) {
-
         hideStopsExcept(data.route)
         hidePolylinesExcept(data.route)
 
@@ -1212,16 +1220,29 @@ function popInfo(busId, resetCampusFontSize) {
                 busMarkers[marker].getElement().style.display = 'none';
             }
         }
-
     }
 
+    const currentSouthWest = bounds.getSouthWest();
+    const currentNorthEast = bounds.getNorthEast();
+    const factor = 2;
+    const newSouthWest = L.latLng(
+        currentSouthWest.lat - (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
+        currentSouthWest.lng - (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
+    );
+    const newNorthEast = L.latLng(
+        currentNorthEast.lat + (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
+        currentNorthEast.lng + (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
+    );
+    const expandedBounds = L.latLngBounds(newSouthWest, newNorthEast);
+    map.setMaxBounds(expandedBounds);
+    map.setMinZoom(9)
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
 
     $('.bus-info-popup').stop(true, true).show();
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 105) // 1.5rem*2 = vertical padding on .info-next-stops, plus 7.5rem gap to be above .bottom
+    $('.info-next-stops').css('max-height', maxHeight - 155) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
 
 }
 
@@ -1244,7 +1265,7 @@ function startStoppedForTimer(busId) {
     }
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 105)
+    $('.info-next-stops').css('max-height', maxHeight - 155)
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {

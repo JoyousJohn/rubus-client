@@ -247,7 +247,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${(data.eta)}m</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
         } else if (busData[busId].atDepot) {
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">X</div>`);
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Xm</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
         }
 
