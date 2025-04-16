@@ -254,14 +254,15 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         if (actuallyShownRoute && actuallyShownRoute !== data.route) {
             $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
             $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
+            $('.stop-info-buses-grid').children().slice(-4).removeClass('pointer');
         } else {
             $('.stop-bus-route').last().css('color', colorMappings[data.route]);
+            $('.stop-info-buses-grid').children().slice(-4).click(function() {
+                sourceStopId = stopId;
+                flyToBus(busId);
+            });
         }
              
-        $('.stop-info-buses-grid').children().slice(-4).click(function() {
-            sourceStopId = stopId;
-            flyToBus(busId);
-        });
     })
 
     const avgWait = waits[stopId];

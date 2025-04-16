@@ -40,7 +40,7 @@ $('.bus-star').click(function() {
         favBuses = favBuses.filter(busId => busId !== currentBusId);
         $(this).find('i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
         $(`div[data-fav-id="${currentBusId}"]`).remove();
-        busMarkers[currentBusId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'white';
+        busMarkers[currentBusId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'var(--theme-bus-icon-inner)';
     
         if ($('.favs > div').length === 0) {
             if (shownRoute) {
