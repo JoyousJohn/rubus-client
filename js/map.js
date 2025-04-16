@@ -1016,7 +1016,7 @@ function popInfo(busId, resetCampusFontSize) {
                 .concat(routeStops.slice(0, nextStopIndex));
         }
 
-        if (busData[busId].at_stop) {
+        if (busData[busId].at_stop && !(closestStopId && closestStopId === busData[busId].stopId)) {
 
             let stopId = busData[busId].stopId
             if (Array.isArray(stopId)) {
