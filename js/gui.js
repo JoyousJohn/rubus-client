@@ -301,6 +301,8 @@ function toggleRoute(route) {
             updateStopBuses(popupStopId);
         }
 
+        $('[stop-eta]').text('').hide();
+
     // Hide other polylines and buses
     } else {
 
@@ -328,6 +330,25 @@ function toggleRoute(route) {
         else {
             updateStopBuses(popupStopId, route);
         }
+
+        const routeBuses = busesByRoutes[route]
+
+        stopLists[route].forEach(stopId => {
+            let lowestETA = Infinity;
+            let lowestBusId;
+
+            routeBuses.forEach(busId => {
+                const eta = busETAs[busId][stopId]
+                if (eta < lowestETA) {
+                    lowestETA = eta;
+                    lowestBusId = busId;
+                }
+            })
+
+            const lowestETAMin = Math.ceil(lowestETA/60)
+            $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
+        })
+
     }
 
     if (!popupStopId) {
