@@ -92,7 +92,9 @@ $('.bus-star').click(function() {
             map.fitBounds(bounds);
             $('.favs').show();
             $('.bus-info-popup').hide();
-
+            busMarkers[popupBusId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
+            popupBusId = null;
+            
         }
     }
 
