@@ -880,7 +880,8 @@ function popInfo(busId, resetCampusFontSize) {
         }
     } else {
         stopOvertimeCounter();
-        $('.bus-stopped-for .stop-octagon, .overtime-time').hide();
+        $('.bus-stopped-for').slideUp();
+        $('.stop-octagon, .overtime-time').hide();
     }
     
     const data = busData[busId]
@@ -1196,7 +1197,7 @@ function popInfo(busId, resetCampusFontSize) {
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
 
-    $('.bus-info-popup').show();
+    $('.bus-info-popup').stop(true, true).show();
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
     $('.info-next-stops').css('max-height', maxHeight - 105) // 1.5rem*2 = vertical padding on .info-next-stops, plus 7.5rem gap to be above .bottom
