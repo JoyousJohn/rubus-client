@@ -108,6 +108,7 @@ $(document).ready(function() {
                 }
             }
 
+            $('[stop-eta]').text('').hide(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
 
             $('.favs').show();
         }
@@ -252,8 +253,6 @@ function hideInfoBoxes(instantly_hide) {
         popupStopId = null;
         thisClosestStopId = null;
     }
-
-    $('[stop-eta]').text('').hide();
 
     if (popupBusId) {
         stopOvertimeCounter();
