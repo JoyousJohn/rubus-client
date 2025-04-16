@@ -94,7 +94,7 @@ $(document).ready(function() {
 
             if (popupBusId) {
                 const minZoomLevel = 13;
-                map.setMaxZoom(minZoomLevel);
+                map.setMinZoom(minZoomLevel);
                 if (map.getZoom() < minZoomLevel) {
                     map.setZoom(minZoomLevel);
                 }
