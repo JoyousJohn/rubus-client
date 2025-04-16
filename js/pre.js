@@ -226,10 +226,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             updateStopBuses(popupStopId, shownRoute);
         }
 
-        console.log(activeBuses)
-        console.log(activeBuses.size)
-        if (activeBuses.size) {
-            console.log("Removing knight mover divs")
+        if (activeBuses.length) {
             $('.right-btns').removeClass('right-btns-bottom');
             $('.knight-mover, .knight-mover-mini').hide();
             checkMinRoutes();

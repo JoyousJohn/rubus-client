@@ -280,6 +280,8 @@ async function popStopInfo(stopId) {
     if (popupStopId) {
         busStopMarkers[popupStopId].setIcon(L.icon({
             iconUrl: 'img/stop_marker.png',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
         }));
     }
 
