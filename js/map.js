@@ -80,6 +80,16 @@ $(document).ready(function() {
 
         } else {
             isTransitioning = true;
+
+            if (popupBusId) {
+                const minZoomLevel = 13;
+                map.setMinZoom(minZoomLevel);
+                if (map.getZoom() < minZoomLevel) {
+                    map.setZoom(minZoomLevel);
+                }
+                map.setMaxBounds(bounds);
+            }
+            
             hideInfoBoxes();
 
             if (settings['toggle-show-bus-log']) {
@@ -92,14 +102,7 @@ $(document).ready(function() {
                 showAllPolylines();
             }
 
-            if (popupBusId) {
-                const minZoomLevel = 13;
-                map.setMinZoom(minZoomLevel);
-                if (map.getZoom() < minZoomLevel) {
-                    map.setZoom(minZoomLevel);
-                }
-                map.setMaxBounds(bounds);
-            }
+            
 
             $('.favs').show();
         }
@@ -1242,7 +1245,7 @@ function popInfo(busId, resetCampusFontSize) {
     $('.bus-info-popup').stop(true, true).show();
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 155) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
+    $('.info-next-stops').css('max-height', maxHeight - 135) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
 
 }
 
@@ -1265,7 +1268,7 @@ function startStoppedForTimer(busId) {
     }
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 155)
+    $('.info-next-stops').css('max-height', maxHeight - 135)
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {
