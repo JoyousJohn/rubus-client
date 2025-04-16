@@ -108,7 +108,9 @@ $(document).ready(function() {
                 }
             }
 
-            $('[stop-eta]').text('').hide(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
+            if (!shownRoute) {
+                $('[stop-eta]').text('').hide(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
+            }
 
             $('.favs').show();
         }
