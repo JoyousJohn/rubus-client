@@ -444,6 +444,10 @@ function updateTimeToStops(busIds) {
 
     });
 
+    if (shownRoute && !popupBusId && !popupStopId) {
+        updateTooltips(shownRoute);
+    }
+
 }
 
 

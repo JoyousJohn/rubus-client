@@ -110,6 +110,8 @@ $(document).ready(function() {
 
             if (!shownRoute) {
                 $('[stop-eta]').text('').hide(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
+            } else {
+                updateTooltips(shownRoute);
             }
 
             $('.favs').show();
@@ -310,12 +312,18 @@ function panout() {
     } else { // no buses running, show all of nb
         map.fitBounds(bounds);
     }
-    $('.panout').css('color', 'blue')
+    $('.panout').css('color', 'blue');
     setTimeout(() => {
-        $('.panout').css('color', 'rgb(185, 185, 185)')
+        $('.panout').css('color', 'rgb(185, 185, 185)');
     }, 500);
 
     hideInfoBoxes();
+
+    if (shownRoute) {
+        updateTooltips(shownRoute);
+    }
+
+
 }
 
 function changeMapStyle(newStyle) {
@@ -323,12 +331,12 @@ function changeMapStyle(newStyle) {
     document.documentElement.setAttribute('theme', newStyle);
 
     if (newStyle === 'light') {
-        newStyle = 'streets-v11'
+        newStyle = 'streets-v11';
     } else {
-        newStyle = 'dark-v11'
+        newStyle = 'dark-v11';
     }
 
-    console.log("Setting map style to " + newStyle)
+    // console.log("Setting map style to " + newStyle);
     let newUrl = 'https://api.mapbox.com/styles/v1/mapbox/' + newStyle + '/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken;
     tileLayer.setUrl(newUrl);
     

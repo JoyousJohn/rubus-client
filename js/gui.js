@@ -209,7 +209,7 @@ function toggleRouteSelectors(route) {
         shownRoute = null;  
         shownBeforeRoute = null;
 
-        // $(`.route-selector[routeName="fav"]`).css('background-color', 'white');
+        $(`.route-selector[routeName="fav"]`).css('background-color', 'gold');
     }
 
     else {
@@ -284,6 +284,26 @@ function showAllPolylines() {
     }
 }
 
+function updateTooltips(route) {
+    const routeBuses = busesByRoutes[route]
+
+    stopLists[route].forEach(stopId => {
+        let lowestETA = Infinity;
+        let lowestBusId;
+
+        routeBuses.forEach(busId => {
+            const eta = busETAs[busId][stopId]
+            if (eta < lowestETA) {
+                lowestETA = eta;
+                lowestBusId = busId;
+            }
+        })
+
+        const lowestETAMin = Math.ceil(lowestETA/60)
+        $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
+    })
+}
+
 function toggleRoute(route) {
 
     if (route === 'fav') { toggleFavorites(); return; }
@@ -331,23 +351,7 @@ function toggleRoute(route) {
             updateStopBuses(popupStopId, route);
         }
 
-        const routeBuses = busesByRoutes[route]
-
-        stopLists[route].forEach(stopId => {
-            let lowestETA = Infinity;
-            let lowestBusId;
-
-            routeBuses.forEach(busId => {
-                const eta = busETAs[busId][stopId]
-                if (eta < lowestETA) {
-                    lowestETA = eta;
-                    lowestBusId = busId;
-                }
-            })
-
-            const lowestETAMin = Math.ceil(lowestETA/60)
-            $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
-        })
+        updateTooltips(route);
 
     }
 

@@ -12,7 +12,7 @@
     --theme-stop-bus-time: rgb(127, 127, 127);
     --theme-bg-closest-stop: rgb(68, 68, 68);
     --theme-hidden-route-col: #555;
-    --theme-bus-icon-inner: gray;
+    --theme-bus-icon-inner: lightgray;
 }
 
 [theme="light"] {

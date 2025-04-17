@@ -298,6 +298,15 @@ async function popStopInfo(stopId) {
         $('.closest-stop').hide();
     }
 
+    if (shownRoute && popupBusId) {
+        busesByRoutes[shownRoute].forEach(busId => {
+            busMarkers[busId].getElement().style.display = '';
+        })
+        updateTooltips(shownRoute);
+    } else {
+        $('[stop-eta]').text('').hide();
+    }
+
     popupStopId = stopId;
     popupBusId = null;
 
@@ -370,9 +379,14 @@ async function addStopsToMap() {
             })
             .addTo(map)
             .on('click', function() {
+
                 sourceStopId = null;
                 sourceBusId = null;
                 popStopInfo(stopId);
+                if (!shownRoute) {
+                    showAllBuses();
+                    showAllPolylines();
+                }
             });
             
             busStopMarkers[stopId] = marker;
