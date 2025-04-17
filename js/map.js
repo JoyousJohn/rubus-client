@@ -240,6 +240,7 @@ $(document).on('keydown', function(e) {
 })
 
 function hideInfoBoxes(instantly_hide) {
+    console.log('trig')
     // console.log('hideInfoBoxes() triggered')
 
     if (instantly_hide) {

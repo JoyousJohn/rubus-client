@@ -1227,6 +1227,10 @@ $(document).ready(function() {
 
     $('.bus-info-back').click(function() {
         flyToStop(sourceStopId);
+        if (!shownRoute) {
+            showAllBuses();
+            showAllPolylines();
+        }
     });
 
 })

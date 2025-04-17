@@ -260,6 +260,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid').children().slice(-4).click(function() {
                 sourceStopId = stopId;
                 flyToBus(busId);
+                $('.stop-info-popup').hide(); // this was def being handled somewhere else before... need to check what happened sometime. Hard finding changes in recent commits that might've affected this.
             });
         }
              
