@@ -132,6 +132,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
                 if (!isInitial) {
                     addStopsToMap();
+                    updateTimeToStops([busId]); // otherwise can briefly get undefined when reading ETA for this bus. Found this when selecting route selector and I think the tooltip code failed to read (gui line 295 at the time)
                 }
 
                 populateFavs();
