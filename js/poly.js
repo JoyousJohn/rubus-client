@@ -279,18 +279,11 @@ let sourceStopId = null;
 async function popStopInfo(stopId) {
 
     if (popupStopId) {
-        busStopMarkers[popupStopId].setIcon(L.icon({
-            iconUrl: 'img/stop_marker.png',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9],
-        }));
+        $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
     }
 
-    busStopMarkers[stopId].setIcon(L.icon({
-        iconUrl: 'img/stop_marker_selected.png',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-    }));
+    $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/stop_marker_selected.png')
+
 
     if (Number(closestStopId) === stopId) {
         $('.closest-stop').show();
@@ -370,7 +363,7 @@ async function addStopsToMap() {
                     iconAnchor: [15, 15],
                     html: `
                         <div class="marker-wrapper">
-                            <img src="img/stop_marker.png" width="18" height="18" />
+                            <img src="img/stop_marker.png" width="18" height="18" stop-marker-id="${stopId}"/>
                             <div class="corner-label none" stop-eta="${stopId}">xm</div>
                         </div>
                     `

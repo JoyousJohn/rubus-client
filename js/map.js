@@ -249,11 +249,9 @@ function hideInfoBoxes(instantly_hide) {
     }
 
     if (popupStopId) {
-        busStopMarkers[popupStopId].setIcon(L.icon({
-            iconUrl: 'img/stop_marker.png',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9],
-        }));
+
+        $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
+
         popupStopId = null;
         thisClosestStopId = null;
     }
@@ -899,14 +897,7 @@ function popInfo(busId, resetCampusFontSize) {
         secondsDivisor = 1;
     }
     
-    $('.stop-info-popup, .favs').hide();
-    if (popupStopId) {
-        busStopMarkers[popupStopId].setIcon(L.icon({
-            iconUrl: 'img/stop_marker.png',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
-        }));
-    }
+    $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
 
     if (busData[busId]['overtime']) {
         $('.bus-stopped-for .stop-octagon').show();
