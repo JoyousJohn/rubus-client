@@ -196,11 +196,10 @@ html, body {
 }
 
 .passio-messages {
-    display: none;
     font-family: var(--font-family);
     color: var(--theme-color);
     font-size: 1.7rem;
-    /* position: fixed; */
+    pointer-events: auto;
 }
 
 .passio-mini-alert {
