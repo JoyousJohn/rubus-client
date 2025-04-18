@@ -467,9 +467,9 @@ async function fetchWhere() {
 
             if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
                             
-            busData[busId]['stopId'] = parseInt(busLocations[busId][0])
-            if (busLocations[busId].length === 2) {
-                busData[busId]['prevStopId'] = parseInt(busLocations[busId][1])  
+            busData[busId]['stopId'] = parseInt(busLocations[busId]['where'][0])
+            if (busLocations[busId]['where'].length === 2) {
+                busData[busId]['prevStopId'] = parseInt(busLocations[busId]['where'][1])  
             }
 
             validBusIds.push(busId)
