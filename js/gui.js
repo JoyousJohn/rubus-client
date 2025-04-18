@@ -292,10 +292,12 @@ function updateTooltips(route) {
         let lowestBusId;
 
         routeBuses.forEach(busId => {
-            const eta = busETAs[busId][stopId]
-            if (eta < lowestETA) {
-                lowestETA = eta;
-                lowestBusId = busId;
+            if (busETAs[busId]) {
+                const eta = busETAs[busId][stopId]
+                if (eta < lowestETA) {
+                    lowestETA = eta;
+                    lowestBusId = busId;
+                }
             }
         })
 
