@@ -229,7 +229,9 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
         if (activeBuses.length) {
             $('.right-btns').removeClass('right-btns-bottom');
-            $('.knight-mover, .knight-mover-mini').hide();
+            if (!settings['toggle-show-knight-mover']){
+                $('.knight-mover, .knight-mover-mini').hide();
+            }
             checkMinRoutes();
         }
 
@@ -570,7 +572,7 @@ function checkMinRoutes() {
     const minRoutes = ["ee", "lx", "h"];
     if(!minRoutes.every(str => activeRoutes.has(str))) {
         $('.knight-mover-mini').css('display', 'flex');
-    } else {
+    } else if (settings['toggle-show-knight-mover']) {
         $('.knight-mover-mini').hide();
     }
 }
