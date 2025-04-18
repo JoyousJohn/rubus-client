@@ -259,7 +259,7 @@ function makeOoS(busId) {
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
         if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polelines, have to ensure code works flawlessly!
-            polylines[route].remove();
+            polylines[route].setStyle({ opacity: 0 });
         }
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 

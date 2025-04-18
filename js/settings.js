@@ -225,7 +225,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
                     polyline.setStyle({
                         renderer: L.svg({ padding: 1.0 })
                     });
-                    polyline.addTo(map);
+                    polyline.setStyle({ opacity: 1 });
                 }
             } else {
                 for (const routeName in polylines) {
@@ -234,7 +234,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
                     polyline.setStyle({
                         renderer: undefined
                     });
-                    polyline.addTo(map);
+                    polyline.setStyle({ opacity: 1 });
                 }
             }
             break;

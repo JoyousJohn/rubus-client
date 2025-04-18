@@ -71,14 +71,14 @@ $('.bus-star').click(function() {
             $('.bus-info-popup').hide();
             popupBusId = null;
             if (!favRoutes.has(busData[currentBusId].route)) {
-                polylines[busData[currentBusId].route].remove();
+                polylines[busData[currentBusId].route].setStyle({ opacity: 0 });
             }
         }
 
         if (favRoutes.size === 0) {
             for (const polyline in polylines) {
                 if (!map.hasLayer(polylines[polyline])) { // needed?
-                    polylines[polyline].addTo(map);
+                    polylines[polyline].setStyle({ opacity: 1 });
                 }
             }  
             for (const marker in busMarkers) {
@@ -158,7 +158,7 @@ function toggleFavorites() {
                 polylines[polyline].remove();
             } else {
                 if (!map.hasLayer(polylines[polyline])) {
-                    polylines[polyline].addTo(map);
+                    polylines[polyline].setStyle({ opacity: 1 });
                 }
                 visibleBounds.extend(polylines[polyline].getBounds());
             }
@@ -192,7 +192,7 @@ function toggleFavorites() {
 
     } else {
         for (const polyline in polylines) {
-            polylines[polyline].addTo(map);
+            polylines[polyline].setStyle({ opacity: 1 });
         }
         for (const stopId in busStopMarkers) {
             busStopMarkers[stopId].addTo(map);

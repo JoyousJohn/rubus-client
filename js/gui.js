@@ -261,7 +261,7 @@ function hideStopsExcept(excludedRoute) {
 function hidePolylinesExcept(route) {
     for (const polyline in polylines) {
         if (polyline !== route) {
-            polylines[polyline].remove()
+            polylines[polyline].setStyle({ opacity: 0 });
         }
     }
 }
@@ -280,7 +280,7 @@ function showAllBuses() {
 
 function showAllPolylines() {
     for (const polyline in polylines) {
-        polylines[polyline].addTo(map)
+        polylines[polyline].setStyle({ opacity: 1 });
     }
 }
 
@@ -339,9 +339,9 @@ function toggleRoute(route) {
             }
         }
 
-        hideStopsExcept(route)
+        hideStopsExcept(route);
 
-        polylines[route].addTo(map) // show this one if it was prev hidden
+        polylines[route].setStyle({ opacity: 1 }); // show this one if it was prev hidden
 
         if (!popupStopId) {
             map.fitBounds(polylines[route].getBounds(), { padding: [10, 10] });
@@ -352,7 +352,6 @@ function toggleRoute(route) {
         }
 
         updateTooltips(route);
-
     }
 
     if (!popupStopId) {

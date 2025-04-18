@@ -57,7 +57,6 @@ async function setPolylines(activeRoutes) {
 
         const polyline = L.polyline(coordinates, polylineOptions);
 
-        // Add the polyline to the map
         polyline.addTo(map);
 
         polylines[routeName] = polyline;
