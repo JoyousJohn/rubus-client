@@ -1171,7 +1171,6 @@ function popInfo(busId, resetCampusFontSize) {
                 });
 
                 if (eta === 0) { eta = 1 }
-
                 eta += 'm'
             }
 
@@ -1286,6 +1285,22 @@ function popInfo(busId, resetCampusFontSize) {
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
     $('.info-next-stops').css('max-height', maxHeight - 135) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
 
+    if (!popupBusId) {
+        const topContainerHeight = 1 - ($(window).height() - $('.bus-btns').offset().top)/$(window).height()
+
+        const polyline = polylines[data.route]
+        const mapSize = map.getSize();
+        const topGuiHeight = mapSize.y * topContainerHeight;
+
+        const extraPaddingY = 30;
+        const extraPaddingX = 30;
+
+        map.fitBounds(polyline.getBounds(), {
+            paddingTopLeft:     [extraPaddingX, topGuiHeight],
+            paddingBottomRight: [extraPaddingX, extraPaddingY + 30],
+            animate: true
+        });
+    }
 }
 
 function expandBounds(origBounds, factor) {
