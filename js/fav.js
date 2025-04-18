@@ -94,7 +94,8 @@ $('.bus-star').click(function() {
             $('.bus-info-popup').hide();
             busMarkers[popupBusId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
             popupBusId = null;
-            
+            showAllPolylines();
+            $('[stop-eta]').hide();            
         }
     }
 
@@ -172,8 +173,6 @@ function toggleFavorites() {
         }
 
         hideStopsExcept(Array.from(favRoutes));
-
-        console.log('a')
 
         if (visibleBounds.isValid()) {
             console.log('has bound');
