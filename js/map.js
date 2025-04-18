@@ -27,8 +27,8 @@ $(document).ready(function() {
     settings = JSON.parse(localStorage.getItem('settings'));
 
     map = L.map('map', {
-        maxBounds: bounds, // Set the maximum bounds
-        maxBoundsViscosity: 1.3, // Optional: Adjust the stickiness of the bounds (1.0 is default)
+        maxBounds: expandBounds(bounds, 2),
+        maxBoundsViscosity: 1.3,
         zoomControl: false,
         inertiaDeceleration: 1000,
         zoomSnap: 0,
@@ -40,19 +40,19 @@ $(document).ready(function() {
     map.setMinZoom(12);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
 
-    let mapTheme
+    let mapTheme;
     if (settings && settings['theme']) {
 
         if (settings['theme'] === 'light') {
-            mapTheme = 'streets-v11'
+            mapTheme = 'streets-v11';
         } else if (settings['theme'] === 'dark') {
-            mapTheme = 'dark-v11'
+            mapTheme = 'dark-v11';
         } else if (settings['theme'] === 'auto') {
             const currentHour = new Date().getHours();
             mapTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
         } 
     } else {
-        mapTheme = 'streets-v11'
+        mapTheme = 'streets-v11';
     }
 
     if (settings && settings['toggle-pause-update-marker']) {
@@ -1235,19 +1235,8 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     if (!isDesktop) {
-        const currentSouthWest = bounds.getSouthWest();
-        const currentNorthEast = bounds.getNorthEast();
-        const factor = 2.8;
-        const newSouthWest = L.latLng(
-            currentSouthWest.lat - (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
-            currentSouthWest.lng - (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
-        );
-        const newNorthEast = L.latLng(
-            currentNorthEast.lat + (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
-            currentNorthEast.lng + (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
-        );
-        const expandedBounds = L.latLngBounds(newSouthWest, newNorthEast);
-        map.setMaxBounds(expandedBounds);
+        const expandedBounds = expandBounds(bounds, 2.8)
+        // map.setMaxBounds(expandedBounds);
         map.setMinZoom(9)
     }
 
@@ -1258,6 +1247,20 @@ function popInfo(busId, resetCampusFontSize) {
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
     $('.info-next-stops').css('max-height', maxHeight - 135) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
 
+}
+
+function expandBounds(origBounds, factor) {
+    const currentSouthWest = origBounds.getSouthWest();
+    const currentNorthEast = origBounds.getNorthEast();
+    const newSouthWest = L.latLng(
+        currentSouthWest.lat - (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
+        currentSouthWest.lng - (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
+    );
+    const newNorthEast = L.latLng(
+        currentNorthEast.lat + (currentNorthEast.lat - currentSouthWest.lat) * (factor - 1) / 2,
+        currentNorthEast.lng + (currentNorthEast.lng - currentSouthWest.lng) * (factor - 1) / 2
+    );
+    return L.latLngBounds(newSouthWest, newNorthEast);
 }
 
 function startStoppedForTimer(busId) {
