@@ -197,11 +197,27 @@ html, body {
 
 .passio-messages {
     display: none;
-    padding: 1rem;
     font-family: var(--font-family);
     color: var(--theme-color);
     font-size: 1.7rem;
     /* position: fixed; */
+}
+
+.passio-mini-alert {
+    padding: 0.5rem;
+    border-radius: 2rem;
+    color: white;
+    background-color: rgb(241, 92, 92);
+    font-size: 1.5rem;
+    font-family: var(--font-family);
+    width: min-content;
+    white-space: nowrap;
+    display: grid;
+    grid-template-columns: auto auto;
+}
+
+.passio-mini {
+    pointer-events: auto;
 }
 
 .shared {
