@@ -309,6 +309,8 @@
 
 .w-full { width: 100%; }
 
+.w-min { width: min-content; }
+
 .w-max { width: max-content; }
 
 .w-auto { width: auto; }
