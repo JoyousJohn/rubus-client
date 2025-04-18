@@ -1365,7 +1365,7 @@ function handleNearestStop(fly) {
         })
 
         $('.fly-closest-stop-wrapper').fadeIn();
-        if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3) {
+        if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3 && !popupBusId && !popupStopId) {
             sourceStopId = null;
             sourceBusId = null;
             if (!sharedBus) {
