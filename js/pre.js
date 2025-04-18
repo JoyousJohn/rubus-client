@@ -586,6 +586,65 @@ function makeActiveRoutes() {
     populateRouteSelectors(activeRoutes); 
 }
 
+
+function populateMessages(messages) {
+    messages.forEach(message => {
+        console.log(message)
+
+        const createdUTC = message['createdUtc'];
+        console.log(createdUTC)
+        const createdLocalDatetime = new Date(createdUTC + 'Z');
+        const createdFormatted = createdLocalDatetime.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        let title = message['gtfsAlertHeaderText'];
+        title = title.replace(/^\d{1,2}\/\d{1,2}:\s*/, '');
+        title = title.replace(/:$/, '');
+
+        let desc = message['gtfsAlertDescriptionText'];
+        desc = desc.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\/\d{2,4}:\s*/, '');        
+
+        const $msgElm = $(
+            `<div class="flex flex-col gap-y-1rem br-1rem" style="background-color: var(--theme-bg); padding: 1rem 3rem;">
+                <div class="center bold-500">${title}</div>
+                <div class="text-1p4rem">${desc}</div>
+                <div class="text-1p2rem" style="color: var(--theme-extra);">${createdFormatted}</div>
+            </div>`)
+
+        $('.passio-messages-list').append($msgElm)
+    })
+
+    $('.passio-messages').fadeIn();
+}
+
+function getMessages() {
+    const payload = {
+        systemSelected0: "1268",
+        amount: 1, // unsure what this does
+    };
+
+    fetch("https://passiogo.com/goServices.php?getAlertMessages=1&deviceId=21050160&alertCRC=0d4cbb29&buildNo=110&embedded=0", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: "json=" + encodeURIComponent(JSON.stringify(payload))
+    })
+    .then(res => res.json())
+    .then(data => {
+        const messages = data.msgs;
+        if (messages) {
+            populateMessages(messages);
+        }
+    })
+    .catch(err => console.error("Error", err));
+
+}
+
+
 let joined_service = {};
 
 $(document).ready(async function() {
@@ -738,6 +797,8 @@ $(document).ready(async function() {
             $('.updating-buses').slideUp();
         }
     });
+
+    getMessages();
 
 })
 

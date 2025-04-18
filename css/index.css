@@ -126,12 +126,12 @@ html, body {
 }
 
 .info-top-left {
-    position: absolute;
+    /* position: absolute; */
     left: 1rem;
 }
 
 .info-top-right {
-    position: absolute;
+    /* position: absolute; */
     right: 1rem;
 }
 
@@ -193,6 +193,15 @@ html, body {
     font-size: 1.7rem;
     font-family: var(--font-family);
     pointer-events: all;
+}
+
+.passio-messages {
+    display: none;
+    padding: 1rem;
+    font-family: var(--font-family);
+    color: var(--theme-color);
+    font-size: 1.7rem;
+    /* position: fixed; */
 }
 
 .shared {

@@ -87,7 +87,7 @@ $(document).ready(function() {
                 if (map.getZoom() < minZoomLevel) {
                     map.setZoom(minZoomLevel);
                 }
-                map.setMaxBounds(bounds);
+                // map.setMaxBounds(bounds);
             }
 
             hideInfoBoxes();
@@ -568,9 +568,48 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         
         // Update rotation immediately as well
         if (!pauseRotationUpdating) {
+            let newRotation;
+
+            console.log(busData[busId].at_stop)
+
+            if (busData[busId].at_stop && polylines[busData[busId].route]) {
+
+                console.log(busId)
+
+                // Get polyline points
+                const polyPoints = polylines[busData[busId].route].getLatLngs();
+                // Find closest point on polyline to bus
+                let minDist = Infinity;
+                let closestIdx = 0;
+                for (let i = 0; i < polyPoints.length; i++) {
+                    const d = Math.pow(polyPoints[i].lat - loc.lat, 2) + Math.pow(polyPoints[i].lng - loc.long, 2);
+                    if (d < minDist) {
+                        minDist = d;
+                        closestIdx = i;
+                    }
+                }
+                // Get next point (wrap if at end)
+                const nextIdx = (closestIdx + 1) % polyPoints.length;
+                const pt1 = polyPoints[closestIdx];
+                const pt2 = polyPoints[nextIdx];
+                // Calculate bearing
+                const toRad = deg => deg * Math.PI / 180;
+                const toDeg = rad => rad * 180 / Math.PI;
+                const dLon = toRad(pt2.lng - pt1.lng);
+                const y = Math.sin(dLon) * Math.cos(toRad(pt2.lat));
+                const x = Math.cos(toRad(pt1.lat)) * Math.sin(toRad(pt2.lat)) - Math.sin(toRad(pt1.lat)) * Math.cos(toRad(pt2.lat)) * Math.cos(dLon);
+                let bearing = Math.atan2(y, x);
+                bearing = (toDeg(bearing) + 360) % 360;
+                newRotation = bearing + 45;
+
+                console.log(newRotation)
+
+            } else {
+                newRotation = busData[busId].rotation + 45;
+            }
             const iconElement = marker.getElement().querySelector('.bus-icon-outer');
             if (iconElement) {
-                iconElement.style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
+                iconElement.style.transform = `rotate(${newRotation}deg)`;
             }
         }
         
