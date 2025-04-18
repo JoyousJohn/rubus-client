@@ -287,7 +287,7 @@ function makeOoS(busId) {
     }
 
     populateMeClosestStops();
-    // populateFavs(); Do I need this?
+    populateFavs(); // Do I need this? <-- yes you do
 
 }
 

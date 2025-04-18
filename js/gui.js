@@ -1469,16 +1469,6 @@ function populateMeClosestStops() {
         
         const stopNameDiv = $(`<div class="name pointer">${stopsData[stopId].name}</div>`).click(() => { flyToStop(stopId)})
         const stopDistDiv = $(`<div class="dist bold pointer">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>`).click(() => { flyToStop(stopId)}) // add meter option later
-            
-        if (count === 3) {
-            const $showAllStops = $(`<div class="center m-1rem text-1p3rem pointer" style="grid-column: span 2; color: var(--theme-color)">▼ Show All Stops</div>`)
-            .click(function() {
-                $('.closest-stops-list > div').slideDown();
-                $(this).hide();
-            })
-
-            $('.closest-stops-list').append($showAllStops);
-        }
 
         if (count >= 3) {
             stopNameDiv.hide();
@@ -1511,6 +1501,23 @@ function populateMeClosestStops() {
 
         count++;
     }
+
+    const $showAllStops = $(`<div class="center m-1rem text-1p3rem pointer" style="grid-column: span 2; color: var(--theme-color)">▼ Show All Stops</div>`)
+    .click(function() {
+        const $allDivs = $('.closest-stops-list > div:not(:last-child)');
+        const $hiddenDivs = $allDivs.filter(':hidden');
+        
+        if ($hiddenDivs.length > 0) {
+            $allDivs.slideDown();
+            $(this).text('▲ Hide Extra Stops');
+        } else {
+            $allDivs.slice(9).slideUp();
+            $(this).text('▼ Show Closest Stops');
+        }
+    })
+
+    $('.closest-stops-list').append($showAllStops);
+
 }
 
 
