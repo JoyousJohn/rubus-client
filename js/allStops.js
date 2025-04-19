@@ -41,10 +41,15 @@ function populateAllStops() {
 
                 campusHasBuses = true;
 
-                const $stopsElm = $(`<div>
+                const $stopsElm = $(`<div class="pointer incoming-wrapper">
                     <div class="text-1p3rem center mb-0p5rem">${stopsData[stopId].name}</div>
                     <div class="incoming-list grid gap-y-0p5rem align-center" style="grid-template-columns: auto 1fr;"></div>
-                </div>`);
+                </div>`)
+                .click(function() {
+                    flyToStop(stopId);
+                    $('.all-stops-wrapper, .all-stops-close').hide();
+                    $('.bottom').show();
+                });
 
                 $allStopsGridElm.append($stopsElm);
 

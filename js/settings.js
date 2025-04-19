@@ -246,6 +246,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-rotation-points':
+            settings['toggle-show-rotation-points'] = isChecked;
+            for (const busId in busRotationPoints) {
+                ['pt1', 'pt2', 'line'].forEach(val => {
+                    busRotationPoints[busId][val].setStyle({'opacity': isChecked ? 1 : 0})
+                })
+            }
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;

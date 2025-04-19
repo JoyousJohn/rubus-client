@@ -1062,6 +1062,7 @@ const toggleSettings = [
     'toggle-show-knight-mover',
     'toggle-polyline-padding',
     'toggle-show-invalid-etas',
+    'toggle-show-rotation-points',
 ]
 
 let defaultSettings = {
@@ -1094,6 +1095,7 @@ let defaultSettings = {
     'toggle-show-knight-mover': false,
     'toggle-polyline-padding': false,
     'toggle-show-invalid-etas': false,
+    'toggle-show-rotation-points': false,
 
     'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
 

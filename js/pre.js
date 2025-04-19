@@ -469,7 +469,7 @@ async function fetchWhere() {
         }
         const data = await response.json();
         const busLocations = data;
-        console.log('Bus locations fetched:', busLocations);
+        // console.log('Bus locations fetched:', busLocations);
 
         const validBusIds = []
         for (const busId in busLocations) {
@@ -517,8 +517,6 @@ async function startOvernight() {
 
     } else {
         const data = await response.json();
-
-        console.log(data)
 
         if (Object.keys(data).length) {
             wsClient.connect()

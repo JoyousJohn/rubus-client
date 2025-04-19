@@ -37,7 +37,7 @@ function openRUBusSocket() {
     }
 
     socket.addEventListener("open", (event) => {
-        console.log("Passio WebSocket connection opened");
+        // console.log("Passio WebSocket connection opened");
     });
 
     function processEventData(eventData) {
@@ -140,6 +140,14 @@ function openRUBusSocket() {
                 `)
                 $('.bus-log').append($busLogElm);
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+
+                if (busRotationPoints[busId]) {
+                    ['px1', 'px2', 'line'].forEach(val => {
+                        busRotationPoints[busId][val].remove();
+                    })
+                    delete busRotationPoints[busId];
+                }
+                
             }
 
             updateTimeToStops([busId]) // updates bus's etas to all stops
@@ -156,9 +164,6 @@ function openRUBusSocket() {
 
         // Initial connection, recall from visibilityChange
         else {
-
-            console.log(eventData)
-
             for (let busId in eventData) {
                 
                 // console.log(parseInt('13209') in busData.keys())
@@ -197,7 +202,7 @@ function openRUBusSocket() {
     });
 
     socket.addEventListener("close", (event) => {
-        console.log("Passio WebSocket connection closed:", event);
+        // console.log("Passio WebSocket connection closed:", event);
     });
 
     socket.addEventListener("error", (event) => {

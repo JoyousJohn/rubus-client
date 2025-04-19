@@ -573,23 +573,94 @@ async function calculateSpeed(busId) {
 
 }
 
+let busRotationPoints = {}
+
 const calculateRotation = (busId, loc) => {
     let newRotation;
     if (!pauseRotationUpdating) {
         if (busData[busId].at_stop && polylines[busData[busId].route]) {
+
             const polyPoints = polylines[busData[busId].route].getLatLngs();
             let minDist = Infinity;
             let closestIdx = 0;
-            for (let i = 0; i < polyPoints.length; i++) {
-                const d = Math.pow(polyPoints[i].lat - loc.lat, 2) + Math.pow(polyPoints[i].lng - loc.long, 2);
-                if (d < minDist) {
-                    minDist = d;
+            let closestPoint = null;
+
+            // Check each segment of the polyline
+            for (let i = 0; i < polyPoints.length - 1; i++) {
+                const start = polyPoints[i];
+                const end = polyPoints[i + 1];
+                
+                // Calculate the projection of the bus location onto the segment
+                const x1 = start.lng - loc.long;
+                const y1 = start.lat - loc.lat;
+                const x2 = end.lng - loc.long;
+                const y2 = end.lat - loc.lat;
+                
+                const dot = x1 * x2 + y1 * y2;
+                const lenSq = x2 * x2 + y2 * y2;
+                const param = dot / lenSq;
+                
+                let xx, yy;
+                if (param < 0) {
+                    xx = start.lng;
+                    yy = start.lat;
+                } else if (param > 1) {
+                    xx = end.lng;
+                    yy = end.lat;
+                } else {
+                    xx = start.lng + param * x2;
+                    yy = start.lat + param * y2;
+                }
+                
+                // Calculate distance to the closest point on this segment
+                const dx = loc.long - xx;
+                const dy = loc.lat - yy;
+                const dist = dx * dx + dy * dy;
+                
+                if (dist < minDist) {
+                    minDist = dist;
                     closestIdx = i;
+                    closestPoint = L.latLng(yy, xx);
                 }
             }
+
             const nextIdx = (closestIdx + 1) % polyPoints.length;
-            const pt1 = polyPoints[closestIdx];
+            const pt1 = closestPoint || polyPoints[closestIdx];
             const pt2 = polyPoints[nextIdx];
+        
+            if (busRotationPoints[busId]) {
+                Object.entries(busRotationPoints[busId]).forEach(([key, value]) => {
+                    value.remove();
+                })
+            }
+            busRotationPoints[busId] = {}
+            
+            // Add markers for the points
+            busRotationPoints[busId]['pt1'] = L.circleMarker(pt1, {
+                radius: 6,
+                fillColor: "red",
+                color: "#000",
+                weight: 0,
+                opacity: 1,
+                fillOpacity: settings['toggle-show-rotation-points'] ? 1 : 0
+            }).addTo(map);
+            
+            busRotationPoints[busId]['pt2'] = L.circleMarker(pt2, {
+                radius: 6,
+                fillColor: "blue",
+                color: "#000",
+                weight: 0,
+                opacity: 1,
+                fillOpacity: settings['toggle-show-rotation-points'] ? 1 : 0
+            }).addTo(map);
+
+            // Add green line between the points
+            busRotationPoints[busId]['line'] = L.polyline([pt1, pt2], {
+                color: 'green',
+                weight: 3,
+                opacity: settings['toggle-show-rotation-points'] ? 1 : 0
+            }).addTo(map);
+
             const toRad = deg => deg * Math.PI / 180;
             const toDeg = rad => rad * 180 / Math.PI;
             const dLon = toRad(pt2.lng - pt1.lng);
@@ -864,8 +935,6 @@ function plotBus(busId, immediatelyUpdate) {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[busData[busId].route];
     
-        console.log(busData[busId].route)
-
         if ((shownRoute && shownRoute !== busData[busId].route) || (settings['toggle-hide-other-routes'] && popupBusId && busData[popupBusId].route !== busData[busId].route) || popupBusId) {
             busMarkers[busId].getElement().style.display = '';
         }
@@ -873,7 +942,7 @@ function plotBus(busId, immediatelyUpdate) {
         busMarkers[busId].on('click', function() {
             sourceStopId = null;
             sourceBusId = null;
-            selectBusMarker(busId)
+            selectBusMarker(busId);
         });
 
     } else if (!pauseUpdateMarkerPositions) {

@@ -23,3 +23,11 @@
     right: 3rem;
     bottom: 2rem;
 }
+
+.incoming-wrapper {
+    transition: 200ms;
+}
+
+.incoming-wrapper:hover {
+    background-color: rgb(95, 95, 192);
+}
