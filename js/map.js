@@ -118,7 +118,7 @@ $(document).ready(function() {
             $('.favs').show();
 
             if (savedCenter) {
-                map.flyTo(savedCenter, savedZoom, {'animate': true, 'duration': 0.2});
+                map.flyTo(savedCenter, savedZoom, {'animate': true, 'duration': 0.08});
                 savedCenter = null;
                 savedZoom = null;
                 returningToSavedView = true;
@@ -329,6 +329,12 @@ function panout() {
 
     if (polylineBounds) {
         map.fitBounds(polylineBounds);
+        showAllBuses();
+        showAllPolylines();
+        $('[stop-eta]').text('').hide();
+        savedCenter = null;
+        savedView = null;
+        returningToSavedView = false; // not sure if I need this, this will be so hard to trigger within 80ms. drag and then panout...
     } else { // no buses running, show all of nb
         map.fitBounds(bounds);
     }
@@ -342,7 +348,6 @@ function panout() {
     if (shownRoute) {
         updateTooltips(shownRoute);
     }
-
 
 }
 
