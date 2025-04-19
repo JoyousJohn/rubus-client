@@ -1363,6 +1363,13 @@ function distanceFromLine(busId) {
     return (distanceMiles > 200)
 }
 
+function isInvalid(busId) {
+    stopLists[busData[busId].route].forEach(stopId => {
+        if (busETAs[busId][stopId] < 0) return false;
+    })
+    return true;
+}
+
 function expandBounds(origBounds, factor) {
     const currentSouthWest = origBounds.getSouthWest();
     const currentNorthEast = origBounds.getNorthEast();
