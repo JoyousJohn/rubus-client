@@ -583,7 +583,7 @@ const calculateRotation = (busId, loc) => {
             let polyPoints = polylines[busData[busId].route].getLatLngs();
 
             let currentStopId = busData[busId].stopId[0]; // if at stop .stopId should be an array o the 2 stops
-            if (currentStopId === 13) { // LSC
+            if (currentStopId === 13 || currentStopId === 6) { // LSC, hill NB
                 polyPoints = polyPoints.reverse()
             }
 

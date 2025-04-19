@@ -413,7 +413,7 @@ function selectedRoute(route) {
 
     if (!panelRoute) {
         $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight())
-        $('.panout, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks').fadeOut('fast');
+        $('.panout, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops').fadeOut('fast');
         $('.settings-btn').hide();
         $('.route-panel').slideDown('fast');
 

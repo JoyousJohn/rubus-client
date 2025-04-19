@@ -765,7 +765,8 @@ html, body {
     margin-top: 2rem;
     padding: 1rem;
     overflow-y: scroll;
-    margin-bottom: 15rem;
+    margin-bottom: 8rem;
+    padding-bottom: 18rem;
 }
 
 .route-stop-name {
@@ -1043,7 +1044,7 @@ html, body {
     margin-left: 0.5rem;
     margin-bottom: 0.2rem;
     color: gray;
-    user-select: none;
+    /* user-select: none; */
 }
 
 .settings-options {
@@ -1052,6 +1053,7 @@ html, body {
     font-size: 1.8rem;
     background-color: white;
     /* text-align: center; */
+    user-select: none;
 }
 
 .settings-option {
