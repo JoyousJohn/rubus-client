@@ -135,6 +135,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     updateTimeToStops([busId]); // otherwise can briefly get undefined when reading ETA for this bus. Found this when selecting route selector and I think the tooltip code failed to read (gui line 295 at the time)
                 }
 
+                busData[busId].busName = bus.busName;
                 populateFavs();
 
                 isNew = true;
@@ -151,7 +152,6 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 }
             }
 
-            busData[busId].busName = bus.busName;
             busData[busId].lat = bus.latitude;
             busData[busId].long = bus.longitude;
 
