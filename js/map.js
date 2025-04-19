@@ -1359,10 +1359,11 @@ function distanceFromLine(busId) {
     return (distanceMiles > 200)
 }
 
-function isInvalid(busId) {
+function isValid(busId) {
     stopLists[busData[busId].route].forEach(stopId => {
         if (busETAs[busId][stopId] < 0) return false;
     })
+
     return true;
 }
 

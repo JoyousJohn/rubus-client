@@ -186,8 +186,8 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         if (aDepot && !bDepot) return 1;
         if (!aDepot && bDepot) return -1;
 
-        const aInvalid = isInvalid(busIdA);
-        const bInvalid = isInvalid(busIdB);
+        const aInvalid = !isValid(busIdA);
+        const bInvalid = !isValid(busIdB);
         if (aInvalid && !bInvalid) return 1;
         if (!aInvalid && bInvalid) return -1;
 
@@ -249,7 +249,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         } else if (!busData[busId].atDepot) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${(data.eta)}m</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
-        } else if (busData[busId].atDepot || distanceFromLine(busId) || isInvalid(busId)) {
+        } else if (busData[busId].atDepot || distanceFromLine(busId) || !isValid(busId)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Xm</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
         }
@@ -306,7 +306,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         });
 
 
-        if (!busData[busId].overtime && !busData[busId].oos && !busData[busId].atDepot && !isInvalid(busId)) {
+        if (!busData[busId].overtime && !busData[busId].oos && !busData[busId].atDepot && isValid(busId)) {
 
             $('.stop-info-buses-grid-next').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`));
 
