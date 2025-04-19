@@ -393,6 +393,8 @@ async function popStopInfo(stopId) {
 
     $('.bus-info-popup, .route-panel, .my-location-popup').hide();
 
+    // return;
+
     const stopName = stopsData[stopId].name;
     $('.info-stop-name').text(settings['toggle-show-stop-id'] ? `${stopName} (#${stopId})` : stopName);
 
@@ -407,6 +409,7 @@ async function popStopInfo(stopId) {
     }
 
     $('.stop-info-popup').stop(true, true).show();
+
     $('.stop-info-popup-inner').scrollTop(0);
 
     $('.bus-log-wrapper').hide();

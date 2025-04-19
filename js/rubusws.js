@@ -156,6 +156,9 @@ function openRUBusSocket() {
 
         // Initial connection, recall from visibilityChange
         else {
+
+            console.log(eventData)
+
             for (let busId in eventData) {
                 
                 // console.log(parseInt('13209') in busData.keys())

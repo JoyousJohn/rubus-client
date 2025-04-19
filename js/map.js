@@ -1316,6 +1316,7 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
+    $('.stop-info-popup').hide(); // nvm I changed something somewhere to make me need to hide this one too
 
     $('.bus-info-popup').stop(true, true).show();
 
