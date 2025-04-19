@@ -474,7 +474,14 @@ async function fetchWhere() {
         const validBusIds = []
         for (const busId in busLocations) {
 
-            if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
+            // if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
+            
+            if (!busData[busId]) {
+                busData[busId] = {
+                    'route': busLocations[busId]['route'],
+                }
+            }
+            
             if (!busLocations[busId]['where']) { continue; } // joined service and didn't get to a stop polygon yet        
             
             busData[busId]['stopId'] = parseInt(busLocations[busId]['where'][0])
@@ -483,6 +490,7 @@ async function fetchWhere() {
             }
 
             validBusIds.push(busId)
+            activeRoutes.add(busData[busId].route)
         }
 
         updateTimeToStops(validBusIds)
@@ -510,6 +518,8 @@ async function startOvernight() {
     } else {
         const data = await response.json();
 
+        console.log(data)
+
         if (Object.keys(data).length) {
             wsClient.connect()
             
@@ -521,9 +531,9 @@ async function startOvernight() {
                     continue
                 }
     
-                const busId = bus.bus_id
+                const busId = bus.busId
     
-                if (!(busId in busData)) {
+                if (!busData[busId]) {
                     busData[busId] = {}
                     busData[busId].previousTime = new Date().getTime() - 5000;
                     busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]]
@@ -531,7 +541,7 @@ async function startOvernight() {
     
                 busData[busId].busName = bus.name
                 busData[busId].lat = bus.lat
-                busData[busId].long = bus.lng
+                busData[busId].long = bus.long
     
                 busData[busId].rotation = parseFloat(bus.rotation)
     
@@ -545,9 +555,12 @@ async function startOvernight() {
                 plotBus(busId)
                 calculateSpeed(busId)
     
-                makeBusesByRoutes()
-    
             }
+
+            makeBusesByRoutes()
+
+            populateRouteSelectors(activeRoutes);
+            setPolylines(activeRoutes);
 
             // console.log(activeRoutes)
             // console.log(polylines)
@@ -706,6 +719,8 @@ $(document).ready(async function() {
     }
 
     await fetchJoinTimes();
+
+    await startOvernight()
 
     await fetchBusData(false, true);
 

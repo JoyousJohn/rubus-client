@@ -68,16 +68,21 @@ class BusWebSocketClient {
                 busData[busId].route = 'none'
             } else {
 
-                let alphaRouteId = bus.routeId.replace(/[^a-zA-Z]/g, '')
+                if (data.route === 'ONWK1FS') {
+                    busData[busId].route = 'on1';
+                } else if (data.route === 'ONWK2FS') {
+                    busData[busId].route = 'on2';
+                } else {
+                    let alphaRouteId = data.routeId.replace(/[^a-zA-Z]/g, '')
 
-                if (alphaRouteId in routeMapping) {
-                    busData[busId].route = routeMapping[alphaRouteId]
-                }  else {
-                    busData[busId].route = data.route
-                }
+                    if (alphaRouteId in routeMapping) {
+                        busData[busId].route = routeMapping[alphaRouteId]
+                    }  else {
+                        busData[busId].route = data.route
+                    }
+                } 
             }
         }
-
 
         busData[busId].lat = data.latitude
         busData[busId].long = data.longitude

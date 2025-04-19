@@ -864,6 +864,8 @@ function plotBus(busId, immediatelyUpdate) {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[busData[busId].route];
     
+        console.log(busData[busId].route)
+
         if ((shownRoute && shownRoute !== busData[busId].route) || (settings['toggle-hide-other-routes'] && popupBusId && busData[popupBusId].route !== busData[busId].route) || popupBusId) {
             busMarkers[busId].getElement().style.display = '';
         }

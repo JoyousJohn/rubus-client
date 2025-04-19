@@ -320,10 +320,6 @@ $(document).ready(function() {
                     $(`[stop-eta="${$(this).attr('data-stop-id')}"]`).text(ETAText);
 
                 });
-
-
-
-
             }
 
             if ($('.all-stops-inner').is(':visible')) {
