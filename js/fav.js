@@ -51,6 +51,7 @@ $('.bus-star').click(function() {
                 // toggleRouteSelectors(previousShownRoute);
             } else {
                 populateRouteSelectors(activeRoutes);
+                showAllPolylines();
             }
         } else {
             favsShown = false;
