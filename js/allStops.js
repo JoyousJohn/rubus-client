@@ -75,9 +75,15 @@ function populateAllStops() {
                         }
                     
                         //                            <div class="text-1p4rem">${busData[busId].busName}</div>
-                        $stopsElm.find('.incoming-list').append(`
-                                <div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busId].route]}; padding: 0.2rem 1rem;">${busData[busId].route.toUpperCase()}</div>
-                            `)
+                        $stopsElm.find('.incoming-list').append(
+                            $(`<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busId].route]}; padding: 0.2rem 1rem;">${busData[busId].route.toUpperCase()}</div>`)
+                            .click(function() {
+                                flyToStop(stopId);
+                                toggleRoute(route);
+                                $('.all-stops-wrapper, .all-stops-close').hide();
+                                $('.bottom').show();
+                            })
+                        )
                         $stopsElm.find('.incoming-list').append(`<div class="text-1p6rem bold right">${eta}</div>`)
                     
                     }
