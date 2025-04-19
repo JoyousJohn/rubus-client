@@ -210,6 +210,7 @@ function toggleRouteSelectors(route) {
         shownBeforeRoute = null;
 
         $(`.route-selector[routeName="fav"]`).css('background-color', 'gold');
+
     }
 
     else {
@@ -319,7 +320,7 @@ function toggleRoute(route) {
         showAllStops();
         
         if (!popupStopId) {
-            map.fitBounds(bounds) 
+            map.fitBounds(polylineBounds) 
         }
         else {
             updateStopBuses(popupStopId);
