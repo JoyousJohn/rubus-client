@@ -301,8 +301,10 @@ function updateTooltips(route) {
             }
         })
 
-        const lowestETAMin = Math.ceil(lowestETA/60)
-        $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
+        if (lowestBusId) {
+            const lowestETAMin = Math.ceil(lowestETA/60)
+            $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
+        }
     })
 }
 
