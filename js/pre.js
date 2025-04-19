@@ -70,6 +70,7 @@ function getRouteStr(route) {
     }     
 }
 
+
 async function fetchBusData(immediatelyUpdate, isInitial) {
 
     const formData = '{"s0":"1268","sA":1}';
@@ -123,6 +124,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]];
                 populateMeClosestStops();
                 busData[busId].route = routeStr;
+                busData[busId]['type'] = 'api';
 
                 if (joined_service[busId]) {
                     busData[busId].joined_service = joined_service[busId];
@@ -147,7 +149,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     makeActiveRoutes();
                     // if (!polylines[routeStr]) {
                     //     setPolylines([routeStr]);
-                    // } // do i not need his bc new route will be caght in setpolylines below?
+                    // } // do i not need his bc new route will be caght in setpolylines below? // maybe i do need this...
                     populateFavs();
                 }
             }
@@ -155,7 +157,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             busData[busId].lat = bus.latitude;
             busData[busId].long = bus.longitude;
 
-            const lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1];
+            // getting undefined on previousPositions, but it should be set from both above in pre where new bus and in ws where new bus, so I added a type key to debug this.
+            // maybe limit ws to on/none? maybe getting long lat when setting it there is failing? don't think I've ever seen it without coords
+            console.log(busId)
+            const lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]; // gett
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
                 busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
             }
@@ -177,6 +182,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 busMarkers[busId].getElement().style.display = 'none';
             }
 
+            makeBusesByRoutes(); // this has to go before updateTimeToStops since that calls populateAllStops which uses this. Not sure if moving this back up here broke something else though. Should find a better way to do the thing below.
+
             // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
             if (Object.keys(etas).length > 0) {
                 updateTimeToStops([busId]);
@@ -187,14 +194,13 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             // console.log(pollActiveRoutes)
             const newRoutes = pollActiveRoutes.difference(activeRoutes);
             if (newRoutes.size > 0) {
-                // console.log('newRoutes: ', newRoutes)
-                // console.log(activeRoutes)
+                console.log('newRoutes: ', newRoutes)
+                console.log('newRoutes: ' , activeRoutes)
                 setPolylines(newRoutes);
                 newRoutes.forEach(item => activeRoutes.add(item))
                 populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all
             }
 
-            makeBusesByRoutes();
             
             if (busId === popupBusId) {
                 $('.info-capacity').text(bus.paxLoad + '% capacity');
@@ -261,7 +267,7 @@ function makeOoS(busId) {
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
         if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polelines, have to ensure code works flawlessly!
-            polylines[route].setStyle({ opacity: 0 });
+            polylines[route].remove();
         }
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
@@ -281,9 +287,9 @@ function makeOoS(busId) {
 
     if (popupBusId === busId) {
         console.log("Selected bus went OOS")
-        print(popupBusId)
-        print(busId)
-        print(sourceBusId)
+        console.log(popupBusId)
+        pconsole.logrint(busId)
+        console.log(sourceBusId)
         hideInfoBoxes();
         sourceBusId = null;
     }
@@ -492,6 +498,15 @@ async function fetchWhere() {
             validBusIds.push(busId)
             activeRoutes.add(busData[busId].route)
         }
+
+        console.log(validBusIds)
+        Object.keys(busData).forEach(busId => {
+            console.log(busId)
+            if (!validBusIds.includes(busId)) {
+                makeOoS(busId)
+                // console.log(' no more ', busId)
+            }
+        })
 
         updateTimeToStops(validBusIds)
         if (popupStopId) {

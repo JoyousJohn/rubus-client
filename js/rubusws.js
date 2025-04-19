@@ -42,6 +42,8 @@ function openRUBusSocket() {
 
     function processEventData(eventData) {
 
+        print(eventData)
+
         if ('event' in eventData) {
 
             if (eventData['event'] === 'eta_update') {
@@ -143,7 +145,9 @@ function openRUBusSocket() {
 
                 if (busRotationPoints[busId]) {
                     ['px1', 'px2', 'line'].forEach(val => {
-                        busRotationPoints[busId][val].remove();
+                        if (busRotationPoints[busId][val]) { // not sure why this check is necessary... something with buses going in/out of service removing the point but not the var reference? how is this possible?
+                            busRotationPoints[busId][val].remove();
+                        }
                     })
                     delete busRotationPoints[busId];
                 }

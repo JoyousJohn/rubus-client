@@ -63,6 +63,7 @@ class BusWebSocketClient {
             busData[busId].busName = data.bus
             busData[busId].previousTime = new Date().getTime() - 5000;
             busData[busId].previousPositions = [[parseFloat(data.latitude), parseFloat(data.longitude)]];
+            busData[busId].type = 'ws'
 
             if (!('route' in data)) { // sometimes none...
                 busData[busId].route = 'none'
@@ -73,13 +74,14 @@ class BusWebSocketClient {
                 } else if (data.route === 'ONWK2FS') {
                     busData[busId].route = 'on2';
                 } else {
-                    let alphaRouteId = data.routeId.replace(/[^a-zA-Z]/g, '')
+                    return; // just don't deal with normal buses since these should show up inapi, hope this fixes everything
+                    // let alphaRouteId = data.routeId.replace(/[^a-zA-Z]/g, '')
 
-                    if (alphaRouteId in routeMapping) {
-                        busData[busId].route = routeMapping[alphaRouteId]
-                    }  else {
-                        busData[busId].route = data.route
-                    }
+                    // if (alphaRouteId in routeMapping) {
+                    //     busData[busId].route = routeMapping[alphaRouteId]
+                    // }  else {
+                    //     busData[busId].route = data.route
+                    // }
                 } 
             }
         }

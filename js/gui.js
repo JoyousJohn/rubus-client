@@ -346,6 +346,7 @@ function toggleRoute(route) {
 
         hideStopsExcept(route);
 
+        console.log(route)
         polylines[route].setStyle({ opacity: 1 }); // show this one if it was prev hidden
 
         if (!popupStopId) {
