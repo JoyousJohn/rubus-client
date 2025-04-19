@@ -13,7 +13,6 @@ function getSoonestBus(stopId, route) {
     let lowestBusId;
 
     busesByRoutes[route].forEach(busId => {
-        console.log(busId)
         if (busETAs[busId]) {
             const eta = busETAs[busId][stopId]
             if (eta < lowestETA) {
@@ -26,9 +25,6 @@ function getSoonestBus(stopId, route) {
 }
 
 function populateAllStops() {
-    
-    console.log(activeStops)
-    console.log()
 
     $('.all-stops-inner').empty();
 
@@ -56,7 +52,6 @@ function populateAllStops() {
 
                 servicingRoutes.forEach(route => {
                     [busId, eta] = getSoonestBus(stopId, route);
-                    console.log(busId);
                     if (eta >= 60) {
                         const minutes = Math.floor(eta / 60);
                         if (settings['toggle-show-etas-in-seconds']) {
