@@ -70,9 +70,6 @@ function populateAllStops() {
                         }
                     
                         //                            <div class="text-1p4rem">${busData[busId].busName}</div>
-
-                        console.log(busData)
-                        console.log(busId)
                         $stopsElm.find('.incoming-list').append(`
                                 <div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busId].route]}; padding: 0.2rem 1rem;">${busData[busId].route.toUpperCase()}</div>
                             `)

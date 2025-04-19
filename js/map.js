@@ -1182,9 +1182,11 @@ function popInfo(busId, resetCampusFontSize) {
                     hour12: true
                 });
 
-                let minutes = Math.floor(eta / 60);
+                let hours = Math.floor(eta / 3600);
+                let minutes = Math.floor((eta % 3600) / 60);
                 let seconds = eta % 60;
-                eta = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                eta = hours > 0 ? `${hours}h ${minutes}m ${seconds}s` : 
+                      minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
             } else if (showETAsInSeconds && eta >= 600) {
                 currentTime.setMinutes(currentTime.getMinutes() + Math.floor(eta / 60));
@@ -1194,8 +1196,9 @@ function popInfo(busId, resetCampusFontSize) {
                     hour12: true
                 });
 
-                let minutes = Math.floor(eta / 60);
-                eta = `${minutes}m`;
+                let hours = Math.floor(eta / 3600);
+                let minutes = Math.floor((eta % 3600) / 60);
+                eta = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
             } else {
                 currentTime.setMinutes(currentTime.getMinutes() + eta);
