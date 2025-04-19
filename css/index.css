@@ -30,7 +30,7 @@
 
 body {
     margin: 0;
-    height: 100vh;
+    height: 100dvh; /* cool unit */
     background-color: var(--theme-bg);
 }
 
