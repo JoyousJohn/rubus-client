@@ -159,7 +159,6 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             // getting undefined on previousPositions, but it should be set from both above in pre where new bus and in ws where new bus, so I added a type key to debug this.
             // maybe limit ws to on/none? maybe getting long lat when setting it there is failing? don't think I've ever seen it without coords
-            console.log(busId)
             const lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]; // gett
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
                 busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
@@ -194,8 +193,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             // console.log(pollActiveRoutes)
             const newRoutes = pollActiveRoutes.difference(activeRoutes);
             if (newRoutes.size > 0) {
-                console.log('newRoutes: ', newRoutes)
-                console.log('newRoutes: ' , activeRoutes)
+                // console.log('newRoutes: ', newRoutes)
+                // console.log('newRoutes: ' , activeRoutes)
                 setPolylines(newRoutes);
                 newRoutes.forEach(item => activeRoutes.add(item))
                 populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all

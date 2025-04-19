@@ -42,8 +42,6 @@ function openRUBusSocket() {
 
     function processEventData(eventData) {
 
-        print(eventData)
-
         if ('event' in eventData) {
 
             if (eventData['event'] === 'eta_update') {

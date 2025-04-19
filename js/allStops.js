@@ -14,9 +14,6 @@ function getSoonestBus(stopId, route) {
 
     busesByRoutes[route].forEach(busId => {
 
-        // console.log(busId)
-        // console.log(route)
-
         if (busETAs[busId]) {
             const eta = busETAs[busId][stopId]
 
