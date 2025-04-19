@@ -1591,6 +1591,8 @@ function selectTheme(theme) {
             activeTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
 
+        $(`[theme-option="${selectedTheme}"]`).addClass('settings-selected');
+
         // Update the global attributes on confirm
         document.documentElement.setAttribute('data-selected-theme', selectedTheme);
         document.documentElement.setAttribute('theme', activeTheme);
