@@ -49,7 +49,7 @@ function populateAllStops() {
                 </div>`)
                 .click(function() {
                     flyToStop(stopId);
-                    $('.all-stops-wrapper, .all-stops-close').hide();
+                    $('.all-stops-wrapper').hide();
                     $('.bottom').show();
                 });
 
@@ -82,7 +82,7 @@ function populateAllStops() {
                             .click(function() {
                                 flyToStop(stopId);
                                 toggleRoute(route);
-                                $('.all-stops-wrapper, .all-stops-close').hide();
+                                $('.all-stops-wrapper').hide();
                                 $('.bottom').show();
                             })
                         )

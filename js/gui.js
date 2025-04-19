@@ -427,6 +427,9 @@ function selectedRoute(route) {
 
     $('.route-stops-grid').empty();
 
+    let firstCircle;
+    let lastCircle;
+
     let previousStopId = null;
     stopLists[route].forEach((stopId, index) => {
 
@@ -435,6 +438,11 @@ function selectedRoute(route) {
             <div class="route-stop-name">${stopsData[stopId].name}</div>
             <div class="route-buses-for-stop"></div>
         </div>`)
+
+        if (!firstCircle) {
+            firstCircle = $('.route-stops-grid .next-stop-circle').last();
+            firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[route]}"></div>`)
+        }
 
         let i = 0;
 
@@ -562,6 +570,17 @@ function selectedRoute(route) {
     });
 
     $('.route-stops-grid .next-stop-circle').css('background-color', colorMappings[route])
+
+    lastCircle = $('.route-stops-grid .next-stop-circle').last();
+
+    setTimeout(() => {
+        const firstRect = firstCircle[0].getBoundingClientRect();
+        const lastRect = lastCircle[0].getBoundingClientRect();
+        const heightDiff = Math.abs(lastRect.top - firstRect.top);
+        console.log(heightDiff)
+        firstCircle.addClass('connecting-line');
+        firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
+    }, 0);
 
     panelRoute = route
 

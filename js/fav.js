@@ -90,7 +90,7 @@ $('.bus-star').click(function() {
                 busStopMarkers[stopId].addTo(map);
             }
 
-            map.fitBounds(bounds);
+            map.fitBounds(polylineBounds);
             $('.favs').show();
             $('.bus-info-popup').hide();
             busMarkers[popupBusId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';

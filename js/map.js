@@ -580,7 +580,13 @@ const calculateRotation = (busId, loc) => {
     if (!pauseRotationUpdating) {
         if (busData[busId].at_stop && polylines[busData[busId].route]) {
 
-            const polyPoints = polylines[busData[busId].route].getLatLngs();
+            let polyPoints = polylines[busData[busId].route].getLatLngs();
+
+            let currentStopId = busData[busId].stopId[0]; // if at stop .stopId should be an array o the 2 stops
+            if (currentStopId === 13) { // LSC
+                polyPoints = polyPoints.reverse()
+            }
+
             let minDist = Infinity;
             let closestIdx = 0;
             let closestPoint = null;
@@ -629,8 +635,8 @@ const calculateRotation = (busId, loc) => {
             const pt2 = polyPoints[nextIdx];
         
             if (busRotationPoints[busId]) {
-                Object.entries(busRotationPoints[busId]).forEach(([key, value]) => {
-                    value.remove();
+                ['pt1', 'pt2', 'line'].forEach(val => {
+                    busRotationPoints[busId][val].remove();
                 })
             }
             busRotationPoints[busId] = {}
@@ -669,7 +675,7 @@ const calculateRotation = (busId, loc) => {
             let bearing = Math.atan2(y, x);
             bearing = (toDeg(bearing) + 360) % 360;
             newRotation = bearing + 45;
-            console.log(`New rotation for bus: ${busData[busId].busName}: ${newRotation}`)
+            // console.log(`New rotation for bus: ${busData[busId].busName}: ${newRotation}`)
         } else {
             newRotation = busData[busId].rotation + 45;
         }
@@ -1225,7 +1231,7 @@ function popInfo(busId, resetCampusFontSize) {
             if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1') && sortedStops[i] === 3) { // special case
                 if (busData[busId]['stopId'] && !busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
                     delete busETAs[busId];
-                    console.log("I'm amazed this actually happened, wow");
+                    console.log("I'm amazed this actually happened, wow"); // encountered this 4/19/2025 six:38 pm at livi dining
                     return;
                 }
                 const prevStopId = i === 0 ? sortedStops[sortedStops.length - 1] : sortedStops[i-1]
@@ -1267,7 +1273,7 @@ function popInfo(busId, resetCampusFontSize) {
 
                 let hours = Math.floor(eta / 3600);
                 let minutes = Math.floor((eta % 3600) / 60);
-                eta = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                eta = hours > 0 ? (minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`) : `${minutes}m`;
 
             } else {
                 currentTime.setMinutes(currentTime.getMinutes() + eta);

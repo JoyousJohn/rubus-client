@@ -247,6 +247,9 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
 
 function makeOoS(busId) {
+
+    console.log(`[Out of Service] busId: ${busId}`)
+
     if (busMarkers[busId]) { // investigate why this would occur
         busMarkers[busId].remove();
     }
@@ -500,8 +503,7 @@ async function fetchWhere() {
 
         console.log(validBusIds)
         Object.keys(busData).forEach(busId => {
-            console.log(busId)
-            if (!validBusIds.includes(busId)) {
+            if (!validBusIds.includes(busId) && busData[busId].route.includes('on')) { // this should only afet returning to the app which had overnight buses previously (from ws), otherwise it would briefly cause buses not yet reaching a stop to pop out before respawning from fetch data
                 makeOoS(busId)
                 // console.log(' no more ', busId)
             }
@@ -601,7 +603,7 @@ function checkMinRoutes() {
 
     if (excludeRoutes.some(route => activeRoutes.has(route))) { return; }
 
-    const minRoutes = ["ee", "lx", "h"];
+    const minRoutes = ["ee", "lx", "h", "bl"];
     if(!minRoutes.every(str => activeRoutes.has(str))) {
         $('.knight-mover-mini').css('display', 'flex');
     } else if (settings['toggle-show-knight-mover']) {
@@ -732,7 +734,7 @@ $(document).ready(async function() {
 
     await fetchJoinTimes();
 
-    await startOvernight()
+    await startOvernight();
 
     await fetchBusData(false, true);
 
