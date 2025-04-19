@@ -900,7 +900,7 @@ html, body {
     cursor: pointer;
 }
 
-.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i {
+.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .all-stops > i {
     font-size: 2rem;
 }
 
