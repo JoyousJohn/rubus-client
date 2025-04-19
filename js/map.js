@@ -328,11 +328,17 @@ function panout() {
     // }
 
     if (polylineBounds) {
-        map.fitBounds(polylineBounds);
         $('[stop-eta]').text('').hide();
         savedCenter = null;
         savedView = null;
-        returningToSavedView = false; // not sure if I need this, this will be so hard to trigger within 80ms. drag and then panout...
+        returningToSavedView = false; // not sure if I need this, this will be so hard to trigger within 88ms. drag and then panout...
+
+        if (shownRoute) {
+            map.fitBounds(routeBounds[shownRoute]);
+        } else {
+            map.fitBounds(polylineBounds);
+        }
+
     } else { // no buses running, show all of nb
         map.fitBounds(bounds);
     }

@@ -1,4 +1,5 @@
 let polylineBounds;
+let routeBounds ={};
 
 async function setPolylines(activeRoutes) {
 
@@ -60,6 +61,8 @@ async function setPolylines(activeRoutes) {
         polyline.addTo(map);
 
         polylines[routeName] = polyline;
+
+        routeBounds[routeName] = polyline.getBounds();
 
         fetchPromises.push(coordinates);
     }
