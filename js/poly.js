@@ -347,12 +347,17 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         }    
     })
 
-    const avgWait = waits[stopId];
-    const waitStr = `${Math.floor(avgWait / 60)}m ${avgWait % 60}s`;
-
-    if (!jQuery.isEmptyObject(busData)) {
-        $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`);
+    if (waits[stopId]) {
+        const avgWait = waits[stopId];
+        const waitStr = `${Math.floor(avgWait / 60)}m ${avgWait % 60}s`;
+    
+        if (!jQuery.isEmptyObject(busData)) {
+            $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`).show();
+        }
+    } else {
+        $('.stop-info-avg-wait').hide();
     }
+    
 }
 
 let sourceBusId = null;
