@@ -191,7 +191,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
     })
     .map(([busId]) => busId);
 
-    $('.stop-info-buses-grid').empty();
+    $('.stop-info-buses-grid, .stop-info-buses-grid-next').empty();
 
     // const infoNextStopsScrollPosition = $('.info-next-stops').scrollTop();
     // alert(infoNextStopsScrollPosition)
@@ -264,6 +264,81 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         }
              
     })
+    
+
+    const loopTimes = calculateLoopTimes();
+    const nextLoopServicing = JSON.parse(JSON.stringify(servicingBuses));
+
+    for (busId in servicingBuses) {
+        if (!busData[busId].oos && !busData[busId].atDepot) {
+            nextLoopServicing[busId].eta += loopTimes[servicingBuses[busId].route];
+            // nextLoopServicing[busId].isNext = true;
+        } else {
+            delete nextLoopServicing[busId];
+        }
+    }
+
+    const sortedNextLoopBusIds = Object.entries(nextLoopServicing)
+    .sort(([busIdA, a], [busIdB, b]) => {
+        const aDepot = busData[busIdA]?.atDepot;
+        const bDepot = busData[busIdB]?.atDepot;
+
+        if (aDepot && !bDepot) return 1;
+        if (!aDepot && bDepot) return -1;
+
+        return a.eta - b.eta;
+    })
+    .map(([busId]) => busId);
+
+    sortedNextLoopBusIds.forEach(busId => {
+        const data = nextLoopServicing[busId]
+
+        const currentTime = new Date();
+        currentTime.setMinutes(currentTime.getMinutes() + data.eta);
+        const formattedTime = currentTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
+
+        if (!busData[busId].overtime && !busData[busId].oos && !busData[busId].atDepot) {
+
+            $('.stop-info-buses-grid-next').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`));
+
+            const $stopBusElm = $(`<div class="flex justify-between align-center pointer">
+                <div class="flex gap-x-0p5rem">
+                    <div class="stop-bus-id">${busData[busId].busName}</div>
+                </div>
+            </div>`)
+            $('.stop-info-buses-grid-next').append($stopBusElm);
+
+            if (data.eta === 0) {
+                // $('.stop-info-buses-grid').append(`<div></div>`)
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Here</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="pointer"></div>`);
+            } else if (!busData[busId].atDepot) {
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">${(data.eta)}m</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
+            } else if (busData[busId].atDepot || distanceFromLine(busId)) {
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Xm</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
+            }
+
+            if (actuallyShownRoute && actuallyShownRoute !== data.route) {
+                $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
+                $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
+                $('.stop-info-buses-grid-next').children().slice(-4).removeClass('pointer');
+            } else {
+                $('.stop-bus-route').last().css('color', colorMappings[data.route]);
+                $('.stop-info-buses-grid-next').children().slice(-4).click(function() {
+                    sourceStopId = stopId;
+                    flyToBus(busId);
+                    $('.stop-info-popup').hide();
+                });
+            }
+        }    
+    })
 
     const avgWait = waits[stopId];
     const waitStr = `${Math.floor(avgWait / 60)}m ${avgWait % 60}s`;
@@ -314,6 +389,8 @@ async function popStopInfo(stopId) {
     const stopName = stopsData[stopId].name;
     $('.info-stop-name').text(settings['toggle-show-stop-id'] ? `${stopName} (#${stopId})` : stopName);
 
+    $('.stop-info-show-next-loop').show();
+    $('.stop-info-next-loop-wrapper').hide();
     updateStopBuses(stopId, shownRoute);
 
     if (sourceBusId && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set

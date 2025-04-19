@@ -550,7 +550,7 @@ html, body {
     border-radius: 0.5rem;
 }
 
-.stop-info-buses-grid {
+.stop-info-buses-grid, .stop-info-buses-grid-next {
     display: grid;
     grid-template-columns: auto 1fr auto auto;
     column-gap: 0.5rem;
@@ -622,7 +622,7 @@ html, body {
     color: var(--theme-stop-bus-time) /* #616161; */
 }
 
-.stop-info-avg-wait {
+.stop-info-avg-wait, .stop-info-show-next-loop {
     font-size: 1.3rem;
     color: gray;
     margin: 0 1rem 1rem 1rem;

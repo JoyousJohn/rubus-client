@@ -266,6 +266,11 @@ function makeOoS(busId) {
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
         checkMinRoutes();
+
+        if (shownRoute && shownRoute === route) {
+            toggleRoute(route);
+        }
+
     } else if (!route) {
         alert("Undefined route went OoS!")
         console.log("A bus with an undefined route claimed to go out of service... busData:");

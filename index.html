@@ -267,10 +267,12 @@
                 <div class="info-stop-name center"></div>
                 <div class="info-stop-servicing flex gap-x-1rem justify-center"></div>
 
-                <div class="stop-info-buses-grid align-center">
-
+                <div class="stop-info-buses-grid align-center"></div>
+                <div class="stop-info-next-loop-wrapper none">
+                    <div class="stop-info-buses-grid-next align-center"></div>
                 </div>
-
+                
+                <div class="stop-info-show-next-loop pointer" style="color: #6969bf;" onclick="$('.stop-info-next-loop-wrapper').slideDown(); $('.stop-info-show-next-loop').hide();">Show next loop</div>
                 <div class="stop-info-avg-wait"></div>
             </div>
 
@@ -292,12 +294,8 @@
                 <div class="closest-stops-list grid text-1p8rem gap-x-3rem mt-0p5rem">
 
                 </div>
-
             </div>
-            
-
         </div>
-
     </div>
 
     <div class="bus-log-wrapper none">
