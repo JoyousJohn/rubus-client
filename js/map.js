@@ -66,6 +66,7 @@ $(document).ready(function() {
 
     let isTransitioning = false; // Flag to track if the map is transitioning
     let isFittingBounds = false;
+    let returningToSavedView = false;
 
     map.on('drag', function() {
 
@@ -75,7 +76,7 @@ $(document).ready(function() {
             return;
         }
 
-        if (isTransitioning || isDesktop || isFittingBounds) {
+        if (isTransitioning || isDesktop || isFittingBounds || returningToSavedView) {
             return; 
 
         } else {
@@ -88,12 +89,6 @@ $(document).ready(function() {
                     map.setZoom(minZoomLevel);
                 }
                 // map.setMaxBounds(bounds);
-            }
-
-            if (savedCenter) {
-                map.setView(savedCenter, savedZoom, {'animate': true});
-                savedCenter = null;
-                savedZoom = null;
             }
 
             hideInfoBoxes();
@@ -121,6 +116,16 @@ $(document).ready(function() {
             }
 
             $('.favs').show();
+
+            if (savedCenter) {
+                map.flyTo(savedCenter, savedZoom, {'animate': true, 'duration': 0.2});
+                savedCenter = null;
+                savedZoom = null;
+                returningToSavedView = true;
+                restoreViewWithCallback(savedCenter, savedZoom, () => {
+                    returningToSavedView = false;
+                });
+            }
         }
 
     });
@@ -164,6 +169,17 @@ $(document).ready(function() {
     });
 
 });
+
+function restoreViewWithCallback(center, zoom, callback) {
+    const onMoveEnd = () => {
+      map.off('moveend', onMoveEnd); // Clean up listener
+      callback();
+    };
+  
+    map.on('moveend', onMoveEnd);
+    map.setView(center, zoom, { animate: true });
+  }
+  
 
 const fireworks = new Fireworks.default($('#fireworks')[0], {
     traceSpeed: 2,
