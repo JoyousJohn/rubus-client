@@ -329,8 +329,6 @@ function panout() {
 
     if (polylineBounds) {
         map.fitBounds(polylineBounds);
-        showAllBuses();
-        showAllPolylines();
         $('[stop-eta]').text('').hide();
         savedCenter = null;
         savedView = null;
@@ -347,6 +345,9 @@ function panout() {
 
     if (shownRoute) {
         updateTooltips(shownRoute);
+    } else {
+        showAllBuses();
+        showAllPolylines();
     }
 
 }
