@@ -1,0 +1,25 @@
+.all-stops-wrapper {
+    height: 100%;
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
+    font-family: var(--font-family);
+    overflow-y: scroll;
+}
+
+.all-stops-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 1rem 0;
+    gap: 1rem;
+}
+
+.all-stops-grid > div {
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    padding: 1rem;
+}
+
+.all-stops-close {
+    right: 3rem;
+    bottom: 2rem;
+}

@@ -431,7 +431,6 @@ async function addStopsToMap() {
     if (!activeStops.length) { // no buses running, show all stops
         activeStops = Array.from({length: 25}, (_, i) => i + 1);
     }
-
     // console.log(activeStops)
 
     checkIfLocationShared();

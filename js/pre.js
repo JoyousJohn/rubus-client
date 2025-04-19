@@ -456,6 +456,8 @@ function updateTimeToStops(busIds) {
         updateTooltips(shownRoute);
     }
 
+    populateAllStops();
+
 }
 
 

@@ -29,6 +29,7 @@
     <script defer src="js/fav.js"></script>
     <script src="js/share.js"></script>
     <script src="js/ai.js"></script>
+    <script defer src="js/allStops.js"></script>
 
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -41,6 +42,7 @@
     <link rel="stylesheet" type="text/css" href="css/modal.css">
     <link rel="stylesheet" type="text/css" href="css/involved.css">
     <link rel="stylesheet" type="text/css" href="css/ai.css">
+    <link rel="stylesheet" type="text/css" href="css/all_stops.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
 
@@ -359,6 +361,11 @@
         
 
         <div class="buses-close justify-center align-center">X</div>
+    </div>
+
+    <div class="all-stops-wrapper none">
+        <div class="all-stops-inner p-2rem mb-8rem"></div>
+        <div class="flex all-stops-close justify-center align-center">X</div>
     </div>
 
     <div class="settings-panel">
@@ -744,6 +751,9 @@
             </div>
 
             <div class="right-btns flex flex-col" style="row-gap: 0.8rem">
+                <div class="all-stops-btn-wrapper">
+                    <div class="all-stops"><i class="fa-solid fa-location-dot"></i></div>
+                </div>
                 <div class="launch-fireworks-wrapper none">
                     <div class="shoot-fireworks"><i class="fa-solid fa-bahai"></i></div>
                 </div>
