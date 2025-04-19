@@ -1226,6 +1226,8 @@ $(document).ready(function() {
 
     $('.stop-info-back').click(function() {
         flyToBus(sourceBusId);
+        $('.stop-info-popup').hide();
+        // setting sourceBusId to null breaks stuff
     });
 
     $('.bus-info-back').click(function() {
