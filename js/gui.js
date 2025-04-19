@@ -575,6 +575,8 @@ $('.color-circle').click(function() {
         const color = $(this).css('background-color');
         if (color === colorMappings[shownRoute]) {
             $(this).addClass('selected-color-choice').text('✔');
+        } else {
+            $(this).text('');
         }
     });
 
