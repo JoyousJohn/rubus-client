@@ -90,6 +90,12 @@ $(document).ready(function() {
                 // map.setMaxBounds(bounds);
             }
 
+            if (savedCenter) {
+                map.setView(savedCenter, savedZoom, {'animate': true});
+                savedCenter = null;
+                savedZoom = null;
+            }
+
             hideInfoBoxes();
 
             if (settings['toggle-show-bus-log']) {
@@ -928,6 +934,8 @@ const campusShortNamesMappings = {
 
 let stoppedForInterval;
 
+let savedCenter;
+let savedZoom;
 
 function popInfo(busId, resetCampusFontSize) {
 
@@ -1064,6 +1072,7 @@ function popInfo(busId, resetCampusFontSize) {
             </div>`).click(() => { 
                 flyToStop(closestStopId);  
             }));
+            $('.next-stops-grid > .grid').css('margin-top', '-0.5rem')
             // $('.next-stops-grid > div').append('<div class="closest-stop-divider"><hr></div>')
         }
 
@@ -1220,6 +1229,10 @@ function popInfo(busId, resetCampusFontSize) {
 
         }
 
+        if (busData[busId].oos) {
+            distanceFromLine(busId);
+        }
+
         if (!negativeETA) {
 
             $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
@@ -1301,6 +1314,32 @@ function popInfo(busId, resetCampusFontSize) {
             animate: true
         });
     }
+
+    if (!savedCenter) {
+        savedCenter = map.getCenter();
+        savedZoom = map.getZoom();
+    }
+}
+
+function distanceFromLine(busId) {
+    const busLatLng = L.latLng(busData[busId].lat, busData[busId].long);
+    const polyline = polylines[busData[busId].route];
+    const polyPoints = polyline.getLatLngs();
+    
+    let minDist = Infinity;
+    let closestPoint = null;
+    
+    for (let i = 0; i < polyPoints.length; i++) {
+        const d = busLatLng.distanceTo(polyPoints[i]);
+        if (d < minDist) {
+            minDist = d;
+            closestPoint = polyPoints[i];
+        }
+    }
+    
+    const distanceMiles = minDist * 0.000621371 * 5280;
+    // console.log(`Bus ${busId} is ${distanceMiles.toFixed(3)} ft from its route`);
+    return (distanceMiles > 200)
 }
 
 function expandBounds(origBounds, factor) {
