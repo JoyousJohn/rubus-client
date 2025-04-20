@@ -260,11 +260,13 @@
                                 if (iPhoneOrAndroid && iPhoneOrAndroid === 'iphone') {
                                     $('.install-pic-1 > img').attr('src', 'img/iphone-pwa-1-arrow.png');
                                     $('.install-pic-2 > img').attr('src', 'img/iphone-pwa-2-arrow.png');
-                                    $('.pwa-install-head').text('Install iPhone Web App')
+                                    $('.pwa-install-head').text('Install iPhone Web App');
+                                    $('.install-pwa-wrapper').show();
                                 } else if (iPhoneOrAndroid && iPhoneOrAndroid === 'android') {
                                     $('.install-pic-1 > img').attr('src', 'img/android-pwa-1-arrow.png');
                                     $('.install-pic-2 > img').attr('src', 'img/android-pwa-2-arrow.png');
-                                    $('.pwa-install-head').text('Install Android Web App')
+                                    $('.pwa-install-head').text('Install Android Web App');
+                                    $('.install-pwa-wrapper').show();
                                 } else {
                                     $('.install-pwa').hide();
                                 }
@@ -376,7 +378,7 @@
 
         <div class="busy-wrapper flex flex-col align-center mb-8rem mt-5rem">
             <div class="flex justify-center">
-                <div class="ridership-history-title wait-title center">Stop Wait Times</div>
+                <div class="ridership-history-title wait-title center">Bus Wait Times</div>
             </div>
             <div class="wait-times gap-1rem">
             </div>
@@ -391,8 +393,8 @@
 
     <div class="install-pwa-wrapper none">
         <div class="flex justify-center align-center h-full">
-            <div class="install-pwa-iphone flex flex-col gap-y-1rem center">
-                <div class="flex flex-col align-center">
+            <div class="install-pwa-iphone flex flex-col gap-y-1rem center align-center">
+                <div class="flex flex-col align-center w-full">
                     <div class="text-2p3rem pwa-install-head"></div>
                     <div class="text-1p7rem" style="max-width: 50%; color: var(--theme-extra)">For automatic updates, storage-free.</div>
                 </div>
@@ -412,7 +414,8 @@
                     </div>
                 </div>
 
-                <div class="text-1p3rem gray777777 mt-3rem pointer" onclick="$('.install-pwa-wrapper').hide();">Continue in browser</div>
+                <div class="text-1p3rem gray777777 mt-2rem">Or</div>
+                <div class="text-1p7rem white br-2rem mt-1rem pointer" style="padding: 0.5rem 1rem; background-color: rgb(89, 89, 205);" onclick="$('.install-pwa-wrapper').hide();">Continue in browser</div>
 
             </div>
         </div>
