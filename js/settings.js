@@ -181,6 +181,17 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-hide-other-routes':
             settings['toggle-hide-other-routes'] = isChecked;
+
+            if (!isChecked && popupBusId) {
+                showAllPolylines();
+                showAllBuses();
+                map.flyTo(savedCenter, savedZoom, {animate: false});
+                savedCenter = null;
+                savedZoom = null;
+            } else if (isChecked && popupBusId) {
+                focusBus(popupBusId);
+            }
+
             break;
 
             // implement logic here to hide/show other routes if bus already selected: if (popupBus)...

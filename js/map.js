@@ -117,17 +117,15 @@ $(document).ready(function() {
 
             $('.favs').show();
 
-            if (savedCenter) {
+            if (savedCenter && settings['toggle-hide-other-routes']) {
                 returningToSavedView = true;
                 flyToWithCallback(savedCenter, savedZoom, () => {
                     returningToSavedView = false;
                     savedCenter = null;
                     savedZoom = null;
                 });
-            
             }
         }
-
     });
 
     map.on('moveend', function() {
@@ -1378,17 +1376,6 @@ function popInfo(busId, resetCampusFontSize) {
         $('.bus-star > i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
     }
 
-    if (settings['toggle-hide-other-routes']) {
-        hideStopsExcept(data.route)
-        hidePolylinesExcept(data.route)
-
-        for (const marker in busMarkers) {
-            if (marker !== busId.toString()) {
-                busMarkers[marker].getElement().style.display = 'none';
-            }
-        }
-    }
-
     if (!isDesktop) {
         const expandedBounds = expandBounds(bounds, 2.8)
         // map.setMaxBounds(expandedBounds);
@@ -1403,10 +1390,28 @@ function popInfo(busId, resetCampusFontSize) {
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
     $('.info-next-stops').css('max-height', maxHeight - 135) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
 
-    if (!popupBusId) {
+    if (settings['toggle-hide-other-routes']) { // this might need a && !popupBusId condition for some reason...
+        focusBus(busId)
+    }
+}
+
+function focusBus(busId) {
+
+    const route = busData[busId].route;
+
+    hideStopsExcept(route)
+    hidePolylinesExcept(route)
+
+    for (const marker in busMarkers) {
+        if (marker !== busId.toString()) {
+            busMarkers[marker].getElement().style.display = 'none';
+        }
+    }
+
+    // if (!popupBusId) {
         const topContainerHeight = 1 - ($(window).height() - $('.bus-btns').offset().top)/$(window).height()
 
-        const polyline = polylines[data.route]
+        const polyline = polylines[route]
         const mapSize = map.getSize();
         const topGuiHeight = mapSize.y * topContainerHeight;
 
@@ -1418,7 +1423,7 @@ function popInfo(busId, resetCampusFontSize) {
             paddingBottomRight: [extraPaddingX, extraPaddingY + 30],
             animate: true
         });
-    }
+    // }
 
     if (!savedCenter) {
         savedCenter = map.getCenter();

@@ -1062,6 +1062,7 @@ html, body {
     justify-content: center;
     align-items: center;
     color: rgb(54, 54, 54);
+    cursor: pointer;
 }
 
 .settings-selected {
