@@ -104,7 +104,7 @@ html, body {
 }
 
 
-.info-popup-wrapper, .route-panel-wrapper, .buses-panel-wrapper, .all-stops-wrapper, .install-pwa-wrapper {
+.info-popup-wrapper, .route-panel-wrapper, .buses-panel-wrapper, .all-stops-wrapper, .install-pwa-wrapper, .leave-feedback-wrapper {
     width: 100%;
     position: fixed;
     /* left: 0; */

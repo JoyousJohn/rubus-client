@@ -258,6 +258,8 @@
 
 .fixed { position: fixed; }
 
+.absolute { position: absolute;}
+
 .relative { position: relative; }
 
 .flex { display: flex; }

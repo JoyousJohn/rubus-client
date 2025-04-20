@@ -1,0 +1,16 @@
+.leave-feedback-modal {
+    background-color: var(--theme-bg);
+    opacity: 0.9;
+}
+
+.leave-feedback-wrapper {
+    color: var(--theme-color);
+    font-family: var(--font-family);
+}
+
+.feedback-input {
+    border: 1px solid var(--theme-color);
+    min-height: 5rem;
+    resize: none;
+    font-family: inherit;
+}

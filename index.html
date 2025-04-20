@@ -44,6 +44,7 @@
     <link rel="stylesheet" type="text/css" href="css/ai.css">
     <link rel="stylesheet" type="text/css" href="css/all_stops.css">
     <link rel="stylesheet" type="text/css" href="css/pwa.css">
+    <link rel="stylesheet" type="text/css" href="css/feedback.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
 
@@ -205,7 +206,7 @@
                             <i class="fa-solid fa-map-pin"></i>
                         </div>
                         <div class="bus-comment br-1rem align-center pointer">
-                            <i class="fa-regular fa-message"></i>
+                            <i class="fa-regular fa-message" onclick="$('.leave-feedback-wrapper').show(); $('.bottom').hide();"></i>
                         </div>
                         <div class="bus-share br-1rem align-center none pointer">
                             <i class="fa-solid fa-share-nodes"></i>
@@ -433,6 +434,24 @@
             </div>
         </div>
         
+    </div>
+
+    <div class="leave-feedback-wrapper h-full none">
+        <div class="leave-feedback-modal h-full"></div>
+        <div class="absolute" style="inset: 0;">
+            <div class="flex flex-col justify-center align-center h-full left" style="padding: 0 7rem;">
+                <div class="w-mn">
+                    <div class="text-2p3rem w-full">Leave feedback</div>
+                    <div class="text-1p5rem w-full">About this bus or how RUBus is displaying it.</div>
+                    <div class="flex">
+                        <textarea class="feedback-input mt-2rem text-1p3rem br-0p5rem p-1rem w-full" placeholder="What's on your mind?"></textarea>
+                    </div>
+                    <div class="flex justify-center">
+                        <div class="white br-2rem text-1p4rem w-fit mt-1rem" style="padding: 0.5rem 1rem; background-color: #4f4fd8;">Send Feedback</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="settings-panel">
