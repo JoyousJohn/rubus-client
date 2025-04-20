@@ -119,6 +119,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             let isNew = false;
 
             if (!busData[busId]) {
+                console.log(`New bus in API: ${bus.busName} (${busId}) (${routeStr})`)
                 busData[busId] = {};
                 busData[busId].previousTime = new Date().getTime() - 5000;
                 busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]];
@@ -219,7 +220,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             }
 
             if (!activeBuses.includes(parseInt(busId))) {
-                console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`);
+                console.log(`[Out of Service][${busData[busId].route}] Bus ${busData[busId].busName} is out of service`);
                 makeOoS(busId);
             }
         }
@@ -248,7 +249,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
 function makeOoS(busId) {
 
-    console.log(`[Out of Service] busId: ${busId}`)
+    console.log(`[Out of Service][${new Date().toLocaleString('en-US', {timeZone: 'America/New_York', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(',','')}] busId: ${busId}`)
 
     if (busMarkers[busId]) { // investigate why this would occur
         busMarkers[busId].remove();
@@ -552,6 +553,7 @@ async function startOvernight() {
                     busData[busId] = {}
                     busData[busId].previousTime = new Date().getTime() - 5000;
                     busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]]
+                    busData[busId]['type'] = 'over'
                 }
     
                 busData[busId].busName = bus.name
@@ -570,6 +572,13 @@ async function startOvernight() {
                 plotBus(busId)
                 calculateSpeed(busId)
     
+            }
+
+            for (const busId in busData) {
+                if (busData[busId].type === 'over' && !(busId in data)) { // I think all objects should have the type key set...
+                    console.log(`[startOvernight()][Out of Service][${busData[busId].route} Bus ${busData[busId].busName} is out of service?`);
+                    makeOoS(busId)
+                }
             }
 
             makeBusesByRoutes()
@@ -856,11 +865,12 @@ $(document).ready(async function() {
             }
 
             await fetchWhere();
+            checkMinRoutes(); // oes this work right?
             openRUBusSocket();
 
-            if (!Object.keys(busData).length) {
+            // if (!Object.keys(busData).length) { // maybe add a condition here to only cheeck on weekends at night?
                 startOvernight();
-            }
+            // }
 
             $('.updating-buses').slideUp();
         }

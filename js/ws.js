@@ -58,6 +58,7 @@ class BusWebSocketClient {
         // }
 
         if (!busData[busId]) {
+            console.log(`New bus in WS: ${data.bus} (${busId}) (${data.route})`)
             busData[busId] = {}
             busData[busId].busName = data.bus
             busData[busId].previousTime = new Date().getTime() - 5000;
