@@ -997,7 +997,7 @@ function updateWaitTimes() {
 
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
-    $('.panout, .settings-btn, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks').show();
+    $('.panout, .settings-btn, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops').show();
     if (userLocation) {
         $('.fly-closest-stop').show();
     }
