@@ -250,9 +250,9 @@
 
                     <div class="info-top-right flex flex-col gap-y-1rem align-end">
                         <div class="install-pwa pointer none" onclick="$('.install-pwa-wrapper').show();">Install App ➜</div>
-                        <script> if (!isDesktop && 'matchMedia' in window) {
+                        <script> $(document).ready(function(){ if (!isDesktop && 'matchMedia' in window) {
                             if (!window.matchMedia('(display-mode: standalone)').matches) $('.install-pwa').show();
-                        } </script>
+                        }}) </script>
                         <div class="passio-mini flex flex-col gap-y-1rem"></div>
                         <div class="notif-popup"></div>
                         <div class="getting-location-popup">Getting location...</div>
