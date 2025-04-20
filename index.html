@@ -43,6 +43,7 @@
     <link rel="stylesheet" type="text/css" href="css/involved.css">
     <link rel="stylesheet" type="text/css" href="css/ai.css">
     <link rel="stylesheet" type="text/css" href="css/all_stops.css">
+    <link rel="stylesheet" type="text/css" href="css/pwa.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
 
@@ -236,7 +237,7 @@
                 </div>
 
                 <div class="passio-messages">
-                    <div class="passio-messages-list flex flex-col gap-y-1rems">
+                    <div class="passio-messages-list flex flex-col gap-y-1rem">
                     </div>
                 </div>
 
@@ -248,6 +249,10 @@
                     </div>
 
                     <div class="info-top-right flex flex-col gap-y-1rem align-end">
+                        <div class="install-pwa pointer none" onclick="$('.install-pwa-wrapper').show();">Install App ➜</div>
+                        <script> if (!isDesktop && 'matchMedia' in window) {
+                            if (!window.matchMedia('(display-mode: standalone)').matches) $('.install-pwa').show();
+                        } </script>
                         <div class="passio-mini flex flex-col gap-y-1rem"></div>
                         <div class="notif-popup"></div>
                         <div class="getting-location-popup">Getting location...</div>
@@ -366,6 +371,36 @@
     <div class="all-stops-wrapper none">
         <div class="all-stops-inner p-2rem mb-8rem"></div>
         <div class="flex all-stops-close justify-center align-center">X</div>
+    </div>
+
+    <div class="install-pwa-wrapper none">
+        <div class="flex justify-center align-center h-full">
+            <div class="install-pwa-iphone flex flex-col gap-y-1rem center">
+                <div class="flex flex-col align-center">
+                    <div class="text-2p3rem">Install iPhone Web App</div>
+                    <div class="text-1p7rem" style="max-width: 50%; color: var(--theme-extra)">For automatic updates, storage-free.</div>
+                </div>
+                <div class="grid grid-cols-2 gap-x-2rem m-2rem left text-1p5rem"">
+                    <div class="flex flex-col gap-y-0p5rem">
+                        <div class="mx-1rem" style="border-bottom: 1px solid gray;">Step 1</div>
+                        <div class="install-pic install-pwa-iphone-1">
+                            <img src="img/iphone-pwa-1-arrow.png">
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-y-0p5rem">
+                        <div class="mx-1rem" style="border-bottom: 1px solid gray;">Step 2</div>
+                        <div class="install-pic install-pwa-iphone-1">
+                            <img src="img/iphone-pwa-2-arrow.png">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-1p3rem gray777777 mt-3rem pointer" onclick="$('.install-pwa-wrapper').hide();">Continue in browser</div>
+
+            </div>
+        </div>
+        
     </div>
 
     <div class="settings-panel">

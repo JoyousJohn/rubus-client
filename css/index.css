@@ -104,7 +104,7 @@ html, body {
 }
 
 
-.info-popup-wrapper, .route-panel-wrapper, .buses-panel-wrapper, .all-stops-wrapper {
+.info-popup-wrapper, .route-panel-wrapper, .buses-panel-wrapper, .all-stops-wrapper, .install-pwa-wrapper {
     width: 100%;
     position: fixed;
     /* left: 0; */
@@ -169,6 +169,16 @@ html, body {
     text-align: center;
     width: fit-content;
     display: none;
+}
+
+.install-pwa {
+    padding: 0.5rem 1.7rem;
+    background-color: black;
+    color: white;
+    border-radius: 2rem;
+    font-size: 1.8rem;
+    font-family: var(--font-family);
+    pointer-events: all;
 }
 
 .knight-mover {
