@@ -126,7 +126,20 @@
                 </script>
             </div>
         </div>
-        <div class="theme-modal-confirm theme-modal-confirm-mobile pointer" onclick="selectTheme('confirm')">Confirm ➜</div>
+        <div class="flex justify-between align-center">
+            <div class="text-1p7rem ml-2rem pointer none ipw" onclick="$('.install-pwa-wrapper').show();">Install App</div>
+            <script>
+                $(document).ready(function() {
+                    if (!window.matchMedia('(display-mode: standalone)').matches) {
+                        if (/iPhone/i.test(navigator.userAgent) || /Android/i.test(navigator.userAgent)) {
+                            $('.ipw').show();
+                        };
+                    }
+                })     
+            </script>
+            <div></div>
+            <div class="theme-modal-confirm theme-modal-confirm-mobile pointer" onclick="selectTheme('confirm')">Confirm ➜</div>
+        </div>
     </div>
 
     <script>
