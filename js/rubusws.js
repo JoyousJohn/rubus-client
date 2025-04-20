@@ -1,5 +1,3 @@
-// socket = new WebSocket('wss://rubus.live/ws');
-
 let etas = {}
 let waits = {}
 let busLocations = {}

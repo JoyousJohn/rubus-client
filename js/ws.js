@@ -83,6 +83,9 @@ class BusWebSocketClient {
                     // }
                 } 
             }
+
+            $('.knight-mover, .knight-mover-mini').hide();
+
         }
 
         busData[busId].lat = data.latitude

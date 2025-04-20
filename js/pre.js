@@ -262,8 +262,10 @@ function makeOoS(busId) {
 
     delete busData[busId];   
     console.log("makeOos() busesByRoutes before: ", busesByRoutes)
+    console.log("busData before: ", busDataCopy)
     makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
     console.log("makeOos() busesByRoutes after: ", busesByRoutes)
+    console.log("busData after: ", busDataCopy)
 
     if (route && !busesByRoutes[route]) { // for some reason route can be undefined, investigate.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
@@ -535,7 +537,6 @@ async function startOvernight() {
         const data = await response.json();
 
         if (Object.keys(data).length) {
-            wsClient.connect()
             
             for (const someId in data) {
     
@@ -587,7 +588,10 @@ async function startOvernight() {
 
 function checkMinRoutes() {
 
-    if (!activeRoutes.length === 0) {
+    const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+    if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
+
+    if (!activeRoutes.size) {
         $('.knight-mover').show();
         $('.knight-mover-mini').hide();
         populateRouteSelectors(); // to remove favs
@@ -595,7 +599,6 @@ function checkMinRoutes() {
     }
 
     const excludeRoutes = ['on1', 'on2'];
-    const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
     const isWeekend = new Date(today).getDay() === 0 || new Date(today).getDay() === 6;
     if (isWeekend) {
         excludeRoutes.push('wknd1', 'wknd2');
@@ -740,9 +743,9 @@ $(document).ready(async function() {
 
     checkShared();
 
-    if (!Object.keys(busData).length) {
-        await startOvernight();
-    }
+    // if (!Object.keys(busData).length) {
+    await startOvernight();
+    // }
 
     makeActiveRoutes();
     // setPolylines(activeRoutes);

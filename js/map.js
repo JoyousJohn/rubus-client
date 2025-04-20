@@ -1099,8 +1099,8 @@ function popInfo(busId, resetCampusFontSize) {
         $('.info-shared-bus').show();
     }
 
-    if (data.joined_service) {
-        const serviceDate = new Date(data.joined_service);
+    if (joined_service[busId]) {
+        const serviceDate = new Date(joined_service[busId]);
         const today = new Date();
         const isToday = serviceDate.getDate() === today.getDate() && 
                         serviceDate.getMonth() === today.getMonth() &&
