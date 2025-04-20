@@ -266,6 +266,18 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-always-show-second':
+            settings['toggle-always-show-second'] = isChecked;
+
+            if (isChecked) {
+                $('.stop-info-show-next-loop').hide();
+                $('.stop-info-next-loop-wrapper').show();
+            } else {
+                $('.stop-info-show-next-loop').show();
+            }
+
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;

@@ -403,8 +403,13 @@ async function popStopInfo(stopId) {
     const stopName = stopsData[stopId].name;
     $('.info-stop-name').text(settings['toggle-show-stop-id'] ? `${stopName} (#${stopId})` : stopName);
 
-    $('.stop-info-show-next-loop').show();
-    $('.stop-info-next-loop-wrapper').hide();
+    if (!settings['toggle-always-show-second']) {
+        $('.stop-info-next-loop-wrapper').hide();
+        $('.stop-info-show-next-loop').show();
+    } else {
+        $('.stop-info-next-loop-wrapper').show();
+        $('.stop-info-show-next-loop').hide();
+    }
     updateStopBuses(stopId, shownRoute);
 
     if (sourceBusId && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set

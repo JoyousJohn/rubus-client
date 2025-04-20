@@ -408,7 +408,7 @@
                     </label>
                 </div>
             </div>
-            <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Take RUBus's advanced in-house ETA calculation algorithm to the extreme by forecasting in seconds. This is experimental and may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
+            <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Take RUBus's advanced ETA calculation algorithm to the extreme by forecasting in seconds. This is experimental and may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
             <script>
             $('.span-i-seconds').click(function() {$('.seconds-explain').slideToggle();})
             </script>
@@ -453,7 +453,7 @@
 
             <div class="flex justify-between">
                 <div class="settings-heading flex flex-1 align-center">Preload Map Routes<span class="span-i span-i-preload pointer select-none">i</span></div>
-                <div class="settings-toggle toggle-polyline-padding">
+                <div class="settings-toggle">
                     <input type="checkbox" id="toggle-polyline-padding" class="toggle-input">
                     <label for="toggle-polyline-padding" class="toggle-label">
                         <span class="toggle-slider"></span>
@@ -461,13 +461,28 @@
                 </div>
             </div>
             <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
-            <div class="preload-explain none ml-0p5rem text-1p3rem dimgray">Pre-render route lines on the entire map, even outside of view, to avoid having to load them when panning the map. May heavily impact performance on some devices.</div>
+            <div class="preload-explain none ml-0p5rem text-1p3rem dimgray">Pre-render route lines on the entire map, even outside of view, to avoid having to load them when panning the map. May heavily degrade performance on some devices.</div>
             <script>
             $('.span-i-preload').click(function() {$('.preload-explain').slideToggle();})
             if (/iPhone/i.test(navigator.userAgent)) {
                 $('.toggle-polyline-padding').css('pointer-events', 'none');
                 $('.toggle-polyline-padding-unavailable').show();
             }
+            </script>
+
+            <div class="flex justify-between">
+                <div class="settings-heading flex flex-1 align-center">Always Show 2nd Loop<span class="span-i span-i-second pointer select-none">i</span></div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-always-show-second" class="toggle-input">
+                    <label for="toggle-always-show-second" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
+            <div class="second-explain none ml-0p5rem text-1p3rem dimgray">Always show incoming buses from far into the future in the stop info menu.</div>
+            <script>
+            $('.span-i-second').click(function() {$('.second-explain').slideToggle();})
             </script>
 
             <div class="flex justify-between">

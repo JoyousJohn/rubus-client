@@ -1062,6 +1062,7 @@ const toggleSettings = [
     'toggle-show-arrival-times',
     'toggle-show-bus-speeds',
     'toggle-stops-above-buses',
+    'toggle-always-show-second',
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
@@ -1089,10 +1090,11 @@ let defaultSettings = {
     'font': 'PP Neue Montreal',
     'marker_size': 'medium',
     'theme': 'auto',
+    'toggle-show-etas-in-seconds': false,
     'toggle-select-closest-stop': true,
-    'toggle-show-arrival-times': true,
-    'toggle-show-bus-speeds': true,
+    'toggle-hide-other-routes': true,
     'toggle-stops-above-buses': false,
+    'toggle-always-show-second': false,
     
     // dev settings
     'map-renderer': 'svg',
@@ -1102,13 +1104,11 @@ let defaultSettings = {
     'toggle-pause-passio-polling': false,
     'toggle-show-stop-polygons': false,
     'toggle-show-dev-options': false,
-    'toggle-show-etas-in-seconds': false,
     'toggle-show-bus-id': false,
     'toggle-show-bus-progress': false,
     'toggle-show-bus-overtime-timer': false,
     'toggle-show-bus-path': false,
     'toggle-launch-fireworks-button': false,
-    'toggle-hide-other-routes': true,
     'toggle-show-bus-log': false,
     'toggle-show-extra-bus-data': false,
     'toggle-show-stop-id': false,
@@ -1116,6 +1116,10 @@ let defaultSettings = {
     'toggle-polyline-padding': false,
     'toggle-show-invalid-etas': false,
     'toggle-show-rotation-points': false,
+
+    // going to remove
+    'toggle-show-arrival-times': true,
+    'toggle-show-bus-speeds': true,
 
     'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
 
