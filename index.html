@@ -250,9 +250,27 @@
 
                     <div class="info-top-right flex flex-col gap-y-1rem align-end">
                         <div class="install-pwa pointer none" onclick="$('.install-pwa-wrapper').show();">Install App ➜</div>
-                        <script> $(document).ready(function(){ if (!isDesktop && 'matchMedia' in window) {
-                            if (!window.matchMedia('(display-mode: standalone)').matches) $('.install-pwa').show();
-                        }}) </script>
+                        <script> 
+                        $(document).ready(function(){ if (!isDesktop && 'matchMedia' in window) {
+                            if (!window.matchMedia('(display-mode: standalone)').matches) {
+                                $('.install-pwa').show();
+                                const iPhoneOrAndroid = /iPhone/i.test(navigator.userAgent) ? 'iphone' : 
+                                                       /Android/i.test(navigator.userAgent) ? 'android' : 
+                                                       null;
+                                if (iPhoneOrAndroid && iPhoneOrAndroid === 'iphone') {
+                                    $('.install-pic-1 > img').attr('src', 'img/iphone-pwa-1-arrow.png');
+                                    $('.install-pic-2 > img').attr('src', 'img/iphone-pwa-2-arrow.png');
+                                    $('.pwa-install-head').text('Install iPhone Web App')
+                                } else if (iPhoneOrAndroid && iPhoneOrAndroid === 'android') {
+                                    $('.install-pic-1 > img').attr('src', 'img/android-pwa-1-arrow.png');
+                                    $('.install-pic-2 > img').attr('src', 'img/android-pwa-2-arrow.png');
+                                    $('.pwa-install-head').text('Install Android Web App')
+                                } else {
+                                    $('.install-pwa').hide();
+                                }
+                            }
+                        }}) 
+                        </script>
                         <div class="passio-mini flex flex-col gap-y-1rem"></div>
                         <div class="notif-popup"></div>
                         <div class="getting-location-popup">Getting location...</div>
@@ -363,8 +381,6 @@
             <div class="wait-times gap-1rem">
             </div>
         </div>
-        
-
         <div class="buses-close justify-center align-center">X</div>
     </div>
 
@@ -377,21 +393,21 @@
         <div class="flex justify-center align-center h-full">
             <div class="install-pwa-iphone flex flex-col gap-y-1rem center">
                 <div class="flex flex-col align-center">
-                    <div class="text-2p3rem">Install iPhone Web App</div>
+                    <div class="text-2p3rem pwa-install-head"></div>
                     <div class="text-1p7rem" style="max-width: 50%; color: var(--theme-extra)">For automatic updates, storage-free.</div>
                 </div>
                 <div class="grid grid-cols-2 gap-x-2rem m-2rem left text-1p5rem"">
                     <div class="flex flex-col gap-y-0p5rem">
                         <div class="mx-1rem" style="border-bottom: 1px solid gray;">Step 1</div>
-                        <div class="install-pic install-pwa-iphone-1">
-                            <img src="img/iphone-pwa-1-arrow.png">
+                        <div class="install-pic-1">
+                            <img>
                         </div>
                     </div>
                     
                     <div class="flex flex-col gap-y-0p5rem">
                         <div class="mx-1rem" style="border-bottom: 1px solid gray;">Step 2</div>
-                        <div class="install-pic install-pwa-iphone-1">
-                            <img src="img/iphone-pwa-2-arrow.png">
+                        <div class="install-pic-2">
+                            <img>
                         </div>
                     </div>
                 </div>
