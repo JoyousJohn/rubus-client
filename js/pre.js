@@ -834,11 +834,12 @@ $(document).ready(async function() {
     }
     populateJoinedService();
 
+    wsClient.connect()
     openRUBusSocket();
 
-    if (!wsClient.ws) {
+    // if (!wsClient.ws) {
         startBusPolling();
-    }
+    // }
 
     setInterval(async () => {
         await randomStepBusSpeeds();
