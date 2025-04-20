@@ -194,7 +194,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             const newRoutes = pollActiveRoutes.difference(activeRoutes);
             if (newRoutes.size > 0) {
                 // console.log('newRoutes: ', newRoutes)
-                // console.log('newRoutes: ' , activeRoutes)
+                // console.log('activeRoutes: ' , activeRoutes)
                 setPolylines(newRoutes);
                 newRoutes.forEach(item => activeRoutes.add(item))
                 populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all
@@ -744,7 +744,7 @@ $(document).ready(async function() {
     checkShared();
 
     // if (!Object.keys(busData).length) {
-    await startOvernight();
+    // await startOvernight();
     // }
 
     makeActiveRoutes();
