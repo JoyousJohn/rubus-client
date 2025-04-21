@@ -1673,12 +1673,6 @@ $('.satellite-btn').click(function() {
             const currentHour = new Date().getHours();
             theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
-
-        if (theme === 'dark') {
-            $(this).css('background-color', '#3155c1');
-        } else if (theme === 'light') {
-            $(this).css('background-color', 'rgb(143, 171, 255)');
-        }
     }
 });
 

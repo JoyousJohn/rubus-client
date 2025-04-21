@@ -13,6 +13,7 @@
     --theme-bg-closest-stop: rgb(68, 68, 68);
     --theme-hidden-route-col: #555;
     --theme-bus-icon-inner: lightgray;
+    --theme-satellite-btn: #3155c1;
 }
 
 [theme="light"] {
@@ -26,6 +27,7 @@
     --theme-bg-closest-stop: rgb(240, 240, 240);
     --theme-hidden-route-col: #d2d1d1;
     --theme-bus-icon-inner: white;
+    --theme-satellite-btn: rgb(143, 171, 255);
 }
 
 body {
@@ -918,6 +920,10 @@ html, body {
 .panout {
     color: rgb(185, 185, 185);
     transition: color 0.2s ease;
+}
+
+.satellite-btn {
+    background-color: var(--theme-satellite-btn);
 }
 
 .centerme-wrapper {
