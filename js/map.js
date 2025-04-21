@@ -1370,7 +1370,7 @@ function popInfo(busId, resetCampusFontSize) {
     }
     sourceBusId = busId;
 
-    if (favBuses.includes(busId)) {
+    if (favBuses.includes(parseInt(busId))) {
         $('.bus-star > i').css('color', 'gold').removeClass('fa-regular').addClass('fa-solid')
     } else {
         $('.bus-star > i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
