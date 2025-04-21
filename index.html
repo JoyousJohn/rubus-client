@@ -437,18 +437,18 @@
     </div>
 
     <div class="leave-feedback-wrapper h-full none">
-        <div class="feedback-x flex justify-center align-center" style="top: 2rem; right: 2rem; color: var(--theme-bg); background-color: var(--theme-color)" onclick="$('.leave-feedback-wrapper').hide();">X</div>
+        <div class="feedback-x flex justify-center align-center" style="top: 2rem; right: 2rem; color: var(--theme-bg); background-color: var(--theme-color)" onclick="$('.leave-feedback-wrapper').hide(); $('.bottom').show();">X</div>
         <div class="leave-feedback-modal h-full"></div>
         <div class="absolute" style="inset: 0;">
-            <div class="flex flex-col justify-center align-center h-full left" style="padding: 0 5rem;">
+            <div class="flex flex-col justify-center align-center h-full left mb-8rem" style="padding: 0 5rem;">
                 <div class="w-mn">
-                    <div class="text-2p5rem w-full">Leave feedback</div>
+                    <div class="text-2p5rem w-full bold-500">Leave feedback</div>
                     <div class="text-1p8rem w-full">About this bus or how RUBus is displaying it.</div>
                     <div class="flex">
-                        <textarea class="feedback-input mt-2rem text-1p3rem br-0p5rem p-1rem w-full" placeholder="What's on your mind?"></textarea>
+                        <textarea class="feedback-input mt-2rem text-1p5rem br-0p5rem p-1rem w-full" placeholder="What's on your mind?"></textarea>
                     </div>
                     <!-- <div class="flex justify-center"> -->
-                        <div class="white br-2rem text-1p7rem w-fit mt-2rem" style="padding: 0.5rem 1rem; background-color: #4f4fd8;" onclick="$('.leave-feedback-wrapper').hide();">Send Feedback</div>
+                        <div class="white br-2rem text-1p4rem w-fit mt-2rem" style="padding: 0.5rem 1.5rem; background-color: #4f4fd8;" onclick="$('.leave-feedback-wrapper').hide();">Send Feedback</div>
                     <!-- </div> -->
                 </div>
             </div>
