@@ -139,7 +139,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 }
 
                 busData[busId].busName = bus.busName;
-                populateFavs();
+                await populateFavs();
 
                 isNew = true;
 
@@ -860,7 +860,7 @@ $(document).ready(async function() {
     }
     populateJoinedService();
 
-    wsClient.connect()
+    // wsClient.connect()
     openRUBusSocket();
 
     // if (!wsClient.ws) {

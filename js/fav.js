@@ -77,14 +77,8 @@ $('.bus-star').click(function() {
         }
 
         if (favRoutes.size === 0) {
-            for (const polyline in polylines) {
-                if (!map.hasLayer(polylines[polyline])) { // needed?
-                    polylines[polyline].setStyle({ opacity: 1 });
-                }
-            }  
-            for (const marker in busMarkers) {
-                busMarkers[marker].getElement().style.display = '';
-            }
+            showAllPolylines();
+            showAllBuses();
     
             for (const stopId in busStopMarkers) {
                 busStopMarkers[stopId].addTo(map);
@@ -103,12 +97,17 @@ $('.bus-star').click(function() {
     localStorage.setItem('favs', JSON.stringify(favBuses))
 })
 
-function populateFavs() {
+async function populateFavs() {
 
     $('.favs').empty();
 
     favBuses.forEach(favId => {
-        if (busData[favId]) {
+        if (busData[favId]) { // RACE CONDITION SOMEWHERE!!!
+
+            // console.log(`${favId} in `)
+            // console.log(busData[favId])
+            // console.log(busMarkers[favId])
+
             const $thisFav = $(`<div class="br-1rem" data-fav-id="${favId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[favId].route]}">${busData[favId].route.toUpperCase()}</span>${busData[favId].busName}</div>`)
             $thisFav.click(function() {
                 if (busData[favId]) {
@@ -122,7 +121,11 @@ function populateFavs() {
             $('.favs').append($thisFav)
 
             setTimeout(() => {
-                busMarkers[favId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+
+                // console.log(Object.keys(busMarkers))
+                // console.log(favId.toString())
+
+                busMarkers[favId.toString()].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
             }, 0);
 
         }

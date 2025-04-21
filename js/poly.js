@@ -3,7 +3,8 @@ let routeBounds ={};
 
 async function setPolylines(activeRoutes) {
 
-    // console.log(activeRoutes)
+    console.log("Setting polylines for activeRoutes: ", activeRoutes)
+    
 
     const fetchPromises = [];
 
