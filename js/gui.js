@@ -3,7 +3,15 @@ let longPressTimer
 function populateRouteSelectors(activeRoutes) {
     $('.route-selectors > div').not('.settings-btn').remove();
 
-    let routesArray = Array.from(activeRoutes);
+    let routesArray;
+
+    try {
+        routesArray = Array.from(activeRoutes);
+    } catch (error) {
+        console.error('Error converting activeRoutes to array:', error);
+        console.log(routesArray);
+        console.log(typeof routesArray);
+    }
 
     if (routesArray.includes('ftbl')) {
         routesArray = routesArray.filter(route => route !== 'ftbl');
@@ -286,27 +294,35 @@ function showAllPolylines() {
 }
 
 function updateTooltips(route) {
+
+    if (route === 'fav') return;
+
     const routeBuses = busesByRoutes[route]
 
-    stopLists[route].forEach(stopId => {
-        let lowestETA = Infinity;
-        let lowestBusId;
-
-        routeBuses.forEach(busId => {
-            if (busETAs[busId]) {
-                const eta = busETAs[busId][stopId]
-                if (eta < lowestETA) {
-                    lowestETA = eta;
-                    lowestBusId = busId;
+    try {
+        stopLists[route].forEach(stopId => {
+            let lowestETA = Infinity;
+            let lowestBusId;
+    
+            routeBuses.forEach(busId => {
+                if (busETAs[busId]) {
+                    const eta = busETAs[busId][stopId]
+                    if (eta < lowestETA) {
+                        lowestETA = eta;
+                        lowestBusId = busId;
+                    }
                 }
+            })
+    
+            if (lowestBusId) {
+                const lowestETAMin = Math.ceil(lowestETA/60)
+                $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
             }
         })
-
-        if (lowestBusId) {
-            const lowestETAMin = Math.ceil(lowestETA/60)
-            $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
-        }
-    })
+    } catch (error) {
+        console.log(`Error updating tooltips for route ${route}: ${error}`)
+    }
+    
 }
 
 function toggleRoute(route) {

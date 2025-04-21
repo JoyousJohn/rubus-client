@@ -146,7 +146,14 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             } else {
                 if (busData[busId].route !== routeStr) { // Route changed for existing bus...
                     busData[busId].route = routeStr;
-                    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
+
+                    try {
+                        busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr]; // somehow got  busMarkers[busId] is undefined... how was busId in busData but not busMarkers? don't understand...
+                    } catch (error) {
+                        console.log('Error accessing busMarkers:', error)
+                        console.log(busData)
+                        console.log(busMarkers)
+                    }
                     makeActiveRoutes();
                     // if (!polylines[routeStr]) {
                     //     setPolylines([routeStr]);
@@ -437,7 +444,7 @@ function updateTimeToStops(busIds) {
                 } else {
                     // console.log(routeStops)
                     // console.log('nextStop: ', nextStop)
-                    console.log('i: ' + i + ' thisStopId -> [' + thisStopId + '][from][' + prevStopId + '] <- prevStopId' + ' not found.')
+                    // console.log('i: ' + i + ' thisStopId -> [' + thisStopId + '][from][' + prevStopId + '] <- prevStopId' + ' not found.')
                     currentETA += 300 * (1 - progress)
                     // console.log(``)
                 }
