@@ -58,6 +58,9 @@ class BusWebSocketClient {
         // }
 
         if (!busData[busId]) {
+
+            if (!data.route.includes('ONWK')) return;
+
             console.log(`New bus in WS: ${data.bus} (${busId}) (${data.route})`)
             busData[busId] = {}
             busData[busId].busName = data.bus

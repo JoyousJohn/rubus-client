@@ -860,7 +860,7 @@ $(document).ready(async function() {
     }
     populateJoinedService();
 
-    // wsClient.connect()
+    wsClient.connect()
     openRUBusSocket();
 
     // if (!wsClient.ws) {
