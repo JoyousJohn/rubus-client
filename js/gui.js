@@ -1622,5 +1622,8 @@ function selectTheme(theme) {
     // Immediately update the global theme attributes and styles.
     document.documentElement.setAttribute('data-selected-theme', theme);
     document.documentElement.setAttribute('theme', previewTheme);
-    changeMapStyle(previewTheme);
+
+    if (!tileLayer.options.id.includes('satellite')) {
+        changeMapStyle(previewTheme);
+    }
 }
