@@ -160,7 +160,15 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             // getting undefined on previousPositions, but it should be set from both above in pre where new bus and in ws where new bus, so I added a type key to debug this.
             // maybe limit ws to on/none? maybe getting long lat when setting it there is failing? don't think I've ever seen it without coords
-            const lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]; // gett
+            
+            let lastPosition;
+            try {
+                lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]; // gett
+            } catch (error) {
+                console.log('Error accessing previous positions array:', error)
+                console.log(busData)
+            }
+
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
                 busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
             }
@@ -599,6 +607,8 @@ function checkMinRoutes() {
 
     const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
     if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
+    const hour = new Date().getHours();
+    if (hour < 3 || hour >= 6) return;
 
     if (!activeRoutes.size) {
         $('.knight-mover').show();

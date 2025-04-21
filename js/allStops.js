@@ -12,6 +12,12 @@ function getSoonestBus(stopId, route) {
     let lowestETA = Infinity;
     let lowestBusId;
 
+    if (!busesByRoutes) {
+        console.log ('busesByRoutes not defined');
+        console.log(busesByRoutes);
+        return [null, null];
+    }
+
     busesByRoutes[route].forEach(busId => {
 
         if (busETAs[busId]) {
