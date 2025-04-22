@@ -576,67 +576,40 @@ let busRotationPoints = {}
 const calculateRotation = (busId, loc) => {
     let newRotation;
     if (!pauseRotationUpdating) {
-        if (busData[busId].at_stop && polylines[busData[busId].route]) {
+        const currentStopId = busData[busId].stopId;
 
-            let polyPoints = polylines[busData[busId].route].getLatLngs();
+        if (!stopLines[currentStopId]) {
+            return busData[busId].rotation + 45;
+        }
+        console.log('at yard')
 
-            let currentStopId = busData[busId].stopId[0]; // if at stop .stopId should be an array o the 2 stops
-            if (currentStopId === 13 || currentStopId === 6) { // LSC, hill NB
-                polyPoints = polyPoints.reverse()
+        let polyPoints = stopLines[currentStopId];
+        let minDist = Infinity;
+        let closestIdx = 0;
+
+        // Find the closest point in the array
+        for (let i = 0; i < polyPoints.length; i++) {
+            const point = polyPoints[i];
+            const dx = loc.long - point.lng;
+            const dy = loc.lat - point.lat;
+            const dist = dx * dx + dy * dy;
+            
+            if (dist < minDist) {
+                minDist = dist;
+                closestIdx = i;
             }
+        }
 
-            let minDist = Infinity;
-            let closestIdx = 0;
-            let closestPoint = null;
-
-            // Check each segment of the polyline
-            for (let i = 0; i < polyPoints.length - 1; i++) {
-                const start = polyPoints[i];
-                const end = polyPoints[i + 1];
-                
-                // Calculate the projection of the bus location onto the segment
-                const x1 = start.lng - loc.long;
-                const y1 = start.lat - loc.lat;
-                const x2 = end.lng - loc.long;
-                const y2 = end.lat - loc.lat;
-                
-                const dot = x1 * x2 + y1 * y2;
-                const lenSq = x2 * x2 + y2 * y2;
-                const param = dot / lenSq;
-                
-                let xx, yy;
-                if (param < 0) {
-                    xx = start.lng;
-                    yy = start.lat;
-                } else if (param > 1) {
-                    xx = end.lng;
-                    yy = end.lat;
-                } else {
-                    xx = start.lng + param * x2;
-                    yy = start.lat + param * y2;
-                }
-                
-                // Calculate distance to the closest point on this segment
-                const dx = loc.long - xx;
-                const dy = loc.lat - yy;
-                const dist = dx * dx + dy * dy;
-                
-                if (dist < minDist) {
-                    minDist = dist;
-                    closestIdx = i;
-                    closestPoint = L.latLng(yy, xx);
-                }
-            }
-
-            const nextIdx = (closestIdx + 1) % polyPoints.length;
-            const pt1 = closestPoint || polyPoints[closestIdx];
-            const pt2 = polyPoints[nextIdx];
+        const nextIdx = (closestIdx + 1) % polyPoints.length;
+        const pt1 = polyPoints[closestIdx];
+        const pt2 = polyPoints[nextIdx];
+    
+        if (busRotationPoints[busId]) {
+            ['pt1', 'pt2', 'line'].forEach(val => {
+                busRotationPoints[busId][val].remove();
+            })
+        }
         
-            if (busRotationPoints[busId]) {
-                ['pt1', 'pt2', 'line'].forEach(val => {
-                    busRotationPoints[busId][val].remove();
-                })
-            }
             busRotationPoints[busId] = {}
             
             // Add markers for the points
@@ -677,7 +650,6 @@ const calculateRotation = (busId, loc) => {
         } else {
             newRotation = busData[busId].rotation + 45;
         }
-    }
     return newRotation;
 };
 
@@ -1661,7 +1633,7 @@ $('.satellite-btn').click(function() {
             id: 'mapbox/' + newTheme,
         }).addTo(map);
         
-        $(this).css('background-color', '');
+        $(this).css('background-color', 'var(--theme-bg)');
     } else {
         map.removeLayer(tileLayer);
         tileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`, {
@@ -1673,6 +1645,7 @@ $('.satellite-btn').click(function() {
             const currentHour = new Date().getHours();
             theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
+        $(this).css('background-color', 'var(--theme-satellite-btn)');
     }
 });
 

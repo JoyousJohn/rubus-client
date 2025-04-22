@@ -923,7 +923,7 @@ html, body {
 }
 
 .satellite-btn {
-    background-color: var(--theme-satellite-btn);
+    background-color: var(--theme-bg);
 }
 
 .centerme-wrapper {
