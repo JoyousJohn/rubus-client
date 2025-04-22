@@ -1125,6 +1125,8 @@ function popInfo(busId, resetCampusFontSize) {
     // console.log('data: ', data)
     // console.log('next_stop' in data)
 
+    $('.next-stop-circle').remove(); // remaining .next-stop-circles rom rote menu messes this up
+
     if ('next_stop' in data) {
         $('.next-stops-grid > div').empty();
 
