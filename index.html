@@ -553,7 +553,7 @@
             <script>
             $('.span-i-preload').click(function() {$('.preload-explain').slideToggle();})
             if (/iPhone/i.test(navigator.userAgent)) {
-                $('.toggle-polyline-padding').css('pointer-events', 'none');
+                $('#toggle-polyline-padding').parent().css('pointer-events', 'none');
                 $('.toggle-polyline-padding-unavailable').show();
             }
             </script>
@@ -800,6 +800,16 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-rotation-points" class="toggle-input">
                             <label for="toggle-show-rotation-points" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Allow iPhone Route Preload</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-allow-iphone-preload" class="toggle-input">
+                            <label for="toggle-allow-iphone-preload" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>

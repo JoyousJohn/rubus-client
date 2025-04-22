@@ -1100,6 +1100,7 @@ const toggleSettings = [
     'toggle-polyline-padding',
     'toggle-show-invalid-etas',
     'toggle-show-rotation-points',
+    'toggle-allow-iphone-preload',
 ]
 
 let defaultSettings = {
@@ -1132,6 +1133,7 @@ let defaultSettings = {
     'toggle-polyline-padding': false,
     'toggle-show-invalid-etas': false,
     'toggle-show-rotation-points': false,
+    'toggle-allow-iphone-preload': false,
 
     // going to remove
     'toggle-show-arrival-times': true,

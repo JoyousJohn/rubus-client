@@ -266,6 +266,24 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-allow-iphone-preload':
+            settings['toggle-allow-iphone-preload'] = isChecked;
+
+            if (isChecked) {
+                $('.toggle-polyline-padding-unavailable').html('Disablement overriden via developer!<br>Enabling this may crash your iPhone.')
+                $('#toggle-polyline-padding').parent().css('pointer-events', 'all');
+            } else {
+                $('.toggle-polyline-padding-unavailable').text('Option unavailable on iPhone');
+                $('#toggle-polyline-padding').parent().css('pointer-events', 'none');
+                
+                if (settings['toggle-polyline-padding']) {
+                    $('#toggle-polyline-padding').click();
+                }
+
+            }
+
+            break;
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 
@@ -385,6 +403,11 @@ $(document).ready(function() {
 
     if (settings['toggle-show-knight-mover']) {
         $('.knight-mover').show();
+    }
+
+    if (settings['toggle-allow-iphone-preload']) {
+        $('.toggle-polyline-padding-unavailable').html('Disablement overriden via developer!<br>Enabling this may crash your app.')
+        $('#toggle-polyline-padding').parent().css('pointer-events', 'all');
     }
 
 })
