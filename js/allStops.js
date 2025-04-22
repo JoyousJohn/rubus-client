@@ -20,9 +20,9 @@ function getSoonestBus(stopId, route) {
 
     busesByRoutes[route].forEach(busId => {
 
-        if (busETAs[busId]) {
-            const eta = busETAs[busId][stopId]
+        if (busETAs[busId] && busETAs[busId][stopId] > 0 && isValid(busId)) {
 
+            const eta = busETAs[busId][stopId];
             if (eta < lowestETA) {
                 lowestETA = eta;
                 lowestBusId = busId;
