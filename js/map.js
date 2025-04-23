@@ -1088,35 +1088,39 @@ function popInfo(busId, resetCampusFontSize) {
 
         const displayTime = isToday ? formattedTime : 
             `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
+        
+
         $('.bus-joined-service').text('Joined service at ' + displayTime);
-        $('.info-next-stops').show();
-            
-        $('.bus-data-extra').empty();
-        let extraDataHtml = `<div class="center mb-0p5rem">Bus ID: ${busId}</div>`;
-        for (const [key, value] of Object.entries(busData[busId])) {
-            // Format all values including arrays
-            if (value !== null) {
-                let extraDataVal = value
-                if (key === 'stopId') {
-                    if (Array.isArray(value)) {
-                        const formattedStops = [];
-                        for (const id of value) {
-                            const stopName = stopsData[id] ? stopsData[id].name : 'Unknown';
-                            formattedStops.push(`${id} (${stopName})`);
-                        }
-                        extraDataVal = formattedStops.join(', ');
-                    } else {
-                        extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
+    
+    }
+
+    $('.info-next-stops').show();
+        
+    $('.bus-data-extra').empty();
+    let extraDataHtml = `<div class="center mb-0p5rem">Bus ID: ${busId}</div>`;
+    for (const [key, value] of Object.entries(busData[busId])) {
+        // Format all values including arrays
+        if (value !== null) {
+            let extraDataVal = value
+            if (key === 'stopId') {
+                if (Array.isArray(value)) {
+                    const formattedStops = [];
+                    for (const id of value) {
+                        const stopName = stopsData[id] ? stopsData[id].name : 'Unknown';
+                        formattedStops.push(`${id} (${stopName})`);
                     }
-                } else if (key === 'prevStopId' || key === 'next_stop') {
+                    extraDataVal = formattedStops.join(', ');
+                } else {
                     extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
                 }
-                extraDataHtml += `<div>${key}: <span style="opacity: 0.7">${extraDataVal}</span></div>`;
+            } else if (key === 'prevStopId' || key === 'next_stop') {
+                extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
             }
+            extraDataHtml += `<div>${key}: <span style="opacity: 0.7">${extraDataVal}</span></div>`;
         }
-        $('.bus-data-extra').html(extraDataHtml);
-
     }
+    $('.bus-data-extra').html(extraDataHtml);
+
     if ('at_stop' in busData[busId] && busData[busId].at_stop === true) {
         startStoppedForTimer(busId)
     } else {
