@@ -972,7 +972,7 @@ const campusMappings = {
 let colorMappings;
 
 const defaultColorMappings = {
-    'ee': 'red',
+    'ee': '#fd0000', // bc red is also a color in color circle select, checkmark will appear double
     'f': 'IndianRed',
     'h': 'RoyalBlue',
     'a': 'Orchid',

@@ -608,9 +608,22 @@ $('.color-circle').click(function() {
     
     $('.color-circle-select-default').css('background-color', defaultColorMappings[shownRoute])
 
+    let colorValue = colorMappings[shownRoute];
+    let colorMappingRGB;
+
+    if (colorValue.startsWith('rgb')) {
+        colorMappingRGB = colorValue;
+    } else {
+        const tempElement = document.createElement('div');
+        tempElement.style.color = colorValue;
+        document.body.appendChild(tempElement);
+        colorMappingRGB = window.getComputedStyle(tempElement).color;
+        document.body.removeChild(tempElement);
+    }
+
     $('.color-circle-select').each(function() {
         const color = $(this).css('background-color');
-        if (color === colorMappings[shownRoute]) {
+        if (color === colorMappingRGB) {
             $(this).addClass('selected-color-choice').text('✔');
         } else {
             $(this).text('');
