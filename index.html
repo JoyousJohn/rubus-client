@@ -30,6 +30,7 @@
     <script src="js/share.js"></script>
     <script src="js/ai.js"></script>
     <script defer src="js/allStops.js"></script>
+    <script src="lib/feedback.js"></script>
 
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -239,7 +240,7 @@
         </div>
 
         <div class="fixed w-full" style="top: 0;">
-            <div class="flex flex-col gap-y-1rem" style="margin: 1rem 2rem;">
+            <div class="flex flex-col" style="margin: 1rem 2rem;">
 
                 <div class="knight-mover">
                     <div class="center">ⓘ No buses running</div>
@@ -249,6 +250,7 @@
                             <div class="call white">Call Knight Mover</div>
                         </div>
                     </div>   
+                    <div class="text-1p2rem center" style="color: var(--theme-extra)">Knight Mover accepts calls until 5:45AM</div>
                 </div>
 
                 <div class="passio-messages">
@@ -292,6 +294,7 @@
                         <div class="notif-popup"></div>
                         <div class="getting-location-popup">Getting location...</div>
                         <div class="updating-buses">Updating bases...</div>
+                        <div class="feedback-sent">Feedback sent</div>
                     </div>
                 </div>
 
@@ -329,6 +332,14 @@
                     <div class="stop-navigate br-1rem align-center pointer" onclick="navToStop();">
                         <i class="fa-solid fa-person-walking"></i>
                     </div>
+                    <script>
+                        $('.stop-navigate').click(function() {
+                            $(this).css('background-color', '#565fe5');
+                            setTimeout(() => {
+                                $(this).css('background-color', 'var(--theme-bg)');
+                            }, 250);
+                        })
+                    </script>
                 </div>
 
             </div>
@@ -458,7 +469,7 @@
                         <textarea class="feedback-input mt-2rem text-1p5rem br-0p5rem p-1rem w-full" placeholder="What's on your mind?"></textarea>
                     </div>
                     <!-- <div class="flex justify-center"> -->
-                        <div class="white br-2rem text-1p4rem w-fit mt-2rem" style="padding: 0.5rem 1.5rem; background-color: #4f4fd8;" onclick="$('.leave-feedback-wrapper').hide();">Send Feedback</div>
+                        <div class="white br-2rem text-1p4rem w-fit mt-2rem" style="padding: 0.5rem 1.5rem; background-color: #4f4fd8;" onclick="sendFeedback();">Send Feedback</div>
                     <!-- </div> -->
                 </div>
             </div>

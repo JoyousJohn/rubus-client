@@ -372,7 +372,6 @@ async function popStopInfo(stopId) {
 
     $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/stop_marker_selected.png')
 
-
     if (Number(closestStopId) === stopId) {
         $('.closest-stop').show();
     } else {
@@ -406,7 +405,12 @@ async function popStopInfo(stopId) {
 
     if (!settings['toggle-always-show-second']) {
         $('.stop-info-next-loop-wrapper').hide();
-        $('.stop-info-show-next-loop').show();
+
+        if (getRoutesServicingStop(stopId).length !== 0) {
+            $('.stop-info-show-next-loop').show();
+        } else {
+            $('.stop-info-show-next-loop').hide();
+        }
     } else {
         $('.stop-info-next-loop-wrapper').show();
         $('.stop-info-show-next-loop').hide();

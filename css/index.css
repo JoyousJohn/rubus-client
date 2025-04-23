@@ -173,6 +173,18 @@ html, body {
     display: none;
 }
 
+.feedback-sent {
+    padding: 0.5rem 1.5rem;
+    background-color: rgb(37, 207, 37);
+    color: white;
+    border-radius: 2rem;
+    font-size: 1.7rem;
+    font-family: var(--font-family);
+    text-align: center;
+    width: fit-content;
+    display: none;
+}
+
 .install-pwa {
     padding: 0.5rem 1.7rem;
     background-color: black;

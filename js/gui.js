@@ -3,6 +3,8 @@ let longPressTimer
 function populateRouteSelectors(activeRoutes) {
     $('.route-selectors > div').not('.settings-btn').remove();
 
+    if (!activeRoutes) return;
+
     let routesArray;
 
     try {

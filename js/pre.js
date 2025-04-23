@@ -314,7 +314,7 @@ function makeOoS(busId) {
         sourceBusId = null;
     }
 
-    if (sharedBus && sharedBus === busId) {
+    if (sharedBus && sharedBus == busId) {
         $('.shared, .info-shared').hide();
         sharedBus = null;
     }
@@ -413,19 +413,21 @@ function updateTimeToStops(busIds) {
 
                     const avgWaitAtStop = waits[prevStopId]
 
-                    if (arrivedAgoSeconds < avgWaitAtStop) {
-                        const expectedWaitAtStop = avgWaitAtStop - arrivedAgoSeconds
-
-                        currentETA += expectedWaitAtStop;
-                        busData[busId]['overtime'] = false;
-                    } else {
-                        busData[busId]['overtime'] = true;
-
-                        if (popupBusId === busId && !overtimeInterval && settings['toggle-show-bus-overtime-timer']) {
-                            $('.bus-stopped-for .stop-octagon').show();
-                            startOvertimeCounter(busId);
+                    if (avgWaitAtStop) {
+                        if (arrivedAgoSeconds < avgWaitAtStop) {
+                            const expectedWaitAtStop = avgWaitAtStop - arrivedAgoSeconds
+    
+                            currentETA += expectedWaitAtStop;
+                            busData[busId]['overtime'] = false;
+                        } else {
+                            busData[busId]['overtime'] = true;
+    
+                            if (popupBusId === busId && !overtimeInterval && settings['toggle-show-bus-overtime-timer']) {
+                                $('.bus-stopped-for .stop-octagon').show();
+                                startOvertimeCounter(busId);
+                            }
                         }
-                    }
+                    }  
                 } else {
                     prevStopId = sortedStops[i-1]
                 }
