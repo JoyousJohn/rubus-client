@@ -195,6 +195,12 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         if (aInvalid && !bInvalid) return 1;
         if (!aInvalid && bInvalid) return -1;
 
+        // Add check for negative zero
+        const aIsNegZero = Object.is(a.eta, -0);
+        const bIsNegZero = Object.is(b.eta, -0);
+        if (aIsNegZero && !bIsNegZero) return 1;
+        if (!aIsNegZero && bIsNegZero) return -1;
+
         return a.eta - b.eta;
     })
     .map(([busId]) => busId);
@@ -246,8 +252,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-octagon').last().css('background-color', 'var(--theme-hidden-route-col)').find('div').css('color', 'gray');
         }
 
-        if (data.eta === 0) {
-            // $('.stop-info-buses-grid').append(`<div></div>`)
+        if (Object.is(data.eta, -0)) {
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Off route</div>`);
+            $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
+        } else if (Object.is(data.eta, 0)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
             $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
         } else if (!busData[busId].atDepot) {

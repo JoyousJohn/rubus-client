@@ -235,7 +235,7 @@ html, body {
     font-family: var(--font-family);
     width: min-content;
     white-space: nowrap;
-    display: grid;
+    display: flex;
     grid-template-columns: auto auto;
 }
 

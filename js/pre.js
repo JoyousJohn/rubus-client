@@ -704,7 +704,7 @@ function populateMessages(messages) {
         $('.passio-messages-list').append($msgElm)
 
         $('.passio-mini').append(`<div data-alert-mini="${message['id']}" class="passio-mini-alert gap-x-0p5rem pointer">
-            <div class="br-1rem bold flex justify-center align-center" style="background-color: white; color: red; aspect-ratio: 1; height: 100%; margin-right: 1.5rem;">!</div>
+            <div class="br-1rem bold flex justify-center align-center" style="background-color: white; color: red; aspect-ratio: 1; height: 100%;">!</div>
             <div class="pr-0p5rem">${title}</span>
         </div>`)
         .click(function() {
