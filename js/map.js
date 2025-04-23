@@ -352,6 +352,7 @@ function panout() {
     } else {
         showAllBuses();
         showAllPolylines();
+        showAllStops();
     }
 
 }
@@ -1385,14 +1386,20 @@ function focusBus(busId) {
     // if (!popupBusId) {
         const topContainerHeight = 1 - ($(window).height() - $('.bus-btns').offset().top)/$(window).height()
 
-        const polyline = polylines[route]
+        let focusBounds = polylines[route].getBounds()
+
+        if (busData[busId].atDepot) {
+            const busLocBounds = L.latLngBounds([L.latLng(busData[busId].lat, busData[busId].long)]);
+            focusBounds.extend(busLocBounds);
+        }
+
         const mapSize = map.getSize();
         const topGuiHeight = mapSize.y * topContainerHeight;
 
         const extraPaddingY = 30;
         const extraPaddingX = 30;
 
-        map.fitBounds(polyline.getBounds(), {
+        map.fitBounds(focusBounds, {
             paddingTopLeft:     [extraPaddingX, topGuiHeight],
             paddingBottomRight: [extraPaddingX, extraPaddingY + 30],
             animate: true
