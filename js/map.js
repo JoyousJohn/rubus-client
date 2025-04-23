@@ -582,7 +582,7 @@ const calculateRotation = (busId, loc) => {
         if (!stopLines[currentStopId]) {
             return busData[busId].rotation + 45;
         }
-        console.log('at yard')
+        // console.log('at yard')
 
         let polyPoints = stopLines[currentStopId];
         let minDist = Infinity;
@@ -1128,7 +1128,7 @@ function popInfo(busId, resetCampusFontSize) {
 
     $('.next-stop-circle').remove(); // remaining .next-stop-circles rom rote menu messes this up
 
-    if ('next_stop' in data) {
+    if ('next_stop' in data && busETAs[busId]) { // instead of checking && busETAs[busId], can also do && !busData[busId].atDepot, since we're just trying to hide next stops when there's no prev stop visited info... wait why not just do that? busData[busId].stopId?
         $('.next-stops-grid > div').empty();
 
         if (closestStopId && routesServicing(closestStopId).includes(data.route)) {
@@ -1699,4 +1699,27 @@ function animatePikachu() {
     }
 
     requestAnimationFrame(animate);
+}
+
+
+function navToStop() {
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    let url = '';
+
+    const stopLat = stopsData[popupStopId].latitude
+    const stopLng = stopsData[popupStopId].longitude
+
+    if (isIOS) {
+        url = `http://maps.apple.com/?daddr=${stopLat},${stopLng}&dirflg=w`;
+    } else if (isAndroid) {
+        url = `https://www.google.com/maps/dir/?api=1&destination=${stopLat},${stopLng}&travelmode=walking`;
+    } else {
+        // Fallback, use GM
+        url = `https://www.google.com/maps/dir/?api=1&destination=${stopLat},${stopLng}&travelmode=walking`;
+    }
+
+    window.open(url, '_blank');
+
 }

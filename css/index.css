@@ -497,13 +497,13 @@ html, body {
     color: rgb(242, 242, 242)
 }
 
-.bus-btns {
+.bus-btns, .stop-btns {
     position: absolute;
     right: 0;
     top: 0;
 }
 
-.bus-star, .bus-share, .bus-comment, .bus-follow {
+.bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate {
     color: var(--theme-color);
     background-color: var(--theme-bg);
     font-size: 1.7rem;
