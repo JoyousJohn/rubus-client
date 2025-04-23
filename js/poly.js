@@ -253,7 +253,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         }
 
         if (Object.is(data.eta, -0)) {
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Off route</div>`);
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Detour</div>`);
             $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
         } else if (Object.is(data.eta, 0)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
