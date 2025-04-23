@@ -7,7 +7,7 @@ function checkShared() {
 
     if (busId && busData[busId]) {
 
-        sharedBus = busId;
+        sharedBus = parseInt(busId);
 
         setTimeout(() => { // otherwise Failed to find popup or reach target zoom after multiple attempts
             flyToBus(sharedBus);
