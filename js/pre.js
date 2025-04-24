@@ -889,6 +889,7 @@ $(document).ready(async function() {
             await fetchWhere();
             checkMinRoutes(); // oes this work right?
             openRUBusSocket();
+            fetchBusData(true); // Explicitly call for immediate update on visibility change
 
             // if (!Object.keys(busData).length) { // maybe add a condition here to only cheeck on weekends at night?
                 startOvernight();

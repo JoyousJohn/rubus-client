@@ -59,17 +59,22 @@ class BusWebSocketClient {
 
         if (!busData[busId]) {
 
+            if (!data.route) {
+                console.log("[WHAT] " + busId + " " + data + " doesn't have a route...");
+                return;
+            }
+
             if (!data.route.includes('ONWK')) return;
 
-            console.log(`New bus in WS: ${data.bus} (${busId}) (${data.route})`)
-            busData[busId] = {}
-            busData[busId].busName = data.bus
+            console.log(`New bus in WS: ${data.bus} (${busId}) (${data.route})`);
+            busData[busId] = {};
+            busData[busId].busName = data.bus;
             busData[busId].previousTime = new Date().getTime() - 5000;
             busData[busId].previousPositions = [[parseFloat(data.latitude), parseFloat(data.longitude)]];
-            busData[busId].type = 'ws'
+            busData[busId].type = 'ws';
 
             if (!('route' in data)) { // sometimes none...
-                busData[busId].route = 'none'
+                busData[busId].route = 'none';
             } else {
 
                 if (data.route === 'ONWK1FS') {
