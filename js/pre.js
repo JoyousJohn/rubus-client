@@ -766,6 +766,14 @@ function getMessages() {
 }
 
 
+function cancelAllAnimations() {
+    Object.keys(animationFrames).forEach(busId => {
+        cancelAnimationFrame(animationFrames[busId]);
+        delete animationFrames[busId];
+    });
+  }
+
+
 let joined_service = {};
 
 $(document).ready(async function() {
@@ -922,7 +930,14 @@ $(document).ready(async function() {
 
             $('.updating-buses').slideUp();
         }
+        
+        if (document.visibilityState === 'hidden') {
+            cancelAllAnimations();
+        }
+    
     });
+
+    window.addEventListener('beforeunload', cancelAllAnimations);
 
     getMessages();
 

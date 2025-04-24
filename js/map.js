@@ -918,8 +918,14 @@ function plotBus(busId, immediatelyUpdate) {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[busData[busId].route];
     
-        if ((shownRoute && shownRoute !== busData[busId].route) || (settings['toggle-hide-other-routes'] && popupBusId && busData[popupBusId].route !== busData[busId].route) || popupBusId) {
-            busMarkers[busId].getElement().style.display = '';
+        try {
+            if ((shownRoute && shownRoute !== busData[busId].route) || (settings['toggle-hide-other-routes'] && popupBusId && busData[popupBusId].route !== busData[busId].route) || popupBusId) {
+                busMarkers[busId].getElement().style.display = '';
+            }
+        } catch (error) {
+            console.error('Error updating bus marker visibility:', error);
+            console.log(busData);
+            console.log(busData[popupBusId]); // why can this ever be the case?
         }
 
         busMarkers[busId].on('click', function() {

@@ -555,20 +555,10 @@
                     </label>
                 </div>
             </div>
-            <div class="focus-explain none ml-0p5rem text-1p3rem dimgray">Hide all other buses and center the route within view when a bus is selected. Pan on the map with two fingers to move around in this view. Pan with one finger to restore view.</div>
+            <div class="focus-explain none ml-0p5rem text-1p3rem dimgray">Hide all other buses and center the route when a bus is selected. Drag with two fingers to pan the map. Pan with one finger to restore view.</div>
             <script>
             $('.span-i-focus').click(function() {$('.focus-explain').slideToggle();})
             </script>
-
-            <div class="settings- flex justify-between">
-                <div class="settings-heading">Show Stops Above Buses</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-stops-above-buses" class="toggle-input">
-                    <label for="toggle-stops-above-buses" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
 
             <div class="flex justify-between">
                 <div class="settings-heading flex flex-1 align-center">Preload Map Routes<span class="span-i span-i-preload pointer select-none">i</span></div>
@@ -603,6 +593,16 @@
             <script>
             $('.span-i-second').click(function() {$('.second-explain').slideToggle();})
             </script>
+
+            <div class="settings- flex justify-between">
+                <div class="settings-heading">Show Stops Above Buses</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-stops-above-buses" class="toggle-input">
+                    <label for="toggle-stops-above-buses" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
 
             <div class="flex justify-between">
                 <div class="settings-heading">Launch Fireworks Button</div>
