@@ -133,6 +133,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     busData[busId].joined_service = new Date();
                 }
 
+                // All stops are shown so no buses, and if this is the first bus, we need to hide all stops first before showing stops for this route
+                if (Object.keys(busData).length === 1) {
+                    hideAllStops();
+                }
+
                 if (!isInitial) {
                     addStopsToMap();
                     updateTimeToStops([busId]); // otherwise can briefly get undefined when reading ETA for this bus. Found this when selecting route selector and I think the tooltip code failed to read (gui line 295 at the time)
@@ -215,8 +220,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 newRoutes.forEach(item => activeRoutes.add(item))
                 populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all
             }
-
-            
+ 
             if (busId === popupBusId) {
                 $('.info-capacity').text(bus.paxLoad + '% capacity');
             }

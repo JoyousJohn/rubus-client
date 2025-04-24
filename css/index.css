@@ -518,13 +518,13 @@ html, body {
 .bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate {
     color: var(--theme-color);
     background-color: var(--theme-bg);
-    font-size: 2rem;
+    font-size: 1.7rem;
     aspect-ratio: 1;
     min-height: fit-content;
     display: flex;
     justify-content: center;
     /* max-height: 100%; */
-    width: 4.2rem;
+    width: 3.5rem;
     transition: 80ms;
 }
 
@@ -1105,7 +1105,7 @@ html, body {
 .settings-close > div, .buses-close, .events-close, .all-stops-close, .feedback-x {
     background-color: rgb(208, 77, 77);
     position: fixed;
-    bottom: 0;
+    bottom: 1rem;
     right: 0;
     height: 4rem;
     width: 4rem;

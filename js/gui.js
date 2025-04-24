@@ -256,6 +256,14 @@ function toggleRouteSelectors(route) {
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
 
+function hideAllStops() {
+    for (const polyline in polylines) {
+        const stopIdsForRoute = stopLists[polyline]
+        stopIdsForRoute.forEach(stopId => {
+            busStopMarkers[stopId].remove();
+        })
+    }    
+}
 
 function hideStopsExcept(excludedRoute) {
     const stopIdsForSelectedRoute = stopLists[excludedRoute]

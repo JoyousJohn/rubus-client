@@ -444,15 +444,14 @@ async function addStopsToMap() {
     activeStops = []
 
     for (const activeRoute in busesByRoutes) {
-        if (!(activeRoute in stopLists)) continuev // why would this trigger?
-        activeStops = [...activeStops, ...stopLists[activeRoute]]
-        activeStops = [...new Set(activeStops)]
+        if (!(activeRoute in stopLists)) { console.log('does this actually happen?'); continue; } // why would this trigger?
+        activeStops = [...activeStops, ...stopLists[activeRoute]];
+        activeStops = [...new Set(activeStops)];
     }
 
     if (!activeStops.length) { // no buses running, show all stops
         activeStops = Array.from({length: 25}, (_, i) => i + 1);
     }
-    // console.log(activeStops)
 
     checkIfLocationShared();
 
