@@ -104,6 +104,21 @@ async function getPolylineData(routeName) {
     }
 } 
 
+
+function getValidBusesServicingStop(stopId) {
+    let validBuses = [];
+    const routesServicing = getRoutesServicingStop(stopId)
+    routesServicing.forEach(route => {
+        busesByRoutes[route].forEach(busId => {
+            if (isValid(busId)) {
+                validBuses.push(busId);
+            }
+        })
+    })
+    return validBuses;
+}
+
+
 const busStopMarkers = {};
 
 function getNextStopId(route, stopId) {
@@ -414,7 +429,7 @@ async function popStopInfo(stopId) {
     if (!settings['toggle-always-show-second']) {
         $('.stop-info-next-loop-wrapper').hide();
 
-        if (getRoutesServicingStop(stopId).length !== 0) {
+        if (getValidBusesServicingStop(stopId).length !== 0) {
             $('.stop-info-show-next-loop').show();
         } else {
             $('.stop-info-show-next-loop').hide();
