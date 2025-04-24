@@ -30,7 +30,7 @@
     <script src="js/share.js"></script>
     <script src="js/ai.js"></script>
     <script defer src="js/allStops.js"></script>
-    <script src="lib/feedback.js"></script>
+    <script src="js/feedback.js"></script>
 
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -163,6 +163,7 @@
     </script>
 
     <div class="dev-build-popup none arial">ⓘ Developer build</div>
+    <div class="feedback-sent none">Feedback sent!</div>
 
     <div class="info-popup-wrapper h-100">
 
@@ -305,7 +306,6 @@
                         <div class="notif-popup"></div>
                         <div class="getting-location-popup">Getting location...</div>
                         <div class="updating-buses">Updating bases...</div>
-                        <div class="feedback-sent">Feedback sent</div>
                     </div>
                 </div>
 
@@ -424,9 +424,9 @@
 
         <div class="busy-wrapper flex flex-col align-center mb-8rem mt-5rem">
             <div class="flex justify-center">
-                <div class="ridership-history-title wait-title center">Bus Wait Times</div>
+                <div class="ridership-history-title wait-title center pointer" onclick="$('.wait-times').slideDown(); $('.wait-title').text('Bus Wait Times');">Show Bus Wait Times</div>
             </div>
-            <div class="wait-times gap-1rem">
+            <div class="wait-times gap-1rem none">
             </div>
         </div>
         <div class="buses-close justify-center align-center">X</div>

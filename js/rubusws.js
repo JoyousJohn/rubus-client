@@ -16,13 +16,8 @@ function updateWaits(waitsData) {
 }
 
 function closeRUBusSocket() {
-    console.log(socket.readyState)
     if (socket.readyState === WebSocket.OPEN) {
-        console.log('open, closing,,,')
         socket.close();
-        console.log(socket.readyState)
-    } else {
-        console.log('not open !!!')
     }
 }
 
