@@ -1365,6 +1365,8 @@ function updateNearestStop() {
         }
     }
 
+    closestStopId = closestStop;
+
     closestStopsMap = new Map(
         Object.entries(closestStopDistances)
             .sort(([, distanceA], [, distanceB]) => distanceA - distanceB)
