@@ -1444,6 +1444,9 @@ function distanceFromLine(busId) {
 }
 
 function isValid(busId) {
+
+    if (!busETAs[busId]) return false;
+
     stopLists[busData[busId].route].forEach(stopId => {
         if (busETAs[busId][stopId] < 0) return false;
     })

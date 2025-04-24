@@ -623,9 +623,25 @@ function checkMinRoutes() {
     const hour = new Date().getHours();
     if (hour < 3 || hour >= 6) return;
 
+    const minRoutes = ["ee", "lx", "h", "bl"];
+
+    let isAnyBusActuallyInService = false;
+    minRoutes.forEach(route => {
+        if (busesByRoutes[route]) {
+            busesByRoutes[route].forEach(busId => {
+                const valid = isValid(busId);
+                if (valid) {
+                    isAnyBusActuallyInService = true;
+                }
+            }) 
+        }
+        
+    })
+
     if (!activeRoutes.size) {
         $('.knight-mover').show();
         $('.knight-mover-mini').hide();
+
         populateRouteSelectors(); // to remove favs
         return;
     }
@@ -638,9 +654,14 @@ function checkMinRoutes() {
 
     if (excludeRoutes.some(route => activeRoutes.has(route))) { return; }
 
-    const minRoutes = ["ee", "lx", "h", "bl"];
     if(!minRoutes.every(str => activeRoutes.has(str))) {
-        $('.knight-mover-mini').css('display', 'flex');
+
+        if (!isAnyBusActuallyInService) {
+            $('.knight-mover').show();
+        } else {
+            $('.knight-mover-mini').css('display', 'flex');
+        }
+
     } else if (settings['toggle-show-knight-mover']) {
         $('.knight-mover-mini').hide();
     }
