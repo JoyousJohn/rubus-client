@@ -148,6 +148,17 @@
     <script>
         if (JSON.parse(localStorage.getItem('settings')) && JSON.parse(localStorage.getItem('settings'))['theme']) {
             document.querySelector('.theme-modal').style.display = 'none';
+        } else if (new URLSearchParams(window.location.search).has('bus')) {
+            document.querySelector('.theme-modal').style.display = 'none';
+            $(document).ready(async function() {
+                if (!localStorage.getItem('settings')) {
+                    selectTheme('auto'); // need document ready to wait for this to load
+                    setTimeout(() => {
+                        updateSettings();
+                        settings['theme'] = 'auto'; // idk why this isn't being set in defaultSettings and am too lazy tracing it
+                    }, 0);
+                }
+            })
         }
     </script>
 
@@ -268,7 +279,7 @@
                     <div class="info-top-right flex flex-col gap-y-1rem align-end">
                         <div class="install-pwa pointer none" onclick="$('.install-pwa-wrapper').show();">Install App ➜</div>
                         <script> 
-                        $(document).ready(function(){ if (!isDesktop && 'matchMedia' in window) {
+                        $(document).ready(function(){ if (!isDesktop && 'matchMedia' in window && !new URLSearchParams(window.location.search).has('bus')) {
                             if (!window.matchMedia('(display-mode: standalone)').matches) {
                                 $('.install-pwa').show();
                                 const iPhoneOrAndroid = /iPhone/i.test(navigator.userAgent) ? 'iphone' : 
