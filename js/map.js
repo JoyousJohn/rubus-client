@@ -672,37 +672,17 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         delete animationFrames[busId];
     }
 
-    // If immediatelyUpdate is true, skip animation and set position directly
-    if (immediatelyUpdate) {
-        const endLatLng = L.latLng(loc.lat, loc.long);
-        
-        if (wholePixelPositioning) {
-            marker.setLatLng(endLatLng);
-        } else {
-            marker.setLatLngPrecise([endLatLng.lat, endLatLng.lng]);
-        }
-        
-        // Update rotation immediately as well
-        if (!pauseRotationUpdating) {
-            const newRotation = calculateRotation(busId, loc);
-            const iconElement = marker.getElement().querySelector('.bus-icon-outer');
-            if (iconElement && newRotation !== undefined) {
-                iconElement.style.transform = `rotate(${newRotation}deg)`;
-            }
-        }
-        
-        return; // Exit early - no animation needed
-    }
-
-    let prevLatLng;
-    if (busData[busId].previousPositions.length >= 3) {
-        prevLatLng = {lat: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][0], lng: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][1]};
-    }
-    // console.log(busData[busId].previousPositions)
-    // console.log(prevLatLng)
-    // console.log('')
+    // Get current position
     const startLatLng = marker.getLatLng();
     const endLatLng = L.latLng(loc.lat, loc.long);
+    
+    let prevLatLng;
+    if (busData[busId].previousPositions.length >= 3) {
+        prevLatLng = {
+            lat: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][0], 
+            lng: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][1]
+        };
+    }
 
     const positioningOption = settings['bus-positioning'];
     const showPath = settings['toggle-show-bus-path'];
@@ -780,13 +760,33 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         }
     }
 
+    // If immediatelyUpdate is true, skip animation and set position directly
+    if (immediatelyUpdate) {
+        if (wholePixelPositioning) {
+            marker.setLatLng(endLatLng);
+        } else {
+            marker.setLatLngPrecise([endLatLng.lat, endLatLng.lng]);
+        }
+        
+        // Update rotation immediately as well
+        if (!pauseRotationUpdating) {
+            const newRotation = calculateRotation(busId, loc);
+            const iconElement = marker.getElement().querySelector('.bus-icon-outer');
+            if (iconElement && newRotation !== undefined) {
+                iconElement.style.transform = `rotate(${newRotation}deg)`;
+            }
+        }
+        
+        return; // Exit early - no animation needed
+    }
+
+    // Calculate animation duration - keep this exactly as in original code
     const duration = (new Date().getTime() - busData[busId].previousTime) + 2500;
     const startTime = performance.now();
     busData[busId].previousTime = new Date().getTime();
 
     const startRotation = parseFloat(marker.getElement().querySelector('.bus-icon-outer').style.transform.replace('rotate(', '').replace('deg)', '') || '0');
     const endRotation = calculateRotation(busId, loc);
-    const startPosition = marker.getLatLng();
 
     const calculateBezierPoint = (t) => {
         if (!prevLatLng || positioningOption !== 'bezier') return null;
@@ -809,8 +809,8 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         if (t <= 0.3) {
             const t1 = t / 0.3;
             return {
-                lat: startPosition.lat + (curveJoinPoint.lat - startPosition.lat) * t1,
-                lng: startPosition.lng + (curveJoinPoint.lng - startPosition.lng) * t1
+                lat: startLatLng.lat + (curveJoinPoint.lat - startLatLng.lat) * t1,
+                lng: startLatLng.lng + (curveJoinPoint.lng - startLatLng.lng) * t1
             };
         } else {
             const t2 = (t - 0.3) / 0.7;
@@ -828,8 +828,19 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
     };
 
     const animateMarker = (currentTime) => {
+        // Skip this animation frame if busId has been removed from animationFrames
+        // This happens when a new animation starts or cancellation occurs
+        if (!animationFrames[busId]) return;
+        
         const elapsedTime = currentTime - startTime;
         const progress = Math.min(elapsedTime / duration, 1);
+
+        // Check if the bus marker still exists
+        if (!busMarkers[busId]) {
+            // Bus went out of service, clean up the animation
+            delete animationFrames[busId];
+            return;
+        }
 
         // Determine the current position
         let currentLatLng;
@@ -865,8 +876,6 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
             rotationChange += 360;
         }
 
-        if (!busMarkers[busId]) return; // Bus went out of service
-
         if (!pauseRotationUpdating) {
             let currentRotation = startRotation + rotationChange * progress;
             const iconElement = marker.getElement().querySelector('.bus-icon-outer');
@@ -876,25 +885,22 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         }
 
         if (progress < 1) {
+            // Only schedule next frame if we're still animating and this ID hasn't been replaced
             animationFrames[busId] = requestAnimationFrame(animateMarker);
         } else {
-            // console.log(`Updated bus ${busId} in ${(performance.now() - startTime) / 1000} seconds.`);
+            // Animation complete, clean up
             delete animationFrames[busId];
         }
     };
-
-    // Animation frame already canceled at the top of the function
     
-    requestAnimationFrame(animateMarker);
+    // Start the animation
+    animationFrames[busId] = requestAnimationFrame(animateMarker);
 };
 
 let selectedMarkerId;
 let pauseUpdateMarkerPositions = false;
 
 function plotBus(busId, immediatelyUpdate) {
-
-    // console.log('plotting bus with id:', busId)
-
     const loc = {lat: busData[busId].lat, long: busData[busId].long};
 
     if (!busMarkers[busId]) {

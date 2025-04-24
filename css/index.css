@@ -518,13 +518,13 @@ html, body {
 .bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate {
     color: var(--theme-color);
     background-color: var(--theme-bg);
-    font-size: 1.7rem;
+    font-size: 2rem;
     aspect-ratio: 1;
     min-height: fit-content;
     display: flex;
     justify-content: center;
     /* max-height: 100%; */
-    width: 3.5rem;
+    width: 4.2rem;
     transition: 80ms;
 }
 

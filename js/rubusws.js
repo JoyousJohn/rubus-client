@@ -30,7 +30,7 @@ function openRUBusSocket() {
 
     if (socket && socket.readyState === WebSocket.OPEN) {
         closeRUBusSocket();
-        fetchBusData(true); // immediately update positions
+        // fetchBusData(true); // immediately update positions
     }
 
     if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
