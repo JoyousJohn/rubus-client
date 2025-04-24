@@ -26,6 +26,11 @@ function checkShared() {
 
         }, 0);
 
+    } else if (busId && !busData[busId]) {
+        $('.shared').html(`Shared bus no longer in service!`).css('display', 'flex')
+        setTimeout(() => {
+            $('.shared').html(`Shared bus no longer in service!`).slideUp();
+        }, 5000);
     }
 
 }
