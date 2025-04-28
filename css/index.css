@@ -148,7 +148,7 @@ html, body {
     display: none;
 }
 
-.getting-location-popup {
+/* .getting-location-popup {
     padding: 0.5rem 1.5rem;
     background-color: rgb(255, 167, 0);
     color: white;
@@ -159,9 +159,9 @@ html, body {
     width: fit-content;
     display: none;
     animation: pulse 1s infinite;
-}
+} */
 
-.updating-buses {
+.updating-buses, .getting-location-popup {
     padding: 0.3rem 1rem;
     background-color: rgb(51, 160, 211);
     color: white;
