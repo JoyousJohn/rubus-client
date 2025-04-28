@@ -142,7 +142,7 @@ html, body {
     padding: 2rem 3rem;
     margin: 1rem;
     font-family: var(--font-family);
-    font-size: 1.7rem;
+    font-size: 1.5rem;
     border-radius: 0.5rem;
     color: rgb(246, 246, 246);
     display: none;
@@ -162,15 +162,16 @@ html, body {
 }
 
 .updating-buses {
-    padding: 0.5rem 1.5rem;
-    background-color: rgb(255, 167, 0);
+    padding: 0.3rem 1rem;
+    background-color: rgb(51, 160, 211);
     color: white;
-    border-radius: 2rem;
-    font-size: 1.7rem;
+    font-weight: 500;
+    border-radius: 0.3rem;
+    font-size: 1.2rem;
     font-family: var(--font-family);
     text-align: center;
     width: fit-content;
-    display: none;
+    /* display: none; */
 }
 
 .install-pwa {

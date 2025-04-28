@@ -1497,6 +1497,8 @@ function findNearestStop(fly) {
         if (error.code === 1) {
             localStorage.setItem('locationShared', 'false')
         }
+    }, {
+        enableHighAccuracy: true,
     });
 }
 

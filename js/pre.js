@@ -91,7 +91,6 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             }
         });
 
-        // Check if response is OK
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -100,9 +99,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         // console.log('Response data:', data);
 
         if (data.error) {
-            $('.notif-popup').html(`Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio error: ${data.error}`).fadeIn();
+            $('.notif-popup').html(`Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio is reporting: ${data.error}`).fadeIn();
             passioDown = true;
             return;
+        } else {
+            $('.notif-error').slideUp(); // will this also slide up errors when rubus servers are down? maybe I'll need a second wrapper?
         }
 
         let activeBuses = [];
