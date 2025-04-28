@@ -70,6 +70,7 @@ function getRouteStr(route) {
     }     
 }
 
+let passioDown = false;
 
 async function fetchBusData(immediatelyUpdate, isInitial) {
 
@@ -97,6 +98,12 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
         const data = await response.json();
         // console.log('Response data:', data);
+
+        if (data.error) {
+            $('.notif-popup').html(`Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio error: ${data.error}`).fadeIn();
+            passioDown = true;
+            return;
+        }
 
         let activeBuses = [];
         let pollActiveRoutes = new Set();
@@ -824,7 +831,7 @@ $(document).ready(async function() {
         $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
         // setTimeout(() => {
             // $('.bus-info-popup').hide();
-        $('.knight-mover').show();
+        if (!passioDown) $('.knight-mover').show();
         // }, 5000);
         // $('.centerme-wrapper').addClass('centerme-bottom-right')
         $('.right-btns').addClass('right-btns-bottom')
