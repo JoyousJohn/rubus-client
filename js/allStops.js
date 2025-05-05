@@ -18,18 +18,26 @@ function getSoonestBus(stopId, route) {
         return [null, null];
     }
 
-    busesByRoutes[route].forEach(busId => {
+    try {
+        busesByRoutes[route].forEach(busId => {
 
-        if (busETAs[busId] && busETAs[busId][stopId] > 0 && isValid(busId)) {
+            if (busETAs[busId] && busETAs[busId][stopId] > 0 && isValid(busId)) {
 
-            const eta = busETAs[busId][stopId];
-            if (eta < lowestETA) {
-                lowestETA = eta;
-                lowestBusId = busId;
+                const eta = busETAs[busId][stopId];
+                if (eta < lowestETA) {
+                    lowestETA = eta;
+                    lowestBusId = busId;
+                }
             }
-        }
-    })
-    return [lowestBusId, lowestETA]
+        })
+    } catch (error) {
+        console.log('error in getSoonestBus');
+        console.log(error);
+        console.log(route);
+        console.log(stopId);
+        console.log(busesByRoutes);
+    }
+    return [lowestBusId, lowestETA];
 }
 
 function populateAllStops() {

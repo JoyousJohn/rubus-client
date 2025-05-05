@@ -679,11 +679,17 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
     const endLatLng = L.latLng(loc.lat, loc.long);
     
     let prevLatLng;
-    if (busData[busId].previousPositions.length >= 3) {
-        prevLatLng = {
-            lat: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][0], 
-            lng: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][1]
-        };
+    try {
+        if (busData[busId].previousPositions.length >= 3) {
+            prevLatLng = {
+                lat: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][0], 
+                lng: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][1]
+            };
+        }
+    } catch (error) {
+        console.log(error);
+        console.log(busData[busId].previousPositions);
+        console.log(busData[busId]);
     }
 
     const positioningOption = settings['bus-positioning'];

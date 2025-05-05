@@ -1244,6 +1244,13 @@ html, body {
 .settings-rubus-attribution {
     font-size: 1.25rem;
 }
+
+.footer-selected {
+    font-weight: bold;
+    text-decoration: underline;
+    color: black;
+}
+
 .rubus-ai {
     display: grid;
     grid-template-columns: 1fr 5fr;

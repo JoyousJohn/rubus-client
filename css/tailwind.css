@@ -28,6 +28,8 @@
 
 .underline { text-decoration: underline; }
 
+.italics { font-style: italic; }
+
 .text-1rem { font-size: 1rem; }
 
 .text-1p2rem { font-size: 1.2rem; }

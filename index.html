@@ -31,6 +31,7 @@
     <script src="js/ai.js"></script>
     <script defer src="js/allStops.js"></script>
     <script src="js/feedback.js"></script>
+    <script src="js/contact.js"></script>
 
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -219,9 +220,9 @@
                         <div class="bus-follow br-1rem align-center pointer">
                             <i class="fa-solid fa-map-pin"></i>
                         </div>
-                        <div class="bus-comment br-1rem align-center pointer">
+                        <!-- <div class="bus-comment br-1rem align-center pointer">
                             <i class="fa-regular fa-message" onclick="$('.leave-feedback-wrapper').show(); $('.bottom').hide();"></i>
-                        </div>
+                        </div> -->
                         <div class="bus-share br-1rem align-center none pointer">
                             <i class="fa-solid fa-share-nodes"></i>
                         </div>
@@ -915,11 +916,20 @@
 
             </div>
 
-            <div class="settings-rubus-attribution flex justify-around gray777777 mb-10rem mt-1p5rem">
-                <div>About</div>
-                <div>Contact</div>
-                <div>Terms</div>
+            <div class="settings-rubus-attribution flex justify-around select-none gray777777 mt-1p5rem mb-2rem">
+                <!-- <div>About</div> -->
+                <div class="contact pointer" onclick="contactClicked();">Contact</div>
+                <!-- <div>Terms</div> -->
                 <div class="events-link">Events (Exp)</div>
+            </div>
+
+            <div class="footer flex justify-center mb-10rem">
+                <div class="footer-contact-wrapper none">
+                    <div class="flex justify-center">
+                        <div class="footer-contact grid grid-cols-2-auto text-1p5rem w-max gap-x-2rem"></div>
+                    </div>
+                    <div class="text-1p3rem italics gray777777 mt-0p5rem">You may receive a response from a non-@rubus.live email.</div>
+                </div>
             </div>
 
         </div>

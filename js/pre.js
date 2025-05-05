@@ -158,6 +158,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             } else {
                 if (busData[busId].route !== routeStr) { // Route changed for existing bus...
+                    busData[busId]['route_change'] = {
+                        'old_route': busData[busId].route,
+                        'route_change_time': new Date(),
+                    };
                     busData[busId].route = routeStr;
 
                     try {
@@ -186,7 +190,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]; // gett
             } catch (error) {
                 console.log('Error accessing previous positions array:', error)
-                console.log(busData)
+                console.log(busData[busId])
             }
 
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
@@ -537,7 +541,6 @@ async function fetchWhere() {
         Object.keys(busData).forEach(busId => {
             if (!validBusIds.includes(busId) && busData[busId].route.includes('on')) { // this should only afet returning to the app which had overnight buses previously (from ws), otherwise it would briefly cause buses not yet reaching a stop to pop out before respawning from fetch data
                 makeOoS(busId)
-                // console.log(' no more ', busId)
             }
         })
 
