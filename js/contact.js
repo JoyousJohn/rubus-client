@@ -10,10 +10,20 @@ function popContact() {
     Object.keys(contact).forEach(function(key) {
         if (key === 'emails') {
             contact.emails.forEach(function(email) {
-                $('.footer-contact').append(`<div>${email.type}</div>`)
-                $('.footer-contact').append(`<div class="right">${email.address}</div>`)
+                $('.footer-contact').find('.footer-contact-email-blurb').before(`<div>${email.type}</div>`)
+                $('.footer-contact').find('.footer-contact-email-blurb').before(`<div class="right"><a href="mailto:${email.address}">${email.address}</a></div>`)
             });
         }
+
+        else if (key === 'socials') {
+            contact.socials.forEach(function(social) {
+                $('.footer-contact').append(`<div>${social.type}</div>`)
+                if (social.type === 'Reddit') {
+                    $('.footer-contact').append(`<div class="right"><a href="https://redddit.com/${social.address}">${social.address}</a></div>`)
+                }
+            });
+        }
+
     });
 
     showContact();
@@ -33,6 +43,11 @@ function contactClicked() {
                 console.error('Error fetching contact data:', error);
             });
     } else {
-        showContact();
+        if ($('.footer-contact-wrapper').is(':visible')) {
+            $('.footer-contact-wrapper').hide();
+            $('.contact').removeClass('footer-selected');
+        } else {
+            showContact();
+        }
     }
 }
