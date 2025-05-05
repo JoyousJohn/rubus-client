@@ -97,7 +97,7 @@ $('.bus-star').click(function() {
     localStorage.setItem('favs', JSON.stringify(favBuses))
 })
 
-async function populateFavs() {
+async function populateFavs(popSelectors = true) {
 
     $('.favs').empty();
 
@@ -131,7 +131,7 @@ async function populateFavs() {
         }
     })
 
-    if ($('.favs > div').length) {
+    if ($('.favs > div').length && popSelectors) {
         populateRouteSelectors(activeRoutes);
     }
 

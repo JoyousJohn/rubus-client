@@ -294,7 +294,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
 
 function makeOoS(busId) {
-
+    
     console.log(`[Out of Service][${new Date().toLocaleString('en-US', {timeZone: 'America/New_York', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(',','')}] busId: ${busId}`)
 
     if (busMarkers[busId]) { // investigate why this would occur
@@ -313,7 +313,7 @@ function makeOoS(busId) {
     makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
     console.log("makeOos() busesByRoutes after: ", busesByRoutes)
     console.log("busData after: ", busDataCopy)
-
+    
     if (route && !busesByRoutes[route]) { // for some reason route can be undefined, investigate.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
@@ -323,7 +323,6 @@ function makeOoS(busId) {
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
         checkMinRoutes();
-
         if (shownRoute && shownRoute === route) {
             toggleRoute(route);
         }
@@ -351,7 +350,7 @@ function makeOoS(busId) {
     }
 
     populateMeClosestStops();
-    populateFavs(); // Do I need this? <-- yes you do
+    populateFavs(popSelectors=false); // Do I need this? <-- yes you do
 
 }
 
