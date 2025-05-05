@@ -908,7 +908,7 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 let selectedMarkerId;
 let pauseUpdateMarkerPositions = false;
 
-function plotBus(busId, immediatelyUpdate) {
+function plotBus(busId, immediatelyUpdate=false) {
     const loc = {lat: busData[busId].lat, long: busData[busId].long};
 
     if (!busMarkers[busId]) {
@@ -943,6 +943,10 @@ function plotBus(busId, immediatelyUpdate) {
         });
 
     } else if (!pauseUpdateMarkerPositions) {
+        if (document.visibilityState === 'hidden') {
+            immediatelyUpdate = true;
+            console.log('page hidden, updating immediately')
+        }
         updateMarkerPosition(busId, immediatelyUpdate);
     }
 }

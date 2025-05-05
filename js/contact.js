@@ -11,7 +11,7 @@ function popContact() {
         if (key === 'emails') {
             contact.emails.forEach(function(email) {
                 $('.footer-contact').append(`<div>${email.type}</div>`)
-                $('.footer-contact').append(`<div>${email.address}</div>`)
+                $('.footer-contact').append(`<div class="right">${email.address}</div>`)
             });
         }
     });
