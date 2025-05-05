@@ -160,7 +160,7 @@ function toggleFavorites() {
 
         for (const polyline in polylines) {
             if (!favRoutes.has(polyline)) {
-                polylines[polyline].remove();
+                polylines[polyline].setStyle({ opacity: 0});
             } else {
                 if (!map.hasLayer(polylines[polyline])) {
                     polylines[polyline].setStyle({ opacity: 1 });
