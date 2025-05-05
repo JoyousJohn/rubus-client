@@ -194,6 +194,12 @@ function populateRouteSelectors(activeRoutes) {
         lastTime = currentTime;
         
         e.preventDefault();
+    })
+    .on('wheel', function(event) {
+        event.preventDefault();
+        const $el = $(this);
+        const newScrollLeft = $el.scrollLeft() + event.originalEvent.deltaY;
+        $el.stop().animate({ scrollLeft: newScrollLeft }, 100);
     });
 
 }
@@ -504,7 +510,6 @@ function selectedRoute(route) {
                 let busIndex = -1;
                 
                 if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && busData[busId].stopId == 3) {
-                    // For these routes, find where current stop follows the previous stop in the route
                     
                     for (let j = 1; j < stopLists[route].length; j++) {
 
@@ -521,7 +526,6 @@ function selectedRoute(route) {
                             break;
                         }
                     }
-                    // If not found, fall back to first occurrence
                     if (busIndex === -1) {
                         busIndex = stopLists[route].indexOf(busData[busId].stopId);
                     }
@@ -542,7 +546,7 @@ function selectedRoute(route) {
 
                     const $gridElm = $stopElm.find('.route-buses-for-stop');
 
-                    if (busData[busId].at_stop && (Array.isArray(busData[busId].stopId) ? stopId === busData[busId].stopId[0] : stopId === busData[busId].stopId)) { 
+                    if (busData[busId].at_stop && (Array.isArray(busData[busId].stopId) ? stopId === busData[busId].stopId[0] : stopId === busData[busId].stopId)) {
                         eta = 0;
                         $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
                         $gridElm.append(`<div class="bold">Here</div>`);
@@ -553,11 +557,11 @@ function selectedRoute(route) {
                         $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
+                        return;
                     } else {
                         $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
                         if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
                             // Use the previous stop to determine which 'via' path to use
-                            // console.table(busETAs[busId][stopId]['via'])
                             eta = busETAs[busId][stopId]['via'][previousStopId];
                         } else {
                             eta = busETAs[busId][stopId];
@@ -569,11 +573,7 @@ function selectedRoute(route) {
 
                         let stopsAwayText = '';
 
-                        // if (stopsAway === 0 && !(((route === 'wknd1' || route === 'all') 
-                        //     && stopId === 3 
-                        //     && previousStopId  == busData[busId].stopId[1])))  {
-                        //     stopsAwayText = 'En route';
-                        if (!busData[busId].at_stop && stopsAway === 0) {
+                        if (stopsAway === 0) {
                             stopsAwayText = "En route";
                         } else if (stopsAway === 1) {
                             stopsAwayText = stopsAway + ' stop away';
@@ -583,10 +583,12 @@ function selectedRoute(route) {
 
                         $gridElm.append(`<div class="align-right">${stopsAwayText}</div>`);
                     }
+
                 }
 
-                prevStopId = stopId;
                 i++;
+                previousStopId = stopId;
+
             });
 
         console.log('---')
