@@ -163,8 +163,6 @@
         }
     </script>
 
-    <div class="dev-build-popup none arial">ⓘ Developer build</div>
-    <div class="feedback-sent none">Feedback sent!</div>
 
     <div class="info-popup-wrapper h-100">
 
@@ -255,6 +253,12 @@
         <div class="fixed w-full" style="top: 0;">
             <div class="flex flex-col" style="margin: 1rem 2rem;">
 
+                <div class="flex align-center flex-col gap-y-1rem">
+                    <div class="dev-build-popup arial none w-fit">ⓘ Developer build</div>
+                    <div class="feedback-sent none w-fit">Feedback sent!</div>
+                </div>
+                
+
                 <div class="knight-mover">
                     <div class="center">ⓘ No buses running</div>
                     <div class="flex justify-center mt-0p5rem mb-0p5rem">
@@ -274,7 +278,7 @@
                 </div>
 
                 <div class="flex justify-between">
-                    <div class="info-top-left flex flex-col gap-y-1rem">
+                    <div class="info-top-left flex flex-col gap-y-0p5rem">
                         <div class="knight-mover-mini bg-ckm white align-center gap-x-0p5rem none pointer w-max" onclick="window.location.href='tel:7329327433'"><i class="fa-solid fa-phone text-1p4rem white"></i>Call Knight Mover</div>
                         <div class="shared none gap-x-0p5rem w-max"></div>
                         <div class="favs flex flex-col gap-y-0p5rem w-max"></div>

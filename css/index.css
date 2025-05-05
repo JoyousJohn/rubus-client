@@ -259,10 +259,6 @@ html, body {
 }
 
 .feedback-sent {
-    position: fixed;
-    top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
     background-color: #07ad15;
     padding: 0.5rem 1.5rem;
     border-radius: 15px;

@@ -158,8 +158,9 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             } else {
                 if (busData[busId].route !== routeStr) { // Route changed for existing bus...
+                    const oldRoute = busData[busId].route;
                     busData[busId]['route_change'] = {
-                        'old_route': busData[busId].route,
+                        'old_route': oldRoute;
                         'route_change_time': new Date(),
                     };
                     busData[busId].route = routeStr;
@@ -171,10 +172,24 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                         console.log(busData)
                         console.log(busMarkers)
                     }
+
                     makeActiveRoutes();
-                    // if (!polylines[routeStr]) {
-                    //     setPolylines([routeStr]);
-                    // } // do i not need his bc new route will be caght in setpolylines below? // maybe i do need this...
+                    if (!activeRoutes.has(routeStr)) {
+                        populateRouteSelectors(activeRoutes);
+                        console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
+                        polylines[route].remove();
+                        delete polylines[route];
+                        // $(`.route-selector[routename="${route}"]`).remove(); // not sure if i need this or if it's triggered elsewhere
+                        // checkMinRoutes(); // also unsure if i need this
+
+                        if (shownRoute && shownRoute === oldRoute) {
+                            toggleRoute(oldRoute);
+                        }
+                    }
+
+                    if (!polylines[routeStr]) {
+                        setPolylines([routeStr]);
+                    }
                     populateFavs();
                 }
             }
