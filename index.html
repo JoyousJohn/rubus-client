@@ -847,6 +847,16 @@
                         </div>
                     </div>
 
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Show RUBus AI</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-rubus-ai" class="toggle-input">
+                            <label for="toggle-show-rubus-ai" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="settings-reset-settings">
                         <div class="settings-heading">REMOVE localStorage.SETTINGS</div>
                         <div class="settings-options grid">
@@ -880,16 +890,18 @@
                 </div>
             </div>
 
-            <div class="settings-rubus"></div>
+            <div class="rubus-ai-wrapper none">
+                <div class="settings-rubus"></div>
+                <div class="rubus-ai" onclick="$('.ai-wrapper').show(); $('.ai-wrapper').scrollTop(0);">
+                    <div class="flex justify-center p-0p5rem">
+                        <div class="ai-logo"></div>
+                    </div>
+                    <div class="select-none">
+                        <div class="ai-title white bold-500">RUBus AI</div>
+                        <div class="white text-1p4rem">Schedule self-learning & automatic notifying. <u>Pre-enroll.</u></div>
+                    </div>
+                </div>
 
-            <div class="rubus-ai" onclick="$('.ai-wrapper').show(); $('.ai-wrapper').scrollTop(0);">
-                <div class="flex justify-center p-0p5rem">
-                    <div class="ai-logo"></div>
-                </div>
-                <div class="select-none">
-                    <div class="ai-title white bold-500">RUBus AI</div>
-                    <div class="white text-1p4rem">Schedule self-learning & automatic notifying. <u>Pre-enroll.</u></div>
-                </div>
             </div>
 
             <div class="settings-rubus mt-2rem">

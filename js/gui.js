@@ -1124,6 +1124,7 @@ const toggleSettings = [
     'toggle-show-invalid-etas',
     'toggle-show-rotation-points',
     'toggle-allow-iphone-preload',
+    'toggle-show-rubus-ai',
 ]
 
 let defaultSettings = {
@@ -1157,6 +1158,7 @@ let defaultSettings = {
     'toggle-show-invalid-etas': false,
     'toggle-show-rotation-points': false,
     'toggle-allow-iphone-preload': false,
+    'toggle-show-rubus-ai': false,
 
     // going to remove
     'toggle-show-arrival-times': true,

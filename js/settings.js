@@ -284,6 +284,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
+        case 'toggle-show-rubus-ai':
+            settings['toggle-show-rubus-ai'] = isChecked;
+
+            if (isChecked) {
+                $('.rubus-ai-wrapper').show();
+            } else {
+                $('.rubus-ai-wrapper').hide();
+            }
+            break;
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 
@@ -408,6 +418,10 @@ $(document).ready(function() {
     if (settings['toggle-allow-iphone-preload']) {
         $('.toggle-polyline-padding-unavailable').html('Disablement overriden via developer!<br>Enabling this may crash your app.')
         $('#toggle-polyline-padding').parent().css('pointer-events', 'all');
+    }
+
+    if (settings['toggle-show-rubus-ai']) {
+        $('.rubus-ai-wrapper').show();
     }
 
 })

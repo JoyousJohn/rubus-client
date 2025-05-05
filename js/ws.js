@@ -60,7 +60,7 @@ class BusWebSocketClient {
         if (!busData[busId]) {
 
             if (!data.route) {
-                console.log("[WHAT] " + busId + " " + data + " doesn't have a route...");
+                console.log("[WHAT] " + busId + " " + JSON.stringify(data) + " doesn't have a route...");
                 return;
             }
 
