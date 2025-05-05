@@ -1443,13 +1443,15 @@ function handleNearestStop(fly) {
         })
 
         $('.fly-closest-stop-wrapper').fadeIn();
-        if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3 && !popupBusId && !popupStopId) {
+        if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3 && !popupBusId && !popupStopId && !shownRoute) {
             sourceStopId = null;
             sourceBusId = null;
             if (!sharedBus) {
                 flyToStop(thisClosestStopId);
                 console.log("Flying to closest stop");
             }    
+        } else {
+            console.log("Not flying to closest stop");
         }
 
         // console.log(popupStopId)
