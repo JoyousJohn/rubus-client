@@ -1618,8 +1618,9 @@ async function getBuildNumber() {
             commitDate = month + '/' + day;
 
             const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
-            const lastPage = linkHeader.match(/page=(\d+)>; rel="last"/)[1];
-            $('.build-number').text('- Version b' + lastPage + ' (' + commitDate + ')');
+            const lastPage = parseInt(linkHeader.match(/page=(\d+)>; rel="last"/)[1]);
+            $('.build-number').text(`- Version a${lastPage - 473} (${commitDate}) - b${lastPage}`);
+            // $('.build-number').text('- V' + (lastPage - 473) + ' | Build' + lastPage + ' (' + commitDate + ')');
         }
     });
 }
