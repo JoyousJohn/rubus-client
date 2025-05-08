@@ -195,7 +195,6 @@ $(document).ready(function() {
         deviceType += '_web';
     }
 
-    alert(deviceType)
     sa_event('load_test', {'device_type': deviceType});
 
 });
