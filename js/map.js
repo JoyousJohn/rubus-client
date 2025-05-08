@@ -166,6 +166,38 @@ $(document).ready(function() {
         map.scrollWheelZoom.enable();
     });
 
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                  window.navigator.standalone || 
+                  document.referrer.includes('android-app://');
+
+    const userAgent = navigator.userAgent.toLowerCase();
+    let deviceType;
+    
+    if (/iphone/.test(userAgent)) {
+        deviceType = 'iphone';
+    } else if (/ipad/.test(userAgent)) {
+        deviceType = 'ipad';
+    } else if (/android/.test(userAgent)) {
+        deviceType = 'android';
+    } else if (/macintosh/.test(userAgent)) {
+        deviceType = 'macintosh';
+    } else if (/windows/.test(userAgent)) {
+        deviceType = 'windows'; 
+    } else if (/linux/.test(userAgent)) {
+        deviceType = 'linux';
+    } else {
+        deviceType = 'other';
+    }
+
+    if (isPWA) {
+        deviceType += '_pwa';
+    } else {
+        deviceType += '_web';
+    }
+
+    alert(deviceType)
+    sa_event('load_test', {'device_type': deviceType});
+
 });
 
 function flyToWithCallback(center, zoom, callback) {
