@@ -195,8 +195,32 @@ $(document).ready(function() {
         isPWA = 'web';
     }
 
-    sa_event('load_test_2', {'device_type': deviceType, 'pwa': isPWA});
+    const date = new Date();
+    const timeOptions = {
+        timeZone: 'America/New_York',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    };
+    const timeString = date.toLocaleTimeString('en-US', timeOptions);
 
+    const dateOptions = {
+        timeZone: 'America/New_York',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    };
+    const dateString = date.toLocaleDateString('en-US', dateOptions);
+    
+    const nyTime = `${timeString}, ${dateString}`;
+
+    console.log(nyTime)
+    sa_event('load_test_2', {
+        'device_type': deviceType,
+        'pwa': isPWA,
+        'ny_time': nyTime,
+        'date': new Date()
+    });
 });
 
 function flyToWithCallback(center, zoom, callback) {
