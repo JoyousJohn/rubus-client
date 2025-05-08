@@ -166,7 +166,7 @@ $(document).ready(function() {
         map.scrollWheelZoom.enable();
     });
 
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+    let isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                   window.navigator.standalone || 
                   document.referrer.includes('android-app://');
 
@@ -190,12 +190,12 @@ $(document).ready(function() {
     }
 
     if (isPWA) {
-        deviceType += '_pwa';
+        isPWA = 'pwa';
     } else {
-        deviceType += '_web';
+        isPWA = 'web';
     }
 
-    sa_event('load_test', {'device_type': deviceType});
+    sa_event('load_test_2', {'device_type': deviceType, 'pwa': isPWA});
 
 });
 
