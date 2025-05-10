@@ -1435,9 +1435,9 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     if (!isDesktop) {
-        const expandedBounds = expandBounds(bounds, 2.8)
+        const expandedBounds = expandBounds(bounds, 2.8);
         // map.setMaxBounds(expandedBounds);
-        map.setMinZoom(9)
+        map.setMinZoom(9);
     }
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
@@ -1449,9 +1449,16 @@ function popInfo(busId, resetCampusFontSize) {
     $('.info-next-stops').css('max-height', maxHeight - 135) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
 
     if (settings['toggle-hide-other-routes']) { // this might need a && !popupBusId condition for some reason...
-        focusBus(busId)
+        focusBus(busId);
     }
+
+    sa_event('bus_view_test', {
+        'bus_id': busId,
+        'route': data.route,
+    });
+
 }
+
 
 function focusBus(busId) {
 
