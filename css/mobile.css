@@ -5,6 +5,8 @@
         height: 100vh;
         margin-top: 1rem;
         margin-right: 1rem;
+        display: flex;
+        justify-content: end;
     }
 
     .getting-location-popup {
@@ -138,6 +140,15 @@
     .theme-modal-confirm {
         align-self: center !important;
         padding: 0.5rem 8rem !important;
+    }
+
+    .info-top {
+        flex-direction: column;
+    }
+
+    .top-fixed {
+        margin-top: 0;
+        width: auto;
     }
 
 }

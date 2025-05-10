@@ -311,6 +311,34 @@ $(document).on('keydown', function(e) {
         $('.settings-panel').fadeOut('fast');
         $('.bottom').fadeIn('fast'); // this is being hidden due to settings-btn click?... Why tho
         $('.settings-close').hide();
+
+        if (settings['toggle-hide-other-routes'] && !shownRoute) {
+            showAllStops();
+            showAllBuses();
+            showAllPolylines();
+        } else if (settings['toggle-hide-other-routes'] && shownRoute) {
+            for (const marker in busMarkers) {
+                if (busData[marker].route === shownRoute) {
+                    busMarkers[marker].getElement().style.display = '';
+                }
+            }
+        }
+
+        if (!shownRoute) {
+            $('[stop-eta]').text('').hide(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
+        } else {
+            updateTooltips(shownRoute);
+        }
+
+        if (savedCenter && settings['toggle-hide-other-routes']) {
+            returningToSavedView = true;
+            flyToWithCallback(savedCenter, savedZoom, () => {
+                returningToSavedView = false;
+                savedCenter = null;
+                savedZoom = null;
+            });
+        }
+
     }
 })
 

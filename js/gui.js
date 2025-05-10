@@ -789,7 +789,7 @@ function busesOverview() {
         $('.buses-close').addClass('flex');
         $('.buses-panel-wrapper').css('margin-left', 0);
     } else {
-        const routeSelectorsWidth = $('.route-selectors').width() / parseFloat(getComputedStyle(document.documentElement).fontSize) + 2;
+        const routeSelectorsWidth = $('.route-selectors').width() / parseFloat(getComputedStyle(document.documentElement).fontSize) + 3;
         $('.buses-panel-wrapper').css('margin-left', routeSelectorsWidth + 'rem');
         const leftBtnHeight = $('.left-btns').height();
         $('.buses-panel-wrapper').css('max-height', window.innerHeight - leftBtnHeight - 4 * parseFloat(getComputedStyle(document.documentElement).fontSize));
