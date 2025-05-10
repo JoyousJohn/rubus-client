@@ -454,6 +454,7 @@ async function popStopInfo(stopId) {
 
     sa_event('stop_view_test', {
         'stop_id': stopId,
+        'stop_name': stopsData[stopId].name
     });
     
 }
