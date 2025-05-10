@@ -451,6 +451,10 @@ async function popStopInfo(stopId) {
     $('.stop-info-popup-inner').scrollTop(0);
 
     $('.bus-log-wrapper').hide();
+
+    sa_event('stop_view_test', {
+        'stop_id': stopId,
+    });
     
 }
 
