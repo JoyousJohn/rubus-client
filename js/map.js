@@ -1538,12 +1538,17 @@ function populateBusBreaks(busBreakData) {
 
     }
 
+
     const percentDiff = ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime * 100).toFixed(1);
     $('.bus-avg-break-time').html(`<span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'slower' : 'faster'} than other buses`);
 
     if (breakCount === 0) {
         $('.bus-breaks').empty();
         $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
+    }
+
+    if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.2) {
+        $('.info-quickness').hide().html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Slow bus</span>").fadeIn('fast');
     }
     
 }
