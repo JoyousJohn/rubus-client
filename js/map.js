@@ -1548,7 +1548,7 @@ function populateBusBreaks(busBreakData) {
     }
 
     if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
-        $('.info-quickness').hide().html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Slow bus</span>").fadeIn('fast');
+        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Slow bus</span>").show();
     } else {
         $('.info-quickness').hide();
     }
@@ -1556,10 +1556,25 @@ function populateBusBreaks(busBreakData) {
 }
 
 
+let busBreaksCache = {};
+
 function getBusBreaks(busId) {
+    const currentTime = new Date().getTime();
+    const THREE_MINUTES = 3 * 60 * 1000;
+
+    if (busBreaksCache[busId] && 
+        (currentTime - busBreaksCache[busId].timestamp) < THREE_MINUTES) {
+        populateBusBreaks(busBreaksCache[busId].data);
+        return;
+    }
+
     fetch(`https://transloc.up.railway.app/get_breaks?bus_id=${busId}`)
         .then(response => response.json())
         .then(data => {
+            busBreaksCache[busId] = {
+                data: data,
+                timestamp: currentTime
+            };
             populateBusBreaks(data);
         })
         .catch(error => {
