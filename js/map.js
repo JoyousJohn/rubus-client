@@ -1511,7 +1511,7 @@ function populateBusBreaks(busBreakData) {
 
     let breakCount = 0;
 
-    for (const breakItem of busBreakData) {
+    for (const breakItem of busBreakData.reverse()) {
         if (Math.floor(breakItem.break_duration/60) >= 3) {
             const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
             const formattedTime = timeArrived.toLocaleTimeString('en-US', {
