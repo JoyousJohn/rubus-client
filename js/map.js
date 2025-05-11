@@ -1505,8 +1505,8 @@ function populateBusBreaks(busBreakData) {
     const breakDiv = $('.bus-breaks');
     breakDiv.empty(); // Clear existing breaks before adding new ones
     
-    breakDiv.append(`<div class="mb-0p5rem">Stop</div>`);
     breakDiv.append(`<div class="mb-0p5rem">Time</div>`);
+    breakDiv.append(`<div class="mb-0p5rem">Stop</div>`);
     breakDiv.append(`<div class="mb-0p5rem">Duration</div>`);
 
     let breakCount = 0;

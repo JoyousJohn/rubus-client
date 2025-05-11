@@ -204,12 +204,12 @@
                         <div class="grid"></div>
                     </div>
 
-                    <div class="mt-2rem">
-                        <div class="text-1p3rem lightgray center">Ridership</div>
+                    <div class="mt-2rem bus-ridership-wrapper">
+                        <div class="text-1p3rem lightgray center">Ridership Today</div>
                         <div class="bus-historical-capacity mt-0p5rem"></div>
                     </div>
 
-                    <div class="flex flex-col align-center mt-1rem mb-0p5rem">
+                    <div class="flex flex-col align-center mt-2rem mb-1rem">
                         <div class="text-1p3rem lightgray center mb-0p5rem">Past Breaks</div>
                         <div class="bus-breaks grid grid-cols-3-auto text-1p4rem gap-x-1rem w-fit"></div>
                         <div class="bus-avg-break-time text-1p2rem mt-0p5rem"></div>
@@ -227,12 +227,26 @@
                     </div>
                     <div></div> <!-- So star floats right -->
                     <div class="bus-btns flex gap-x-0p5rem">  
-                        <div class="bus-follow br-1rem align-center pointer">
+
+                        <!-- <div class="bus-follow br-1rem align-center pointer">
                             <i class="fa-solid fa-map-pin"></i>
-                        </div>
+                        </div> -->
                         <!-- <div class="bus-comment br-1rem align-center pointer">
                             <i class="fa-regular fa-message" onclick="$('.leave-feedback-wrapper').show(); $('.bottom').hide();"></i>
                         </div> -->
+
+                        <div class="bus-history br-1rem align-center pointer" onclick="$('.bus-ridership-wrapper')[0].scrollIntoView({behavior: 'smooth'});">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <script>
+                            $('.bus-history').click(function() {
+                                $(this).css('background-color', '#565fe5');
+                                setTimeout(() => {
+                                    $(this).css('background-color', 'var(--theme-bg)');
+                                }, 250);
+                            })
+                        </script>
+
                         <div class="bus-share br-1rem align-center none pointer">
                             <i class="fa-solid fa-share-nodes"></i>
                         </div>
@@ -240,9 +254,9 @@
                             if (navigator.share) { 
                                 $('.bus-share').css('display', 'flex')
                                                 .click(function() {
-                                                    $('.bus-share').css('background-color', '#565fe5');
+                                                    $(this).css('background-color', '#565fe5');
                                                     setTimeout(() => {
-                                                        $('.bus-share').css('background-color', 'var(--theme-bg)');
+                                                        $(this).css('background-color', 'var(--theme-bg)');
                                                     }, 250);
                                                 })
                             }

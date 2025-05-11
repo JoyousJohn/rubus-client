@@ -516,7 +516,7 @@ html, body {
     top: 0;
 }
 
-.bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate {
+.bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate, .bus-history {
     color: var(--theme-color);
     background-color: var(--theme-bg);
     font-size: 1.7rem;
@@ -534,7 +534,7 @@ html, body {
     padding: 1rem;
 }
 
-.bus-share > i {
+.bus-share > i { /* just this one? */
     aspect-ratio: 1;
 }
 
