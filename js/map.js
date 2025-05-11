@@ -1993,6 +1993,8 @@ $('.satellite-btn').click(function() {
     }
 });
 
+let lastPikachuGif = null;
+
 function animatePikachu() {
     const pikaSound = new Audio('img/pika.mp3');
 
@@ -2001,7 +2003,13 @@ function animatePikachu() {
     }, 100);
 
     const pika = document.createElement('img');
-    pika.src = ['img/pika.gif', 'img/jolteon.gif', 'img/sonic.gif', 'img/mario.gif'][Math.floor(Math.random() * 4)];
+    const gifs = ['img/pika.gif', 'img/jolteon.gif', 'img/sonic.gif', 'img/mario.gif'];
+    
+    const availableGifs = gifs.filter(gif => gif !== lastPikachuGif);
+    const selectedGif = availableGifs[Math.floor(Math.random() * availableGifs.length)];
+    lastPikachuGif = selectedGif;
+    
+    pika.src = selectedGif;
     if (pika.src.includes('jolteon.gif')) {
         pika.style.transform = 'translateY(-50%) scaleX(-1)';
     } else {
