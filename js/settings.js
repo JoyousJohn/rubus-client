@@ -294,6 +294,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-bus-quickness-breakdown':
+            settings['toggle-show-bus-quickness-breakdown'] = isChecked;
+
+            if (isChecked) {
+                $('.bus-quickness-breakdown-wrapper').show();
+            } else {
+                $('.bus-quickness-breakdown-wrapper').hide();
+            }
+            break;
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 

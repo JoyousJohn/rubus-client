@@ -1552,6 +1552,16 @@ function populateBusBreaks(busBreakData) {
     } else {
         $('.info-quickness').hide();
     }
+
+    if (settings['toggle-show-bus-quickness-breakdown']) {
+        $('.bus-quickness-breakdown-wrapper').html(`<div class="flex flex-col text-1p3rem mt-0p5rem">
+            <div>Total bus loop break time: ${Math.round(totalBusBreakTime)}s</div>
+            <div>Total avg break time: ${Math.round(totalAvgBreakTime)}s</div>
+            <div>Percent difference: ${percentDiff}%</div>
+        </div>`).show();
+    } else {
+        $('.bus-quickness-breakdown-wrapper').hide();
+    }
     
 }
 

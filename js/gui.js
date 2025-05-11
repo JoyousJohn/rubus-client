@@ -1127,6 +1127,7 @@ const toggleSettings = [
     'toggle-show-rotation-points',
     'toggle-allow-iphone-preload',
     'toggle-show-rubus-ai',
+    'toggle-show-bus-quickness-breakdown',
 ]
 
 let defaultSettings = {
@@ -1161,6 +1162,7 @@ let defaultSettings = {
     'toggle-show-rotation-points': false,
     'toggle-allow-iphone-preload': false,
     'toggle-show-rubus-ai': false,
+    'toggle-show-bus-quickness-breakdown': false,
 
     // going to remove
     'toggle-show-arrival-times': true,
