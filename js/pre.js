@@ -341,7 +341,7 @@ function makeOoS(busId) {
             polylines[route].remove();
             console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
         } else {
-            console.log('Route is none')
+            console.log('Route is none');
         }
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
@@ -359,10 +359,10 @@ function makeOoS(busId) {
     removePreviouslyActiveStops();
 
     if (popupBusId === busId) {
-        console.log("Selected bus went OOS")
-        console.log(popupBusId)
-        pconsole.logrint(busId)
-        console.log(sourceBusId)
+        console.log("Selected bus went OOS");
+        console.log(popupBusId);
+        console.log(busId);
+        console.log(sourceBusId);
         hideInfoBoxes();
         sourceBusId = null;
     }

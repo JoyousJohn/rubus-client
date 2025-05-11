@@ -94,6 +94,7 @@ class BusWebSocketClient {
             }
 
             addStopsToMap();
+            makeBusesByRoutes();
 
             $('.knight-mover, .knight-mover-mini').hide();
 

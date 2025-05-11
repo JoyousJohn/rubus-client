@@ -18,7 +18,7 @@ function getSoonestBus(stopId, route) {
         return [null, null];
     }
 
-    try {
+    try { // busesByRoutes[route] disapears when negative/invalid ETA? have to check if this is why/when it is so
         busesByRoutes[route].forEach(busId => {
 
             if (busETAs[busId] && busETAs[busId][stopId] > 0 && isValid(busId)) {
