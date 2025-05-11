@@ -235,6 +235,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             busData[busId].atDepot = isAtDepot(bus.longitude, bus.latitude);
 
             plotBus(busId, immediatelyUpdate);
+
+            if (immediatelyUpdate) {
+                busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
+            }   
+
             calculateSpeed(busId);
 
             if (isNew && shownRoute && shownRoute !== routeStr) { // may have to timeout 0s this
@@ -948,7 +953,16 @@ $(document).ready(async function() {
 
     document.addEventListener('visibilitychange', async function() {
         if (document.visibilityState === 'visible') {
+
+            cancelAllAnimations();
+
             $('.updating-buses').fadeIn();
+
+            for (const busId in busData) {
+                // if (busMarkers[busId]) {
+                    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = 'gray';
+                // }
+            }
 
             hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
 
