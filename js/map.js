@@ -1547,8 +1547,10 @@ function populateBusBreaks(busBreakData) {
         $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
     }
 
-    if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.2) {
+    if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
         $('.info-quickness').hide().html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Slow bus</span>").fadeIn('fast');
+    } else {
+        $('.info-quickness').hide();
     }
     
 }
