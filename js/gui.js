@@ -271,17 +271,23 @@ function hideAllStops() {
     }    
 }
 
+
 function hideStopsExcept(excludedRoute) {
+    console.log('hiding stops except: ' + excludedRoute)
     const stopIdsForSelectedRoute = stopLists[excludedRoute]
     for (const polyline in polylines) {
+        console.log('polyline: ' + polyline)
         const stopIdsForRoute = stopLists[polyline]
+        console.log('stopIdsForRoute: ' + stopIdsForRoute)
         stopIdsForRoute.forEach(stopId => {
             if (!(stopIdsForSelectedRoute).includes(stopId)) {
+                console.log('removing stop: ' + stopId)
                 busStopMarkers[stopId].remove();
             }
         })
     }    
 }
+
 
 function hidePolylinesExcept(route) {
     for (const polyline in polylines) {

@@ -612,36 +612,36 @@ async function startOvernight(setColorBack) {
             
             for (const someId in data) {
     
-                const bus = data[someId]
+                const bus = data[someId];
     
                 if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
-                    continue
+                    continue;
                 }
     
-                const busId = bus.busId
+                const busId = bus.busId;
     
                 if (!busData[busId]) {
-                    busData[busId] = {}
+                    busData[busId] = {};
                     busData[busId].previousTime = new Date().getTime() - 5000;
-                    busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]]
-                    busData[busId]['type'] = 'over'
+                    busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]];
+                    busData[busId]['type'] = 'over';
                 }
     
-                busData[busId].busName = bus.name
-                busData[busId].lat = bus.lat
-                busData[busId].long = bus.long
+                busData[busId].busName = bus.name;
+                busData[busId].lat = bus.lat;
+                busData[busId].long = bus.long;
     
-                busData[busId].rotation = parseFloat(bus.rotation)
+                busData[busId].rotation = parseFloat(bus.rotation);
     
-                const [routeStr, isKnown] = getRouteStr(bus.route)
-                busData[busId].route = routeStr
-                busData[busId].isKnown = isKnown
-                activeRoutes.add(busData[busId].route)
+                const [routeStr, isKnown] = getRouteStr(bus.route);
+                busData[busId].route = routeStr;
+                busData[busId].isKnown = isKnown;
+                activeRoutes.add(busData[busId].route);
 
-                busData[busId].capacity = bus.capacity
+                busData[busId].capacity = bus.capacity;
     
-                plotBus(busId)
-                calculateSpeed(busId)
+                plotBus(busId);
+                calculateSpeed(busId);
 
                 if (setColorBack) {
                     busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
@@ -652,17 +652,19 @@ async function startOvernight(setColorBack) {
             for (const busId in busData) {
                 if (busData[busId].type === 'over' && !(busId in data)) { // I think all objects should have the type key set...
                     console.log(`[startOvernight()][Out of Service][${busData[busId].route} Bus ${busData[busId].busName} is out of service?`);
-                    makeOoS(busId)
+                    makeOoS(busId);
                 }
             }
 
-            makeBusesByRoutes()
+            makeBusesByRoutes();
 
             populateRouteSelectors(activeRoutes);
             const newActiveRoutes = new Set([...activeRoutes].filter(route => !previousActiveRoutes.has(route)));
             if (newActiveRoutes.size > 0) {
                 setPolylines(newActiveRoutes);
             }
+
+            addStopsToMap();
 
             // console.log(activeRoutes)
             // console.log(polylines)

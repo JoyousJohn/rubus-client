@@ -93,6 +93,8 @@ class BusWebSocketClient {
                 } 
             }
 
+            addStopsToMap();
+
             $('.knight-mover, .knight-mover-mini').hide();
 
         }
@@ -121,7 +123,7 @@ class BusWebSocketClient {
 
         let route = busData[busId].route
         if (!activeRoutes.has(route)) {
-            console.log("Does this ever run?")
+            console.log("Does this ever run?") // yes it does
             if (!route) route = 'undefined'
             // if (route === 'Campus Connect Express') alert('hi')
             activeRoutes.add(route)

@@ -2012,6 +2012,8 @@ function animatePikachu() {
     pika.src = selectedGif;
     if (pika.src.includes('jolteon.gif')) {
         pika.style.transform = 'translateY(-50%) scaleX(-1)';
+    } else if (pika.src.includes('sonic.gif')) {
+        pika.style.transform = 'translateY(-50%) scale(0.7)';
     } else {
         pika.style.transform = 'translateY(-50%)';
     }
