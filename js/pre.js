@@ -608,6 +608,8 @@ async function startOvernight(setColorBack) {
 
         if (Object.keys(data).length) {
             
+            const previousActiveRoutes = new Set(activeRoutes);
+            
             for (const someId in data) {
     
                 const bus = data[someId]
@@ -657,7 +659,10 @@ async function startOvernight(setColorBack) {
             makeBusesByRoutes()
 
             populateRouteSelectors(activeRoutes);
-            setPolylines(activeRoutes);
+            const newActiveRoutes = new Set([...activeRoutes].filter(route => !previousActiveRoutes.has(route)));
+            if (newActiveRoutes.size > 0) {
+                setPolylines(newActiveRoutes);
+            }
 
             // console.log(activeRoutes)
             // console.log(polylines)
