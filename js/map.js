@@ -1119,6 +1119,14 @@ let savedCenter;
 let savedZoom;
 
 function popInfo(busId, resetCampusFontSize) {
+    // Only destroy charts if showing a different bus
+    if (currentRidershipChartBusId !== busId) {
+        for (const existingBusId in busRidershipCharts) {
+            busRidershipCharts[existingBusId].destroy();
+            delete busRidershipCharts[existingBusId];
+        }
+        $('.bus-historical-capacity').empty();
+    }
 
     let secondsDivisor = 60;
     if (showETAsInSeconds) {
@@ -1493,23 +1501,87 @@ function popInfo(busId, resetCampusFontSize) {
 
 let busRiderships = {};
 
+let busRidershipCharts = {};
+let currentRidershipChartBusId = null;
+
 function updateHistoricalCapacity(busId) {
-    if (Object.keys(busRiderships).length === 0) {
+    // Only proceed if this is a new bus selection or data needs refresh
+    const currentMinute = new Date().getMinutes();
+    const shouldRefresh = currentMinute % 5 === 1 && !busRiderships.lastUpdate || 
+                         (currentMinute % 5 === 1 && new Date().getTime() - busRiderships.lastUpdate > 60000);
+                         
+    if (Object.keys(busRiderships).length === 0 || shouldRefresh) {
         fetch('https://transloc.up.railway.app/bus_ridership')
             .then(response => response.json())
             .then(data => {
+                const dataChanged = JSON.stringify(busRiderships) !== JSON.stringify(data);
                 busRiderships = data;
-                createBusRidershipChart(busId);
+                busRiderships.lastUpdate = new Date().getTime();
+                if (!busRidershipCharts[busId] || dataChanged) {
+                    createBusRidershipChart(busId);
+                    currentRidershipChartBusId = busId;
+                }
             })
             .catch(error => {
                 console.error('Error fetching bus ridership data:', error);
             });
-    } else {
+    } else if (!busRidershipCharts[busId]) {
         createBusRidershipChart(busId);
+        currentRidershipChartBusId = busId;
     }
 }
 
 function createBusRidershipChart(busId) {
+    console.log("createBusRidershipChart called for busId:", busId);
+    console.log("Chart exists?", !!busRidershipCharts[busId]);
+    
+    // If chart already exists, just update its data if needed
+    if (busRidershipCharts[busId]) {
+        console.log("Updating existing chart");
+        const timeRiderships = busRiderships[busId];
+        if (!timeRiderships || !Object.keys(timeRiderships).length) {
+            $('.bus-historical-capacity').hide();
+            return;
+        }
+
+        const utcOffset = new Date().getTimezoneOffset();
+        const entries = Object.entries(timeRiderships).map(([key, value]) => {
+            let localMinutes = parseInt(key) - utcOffset;
+            if (localMinutes < 0) localMinutes += 1440;
+            const sortMinutes = localMinutes < 300 ? localMinutes + 1440 : localMinutes;
+            const hours = Math.floor(localMinutes / 60);
+            const minutes = localMinutes % 60;
+            const time = new Date();
+            time.setHours(hours, minutes, 0, 0);
+            const formattedTime = time.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+            return [formattedTime, value, sortMinutes];
+        });
+
+        const sortedData = Object.fromEntries(
+            entries.sort(([, , a], [, , b]) => a - b)
+        );
+
+        const newLabels = Object.keys(sortedData);
+        const newValues = Object.values(sortedData);
+
+        // Only update if data has changed
+        const currentLabels = busRidershipCharts[busId].data.labels;
+        const currentValues = busRidershipCharts[busId].data.datasets[0].data;
+        
+        if (JSON.stringify(currentLabels) !== JSON.stringify(newLabels) || 
+            JSON.stringify(currentValues) !== JSON.stringify(newValues)) {
+            busRidershipCharts[busId].data.labels = newLabels;
+            busRidershipCharts[busId].data.datasets[0].data = newValues;
+            busRidershipCharts[busId].update();
+        }
+        
+        $('.bus-historical-capacity').show();
+        return;
+    }
+
     if (!busRiderships[busId]) {
         $('.bus-historical-capacity').hide();
         return;
@@ -1550,68 +1622,57 @@ function createBusRidershipChart(busId) {
     const labels = Object.keys(sortedData);
     const values = Object.values(sortedData);
 
-    // Create or update chart
-    if (!busRidershipCharts[busId]) {
-        const ctx = document.createElement('canvas');
-        ctx.style.height = '100px';  // Set a fixed height for the chart
-        $('.bus-historical-capacity').empty().append(ctx).show();
-        
-        busRidershipCharts[busId] = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Passengers',
-                    data: values,
-                    borderColor: colorMappings[busData[busId].route],
-                    backgroundColor: function() {
-                        const color = colorMappings[busData[busId].route];
-                        if (color.startsWith('rgb')) {
-                            return color.replace(')', ', 0.2)').replace('rgb', 'rgba');
-                        } else {
-                            const temp = document.createElement('div');
-                            temp.style.color = color;
-                            document.body.appendChild(temp);
-                            const rgb = window.getComputedStyle(temp).color;
-                            document.body.removeChild(temp);
-                            return rgb.replace(')', ', 0.2)').replace('rgb', 'rgba');
-                        }
-                    }(),
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.parsed.y} passengers`;
-                            }
-                        }
+    const ctx = document.createElement('canvas');
+    $('.bus-historical-capacity').empty().css('height', '100px').append(ctx).show();
+    
+    busRidershipCharts[busId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Passengers',
+                data: values,
+                borderColor: colorMappings[busData[busId].route],
+                backgroundColor: function() {
+                    const color = colorMappings[busData[busId].route];
+                    if (color.startsWith('rgb')) {
+                        return color.replace(')', ', 0.2)').replace('rgb', 'rgba');
+                    } else {
+                        const temp = document.createElement('div');
+                        temp.style.color = color;
+                        document.body.appendChild(temp);
+                        const rgb = window.getComputedStyle(temp).color;
+                        document.body.removeChild(temp);
+                        return rgb.replace(')', ', 0.2)').replace('rgb', 'rgba');
                     }
+                }(),
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
                 },
-                scales: {
-                    y: {
-                        display: false
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y} passengers`;
+                        }
                     }
                 }
+            },
+            scales: {
+                y: {
+                    display: false
+                }
             }
-        });
-    } else {
-        busRidershipCharts[busId].data.labels = labels;
-        busRidershipCharts[busId].data.datasets[0].data = values;
-        busRidershipCharts[busId].update();
-    }
-    
+        }
+    });
 }
-
-let busRidershipCharts = {};
 
 function focusBus(busId) {
 
