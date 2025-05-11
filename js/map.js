@@ -1669,14 +1669,14 @@ function createBusRidershipChart(busId) {
     const values = Object.values(sortedData);
 
     const ctx = document.createElement('canvas');
-    $('.bus-historical-capacity').empty().css('height', '80px').append(ctx).show();
+    $('.bus-historical-capacity').empty().css('height', '90px').append(ctx).show();
     
     busRidershipCharts[busId] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Passengers',
+                // label: 'Passengers',
                 data: values,
                 borderColor: colorMappings[busData[busId].route],
                 backgroundColor: function() {
@@ -1692,8 +1692,9 @@ function createBusRidershipChart(busId) {
                         return rgb.replace(')', ', 0.2)').replace('rgb', 'rgba');
                     }
                 }(),
-                fill: true,
-                tension: 0.4
+                // fill: true,
+                tension: 0.4,
+                pointRadius: 0
             }]
         },
         options: {
@@ -1704,9 +1705,11 @@ function createBusRidershipChart(busId) {
                     display: false
                 },
                 tooltip: {
+                    mode: 'index',
+                    intersect: false,
                     callbacks: {
                         label: function(context) {
-                            return `${context.parsed.y} passengers`;
+                            return `${context.parsed.y}% full`;
                         }
                     }
                 }
@@ -1716,30 +1719,43 @@ function createBusRidershipChart(busId) {
                     display: false
                 },
                 x: {
+                    grid: {
+                        display: false
+                    },
                     ticks: {
+                        autoSkip: false,
+                        maxRotation: 0,
+                        padding: 5,
+                        // Explicitly set which ticks to display
                         callback: function(value, index, values) {
                             const label = this.getLabelForValue(value);
                             const timePart = String(label).split(' ')[0];
-                            const firstLabel = String(this.getLabelForValue(values[0].value));
-                            const lastLabel = String(this.getLabelForValue(values[values.length - 1].value));
-                            const firstHour = firstLabel.split(' ')[0].split(':')[0];
-                            const firstPeriod = firstLabel.split(' ')[1];
-                            const lastHour = lastLabel.split(' ')[0].split(':')[0];
-                            const lastPeriod = lastLabel.split(' ')[1];
                             
+                            // Always show first and last labels
                             if (index === 0 || index === values.length - 1) {
                                 const [hour, period] = String(label).split(' ');
                                 return hour.split(':')[0] + ' ' + period;
                             }
                             
+                            // For intermediate labels, only show hour labels (:00)
                             if (timePart.endsWith(':00')) {
                                 const [hour, period] = String(label).split(' ');
                                 const hourNum = hour.split(':')[0];
                                 const timeLabel = hourNum + ' ' + period;
                                 
+                                // Check if this hour matches the first or last hour
+                                const firstLabel = String(this.getLabelForValue(values[0].value));
+                                const lastLabel = String(this.getLabelForValue(values[values.length - 1].value));
+                                const firstHour = firstLabel.split(' ')[0].split(':')[0];
+                                const firstPeriod = firstLabel.split(' ')[1];
+                                const lastHour = lastLabel.split(' ')[0].split(':')[0];
+                                const lastPeriod = lastLabel.split(' ')[1];
+                                
+                                // Don't show intermediate labels that match first or last hour
                                 if (timeLabel === firstHour + ' ' + firstPeriod || timeLabel === lastHour + ' ' + lastPeriod) {
                                     return '';
                                 }
+                                
                                 return timeLabel;
                             }
                             return '';
