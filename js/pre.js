@@ -189,8 +189,9 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     if (!activeRoutes.has(routeStr)) {
                         populateRouteSelectors(activeRoutes);
                         console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
-                        polylines[route].remove();
-                        delete polylines[route];
+                        console.log('Polylines on map before remove:', map.hasLayer(polylines[oldRoute]));
+                        polylines[oldRoute].remove();
+                        console.log('Polylines on map after remove:', map.hasLayer(polylines[oldRoute]));
                         // $(`.route-selector[routename="${route}"]`).remove(); // not sure if i need this or if it's triggered elsewhere
                         // checkMinRoutes(); // also unsure if i need this
 
@@ -335,7 +336,12 @@ function makeOoS(busId) {
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
         if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polelines, have to ensure code works flawlessly!
+            console.log(`Removing polyline for route ${route}`);
+            console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
             polylines[route].remove();
+            console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
+        } else {
+            console.log('Route is none')
         }
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
@@ -590,7 +596,7 @@ async function fetchWhere() {
 }
 
 
-async function startOvernight() {
+async function startOvernight(setColorBack) {
 
     response = await fetch('https://transloc.up.railway.app/overnight');
 
@@ -634,6 +640,10 @@ async function startOvernight() {
     
                 plotBus(busId)
                 calculateSpeed(busId)
+
+                if (setColorBack) {
+                    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
+                }
     
             }
 
@@ -843,7 +853,7 @@ $(document).ready(async function() {
 
     await fetchJoinTimes();
 
-    await startOvernight();
+    await startOvernight(false);
 
     await fetchBusData(false, true);
 
@@ -971,12 +981,12 @@ $(document).ready(async function() {
             }
 
             await fetchWhere();
-            checkMinRoutes(); // oes this work right?
+            checkMinRoutes(); // ddoes this work right?
             openRUBusSocket();
             fetchBusData(true); // Explicitly call for immediate update on visibility change
 
             // if (!Object.keys(busData).length) { // maybe add a condition here to only cheeck on weekends at night?
-                startOvernight();
+                startOvernight(true);
             // }
 
             $('.updating-buses').slideUp();
