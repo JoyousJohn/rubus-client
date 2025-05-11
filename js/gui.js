@@ -1369,7 +1369,7 @@ function updateNearestStop() {
         }
     }
 
-    closestStopId = closestStop;
+    closestStopId = thisClosestStopId;
 
     closestStopsMap = new Map(
         Object.entries(closestStopDistances)
