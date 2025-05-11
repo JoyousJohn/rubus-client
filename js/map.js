@@ -1511,8 +1511,12 @@ function populateBusBreaks(busBreakData) {
 
     let breakCount = 0;
 
+    let consideredStops = new Set();
+    let totalAvgBreakTime = 0;
+    let totalBusBreakTime = 0;
+
     for (const breakItem of busBreakData.reverse()) {
-        if (Math.floor(breakItem.break_duration/60) >= 3) {
+        if (breakItem.break_duration > 180 && breakCount < 8) {
             const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
             const formattedTime = timeArrived.toLocaleTimeString('en-US', {
                 hour: 'numeric',
@@ -1522,18 +1526,26 @@ function populateBusBreaks(busBreakData) {
             
             breakDiv.append(`<div style="color:#656565;">${formattedTime}</div>`);
             breakDiv.append(`<div style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].name}</div>`);
-            breakDiv.append(`<div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60)}s</div>`);
+            breakDiv.append(`<div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>`);
             breakCount++;
-
-            if (breakCount === 8) {
-                break;
-            }
         }
+
+        if (!consideredStops.has(breakItem.stop_id)) {
+            totalAvgBreakTime += waits[breakItem.stop_id];
+            totalBusBreakTime += breakItem.break_duration;
+            consideredStops.add(breakItem.stop_id);
+        }
+
     }
+
+    const percentDiff = ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime * 100).toFixed(1);
+    $('.bus-avg-break-time').html(`<span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'slower' : 'faster'} than other buses`);
 
     if (breakCount === 0) {
-        $('.bus-breaks').hide();
+        $('.bus-breaks').empty();
+        $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
     }
+    
 }
 
 
@@ -1724,7 +1736,7 @@ function createBusRidershipChart(busId) {
                     },
                     ticks: {
                         autoSkip: false,
-                        maxRotation: 0,
+                        maxRotation: 45,
                         padding: 5,
                         // Explicitly set which ticks to display
                         callback: function(value, index, values) {
