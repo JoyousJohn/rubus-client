@@ -1450,6 +1450,8 @@ function popInfo(busId, resetCampusFontSize) {
         $('.next-stops-grid').hide();
         $('.next-stops-grid > div').empty();
     }
+
+    updateHistoricalCapacity(busId);
     
     if (sourceStopId) {
         $('.bus-info-back').show();
@@ -1489,6 +1491,127 @@ function popInfo(busId, resetCampusFontSize) {
 
 }
 
+let busRiderships = {};
+
+function updateHistoricalCapacity(busId) {
+    if (Object.keys(busRiderships).length === 0) {
+        fetch('https://transloc.up.railway.app/bus_ridership')
+            .then(response => response.json())
+            .then(data => {
+                busRiderships = data;
+                createBusRidershipChart(busId);
+            })
+            .catch(error => {
+                console.error('Error fetching bus ridership data:', error);
+            });
+    } else {
+        createBusRidershipChart(busId);
+    }
+}
+
+function createBusRidershipChart(busId) {
+    if (!busRiderships[busId]) {
+        $('.bus-historical-capacity').hide();
+        return;
+    }
+
+    const timeRiderships = busRiderships[busId];
+    if (!Object.keys(timeRiderships).length) {
+        $('.bus-historical-capacity').hide();
+        return;
+    }
+
+    const utcOffset = new Date().getTimezoneOffset();
+
+    const entries = Object.entries(timeRiderships).map(([key, value]) => {
+        let localMinutes = parseInt(key) - utcOffset;
+        if (localMinutes < 0) localMinutes += 1440; // Handle day wraparound
+
+        // Add 24 hours (1440 mins) to early morning times to sort them at the end
+        const sortMinutes = localMinutes < 300 ? localMinutes + 1440 : localMinutes;
+
+        const hours = Math.floor(localMinutes / 60);
+        const minutes = localMinutes % 60;
+        const time = new Date();
+        time.setHours(hours, minutes, 0, 0);
+
+        const formattedTime = time.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+
+        return [formattedTime, value, sortMinutes];
+    });
+
+    const sortedData = Object.fromEntries(
+        entries.sort(([, , a], [, , b]) => a - b)
+    );
+
+    const labels = Object.keys(sortedData);
+    const values = Object.values(sortedData);
+
+    // Create or update chart
+    if (!busRidershipCharts[busId]) {
+        const ctx = document.createElement('canvas');
+        ctx.style.height = '100px';  // Set a fixed height for the chart
+        $('.bus-historical-capacity').empty().append(ctx).show();
+        
+        busRidershipCharts[busId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Passengers',
+                    data: values,
+                    borderColor: colorMappings[busData[busId].route],
+                    backgroundColor: function() {
+                        const color = colorMappings[busData[busId].route];
+                        if (color.startsWith('rgb')) {
+                            return color.replace(')', ', 0.2)').replace('rgb', 'rgba');
+                        } else {
+                            const temp = document.createElement('div');
+                            temp.style.color = color;
+                            document.body.appendChild(temp);
+                            const rgb = window.getComputedStyle(temp).color;
+                            document.body.removeChild(temp);
+                            return rgb.replace(')', ', 0.2)').replace('rgb', 'rgba');
+                        }
+                    }(),
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y} passengers`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        display: false
+                    }
+                }
+            }
+        });
+    } else {
+        busRidershipCharts[busId].data.labels = labels;
+        busRidershipCharts[busId].data.datasets[0].data = values;
+        busRidershipCharts[busId].update();
+    }
+    
+}
+
+let busRidershipCharts = {};
 
 function focusBus(busId) {
 
