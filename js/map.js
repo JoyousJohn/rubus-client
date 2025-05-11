@@ -166,6 +166,9 @@ $(document).ready(function() {
         map.scrollWheelZoom.enable();
     });
 
+});
+
+function postLoadEvent() {
     let isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                   window.navigator.standalone || 
                   document.referrer.includes('android-app://');
@@ -214,14 +217,13 @@ $(document).ready(function() {
     
     const nyTime = `${timeString}, ${dateString}`;
 
-    console.log(nyTime)
     sa_event('load_test_2', {
         'device_type': deviceType,
         'pwa': isPWA,
         'ny_time': nyTime,
         'date': new Date()
     });
-});
+}
 
 function flyToWithCallback(center, zoom, callback) {
     const onMoveEnd = () => {
