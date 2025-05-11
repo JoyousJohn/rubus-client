@@ -1460,6 +1460,7 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     updateHistoricalCapacity(busId);
+    getBusBreaks(busId);
     
     if (sourceStopId) {
         $('.bus-info-back').show();
@@ -1497,6 +1498,42 @@ function popInfo(busId, resetCampusFontSize) {
         'route': data.route,
     });
 
+}
+
+
+function populateBusBreaks(busBreakData) {
+    const breakDiv = $('.bus-breaks');
+    breakDiv.empty(); // Clear existing breaks before adding new ones
+    
+    breakDiv.append(`<div class="mb-0p5rem">Stop</div>`);
+    breakDiv.append(`<div class="mb-0p5rem">Time</div>`);
+    breakDiv.append(`<div class="mb-0p5rem">Duration</div>`);
+
+    busBreakData.forEach(breakItem => {
+
+        const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
+        const formattedTime = timeArrived.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        breakDiv.append(`<div style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].name}</div>`);
+        breakDiv.append(`<div style="color:#656565;">${formattedTime}</div>`);
+        breakDiv.append(`<div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60)}s</div>`);
+    });
+}
+
+
+function getBusBreaks(busId) {
+    fetch(`https://transloc.up.railway.app/get_breaks?bus_id=${busId}`)
+        .then(response => response.json())
+        .then(data => {
+            populateBusBreaks(data);
+        })
+        .catch(error => {
+            console.error('Error fetching bus breaks:', error);
+        });
 }
 
 let busRiderships = {};
