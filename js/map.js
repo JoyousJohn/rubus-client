@@ -1532,12 +1532,9 @@ function updateHistoricalCapacity(busId) {
 }
 
 function createBusRidershipChart(busId) {
-    console.log("createBusRidershipChart called for busId:", busId);
-    console.log("Chart exists?", !!busRidershipCharts[busId]);
     
     // If chart already exists, just update its data if needed
     if (busRidershipCharts[busId]) {
-        console.log("Updating existing chart");
         const timeRiderships = busRiderships[busId];
         if (!timeRiderships || !Object.keys(timeRiderships).length) {
             $('.bus-historical-capacity').hide();
@@ -1668,6 +1665,37 @@ function createBusRidershipChart(busId) {
             scales: {
                 y: {
                     display: false
+                },
+                x: {
+                    ticks: {
+                        callback: function(value, index, values) {
+                            const label = this.getLabelForValue(value);
+                            const timePart = String(label).split(' ')[0];
+                            const firstLabel = String(this.getLabelForValue(values[0].value));
+                            const lastLabel = String(this.getLabelForValue(values[values.length - 1].value));
+                            const firstHour = firstLabel.split(' ')[0].split(':')[0];
+                            const firstPeriod = firstLabel.split(' ')[1];
+                            const lastHour = lastLabel.split(' ')[0].split(':')[0];
+                            const lastPeriod = lastLabel.split(' ')[1];
+                            
+                            if (index === 0 || index === values.length - 1) {
+                                const [hour, period] = String(label).split(' ');
+                                return hour.split(':')[0] + ' ' + period;
+                            }
+                            
+                            if (timePart.endsWith(':00')) {
+                                const [hour, period] = String(label).split(' ');
+                                const hourNum = hour.split(':')[0];
+                                const timeLabel = hourNum + ' ' + period;
+                                
+                                if (timeLabel === firstHour + ' ' + firstPeriod || timeLabel === lastHour + ' ' + lastPeriod) {
+                                    return '';
+                                }
+                                return timeLabel;
+                            }
+                            return '';
+                        }
+                    }
                 }
             }
         }
