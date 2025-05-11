@@ -20,7 +20,7 @@ const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds ob
 let isDesktop;
 let tileLayer;
 
-const mapBoxToken = 'pk.eyJ1IjoiaGFwcHlqb2huIiwiYSI6ImNsbzB1NzlxZDByYXIyam9kd2QybnB4ZzUifQ.2Ssy25qvKfJ70J4LpueDKA'
+const mapBoxToken = null;
 
 $(document).ready(function() {
 
@@ -1064,8 +1064,8 @@ const campusMappings = {
     'b': 'Livingston/Busch',
     'bhe': 'Livi/Busch',
     'bl': 'Livi/Busch',
-    'on1': 'Overnight 1',
-    'on2': 'Overnight 2',
+    'on1': 'All Campus',
+    'on2': 'All Campus',
     'ftbl': 'Football',
     'wknd1': 'All Campus',
     'wknd2': 'All Campus',
@@ -1509,19 +1509,31 @@ function populateBusBreaks(busBreakData) {
     breakDiv.append(`<div class="mb-0p5rem">Time</div>`);
     breakDiv.append(`<div class="mb-0p5rem">Duration</div>`);
 
-    busBreakData.forEach(breakItem => {
+    let breakCount = 0;
 
-        const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
-        const formattedTime = timeArrived.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
+    for (const breakItem of busBreakData) {
+        if (Math.floor(breakItem.break_duration/60) >= 3) {
+            const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
+            const formattedTime = timeArrived.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            breakDiv.append(`<div style="color:#656565;">${formattedTime}</div>`);
+            breakDiv.append(`<div style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].name}</div>`);
+            breakDiv.append(`<div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60)}s</div>`);
+            breakCount++;
 
-        breakDiv.append(`<div style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].name}</div>`);
-        breakDiv.append(`<div style="color:#656565;">${formattedTime}</div>`);
-        breakDiv.append(`<div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60)}s</div>`);
-    });
+            if (breakCount === 8) {
+                break;
+            }
+        }
+    }
+
+    if (breakCount === 0) {
+        $('.bus-breaks').hide();
+    }
 }
 
 
