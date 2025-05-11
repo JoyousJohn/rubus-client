@@ -123,7 +123,7 @@ class BusWebSocketClient {
 
         let route = busData[busId].route
         if (!activeRoutes.has(route)) {
-            console.log("Does this ever run?") // yes it does
+            console.log("Does this ever run?") // yes it does, after something like "New bus in WS: 4035 (13211) (ONWK2FS)"
             if (!route) route = 'undefined'
             // if (route === 'Campus Connect Express') alert('hi')
             activeRoutes.add(route)

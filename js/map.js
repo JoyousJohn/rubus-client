@@ -1995,19 +1995,26 @@ $('.satellite-btn').click(function() {
 
 let lastPikachuGif = null;
 
+const gifSoundMap = {
+    'img/pika.gif': 'img/pika.mp3',
+    'img/jolteon.gif': 'img/jolteon.mp3',
+    'img/sonic.gif': 'img/sonic.mp3',
+    'img/mario.gif': 'img/mario.mp3'
+};
+
 function animatePikachu() {
-    const pikaSound = new Audio('img/pika.mp3');
-
-    setTimeout(() => {
-        pikaSound.play();
-    }, 100);
-
     const pika = document.createElement('img');
     const gifs = ['img/pika.gif', 'img/jolteon.gif', 'img/sonic.gif', 'img/mario.gif'];
     
     const availableGifs = gifs.filter(gif => gif !== lastPikachuGif);
     const selectedGif = availableGifs[Math.floor(Math.random() * availableGifs.length)];
     lastPikachuGif = selectedGif;
+    
+    // Play the corresponding sound for the selected GIF
+    const sound = new Audio(gifSoundMap[selectedGif]);
+    setTimeout(() => {
+        sound.play();
+    }, 100);
     
     pika.src = selectedGif;
     if (pika.src.includes('jolteon.gif')) {
