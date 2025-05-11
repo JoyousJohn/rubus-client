@@ -20,7 +20,7 @@ const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds ob
 let isDesktop;
 let tileLayer;
 
-const mapBoxToken = null;
+const mapBoxToken = 'pk.eyJ1Ijoiam9obi1oYXBweSIsImEiOiJjbWFrMzR2cnYwNDJ1MnFvaGh4dGd5YnlmIn0.cMHFVjIXIo_IaSI-Q6RtfQ';
 
 $(document).ready(function() {
 
@@ -1669,7 +1669,7 @@ function createBusRidershipChart(busId) {
     const values = Object.values(sortedData);
 
     const ctx = document.createElement('canvas');
-    $('.bus-historical-capacity').empty().css('height', '100px').append(ctx).show();
+    $('.bus-historical-capacity').empty().css('height', '80px').append(ctx).show();
     
     busRidershipCharts[busId] = new Chart(ctx, {
         type: 'line',
