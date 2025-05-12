@@ -5,6 +5,7 @@ function sendFeedback() {
     if (feedback.length > 0) {
 
         $('.leave-feedback-wrapper').hide();
+        $('.bottom').show();
 
         const payload = {
             feedback: feedback,
