@@ -328,7 +328,7 @@ html, body {
     background-color: var(--theme-bg);
     border-radius: 1rem;
     padding: 1.3rem 2rem;
-    color: var(--theme-color) /* in light theme this is already black by default */
+    color: var(--theme-color);
 }
 
 .info-shared-bus {
