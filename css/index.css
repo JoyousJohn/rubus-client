@@ -259,13 +259,16 @@ html, body {
 }
 
 .feedback-sent {
-    background-color: #07ad15;
+    background-color: #22d832;
     padding: 0.5rem 1.5rem;
     border-radius: 15px;
     color: white;
-    z-index: 403;
+    z-index: 401;
     font-size: 1.5rem;
     font-family: var(--font-family);
+    top: 1rem;
+    transform: translateX(-50%);
+    left: 50%;
 }
 
 

@@ -1,13 +1,15 @@
 function sendFeedback() {
 
-    $('.leave-feedback-wrapper').hide();
-
     const feedback = $('.feedback-input').val();
 
     if (feedback.length > 0) {
+
+        $('.leave-feedback-wrapper').hide();
+
         const payload = {
             feedback: feedback,
             busId: popupBusId,
+            route: busData[popupBusId].route,
             timeSent: new Date().toISOString() 
         };
     
@@ -17,7 +19,6 @@ function sendFeedback() {
             contentType: 'application/json',
             data: JSON.stringify(payload),
             success: function (data) {
-
                 $('.feedback-input').val('');
                 $('.feedback-sent').slideDown();
     
@@ -29,5 +30,17 @@ function sendFeedback() {
                 console.error("Error sending feedback:", textStatus, errorThrown);
             }
         });
+    } 
+
+    else {
+        $('.empty-feedback').slideDown();
     }
 }
+
+$(document).ready(function() {
+    $('.feedback-input').on('input', function() {
+        if ($('.feedback-input').val().length > 0) {
+            $('.empty-feedback').slideUp('fast');
+        }
+    });
+});

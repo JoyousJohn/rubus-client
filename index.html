@@ -167,6 +167,8 @@
 
     <div class="info-popup-wrapper h-100">
 
+        <div class="feedback-sent w-fit fixed ">Feedback sent!</div>
+
         <div class="bus-info-popup">
             <div class="flex flex-col gap-y-0p5rem h-100 ">
                 <div class="bus-info-main">
@@ -237,9 +239,9 @@
                         <!-- <div class="bus-follow br-1rem align-center pointer">
                             <i class="fa-solid fa-map-pin"></i>
                         </div> -->
-                        <!-- <div class="bus-comment br-1rem align-center pointer">
+                        <div class="bus-comment br-1rem align-center pointer">
                             <i class="fa-regular fa-message" onclick="$('.leave-feedback-wrapper').show(); $('.bottom').hide();"></i>
-                        </div> -->
+                        </div>
 
                         <div class="bus-history br-1rem align-center pointer" onclick="$('.past-breaks-wrapper')[0].scrollIntoView({behavior: 'smooth'});">
                             <i class="fa-solid fa-clock"></i>
@@ -287,7 +289,6 @@
 
                 <div class="flex align-center flex-col gap-y-1rem">
                     <div class="dev-build-popup arial none w-fit">ⓘ Developer build</div>
-                    <div class="feedback-sent none w-fit">Feedback sent!</div>
                 </div>
                 
 
@@ -518,7 +519,8 @@
                         <textarea class="feedback-input mt-2rem text-1p5rem br-0p5rem p-1rem w-full" placeholder="What's on your mind?"></textarea>
                     </div>
                     <!-- <div class="flex justify-center"> -->
-                        <div class="white br-2rem text-1p4rem w-fit mt-2rem" style="padding: 0.5rem 1.5rem; background-color: #4f4fd8;" onclick="sendFeedback();">Send Feedback</div>
+                    <div class="empty-feedback none white br-2rem text-1p4rem w-fit mt-2rem" style="padding: 0.5rem 1.5rem; background-color: #f24160;">You can't submit empty feedback.</div>
+                    <div class="white br-2rem text-1p4rem w-fit mt-2rem" style="padding: 0.5rem 1.5rem; background-color: #4f4fd8;" onclick="sendFeedback();">Send Feedback</div>
                     <!-- </div> -->
                 </div>
             </div>
