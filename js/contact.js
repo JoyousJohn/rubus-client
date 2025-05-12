@@ -33,10 +33,12 @@ function popContact() {
 
 function contactClicked() {
     if (!contact) {
+        $('.footer-contact-loading').show();
         fetch('https://transloc.up.railway.app/contact')
             .then(response => response.json())
             .then(data => {
                 contact = data;
+                $('.footer-contact-loading').hide();
                 popContact();
             })
             .catch(error => {
