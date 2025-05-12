@@ -1505,9 +1505,9 @@ function populateBusBreaks(busBreakData) {
     const breakDiv = $('.bus-breaks');
     breakDiv.empty(); // Clear existing breaks before adding new ones
     
-    breakDiv.append(`<div class="mb-0p5rem">Time</div>`);
-    breakDiv.append(`<div class="mb-0p5rem">Stop</div>`);
-    breakDiv.append(`<div class="mb-0p5rem">Duration</div>`);
+    breakDiv.append(`<div class="mb-0p5rem text-1p2rem">Time</div>`);
+    breakDiv.append(`<div class="mb-0p5rem text-1p2rem">Stop</div>`);
+    breakDiv.append(`<div class="mb-0p5rem text-1p2rem">Duration</div>`);
 
     let breakCount = 0;
 
@@ -1515,7 +1515,9 @@ function populateBusBreaks(busBreakData) {
     let totalAvgBreakTime = 0;
     let totalBusBreakTime = 0;
 
-    for (const breakItem of busBreakData.reverse()) {
+    const reversedData = [...busBreakData].reverse();
+
+    for (const breakItem of reversedData) {
         if (breakItem.break_duration > 180 && breakCount < 8) {
             const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
             const formattedTime = timeArrived.toLocaleTimeString('en-US', {
@@ -1535,7 +1537,6 @@ function populateBusBreaks(busBreakData) {
             totalBusBreakTime += breakItem.break_duration;
             consideredStops.add(breakItem.stop_id);
         }
-
     }
 
 
@@ -1548,7 +1549,7 @@ function populateBusBreaks(busBreakData) {
     }
 
     if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
-        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Slow bus</span>").show();
+        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Frequently stops</span>").show();
     } else {
         $('.info-quickness').hide();
     }
