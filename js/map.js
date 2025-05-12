@@ -1559,7 +1559,7 @@ function populateBusBreaks(busBreakData) {
     const breakMinPerHour = (totalBusStopTime / timeDiff * 60).toFixed(1);
     // $('.bus-avg-break-time-per-hour').html(`${breakMinPerHour} min/hr`);
 
-    $('.bus-avg-break-time').html(`<span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'slower' : 'faster'} than other buses, breaks for <span style="color: yellow;">${Math.ceil(breakMinPerHour)} min/hr</span>`);
+    $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: yellow;">${Math.ceil(breakMinPerHour)} min/hr</span>`);
 
     if (breakCount === 0) {
         $('.bus-breaks').empty();

@@ -327,7 +327,7 @@ html, body {
 .bus-info-main, .info-next-stops {
     background-color: var(--theme-bg);
     border-radius: 1rem;
-    padding: 1.5rem 2rem;
+    padding: 1.3rem 2rem;
     color: var(--theme-color) /* in light theme this is already black by default */
 }
 
