@@ -206,11 +206,13 @@
                     </div>
 
                     <div class="past-breaks-wrapper flex flex-col align-center mt-2rem mb-1rem">
-                        <div class="flex justify-between w-full">
-                            <div class="text-1p3rem lightgray center mb-0p5rem">Past Breaks</div>
+                        <div class="flex flex-col justify-center">
+                            <div class="text-1p4rem lightgray center">Past Breaks</div>
                             <div class="bus-avg-break-time text-1p2rem"></div>
+                            <div class="bus-avg-break-time-per-hour text-1p2rem"></div>
                         </div>
-                        <div class="bus-breaks grid grid-cols-3-auto text-1p4rem gap-x-1rem w-fit"></div>
+                        <div class="bus-breaks grid grid-cols-3-auto text-1p4rem gap-x-1rem w-fit mt-0p5rem"></div>
+                        <div class="show-more-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div').slideDown(); $('.show-more-breaks').hide();">Show More Breaks</div>
                         <div class="bus-quickness-breakdown-wrapper text-1p2remnone"></div>
                     </div>
 

@@ -1460,6 +1460,8 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     updateHistoricalCapacity(busId);
+
+    $('.show-more-breaks').show();
     getBusBreaks(busId);
     
     if (sourceStopId) {
@@ -1514,21 +1516,28 @@ function populateBusBreaks(busBreakData) {
     let consideredStops = new Set();
     let totalAvgBreakTime = 0;
     let totalBusBreakTime = 0;
+    let totalBusStopTime = 0;
 
     const reversedData = [...busBreakData].reverse();
 
     for (const breakItem of reversedData) {
-        if (breakItem.break_duration > 180 && breakCount < 8) {
+        if (breakItem.break_duration > 180) {
+
             const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
             const formattedTime = timeArrived.toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 minute: '2-digit',
                 hour12: true
             });
+
+            let displayClass = ''
+            if (breakCount >= 7) {
+                displayClass = 'none';
+            }
             
-            breakDiv.append(`<div style="color:#656565;">${formattedTime}</div>`);
-            breakDiv.append(`<div style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].name}</div>`);
-            breakDiv.append(`<div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>`);
+            breakDiv.append(`<div class="${displayClass}" style="color:#656565;">${formattedTime}</div>`);
+            breakDiv.append(`<div class="${displayClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].name}</div>`);
+            breakDiv.append(`<div class="${displayClass} bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>`);
             breakCount++;
         }
 
@@ -1537,11 +1546,20 @@ function populateBusBreaks(busBreakData) {
             totalBusBreakTime += breakItem.break_duration;
             consideredStops.add(breakItem.stop_id);
         }
+
+        if (breakItem.break_duration > 180) {   
+            totalBusStopTime += breakItem.break_duration;
+        }
     }
 
 
     const percentDiff = ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime * 100).toFixed(1);
-    $('.bus-avg-break-time').html(`<span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'slower' : 'faster'} than other buses`);
+
+    const timeDiff = Math.round((new Date(busBreakData[busBreakData.length - 1].time_departed.replace(/\.\d+/, '')) - new Date(busBreakData[0].time_arrived.replace(/\.\d+/, ''))) / 1000);
+    const breakMinPerHour = (totalBusStopTime / timeDiff * 60).toFixed(1);
+    // $('.bus-avg-break-time-per-hour').html(`${breakMinPerHour} min/hr`);
+
+    $('.bus-avg-break-time').html(`<span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'slower' : 'faster'} than other buses, breaks for <span style="color: yellow;">${Math.ceil(breakMinPerHour)} min/hr</span>`);
 
     if (breakCount === 0) {
         $('.bus-breaks').empty();
@@ -1549,7 +1567,7 @@ function populateBusBreaks(busBreakData) {
     }
 
     if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
-        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Frequently stops</span>").show();
+        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Frequent breaks</span>").show();
     } else {
         $('.info-quickness').hide();
     }
