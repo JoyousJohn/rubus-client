@@ -560,7 +560,8 @@ async function fetchWhere() {
             if (!busData[busId]) {
                 busData[busId] = {
                     'route': busLocations[busId]['route'],
-                }
+                    'src_test': 'fetchWhere'
+                } // may need to set previousPosition keys here
             }
             
             if (!busLocations[busId]['where']) { continue; } // joined service and didn't get to a stop polygon yet        

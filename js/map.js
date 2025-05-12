@@ -1571,6 +1571,8 @@ function populateBusBreaks(busBreakData) {
 
     if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
         $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Frequent breaks</span>").show();
+    } else if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime < -0.2) {
+        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #32f832;'>Short stops</span>").show();
     } else {
         $('.info-quickness').hide();
     }
