@@ -1539,7 +1539,7 @@ function populateBusBreaks(busBreakData) {
             }
             
             breakDiv.append(`<div class="${displayClass}" style="color:#656565;">${formattedTime}</div>`);
-            breakDiv.append(`<div class="${displayClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].name}</div>`);
+            breakDiv.append(`<div class="${displayClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name}</div>`);
             breakDiv.append(`<div class="${displayClass} bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>`);
             breakCount++;
         }
