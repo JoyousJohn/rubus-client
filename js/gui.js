@@ -710,7 +710,9 @@ function updateBusOverview(routes) {
 
     if (!routes) { 
         routes = Object.keys(busesByRoutes);
-        $('.buses-overview-grid').children().not('.bus-overview-heading, .bus-overview-footer').remove();
+        $('.buses-overview-grid').hide().children().not('.bus-overview-heading, .bus-overview-footer').remove();
+    } else {
+        $('.buses-over-grid').show();
     }
 
     if (routes.includes('undefined')) { // Should I even track this?

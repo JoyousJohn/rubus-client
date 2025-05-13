@@ -359,6 +359,8 @@ function hideInfoBoxes(instantly_hide) {
 
         popupStopId = null;
         thisClosestStopId = null;
+
+        checkMinRoutes(); // because .knight-mover is hidden in popStopInfo()
     }
 
     if (popupBusId) {

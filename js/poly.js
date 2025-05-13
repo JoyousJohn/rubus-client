@@ -419,7 +419,7 @@ async function popStopInfo(stopId) {
         selectedMarkerId = null;
     }
 
-    $('.bus-info-popup, .route-panel, .my-location-popup').hide();
+    $('.bus-info-popup, .route-panel, .my-location-popup, .knight-mover').hide();
 
     // return;
 
