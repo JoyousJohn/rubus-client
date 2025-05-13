@@ -14,6 +14,7 @@
     --theme-hidden-route-col: #555;
     --theme-bus-icon-inner: lightgray;
     --theme-satellite-btn: #3155c1;
+    --theme-breaks-min-color: yellow;
 }
 
 [theme="light"] {
@@ -28,6 +29,7 @@
     --theme-hidden-route-col: #d2d1d1;
     --theme-bus-icon-inner: white;
     --theme-satellite-btn: rgb(143, 171, 255);
+    --theme-breaks-min-color: gold;
 }
 
 body {

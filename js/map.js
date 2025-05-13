@@ -1462,6 +1462,7 @@ function popInfo(busId, resetCampusFontSize) {
     updateHistoricalCapacity(busId);
 
     if (sourceBusId !== busId) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
+        $('.info-quickness').hide();
         getBusBreaks(busId);
         $('.show-more-breaks, .show-all-breaks').show();
     }
@@ -1582,7 +1583,7 @@ function populateBusBreaks(busBreakData) {
     const breakMinPerHour = (totalBusStopTime / timeDiff * 60).toFixed(1);
     // $('.bus-avg-break-time-per-hour').html(`${breakMinPerHour} min/hr`);
 
-    $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: yellow;">${Math.ceil(breakMinPerHour)} min/hr</span>`);
+    $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
 
     if (breakCount === 0) {
         $('.bus-breaks').empty();
@@ -1590,17 +1591,15 @@ function populateBusBreaks(busBreakData) {
     }
 
     if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
-        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Frequent breaks</span>").show();
+        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Lengthy stops</span>").show();
     } else if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime < -0.2) {
         $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #32f832;'>Short stops</span>").show();
-    } else {
-        $('.info-quickness').hide();
     }
 
     if (settings['toggle-show-bus-quickness-breakdown']) {
         $('.bus-quickness-breakdown-wrapper').html(`<div class="flex flex-col text-1p3rem mt-0p5rem">
-            <div>Total bus loop break time: ${Math.round(totalBusBreakTime)}s</div>
-            <div>Total avg break time: ${Math.round(totalAvgBreakTime)}s</div>
+            <div>Total bus stop time/loop: ${Math.round(totalBusBreakTime)}s</div>
+            <div>Network avg stop time/loop: ${Math.round(totalAvgBreakTime)}s</div>
             <div>Percent difference: ${percentDiff}%</div>
         </div>`).show();
     } else {
