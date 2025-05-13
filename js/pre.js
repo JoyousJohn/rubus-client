@@ -564,10 +564,12 @@ async function fetchWhere() {
             // if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
             
             if (!busData[busId]) {
-                busData[busId] = {
-                    'route': busLocations[busId]['route'],
-                    'src_test': 'fetchWhere'
-                } // may need to set previousPosition keys here
+                continue;
+                // busData[busId] = {
+                //     'route': busLocations[busId]['route'],
+                //     'src_test': 'fetchWhere',
+                //     'previousPositions': [] // hope this is enough?
+                // } // may need to set previousPosition keys here
             }
             
             if (!busLocations[busId]['where']) { continue; } // joined service and didn't get to a stop polygon yet        
@@ -583,7 +585,7 @@ async function fetchWhere() {
 
         console.log(validBusIds)
         Object.keys(busData).forEach(busId => {
-            if (!validBusIds.includes(busId) && busData[busId].route.includes('on')) { // this should only afet returning to the app which had overnight buses previously (from ws), otherwise it would briefly cause buses not yet reaching a stop to pop out before respawning from fetch data
+            if (!validBusIds.includes(busId) && busData[busId].route.includes('on')) { // this should only affect returning to the app which had overnight buses previously (from ws), otherwise it would briefly cause buses not yet reaching a stop to pop out before respawning from fetch data
                 makeOoS(busId)
             }
         })
