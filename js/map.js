@@ -1206,8 +1206,12 @@ function popInfo(busId, resetCampusFontSize) {
         const displayTime = isToday ? formattedTime : 
             `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
         
+        const timeInService = Math.floor((today - serviceDate) / 1000);
+        const hours = Math.floor(timeInService / 3600);
+        const minutes = Math.floor((timeInService % 3600) / 60);
+        const timeInServiceText = `${hours}h ${minutes}m`;
 
-        $('.bus-joined-service').text('Joined service at ' + displayTime);
+        $('.bus-joined-service').text('Joined service at ' + displayTime + ' (' + timeInServiceText + ' ago)');
     
     }
 
@@ -1451,6 +1455,9 @@ function popInfo(busId, resetCampusFontSize) {
             
         } else {
             $('.next-stops-grid').hide(); // For some reason *only* the closest stop at top of next stops remains visible if negative ETA, and only if negative ETA happens while site was open. Investigate why, unsure if this fixes. The closest stop should be part of the element, so I'm confused...
+            setTimeout(() => {
+                $('.info-next-stops').scrollTop(0)
+            }, 0);
         }
     }
 
