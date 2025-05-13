@@ -247,6 +247,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 busMarkers[busId].getElement().style.display = 'none';
             }
 
+            if (isNew) {
+                $('.all-stops-btn-wrapper').show();
+            }
+
             makeBusesByRoutes(); // this has to go before updateTimeToStops since that calls populateAllStops which uses this. Not sure if moving this back up here broke something else though. Should find a better way to do the thing below.
 
             // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
@@ -303,6 +307,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 $('.knight-mover, .knight-mover-mini').hide();
             }
             checkMinRoutes();
+        } else {
+            $('.all-stops-btn-wrapper').hide();
         }
 
     } catch (error) {
@@ -698,11 +704,13 @@ function checkMinRoutes() {
         
     })
 
+
     if (!activeRoutes.size) {
         $('.knight-mover').show();
         $('.knight-mover-mini').hide();
 
         populateRouteSelectors(); // to remove favs
+        $('.all-stops-btn-wrapper').hide();
         return;
     }
 

@@ -98,6 +98,8 @@ class BusWebSocketClient {
 
             $('.knight-mover, .knight-mover-mini').hide();
 
+            $('.all-stops-btn-wrapper').show();
+
         }
 
         busData[busId].lat = data.latitude
