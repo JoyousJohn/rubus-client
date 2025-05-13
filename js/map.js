@@ -1547,7 +1547,22 @@ function populateBusBreaks(busBreakData) {
         
         breakDiv.append(`<div class="${extraClass}" style="color:#656565;">${formattedTime}</div>`);
         breakDiv.append(`<div class="${extraClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name}</div>`);
-        breakDiv.append(`<div class="${extraClass} bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>`);
+        
+        let durationDiffPercent = Math.round(((breakItem.break_duration - waits[breakItem.stop_id])/breakItem.break_duration * 100));
+        
+        let percentDiffCol = ''
+        if (durationDiffPercent > 0) { // slower than average
+            percentDiffCol = '#f84949';
+            durationDiffPercent = '+' + durationDiffPercent;
+        } else if (durationDiffPercent < 0) { // faster than average
+            percentDiffCol = '#32f832';
+        }
+
+
+        breakDiv.append(`<div class="${extraClass}"><div class="flex gap-x-0p5rem justify-between">
+            <div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>
+            <div class="stop-dur-percent none text-1p2rem" style="color: ${percentDiffCol};">${durationDiffPercent}%</div>
+        </div></div>`);
 
         if (!consideredStops.has(breakItem.stop_id)) {
             totalAvgBreakTime += waits[breakItem.stop_id];
