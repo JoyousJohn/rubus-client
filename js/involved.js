@@ -12,7 +12,13 @@ $('.events-link').click(function() {
             const futureEvents = futureEventIndex === -1 ? [] : data.slice(futureEventIndex);
 
             futureEvents.forEach(event => {
-                const $imgElm = $(`<div id="event-img"></div>`).css('background-image', `url(https://se-images.campuslabs.com/clink/images/${event['img']})`)
+
+                let $imgElm = $(`<div id="event-img"></div>`)
+                if (event['img']) {
+                    $imgElm.css('background-image', `url(https://se-images.campuslabs.com/clink/images/${event['img']})`)
+                } else {
+                    $imgElm.css('background-color', '#e5e5e5')
+                }
                 $('.involved-grid').append($imgElm)
 
                 const $eventElm = $(`
@@ -29,7 +35,7 @@ $('.events-link').click(function() {
 
                 if (event.benefits) {
                     event.benefits.forEach(benefit => {
-                        $eventElm.find('.benefits').append(`<div class="benefit bg-lime white" style="padding: 0.2rem 0.5rem; border-radius: 0.3rem;">${benefit}</div>`)
+                        $eventElm.find('.benefits').append(`<div class="benefit white" style="padding: 0.2rem 0.5rem; border-radius: 0.3rem; background-color: #1cd41c;">${benefit}</div>`)
                     })
                 }
 

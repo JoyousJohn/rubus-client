@@ -17,7 +17,7 @@ function popContact() {
 
         else if (key === 'socials') {
             contact.socials.forEach(function(social) {
-                $('.footer-contact').append(`<div>${social.type} (recommended)</div>`)
+                $('.footer-contact').append(`<div style="line-height: 0.7;">${social.type}<br><span class="gray777777 text-1p2rem">(recommended)</span></div>`)
                 if (social.type === 'Reddit') {
                     $('.footer-contact').append(`<div class="right"><a href="https://reddit.com/${social.address}">${social.address}</a></div>`)
                 }
