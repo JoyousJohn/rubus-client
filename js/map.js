@@ -1556,7 +1556,7 @@ function populateBusBreaks(busBreakData) {
             percentDiffCol = '#f84949';
             durationDiffPercent = '+' + durationDiffPercent;
         } else if (durationDiffPercent < 0) { // faster than average
-            percentDiffCol = '#32f832';
+            percentDiffCol = 'var(--theme-short-stops-color)';
         }
 
 
@@ -1583,7 +1583,7 @@ function populateBusBreaks(busBreakData) {
     const breakMinPerHour = (totalBusStopTime / timeDiff * 60).toFixed(1);
     // $('.bus-avg-break-time-per-hour').html(`${breakMinPerHour} min/hr`);
 
-    $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : '#32f832'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
+    $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
 
     if (breakCount === 0) {
         $('.bus-breaks').empty();
@@ -1593,7 +1593,7 @@ function populateBusBreaks(busBreakData) {
     if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
         $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Lengthy stops</span>").show();
     } else if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime < -0.2) {
-        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #32f832;'>Short stops</span>").show();
+        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: var(--theme-short-stops-color);'>Short stops</span>").show();
     }
 
     if (settings['toggle-show-bus-quickness-breakdown']) {
@@ -1779,7 +1779,7 @@ function createBusRidershipChart(busId) {
                         return rgb.replace(')', ', 0.2)').replace('rgb', 'rgba');
                     }
                 }(),
-                // fill: true,
+                fill: true,
                 tension: 0.4,
                 pointRadius: 0
             }]
@@ -1819,10 +1819,10 @@ function createBusRidershipChart(busId) {
                             const timePart = String(label).split(' ')[0];
                             
                             // Always show first and last labels
-                            if (index === 0 || index === values.length - 1) {
-                                const [hour, period] = String(label).split(' ');
-                                return hour.split(':')[0] + ' ' + period;
-                            }
+                            // if (index === 0 || index === values.length - 1) {
+                            //     const [hour, period] = String(label).split(' ');
+                            //     return hour.split(':')[0] + ' ' + period;
+                            // }
                             
                             // For intermediate labels, only show hour labels (:00)
                             if (timePart.endsWith(':00')) {
@@ -1830,18 +1830,18 @@ function createBusRidershipChart(busId) {
                                 const hourNum = hour.split(':')[0];
                                 const timeLabel = hourNum + ' ' + period;
                                 
-                                // Check if this hour matches the first or last hour
-                                const firstLabel = String(this.getLabelForValue(values[0].value));
-                                const lastLabel = String(this.getLabelForValue(values[values.length - 1].value));
-                                const firstHour = firstLabel.split(' ')[0].split(':')[0];
-                                const firstPeriod = firstLabel.split(' ')[1];
-                                const lastHour = lastLabel.split(' ')[0].split(':')[0];
-                                const lastPeriod = lastLabel.split(' ')[1];
+                                // // Check if this hour matches the first or last hour
+                                // const firstLabel = String(this.getLabelForValue(values[0].value));
+                                // const lastLabel = String(this.getLabelForValue(values[values.length - 1].value));
+                                // const firstHour = firstLabel.split(' ')[0].split(':')[0];
+                                // const firstPeriod = firstLabel.split(' ')[1];
+                                // const lastHour = lastLabel.split(' ')[0].split(':')[0];
+                                // const lastPeriod = lastLabel.split(' ')[1];
                                 
-                                // Don't show intermediate labels that match first or last hour
-                                if (timeLabel === firstHour + ' ' + firstPeriod || timeLabel === lastHour + ' ' + lastPeriod) {
-                                    return '';
-                                }
+                                // // Don't show intermediate labels that match first or last hour
+                                // if (timeLabel === firstHour + ' ' + firstPeriod || timeLabel === lastHour + ' ' + lastPeriod) {
+                                    // return '';
+                                // }
                                 
                                 return timeLabel;
                             }
