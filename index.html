@@ -213,8 +213,11 @@
                             <div class="bus-avg-break-time text-1p2rem"></div>
                             <div class="bus-avg-break-time-per-hour text-1p2rem"></div>
                         </div>
-                        <div class="bus-breaks grid grid-cols-3-auto text-1p4rem gap-x-1rem w-fit mt-1rem"></div>
-                        <div class="show-more-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div').slideDown(); $('.show-more-breaks').hide();">Show More Breaks</div>
+                        <div class="bus-breaks grid grid-cols-3-auto text-1p4rem gap-x-3rem mt-1rem"></div>
+                        <div class="flex justify-evenly w-full">
+                            <div class="show-more-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div.long-break').slideDown(); $('.show-more-breaks').hide();">Show All Breaks</div>
+                            <div class="show-all-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div').slideDown(); $('.show-all-breaks, .show-more-breaks').hide();">Show All Stops</div>
+                        </div>
                         <div class="bus-quickness-breakdown-wrapper text-1p2remnone"></div>
                     </div>
 
@@ -757,7 +760,7 @@
                     </div>
 
                     <div class="settings- flex justify-between">
-                        <div class="settings-heading">Show Stop Polygons</div>
+                        <div class="settings-heading">Show stop polygons</div>
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-stop-polygons" class="toggle-input">
                             <label for="toggle-show-stop-polygons" class="toggle-label">
@@ -897,7 +900,7 @@
                     </div>
 
                     <div class="flex justify-between">
-                        <div class="settings-heading">Show Bus Quickness Breakdown</div>
+                        <div class="settings-heading">Breakdown bus quickness</div>
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-bus-quickness-breakdown" class="toggle-input">
                             <label for="toggle-show-bus-quickness-breakdown" class="toggle-label">

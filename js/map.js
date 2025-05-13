@@ -1463,7 +1463,7 @@ function popInfo(busId, resetCampusFontSize) {
 
     if (sourceBusId !== busId) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
         getBusBreaks(busId);
-        $('.show-more-breaks').show();
+        $('.show-more-breaks, .show-all-breaks').show();
     }
     
     if (sourceStopId) {
@@ -1524,25 +1524,30 @@ function populateBusBreaks(busBreakData) {
     const reversedData = [...busBreakData].reverse();
 
     for (const breakItem of reversedData) {
+
+        let extraClass = '';
+
         if (breakItem.break_duration > 180) {
-
-            const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
-            const formattedTime = timeArrived.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-
-            let displayClass = ''
-            if (breakCount >= 7) {
-                displayClass = 'none';
-            }
-            
-            breakDiv.append(`<div class="${displayClass}" style="color:#656565;">${formattedTime}</div>`);
-            breakDiv.append(`<div class="${displayClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name}</div>`);
-            breakDiv.append(`<div class="${displayClass} bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>`);
+            extraClass = 'long-break';
             breakCount++;
+        } else {
+            extraClass += 'none';
         }
+
+        if (breakCount >= 7) {
+            extraClass += ' none';
+        }
+
+        const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
+        const formattedTime = timeArrived.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        breakDiv.append(`<div class="${extraClass}" style="color:#656565;">${formattedTime}</div>`);
+        breakDiv.append(`<div class="${extraClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name}</div>`);
+        breakDiv.append(`<div class="${extraClass} bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>`);
 
         if (!consideredStops.has(breakItem.stop_id)) {
             totalAvgBreakTime += waits[breakItem.stop_id];
