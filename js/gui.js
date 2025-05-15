@@ -1204,6 +1204,8 @@ function updateSettings() {
             }
         }
 
+        colorMappings = settings['colorMappings']
+
         for (const key in defaultColorMappings) {
             if (!colorMappings.hasOwnProperty(key)) {
                 colorMappings[key] = defaultColorMappings[key];
@@ -1214,7 +1216,6 @@ function updateSettings() {
 
         document.documentElement.style.setProperty('--font-family', settings['font']);
 
-        colorMappings = settings['colorMappings']
 
     } else {
         setDefaultSettings();
