@@ -1204,6 +1204,12 @@ function updateSettings() {
             }
         }
 
+        for (const key in defaultColorMappings) {
+            if (!colorMappings.hasOwnProperty(key)) {
+                colorMappings[key] = defaultColorMappings[key];
+            }
+        }
+
         localStorage.setItem('settings', JSON.stringify(settings))
 
         document.documentElement.style.setProperty('--font-family', settings['font']);

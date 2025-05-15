@@ -1124,8 +1124,8 @@ const defaultColorMappings = {
     'winter1': 'SpringGreen',
     'winter2': 'crimson',
     'fav': 'gold',
-    'summer1': 'MediumSpringGreen',
-    'summer2': 'SpringGreen'
+    'summer1': 'Plum',
+    'summer2': 'PowderBlue'
 }
 
 const campusShortNamesMappings = {
