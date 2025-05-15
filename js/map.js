@@ -26,16 +26,34 @@ $(document).ready(function() {
 
     settings = JSON.parse(localStorage.getItem('settings'));
 
-    map = L.map('map', {
+    let mapOptions = {
         maxBounds: expandBounds(bounds, 2),
-        maxBoundsViscosity: 1.3,
-        zoomControl: false,
-        inertiaDeceleration: 1000,
-        zoomSnap: 0,
-        edgeBufferTiles: 10,
-        preferCanvas: settings && settings['map-renderer'] === 'canvas',
+        maxBoundsViscosity: 1.3, // How much resistance to panning outside maxBounds
+        zoomControl: false, // Disable +/- zoom control
+        inertiaDeceleration: 1000, // higher means faster deceleration
+        zoomSnap: 0, // can be 0 for continuous zoom, normally 1
+        edgeBufferTiles: 10, // number of invisible tiles to load on edges
         scrollWheelZoom: false, // Disable default scroll zoom
-    }).setView([40.507476,-74.4541267], 14);
+    };
+
+    const usePolylinePadding = settings && settings['toggle-polyline-padding'];
+    const preferCanvasRenderer = settings && settings['map-renderer'] === 'canvas';
+
+    if (usePolylinePadding) {
+        if (preferCanvasRenderer) {
+            // Polyline padding enabled AND Canvas renderer preferred
+            mapOptions.renderer = L.canvas({ padding: 0.1 }); // Adjust padding as needed
+        } else {
+            // Polyline padding enabled AND SVG renderer preferred (or default)
+            mapOptions.renderer = L.svg({ padding: 0.1 }); // Adjust padding as needed
+        }
+    } else if (preferCanvasRenderer) {
+        // Polyline padding NOT enabled, but Canvas renderer IS preferred
+        mapOptions.preferCanvas = true; // Leaflet's default L.canvas() has 0.1 padding
+    }
+    // If none of the above, Leaflet defaults to L.svg() without explicit padding.
+
+    map = L.map('map', mapOptions).setView([40.507476,-74.4541267], 14); // Rutgers Student Center
 
     map.setMinZoom(12);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
@@ -1077,7 +1095,9 @@ const campusMappings = {
     'rexl': 'Cook/Doug/Livi',
     'rexb': 'Cook/Busch',
     'winter1': 'Winter 1',
-    'winter2': 'Winter 2'
+    'winter2': 'Winter 2',
+    'summer1': 'Summer 1',
+    'summer2': 'Summer 2'
 } 
 
 let colorMappings;
@@ -1103,7 +1123,9 @@ const defaultColorMappings = {
     'all': 'MediumSpringGreen',
     'winter1': 'SpringGreen',
     'winter2': 'crimson',
-    'fav': 'gold'
+    'fav': 'gold',
+    'summer1': 'MediumSpringGreen',
+    'summer2': 'SpringGreen'
 }
 
 const campusShortNamesMappings = {
@@ -1328,7 +1350,7 @@ function popInfo(busId, resetCampusFontSize) {
 
             let eta;
 
-            if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1') && sortedStops[i] === 3) { // special case
+            if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'summer1') && sortedStops[i] === 3) { // special case
                 if (busData[busId]['stopId'] && !busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
                     delete busETAs[busId];
                     console.log("I'm amazed this actually happened, wow"); // encountered this 4/19/2025 six:38 pm at livi dining
@@ -1517,6 +1539,13 @@ function popInfo(busId, resetCampusFontSize) {
 
 function populateBusBreaks(busBreakData) {
 
+    if (!busBreakData.data) {
+        $('.bus-breaks').empty();
+        $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
+        $('.show-more-breaks, .show-all-breaks').hide();
+        return;
+    }
+
     const breakDiv = $('.bus-breaks');
     breakDiv.empty(); // Clear existing breaks before adding new ones
     
@@ -1614,7 +1643,12 @@ function populateBusBreaks(busBreakData) {
     } else {
         $('.bus-quickness-breakdown-wrapper').hide();
     }
-    
+
+    if (breakCount !== Object.keys(busBreakData.data).length) {
+        $('.show-more-breaks, .show-all-breaks').show();
+    }
+    // eventually find a way to count breaks vs stops, probably by counting ivs with .long-break, and only show .show-more-breaks if this number is not 7, or whatever var i set to max def visible breaks
+
 }
 
 

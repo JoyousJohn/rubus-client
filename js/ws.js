@@ -61,7 +61,7 @@ class BusWebSocketClient {
 
             if (!data.route) {
                 console.log("[WHAT] " + busId + " " + JSON.stringify(data) + " doesn't have a route...");
-                return;
+                // return;
             }
 
             if (!data.route.includes('ONWK')) return;

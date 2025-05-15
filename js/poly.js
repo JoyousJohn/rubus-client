@@ -5,7 +5,6 @@ async function setPolylines(activeRoutes) {
 
     console.log("Setting polylines for activeRoutes: ", activeRoutes)
     
-
     const fetchPromises = [];
 
     for (const routeName of activeRoutes) {
@@ -50,7 +49,8 @@ async function setPolylines(activeRoutes) {
             color: colorMappings[routeName],
             weight: 4,
             opacity: 1,
-            smoothFactor: 1
+            smoothFactor: 1,
+            // noClip: true
         };
 
         if (settings['toggle-polyline-padding']) {
@@ -81,7 +81,7 @@ async function getPolylineData(routeName) {
 
     try {
 
-        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
+        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2']
         if (!knownRoutes.includes(routeName)) return
 
         let polylineData = null;
@@ -184,7 +184,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             else if (busETAs[busId]) {
 
                 let eta;
-                if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1') && stopId === 3) { // special case
+                if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && stopId === 3) { // special case
                     eta = Math.min(...Object.values(busETAs[busId][3]['via']));
                 } else {
                     eta = busETAs[busId][stopId]

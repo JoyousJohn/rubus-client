@@ -57,7 +57,11 @@ const routeMapping = {
     '55369': 'h',
     '55279': 'ee',
     '55367': 'c',
-    '61741': 'bl'    
+    '61741': 'bl',
+    
+    // summer (5/15)
+    '41752': 'summer1',
+    '44051': 'summer2'
 }
 
 const excludedRouteMappings = {
@@ -72,7 +76,7 @@ function getRouteStr(route) {
     if (route in routeMapping) {
         return [routeMapping[route], true];
     } else {
-        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
+        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2']
         let alphaRouteId = route.replace(/[^a-zA-Z]/g, '').toLowerCase();
         if (knownRoutes.includes(alphaRouteId)) {
             return [alphaRouteId, true];
@@ -414,7 +418,7 @@ function updateTimeToStops(busIds) {
                             .concat(routeStops.slice(0, nextStopIndex));
         }
 
-        if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1') && nextStop === 3) { // special case
+        if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1') && nextStop === 3) { // special case
 
             if (!busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
                 delete busETAs[busId]
@@ -523,7 +527,7 @@ function updateTimeToStops(busIds) {
 
                 // console.log(thisStopId)
 
-                if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1') && thisStopId === 3) { // special case
+                if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1') && thisStopId === 3) { // special case
                     if (!busETAs[busId][thisStopId]) busETAs[busId][thisStopId] = {'via': {}}
                     busETAs[busId][thisStopId]['via'][prevStopId] = Math.round(currentETA)
                 } else {

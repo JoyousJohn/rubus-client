@@ -48,7 +48,7 @@ function populateRouteSelectors(activeRoutes) {
 
         let color = 'darkgray'
 
-        const knownRoutes = ['fav', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl']
+        const knownRoutes = ['fav', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2']
 
         if (knownRoutes.includes(route)) {
             color = colorMappings[route]
@@ -490,7 +490,7 @@ function selectedRoute(route) {
             .sort((a, b) => {
                 const getETA = (busId) => {
                     
-                    if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && stopId === 3 && busETAs[busId] && busETAs[busId][stopId] && previousStopId) {
+                    if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && busETAs[busId] && busETAs[busId][stopId] && previousStopId) {
                         if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) {
                             return 0;
                         }
@@ -509,7 +509,7 @@ function selectedRoute(route) {
                 // console.log(index);
                 let busIndex = -1;
                 
-                if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && busData[busId].stopId == 3) {
+                if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && busData[busId].stopId == 3) {
                     
                     for (let j = 1; j < stopLists[route].length; j++) {
 
@@ -560,7 +560,7 @@ function selectedRoute(route) {
                         return;
                     } else {
                         $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
-                        if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
+                        if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
                             // Use the previous stop to determine which 'via' path to use
                             eta = busETAs[busId][stopId]['via'][previousStopId];
                         } else {
