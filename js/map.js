@@ -1541,7 +1541,7 @@ function popInfo(busId, resetCampusFontSize) {
 
 function populateBusBreaks(busBreakData) {
 
-    if (!busBreakData.data) {
+    if (!busBreakData) {
         $('.bus-breaks').empty();
         $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
         $('.show-more-breaks, .show-all-breaks').hide();
