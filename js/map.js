@@ -1647,9 +1647,9 @@ function populateBusBreaks(busBreakData) {
 
     if (breakCount === 0) {
         $('.bus-breaks').children().slice(0, 3).remove();
-        $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
+        $('.bus-breaks').append(`<div class="no-breaks text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
         $('.show-more-breaks').hide();
-        $('.show-all-breaks').click(function() { $('.bus-breaks > div').last().remove(); });
+        $('.show-all-breaks').click(function() { $('.no-breaks').remove(); });
         $('.show-all-breaks').text("Show Stops");
         $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg`);
     } else {
