@@ -1625,11 +1625,6 @@ function populateBusBreaks(busBreakData) {
 
     $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
 
-    if (breakCount === 0) {
-        $('.bus-breaks').empty();
-        $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
-    }
-
     if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
         $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Lengthy stops</span>").show();
     } else if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime < -0.2) {
@@ -1646,9 +1641,22 @@ function populateBusBreaks(busBreakData) {
         $('.bus-quickness-breakdown-wrapper').hide();
     }
 
-    if (breakCount !== Object.keys(busBreakData.data).length) {
+    if (breakCount !== busBreakData.length) {
         $('.show-more-breaks, .show-all-breaks').show();
     }
+
+    if (breakCount === 0) {
+        $('.bus-breaks').children().slice(0, 3).remove();
+        $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
+        $('.show-more-breaks').hide();
+        $('.show-all-breaks').click(function() { $('.bus-breaks > div').last().remove(); });
+        $('.show-all-breaks').text("Show Stops");
+        $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg`);
+    } else {
+        $('.show-all-breaks').text("Show All Stops");
+    }
+
+
     // eventually find a way to count breaks vs stops, probably by counting ivs with .long-break, and only show .show-more-breaks if this number is not 7, or whatever var i set to max def visible breaks
 
 }
