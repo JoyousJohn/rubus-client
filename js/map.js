@@ -1097,7 +1097,8 @@ const campusMappings = {
     'winter1': 'Winter 1',
     'winter2': 'Winter 2',
     'summer1': 'Summer 1',
-    'summer2': 'Summer 2'
+    'summer2': 'Summer 2',
+    'commencement': 'Commencement'
 } 
 
 let colorMappings;
@@ -1125,7 +1126,8 @@ const defaultColorMappings = {
     'winter2': 'crimson',
     'fav': 'gold',
     'summer1': 'Plum',
-    'summer2': 'PowderBlue'
+    'summer2': 'PowderBlue',
+    'commencement': 'LightSalmon'
 }
 
 const campusShortNamesMappings = {

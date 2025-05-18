@@ -61,7 +61,10 @@ const routeMapping = {
     
     // summer (5/15)
     '41752': 'summer1',
-    '44051': 'summer2'
+    '44051': 'summer2',
+
+    // commencement (5/18)
+    '62409': 'commencement'
 }
 
 const excludedRouteMappings = {
@@ -76,7 +79,7 @@ function getRouteStr(route) {
     if (route in routeMapping) {
         return [routeMapping[route], true];
     } else {
-        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2']
+        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement']
         let alphaRouteId = route.replace(/[^a-zA-Z]/g, '').toLowerCase();
         if (knownRoutes.includes(alphaRouteId)) {
             return [alphaRouteId, true];

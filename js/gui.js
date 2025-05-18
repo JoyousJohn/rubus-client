@@ -48,7 +48,7 @@ function populateRouteSelectors(activeRoutes) {
 
         let color = 'darkgray'
 
-        const knownRoutes = ['fav', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2']
+        const knownRoutes = ['fav', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement']
 
         if (knownRoutes.includes(route)) {
             color = colorMappings[route]
@@ -1205,7 +1205,6 @@ function updateSettings() {
         }
 
         colorMappings = settings['colorMappings']
-
         for (const key in defaultColorMappings) {
             if (!colorMappings.hasOwnProperty(key)) {
                 colorMappings[key] = defaultColorMappings[key];
@@ -1215,7 +1214,6 @@ function updateSettings() {
         localStorage.setItem('settings', JSON.stringify(settings))
 
         document.documentElement.style.setProperty('--font-family', settings['font']);
-
 
     } else {
         setDefaultSettings();
