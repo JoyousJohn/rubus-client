@@ -708,8 +708,8 @@ function updateBusOverview(routes) {
 
     const loopTimes = calculateLoopTimes();
 
+    routes = Object.keys(busesByRoutes);
     if (!routes) { 
-        routes = Object.keys(busesByRoutes);
         $('.buses-overview-grid').hide().children().not('.bus-overview-heading, .bus-overview-footer').remove();
     } else {
         $('.buses-over-grid').show();
