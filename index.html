@@ -334,11 +334,17 @@
                                     $('.install-pic-2 > img').attr('src', 'img/iphone-pwa-2-arrow.png');
                                     $('.pwa-install-head').text('Install iPhone Web App');
                                     $('.install-pwa-wrapper').show();
+                                    $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
+                                        window.dispatchEvent(new Event('resize'));
+                                    });
                                 } else if (iPhoneOrAndroid && iPhoneOrAndroid === 'android') {
                                     $('.install-pic-1 > img').attr('src', 'img/android-pwa-1-arrow.png');
                                     $('.install-pic-2 > img').attr('src', 'img/android-pwa-2-arrow.png');
                                     $('.pwa-install-head').text('Install Android Web App');
                                     $('.install-pwa-wrapper').show();
+                                    $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
+                                        window.dispatchEvent(new Event('resize'));
+                                    });
                                 } else {
                                     $('.install-pwa').hide();
                                 }
@@ -484,7 +490,7 @@
             <div class="install-pwa-iphone flex flex-col gap-y-1rem center align-center">
                 <div class="flex flex-col align-center w-full">
                     <div class="text-2p3rem pwa-install-head"></div>
-                    <div class="text-1p7rem" style="max-width: 50%; color: var(--theme-extra)">For automatic updates, storage-free.</div>
+                    <div class="text-1p7rem" style="max-width: 70%; color: var(--theme-extra)">For all features & automatic updates, storage-free.</div>
                 </div>
                 <div class="grid grid-cols-2 gap-x-2rem m-2rem left text-1p5rem"">
                     <div class="flex flex-col gap-y-0p5rem">
