@@ -335,7 +335,9 @@
                                     $('.pwa-install-head').text('Install iPhone Web App');
                                     $('.install-pwa-wrapper').show();
                                     $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
-                                        window.dispatchEvent(new Event('resize'));
+                                        setTimeout(() => {
+                                            window.dispatchEvent(new Event('resize'));
+                                        }, 0);
                                     });
                                 } else if (iPhoneOrAndroid && iPhoneOrAndroid === 'android') {
                                     $('.install-pic-1 > img').attr('src', 'img/android-pwa-1-arrow.png');
@@ -343,7 +345,9 @@
                                     $('.pwa-install-head').text('Install Android Web App');
                                     $('.install-pwa-wrapper').show();
                                     $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
-                                        window.dispatchEvent(new Event('resize'));
+                                        setTimeout(() => {
+                                            window.dispatchEvent(new Event('resize'));
+                                        }, 0);
                                     });
                                 } else {
                                     $('.install-pwa').hide();
