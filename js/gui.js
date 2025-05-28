@@ -263,12 +263,10 @@ function toggleRouteSelectors(route) {
 }
 
 function hideAllStops() {
-    for (const polyline in polylines) {
-        const stopIdsForRoute = stopLists[polyline]
-        stopIdsForRoute.forEach(stopId => {
-            busStopMarkers[stopId].remove();
-        })
-    }    
+    // Used to loop (active) polylines and then get stop ids from stopLists, but this didn't hide all stops on the very first bus because there are no polylines.
+    for (const stopId in busStopMarkers) {
+        busStopMarkers[stopId].remove();
+    }
 }
 
 function hideStopsExcept(excludedRoute) {

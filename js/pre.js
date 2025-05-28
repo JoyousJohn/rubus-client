@@ -162,6 +162,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
                 // All stops are shown so no buses, and if this is the first bus, we need to hide all stops first before showing stops for this route
                 if (Object.keys(busData).length === 1) {
+                    console.log("Is first bus, hiding all stops")
                     hideAllStops();
                 }
 
