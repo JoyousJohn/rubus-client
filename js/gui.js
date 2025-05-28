@@ -262,6 +262,7 @@ function toggleRouteSelectors(route) {
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
 
+
 function hideAllStops() {
     // Used to loop (active) polylines and then get stop ids from stopLists, but this didn't hide all stops on the very first bus because there are no polylines.
     for (const stopId in busStopMarkers) {

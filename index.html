@@ -334,20 +334,34 @@
                                     $('.install-pic-2 > img').attr('src', 'img/iphone-pwa-2-arrow.png');
                                     $('.pwa-install-head').text('Install iPhone Web App');
                                     $('.install-pwa-wrapper').show();
+                                    
+                                    let loadedImages = 0;
                                     $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
-                                        setTimeout(() => {
-                                            window.dispatchEvent(new Event('resize'));
-                                        }, 0);
+                                        loadedImages++;
+                                        if (loadedImages === 2) {
+                                            setTimeout(() => {
+                                                const container = $('.install-pwa-wrapper');
+                                                const height = container[0].scrollHeight;
+                                                container.css('height', height + 'px');
+                                            }, 100);
+                                        }
                                     });
                                 } else if (iPhoneOrAndroid && iPhoneOrAndroid === 'android') {
                                     $('.install-pic-1 > img').attr('src', 'img/android-pwa-1-arrow.png');
                                     $('.install-pic-2 > img').attr('src', 'img/android-pwa-2-arrow.png');
                                     $('.pwa-install-head').text('Install Android Web App');
                                     $('.install-pwa-wrapper').show();
+                                    
+                                    let loadedImages = 0;
                                     $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
-                                        setTimeout(() => {
-                                            window.dispatchEvent(new Event('resize'));
-                                        }, 0);
+                                        loadedImages++;
+                                        if (loadedImages === 2) {
+                                            setTimeout(() => {
+                                                const container = $('.install-pwa-wrapper');
+                                                const height = container[0].scrollHeight;
+                                                container.css('height', height + 'px');
+                                            }, 100);
+                                        }
                                     });
                                 } else {
                                     $('.install-pwa').hide();
