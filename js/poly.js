@@ -401,6 +401,18 @@ async function popStopInfo(stopId) {
         $('.closest-stop').hide();
     }
 
+    if (stopId === 6) {
+        $('.info-stop-switch').show().one('click', function() {flyToStop(7)});
+        $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+        $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
+    } else if (stopId === 7) {
+        $('.info-stop-switch').show().one('click', function() {flyToStop(6)});
+        $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
+        $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+    } else {
+        $('.info-stop-switch').hide();
+    }
+
     if (shownRoute && popupBusId) {
         busesByRoutes[shownRoute].forEach(busId => {
             busMarkers[busId].getElement().style.display = '';
