@@ -1096,8 +1096,8 @@ const campusMappings = {
     'rexb': 'Cook/Busch',
     'winter1': 'Winter 1',
     'winter2': 'Winter 2',
-    'summer1': 'Summer 1',
-    'summer2': 'Summer 2',
+    'summer1': '',
+    'summer2': '',
     'commencement': 'Commencement'
 } 
 
@@ -1173,7 +1173,12 @@ function popInfo(busId, resetCampusFontSize) {
     }
     
     const data = busData[busId]
-    $('.info-route').text(data.route.toUpperCase()).css('color', colorMappings[data.route])
+    
+    let dataRoute = data.route
+    if (dataRoute === 'summer1' || dataRoute === 'summer2') {
+        dataRoute = dataRoute.slice(0, -1) + ' ' + dataRoute.slice(-1)
+    }
+    $('.info-route').text(dataRoute.toUpperCase()).css('color', colorMappings[dataRoute])
     
     let busNameElmText = data.busName
     if (showBusId) {
