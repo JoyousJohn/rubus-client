@@ -402,27 +402,33 @@ async function popStopInfo(stopId) {
     }
 
     if (stopId === 6) { // Hill North
-        $('.info-stop-switch').css('display', 'inline-block').one('click', function() {flyToStop(7)});
+        $('.info-stop-switch').css('display', 'inline-block')
+        $('.stop-name-wrapper').parent().one('click', function() {flyToStop(7)});
         $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
         $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
     } else if (stopId === 7) { // Hill South
-        $('.info-stop-switch').css('display', 'inline-block').one('click', function() {flyToStop(6)});
+        $('.info-stop-switch').css('display', 'inline-block')
+        $('.stop-name-wrapper').parent().one('click', function() {flyToStop(6)});
         $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
         $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
     } else if (stopId === 22) { // SoCam North
-        $('.info-stop-switch').css('display', 'inline-block').one('click', function() {flyToStop(23)});
+        $('.info-stop-switch').css('display', 'inline-block')
+        $('.stop-name-wrapper').parent().one('click', function() {flyToStop(23)});
         $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
         $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
     } else if (stopId === 23) { // SoCam South
-        $('.info-stop-switch').css('display', 'inline-block').one('click', function() {flyToStop(22)});
+        $('.info-stop-switch').css('display', 'inline-block')
+        $('.stop-name-wrapper').parent().one('click', function() {flyToStop(22)});
         $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
         $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
     } else if (stopId === 3) { // SAC North
-        $('.info-stop-switch').css('display', 'inline-block').one('click', function() {flyToStop(4)});
+        $('.info-stop-switch').css('display', 'inline-block')
+        $('.stop-name-wrapper').parent().one('click', function() {flyToStop(4)});
         $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
         $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
     } else if (stopId === 4) { // SAC South
-        $('.info-stop-switch').css('display', 'inline-block').one('click', function() {flyToStop(3)});
+        $('.info-stop-switch').css('display', 'inline-block')
+        $('.stop-name-wrapper').parent().one('click', function() {flyToStop(3)});
         $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
         $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
     } else {
