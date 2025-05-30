@@ -302,17 +302,25 @@ html, body {
 
 .info-stop-name {
     font-size: 2.5rem;
-    color: var(--theme-color)
+    color: var(--theme-color);
+    display: inline;
 }
 
 .info-stop-switch {
+    /* float: right; */
+    /* display: inline-block; */
+    margin-left: 1rem;
+}
+
+.info-stop-switch > div {
     font-size: 1.7rem;
     color: var(--theme-color);
-    border: 1px solid var(--theme-color);
+    border: 2px solid var(--theme-color);
     border-radius: 0.8rem;
     font-weight: 500;
     height: min-content;
     overflow: hidden;
+    clear: right;
 }
 
 .info-stop-switch-1, .info-stop-switch-2 {
