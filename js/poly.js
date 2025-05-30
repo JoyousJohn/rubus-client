@@ -147,7 +147,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         let stopNoBusesMsg
 
         if (!jQuery.isEmptyObject(busData)) {
-            stopNoBusesMsg = 'NOT SERVICED BY ACTIVE ROUTES'
+            stopNoBusesMsg = 'NOT SERVICED BY ACTIVE ROUTES' /* when would this ever even be shown? */
         } else {
             stopNoBusesMsg = 'NO BUSES ACTIVE'
         }
@@ -401,74 +401,79 @@ async function popStopInfo(stopId) {
         $('.closest-stop').hide();
     }
 
-    if (stopId === 6) { // Hill North
-        $('.info-stop-switch').css('display', 'inline-block')
-        $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-        $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
+    let stopName = stopsData[stopId].name;
 
-        if (!activeStops.includes(7)) {
-            $('.info-stop-switch-2').hide()
-        } else {
-            $('.info-stop-switch-2').show()
-            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(7)});
-        }
+    if (stopsData[stopId].mainName) {
+        stopName = stopsData[stopId].mainName;
+        if (stopId === 6) { // Hill North
+            $('.info-stop-switch').css('display', 'inline-block')
+            $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+            $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
 
-    } else if (stopId === 7) { // Hill South
-        $('.info-stop-switch').css('display', 'inline-block')
-        $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
-        $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-    
-        if (!activeStops.includes(6)) {
-            $('.info-stop-switch-1').hide()
-        } else {
-            $('.info-stop-switch-1').show()
-            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(6)});
-        }
-    
-    } else if (stopId === 22) { // SoCam North
-        $('.info-stop-switch').css('display', 'inline-block')
-        $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-        $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
-    
-        if (!activeStops.includes(23)) {
-            $('.info-stop-switch-2').hide()
-        } else {
-            $('.info-stop-switch-2').show()
-            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(23)});
-        }
-    } else if (stopId === 23) { // SoCam South
-        $('.info-stop-switch').css('display', 'inline-block')
-        $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
-        $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-    
-        if (!activeStops.includes(22)) {
-            $('.info-stop-switch-1').hide()
-        } else {
-            $('.info-stop-switch-1').show()
-            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(22)});
-        }
-    } else if (stopId === 3) { // SAC North
-        $('.info-stop-switch').css('display', 'inline-block')
-        $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-        $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
-    
-        if (!activeStops.includes(4)) {
-            $('.info-stop-switch-2').hide()
-        } else {
-            $('.info-stop-switch-2').show()
-            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(4)});
-        }
-    
-    } else if (stopId === 4) { // SAC South
-        $('.info-stop-switch').css('display', 'inline-block')
-        $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
-        $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-    
-        if (!activeStops.includes(3)) {
-            $('.info-stop-switch-1').hide()
-        } else {
-            $('.info-stop-switch-1').show()
-            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(3)});
+            if (!activeStops.includes(7)) {
+                $('.info-stop-switch-2').hide()
+            } else {
+                $('.info-stop-switch-2').show()
+                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(7)});
+            }
+
+        } else if (stopId === 7) { // Hill South
+            $('.info-stop-switch').css('display', 'inline-block')
+            $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
+            $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+        
+            if (!activeStops.includes(6)) {
+                $('.info-stop-switch-1').hide()
+            } else {
+                $('.info-stop-switch-1').show()
+                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(6)});
+            }
+        
+        } else if (stopId === 22) { // SoCam North
+            $('.info-stop-switch').css('display', 'inline-block')
+            $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+            $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
+        
+            if (!activeStops.includes(23)) {
+                $('.info-stop-switch-2').hide()
+            } else {
+                $('.info-stop-switch-2').show()
+                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(23)});
+            }
+        } else if (stopId === 23) { // SoCam South
+            $('.info-stop-switch').css('display', 'inline-block')
+            $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
+            $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+        
+            if (!activeStops.includes(22)) {
+                $('.info-stop-switch-1').hide()
+            } else {
+                $('.info-stop-switch-1').show()
+                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(22)});
+            }
+        } else if (stopId === 3) { // SAC North
+            $('.info-stop-switch').css('display', 'inline-block')
+            $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+            $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
+        
+            if (!activeStops.includes(4)) {
+                $('.info-stop-switch-2').hide()
+            } else {
+                $('.info-stop-switch-2').show()
+                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(4)});
+            }
+        
+        } else if (stopId === 4) { // SAC South
+            $('.info-stop-switch').css('display', 'inline-block')
+            $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
+            $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+        
+            if (!activeStops.includes(3)) {
+                $('.info-stop-switch-1').hide()
+            } else {
+                $('.info-stop-switch-1').show()
+                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(3)});
+            }
         }
     } else {
         $('.info-stop-switch').hide();
@@ -496,7 +501,6 @@ async function popStopInfo(stopId) {
 
     // return;
 
-    const stopName = stopsData[stopId].name;
     $('.info-stop-name-text').text(settings['toggle-show-stop-id'] ? `${stopName} (#${stopId})` : stopName);
 
     if (!settings['toggle-always-show-second']) {
