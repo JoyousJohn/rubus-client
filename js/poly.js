@@ -499,6 +499,7 @@ async function popStopInfo(stopId) {
         }
     } else {
         $('.info-stop-switch').hide();
+        $('.stop-name-wrapper').parent().off('click');
     }
 
     if (shownRoute && popupBusId) {
