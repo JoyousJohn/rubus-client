@@ -474,6 +474,28 @@ async function popStopInfo(stopId) {
                 $('.info-stop-switch-1').show()
                 $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(3)});
             }
+        } else if (stopId === 27) { // Werblin North
+            $('.info-stop-switch').css('display', 'inline-block')
+            $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+            $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
+
+            if (!activeStops.includes(11)) {
+                $('.info-stop-switch-2').hide()
+            } else {
+                $('.info-stop-switch-2').show()
+                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(11)});
+            }
+        } else if (stopId === 11) { // Werblin South
+            $('.info-stop-switch').css('display', 'inline-block')
+            $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
+            $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+
+            if (!activeStops.includes(27)) {
+                $('.info-stop-switch-1').hide()
+            } else {
+                $('.info-stop-switch-1').show()
+                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(27)});
+            }
         }
     } else {
         $('.info-stop-switch').hide();
@@ -547,7 +569,7 @@ async function addStopsToMap() {
     }
 
     if (!activeStops.length) { // no buses running, show all stops
-        activeStops = Array.from({length: 25}, (_, i) => i + 1);
+        activeStops = Array.from({length: 27}, (_, i) => i + 1);
     }
 
     checkIfLocationShared();
