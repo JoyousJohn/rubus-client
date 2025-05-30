@@ -594,7 +594,7 @@
             </div>
 
             <div class="settings- flex justify-between">
-                <div class="settings-heading flex flex-1 align-center">Show ETAs in Seconds<span class="span-i span-i-seconds pointer select-none">i</span></div>
+                <div class="settings-heading flex flex-1 align-center span-i-seconds">Show ETAs in Seconds<span class="span-i pointer select-none">i</span></div>
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
                     <label for="toggle-show-etas-in-seconds" class="toggle-label">
@@ -602,13 +602,13 @@
                     </label>
                 </div>
             </div>
-            <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Take RUBus's advanced ETA calculation algorithm to the extreme by forecasting in seconds. This is experimental and may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
+            <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Use experimental ETA calculation to forecast in seconds. This may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
             <script>
             $('.span-i-seconds').click(function() {$('.seconds-explain').slideToggle();})
             </script>
 
             <div class="settings- flex justify-between">
-                <div class="settings-heading flex flex-1 align-center">Select Closest Stop on Open<span class="span-i span-i-closest pointer select-none">i</span></div>
+                <div class="settings-heading flex flex-1 align-center span-i-closest">Select Closest Stop on Open<span class="span-i pointer select-none">i</span></div>
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-select-closest-stop" class="toggle-input">
                     <label for="toggle-select-closest-stop" class="toggle-label">
@@ -622,7 +622,7 @@
             </script>
 
             <div class="flex justify-between">
-                <div class="settings-heading flex flex-1 align-center">Bus Focussing<span class="span-i span-i-focus pointer select-none">i</span></div>
+                <div class="settings-heading flex flex-1 align-center span-i-focus">Bus Focussing<span class="span-i pointer select-none">i</span></div>
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-hide-other-routes" class="toggle-input">
                     <label for="toggle-hide-other-routes" class="toggle-label">
@@ -636,7 +636,7 @@
             </script>
 
             <div class="flex justify-between">
-                <div class="settings-heading flex flex-1 align-center">Preload Map Routes<span class="span-i span-i-preload pointer select-none">i</span></div>
+                <div class="settings-heading flex flex-1 align-center span-i-preload">Preload Map Routes<span class="span-i pointer select-none">i</span></div>
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-polyline-padding" class="toggle-input">
                     <label for="toggle-polyline-padding" class="toggle-label">
@@ -655,7 +655,7 @@
             </script>
 
             <div class="flex justify-between">
-                <div class="settings-heading flex flex-1 align-center">Always Show 2nd Loop<span class="span-i span-i-second pointer select-none">i</span></div>
+                <div class="settings-heading flex flex-1 align-center span-i-second">Always Show 2nd Loop<span class="span-i pointer select-none">i</span></div>
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-always-show-second" class="toggle-input">
                     <label for="toggle-always-show-second" class="toggle-label">
