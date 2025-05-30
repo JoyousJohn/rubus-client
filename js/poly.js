@@ -410,7 +410,7 @@ async function popStopInfo(stopId) {
             $('.info-stop-switch-2').hide()
         } else {
             $('.info-stop-switch-2').show()
-            $('.stop-name-wrapper').parent().one('click', function() {flyToStop(7)});
+            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(7)});
         }
 
     } else if (stopId === 7) { // Hill South
@@ -422,7 +422,7 @@ async function popStopInfo(stopId) {
             $('.info-stop-switch-1').hide()
         } else {
             $('.info-stop-switch-1').show()
-            $('.stop-name-wrapper').parent().one('click', function() {flyToStop(6)});
+            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(6)});
         }
     
     } else if (stopId === 22) { // SoCam North
@@ -434,7 +434,7 @@ async function popStopInfo(stopId) {
             $('.info-stop-switch-2').hide()
         } else {
             $('.info-stop-switch-2').show()
-            $('.stop-name-wrapper').parent().one('click', function() {flyToStop(23)});
+            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(23)});
         }
     } else if (stopId === 23) { // SoCam South
         $('.info-stop-switch').css('display', 'inline-block')
@@ -445,11 +445,10 @@ async function popStopInfo(stopId) {
             $('.info-stop-switch-1').hide()
         } else {
             $('.info-stop-switch-1').show()
-            $('.stop-name-wrapper').parent().one('click', function() {flyToStop(22)});
+            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(22)});
         }
     } else if (stopId === 3) { // SAC North
         $('.info-stop-switch').css('display', 'inline-block')
-        $('.stop-name-wrapper').parent().one('click', function() {flyToStop(4)});
         $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
         $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
     
@@ -457,12 +456,11 @@ async function popStopInfo(stopId) {
             $('.info-stop-switch-2').hide()
         } else {
             $('.info-stop-switch-2').show()
-            $('.stop-name-wrapper').parent().one('click', function() {flyToStop(4)});
+            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(4)});
         }
     
     } else if (stopId === 4) { // SAC South
         $('.info-stop-switch').css('display', 'inline-block')
-        $('.stop-name-wrapper').parent().one('click', function() {flyToStop(3)});
         $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
         $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
     
@@ -470,7 +468,7 @@ async function popStopInfo(stopId) {
             $('.info-stop-switch-1').hide()
         } else {
             $('.info-stop-switch-1').show()
-            $('.stop-name-wrapper').parent().one('click', function() {flyToStop(3)});
+            $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(3)});
         }
     } else {
         $('.info-stop-switch').hide();
