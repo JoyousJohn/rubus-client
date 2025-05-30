@@ -452,7 +452,7 @@ async function popStopInfo(stopId) {
     // return;
 
     const stopName = stopsData[stopId].name;
-    $('.info-stop-name').contents()[0].nodeValue = settings['toggle-show-stop-id'] ? `${stopName} (#${stopId})` : stopName;
+    $('.info-stop-name-text').text(settings['toggle-show-stop-id'] ? `${stopName} (#${stopId})` : stopName);
 
     if (!settings['toggle-always-show-second']) {
         $('.stop-info-next-loop-wrapper').hide();

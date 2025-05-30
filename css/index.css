@@ -303,24 +303,36 @@ html, body {
 .info-stop-name {
     font-size: 2.5rem;
     color: var(--theme-color);
-    display: inline;
+}
+
+.stop-name-wrapper {
+    line-height: 1.2;
+    font-size: 2.5rem; /* idk why i need thi here and not in .info-stop-name-text */
+}
+
+.info-stop-name-text {
+    color: var(--theme-color);
 }
 
 .info-stop-switch {
-    /* float: right; */
-    /* display: inline-block; */
+    display: inline-block;
+    vertical-align: middle;
     margin-left: 1rem;
+    position: relative;
+    transform: translateY(-1.5px);
+    /* float: right; */
 }
 
 .info-stop-switch > div {
     font-size: 1.7rem;
     color: var(--theme-color);
-    border: 2px solid var(--theme-color);
+    border: 1px solid var(--theme-color);
     border-radius: 0.8rem;
     font-weight: 500;
     height: min-content;
     overflow: hidden;
-    clear: right;
+    display: flex;
+    align-items: center;
 }
 
 .info-stop-switch-1, .info-stop-switch-2 {
