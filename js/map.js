@@ -1173,12 +1173,12 @@ function popInfo(busId, resetCampusFontSize) {
     }
     
     const data = busData[busId]
-    
+
     let dataRoute = data.route
     if (dataRoute === 'summer1' || dataRoute === 'summer2') {
         dataRoute = dataRoute.slice(0, -1) + ' ' + dataRoute.slice(-1)
     }
-    $('.info-route').text(dataRoute.toUpperCase()).css('color', colorMappings[dataRoute])
+    $('.info-route').text(dataRoute.toUpperCase()).css('color', colorMappings[data.route])
     
     let busNameElmText = data.busName
     if (showBusId) {

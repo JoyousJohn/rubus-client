@@ -197,7 +197,6 @@ html, body {
     font-family: var(--font-family);
     display: none;
     /* position: fixed; */
-    margin: 1rem;
     inset: 0;
     pointer-events: all;
     height: max-content;
