@@ -5,7 +5,7 @@ let busETAs = {}
 let socket = null;
 
 function updateETAs(etasData) {
-    etas = etasData
+    etas = etasData['nb']
     // console.log(etas)
 }
 

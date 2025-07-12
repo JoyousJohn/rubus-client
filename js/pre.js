@@ -924,7 +924,7 @@ $(document).ready(async function() {
                 throw new Error('Network response was not ok');
             }
             const data = await response.json();
-            etas = data;
+            etas = data['nb'];
             // console.log('ETAs fetched:', etas);
             // updateTimeToStops('all')
         } catch (error) {
