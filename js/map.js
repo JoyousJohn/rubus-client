@@ -1546,7 +1546,7 @@ function popInfo(busId, resetCampusFontSize) {
 
 function populateBusBreaks(busBreakData) {
 
-    if (!busBreakData) {
+    if (!busBreakData || busBreakData.error) {
         $('.bus-breaks').empty();
         $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
         $('.show-more-breaks, .show-all-breaks').hide();
@@ -1685,10 +1685,8 @@ function getBusBreaks(busId) {
             busBreaksCache[busId] = {
                 data: data,
                 timestamp: currentTime
-            };
-            if (!data.error) {
-                populateBusBreaks(data);
-            }
+            };                
+            populateBusBreaks(data);
         })
         .catch(error => {
             console.error('Error fetching bus breaks:', error);
