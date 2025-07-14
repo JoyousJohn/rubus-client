@@ -1686,7 +1686,9 @@ function getBusBreaks(busId) {
                 data: data,
                 timestamp: currentTime
             };
-            populateBusBreaks(data);
+            if (!data.error) {
+                populateBusBreaks(data);
+            }
         })
         .catch(error => {
             console.error('Error fetching bus breaks:', error);
