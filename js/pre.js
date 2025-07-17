@@ -712,6 +712,8 @@ async function startOvernight(setColorBack) {
 
 function checkMinRoutes() {
 
+    if (selectedCampus !== 'nb') return;
+
     const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
     if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
     const hour = new Date().getHours();
