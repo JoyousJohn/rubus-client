@@ -1,19 +1,23 @@
 let longPressTimer
 
-function populateRouteSelectors(activeRoutes) {
+let selectedCampusRoutes = [];
+
+function populateRouteSelectors(allActiveRoutes) {
     $('.route-selectors > div').not('.settings-btn').remove();
 
-    if (!activeRoutes) return;
+    if (!allActiveRoutes) return;
 
-    let routesArray;
+    let allRoutesArray;
 
     try {
-        routesArray = Array.from(activeRoutes);
+        allRoutesArray = Array.from(activeRoutes);
     } catch (error) {
         console.error('Error converting activeRoutes to array:', error);
-        console.log(routesArray);
-        console.log(typeof routesArray);
+        console.log(allRoutesArray);
+        console.log(typeof allRoutesArray);
     }
+
+    let routesArray = allRoutesArray.filter(route => routesByCampusBase[selectedCampus].includes(route));
 
     if (routesArray.includes('ftbl')) {
         routesArray = routesArray.filter(route => route !== 'ftbl');
@@ -47,8 +51,6 @@ function populateRouteSelectors(activeRoutes) {
         }
 
         let color = 'darkgray'
-
-        const knownRoutes = ['fav', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement']
 
         if (knownRoutes.includes(route)) {
             color = colorMappings[route]
@@ -105,7 +107,6 @@ function populateRouteSelectors(activeRoutes) {
                 isLongPress = false;
             })
         }
-
         $routeElm.css('background-color', color);
         $('.settings-btn').before($routeElm);
     });
@@ -204,6 +205,10 @@ function populateRouteSelectors(activeRoutes) {
 
 }
 
+function clearRouteSelectors() {
+    $('.route-selectors > div').not('.settings-btn').remove();
+}
+
 let shownRoute;  
 let shownBeforeRoute;
 let isLongPress = false; // Flag to track if a long press occurred
@@ -213,8 +218,6 @@ function toggleRouteSelectors(route) {
     console.log("Toggline for: " + route);
 
     if (shownRoute === route) {
-
-        console.log('1');
 
         for (const polyline in polylines) {
             if (polyline !== route) {
@@ -276,6 +279,7 @@ function hideStopsExcept(excludedRoute) {
         const stopIdsForRoute = stopLists[polyline]
         stopIdsForRoute.forEach(stopId => {
             if (!(stopIdsForSelectedRoute).includes(stopId)) {
+                // console.log(stopId)
                 busStopMarkers[stopId].remove();
             }
         })
@@ -312,7 +316,7 @@ function updateTooltips(route) {
 
     if (route === 'fav') return;
 
-    const routeBuses = busesByRoutes[route]
+    const routeBuses = busesByRoutes[selectedCampus][route]
 
     try {
         stopLists[route].forEach(stopId => {
@@ -335,6 +339,9 @@ function updateTooltips(route) {
             }
         })
     } catch (error) {
+        console.log(busesByRoutes);
+        console.log(routeBuses);
+        console.log(stopLists);
         console.log(`Error updating tooltips for route ${route}: ${error}`)
     }
     
@@ -415,10 +422,10 @@ function selectedRoute(route) {
     $('.route-name').text(route.toUpperCase()).css('color', colorMappings[route])
     $('.route-campuses').text(campusMappings[route])
     $('.color-circle').css('background-color', colorMappings[route])
-    $('.route-active-buses').text(busesByRoutes[route].length === 1 ? '1 bus running' : busesByRoutes[route].length + ' buses running')
+    $('.route-active-buses').text(busesByRoutes[selectedCampus][route].length === 1 ? '1 bus running' : busesByRoutes[selectedCampus][route].length + ' buses running')
 
     $('.active-buses').empty();
-    busesByRoutes[route].forEach(busId => {
+    busesByRoutes[selectedCampus][route].forEach(busId => {
 
         let speed = ''
         if ('visualSpeed' in busData[busId]) {
@@ -478,7 +485,7 @@ function selectedRoute(route) {
         let i = 0;
 
         let positiveBuses = [];
-        busesByRoutes[route].forEach(busId => {
+        busesByRoutes[selectedCampus][route].forEach(busId => {
             if (progressToNextStop(busId) < 1) { // have to debug why some stops are missed - prob a passio location issue, right?
                 positiveBuses.push(busId);
             }
@@ -666,7 +673,7 @@ function updateColorMappingsSelection(selectedColor) {
     $('.route-name').css('color', selectedColor)
     $(`.route-selector[routename="${shownRoute}"]`).css('box-shadow', `0 0 10px ${selectedColor}`)
 
-    busesByRoutes[shownRoute].forEach(busId => {
+    busesByRoutes[selectedCampus][shownRoute].forEach(busId => {
         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = selectedColor;
         polylines[shownRoute].setStyle({ color: selectedColor });
     })
@@ -724,7 +731,7 @@ function updateBusOverview(routes) {
 
     const routeData = routes.map(route => {
         routeRiderships[route] = 0;
-        busesByRoutes[route].forEach(busId => {
+        busesByRoutes[selectedCampus][route].forEach(busId => {
             const riders = Math.ceil(busData[busId].capacity/100 * 57)
             routeRiderships[route] += riders;
             totalRidership += riders;
@@ -736,7 +743,7 @@ function updateBusOverview(routes) {
 
     routeData.forEach(({route}) => {
         if ($(`.bus-overview-ridership[route="${route}"]`).length === 0) {
-            const $busName = $(`<div class="bus-overview-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]); // (${busesByRoutes[route].length})
+            const $busName = $(`<div class="bus-overview-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]); // (${busesByRoutes[selectedCampus][route].length})
             const $busRidership = $(`<div class="bus-overview-ridership" route="${route}">${routeRiderships[route]} riders</div>`);
             const $loopTime = $(`<div class="bus-overview-loop-time" route="${route}">${loopTimes[route]} min</div>`);
             const $footer = $('.buses-overview-grid > .bus-overview-footer').first();
@@ -989,20 +996,29 @@ function calculateLoopTimes() {
 
 
 const stopsByCampus = {
-    'College Ave': [1, 2, 3, 4],
-    'Busch': [5, 6, 7, 8, 9, 10, 11, 26],
-    'Livingston': [12, 13, 14, 15, 24],
-    'Cook': [16, 17, 18, 19, 20, 21],
-    'Downtown': [22, 23]
+    "nb": {
+        'College Ave': [1, 2, 3, 4],
+        'Busch': [5, 6, 7, 8, 9, 10, 11, 26],
+        'Livingston': [12, 13, 14, 15, 24],
+        'Cook': [16, 17, 18, 19, 20, 21],
+        'Downtown': [22, 23]
+    },
+    "newark": {
+        "Newark": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    },
+    "camden": {
+        "Camden": [1, 2, 3, 4, 5, 6]
+    }
+    
 }
 
 function updateWaitTimes() {
     $('.wait-times').empty();
-    for (const campus in stopsByCampus) {
+    for (const campus in stopsByCampus[selectedCampus]) {
         let hasStops = false;
         const $waitWrapper = $('<div class="grid grid-cols-2-auto gap-x-1rem gap-y-0p5rem"></div>')
         $waitWrapper.append($(`<div class="mt-1rem center bold-500 text-1p5rem mb-0p5rem" style="grid-column: span 2;">${campus}</div>`))
-        const stops = stopsByCampus[campus];
+        const stops = stopsByCampus[selectedCampus][campus];
         
         // Sort stops by wait time
         const sortedStops = stops.slice().sort((a, b) => {
@@ -1012,6 +1028,7 @@ function updateWaitTimes() {
         });
 
         sortedStops.forEach(stopId => {
+            // console.log(stopId)
             let waitSeconds = waits[stopId];
             if (waitSeconds) {
                 if (waitSeconds > 60) {
@@ -1140,6 +1157,7 @@ let defaultSettings = {
     'toggle-hide-other-routes': true,
     'toggle-stops-above-buses': false,
     'toggle-always-show-second': false,
+    'campus': 'nb',
     
     // dev settings
     'map-renderer': 'svg',
@@ -1181,11 +1199,14 @@ function setDefaultSettings () {
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
+    $(`div.settings-option[campus="nb"]`).addClass('settings-selected')
+    
     // $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
     colorMappings = settings['colorMappings']
 }
 
 function updateSettings() {
+    console.log('updating settings')
     settings = localStorage.getItem('settings');
     // console.log(settings)
     if (settings) {
@@ -1218,10 +1239,14 @@ function updateSettings() {
         setDefaultSettings();
     }
 
+    selectedCampus = settings['campus'];
+    campusChanged();
+
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker_size']}"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="${settings['map-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
+    $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 
     if (!$('.theme-modal').is(':visible')) {
         $(`div.settings-option[theme-option="${settings['theme']}"]`).addClass('settings-selected')
@@ -1280,6 +1305,12 @@ function updateSettings() {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['bus-positioning'] = $(this).attr('bus-positioning-option')
+
+        } else if (settingsOption === 'campus') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['campus'] = $(this).attr('campus-option')
+            campusChanged();
         }
 
         if (settingsOption) { // don't reset ls if ls was cleared (that option doesn't currently have settingsOption). add some sort of attribute later as this will be in analytics
@@ -1304,7 +1335,7 @@ function updateSettings() {
 
 $(document).ready(function() {
 
-    updateSettings();
+    // updateSettings();
 
     $('.stop-info-back').click(function() {
         flyToBus(sourceBusId);
@@ -1522,8 +1553,8 @@ async function checkIfLocationShared() {
     const lsLocationShared = localStorage.getItem('locationShared');
     locationShared = lsLocationShared === 'true';
     
-    console.log("(localStorage) Location shared: ", locationShared)
-    console.log("geolocation permission state: ", permissionStatus.state)
+    // console.log("(localStorage) Location shared: ", locationShared)
+    // console.log("geolocation permission state: ", permissionStatus.state)
     if (permissionStatus.state === 'granted' || locationShared) {
         findNearestStop(true);
     }

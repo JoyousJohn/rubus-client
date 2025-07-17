@@ -5,7 +5,7 @@ let busETAs = {}
 let socket = null;
 
 function updateETAs(etasData) {
-    etas = etasData
+    etas = etasData[selectedCampus];
     // console.log(etas)
 }
 
@@ -70,7 +70,7 @@ function openRUBusSocket() {
             const busId = parseInt(eventData.busId);
 
             if (!(busId in busData)) {// shouldn't happen
-                console.log('this shouldnt happen');
+                console.log('this finally should happen bc we are excluding buses from other campuses');
                 // busData[busId] = {}
                 return
             }
@@ -169,10 +169,11 @@ function openRUBusSocket() {
                 // console.log(parseInt('13209') in busData.keys())
 
                 if (!(busId in busData)) {// shouldn't happen
-                    console.log(busId)
-                    console.log('this shouldnt happen 2')
+                    // console.log(busId)
+                    // console.log('this shouldnt happen 2')
                     // busData[busId] = {}
-                    console.log(eventData)
+                    // console.log(eventData)
+                    // this could now happen, except maybe i should confirm the bus actually isn't supposed to be in busdata bc diff campus before continuing. otherwise fail fast if it's, i.e., a nb bus not in bus data when selected campus is nb
                     continue
 
                 }
@@ -197,6 +198,7 @@ function openRUBusSocket() {
             processEventData(eventData);
         } catch (error) {
             console.error("Error parsing JSON:", error);
+            console.log(event.data)
         }
 
     });

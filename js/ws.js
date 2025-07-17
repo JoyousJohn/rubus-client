@@ -53,13 +53,13 @@ class BusWebSocketClient {
         // if (data.route && !data.route.includes('ONWK')) {
         //     console.log('Passio reported a non-overnight bus, returning to polling');
         //     wsClient.disconnect();
-        //     // busData = {}; Do I clear all buses? Implement ws checking until ON actually go Oos? Maybe they just turn into other routes? I guess I gotta clear route selectors nonetheless. Have to emulate sometime. // ok, looks like busData updating is successfully handled elsewhere. I just need to remove ON polylines here. - I take this back... ON buses are successfully being detected as going out of servvice, but not that they're the last bus that went out? the (route && !busesByRoutes[route]) condition in makeOoS has to be failing somewhere.
+        //     // busData = {}; Do I clear all buses? Implement ws checking until ON actually go Oos? Maybe they just turn into other routes? I guess I gotta clear route selectors nonetheless. Have to emulate sometime. // ok, looks like busData updating is successfully handled elsewhere. I just need to remove ON polylines here. - I take this back... ON buses are successfully being detected as going out of servservice, but not that they're the last bus that went out? the (route && !busesByRoutes[selectedCampus][route]) condition in makeOoS has to be failing somewhere.
         //     startBusPolling();
         // }
 
         if (!busData[busId]) {
 
-            console.log(data)
+            // console.log(data)
 
             if (!data.route) {
                 console.log("[WHAT] " + busId + " " + JSON.stringify(data) + " doesn't have a route...");
@@ -75,6 +75,7 @@ class BusWebSocketClient {
             busData[busId].previousTime = new Date().getTime() - 5000;
             busData[busId].previousPositions = [[parseFloat(data.latitude), parseFloat(data.longitude)]];
             busData[busId].type = 'ws';
+            busData[busId]['campus'] = routesByCampus[data.route];
 
             if (!('route' in data)) { // sometimes none...
                 busData[busId].route = 'none';

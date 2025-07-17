@@ -1,6 +1,7 @@
 function getRoutesServicingStop(stopId) {
     let routes = [];
-    activeRoutes.forEach(route => {
+    let routesArray = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
+    routesArray.forEach(route => {
         if (stopLists[route].includes(stopId)) {
             routes.push(route)
         }
@@ -18,8 +19,9 @@ function getSoonestBus(stopId, route) {
         return [null, null];
     }
 
-    try { // busesByRoutes[route] disapears when negative/invalid ETA? have to check if this is why/when it is so
-        busesByRoutes[route].forEach(busId => {
+    try { // busesByRoutes[selectedCampus][route] disapears when negative/invalid ETA? have to check if this is why/when it is so
+
+        busesByRoutes[selectedCampus][route].forEach(busId => {
 
             if (busETAs[busId] && busETAs[busId][stopId] > 0 && isValid(busId)) {
 
@@ -44,9 +46,9 @@ function populateAllStops() {
 
     $('.all-stops-inner').empty();
 
-    for (campus in stopsByCampus) {
+    for (campus in stopsByCampus[selectedCampus]) {
 
-        const stops = stopsByCampus[campus];
+        const stops = stopsByCampus[selectedCampus][campus];
 
         let campusHasBuses = false;
 
@@ -120,6 +122,7 @@ function populateAllStops() {
 
 
 $('.all-stops').click(function() {
+    populateAllStops();
     $('.all-stops-wrapper').show().scrollTop(0);
     $('.bottom').hide();
 })

@@ -18,6 +18,7 @@
 
     <link rel="manifest" href="manifest.json">
 
+    <script src="js/vars.js"></script>
     <script defer src="js/leaflet.edgebuffer.js"></script>
     <script defer src="js/map.js"></script>
     <script defer src="js/poly.js"></script>
@@ -33,6 +34,7 @@
     <script defer src="js/allStops.js"></script>
     <script src="js/feedback.js"></script>
     <script src="js/contact.js"></script>
+    <script src="js/campus.js"></script>
 
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -692,11 +694,11 @@
             <div class="settings-campus">
                 <div class="settings-heading">CAMPUS</div>
                 <div class="settings-options grid grid-cols-3">
-                    <div class="settings-option settings-selected" settings-option="campus" font-option="nb">NB</div>
-                    <div class="settings-option gray818181" settings-option="campus" font-option="camden" style="cursor: auto;">Camden</div>
-                    <div class="settings-option gray818181" settings-option="campus" font-option="newark" style="cursor: auto;">Newark</div>
+                    <div class="settings-option" settings-option="campus" campus-option="nb">NB</div>
+                    <div class="settings-option" settings-option="campus" campus-option="camden">Camden</div>
+                    <div class="settings-option" settings-option="campus" campus-option="newark">Newark</div>
                 </div>
-                <div class="ml-0p5rem text-1p3rem dimgray mt-0p5rem">* Camden/Newark campuses will be available in a future update.</div>
+                <!-- <div class="ml-0p5rem text-1p3rem dimgray mt-0p5rem">* Camden/Newark campuses will be available in a future update.</div> -->
             </div>
 
             <div class="dev-options-head settings-heading mt-2rem center pointer" onclick="toggleDevOptions()">Show Developer Options ▼</div>
@@ -1021,7 +1023,7 @@
         </div>
 
         <div class="settings-close none">
-            <div class="flex justify-center align-center">X</div>
+            <div class="flex justify-center align-center select-none">X</div>
         </div>
 
     </div>

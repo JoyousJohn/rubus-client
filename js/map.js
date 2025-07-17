@@ -6,16 +6,13 @@ let activeRoutes = new Set();
 let popupBusId;
 let popupStopId;
 let busesDoneInit; // don't check for moves until map is done plotting
+let selectedCampus;
 
 let mapDragged = false;
 
 // settings vars
 let showETAsInSeconds = false;
 let showBusId = false;
-
-const southWest = L.latLng(40.4550081,-74.4957839); // Define the southwest corner of the bounds
-const northEast = L.latLng(40.538852,-74.4074799); // Define the northeast corner of the bounds
-const bounds = L.latLngBounds(southWest, northEast); // Create a LatLngBounds object
 
 let isDesktop;
 let tileLayer;
@@ -24,10 +21,10 @@ const mapBoxToken = 'pk.eyJ1Ijoiam9obi1oYXBweSIsImEiOiJjbWFrMzR2cnYwNDJ1MnFvaGh4
 
 $(document).ready(function() {
 
-    settings = JSON.parse(localStorage.getItem('settings'));
+    updateSettings();
 
     let mapOptions = {
-        maxBounds: expandBounds(bounds, 2),
+        maxBounds: expandBounds(bounds[selectedCampus], 2),
         maxBoundsViscosity: 1.3, // How much resistance to panning outside maxBounds
         zoomControl: false, // Disable +/- zoom control
         inertiaDeceleration: 1000, // higher means faster deceleration
@@ -53,7 +50,7 @@ $(document).ready(function() {
     }
     // If none of the above, Leaflet defaults to L.svg() without explicit padding.
 
-    map = L.map('map', mapOptions).setView([40.507476,-74.4541267], 14); // Rutgers Student Center
+    map = L.map('map', mapOptions).setView(views[selectedCampus], 14); // Rutgers Student Center
 
     map.setMinZoom(12);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
@@ -106,7 +103,7 @@ $(document).ready(function() {
                 if (map.getZoom() < minZoomLevel) {
                     map.setZoom(minZoomLevel);
                 }
-                // map.setMaxBounds(bounds);
+                // map.setMaxBounds(bounds[selectedCampus]);
             }
 
             hideInfoBoxes();
@@ -412,24 +409,6 @@ function hideInfoBoxes(instantly_hide) {
 
 function panout() {
 
-    // console.log(map.getBounds())
-    // console.log(bounds)
-
-    // improve this later with a flag?
-
-    // const marginOfError = 0.01; // Define a margin of error
-    // console.log(Math.abs(map.getBounds().getNorthEast().lng - bounds.getNorthEast().lng))
-    // console.log(Math.abs(map.getBounds().getSouthWest().lng - bounds.getSouthWest().lng))
-    // console.log(Math.abs(map.getBounds().getNorthEast().lat - bounds.getNorthEast().lat))
-    // console.log(Math.abs(map.getBounds().getSouthWest().lat - bounds.getSouthWest().lat) < marginOfError)
-
-    // if (Math.abs(map.getBounds().getNorthEast().lng - bounds.getNorthEast().lng) < marginOfError &&
-    //     Math.abs(map.getBounds().getSouthWest().lng - bounds.getSouthWest().lng) < marginOfError &&
-    //     Math.abs(map.getBounds().getNorthEast().lat - bounds.getNorthEast().lat) < marginOfError &&
-    //     Math.abs(map.getBounds().getSouthWest().lat - bounds.getSouthWest().lat) < marginOfError) {
-    //     return; // Exit if the current bounds are equal to the bounds var
-    // }
-
     if (polylineBounds) {
         $('[stop-eta]').text('').hide();
         savedCenter = null;
@@ -443,7 +422,7 @@ function panout() {
         }
 
     } else { // no buses running, show all of nb
-        map.fitBounds(bounds);
+        map.fitBounds(bounds[selectedCampus]);
     }
     $('.panout').css('color', 'blue');
     setTimeout(() => {
@@ -1014,6 +993,7 @@ let selectedMarkerId;
 let pauseUpdateMarkerPositions = false;
 
 function plotBus(busId, immediatelyUpdate=false) {
+    
     const loc = {lat: busData[busId].lat, long: busData[busId].long};
 
     if (!busMarkers[busId]) {
@@ -1050,7 +1030,7 @@ function plotBus(busId, immediatelyUpdate=false) {
     } else if (!pauseUpdateMarkerPositions) {
         if (document.visibilityState === 'hidden') {
             immediatelyUpdate = true;
-            console.log('page hidden, updating immediately')
+            // console.log('page hidden, updating immediately')
         }
         updateMarkerPosition(busId, immediatelyUpdate);
     }
@@ -1098,7 +1078,13 @@ const campusMappings = {
     'winter2': 'Winter 2',
     'summer1': '',
     'summer2': '',
-    'commencement': 'Commencement'
+    'commencement': 'Commencement',
+
+    'ps': 'Penn Station',
+    'cc': 'Campus Connect',
+    'ccx': 'Campus Connect Express',
+    'psx': 'Penn Station Express',
+    'cam': 'Camden',
 } 
 
 let colorMappings;
@@ -1127,7 +1113,14 @@ const defaultColorMappings = {
     'fav': 'gold',
     'summer1': 'Plum',
     'summer2': 'PowderBlue',
-    'commencement': 'LightSalmon'
+    'commencement': 'LightSalmon',
+
+    'psx': 'LightSalmon',
+    'ps': 'LightGreen',
+    'ccx': 'Plum',
+    'cc': 'PaleTurquoise',
+
+    'cam': 'navy',
 }
 
 const campusShortNamesMappings = {
@@ -1328,8 +1321,11 @@ function popInfo(busId, resetCampusFontSize) {
                 stopId = stopId[0];
             }
 
-            let stopName = stopsData[stopId].name
-            const campusName = campusShortNamesMappings[stopsData[stopId].campus]
+            let stopName = stopsData[stopId].name;
+            let campusName = '';
+            if (selectedCampus === 'nb') {
+                campusName = campusShortNamesMappings[stopsData[stopId].campus];
+            }
 
             $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
@@ -1417,7 +1413,10 @@ function popInfo(busId, resetCampusFontSize) {
             }
 
             let stopName = stopsData[sortedStops[i]].name
-            const campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus]
+            let campusName = '';
+            if (selectedCampus === 'nb') {
+                campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus];
+            }
 
             if (i === 0 && settings['toggle-show-bus-progress']) {
                 stopName += `<div class="ml-0p5rem" style="color: #00abff;">(${Math.round(busData[busId].progress*100)}%)</div>`
@@ -1519,7 +1518,7 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     if (!isDesktop) {
-        const expandedBounds = expandBounds(bounds, 2.8);
+        const expandedBounds = expandBounds(bounds[selectedCampus], 2.8);
         // map.setMaxBounds(expandedBounds);
         map.setMinZoom(9);
     }
@@ -1546,7 +1545,7 @@ function popInfo(busId, resetCampusFontSize) {
 
 function populateBusBreaks(busBreakData) {
 
-    if (!busBreakData) {
+    if (!busBreakData || busBreakData.error) {
         $('.bus-breaks').empty();
         $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
         $('.show-more-breaks, .show-all-breaks').hide();

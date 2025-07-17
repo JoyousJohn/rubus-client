@@ -2,13 +2,15 @@ let polylineBounds;
 let routeBounds ={};
 
 async function setPolylines(activeRoutes) {
+    // console.log("activeRoutes: ", activeRoutes)
+    const routesToSet = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
 
-    console.log("Setting polylines for activeRoutes: ", activeRoutes)
+    // console.log("Setting polylines for routesToSet: ", routesToSet)
     
     const fetchPromises = [];
 
-    for (const routeName of activeRoutes) {
-        
+    for (const routeName of routesToSet) {
+
         let coordinates = await getPolylineData(routeName);
 
         if (!coordinates) continue // if undefined
@@ -81,12 +83,12 @@ async function getPolylineData(routeName) {
 
     try {
 
-        const knownRoutes = ['test', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement']
-        if (!knownRoutes.includes(routeName)) return
+        if (!knownRoutes.includes(routeName)) return // I don't think it should even be able to get this far to need this final check?
 
         let polylineData = null;
 
         if (localStorage.getItem(`polylineData.${routeName}`) !== null) {
+            // console.log(`Using cached polyline data for route ${routeName}`);
             polylineData = JSON.parse(localStorage.getItem(`polylineData.${routeName}`));
         } else {
             const response = await fetch('https://transloc.up.railway.app/r/' + routeName);
@@ -109,7 +111,7 @@ function getValidBusesServicingStop(stopId) {
     let validBuses = [];
     const routesServicing = getRoutesServicingStop(stopId)
     routesServicing.forEach(route => {
-        busesByRoutes[route].forEach(busId => {
+        busesByRoutes[selectedCampus][route].forEach(busId => {
             if (isValid(busId)) {
                 validBuses.push(busId);
             }
@@ -119,7 +121,7 @@ function getValidBusesServicingStop(stopId) {
 }
 
 
-const busStopMarkers = {};
+let busStopMarkers = {};
 
 function getNextStopId(route, stopId) {
     const routeStops = stopLists[route]
@@ -167,7 +169,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         
         $('.info-stop-servicing').append($serviedRouteElm)
         // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);
-        busesByRoutes[servicedRoute].forEach(busId => {
+        busesByRoutes[selectedCampus][servicedRoute].forEach(busId => {
 
             let busStopId = busData[busId]['stopId']
             if (Array.isArray(busStopId)) {
@@ -387,8 +389,113 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 let sourceBusId = null;
 let sourceStopId = null;
 
-async function popStopInfo(stopId) {
+// Config object mapping stopId to its switch pair and direction info
+const stopSwitchConfig = {
+    'nb': {
+        6: { // Hill North
+            pair: 7,
+            directions: [
+                { label: 'NB', active: true, switch: 1 },
+                { label: 'SB', active: false, switch: 2 }
+            ]
+        },
+        7: { // Hill South
+            pair: 6,
+            directions: [
+                { label: 'NB', active: false, switch: 1 },
+                { label: 'SB', active: true, switch: 2 }
+            ]
+        },
+        22: { // SoCam North
+            pair: 23,
+            directions: [
+                { label: 'NB', active: true, switch: 1 },
+                { label: 'SB', active: false, switch: 2 }
+            ]
+        },
+        23: { // SoCam South
+            pair: 22,
+            directions: [
+                { label: 'NB', active: false, switch: 1 },
+                { label: 'SB', active: true, switch: 2 }
+            ]
+        },
+        3: { // SAC North
+            pair: 4,
+            directions: [
+                { label: 'NB', active: true, switch: 1 },
+                { label: 'SB', active: false, switch: 2 }
+            ]
+        },
+        4: { // SAC South
+            pair: 3,
+            directions: [
+                { label: 'NB', active: false, switch: 1 },
+                { label: 'SB', active: true, switch: 2 }
+            ]
+        },
+        27: { // Werblin North
+            pair: 11,
+            directions: [
+                { label: 'NB', active: true, switch: 1 },
+                { label: 'SB', active: false, switch: 2 }
+            ]
+        },
+        11: { // Werblin South
+            pair: 27,
+            directions: [
+                { label: 'NB', active: false, switch: 1 },
+                { label: 'SB', active: true, switch: 2 }
+            ]
+        }
+    },
+    'newark': {
+        2: { // NJIT North
+            pair: 3,
+            directions: [
+                { label: 'NB', active: true, switch: 1 },
+                { label: 'SB', active: false, switch: 2 }
+            ]
+        },
+        3: { // NJIT South
+            pair: 2,
+            directions: [
+                { label: 'NB', active: false, switch: 1 },
+                { label: 'SB', active: true, switch: 2 }
+            ]
+        },
+        4: { // ICPH North
+            pair: 5,
+            directions: [
+                { label: 'NB', active: true, switch: 1 },
+                { label: 'SB', active: false, switch: 2 }
+            ]
+        },
+        5: { // ICPH South
+            pair: 4,
+            directions: [
+                { label: 'NB', active: false, switch: 1 },
+                { label: 'SB', active: true, switch: 2 }
+            ]
+        },
+        6: { // Bergen Building Front
+            pair: 7,
+            directions: [
+                { label: 'Front', active: true, switch: 1 },
+                { label: 'Back', active: false, switch: 2 }
+            ]
+        },
+        7: { // Bergen Building Back
+            pair: 6,
+            directions: [
+                { label: 'Front', active: false, switch: 1 },
+                { label: 'Back', active: true, switch: 2 }
+            ]
+        },
+    }
+};
 
+async function popStopInfo(stopId) {
     if (popupStopId) {
         $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
     }
@@ -405,97 +512,33 @@ async function popStopInfo(stopId) {
 
     if (stopsData[stopId].mainName) {
         stopName = stopsData[stopId].mainName;
-        if (stopId === 6) { // Hill North
-            $('.info-stop-switch').css('display', 'inline-block')
-            $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-            $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
-
-            if (!activeStops.includes(7)) {
-                $('.info-stop-switch-2').hide()
-            } else {
-                $('.info-stop-switch-2').show()
-                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(7)});
-            }
-
-        } else if (stopId === 7) { // Hill South
-            $('.info-stop-switch').css('display', 'inline-block')
-            $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
-            $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-        
-            if (!activeStops.includes(6)) {
-                $('.info-stop-switch-1').hide()
-            } else {
-                $('.info-stop-switch-1').show()
-                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(6)});
-            }
-        
-        } else if (stopId === 22) { // SoCam North
-            $('.info-stop-switch').css('display', 'inline-block')
-            $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-            $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
-        
-            if (!activeStops.includes(23)) {
-                $('.info-stop-switch-2').hide()
-            } else {
-                $('.info-stop-switch-2').show()
-                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(23)});
-            }
-        } else if (stopId === 23) { // SoCam South
-            $('.info-stop-switch').css('display', 'inline-block')
-            $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
-            $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-        
-            if (!activeStops.includes(22)) {
-                $('.info-stop-switch-1').hide()
-            } else {
-                $('.info-stop-switch-1').show()
-                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(22)});
-            }
-        } else if (stopId === 3) { // SAC North
-            $('.info-stop-switch').css('display', 'inline-block')
-            $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-            $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
-        
-            if (!activeStops.includes(4)) {
-                $('.info-stop-switch-2').hide()
-            } else {
-                $('.info-stop-switch-2').show()
-                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(4)});
-            }
-        
-        } else if (stopId === 4) { // SAC South
-            $('.info-stop-switch').css('display', 'inline-block')
-            $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
-            $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-        
-            if (!activeStops.includes(3)) {
-                $('.info-stop-switch-1').hide()
-            } else {
-                $('.info-stop-switch-1').show()
-                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(3)});
-            }
-        } else if (stopId === 27) { // Werblin North
-            $('.info-stop-switch').css('display', 'inline-block')
-            $('.info-stop-switch-1').text('NB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-            $('.info-stop-switch-2').text('SB').css('color', '').css('background-color', '')
-
-            if (!activeStops.includes(11)) {
-                $('.info-stop-switch-2').hide()
-            } else {
-                $('.info-stop-switch-2').show()
-                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(11)});
-            }
-        } else if (stopId === 11) { // Werblin South
-            $('.info-stop-switch').css('display', 'inline-block')
-            $('.info-stop-switch-1').text('NB').css('color', '').css('background-color', '')
-            $('.info-stop-switch-2').text('SB').css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
-
-            if (!activeStops.includes(27)) {
-                $('.info-stop-switch-1').hide()
-            } else {
-                $('.info-stop-switch-1').show()
-                $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(27)});
-            }
+        const config = stopSwitchConfig[selectedCampus][stopId];
+        if (config) {
+            $('.info-stop-switch').css('display', 'inline-block');
+            config.directions.forEach((dir, idx) => {
+                const sel = `.info-stop-switch-${dir.switch}`;
+                $(sel).text(dir.label);
+                if (dir.active) {
+                    $(sel).css('color', 'var(--theme-bg)').css('background-color', 'var(--theme-color)');
+                } else {
+                    $(sel).css('color', '').css('background-color', '');
+                }
+            });
+            // Handle switch visibility and click
+            config.directions.forEach((dir, idx) => {
+                const sel = `.info-stop-switch-${dir.switch}`;
+                // The "other" direction is the one that switches to the pair stop
+                if (dir.active) return; // skip the active one
+                if (!activeStops.includes(config.pair)) {
+                    $(sel).hide();
+                } else {
+                    $(sel).show();
+                    $('.stop-name-wrapper').parent().one('click', function() {popStopInfo(config.pair)});
+                }
+            });
+        } else {
+            $('.info-stop-switch').hide();
+            $('.stop-name-wrapper').parent().off('click');
         }
     } else {
         $('.info-stop-switch').hide();
@@ -503,7 +546,7 @@ async function popStopInfo(stopId) {
     }
 
     if (shownRoute && popupBusId) {
-        busesByRoutes[shownRoute].forEach(busId => {
+        busesByRoutes[selectedCampus][shownRoute].forEach(busId => {
             busMarkers[busId].getElement().style.display = '';
         })
         updateTooltips(shownRoute);
@@ -563,18 +606,19 @@ async function addStopsToMap() {
 
     activeStops = []
 
-    for (const activeRoute in busesByRoutes) {
+    for (const activeRoute in busesByRoutes[selectedCampus]) {
         if (!(activeRoute in stopLists)) { console.log('does this actually happen?'); continue; } // why would this trigger?
         activeStops = [...activeStops, ...stopLists[activeRoute]];
         activeStops = [...new Set(activeStops)];
     }
 
     if (!activeStops.length) { // no buses running, show all stops
-        activeStops = Array.from({length: 27}, (_, i) => i + 1);
+        activeStops = Array.from({length: Object.keys(stopsData).length}, (_, i) => i + 1);
     }
 
     checkIfLocationShared();
 
+    // console.log(activeStops)
     activeStops.forEach(stopId => {
 
         if (!busStopMarkers[stopId]) { // Adding stops from new buses, need to exclude existing stops
@@ -648,46 +692,35 @@ function removePreviouslyActiveStops() {
 
 function routesServicing(stopId) {
     let routesServicing = []  
-    activeRoutes.forEach(activeRoute => {
-        if (activeRoute in stopLists && stopLists[activeRoute].includes(stopId)) { // remove activeRoute in stopLists check after adding football routes + stops
+    let routesArray = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
+    routesArray.forEach(activeRoute => {
+        if (stopLists[activeRoute].includes(stopId)) { // remove activeRoute in stopLists check after adding football routes + stops
             routesServicing.push(activeRoute);
         }
     })
     return routesServicing;
 }
 
-let busesByRoutes = {};
-
-function makeBusesByRoutes() {
-    busesByRoutes = {};
-    for (const bus in busData) {
-        const route = busData[bus].route;
-        // console.log(route)
-        if (!busesByRoutes.hasOwnProperty(route)) {
-            busesByRoutes[route] = [];
-        }
-        busesByRoutes[route].push(bus);
-        // console.log(busesByRoutes[route])
-    }
-}
 
 function progressToNextStop(busId) {
     if (!busData[busId]['next_stop']) {
         return 0;
     }
 
+    const campusPercentages = percentageDistances[selectedCampus];
+
     const nextStopId = String(busData[busId]['next_stop']);
-    if (!percentageDistances[nextStopId]) {
+    if (!campusPercentages[nextStopId]) {
         return 0;
     }
 
     const prevStopId = String(busData[busId]['stopId']);
-    if (!percentageDistances[nextStopId]['from'][prevStopId]) {
+    if (!campusPercentages[nextStopId]['from'][prevStopId]) {
         return 0;
     }
 
-    const nextStopDistances = percentageDistances[nextStopId]['from'][prevStopId]['geometry']['coordinates'];
-    const percentages = percentageDistances[nextStopId]['from'][prevStopId]['properties']['percentages'];
+    const nextStopDistances = campusPercentages[nextStopId]['from'][prevStopId]['geometry']['coordinates'];
+    const percentages = campusPercentages[nextStopId]['from'][prevStopId]['properties']['percentages'];
 
     const busLat = busData[busId]['lat'];
     const busLng = busData[busId]['long'];

@@ -64,23 +64,32 @@ const routeMapping = {
     '44051': 'summer2',
 
     // commencement (5/18)
-    '62409': 'commencement'
+    '62409': 'commencement',
+
+    '4056': 'ps',
+    '4063': 'cc',
+    '4088': 'ccx',
+    '4098': 'psx',
+    '41231': 'cam',
 }
 
+
+// maybe filter by selected route instead
 const excludedRouteMappings = {
-    '4056': 'Penn Station Local',
-    '4063': 'Campus Connect',
-    '4088': 'Campus Connect Express',
-    '41231': 'Camden',
-    '4098': 'Penn Station Express'
+    // '4056': 'Penn Station Local',
+    // '4063': 'Campus Connect',
+    // '4088': 'Campus Connect Express',
+    // '41231': 'Camden',
+    // '4098': 'Penn Station Express'
 };
 
 function getRouteStr(route) {
+    // console.log(route)
     if (route in routeMapping) {
         return [routeMapping[route], true];
     } else {
-        const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement']
         let alphaRouteId = route.replace(/[^a-zA-Z]/g, '').toLowerCase();
+        // console.log(alphaRouteId)
         if (knownRoutes.includes(alphaRouteId)) {
             return [alphaRouteId, true];
         } else {
@@ -138,10 +147,18 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 continue;
             }
 
+            const [routeStr, isKnown] = getRouteStr(bus.routeId);
+
+            // console.log(routeStr)
+
+            if (routesByCampus[routeStr] !== selectedCampus) {
+                // console.log(`Bus ${bus.busName} (${routeStr}) is not in ${selectedCampus}`)
+                continue;
+
+            }
+
             const busId = bus.busId;
             activeBuses.push(busId);
-
-            const [routeStr, isKnown] = getRouteStr(bus.routeId);
 
             let isNew = false;
 
@@ -153,6 +170,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 populateMeClosestStops();
                 busData[busId].route = routeStr;
                 busData[busId]['type'] = 'api';
+                busData[busId]['campus'] = routesByCampus[routeStr];
 
                 if (joined_service[busId]) {
                     busData[busId].joined_service = joined_service[busId];
@@ -165,6 +183,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     console.log("Is first bus, hiding all stops")
                     hideAllStops();
                 }
+
 
                 if (!isInitial) {
                     addStopsToMap();
@@ -198,8 +217,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                         populateRouteSelectors(activeRoutes);
                         console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
                         console.log('Polylines on map before remove:', map.hasLayer(polylines[oldRoute]));
-                        polylines[oldRoute].remove();
-                        console.log('Polylines on map after remove:', map.hasLayer(polylines[oldRoute]));
+                            polylines[oldRoute].remove();
+                            console.log('Polylines on map after remove:', map.hasLayer(polylines[oldRoute]));
                         // $(`.route-selector[routename="${route}"]`).remove(); // not sure if i need this or if it's triggered elsewhere
                         // checkMinRoutes(); // also unsure if i need this
 
@@ -243,14 +262,16 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             busData[busId].atDepot = isAtDepot(bus.longitude, bus.latitude);
 
-            plotBus(busId, immediatelyUpdate);
-
-            if (immediatelyUpdate) {
-                busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
-            }   
+            if (routesByCampus[busData[busId].route] === selectedCampus) {
+                plotBus(busId, immediatelyUpdate);
+                if (immediatelyUpdate) {
+                    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
+                }   
+            }
 
             calculateSpeed(busId);
 
+            // does the below need to go in the selected campus check above?
             if (isNew && shownRoute && shownRoute !== routeStr) { // may have to timeout 0s this
                 busMarkers[busId].getElement().style.display = 'none';
             }
@@ -275,7 +296,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 // console.log('activeRoutes: ' , activeRoutes)
                 setPolylines(newRoutes);
                 newRoutes.forEach(item => activeRoutes.add(item))
-                populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and steting all
+                populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and setting all <-- not sure this is still true
             }
  
             if (busId === popupBusId) {
@@ -346,14 +367,14 @@ function makeOoS(busId) {
     console.log("makeOos() busesByRoutes after: ", busesByRoutes)
     console.log("busData after: ", busDataCopy)
     
-    if (route && !busesByRoutes[route]) { // for some reason route can be undefined, investigate.
+    if (route && !busesByRoutes[selectedCampus][route]) { // for some reason route can be undefined, investigate.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
         if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polelines, have to ensure code works flawlessly!
             console.log(`Removing polyline for route ${route}`);
-            console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
-            polylines[route].remove();
-            console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
+                console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
+                polylines[route].remove();
+                console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
         } else {
             console.log('Route is none');
         }
@@ -550,9 +571,6 @@ function updateTimeToStops(busIds) {
     if (shownRoute && !popupBusId && !popupStopId) {
         updateTooltips(shownRoute);
     }
-
-    populateAllStops();
-
 }
 
 
@@ -591,7 +609,7 @@ async function fetchWhere() {
             activeRoutes.add(busData[busId].route)
         }
 
-        console.log(validBusIds)
+        // console.log(validBusIds)
         Object.keys(busData).forEach(busId => {
             if (!validBusIds.includes(busId) && busData[busId].route.includes('on')) { // this should only affect returning to the app which had overnight buses previously (from ws), otherwise it would briefly cause buses not yet reaching a stop to pop out before respawning from fetch data
                 makeOoS(busId)
@@ -703,8 +721,8 @@ function checkMinRoutes() {
 
     let isAnyBusActuallyInService = false;
     minRoutes.forEach(route => {
-        if (busesByRoutes[route]) {
-            busesByRoutes[route].forEach(busId => {
+        if (busesByRoutes[selectedCampus][route]) {
+            busesByRoutes[selectedCampus][route].forEach(busId => {
                 const valid = isValid(busId);
                 if (valid) {
                     isAnyBusActuallyInService = true;
@@ -854,6 +872,38 @@ function cancelAllAnimations() {
 
 let joined_service = {};
 
+async function fetchETAs() {
+    try {
+        const response = await fetch('https://transloc.up.railway.app/etas');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        etas = data[selectedCampus];
+        // console.log('ETAs fetched:', etas);
+        // updateTimeToStops('all')
+    } catch (error) {
+        console.error('Error fetching ETAs:', error);
+
+        $('.notif-popup').text('RUBus/Passio servers are experiencing issues and ETAs could not be fetched. Accurate, live bus positioning is still available.').fadeIn();
+
+    }
+
+    try {
+        const response = await fetch('https://transloc.up.railway.app/waits');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        waits = data[selectedCampus];
+        updateWaitTimes();
+        // console.log('Waits fetched:', waits);
+    } catch (error) {
+        console.error('Error fetching waits:', error);
+    }
+
+}
+
 $(document).ready(async function() {
     // Initialize settings before map is created
     settings = localStorage.getItem('settings');
@@ -870,7 +920,7 @@ $(document).ready(async function() {
                 throw new Error('Network response was not ok');
             }
             joined_service = await response.json();
-            console.log('Bus joined service times:', joined_service);
+            // console.log('Bus joined service times:', joined_service);
 
         } catch (error) {
             console.error('Error fetching joined service times:', error);
@@ -916,38 +966,6 @@ $(document).ready(async function() {
         populateFavs()
     }, 1);
     makeRidershipChart()
-
-    async function fetchETAs() {
-        try {
-            const response = await fetch('https://transloc.up.railway.app/etas');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            etas = data;
-            // console.log('ETAs fetched:', etas);
-            // updateTimeToStops('all')
-        } catch (error) {
-            console.error('Error fetching ETAs:', error);
-
-            $('.notif-popup').text('RUBus/Passio servers are experiencing issues and ETAs could not be fetched. Accurate, live bus positioning is still available.').fadeIn();
-
-        }
-
-        try {
-            const response = await fetch('https://transloc.up.railway.app/waits');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            waits = data;
-            updateWaitTimes();
-            // console.log('Waits fetched:', waits);
-        } catch (error) {
-            console.error('Error fetching waits:', error);
-        }
-
-    }
 
     await fetchETAs();
 
@@ -995,6 +1013,7 @@ $(document).ready(async function() {
             $('.updating-buses').fadeIn();
 
             for (const busId in busData) {
+                if (routesByCampus[busData[busId].route] !== selectedCampus) continue; // bc marker only created if selected campus. cna also just check if marker exists like i have commented out below, but i must've previously added that check and removed it to have my code fail fast... possible race condition back then somewhere? maybe when a marker created back on visibility change?
                 // if (busMarkers[busId]) {
                     busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = 'gray';
                 // }
