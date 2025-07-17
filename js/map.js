@@ -1684,7 +1684,7 @@ function getBusBreaks(busId) {
             busBreaksCache[busId] = {
                 data: data,
                 timestamp: currentTime
-            };
+            };                
             populateBusBreaks(data);
         })
         .catch(error => {
