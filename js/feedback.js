@@ -44,4 +44,13 @@ $(document).ready(function() {
             $('.empty-feedback').slideUp('fast');
         }
     });
+
+        
+    $('.feedback-outside').click(function(e) {
+        console.log(e.target)
+        if (e.target === this) {
+            $('.leave-feedback-wrapper').hide(); $('.bottom').show();
+        }
+    })
 });
+    
