@@ -502,7 +502,7 @@ async function popStopInfo(stopId) {
 
     $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/stop_marker_selected.png')
 
-    if (Number(closestStopId) === stopId) {
+    if (Number(closestStopId) === stopId && (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance'])) {
         $('.closest-stop').show();
     } else {
         $('.closest-stop').hide();

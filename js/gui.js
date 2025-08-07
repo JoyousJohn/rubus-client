@@ -1147,6 +1147,7 @@ const toggleSettings = [
     'toggle-show-rubus-ai',
     'toggle-show-bus-quickness-breakdown',
     'toggle-always-immediate-update',
+    'toggle-bypass-max-distance',
 ]
 
 let defaultSettings = {
@@ -1184,7 +1185,8 @@ let defaultSettings = {
     'toggle-show-rubus-ai': false,
     'toggle-show-bus-quickness-breakdown': false,
     'toggle-always-immediate-update': false,
-
+    'toggle-bypass-max-distance': false,
+    
     // going to remove
     'toggle-show-arrival-times': true,
     'toggle-show-bus-speeds': true,
@@ -1285,7 +1287,7 @@ function updateSettings() {
             let theme = $(this).attr('theme-option')
             if (theme === 'auto') {
                 const currentHour = new Date().getHours();
-                theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'streets';
+                theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
             }
 
             changeMapStyle(theme)
@@ -1386,11 +1388,13 @@ let closestStopId;
 let closestStopDistances = {};
 let sortedClosestStopDistances = {};
 let closestStopsMap;
+let closestDistance;
+let watchPositionId = null;
 
 function updateNearestStop() {
     let closestStop = null;
     let thisClosestStopId = null;
-    let closestDistance = Infinity;
+    let thisClosestDistance = Infinity;
 
     const stopIds = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
 
@@ -1403,8 +1407,8 @@ function updateNearestStop() {
 
         closestStopDistances[stopId] = distance;
 
-        if (distance < closestDistance) {
-            closestDistance = distance;
+        if (distance < thisClosestDistance) {
+            thisClosestDistance = distance;
             closestStop = stop;
             thisClosestStopId = stopId;
         }
@@ -1417,13 +1421,15 @@ function updateNearestStop() {
             .sort(([, distanceA], [, distanceB]) => distanceA - distanceB)
     );
 
-    if (popupStopId && popupStopId === thisClosestStopId) {
+    if (popupStopId && popupStopId === thisClosestStopId && (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance'])) {
         $('.closest-stop').show();
     }
 
     $('.fly-closest-stop').off('click').click(function() { flyToStop(thisClosestStopId) });
 
-    return [closestStop, thisClosestStopId, closestDistance]
+    closestDistance = thisClosestDistance;
+
+    return [closestStop, thisClosestStopId, thisClosestDistance]
 
 }
  
@@ -1438,9 +1444,20 @@ function handleNearestStop(fly) {
         console.log(`Closest stop to user is ${closestStop.name} at a distance of ${closestDistance} miles.`);
         closestStopId = thisClosestStopId;
 
-        if (closestDistance > 14) {
+        if (closestDistance > maxDistanceMiles && !settings['toggle-bypass-max-distance']) {
             $('.centerme-wrapper').hide();
             return;
+        }
+
+        // Clear any existing watchPosition handler
+        if (watchPositionId !== null) {
+            navigator.geolocation.clearWatch(watchPositionId);
+            watchPositionId = null;
+        }
+
+        // Remove any existing location marker
+        if (window.locationMarker) {
+            window.locationMarker.remove();
         }
 
         const locationMarker = L.marker(userPosition, 
@@ -1450,8 +1467,11 @@ function handleNearestStop(fly) {
                 iconAnchor: [12, 12],
             })
         }).addTo(map);
+        
+        // Store reference to location marker globally
+        window.locationMarker = locationMarker;
 
-        navigator.geolocation.watchPosition((position) => {
+        watchPositionId = navigator.geolocation.watchPosition((position) => {
             const newPosition = [position.coords.latitude, position.coords.longitude];
             
             const duration = 500;
@@ -1628,7 +1648,7 @@ function populateMeClosestStops() {
         count++;
     }
 
-    const $showAllStops = $(`<div class="center m-1rem text-1p3rem pointer" style="grid-column: span 2; color: var(--theme-color)">▼ Show All Stops</div>`)
+    const $showAllStops = $(`<div class="center m-1rem text-1p3rem pointer" style="grid-column: span 2; color: var(--theme-color)">▼ Show All Stops (Slow)</div>`)
     .click(function() {
         const $allDivs = $('.closest-stops-list > div:not(:last-child)');
         const $hiddenDivs = $allDivs.filter(':hidden');

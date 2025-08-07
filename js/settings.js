@@ -308,6 +308,30 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-always-immediate-update'] = isChecked;
             break;
 
+        case 'toggle-bypass-max-distance':
+            settings['toggle-bypass-max-distance'] = isChecked;
+            
+            if (isChecked) {
+                // Disable maxBounds to allow flying to locations outside bounds
+                map.setMaxBounds(null);
+                if (popupStopId && Number(closestStopId) === popupStopId && (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance'])) {
+                    $('.closest-stop').show();
+                } else {
+                    $('.closest-stop').hide();
+                }
+            } else {
+                // Re-enable maxBounds with the original bounds
+                const newBounds = expandBounds(bounds[selectedCampus], 2);
+                map.setMaxBounds(newBounds);
+
+                if (popupStopId && Number(closestStopId) === popupStopId && closestDistance < maxDistanceMiles) {
+                    $('.closest-stop').show();
+                } else {
+                    $('.closest-stop').hide();
+                }
+            }
+            break;
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 

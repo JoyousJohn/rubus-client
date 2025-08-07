@@ -24,7 +24,6 @@ $(document).ready(function() {
     updateSettings();
 
     let mapOptions = {
-        maxBounds: expandBounds(bounds[selectedCampus], 2),
         maxBoundsViscosity: 1.3, // How much resistance to panning outside maxBounds
         zoomControl: false, // Disable +/- zoom control
         inertiaDeceleration: 1000, // higher means faster deceleration
@@ -32,6 +31,11 @@ $(document).ready(function() {
         edgeBufferTiles: 10, // number of invisible tiles to load on edges
         scrollWheelZoom: false, // Disable default scroll zoom
     };
+
+    // Set maxBounds based on bypass setting
+    if (!settings['toggle-bypass-max-distance']) {
+        mapOptions.maxBounds = expandBounds(bounds[selectedCampus], 2);
+    }
 
     const usePolylinePadding = settings && settings['toggle-polyline-padding'];
     const preferCanvasRenderer = settings && settings['map-renderer'] === 'canvas';
@@ -1657,7 +1661,7 @@ function populateBusBreaks(busBreakData) {
         $('.show-all-breaks').text("Show Stops");
         $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg`);
     } else {
-        $('.show-all-breaks').text("Show All Stops");
+        $('.show-all-breaks').text("Show All Stops (Slow)");
     }
 
 

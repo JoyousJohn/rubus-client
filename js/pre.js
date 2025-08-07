@@ -174,7 +174,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             passioDown = true;
             return;
         } else {
-            $('.notif-error').slideUp(); // will this also slide up errors when rubus servers are down? maybe I'll need a second wrapper?
+            $('.notif-popup').slideUp(); // will this also slide up errors when rubus servers are down? maybe I'll need a second wrapper?
         }
 
         let activeBuses = [];

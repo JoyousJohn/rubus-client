@@ -218,7 +218,7 @@
                         <div class="bus-breaks grid grid-cols-3-auto text-1p4rem gap-x-3rem mt-1rem"></div>
                         <div class="flex justify-evenly w-full">
                             <div class="show-more-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div.long-break').slideDown(); $('.show-more-breaks').hide();">Show All Breaks</div>
-                            <div class="show-all-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div').slideDown(); $('.show-all-breaks, .show-more-breaks').hide();">Show All Stops</div>
+                            <div class="show-all-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div').slideDown(); $('.show-all-breaks, .show-more-breaks').hide();">Show All Stops (Slow)</div>
                         </div>
                         <div class="bus-quickness-breakdown-wrapper text-1p2rem none"></div>
                     </div>
@@ -948,6 +948,16 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-always-immediate-update" class="toggle-input">
                             <label for="toggle-always-immediate-update" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Bypass max distance</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-bypass-max-distance" class="toggle-input">
+                            <label for="toggle-bypass-max-distance" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
