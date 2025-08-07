@@ -319,6 +319,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 } else {
                     $('.closest-stop').hide();
                 }
+                $('.centerme-wrapper').show(); // this not triggering?
+                if (closestStopId) {
+                    $('.fly-closest-stop-wrapper').show();
+                }
             } else {
                 // Re-enable maxBounds with the original bounds
                 const newBounds = expandBounds(bounds[selectedCampus], 2);
@@ -328,6 +332,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
                     $('.closest-stop').show();
                 } else {
                     $('.closest-stop').hide();
+                }
+
+                if (closestDistance > maxDistanceMiles) {
+                    $('.centerme-wrapper').hide();
+                    $('.fly-closest-stop-wrapper').hide();
                 }
             }
             break;
