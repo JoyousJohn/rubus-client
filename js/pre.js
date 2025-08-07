@@ -414,7 +414,7 @@ function makeOoS(busId) {
     console.log("makeOos() busesByRoutes after: ", busesByRoutes)
     console.log("busData after: ", busDataCopy)
     
-    if (route && !busesByRoutes[selectedCampus][route]) { // for some reason route can be undefined, investigate.
+    if (route && (!busesByRoutes[selectedCampus] || !busesByRoutes[selectedCampus][route])) { // for some reason route can be undefined, investigate. // if no more buses, buses by routes will no longer have a campus key. checking if no longer has this key, but can also update the make function to include the campus anyway.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
         if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polelines, have to ensure code works flawlessly!

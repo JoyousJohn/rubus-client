@@ -45,7 +45,6 @@ $(document).ready(function() {
         }
     });
 
-        
     $('.feedback-outside').click(function(e) {
         console.log(e.target)
         if (e.target === this) {
