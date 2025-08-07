@@ -245,14 +245,14 @@
                             <i class="fa-solid fa-map-pin"></i>
                         </div> -->
                         <div class="bus-comment br-1rem align-center pointer">
-                            <i class="fa-regular fa-message" onclick="$('.leave-feedback-wrapper').show(); $('.bottom').hide();"></i>
+                            <i class="fa-regular fa-message" onclick="$('.leave-feedback-wrapper').fadeIn('fast'); $('.bottom').hide();"></i>
                         </div>
 
                         <div class="bus-history br-1rem align-center pointer" onclick="$('.past-breaks-wrapper')[0].scrollIntoView({behavior: 'smooth'});">
                             <i class="fa-solid fa-clock"></i>
                         </div>
                         <script>
-                            $('.bus-history').click(function() {
+                            $('.bus-history, .bus-comment').click(function() {
                                 $(this).css('background-color', '#565fe5');
                                 setTimeout(() => {
                                     $(this).css('background-color', 'var(--theme-bg)');

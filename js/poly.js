@@ -497,10 +497,12 @@ const stopSwitchConfig = {
 
 async function popStopInfo(stopId) {
     if (popupStopId) {
-        $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
+        $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
+        busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
     }
 
-    $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/stop_marker_selected.png')
+    $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/stop_marker_selected.png');
+    busStopMarkers[stopId].setZIndexOffset(2000);
 
     if (Number(closestStopId) === stopId && (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance'])) {
         $('.closest-stop').show();
