@@ -1054,7 +1054,7 @@ $(document).ready(async function() {
         await randomStepBusSpeeds();
     }, Math.floor(Math.random() * (1000 - 200 + 1)) + 200);
 
-    // window.addEventListener('beforeunload', cancelAllAnimations);
+    window.addEventListener('beforeunload', cancelAllAnimations);
 
     getMessages();
 

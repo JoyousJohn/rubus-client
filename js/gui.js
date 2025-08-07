@@ -1630,7 +1630,7 @@ function populateMeClosestStops() {
         const busesHere = routesServicing(parseInt(stopId))
         // console.log(busesHere)
         busesHere.forEach(route => {
-            $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()}</div>`)
+            $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()} ${Math.ceil(getSoonestBus(parseInt(stopId), route)[1] % 60)}m</div>`)
             .css('background-color', colorMappings[route])
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
@@ -1648,7 +1648,7 @@ function populateMeClosestStops() {
         count++;
     }
 
-    const $showAllStops = $(`<div class="center m-1rem text-1p3rem pointer" style="grid-column: span 2; color: var(--theme-color)">▼ Show All Stops (Slow)</div>`)
+    const $showAllStops = $(`<div class="center m-1rem text-1p3rem pointer" style="grid-column: span 2; color: var(--theme-color)">▼ Show All Stops</div>`)
     .click(function() {
         const $allDivs = $('.closest-stops-list > div:not(:last-child)');
         const $hiddenDivs = $allDivs.filter(':hidden');
