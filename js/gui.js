@@ -1146,6 +1146,7 @@ const toggleSettings = [
     'toggle-allow-iphone-preload',
     'toggle-show-rubus-ai',
     'toggle-show-bus-quickness-breakdown',
+    'toggle-always-immediate-update',
 ]
 
 let defaultSettings = {
@@ -1182,6 +1183,7 @@ let defaultSettings = {
     'toggle-allow-iphone-preload': false,
     'toggle-show-rubus-ai': false,
     'toggle-show-bus-quickness-breakdown': false,
+    'toggle-always-immediate-update': false,
 
     // going to remove
     'toggle-show-arrival-times': true,

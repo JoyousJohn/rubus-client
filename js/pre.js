@@ -100,12 +100,55 @@ function getRouteStr(route) {
 
 let passioDown = false;
 
+async function immediatelyUpdateBusDataPre() {
+    cancelAllAnimations();
+
+    $('.updating-buses').fadeIn();
+
+    for (const busId in busData) {
+        if (routesByCampus[busData[busId].route] !== selectedCampus) continue; // bc marker only created if selected campus. cna also just check if marker exists like i have commented out below, but i must've previously added that check and removed it to have my code fail fast... possible race condition back then somewhere? maybe when a marker created back on visibility change?
+        // if (busMarkers[busId]) {
+            busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = 'gray';
+        // }
+    }
+
+    hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
+
+    if ($('.buses-panel-wrapper').is(':visible')) { // hide info boxes closes this so we should show it again immediately as it shouldn't be included in the panels being hidden
+        $('.buses-panel-wrapper').stop(true, true).show(); // true true to cancel slideup (which is already in progress) animation which completes *after* this .show, thus overrides
+    }    
+
+    await fetchWhere();
+    checkMinRoutes(); // ddoes this work right?
+    openRUBusSocket();
+}
+
+async function immediatelyUpdateBusDataPost() {
+    // if (!Object.keys(busData).length) { // maybe add a condition here to only cheeck on weekends at night?
+        startOvernight(true);
+    // }
+    $('.updating-buses').slideUp();
+}
+
 async function fetchBusData(immediatelyUpdate, isInitial) {
 
     const formData = '{"s0":"1268","sA":1}';
     // const formData = '{"s0":"1268","sA":1,"rA":15,"r0":"41231","r1":"4067","r2":"43711","r3":"43431","r4":"43440","r5":"43441","r6":"43398","r7":"43991","r8":"43990","r9":"43973","r10":"43397","r11":"4088","r12":"4063","r13":"4056","r14":"4098", "r15": "-1"}'
     const url = `https://passiogo.com/mapGetData.php?getBuses=1&wTransloc=1&hideExcluded=0&showBusInOos=1&showBusesExcluded=1&json=${encodeURIComponent(formData)}`;
 
+    const currentTime = new Date().getTime();
+    const timeSinceLastPoll = currentTime - lastPollTime;
+    // console.log(timeSinceLastPoll)
+
+    if ((timeSinceLastPoll > pollDelay + pollDelayBuffer && !isInitial) || settings['toggle-always-immediate-update']) {
+        immediatelyUpdate = true;
+        immediatelyUpdateBusDataPre();
+    } else {
+        immediatelyUpdate = false;
+    }
+
+    lastPollTime = currentTime;
+    
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -303,6 +346,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 $('.info-capacity').text(bus.paxLoad + '% capacity');
             }
 
+        }
+
+        if (immediatelyUpdate) {
+            immediatelyUpdateBusDataPost();
         }
 
         // console.log('activeBuses', activeBuses)
@@ -1007,45 +1054,7 @@ $(document).ready(async function() {
         await randomStepBusSpeeds();
     }, Math.floor(Math.random() * (1000 - 200 + 1)) + 200);
 
-    document.addEventListener('visibilitychange', async function() {
-        if (document.visibilityState === 'visible') {
-
-            cancelAllAnimations();
-
-            $('.updating-buses').fadeIn();
-
-            for (const busId in busData) {
-                if (routesByCampus[busData[busId].route] !== selectedCampus) continue; // bc marker only created if selected campus. cna also just check if marker exists like i have commented out below, but i must've previously added that check and removed it to have my code fail fast... possible race condition back then somewhere? maybe when a marker created back on visibility change?
-                // if (busMarkers[busId]) {
-                    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = 'gray';
-                // }
-            }
-
-            hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
-
-            if ($('.buses-panel-wrapper').is(':visible')) { // hide info boxes closes this so we should show it again immediately as it shouldn't be included in the panels being hidden
-                $('.buses-panel-wrapper').stop(true, true).show(); // true true to cancel slideup (which is already in progress) animation which completes *after* this .show, thus overrides
-            }
-
-            await fetchWhere();
-            checkMinRoutes(); // ddoes this work right?
-            openRUBusSocket();
-            fetchBusData(true); // Explicitly call for immediate update on visibility change
-
-            // if (!Object.keys(busData).length) { // maybe add a condition here to only cheeck on weekends at night?
-                startOvernight(true);
-            // }
-
-            $('.updating-buses').slideUp();
-        }
-        
-        if (document.visibilityState === 'hidden') {
-            cancelAllAnimations();
-        }
-    
-    });
-
-    window.addEventListener('beforeunload', cancelAllAnimations);
+    // window.addEventListener('beforeunload', cancelAllAnimations);
 
     getMessages();
 
@@ -1054,11 +1063,11 @@ $(document).ready(async function() {
 function startBusPolling() {
     setTimeout(() => {
         if (!settings['toggle-pause-passio-polling']) { fetchBusData(); }
-    }, 2000);
+    }, initPollDelay);
 
     setInterval(async () => {
         if (!settings['toggle-pause-passio-polling']) { fetchBusData(); }
-    }, 5000);
+    }, pollDelay);
 }
 
 async function randomStepBusSpeeds() {

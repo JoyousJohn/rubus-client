@@ -304,6 +304,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-always-immediate-update':
+            settings['toggle-always-immediate-update'] = isChecked;
+            break;
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 

@@ -872,7 +872,7 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         return; // Exit early - no animation needed
     }
 
-    // Calculate animation duration - keep this exactly as in original code
+    // Calculate animation duration
     const duration = (new Date().getTime() - busData[busId].previousTime) + 2500;
     const startTime = performance.now();
     busData[busId].previousTime = new Date().getTime();
@@ -1028,10 +1028,10 @@ function plotBus(busId, immediatelyUpdate=false) {
         });
 
     } else if (!pauseUpdateMarkerPositions) {
-        if (document.visibilityState === 'hidden') {
-            immediatelyUpdate = true;
-            // console.log('page hidden, updating immediately')
-        }
+        // if (document.visibilityState === 'hidden') {
+        //     immediatelyUpdate = true;
+        //     // console.log('page hidden, updating immediately')
+        // }
         updateMarkerPosition(busId, immediatelyUpdate);
     }
 }
