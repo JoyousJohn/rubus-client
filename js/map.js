@@ -1598,7 +1598,7 @@ function popInfo(busId, resetCampusFontSize) {
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
     $('.info-next-stops').css('max-height', maxHeight - 135) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
 
-    if (settings['toggle-hide-other-routes']) { // this might need a && !popupBusId condition for some reason...
+    if (!popupBusId && settings['toggle-hide-other-routes']) {
         focusBus(busId);
     }
 
