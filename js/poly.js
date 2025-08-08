@@ -663,17 +663,21 @@ async function addStopsToMap() {
 
 function removePreviouslyActiveStops() {
     let newActiveStops = [];
-    for (const route in busesByRoutes) {
-        if (route in stopLists) {
-            newActiveStops = [...newActiveStops, ...stopLists[route]];
+
+    if (busesByRoutes && busesByRoutes[selectedCampus]) {
+        for (const route in busesByRoutes[selectedCampus]) {
+            if (route in stopLists) {
+                newActiveStops = [...newActiveStops, ...stopLists[route]];
+            }
         }
     }
-    newActiveStops = [...new Set(newActiveStops)];
-    activeStops = newActiveStops; // confirm this work
 
-    // if (newActiveStops.length === 0) {
-    //     newActiveStops = Array.from({length: 25}, (_, i) => i + 1);
-    // }
+    newActiveStops = [...new Set(newActiveStops)];
+
+    // If there are no active routes/stops, default to all stops instead of removing everything
+    if (newActiveStops.length === 0) {
+        newActiveStops = Array.from({ length: Object.keys(stopsData).length }, (_, i) => i + 1);
+    }
 
     for (const stopId in busStopMarkers) {
         if (!newActiveStops.includes(Number(stopId))) {
@@ -685,9 +689,10 @@ function removePreviouslyActiveStops() {
                 hideInfoBoxes();
                 sourceStopId = null;
             }
-
         }
     }
+
+    activeStops = newActiveStops;
 }
 
 

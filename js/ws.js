@@ -97,8 +97,8 @@ class BusWebSocketClient {
                 } 
             }
 
+            // makeBusesByRoutes(); // might need this, gotta check by spoofing a on bus
             addStopsToMap();
-            makeBusesByRoutes();
 
             $('.knight-mover, .knight-mover-mini').hide();
 
