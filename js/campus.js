@@ -62,10 +62,12 @@ async function makeNewMap() {
     map.setMaxBounds(newBounds).setView(views[selectedCampus], 14) 
 
     activeRoutes.clear(); // only used to avoid having to call populateRouteSelectors below to trigger const newRoutes = pollActiveRoutes.difference(activeRoutes); in pre.js. doesn't affect addstopstoMap bc we're padding isInitial true to fetchBusData
+    $('.updating-buses').show();
     await fetchETAs();
     await fetchBusData(false, true);
     fetchWhere();
     addStopsToMap();
+    $('.updating-buses').slideUp();
     // setPolylines(activeRoutes);
 }
 
