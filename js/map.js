@@ -570,7 +570,16 @@ async function calculateSpeed(busId) {
     const previousData = busData[busId];
     const distance = haversine(previousData.previousLatitude, previousData.previousLongitude, currentLatitude, currentLongitude);
 
-    const timeDiffHours = (currentTime - previousData.previousSpeedTime) / 3600;
+    // Calculate time diff and guard against background-resume gaps or clock anomalies
+    const timeDiffSeconds = (currentTime - previousData.previousSpeedTime);
+    if (timeDiffSeconds <= 0 || timeDiffSeconds > 30) {
+        // Reset baseline on invalid/large gaps to avoid unrealistic speeds when resuming
+        busData[busId].previousLatitude = currentLatitude;
+        busData[busId].previousLongitude = currentLongitude;
+        busData[busId].previousSpeedTime = currentTime;
+        return null;
+    }
+    const timeDiffHours = timeDiffSeconds / 3600;
 
     // console.log(distance)
 
@@ -580,6 +589,14 @@ async function calculateSpeed(busId) {
 
     const realSpeed = distance / timeDiffHours;
     // console.log('realSpeed: ', realSpeed)
+
+    // // Discard outlier speeds (e.g., resume or GPS jump) and reset baseline
+    // if (realSpeed > 60) { // mph; higher is unrealistic for campus buses
+    //     busData[busId].previousLatitude = currentLatitude;
+    //     busData[busId].previousLongitude = currentLongitude;
+    //     busData[busId].previousSpeedTime = currentTime;
+    //     return null;
+    // }
 
     if (!('visualSpeed' in busData[busId])) {
         busData[busId].speed = realSpeed;
