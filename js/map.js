@@ -577,6 +577,8 @@ async function calculateSpeed(busId) {
         busData[busId].previousLatitude = currentLatitude;
         busData[busId].previousLongitude = currentLongitude;
         busData[busId].previousSpeedTime = currentTime;
+        delete busData[busId].lastRawSpeed;
+        delete busData[busId].recentRawSpeeds;
         return null;
     }
     const timeDiffHours = timeDiffSeconds / 3600;
@@ -587,8 +589,51 @@ async function calculateSpeed(busId) {
         return;
     }
 
-    const realSpeed = distance / timeDiffHours;
-    // console.log('realSpeed: ', realSpeed)
+    const rawSpeed = distance / timeDiffHours;
+    const MAX_REASONABLE_SPEED = 65; // mph
+    const MAX_STEP_DELTA = 12;       // mph per hop max change relative to last accepted
+
+    // Reject obvious GPS jumps
+    if (rawSpeed > 100) {
+        busData[busId].previousLatitude = currentLatitude;
+        busData[busId].previousLongitude = currentLongitude;
+        busData[busId].previousSpeedTime = currentTime;
+        delete busData[busId].lastRawSpeed;
+        delete busData[busId].recentRawSpeeds;
+        if (busData[busId].visualSpeed !== undefined && busData[busId].visualSpeed > MAX_REASONABLE_SPEED) {
+            busData[busId].visualSpeed = MAX_REASONABLE_SPEED;
+        }
+        return null;
+    }
+
+    // Maintain a short rolling window of recent raw speeds for robust smoothing
+    if (!Array.isArray(busData[busId].recentRawSpeeds)) {
+        busData[busId].recentRawSpeeds = [];
+    }
+    busData[busId].recentRawSpeeds.push(rawSpeed);
+    if (busData[busId].recentRawSpeeds.length > 5) {
+        busData[busId].recentRawSpeeds.shift();
+    }
+
+    // Rolling median to reduce effect of outliers
+    const medianOf = (arr) => {
+        const sorted = [...arr].sort((a,b) => a-b);
+        const mid = Math.floor(sorted.length/2);
+        return sorted.length % 2 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
+    };
+    const smoothedSpeed = medianOf(busData[busId].recentRawSpeeds);
+
+    // Enforce post-smoothing cap and step-rate limit
+    let baselineSpeed = ('speed' in busData[busId]) ? (busData[busId].speed || 0) : 0;
+    let proposedSpeed = Math.min(smoothedSpeed, MAX_REASONABLE_SPEED);
+    if (baselineSpeed > 0) {
+        const maxUp = baselineSpeed + MAX_STEP_DELTA;
+        const maxDown = Math.max(0, baselineSpeed - MAX_STEP_DELTA * 1.5);
+        proposedSpeed = Math.min(Math.max(proposedSpeed, maxDown), maxUp);
+    }
+
+    const acceptedSpeed = proposedSpeed;
+    // console.log('averagedSpeed: ', averagedSpeed)
 
     // // Discard outlier speeds (e.g., resume or GPS jump) and reset baseline
     // if (realSpeed > 60) { // mph; higher is unrealistic for campus buses
@@ -599,8 +644,8 @@ async function calculateSpeed(busId) {
     // }
 
     if (!('visualSpeed' in busData[busId])) {
-        busData[busId].speed = realSpeed;
-        busData[busId].visualSpeed = realSpeed;
+        busData[busId].speed = acceptedSpeed;
+        busData[busId].visualSpeed = acceptedSpeed;
         if (popupBusId === busId && showBusSpeeds) {
             console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
             $('.info-speed').text(Math.round(busData[busId].visualSpeed));
@@ -613,15 +658,16 @@ async function calculateSpeed(busId) {
     }
 
     const currentVisualSpeed = busData[busId].visualSpeed;  // Use 0 if speed is not set
-    const speedDiff = realSpeed - currentVisualSpeed;
+    const speedDiff = acceptedSpeed - currentVisualSpeed;
     // if (speedDiff < 1) return
     
     let totalUpdateSeconds = 7;
-    if (realSpeed < 10) {
+    if (acceptedSpeed < 10) {
         totalUpdateSeconds = 3; //decelerate faster
     }
     
-    const updateIntervalMs = Math.abs(totalUpdateSeconds*1000 / speedDiff);
+    const denom = Math.max(Math.abs(speedDiff), 0.01);
+    const updateIntervalMs = Math.min(2000, Math.max(50, (totalUpdateSeconds*1000) / denom));
 
     // if (popupBusId === busId) {
     //     console.log("speedDiff: ", speedDiff);
@@ -635,7 +681,7 @@ async function calculateSpeed(busId) {
     clearInterval(speedTimeout[busId]);
 
     // Set initial speed before starting the interval
-    busData[busId].speed = realSpeed;
+    busData[busId].speed = acceptedSpeed;
     busData[busId].visualSpeed = currentVisualSpeed
 
     let elapsedMs = 0;
