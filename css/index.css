@@ -165,7 +165,7 @@ html, body {
     animation: pulse 1s infinite;
 } */
 
-.updating-buses, .getting-location-popup {
+.updating-buses, .getting-location-popup, .slow-connection {
     padding: 0.3rem 1rem;
     background-color: rgb(51, 160, 211);
     color: white;
@@ -176,6 +176,10 @@ html, body {
     text-align: center;
     width: fit-content;
     /* display: none; */
+}
+
+.slow-connection {
+    background-color: orange;
 }
 
 .install-pwa {

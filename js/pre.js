@@ -149,7 +149,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
     lastPollTime = currentTime;
     
+    let slowConnectionTimeout;
     try {
+        slowConnectionTimeout = setTimeout(() => {
+            $('.slow-connection').slideDown();
+        }, 3000);
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -161,6 +165,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 'Connection': 'keep-alive'
             }
         });
+        clearTimeout(slowConnectionTimeout);
+        $('.slow-connection').slideUp();
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
