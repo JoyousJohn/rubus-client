@@ -1,0 +1,45 @@
+.sim-btn {
+  position: relative;
+  color: rgb(255, 255, 255);
+  background-color: #f8f5ff; /* fallback */
+  overflow: hidden;
+  isolation: isolate;
+  z-index: 0;
+}
+
+.sim-btn::before {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: conic-gradient(
+    from 0deg,
+    hsla(0, 100%, 70%, 1),
+    hsla(30, 100%, 70%, 1),
+    hsla(60, 100%, 70%, 1),
+    hsla(120, 100%, 70%, 1),
+    hsla(180, 100%, 70%, 1),
+    hsla(240, 100%, 70%, 1),
+    hsla(300, 100%, 70%, 1),
+    hsla(360, 100%, 70%, 1)
+  );
+  filter: blur(40px) saturate(1.5);
+  transform-origin: 50% 50%;
+  animation: simGradientSwirl 10s cubic-bezier(.4, 0, .2, 1) infinite alternate;
+  z-index: -1;
+  pointer-events: none;
+}
+
+@keyframes simGradientSwirl {
+  0%   { transform: translate(0%, 0%) rotate(0deg) scale(1); }
+  23%  { transform: translate(-8%, -6%) rotate(120deg) scale(1.1); }
+  47%  { transform: translate(6%, -10%) rotate(220deg) scale(0.95); }
+  71%  { transform: translate(10%, 8%) rotate(310deg) scale(1.15); }
+  100% { transform: translate(0%, 0%) rotate(360deg) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-btn::before { animation: none; }
+}

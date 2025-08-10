@@ -132,6 +132,8 @@ async function immediatelyUpdateBusDataPost() {
 
 async function fetchBusData(immediatelyUpdate, isInitial) {
 
+    if (sim) return;
+
     const formData = '{"s0":"1268","sA":1}';
     // const formData = '{"s0":"1268","sA":1,"rA":15,"r0":"41231","r1":"4067","r2":"43711","r3":"43431","r4":"43440","r5":"43441","r6":"43398","r7":"43991","r8":"43990","r9":"43973","r10":"43397","r11":"4088","r12":"4063","r13":"4056","r14":"4098", "r15": "-1"}'
     const url = `https://passiogo.com/mapGetData.php?getBuses=1&wTransloc=1&hideExcluded=0&showBusInOos=1&showBusesExcluded=1&json=${encodeURIComponent(formData)}`;
@@ -229,8 +231,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
                 // All stops are shown so no buses, and if this is the first bus, we need to hide all stops first before showing stops for this route
                 if (Object.keys(busData).length === 1) {
-                    console.log("Is first bus, hiding all stops")
-                    hideAllStops();
+                    console.log("Is first bus, deleting all stops")
+                    makeBusesByRoutes(); // need to make this before adddStopsToMap triggers below. ik this works for going from no buses to one bus, need to test more complex situations... no sure which
+                    deleteAllStops();
+                    console.log(busStopMarkers)
                 }
 
 
@@ -349,7 +353,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             }
  
             if (busId === popupBusId) {
-                $('.info-capacity').text(bus.paxLoad + '% capacity');
+                $('.info-capacity-mid').text(bus.paxLoad + '% capacity');
             }
 
         }
@@ -1003,7 +1007,6 @@ $(document).ready(async function() {
         updateMarkerSize(); // set correct html marker size before plotting
         checkMinRoutes();
     } else {
-        // $('.bus-info-popup').show().find('.info-campuses').text('Checking for buses...').addClass('pulsate');
         $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
         // setTimeout(() => {
             // $('.bus-info-popup').hide();
@@ -1084,8 +1087,8 @@ async function randomStepBusSpeeds() {
         const randChange = Math.random() < 0.5 ? -1 : 1;
         busData[busId].visualSpeed += randChange;
         if (popupBusId == busId && showBusSpeeds) {
-            $('.info-speed').text(Math.round(busData[busId].visualSpeed));
-            $('.info-mph').text('MPH');
+            $('.info-speed-mid').text(Math.round(busData[busId].visualSpeed));
+            $('.info-mph-mid').text('MPH');
         }
 
         if (panelRoute === busData[busId].route) {

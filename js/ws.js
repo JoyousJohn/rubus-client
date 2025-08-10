@@ -34,7 +34,7 @@ class BusWebSocketClient {
     // Process each message received from the WebSocket server
     processMessage(message) {
 
-        if($('.info-campuses').text() === 'No buses running!') {
+        if($('.info-campuses-mid').text() === 'No buses running!') {
             $('.bus-info-popup').hide(); // check if this works
         }
 

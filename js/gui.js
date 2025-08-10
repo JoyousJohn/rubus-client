@@ -3,7 +3,7 @@ let longPressTimer
 let selectedCampusRoutes = [];
 
 function populateRouteSelectors(allActiveRoutes) {
-    $('.route-selectors > div').not('.settings-btn').remove();
+    $('.route-selectors > div').not('.settings-btn, .sim-btn').remove();
 
     if (!allActiveRoutes) return;
 
@@ -206,7 +206,7 @@ function populateRouteSelectors(allActiveRoutes) {
 }
 
 function clearRouteSelectors() {
-    $('.route-selectors > div').not('.settings-btn').remove();
+    $('.route-selectors > div').not('.settings-btn, .sim-btn').remove();
 }
 
 let shownRoute;  
@@ -1056,7 +1056,7 @@ function updateWaitTimes() {
 
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
-    $('.panout, .settings-btn, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops').show();
+    $('.panout, .settings-btn, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops, .sim-btn').show();
     if (userLocation) {
         $('.fly-closest-stop').show();
     }
@@ -1148,6 +1148,7 @@ const toggleSettings = [
     'toggle-show-bus-quickness-breakdown',
     'toggle-always-immediate-update',
     'toggle-bypass-max-distance',
+    'toggle-show-sim',
 ]
 
 let defaultSettings = {
@@ -1186,6 +1187,7 @@ let defaultSettings = {
     'toggle-show-bus-quickness-breakdown': false,
     'toggle-always-immediate-update': false,
     'toggle-bypass-max-distance': false,
+    'toggle-show-sim': false,
     
     // going to remove
     'toggle-show-arrival-times': true,

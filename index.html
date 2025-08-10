@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RUBus v2</title>
+    <title>RUBus - Summer Updates</title>
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -35,6 +35,7 @@
     <script src="js/feedback.js"></script>
     <script src="js/contact.js"></script>
     <script src="js/campus.js"></script>
+    <script src="js/sim.js"></script>
 
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -51,6 +52,7 @@
     <link rel="stylesheet" type="text/css" href="css/all_stops.css">
     <link rel="stylesheet" type="text/css" href="css/pwa.css">
     <link rel="stylesheet" type="text/css" href="css/feedback.css">
+    <link rel="stylesheet" type="text/css" href="css/sim.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
 
@@ -173,26 +175,30 @@
 
         <div class="bus-info-popup">
             <div class="flex flex-col gap-y-0p5rem h-100 ">
-                <div class="bus-info-main">
-                    <div class="flex justify-center white text-1p1rem">
-                        <div class="info-shared-bus none">Shared With You</div>
-                    </div>
-                    <div class="flex justify-center white text-1p2rem gap-x-0p5rem">
-                        <div class="bus-oos br-0p5rem">Out of Service</div>
-                        <div class="bus-depot br-0p5rem">At Depot</div>
-                    </div>
-                    <div class="info-main gap-x-0p5rem">
-                        <div class="info-route"></div>
-                        <div class="info-campuses"></div>
-                        <div class="info-speed-wrapper">
-                            <div class="info-speed"></div>
-                            <div class="info-mph"></div>
+
+                <div class="bus-info-main-wrapper">
+
+                    <div class="bus-info-main">
+                        <div class="flex justify-center white text-1p1rem">
+                            <div class="info-shared-bus info-shared-bus-mid none">Shared With You</div>
                         </div>
-                    </div>
-                    <div class="info-extra flex" style="white-space: pre;">
-                        <div class="info-name"></div>
-                        <div class="info-capacity"></div>
-                        <div class="info-quickness"></div>
+                        <div class="flex justify-center white text-1p2rem gap-x-0p5rem">
+                            <div class="bus-oos bus-oos-mid br-0p5rem">Out of Service</div>
+                            <div class="bus-depot bus-depot-mid br-0p5rem">At Depot</div>
+                        </div>
+                        <div class="info-main gap-x-0p5rem">
+                            <div class="info-route info-route-mid"></div>
+                            <div class="info-campuses info-campuses-mid"></div>
+                            <div class="info-speed-wrapper">
+                                <div class="info-speed info-speed-mid"></div>
+                                <div class="info-mph info-mph-mid"></div>
+                            </div>
+                        </div>
+                        <div class="info-extra flex" style="white-space: pre;">
+                            <div class="info-name-mid"></div>
+                            <div class="info-capacity info-capacity-mid"></div>
+                            <div class="info-quickness-mid"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -294,6 +300,12 @@
 
                 <div class="flex align-center flex-col gap-y-1rem mb-1rem">
                     <div class="dev-build-popup arial none w-fit">ⓘ Developer build</div>
+                    <div class="sim-popup arial none w-fit">
+                        <div class="flex gap-x-0p5rem align-center">
+                            <span>ⓘ Simulating buses</span>
+                            <span class="sim-exit">EXIT</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="knight-mover">
@@ -964,6 +976,16 @@
                         </div>
                     </div>
 
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Simulator Button</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-sim" class="toggle-input">
+                            <label for="toggle-show-sim" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="settings-reset-settings">
                         <div class="settings-heading">REMOVE localStorage.SETTINGS</div>
                         <div class="settings-options grid">
@@ -1075,6 +1097,7 @@
         <div class="flex justify-between">
             <div class="route-selectors">
                 <div class="route-selector settings-btn"><i class="fa-solid fa-gear"></i></div>
+                <div class="route-selector sim-btn none">SIMULATOR</div>
             </div>
             <div class="route-close justify-center align-center">X</div>
         </div>

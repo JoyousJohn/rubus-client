@@ -361,18 +361,33 @@ html, body {
 .bus-oos {
     padding: 0.3rem 0.8rem;
     background-color: rgb(234, 62, 62);
+    display: none;
 }
 
 .bus-depot {
     padding: 0.3rem 0.8rem;
     background-color: rgb(246, 179, 10);
+    display: none;
 }
 
 .bus-info-main, .info-next-stops {
     background-color: var(--theme-bg);
+    /* background-color: red; */
     border-radius: 1rem;
     padding: 1.3rem 2rem;
     color: var(--theme-color);
+}
+
+.bus-info-main-left {
+    background-color: blue;
+}
+
+.bus-info-main {
+    
+}
+
+.bus-info-main-right {
+    background-color: green;
 }
 
 .info-shared-bus {

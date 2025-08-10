@@ -615,12 +615,13 @@ async function addStopsToMap() {
     }
 
     if (!activeStops.length) { // no buses running, show all stops
+        console.log('no buses running, showing all stops')
         activeStops = Array.from({length: Object.keys(stopsData).length}, (_, i) => i + 1);
     }
 
     checkIfLocationShared();
 
-    // console.log(activeStops)
+    console.log(activeStops)
     activeStops.forEach(stopId => {
 
         if (!busStopMarkers[stopId]) { // Adding stops from new buses, need to exclude existing stops

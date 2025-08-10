@@ -385,7 +385,7 @@ function hideInfoBoxes(instantly_hide) {
     if (popupBusId) {
         stopOvertimeCounter();
         popupBusId = null;
-        $('.info-shared-bus').hide();
+        $('.info-shared-bus-mid').hide();
         // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
     }
 
@@ -648,8 +648,8 @@ async function calculateSpeed(busId) {
         busData[busId].visualSpeed = acceptedSpeed;
         if (popupBusId === busId && showBusSpeeds) {
             console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
-            $('.info-speed').text(Math.round(busData[busId].visualSpeed));
-            $('.info-mph').text('MPH');
+            $('.info-speed-mid').text(Math.round(busData[busId].visualSpeed));
+            $('.info-mph-mid').text('MPH');
         }
         busData[busId].previousLatitude = currentLatitude;
         busData[busId].previousLongitude = currentLongitude;
@@ -701,8 +701,8 @@ async function calculateSpeed(busId) {
         
         if (popupBusId === busId && showBusSpeeds) {
             // console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
-            $('.info-speed').text(Math.round(busData[busId].visualSpeed))
-            $('.info-mph').text('MPH');
+            $('.info-speed-mid').text(Math.round(busData[busId].visualSpeed))
+            $('.info-mph-mid').text('MPH');
         }
 
         if (panelRoute === busData[busId].route) {
@@ -1238,7 +1238,7 @@ function popInfo(busId, resetCampusFontSize) {
     if (dataRoute === 'summer1' || dataRoute === 'summer2') {
         dataRoute = dataRoute.slice(0, -1) + ' ' + dataRoute.slice(-1)
     }
-    $('.info-route').text(dataRoute.toUpperCase()).css('color', colorMappings[data.route])
+    $('.info-route-mid').text(dataRoute.toUpperCase()).css('color', colorMappings[data.route])
     
     let busNameElmText = data.busName
     if (showBusId) {
@@ -1246,9 +1246,9 @@ function popInfo(busId, resetCampusFontSize) {
     }
     
     if (resetCampusFontSize === true) {
-        $('.info-campuses').css('font-size', '2.5rem');
+        $('.info-campuses-mid').css('font-size', '2.5rem');
     }
-    const campusesElement = $('.info-campuses');
+    const campusesElement = $('.info-campuses-mid');
     campusesElement.text(campusMappings[data.route]);
     
     setTimeout(() => {
@@ -1258,26 +1258,26 @@ function popInfo(busId, resetCampusFontSize) {
     }, 0);    
 
     if (showBusSpeeds && !Number.isNaN(parseInt(data.visualSpeed))) {
-        $('.info-speed').text(parseInt(data.visualSpeed));
-        $('.info-mph').text('MPH');
+        $('.info-speed-mid').text(parseInt(data.visualSpeed));
+        $('.info-mph-mid').text('MPH');
     }
-    $('.info-name').text(busNameElmText + ' | ');
-    $('.info-capacity').text(data.capacity + '% capacity');
+    $('.info-name-mid').text(busNameElmText + ' | ');
+    $('.info-capacity-mid').text(data.capacity + '% capacity');
 
     if (busData[busId].oos) {
-        $('.bus-oos').show();
+        $('.bus-oos-mid').show();
     } else {
-        $('.bus-oos').hide();
+        $('.bus-oos-mid').hide();
     }
 
     if (busData[busId].atDepot) {
-        $('.bus-depot').show();
+        $('.bus-depot-mid').show();
     } else {
-        $('.bus-depot').hide();
+        $('.bus-depot-mid').hide();
     }
 
     if (sharedBus && sharedBus === busId) {
-        $('.info-shared-bus').show();
+        $('.info-shared-bus-mid').show();
     }
 
     if (joined_service[busId]) {
@@ -1566,7 +1566,7 @@ function popInfo(busId, resetCampusFontSize) {
     updateHistoricalCapacity(busId);
 
     if (sourceBusId !== busId) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
-        $('.info-quickness').hide();
+        $('.info-quickness-mid').hide();
         getBusBreaks(busId);
         $('.show-more-breaks, .show-all-breaks').show();
     }
@@ -1697,9 +1697,9 @@ function populateBusBreaks(busBreakData) {
     $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
 
     if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
-        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Lengthy stops</span>").show();
+        $('.info-quickness-mid').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Lengthy stops</span>").show();
     } else if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime < -0.2) {
-        $('.info-quickness').html(" | <span class='text-1p2rem' style='color: var(--theme-short-stops-color);'>Short stops</span>").show();
+        $('.info-quickness-mid').html(" | <span class='text-1p2rem' style='color: var(--theme-short-stops-color);'>Short stops</span>").show();
     }
 
     if (settings['toggle-show-bus-quickness-breakdown']) {

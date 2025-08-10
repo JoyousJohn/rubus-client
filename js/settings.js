@@ -138,7 +138,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             showBusId = isChecked;
             
             if (showBusId && popupBusId) {
-                $('.info-name').text(`${$('.info-name').text()} (${popupBusId}) | `)
+                $('.info-name-mid').text(`${$('.info-name-mid').text()} (${popupBusId}) | `)
             }
 
             break;
@@ -341,6 +341,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-sim':
+            settings['toggle-show-sim'] = isChecked;
+
+            if (isChecked && !sim) {
+                $('.sim-btn').show();
+            } else {
+                $('.sim-btn').hide();
+            }
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 
@@ -469,6 +478,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-rubus-ai']) {
         $('.rubus-ai-wrapper').show();
+    }
+
+    if (settings['toggle-show-sim']) {
+        $('.sim-btn').show();
     }
 
 })
