@@ -597,11 +597,17 @@ async function popStopInfo(stopId) {
 
     $('.bus-log-wrapper').hide();
 
-    sa_event('stop_view_test', {
-        'stop_id': stopId,
-        'stop_name': stopsData[stopId].name
-    });
-    
+    if (!sim) {
+        sa_event('stop_view_test', {
+            'stop_id': stopId,
+            'stop_name': stopsData[stopId].name
+        });
+    } else {
+        sa_event('stop_view_test', {
+            'stop_id': 'sim-' + stopId,
+            'stop_name': 'sim-' + stopsData[stopId].name
+        });
+    }
 }
 
 async function addStopsToMap() {

@@ -1602,11 +1602,16 @@ function popInfo(busId, resetCampusFontSize) {
         focusBus(busId);
     }
 
-    sa_event('bus_view_test', {
-        'bus_id': busId,
-        'route': data.route,
-    });
-
+    if (!sim) {
+        sa_event('bus_view_test', {
+            'bus_id': busId,
+            'route': data.route,
+        });
+    } else {
+        sa_event('bus_view_test', {
+            'route': 'sim-' + data.route,
+        });
+    }
 }
 
 
