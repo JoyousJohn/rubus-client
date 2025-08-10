@@ -1669,7 +1669,7 @@ function populateMeClosestStops() {
 
 async function getBuildNumber() {
     $.ajax({
-        url: 'https://api.github.com/repos/JoyousJohn/rubus-public/commits?per_page=1', // &page = 1
+        url: 'https://api.github.com/repos/JoyousJohn/rubus-client/commits?per_page=1', // &page = 1
         type: 'GET',
         success: function(data, textStatus, jqXHR) {
 
