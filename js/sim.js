@@ -473,6 +473,7 @@ function endSim() {
     addStopsToMap();
     deleteAllPolylines();
     sim = false;
+    fetchBusData();
 }
 
 
