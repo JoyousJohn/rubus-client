@@ -741,6 +741,18 @@ function updateSimBus(busId) {
         simState.lastReportedProgress = 0;
         simEtaPending.add(String(busId));
 
+        // Immediately refresh GUI if shown
+        try {
+            updateTimeToStops([String(busId)]);
+            if (String(popupBusId) === String(busId)) {
+                startStoppedForTimer(busId);
+                popInfo(busId);
+            }
+            if (popupStopId) {
+                updateStopBuses(popupStopId);
+            }
+        } catch (e) { alert(''); }
+
         // Reset sim state for dwell
         simState.moving = false;
         simState.waitUntil = now + randomDwellMs(busId);
@@ -855,7 +867,7 @@ async function startSim() {
     startSimMovementLoop();
 }
 
-function endSim() {
+async function endSim() {
     for (const busId in busData) {
         makeOoS(busId);
     }
@@ -863,20 +875,25 @@ function endSim() {
     deleteAllPolylines();
     sim = false;
     stopSimMovementLoop();
-    fetchBusData();
+    await fetchBusData();
+    $('.updating-buses').slideUp();
+    fetchWhere();
 }
 
 
-$(document).ready(function() {
+$(document).ready(async function() {
     $('.sim-btn').on('touchstart click', function() {
         $(this).hide();
+        $('.updating-buses, .slow-connection').hide();
         $('.sim-popup').slideDown();
+        hideInfoBoxes();
         startSim();
     })
 
     $('.sim-exit').click(function() {
         $('.sim-popup').fadeOut();
         $('.sim-btn').fadeIn();
+        $('.updating-buses').show();
         endSim();
     })
 })
