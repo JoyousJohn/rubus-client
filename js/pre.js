@@ -175,6 +175,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         }
 
         const data = await response.json();
+
+        if (sim) return; // don't allow race cconditions of simming before fetch completed
         // console.log('Response data:', data);
 
         if (data.error) {
