@@ -431,9 +431,9 @@ function makeOoS(busId) {
         activeRoutes.delete(route);
         if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polelines, have to ensure code works flawlessly!
             console.log(`Removing polyline for route ${route}`);
-                console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
-                polylines[route].remove();
-                console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
+            console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
+            polylines[route].remove();
+            console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
         } else {
             console.log('Route is none');
         }
@@ -1012,7 +1012,7 @@ $(document).ready(async function() {
         $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
         // setTimeout(() => {
             // $('.bus-info-popup').hide();
-        if (!passioDown) $('.knight-mover').show();
+        if (!passioDown && selectedCampus === 'nb') $('.knight-mover').show();
         // }, 5000);
         // $('.centerme-wrapper').addClass('centerme-bottom-right')
         $('.right-btns').addClass('right-btns-bottom')

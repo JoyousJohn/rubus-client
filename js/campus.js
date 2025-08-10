@@ -78,6 +78,20 @@ function campusChanged() {
     console.log(`campus changed to ${selectedCampus}`)
     stopsData = allStopsData[selectedCampus];
 
+    if (sim) {
+        endSim();
+    } else if (selectedCampus === 'nb') {
+        $('.sim-btn').fadeIn();
+    } else {
+        $('.sim-btn').hide();
+    }
+
+    if (selectedCampus === 'nb') {
+        checkMinRoutes();
+    } else {
+        $('.knight-mover, .knight-mover-mini').hide();
+    }
+
     if (map) {
         cleanupOldMap();
         makeNewMap();

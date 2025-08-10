@@ -868,6 +868,7 @@ async function startSim() {
 }
 
 async function endSim() {
+    $('.sim-popup').fadeOut();
     for (const busId in busData) {
         makeOoS(busId);
     }
@@ -875,24 +876,29 @@ async function endSim() {
     deleteAllPolylines();
     sim = false;
     stopSimMovementLoop();
+
+    if (selectedCampus === 'nb') {
+        $('.sim-btn').fadeIn();
+    }
+
     await fetchBusData();
     $('.updating-buses').slideUp();
     fetchWhere();
+    checkMinRoutes();
 }
 
 
 $(document).ready(async function() {
     $('.sim-btn').on('touchstart click', function() {
         $(this).hide();
-        $('.updating-buses, .slow-connection').hide();
+        $('.updating-buses, .slow-connection, .knight-mover').hide();
+        $('.right-btns').removeClass('right-btns-bottom')
         $('.sim-popup').slideDown();
         hideInfoBoxes();
         startSim();
     })
 
     $('.sim-exit').click(function() {
-        $('.sim-popup').fadeOut();
-        $('.sim-btn').fadeIn();
         $('.updating-buses').show();
         endSim();
     })

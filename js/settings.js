@@ -480,7 +480,7 @@ $(document).ready(function() {
         $('.rubus-ai-wrapper').show();
     }
 
-    if (settings['toggle-show-sim']) {
+    if (settings['toggle-show-sim'] && selectedCampus === 'nb') {
         $('.sim-btn').show();
     }
 
