@@ -678,12 +678,54 @@ function updateSimBus(busId) {
         const campusKey = routesByCampus[route] || selectedCampus || 'nb';
         const currStop = bus.next_stop || bus.stopId;
         const prevStop = bus.stopId || bus.prevStopId;
-        // Snap to stop lat/lng
+        // Snap to a random nearby polyline point within stop polygon or proximity, not exact stop lat/lng
         try {
             const stopInfo = allStopsData[campusKey][String(currStop)] || allStopsData[campusKey][currStop];
-            if (stopInfo) {
-                bus.lat = stopInfo.latitude;
-                bus.long = stopInfo.longitude;
+            const polygon = stopInfo && stopInfo.polygon ? stopInfo.polygon : null; // [[lng,lat],...]
+            const candidates = [];
+            // Build cumulative miles for each coord index
+            const cumMiles = [0];
+            for (let i = 0; i < simState.segDistances.length; i++) {
+                cumMiles.push(cumMiles[i] + simState.segDistances[i]);
+            }
+            const minMiles = Math.max(simState.totalMiles * 0.9, Math.min(simState.progressMiles, simState.totalMiles) - 1e-6);
+            // Collect candidate points from current segment near the stop, but not behind current progress
+            for (let i = 0; i < simState.coords.length; i++) {
+                if (cumMiles[i] < minMiles) continue; // skip points behind progress
+                const pt = simState.coords[i];
+                // If polygon exists, pnpoly test
+                if (polygon && polygon.length >= 3) {
+                    let inside = false;
+                    for (let j = 0, k = polygon.length - 1; j < polygon.length; k = j++) {
+                        const xi = polygon[j][0], yi = polygon[j][1];
+                        const xj = polygon[k][0], yj = polygon[k][1];
+                        const intersect = ((yi > pt.lat) !== (yj > pt.lat)) &&
+                            (pt.lng < (xj - xi) * (pt.lat - yi) / (yj - yi + 1e-12) + xi);
+                        if (intersect) inside = !inside;
+                    }
+                    if (inside) {
+                        candidates.push({ idx: i, pt });
+                        continue;
+                    }
+                }
+                // Fallback proximity (<= 35m) if polygon not present or point not inside
+                if (stopInfo) {
+                    const dMiles = typeof haversine === 'function' ? haversine(pt.lat, pt.lng, stopInfo.latitude, stopInfo.longitude) : 0;
+                    if (dMiles <= 35 / 1609.34) {
+                        candidates.push({ idx: i, pt });
+                    }
+                }
+            }
+            // Prefer later points (towards end) to minimize backward motion if any edge cases remain
+            if (candidates.length) {
+                const topQuartile = candidates.filter(c => cumMiles[c.idx] >= simState.totalMiles * 0.97);
+                const pool = topQuartile.length ? topQuartile : candidates;
+                const chosen = pool[Math.floor(Math.random() * pool.length)].pt;
+                bus.lat = chosen.lat;
+                bus.long = chosen.lng;
+            } else {
+                // No eligible on-road candidate; keep current position to avoid backward jumps
+                // (bus.lat and bus.long remain unchanged)
             }
         } catch {}
 
