@@ -5,6 +5,8 @@
   overflow: hidden;
   isolation: isolate;
   z-index: 0;
+  /* pointer-events: all; */
+  /* touch-action: auto; */
 }
 
 .sim-btn::before {
@@ -29,7 +31,7 @@
   transform-origin: 50% 50%;
   animation: simGradientSwirl 10s cubic-bezier(.4, 0, .2, 1) infinite alternate;
   z-index: -1;
-  pointer-events: none;
+  /* pointer-events: none; */
 }
 
 @keyframes simGradientSwirl {

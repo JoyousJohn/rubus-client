@@ -477,7 +477,7 @@ function endSim() {
 
 
 $(document).ready(function() {
-    $('.sim-btn').click(function() {
+    $('.sim-btn').on('touchstart click', function() {
         $(this).hide();
         $('.sim-popup').slideDown();
         startSim();
