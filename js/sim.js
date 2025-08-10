@@ -805,7 +805,7 @@ async function startSim() {
     }
     await generateSimBusData();
     makeBusesByRoutes();
-    removePreviouslyActiveStops(); // can also deleteAllStops, slightly less efficient...
+    deleteAllStops();
     addStopsToMap();
     setPolylines(SIM_ROUTES);
     populateRouteSelectors(activeRoutes);
