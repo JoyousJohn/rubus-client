@@ -925,7 +925,7 @@ function setSimTimeMultiplier(newMultiplier) {
 $(document).ready(async function() {
     $('.sim-btn').on('touchstart click', function() {
         $(this).hide();
-        $('.updating-buses, .slow-connection, .knight-mover').hide();
+        $('.updating-buses, .slow-connection, .knight-mover, .past-breaks-wrapper, .bus-btns, .bus-ridership-wrapper').hide();
         $('.right-btns').removeClass('right-btns-bottom')
         $('.sim-popup').slideDown();
         hideInfoBoxes();
@@ -937,7 +937,7 @@ $(document).ready(async function() {
     })
 
     $('.sim-exit').click(function() {
-        $('.updating-buses').show();
+        $('.updating-buses, .past-breaks-wrapper, .bus-btns, .bus-ridership-wrapper').show();
         endSim();
 
         sa_event('btn_press', {
