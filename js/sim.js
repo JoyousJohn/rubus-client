@@ -930,11 +930,19 @@ $(document).ready(async function() {
         $('.sim-popup').slideDown();
         hideInfoBoxes();
         startSim();
+
+        sa_event('btn_press', {
+            'btn': 'sim_start'
+        });
     })
 
     $('.sim-exit').click(function() {
         $('.updating-buses').show();
         endSim();
+
+        sa_event('btn_press', {
+            'btn': 'sim_exit'
+        });
     })
 
     // Cycle sim time multiplier: 1x -> 2x -> 4x -> 1x
@@ -942,6 +950,11 @@ $(document).ready(async function() {
         e.preventDefault();
         const next = SIM_TIME_MULTIPLIER === 1 ? 2 : (SIM_TIME_MULTIPLIER === 2 ? 4 : 1);
         setSimTimeMultiplier(next);
+
+        sa_event('btn_press', {
+            'btn': 'sim_speed',
+            'speed': next
+        });
     })
 })
 
