@@ -134,9 +134,29 @@ function getNextStopId(route, stopId) {
     return nextStopId
 }
 
+// Given a route with potentially duplicated stopIds (e.g., SAC NB appears twice),
+// determine the stop that comes immediately after currentStopId when approaching
+// from prevStopId along that route's sequence.
+function getNextStopAfterCurrentGivenPrev(route, prevStopId, currentStopId) {
+    try {
+        const routeStops = stopLists[route] || [];
+        if (!routeStops.length) return getNextStopId(route, currentStopId);
+        const len = routeStops.length;
+        for (let i = 0; i < len; i++) {
+            if (routeStops[i] === prevStopId && routeStops[(i + 1) % len] === currentStopId) {
+                return routeStops[(i + 2) % len];
+            }
+        }
+        // Fallback if pattern not found
+        return getNextStopId(route, currentStopId);
+    } catch (e) {
+        return getNextStopId(route, currentStopId);
+    }
+}
+
 function updateStopBuses(stopId, actuallyShownRoute) {
 
-    let servicingBuses = {}
+    let servicingEntries = []
 
     $('.info-stop-servicing').empty();
 
@@ -177,58 +197,67 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             }
 
             if (busData[busId]['at_stop'] && busStopId === stopId) {
-                servicingBuses[busId] = {
-                    'route': servicedRoute,
-                    'eta': 0,
-                }
-            }
-
-            else if (busETAs[busId]) {
-
-                let eta;
-                if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && stopId === 3) { // special case
-                    eta = Math.min(...Object.values(busETAs[busId][3]['via']));
+                servicingEntries.push({
+                    busId: busId,
+                    route: servicedRoute,
+                    eta: 0
+                })
+            } else if (busETAs[busId]) {
+                if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && stopId === 3) { // special case: show both VIA paths
+                    const viaMap = busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
+                    if (viaMap && Object.keys(viaMap).length) {
+                        Object.entries(viaMap).forEach(([prevIdStr, etaSecs]) => {
+                            const prevId = Number(prevIdStr);
+                            const etaMins = Math.ceil(etaSecs / 60);
+                            const nextStopId = getNextStopAfterCurrentGivenPrev(servicedRoute, prevId, 3);
+                            const nextStop = stopsData[nextStopId];
+                            const nextStopName = nextStop ? (nextStop.shorterName || nextStop.shortName || nextStop.mainName || nextStop.name) : '';
+                            servicingEntries.push({
+                                busId: busId,
+                                route: servicedRoute,
+                                eta: etaMins,
+                                nextStopId: nextStopId,
+                                nextStopName: nextStopName,
+                                viaPrevStopId: prevId
+                            })
+                        })
+                    }
                 } else {
-                    eta = busETAs[busId][stopId]
-                }
-
-                servicingBuses[busId] = {
-                    'route': servicedRoute,
-                    'eta': Math.ceil(eta/60) // can ceil only if this stop is the next stop, otherwise round to match the eta shown in bus info wrapper?
+                    const etaSecs = busETAs[busId][stopId]
+                    if (etaSecs !== undefined) {
+                        servicingEntries.push({
+                            busId: busId,
+                            route: servicedRoute,
+                            eta: Math.ceil(etaSecs/60)
+                        })
+                    }
                 }
             }
         })
     })
 
-    const sortedBusIds = Object.entries(servicingBuses)
-    .sort(([busIdA, a], [busIdB, b]) => {
-        const aDepot = busData[busIdA]?.atDepot;
-        const bDepot = busData[busIdB]?.atDepot;
-        if (aDepot && !bDepot) return 1;
-        if (!aDepot && bDepot) return -1;
+    const sortedEntries = servicingEntries
+        .sort((a, b) => {
+            const aDepot = busData[a.busId]?.atDepot;
+            const bDepot = busData[b.busId]?.atDepot;
+            if (aDepot && !bDepot) return 1;
+            if (!aDepot && bDepot) return -1;
 
-        const aInvalid = !isValid(busIdA);
-        const bInvalid = !isValid(busIdB);
-        if (aInvalid && !bInvalid) return 1;
-        if (!aInvalid && bInvalid) return -1;
+            const aInvalid = !isValid(a.busId);
+            const bInvalid = !isValid(b.busId);
+            if (aInvalid && !bInvalid) return 1;
+            if (!aInvalid && bInvalid) return -1;
 
-        // Add check for negative zero
-        const aIsNegZero = Object.is(a.eta, -0);
-        const bIsNegZero = Object.is(b.eta, -0);
-        if (aIsNegZero && !bIsNegZero) return 1;
-        if (!aIsNegZero && bIsNegZero) return -1;
-
-        return a.eta - b.eta;
-    })
-    .map(([busId]) => busId);
+            // Keep 0 min at top relative ordering otherwise sort by ETA
+            return a.eta - b.eta;
+        });
 
     $('.stop-info-buses-grid, .stop-info-buses-grid-next').empty();
 
     // const infoNextStopsScrollPosition = $('.info-next-stops').scrollTop();
     // alert(infoNextStopsScrollPosition)
 
-    sortedBusIds.forEach(busId => {
-        const data = servicingBuses[busId]
+    sortedEntries.forEach(data => {
 
         const currentTime = new Date();
         currentTime.setMinutes(currentTime.getMinutes() + data.eta);
@@ -238,26 +267,31 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             hour12: true
         });
 
-        $('.stop-info-buses-grid').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`));
+        const $routeCell = $('<div class="stop-bus-route"></div>');
+        $routeCell.append(`<div>${data.route.toUpperCase()}</div>`);
+        if (data.nextStopName) {
+            $routeCell.append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1;">Towards ${data.nextStopName}</div>`);
+        }
+        $('.stop-info-buses-grid').append($routeCell);
 
         let stopOctaconVisibilityClass = 'none'
-        if (busData[busId].overtime) {
+        if (busData[data.busId].overtime) {
             stopOctaconVisibilityClass = ''
         }
 
         let stopOoSVisibilityClass = 'none';
-        if (busData[busId].oos) {
+        if (busData[data.busId].oos) {
             stopOoSVisibilityClass = '';
         }
 
         let stopDepotVisibilityClass = 'none';
-        if (busData[busId].atDepot) {
+        if (busData[data.busId].atDepot) {
             stopDepotVisibilityClass = '';
         }
 
         const $stopBusElm = $(`<div class="flex justify-between align-center pointer">
             <div class="flex gap-x-0p5rem">
-                <div class="stop-bus-id">${busData[busId].busName}</div>
+                <div class="stop-bus-id">${busData[data.busId].busName}</div>
                 <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
                 <div class="stop-depot ${stopDepotVisibilityClass}">Depot</div>
             </div>
@@ -275,10 +309,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         } else if (Object.is(data.eta, 0)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
             $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
-        } else if (!busData[busId].atDepot) {
+        } else if (!busData[data.busId].atDepot) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${data.eta >= 60 ? Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm' : data.eta + 'm'}</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
-        } else if (busData[busId].atDepot || distanceFromLine(busId) || !isValid(busId)) {
+        } else if (busData[data.busId].atDepot || distanceFromLine(data.busId) || !isValid(data.busId)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Xm</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
         }
@@ -291,7 +325,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-bus-route').last().css('color', colorMappings[data.route]);
             $('.stop-info-buses-grid').children().slice(-4).click(function() {
                 sourceStopId = stopId;
-                flyToBus(busId);
+                flyToBus(data.busId);
                 $('.stop-info-popup').hide(); // this was def being handled somewhere else before... need to check what happened sometime. Hard finding changes in recent commits that might've affected this.
             });
         }
@@ -300,31 +334,18 @@ function updateStopBuses(stopId, actuallyShownRoute) {
     
 
     const loopTimes = calculateLoopTimes();
-    const nextLoopServicing = JSON.parse(JSON.stringify(servicingBuses));
-
-    for (busId in servicingBuses) {
-        if (!busData[busId].oos && !busData[busId].atDepot) {
-            nextLoopServicing[busId].eta += loopTimes[servicingBuses[busId].route];
-            // nextLoopServicing[busId].isNext = true;
-        } else {
-            delete nextLoopServicing[busId];
+    const nextLoopEntries = servicingEntries.reduce((acc, entry) => {
+        if (!busData[entry.busId].oos && !busData[entry.busId].atDepot) {
+            acc.push({
+                ...entry,
+                eta: entry.eta + loopTimes[entry.route]
+            })
         }
-    }
+        return acc;
+    }, [])
+    .sort((a, b) => a.eta - b.eta);
 
-    const sortedNextLoopBusIds = Object.entries(nextLoopServicing)
-    .sort(([busIdA, a], [busIdB, b]) => {
-        const aDepot = busData[busIdA]?.atDepot;
-        const bDepot = busData[busIdB]?.atDepot;
-
-        if (aDepot && !bDepot) return 1;
-        if (!aDepot && bDepot) return -1;
-
-        return a.eta - b.eta;
-    })
-    .map(([busId]) => busId);
-
-    sortedNextLoopBusIds.forEach(busId => {
-        const data = nextLoopServicing[busId]
+    nextLoopEntries.forEach(data => {
 
         const currentTime = new Date();
         currentTime.setMinutes(currentTime.getMinutes() + data.eta);
@@ -335,13 +356,18 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         });
 
 
-        if (!busData[busId].overtime && !busData[busId].oos && !busData[busId].atDepot && isValid(busId)) {
+        if (!busData[data.busId].overtime && !busData[data.busId].oos && !busData[data.busId].atDepot && isValid(data.busId)) {
 
-            $('.stop-info-buses-grid-next').append($(`<div class="stop-bus-route">${data.route.toUpperCase()}</div>`));
+            const $routeCellNext = $('<div class="stop-bus-route"></div>');
+            $routeCellNext.append(`<div>${data.route.toUpperCase()}</div>`);
+            if (data.nextStopName) {
+                $routeCellNext.append(`<div class="stop-bus-next-stop" style="font-size: 0.8em; margin-top: 0.1rem; line-height: 1.05;">${data.nextStopName}</div>`);
+            }
+            $('.stop-info-buses-grid-next').append($routeCellNext);
 
             const $stopBusElm = $(`<div class="flex justify-between align-center pointer">
                 <div class="flex gap-x-0p5rem">
-                    <div class="stop-bus-id">${busData[busId].busName}</div>
+                    <div class="stop-bus-id">${busData[data.busId].busName}</div>
                 </div>
             </div>`)
             $('.stop-info-buses-grid-next').append($stopBusElm);
@@ -350,10 +376,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 // $('.stop-info-buses-grid').append(`<div></div>`)
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Here</div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="pointer"></div>`);
-            } else if (!busData[busId].atDepot) {
+            } else if (!busData[data.busId].atDepot) {
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer right">${data.eta >= 60 ? Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm' : data.eta + 'm'}</div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
-            } else if (busData[busId].atDepot || distanceFromLine(busId)) {
+            } else if (busData[data.busId].atDepot || distanceFromLine(data.busId)) {
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Xm</div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
             }
@@ -366,7 +392,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 $('.stop-bus-route').last().css('color', colorMappings[data.route]);
                 $('.stop-info-buses-grid-next').children().slice(-4).click(function() {
                     sourceStopId = stopId;
-                    flyToBus(busId);
+                    flyToBus(data.busId);
                     $('.stop-info-popup').hide();
                 });
             }
