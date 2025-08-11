@@ -894,7 +894,7 @@ async function makeRidershipChart() {
 
 async function updateRidershipChart() {
     try {
-        const response = await fetch('https://transloc.up.railway.app/ridership');
+        const response = await fetch('https://demo.rubus.live/ridership');
         if (!response.ok) throw new Error('Network response was not ok');
         
         const timeRiderships = await response.json();

@@ -1,7 +1,7 @@
 $('.events-link').click(function() {
     $('.involved-wrapper').show();
 
-    fetch('https://transloc.up.railway.app/involved', {
+    fetch('https://demo.rubus.live/involved', {
     })
         .then(response => response.json())
         .then(data => {

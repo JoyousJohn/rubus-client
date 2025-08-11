@@ -31,7 +31,7 @@ function openRUBusSocket() {
     if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
         socket = new WebSocket('ws://127.0.0.1:5000/ws');
     } else {
-        socket = new WebSocket('wss://transloc.up.railway.app/ws');
+        socket = new WebSocket('wss://demo.rubus.live/ws');
     }
 
     socket.addEventListener("open", (event) => {

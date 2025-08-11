@@ -440,7 +440,7 @@ function makeOoS(busId) {
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
         checkMinRoutes();
-        
+
         if (shownRoute && shownRoute === route) {
             toggleRoute(route);
         }
@@ -636,7 +636,7 @@ function updateTimeToStops(busIds) {
 
 async function fetchWhere() {
     try {
-        const response = await fetch('https://transloc.up.railway.app/where');
+        const response = await fetch('https://demo.rubus.live/where');
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -693,7 +693,7 @@ async function fetchWhere() {
 
 async function startOvernight(setColorBack) {
 
-    response = await fetch('https://transloc.up.railway.app/overnight');
+    response = await fetch('https://demo.rubus.live/overnight');
 
     if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -936,7 +936,7 @@ let joined_service = {};
 
 async function fetchETAs() {
     try {
-        const response = await fetch('https://transloc.up.railway.app/etas');
+        const response = await fetch('https://demo.rubus.live/etas');
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -952,7 +952,7 @@ async function fetchETAs() {
     }
 
     try {
-        const response = await fetch('https://transloc.up.railway.app/waits');
+        const response = await fetch('https://demo.rubus.live/waits');
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -977,7 +977,7 @@ $(document).ready(async function() {
 
     async function fetchJoinTimes() {
         try {
-            const response = await fetch('https://transloc.up.railway.app/joined_service');
+            const response = await fetch('https://demo.rubus.live/joined_service');
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }

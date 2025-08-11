@@ -34,7 +34,7 @@ function popContact() {
 function contactClicked() {
     if (!contact) {
         $('.footer-contact-loading').show();
-        fetch('https://transloc.up.railway.app/contact')
+        fetch('https://demo.rubus.live/contact')
             .then(response => response.json())
             .then(data => {
                 contact = data;

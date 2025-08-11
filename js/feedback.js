@@ -15,7 +15,7 @@ function sendFeedback() {
         };
     
         $.ajax({
-            url: 'https://transloc.up.railway.app/feedback',
+            url: 'https://demo.rubus.live/feedback',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(payload),

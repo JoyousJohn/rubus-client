@@ -91,7 +91,7 @@ async function getPolylineData(routeName) {
             // console.log(`Using cached polyline data for route ${routeName}`);
             polylineData = JSON.parse(localStorage.getItem(`polylineData.${routeName}`));
         } else {
-            const response = await fetch('https://transloc.up.railway.app/r/' + routeName);
+            const response = await fetch('https://demo.rubus.live/r/' + routeName);
             if (response.status === 200) {
                 const data = await response.json();
                 localStorage.setItem(`polylineData.${routeName}`, JSON.stringify(data));

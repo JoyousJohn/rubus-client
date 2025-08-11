@@ -1750,7 +1750,7 @@ function getBusBreaks(busId) {
         return;
     }
 
-    fetch(`https://transloc.up.railway.app/get_breaks?bus_id=${busId}`)
+    fetch(`https://demo.rubus.live/get_breaks?bus_id=${busId}`)
         .then(response => response.json())
         .then(data => {
             busBreaksCache[busId] = {
@@ -1776,7 +1776,7 @@ function updateHistoricalCapacity(busId) {
                          (currentMinute % 5 === 1 && new Date().getTime() - busRiderships.lastUpdate > 60000);
                          
     if (Object.keys(busRiderships).length === 0 || shouldRefresh) {
-        fetch('https://transloc.up.railway.app/bus_ridership')
+        fetch('https://demo.rubus.live/bus_ridership')
             .then(response => response.json())
             .then(data => {
                 const dataChanged = JSON.stringify(busRiderships) !== JSON.stringify(data);
