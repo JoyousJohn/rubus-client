@@ -926,11 +926,12 @@ html, body {
 }
 
 .ridership-history-title {
-    font-size: 1.8rem;
-    color: var(--theme-bg);
-    background-color: var(--theme-color);
+    font-size: 1.5rem;
+    color: var(--theme-color);
+    /* background-color: var(--theme-color); */
     padding: 0.5rem 1.5rem;
     border-radius: 0.8rem;
+    text-decoration: underline;
 }
 
 .ridership-avg, .ridership-max {
