@@ -2,7 +2,7 @@
   position: relative;
   color: rgb(255, 255, 255);
   background-color: #f8f5ff; /* fallback */
-  overflow: hidden;
+  overflow: clip;
   isolation: isolate;
   z-index: 0;
   /* pointer-events: all; */
