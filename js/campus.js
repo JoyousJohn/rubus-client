@@ -80,7 +80,7 @@ function campusChanged() {
 
     if (sim) {
         endSim();
-    } else if (selectedCampus === 'nb') {
+    } else if (settings['toggle-show-sim'] && selectedCampus === 'nb') {
         $('.sim-btn').fadeIn();
     } else {
         $('.sim-btn').hide();

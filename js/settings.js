@@ -95,6 +95,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 countdownInterval = setInterval(() => {
 
                     if (popupBusId && !busData[popupBusId].overtime) {
+                        const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
                         $('.next-stop-eta').each(function() {
                             let text = $(this).text();
                             // Check for "Xm Xs" format
@@ -105,20 +106,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
                             if (matchMinutes) {
                                 let minutes = parseInt(matchMinutes[1]);
                                 let seconds = parseInt(matchMinutes[2]);
-                                
-                                if (seconds > 0) {
-                                    seconds--;
-                                } else if (minutes > 0) {
-                                    minutes--;
-                                    seconds = 59;
-                                }
-                                
-                                $(this).text(minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`);
+                                let total = minutes * 60 + seconds;
+                                total = Math.max(0, total - step);
+                                const newM = Math.floor(total / 60);
+                                const newS = total % 60;
+                                $(this).text(newM > 0 ? `${newM}m ${newS}s` : `${newS}s`);
                             } else if (matchSeconds) {
                                 let seconds = parseInt(matchSeconds[1]);
-                                if (seconds > 0) {
-                                    $(this).text(`${seconds - 1}s`);
-                                }
+                                const next = Math.max(0, seconds - step);
+                                $(this).text(`${next}s`);
                             }
                         });
                     }
@@ -403,6 +399,7 @@ $(document).ready(function() {
         countdownInterval = setInterval(() => {
 
             if (popupBusId && !busData[popupBusId].overtime) { // && !busData[popupBusId].at_stop
+                const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
                 $('.next-stop-eta').each(function() {
                     let text = $(this).text();
                     // Check for "Xm Xs" format
@@ -415,20 +412,15 @@ $(document).ready(function() {
                     if (matchMinutes) {
                         let minutes = parseInt(matchMinutes[1]);
                         let seconds = parseInt(matchMinutes[2]);
-                        
-                        if (seconds > 0) {
-                            seconds--;
-                        } else if (minutes > 0) {
-                            minutes--;
-                            seconds = 59;
-                        }
-                        
-                        ETAText = (minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`);
+                        let total = minutes * 60 + seconds;
+                        total = Math.max(0, total - step);
+                        const newM = Math.floor(total / 60);
+                        const newS = total % 60;
+                        ETAText = (newM > 0 ? `${newM}m ${newS}s` : `${newS}s`);
                     } else if (matchSeconds) {
                         let seconds = parseInt(matchSeconds[1]);
-                        if (seconds > 0) {
-                            ETAText = (`${seconds - 1}s`);
-                        }
+                        const next = Math.max(0, seconds - step);
+                        ETAText = (`${next}s`);
                     }
 
                     $(this).text(ETAText)

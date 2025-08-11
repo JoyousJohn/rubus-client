@@ -2087,6 +2087,9 @@ function startStoppedForTimer(busId) {
         $('.bus-stopped-for').show().find('.time').text(`Stopped for ${minutes}m ${remainingSeconds}s`);
     } else if (secondsDifference > 0) {
         $('.bus-stopped-for').show().find('.time').text("Stopped for " + secondsDifference + "s");
+    } else {
+        // Show immediately even if just arrived (0s) - should only affect sim buses
+        $('.bus-stopped-for').show().find('.time').text("Stopped for 0s");
     }
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
@@ -2095,7 +2098,8 @@ function startStoppedForTimer(busId) {
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {
         if (popupBusId === busId) {
-            seconds++;
+            const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
+            seconds += step;
             if (seconds > 59) {
                 const minutes = Math.floor(seconds / 60);
                 const remainingSeconds = seconds % 60;

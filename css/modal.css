@@ -114,11 +114,15 @@
     user-select: none;
 }
 
-.sim-exit {
+.sim-exit, .sim-speed {
     font-size: 1.3rem;
     font-weight: bold;
     border-radius: 2rem;
-    background-color: rgb(154, 235, 235);
+    background-color: rgb(104, 213, 213);
     padding: 0.2rem 0.5rem;
     cursor: pointer;
+}
+
+.sim-speed {
+    padding: 0.2rem 0.8rem !important;
 }

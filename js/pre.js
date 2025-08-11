@@ -440,6 +440,7 @@ function makeOoS(busId) {
         delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
         checkMinRoutes();
+        
         if (shownRoute && shownRoute === route) {
             toggleRoute(route);
         }

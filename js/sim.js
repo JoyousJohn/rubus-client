@@ -12,6 +12,9 @@ const SIM_TICK_MS = 300;          // movement tick
 const SIM_MIN_ETA_UPDATE_MS = 1000; // min interval between ETA updates per batch
 const SIM_PROGRESS_DELTA_FOR_UPDATE = 0.03; // 3% progress change triggers ETA update
 
+// Global simulation time multiplier (1x, 2x, 4x)
+window.SIM_TIME_MULTIPLIER = 1;
+
 let simMoveTimer = null;
 let simEtaPending = new Set();
 let simEtaUpdateLast = 0;
@@ -547,7 +550,7 @@ function initSimMovementForBus(busId) {
         totalMiles: seg.totalMiles,
         progressMiles: 0,
         moving: !busData[busId].at_stop,
-        waitUntil: busData[busId].at_stop ? (Date.now() + randomDwellMs(busId)) : null,
+        waitUntil: busData[busId].at_stop ? (Date.now() + (randomDwellMs(busId) / Math.max(1, window.SIM_TIME_MULTIPLIER))) : null,
         speedMph: busData[busId].at_stop ? 0 : (SIM_MIN_SPEED_MPH + Math.random() * 3),
         targetSpeedMph: SIM_MIN_SPEED_MPH + Math.random() * 5,
         lastTick: Date.now(),
@@ -604,7 +607,7 @@ function initSimMovementForBus(busId) {
     const initProgress = progressPercentFor(busId);
     busData[busId].progress = initProgress;
     busData[busId].sim.lastReportedProgress = initProgress;
-    simEtaPending.add(String(busId));
+    simEtaPending.add(busId);
 }
 
 function randomDwellMs(busId) {
@@ -629,7 +632,8 @@ function updateSimBus(busId) {
     const simState = bus.sim;
 
     const now = Date.now();
-    const dtSec = Math.min(1.0, (now - simState.lastTick) / 1000);
+    const dtBase = Math.min(1.0, (now - simState.lastTick) / 1000);
+    const dtSec = dtBase * Math.max(1, window.SIM_TIME_MULTIPLIER);
     simState.lastTick = now;
 
     // Handle dwell at stop
@@ -644,7 +648,7 @@ function updateSimBus(busId) {
             // Progress reset and ETA refresh on departure
             bus.progress = 0;
             simState.lastReportedProgress = 0;
-            simEtaPending.add(String(busId));
+            simEtaPending.add(busId);
         } else {
             return;
         }
@@ -739,23 +743,22 @@ function updateSimBus(busId) {
         bus.timeArrived = new Date();
         bus.progress = 0;
         simState.lastReportedProgress = 0;
-        simEtaPending.add(String(busId));
+        simEtaPending.add(busId);
 
         // Immediately refresh GUI if shown
         try {
-            updateTimeToStops([String(busId)]);
-            if (String(popupBusId) === String(busId)) {
-                startStoppedForTimer(busId);
+            updateTimeToStops([busId]);
+            if (popupBusId === busId) {
                 popInfo(busId);
             }
             if (popupStopId) {
                 updateStopBuses(popupStopId);
             }
-        } catch (e) { alert(''); }
+        } catch (e) {}
 
         // Reset sim state for dwell
         simState.moving = false;
-        simState.waitUntil = now + randomDwellMs(busId);
+        simState.waitUntil = now + (randomDwellMs(busId) / Math.max(1, window.SIM_TIME_MULTIPLIER));
         simState.speedMph = 0;
         simState.targetSpeedMph = SIM_MIN_SPEED_MPH + Math.random() * 5;
 
@@ -811,7 +814,7 @@ function updateSimBus(busId) {
     bus.progress = newProgress;
     if (Math.abs(newProgress - simState.lastReportedProgress) >= SIM_PROGRESS_DELTA_FOR_UPDATE) {
         simState.lastReportedProgress = newProgress;
-        simEtaPending.add(String(busId));
+        simEtaPending.add(busId);
     }
 
     // Plot
@@ -822,14 +825,16 @@ function startSimMovementLoop() {
     if (simMoveTimer) return;
     simMoveTimer = setInterval(() => {
         for (const busId in busData) {
-            if (busData[busId] && busData[busId].type === 'sim') {
-                updateSimBus(busId);
+            const bus = busData[busId];
+            if (bus && bus.type === 'sim') {
+                updateSimBus(Number(busId));
             }
         }
 
         // Throttled batch ETA updates for sim buses
         const now = Date.now();
-        if (simEtaPending.size && now - simEtaUpdateLast >= SIM_MIN_ETA_UPDATE_MS) {
+        const minEtaInterval = SIM_MIN_ETA_UPDATE_MS / Math.max(1, window.SIM_TIME_MULTIPLIER);
+        if (simEtaPending.size && now - simEtaUpdateLast >= minEtaInterval) {
             try {
                 const ids = Array.from(simEtaPending);
                 simEtaPending.clear();
@@ -863,11 +868,13 @@ async function startSim() {
     addStopsToMap();
     setPolylines(SIM_ROUTES);
     populateRouteSelectors(activeRoutes);
-    try { updateTimeToStops(Object.keys(busData)); } catch (e) {}
+    try { updateTimeToStops(Object.keys(busData).map(id => Number(id))); } catch (e) {}
     startSimMovementLoop();
 }
 
 async function endSim() {
+    // Ensure real-time mode runs at normal speed
+    try { setSimTimeMultiplier(1); } catch (e) { window.SIM_TIME_MULTIPLIER = 1; try { $('.sim-speed').text('1x'); } catch (_) {} }
     $('.sim-popup').fadeOut();
     for (const busId in busData) {
         makeOoS(busId);
@@ -888,6 +895,33 @@ async function endSim() {
 }
 
 
+// Change simulation time multiplier and adjust waiting timers accordingly
+function setSimTimeMultiplier(newMultiplier) {
+    const allowed = [1, 2, 4];
+    if (!allowed.includes(newMultiplier)) return;
+    const prev = SIM_TIME_MULTIPLIER;
+    if (prev === newMultiplier) return;
+    SIM_TIME_MULTIPLIER = newMultiplier;
+
+    try { $('.sim-speed').text(`${newMultiplier}x`); } catch (e) {}
+
+    // Re-scale pending dwell timers so remaining wait respects the new speed
+    for (const busId in busData) {
+        const bus = busData[busId];
+        if (!bus || bus.type !== 'sim' || !bus.sim) continue;
+        const s = bus.sim;
+        if (!s.moving && typeof s.waitUntil === 'number' && s.waitUntil > Date.now()) {
+            const remaining = s.waitUntil - Date.now();
+            const scaledRemaining = remaining * (prev / newMultiplier);
+            s.waitUntil = Date.now() + scaledRemaining;
+        }
+    }
+
+    // Retune UI countdown cadence if available
+    try { if (typeof window.resetEtaCountdownInterval === 'function') { window.resetEtaCountdownInterval(); } } catch (e) {}
+}
+
+
 $(document).ready(async function() {
     $('.sim-btn').on('touchstart click', function() {
         $(this).hide();
@@ -901,6 +935,13 @@ $(document).ready(async function() {
     $('.sim-exit').click(function() {
         $('.updating-buses').show();
         endSim();
+    })
+
+    // Cycle sim time multiplier: 1x -> 2x -> 4x -> 1x
+    $('.sim-speed').on('touchstart click', function(e) {
+        e.preventDefault();
+        const next = SIM_TIME_MULTIPLIER === 1 ? 2 : (SIM_TIME_MULTIPLIER === 2 ? 4 : 1);
+        setSimTimeMultiplier(next);
     })
 })
 
