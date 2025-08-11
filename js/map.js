@@ -939,8 +939,15 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         return; // Exit early - no animation needed
     }
 
-    // Calculate animation duration
-    const duration = (new Date().getTime() - busData[busId].previousTime) + 2500;
+    // Calculate animation duration (scaled for sim buses)
+    const baseDuration = (new Date().getTime() - busData[busId].previousTime) + 2500;
+    let duration = baseDuration;
+    try {
+        if (window.sim === true && busData[busId] && busData[busId].type === 'sim') {
+            const mult = Math.max(1, (window.SIM_TIME_MULTIPLIER || 1));
+            duration = baseDuration / mult;
+        }
+    } catch (e) {}
     const startTime = performance.now();
     busData[busId].previousTime = new Date().getTime();
 
@@ -1054,6 +1061,20 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
     
     // Start the animation
     animationFrames[busId] = requestAnimationFrame(animateMarker);
+};
+
+// Allow sim to retime ongoing animations when speed multiplier changes
+window.retimeSimAnimations = function() {
+    try {
+        if (window.sim !== true) return;
+        for (const busId in busData) {
+            const bus = busData[busId];
+            if (!bus || bus.type !== 'sim') continue;
+            if (!busMarkers[busId]) continue;
+            // Restart animation from current position to current target with new duration scaling
+            updateMarkerPosition(Number(busId), false);
+        }
+    } catch (e) {}
 };
 
 let selectedMarkerId;

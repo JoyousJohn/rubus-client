@@ -919,6 +919,9 @@ function setSimTimeMultiplier(newMultiplier) {
 
     // Retune UI countdown cadence if available
     try { if (typeof window.resetEtaCountdownInterval === 'function') { window.resetEtaCountdownInterval(); } } catch (e) {}
+
+    // Retune active marker animations for sim buses
+    try { if (typeof window.retimeSimAnimations === 'function') { window.retimeSimAnimations(); } } catch (e) {}
 }
 
 

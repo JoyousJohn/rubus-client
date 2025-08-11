@@ -340,7 +340,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-show-sim':
             settings['toggle-show-sim'] = isChecked;
 
-            if (isChecked && !sim) {
+            if (isChecked && !sim && selectedCampus === 'nb') {
                 $('.sim-btn').show();
             } else {
                 $('.sim-btn').hide();
