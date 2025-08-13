@@ -34,6 +34,11 @@
     --theme-short-stops-color: #29c529;
 }
 
+@font-face {
+    font-family: 'dunkin';
+    src: url('../lib/Dunkin.otf') format('opentype');
+}
+
 body {
     margin: 0;
     height: 100dvh; /* cool unit */

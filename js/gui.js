@@ -1152,6 +1152,42 @@ const toggleSettings = [
     'toggle-show-sim',
 ]
 
+let colorMappings;
+
+const defaultColorMappings = {
+    'ee': '#fd0000', // bc red is also a color in color circle select, checkmark will appear double
+    'f': 'IndianRed',
+    'h': 'RoyalBlue',
+    'a': 'Orchid',
+    'lx': 'Gold',
+    'b': 'LimeGreen',
+    'rexb': 'LightSeaGreen',
+    'rexl': 'Coral',
+    'bhe': 'SlateBlue',
+    'bl': 'SlateBlue',
+    'on1': 'BlueViolet',
+    'on2': 'MediumTurquoise',
+    'wknd1': 'HotPink',
+    'wknd2': 'RebeccaPurple',
+    'ftbl': 'gray',
+    'none': 'lightgray',
+    'c': 'MediumVioletRed',
+    'all': 'MediumSpringGreen',
+    'winter1': 'SpringGreen',
+    'winter2': 'crimson',
+    'fav': 'gold',
+    'summer1': 'Plum',
+    'summer2': 'PowderBlue',
+    'commencement': 'LightSalmon',
+
+    'psx': 'LightSalmon',
+    'ps': 'LightGreen',
+    'ccx': 'Plum',
+    'cc': 'PaleTurquoise',
+
+    'cam': 'navy',
+}
+
 let defaultSettings = {
     'font': 'PP Neue Montreal',
     'marker_size': 'medium',
@@ -1219,7 +1255,6 @@ function updateSettings() {
     if (settings) {
 
         settings = JSON.parse(settings);
-
         for (let key in defaultSettings) {
             if (!settings.hasOwnProperty(key) && key !== 'theme') {
                 settings[key] = defaultSettings[key];
@@ -1240,7 +1275,7 @@ function updateSettings() {
 
         localStorage.setItem('settings', JSON.stringify(settings))
 
-        document.documentElement.style.setProperty('--font-family', settings['font']);
+        document.documentElement.style.setProperty('--font-family', settings['font'] + ', sans-serif');
 
     } else {
         setDefaultSettings();
@@ -1269,7 +1304,7 @@ function updateSettings() {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['font'] = $(this).attr('font-option')
-            document.documentElement.style.setProperty('--font-family', settings['font']);
+            document.documentElement.style.setProperty('--font-family', settings['font'] + ', sans-serif');
         }
 
         else if (settingsOption === 'marker_size') {
