@@ -133,6 +133,8 @@ async function immediatelyUpdateBusDataPost() {
 async function fetchBusData(immediatelyUpdate, isInitial) {
 
     if (sim) return;
+    if (busFetchInProgress) return;
+    busFetchInProgress = true;
 
     const formData = '{"s0":"1268","sA":1}';
     // const formData = '{"s0":"1268","sA":1,"rA":15,"r0":"41231","r1":"4067","r2":"43711","r3":"43431","r4":"43440","r5":"43441","r6":"43398","r7":"43991","r8":"43990","r9":"43973","r10":"43397","r11":"4088","r12":"4063","r13":"4056","r14":"4098", "r15": "-1"}'
@@ -142,7 +144,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
     const timeSinceLastPoll = currentTime - lastPollTime;
     // console.log(timeSinceLastPoll)
 
-    if ((timeSinceLastPoll > pollDelay + pollDelayBuffer && !isInitial) || settings['toggle-always-immediate-update']) {
+    // Determine if we should force immediate update
+    // Priority: explicit caller flag > forced resume flag > long gap since last update > setting toggle
+    const longGapSinceUpdate = (currentTime - (lastUpdateTime || 0)) > (pollDelay + pollDelayBuffer);
+    const shouldImmediateUpdate = Boolean(immediatelyUpdate) || forceImmediateUpdate || longGapSinceUpdate || settings['toggle-always-immediate-update'];
+    if (shouldImmediateUpdate && !isInitial) {
         immediatelyUpdate = true;
         immediatelyUpdateBusDataPre();
     } else {
@@ -364,6 +370,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             immediatelyUpdateBusDataPost();
         }
 
+        // Mark the time of the last successful update and clear force flag
+        lastUpdateTime = currentTime;
+        forceImmediateUpdate = false;
+
         // console.log('activeBuses', activeBuses)
 
         // activeBuses = activeBuses.filter(num => num !== 13209);
@@ -401,6 +411,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
     } catch (error) {
         console.error('Error fetching bus data:', error);
+    } finally {
+        busFetchInProgress = false;
     }
 }
 
@@ -1057,6 +1069,25 @@ $(document).ready(async function() {
 
     wsClient.connect()
     openRUBusSocket();
+
+    // On app resume/return, force the next update to be immediate and fetch promptly
+    const triggerImmediateResumeUpdate = () => {
+        forceImmediateUpdate = true;
+        // Kick a fetch right away to avoid waiting for the interval
+        if (!settings['toggle-pause-passio-polling']) { fetchBusData(true); }
+    };
+    window.addEventListener('focus', triggerImmediateResumeUpdate);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            triggerImmediateResumeUpdate();
+        }
+    });
+    window.addEventListener('pageshow', (ev) => {
+        // pageshow fires when bfcache restores the page in Safari/iOS/Chrome
+        if (ev.persisted) {
+            triggerImmediateResumeUpdate();
+        }
+    });
 
     // if (!wsClient.ws) {
         startBusPolling();

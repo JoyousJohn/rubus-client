@@ -55,6 +55,8 @@ $(document).ready(function() {
     // If none of the above, Leaflet defaults to L.svg() without explicit padding.
 
     map = L.map('map', mapOptions).setView(views[selectedCampus], 14); // Rutgers Student Center
+    try { document.dispatchEvent(new Event('rubus-map-created')); } catch (_) {}
+    try { if (typeof initSpoofing === 'function') { initSpoofing(); } } catch (_) {}
 
     map.setMinZoom(12);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
@@ -874,6 +876,15 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         _latlngs: [prevPathEndpoint, endLatLng]
     };
 
+	// Prepare two-segment path: current -> previous target -> new target
+	let previousTargetLatLng = prevPathEndpoint;
+	if (previousTargetLatLng && previousTargetLatLng.lat !== undefined && previousTargetLatLng.lng !== undefined) {
+		previousTargetLatLng = L.latLng(previousTargetLatLng.lat, previousTargetLatLng.lng);
+	}
+	const distanceToPreviousTarget = previousTargetLatLng && startLatLng.distanceTo ? startLatLng.distanceTo(previousTargetLatLng) : 0;
+	const distanceFromPreviousToEnd = previousTargetLatLng && previousTargetLatLng.distanceTo ? previousTargetLatLng.distanceTo(endLatLng) : 0;
+	const totalPathDistance = distanceToPreviousTarget + distanceFromPreviousToEnd;
+
     // Only display the lines if showPath is true
     if (showPath) {
         // Display previous line (red)
@@ -1008,26 +1019,60 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
             return;
         }
 
-        // Determine the current position
-        let currentLatLng;
-        if (positioningOption === 'bezier' && prevLatLng) {
-            // Use Bézier curve if prevLatLng is defined and bezier option is selected
-            const bezierPoint = calculateBezierPoint(progress);
-            if (bezierPoint) {
-                currentLatLng = L.latLng(bezierPoint.lat, bezierPoint.lng);
-            } else {
-                currentLatLng = L.latLng(
-                    startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress,
-                    startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress
-                );
-            }
-        } else {
-            // Straight line interpolation for 'exact' option
-            currentLatLng = L.latLng(
-                startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress,
-                startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress
-            );
-        }
+		// Determine the current position (two-segment path: start -> previous target -> new target)
+		let currentLatLng;
+		const useTwoSegment = previousTargetLatLng && totalPathDistance > 0 && distanceToPreviousTarget > 1;
+		if (useTwoSegment) {
+			const distanceTraveled = totalPathDistance * progress;
+			if (distanceTraveled <= distanceToPreviousTarget) {
+				// Segment 1: move from start to previous target (linear)
+				const t1 = distanceToPreviousTarget === 0 ? 1 : (distanceTraveled / distanceToPreviousTarget);
+				currentLatLng = L.latLng(
+					startLatLng.lat + (previousTargetLatLng.lat - startLatLng.lat) * t1,
+					startLatLng.lng + (previousTargetLatLng.lng - startLatLng.lng) * t1
+				);
+			} else {
+				// Segment 2: move from previous target to new end
+				const remaining = Math.max(0, distanceTraveled - distanceToPreviousTarget);
+				const t2 = distanceFromPreviousToEnd === 0 ? 1 : (remaining / distanceFromPreviousToEnd);
+				if (positioningOption === 'bezier' && prevLatLng) {
+					// Map into the curve phase of the existing bezier helper
+					const t = 0.3 + 0.7 * Math.min(1, Math.max(0, t2));
+					const bezierPoint = calculateBezierPoint(t);
+					if (bezierPoint) {
+						currentLatLng = L.latLng(bezierPoint.lat, bezierPoint.lng);
+					} else {
+						currentLatLng = L.latLng(
+							previousTargetLatLng.lat + (endLatLng.lat - previousTargetLatLng.lat) * t2,
+							previousTargetLatLng.lng + (endLatLng.lng - previousTargetLatLng.lng) * t2
+						);
+					}
+				} else {
+					currentLatLng = L.latLng(
+						previousTargetLatLng.lat + (endLatLng.lat - previousTargetLatLng.lat) * t2,
+						previousTargetLatLng.lng + (endLatLng.lng - previousTargetLatLng.lng) * t2
+					);
+				}
+			}
+		} else {
+			// Single segment fallback (original behavior)
+			if (positioningOption === 'bezier' && prevLatLng) {
+				const bezierPoint = calculateBezierPoint(progress);
+				if (bezierPoint) {
+					currentLatLng = L.latLng(bezierPoint.lat, bezierPoint.lng);
+				} else {
+					currentLatLng = L.latLng(
+						startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress,
+						startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress
+					);
+				}
+			} else {
+				currentLatLng = L.latLng(
+					startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress,
+					startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress
+				);
+			}
+		}
 
         if (wholePixelPositioning) {
             marker.setLatLng(currentLatLng);
@@ -1120,8 +1165,11 @@ function plotBus(busId, immediatelyUpdate=false) {
         //     immediatelyUpdate = true;
         //     // console.log('page hidden, updating immediately')
         // }
-        updateMarkerPosition(busId, immediatelyUpdate);
+        updateMarkerPosition(busId, immediatelyUpdate || forceImmediateUpdate);
     }
+
+    // Record last time a marker was updated/rendered
+    try { lastUpdateTime = Date.now(); } catch (e) {}
 }
 
 function selectBusMarker(busId) {

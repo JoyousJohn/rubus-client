@@ -346,6 +346,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 $('.sim-btn').hide();
             }
 
+        case 'toggle-spoofing':
+            settings['toggle-spoofing'] = isChecked;
+            spoof = isChecked;
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 
@@ -474,6 +478,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-sim'] && selectedCampus === 'nb') {
         $('.sim-btn').show();
+    }
+
+    if (settings['toggle-spoofing']) {
+        spoof = true;
     }
 
 })

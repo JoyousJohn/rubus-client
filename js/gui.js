@@ -1150,6 +1150,7 @@ const toggleSettings = [
     'toggle-always-immediate-update',
     'toggle-bypass-max-distance',
     'toggle-show-sim',
+    'toggle-spoofing'
 ]
 
 let colorMappings;
@@ -1225,6 +1226,7 @@ let defaultSettings = {
     'toggle-always-immediate-update': false,
     'toggle-bypass-max-distance': false,
     'toggle-show-sim': false,
+    'toggle-spoofing': false,
     
     // going to remove
     'toggle-show-arrival-times': true,
