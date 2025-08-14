@@ -9,6 +9,7 @@ const SIM_MIN_SPEED_MPH = 6;      // min rolling speed between stops
 const SIM_ACC_MPH_PER_S = 2.5;    // acceleration per second
 const SIM_DEC_MPH_PER_S = 3.0;    // deceleration per second
 const SIM_TICK_MS = 300;          // movement tick
+const SIM_POLL_INTERVAL_MS = 0; // how often to report/update bus position on the map/UI
 const SIM_MIN_ETA_UPDATE_MS = 1000; // min interval between ETA updates per batch
 const SIM_PROGRESS_DELTA_FOR_UPDATE = 0.03; // 3% progress change triggers ETA update
 
@@ -554,7 +555,8 @@ function initSimMovementForBus(busId) {
         speedMph: busData[busId].at_stop ? 0 : (SIM_MIN_SPEED_MPH + Math.random() * 3),
         targetSpeedMph: SIM_MIN_SPEED_MPH + Math.random() * 5,
         lastTick: Date.now(),
-        lastReportedProgress: 0,
+		lastReportedProgress: 0,
+		nextReportAt: Date.now(),
     };
 
     // If starting somewhere mid-segment, snap to closest point on the segment path
@@ -635,6 +637,11 @@ function updateSimBus(busId) {
     const dtBase = Math.min(1.0, (now - simState.lastTick) / 1000);
     const dtSec = dtBase * Math.max(1, window.SIM_TIME_MULTIPLIER);
     simState.lastTick = now;
+
+	// Determine if it's time to report/publish a new position
+	const pollInterval = SIM_POLL_INTERVAL_MS / Math.max(1, window.SIM_TIME_MULTIPLIER);
+	if (simState.nextReportAt == null) simState.nextReportAt = now;
+	let doPollNow = now >= simState.nextReportAt;
 
     // Handle dwell at stop
     if (!simState.moving) {
@@ -745,16 +752,18 @@ function updateSimBus(busId) {
         simState.lastReportedProgress = 0;
         simEtaPending.add(busId);
 
-        // Immediately refresh GUI if shown
-        try {
-            updateTimeToStops([busId]);
-            if (popupBusId === busId) {
-                popInfo(busId);
-            }
-            if (popupStopId) {
-                updateStopBuses(popupStopId);
-            }
-        } catch (e) {}
+		// Immediately refresh GUI if shown (at poll cadence)
+		if (doPollNow) {
+			try {
+				updateTimeToStops([busId]);
+				if (popupBusId === busId) {
+					popInfo(busId);
+				}
+				if (popupStopId) {
+					updateStopBuses(popupStopId);
+				}
+			} catch (e) {}
+		}
 
         // Reset sim state for dwell
         simState.moving = false;
@@ -770,8 +779,11 @@ function updateSimBus(busId) {
         simState.totalMiles = nextSeg.totalMiles;
         simState.progressMiles = 0;
 
-        // Plot/update
-        try { plotBus(busId); } catch {}
+		// Plot/update at poll cadence
+		if (doPollNow) {
+			try { plotBus(busId); } catch {}
+			simState.nextReportAt = now + pollInterval;
+		}
         return;
     }
 
@@ -800,14 +812,16 @@ function updateSimBus(busId) {
     if (angleDeg < 0) angleDeg += 360;
     bus.rotation = angleDeg;
 
-    // Maintain previousPositions history
-    const lastPos = bus.previousPositions[bus.previousPositions.length - 1];
-    if (!lastPos || lastPos[0] !== newLat || lastPos[1] !== newLng) {
-        bus.previousPositions.push([newLat, newLng]);
-        if (bus.previousPositions.length > 20) {
-            bus.previousPositions.shift();
-        }
-    }
+	// Maintain previousPositions history at poll cadence only
+	if (doPollNow) {
+		const lastPos = bus.previousPositions[bus.previousPositions.length - 1];
+		if (!lastPos || lastPos[0] !== newLat || lastPos[1] !== newLng) {
+			bus.previousPositions.push([newLat, newLng]);
+			if (bus.previousPositions.length > 20) {
+				bus.previousPositions.shift();
+			}
+		}
+	}
 
     // Update progress and queue ETA update if changed significantly
     const newProgress = progressPercentFor(busId);
@@ -817,8 +831,11 @@ function updateSimBus(busId) {
         simEtaPending.add(busId);
     }
 
-    // Plot
-    try { plotBus(busId); } catch {}
+	// Plot at poll cadence
+	if (doPollNow) {
+		try { plotBus(busId); } catch {}
+		simState.nextReportAt = now + pollInterval;
+	}
 }
 
 function startSimMovementLoop() {

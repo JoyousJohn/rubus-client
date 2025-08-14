@@ -75,6 +75,7 @@ function campusChanged() {
     $('.updating-buses').show();
 
     selectedCampus = settings['campus']
+    try { if (typeof setSelectedCampusButton === 'function') { setSelectedCampusButton(selectedCampus); } } catch (_) {}
     console.log(`campus changed to ${selectedCampus}`)
     stopsData = allStopsData[selectedCampus];
 
@@ -100,3 +101,29 @@ function campusChanged() {
     $('.updating-buses').slideUp();
 
 }
+
+$(function(){
+    function setSelectedCampusButton(campus){
+        $('.campus-toggle-btn').removeClass('selected');
+        $(`.campus-toggle-btn[data-campus="${campus}"]`).addClass('selected');
+    }
+    // Initial selection based on current settings (defaults to nb)
+    setSelectedCampusButton((window.settings && settings['campus']) || 'nb');
+
+    // Expose so other code (e.g., campusChanged) can sync UI
+    window.setSelectedCampusButton = setSelectedCampusButton;
+
+    $('.campus-toggle-btn').on('click', function(){
+        const campus = $(this).data('campus');
+        if (window.settings) {
+            if (settings['campus'] === campus) { return; }
+            settings['campus'] = campus;
+            localStorage.setItem('settings', JSON.stringify(settings));
+            campusChanged();
+        } else {
+            window.settings = window.settings || {};
+            settings['campus'] = campus;
+            campusChanged();
+        }
+    });
+});

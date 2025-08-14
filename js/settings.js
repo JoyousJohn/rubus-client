@@ -175,6 +175,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-campus-switcher':
+            settings['toggle-show-campus-switcher'] = isChecked;
+            if (isChecked) {
+                $('.campus-switcher').show();
+            } else {
+                $('.campus-switcher').hide();
+            }
+            break;
+
         case 'toggle-hide-other-routes':
             settings['toggle-hide-other-routes'] = isChecked;
 
@@ -482,6 +491,10 @@ $(document).ready(function() {
 
     if (settings['toggle-spoofing']) {
         spoof = true;
+    }
+
+    if (settings['toggle-show-campus-switcher']) {
+        $('.campus-switcher').show();
     }
 
 })

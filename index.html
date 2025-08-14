@@ -21,6 +21,7 @@
     <script src="js/vars.js"></script>
     <script defer src="js/leaflet.edgebuffer.js"></script>
     <script defer src="js/map.js"></script>
+    <script defer src="js/riding.js"></script>
     <script defer src="js/spoof.js"></script>
     <script defer src="js/poly.js"></script>
     <script defer src="js/gui.js"></script>
@@ -186,6 +187,7 @@
                     <div class="bus-info-main">
                         <div class="flex justify-center white text-1p1rem">
                             <div class="info-shared-bus info-shared-bus-mid none">Shared With You</div>
+                            <div class="info-riding">Your Bus</div>
                         </div>
                         <div class="flex justify-center white text-1p2rem gap-x-0p5rem">
                             <div class="bus-oos bus-oos-mid br-0p5rem">Out of Service</div>
@@ -389,6 +391,14 @@
                         }}) 
                         </script>
                         <div class="passio-mini flex flex-col gap-y-1rem"></div>
+                        <div class="campus-switcher none">
+                            <div class="campus-toggle br-1rem">
+                                <div class="campus-toggle-btn pointer" data-campus="nb">NB</div>
+                                <div class="campus-toggle-btn pointer" data-campus="camden">CAM</div>
+                                <div class="campus-toggle-btn pointer" data-campus="newark">NWK</div>
+                            </div>
+                        </div>
+                        
                         <div class="getting-location-popup none">LOCATING...</div>
                         <div class="updating-buses none">UPDATING</div>
                         <div class="slow-connection none">SLOW CONNECTION</div>
@@ -708,6 +718,16 @@
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
                     <label for="toggle-launch-fireworks-button" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <div class="settings-heading">Show Campus Switcher</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-show-campus-switcher" class="toggle-input">
+                    <label for="toggle-show-campus-switcher" class="toggle-label">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>

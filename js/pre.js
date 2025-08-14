@@ -795,7 +795,8 @@ function checkMinRoutes() {
 
     let isAnyBusActuallyInService = false;
     minRoutes.forEach(route => {
-        if (busesByRoutes[selectedCampus][route]) {
+        // remove busesByRoutes[selectedCampus] && later. we need to investigate whyitsnotgetting itscampuskeysettoan empty obj when no buses later.
+        if (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) {
             busesByRoutes[selectedCampus][route].forEach(busId => {
                 const valid = isValid(busId);
                 if (valid) {

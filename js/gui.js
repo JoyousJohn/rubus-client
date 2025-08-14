@@ -1136,6 +1136,7 @@ const toggleSettings = [
     'toggle-show-bus-overtime-timer',
     'toggle-show-bus-path',
     'toggle-launch-fireworks-button',
+    'toggle-show-campus-switcher',
     'toggle-hide-other-routes',
     'toggle-show-bus-log',
     'toggle-show-extra-bus-data',
@@ -1213,6 +1214,7 @@ let defaultSettings = {
     'toggle-show-bus-overtime-timer': false,
     'toggle-show-bus-path': false,
     'toggle-launch-fireworks-button': false,
+    'toggle-show-campus-switcher': false,
     'toggle-show-bus-log': false,
     'toggle-show-extra-bus-data': false,
     'toggle-show-stop-id': false,
@@ -1355,6 +1357,19 @@ function updateSettings() {
             $(this).addClass('settings-selected')
             settings['campus'] = $(this).attr('campus-option')
             campusChanged();
+        } else if (settingsOption === undefined) {
+            // Toggle switches
+            const id = $(this).find('input[type="checkbox"]').attr('id');
+            if (!id) return;
+            const checked = $(`#${id}`).is(':checked');
+            settings[id] = checked;
+            if (id === 'toggle-show-campus-switcher') {
+                if (checked) {
+                    $('.campus-switcher').show();
+                } else {
+                    $('.campus-switcher').hide();
+                }
+            }
         }
 
         if (settingsOption) { // don't reset ls if ls was cleared (that option doesn't currently have settingsOption). add some sort of attribute later as this will be in analytics
@@ -1373,6 +1388,8 @@ function updateSettings() {
         }
 
     });
+
+    
 
     getBuildNumber()
 }

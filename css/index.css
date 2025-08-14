@@ -244,6 +244,27 @@ html, body {
     pointer-events: auto;
 }
 
+.campus-switcher { pointer-events: auto; }
+.campus-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background-color: var(--theme-bg);
+    border: 1px solid var(--theme-color);
+    border-radius: 1rem;
+    overflow: hidden;
+    font-family: var(--font-family);
+}
+.campus-toggle-btn {
+    padding: 0.5rem 0.9rem;
+    color: var(--theme-color);
+    text-align: center;
+    font-size: 1.3rem;
+}
+.campus-toggle-btn.selected {
+    background-color: var(--theme-color);
+    color: var(--theme-bg);
+}
+
 .shared {
     border-radius: 2rem;
     font-family: var(--font-family);

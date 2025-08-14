@@ -187,6 +187,8 @@ $(document).ready(function() {
         map.scrollWheelZoom.enable();
     });
 
+    try { if (typeof initLocationWatchForRiding === 'function') { initLocationWatchForRiding(); } } catch (e) {}
+
 });
 
 function postLoadEvent() {
@@ -410,6 +412,8 @@ function hideInfoBoxes(instantly_hide) {
     if ($('.buses-panel-wrapper').is(':visible')) {
         $('.buses-panel-wrapper').slideUp('fast');
     }
+
+    try { updateRidingBadgeUI(); } catch (_) {}
 
 }
 
@@ -917,26 +921,27 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 
     // Add Bézier curve only if positioning option is 'bezier'
     if (prevLatLng && positioningOption === 'bezier') {
-        // Get our desired midpoint
-        const desiredMidpoint = {
+        // Define the mid-arc join waypoint (where red/blue connect)
+        const joinWaypointLatLng = {
             lat: busLines[busId]['curr']._latlngs[0].lat,
             lng: busLines[busId]['curr']._latlngs[0].lng
         };
         
-        const controlPoint = {
-            lat: 2 * desiredMidpoint.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
-            lng: 2 * desiredMidpoint.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
+        // Quadratic control point chosen so the curve passes through joinWaypoint at t=0.5
+        const bezierControlLatLng = {
+            lat: 2 * joinWaypointLatLng.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
+            lng: 2 * joinWaypointLatLng.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
         };
         
         // Only display the curve if showPath is true
         if (showPath) {
             const path = L.curve(['M', [prevLatLng.lat, prevLatLng.lng],
-                                'Q', [controlPoint.lat, controlPoint.lng],
+                                'Q', [bezierControlLatLng.lat, bezierControlLatLng.lng],
                                     [endLatLng.lat, endLatLng.lng]],
                                {color: 'purple', weight: 5, opacity: 1}).addTo(map);
             busLines[busId]['curve'] = path;
             
-            // Add a dot at the control point
+            // Add a dot at the join waypoint
             if (midpointCircle[busId]) midpointCircle[busId].removeFrom(map);
             midpointCircle[busId] = L.circleMarker([busLines[busId]['curr']._latlngs[0].lat, busLines[busId]['curr']._latlngs[0].lng], {
                 radius: 4,
@@ -985,26 +990,28 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
     const calculateBezierPoint = (t) => {
         if (!prevLatLng || positioningOption !== 'bezier') return null;
         
-        const desiredMidpoint = {
+        // The join waypoint is the mid-curve constraint at t=0.5
+        const joinWaypointLatLng = {
             lat: busLines[busId]['curr']._latlngs[0].lat,
             lng: busLines[busId]['curr']._latlngs[0].lng
         };
         
-        const controlPoint = {
-            lat: 2 * desiredMidpoint.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
-            lng: 2 * desiredMidpoint.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
+        const bezierControlLatLng = {
+            lat: 2 * joinWaypointLatLng.lat - 0.5 * (prevLatLng.lat + endLatLng.lat),
+            lng: 2 * joinWaypointLatLng.lng - 0.5 * (prevLatLng.lng + endLatLng.lng)
         };
         
-        const curveJoinPoint = {
-            lat: 0.25 * prevLatLng.lat + 0.5 * controlPoint.lat + 0.25 * endLatLng.lat,
-            lng: 0.25 * prevLatLng.lng + 0.5 * controlPoint.lng + 0.25 * endLatLng.lng
+        // This equals joinWaypointLatLng by construction; kept for clarity of intent
+        const midCurvePointLatLng = {
+            lat: 0.25 * prevLatLng.lat + 0.5 * bezierControlLatLng.lat + 0.25 * endLatLng.lat,
+            lng: 0.25 * prevLatLng.lng + 0.5 * bezierControlLatLng.lng + 0.25 * endLatLng.lng
         };
         
         if (t <= 0.3) {
             const t1 = t / 0.3;
             return {
-                lat: startLatLng.lat + (curveJoinPoint.lat - startLatLng.lat) * t1,
-                lng: startLatLng.lng + (curveJoinPoint.lng - startLatLng.lng) * t1
+                lat: startLatLng.lat + (midCurvePointLatLng.lat - startLatLng.lat) * t1,
+                lng: startLatLng.lng + (midCurvePointLatLng.lng - startLatLng.lng) * t1
             };
         } else {
             const t2 = (t - 0.3) / 0.7;
@@ -1012,10 +1019,10 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
             
             return {
                 lat: (1 - curveT) ** 2 * prevLatLng.lat +
-                    2 * (1 - curveT) * curveT * controlPoint.lat +
+                    2 * (1 - curveT) * curveT * bezierControlLatLng.lat +
                     curveT ** 2 * endLatLng.lat,
                 lng: (1 - curveT) ** 2 * prevLatLng.lng +
-                    2 * (1 - curveT) * curveT * controlPoint.lng +
+                    2 * (1 - curveT) * curveT * bezierControlLatLng.lng +
                     curveT ** 2 * endLatLng.lng
             };
         }
@@ -1211,6 +1218,8 @@ function selectBusMarker(busId) {
     selectedMarkerId = busId;
 
     $('.bus-log-wrapper').hide();
+
+    try { updateRidingBadgeUI(); } catch (_) {}
 }
 
 const campusMappings = {
@@ -1668,6 +1677,8 @@ function popInfo(busId, resetCampusFontSize) {
             'route': 'sim-' + data.route,
         });
     }
+
+    try { updateRidingBadgeUI(); } catch (_) {}
 }
 
 
