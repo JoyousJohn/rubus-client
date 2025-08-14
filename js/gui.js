@@ -1303,6 +1303,11 @@ function updateSettings() {
 
         const settingsOption = $(this).attr('settings-option')
 
+        sa_event('settings_change', {
+            'setting': settingsOption,
+            'value': $(this).attr('settings-option')
+        });
+
         // console.log(settingsOption)
         if (settingsOption === 'font') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')

@@ -2,6 +2,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
     const toggleId = $(this).attr('id');
     const isChecked = $(this).prop('checked');
 
+    sa_event('toggle_change', {
+        'toggle': toggleId,
+        'isChecked': isChecked
+    });
+
     switch (toggleId) {
 
         case 'toggle-select-closest-stop':
