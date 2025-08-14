@@ -856,6 +856,10 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         if (busLines[busId]['curve'] && busLines[busId]['curve'].removeFrom) {
             busLines[busId]['curve'].removeFrom(map);
         }
+        if (busLines[busId]['join'] && busLines[busId]['join'].removeFrom) {
+            busLines[busId]['join'].removeFrom(map);
+            delete busLines[busId]['join'];
+        }
     } else {
         busLines[busId] = {};
     }
@@ -884,9 +888,22 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 	const distanceToPreviousTarget = previousTargetLatLng && startLatLng.distanceTo ? startLatLng.distanceTo(previousTargetLatLng) : 0;
 	const distanceFromPreviousToEnd = previousTargetLatLng && previousTargetLatLng.distanceTo ? previousTargetLatLng.distanceTo(endLatLng) : 0;
 	const totalPathDistance = distanceToPreviousTarget + distanceFromPreviousToEnd;
+	const useTwoSegmentPath = previousTargetLatLng && totalPathDistance > 0 && distanceToPreviousTarget > 1;
 
     // Only display the lines if showPath is true
     if (showPath) {
+        // If we're mid-animation, render a temporary join segment from the current
+        // marker position to the previous path endpoint so the first leg is visible
+        try {
+            if (prevPathEndpoint && startLatLng && typeof startLatLng.distanceTo === 'function') {
+                const needJoin = startLatLng.distanceTo(L.latLng(prevPathEndpoint.lat, prevPathEndpoint.lng)) > 0.5;
+                if (needJoin) {
+                    const joinLine = L.polyline([startLatLng, prevPathEndpoint], {color: '#888', weight: 3, dashArray: '4,6'}).addTo(map);
+                    busLines[busId]['join'] = joinLine;
+                }
+            }
+        } catch (e) {}
+
         // Display previous line (red)
         if (busLines[busId]['prev']) {
             const prevLine = L.polyline(busLines[busId]['prev'], {color: 'red', weight: 4}).addTo(map);
@@ -1021,9 +1038,14 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 
 		// Determine the current position (two-segment path: start -> previous target -> new target)
 		let currentLatLng;
-		const useTwoSegment = previousTargetLatLng && totalPathDistance > 0 && distanceToPreviousTarget > 1;
+		const useTwoSegment = useTwoSegmentPath;
 		if (useTwoSegment) {
 			const distanceTraveled = totalPathDistance * progress;
+			// Remove the temporary join line once we pass the connection point
+			if (distanceTraveled > distanceToPreviousTarget && busLines[busId] && busLines[busId]['join'] && busLines[busId]['join'].removeFrom) {
+				busLines[busId]['join'].removeFrom(map);
+				delete busLines[busId]['join'];
+			}
 			if (distanceTraveled <= distanceToPreviousTarget) {
 				// Segment 1: move from start to previous target (linear)
 				const t1 = distanceToPreviousTarget === 0 ? 1 : (distanceTraveled / distanceToPreviousTarget);

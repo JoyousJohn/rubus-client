@@ -55,6 +55,7 @@
     <link rel="stylesheet" type="text/css" href="css/sim.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
+    <link rel="preload" as="image" href="img/stop_marker_selected.png">
 
     <link href="https://fonts.cdnfonts.com/css/yusei-magic" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/bricolage-grotesque" rel="stylesheet">
@@ -99,8 +100,12 @@
             document.querySelector(`[data-theme="${selectedTheme}"]`).classList.add('selected');
         });
 
-        // Preload preview images
-        const preloadImages = ['img/theme-select/dark.png', 'img/theme-select/light.png'];
+        // Preload preview images and critical UI icons
+        const preloadImages = [
+            'img/theme-select/dark.png',
+            'img/theme-select/light.png',
+            'img/stop_marker_selected.png'
+        ];
         preloadImages.forEach(src => {
             const img = new Image();
             img.src = src;
