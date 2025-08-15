@@ -364,6 +364,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-spoofing'] = isChecked;
             spoof = isChecked;
 
+        case 'toggle-show-chat':
+            settings['toggle-show-chat'] = isChecked;
+            if (isChecked) {
+                $('.chat-btn-wrapper').show();
+            } else {
+                $('.chat-btn-wrapper').hide();
+            }
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 
@@ -496,6 +504,10 @@ $(document).ready(function() {
 
     if (settings['toggle-spoofing']) {
         spoof = true;
+    }
+
+    if (settings['toggle-show-chat']) {
+        $('.chat-btn-wrapper').show();
     }
 
     if (settings['toggle-show-campus-switcher']) {

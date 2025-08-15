@@ -38,6 +38,7 @@
     <script src="js/contact.js"></script>
     <script src="js/campus.js"></script>
     <script src="js/sim.js"></script>
+    <script src="js/chat.js"></script>
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
     <script src="lib/dist.js"></script>
@@ -54,6 +55,7 @@
     <link rel="stylesheet" type="text/css" href="css/pwa.css">
     <link rel="stylesheet" type="text/css" href="css/feedback.css">
     <link rel="stylesheet" type="text/css" href="css/sim.css">
+    <link rel="stylesheet" type="text/css" href="css/chat.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
     <link rel="preload" as="image" href="img/stop_marker_selected.png">
@@ -542,6 +544,24 @@
         <div class="flex all-stops-close justify-center align-center">X</div>
     </div>
 
+    <div class="chat-wrapper none">
+      <div class="chat-modal-parent" style="position: fixed; inset: 0; z-index: 403; pointer-events: all;">
+        <div class="chat-ui-panel flex flex-col w-100vw h-100vh max-w-100vw max-h-100vh">
+          <div class="chat-ui-header flex align-center justify-center relative pb-0p5rem pt-1rem px-1p5rem">
+            Chat
+            <span class="chat-ui-close flex justify-center align-center select-none absolute">X</span>
+          </div>
+          <div class="chat-ui-messages flex flex-col gap-1p2rem flex-1 px-1rem">
+            <div class="chat-message bot">RUBus Chat is an expert in Rutgers buses capable of answering complex questions about bus routes, schedules, and more. Ask me anything!</div>
+          </div>
+          <form class="chat-ui-input-bar flex align-center gap-0p5rem p-1rem" autocomplete="off">
+            <input class="chat-ui-input flex-1" type="text" placeholder="Send a message" />
+            <button type="submit" class="chat-ui-send ml-0p5rem" aria-label="Send" title="Send"><i class="fa fa-arrow-up"></i></button>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <div class="install-pwa-wrapper none">
         <div class="flex justify-center align-center h-full">
             <div class="install-pwa-iphone flex flex-col gap-y-1rem center align-center">
@@ -1025,6 +1045,16 @@
                         </div>
                     </div>
 
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Chat</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-chat" class="toggle-input">
+                            <label for="toggle-show-chat" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="settings-reset-settings">
                         <div class="settings-heading">REMOVE localStorage.SETTINGS</div>
                         <div class="settings-options grid">
@@ -1120,6 +1150,9 @@
             </div>
 
             <div class="right-btns flex flex-col" style="row-gap: 0.8rem">
+                <div class="chat-btn-wrapper none">
+                    <div class="chat-btn"><i class="fa-solid fa-comments"></i></div>
+                </div>
                 <div class="launch-fireworks-wrapper none">
                     <div class="shoot-fireworks"><i class="fa-solid fa-bahai"></i></div>
                 </div>

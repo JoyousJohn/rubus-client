@@ -1012,7 +1012,7 @@ html, body {
     cursor: pointer;
 }
 
-.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .all-stops > i {
+.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .all-stops > i, .chat-btn > i {
     font-size: 2rem;
 }
 
@@ -1192,7 +1192,7 @@ html, body {
     border-left: 1px solid rgb(185, 185, 185);
 }
 
-.settings-close > div, .buses-close, .events-close, .all-stops-close, .feedback-x {
+.settings-close > div, .buses-close, .events-close, .all-stops-close, .feedback-x, .chat-ui-close {
     background-color: rgb(208, 77, 77);
     position: fixed;
     bottom: 1rem;
