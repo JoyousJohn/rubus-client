@@ -1192,7 +1192,7 @@ const defaultColorMappings = {
 
 let defaultSettings = {
     'font': 'PP Neue Montreal',
-    'marker_size': 'medium',
+    'marker-size': 'medium',
     'theme': 'auto',
     'toggle-show-etas-in-seconds': false,
     'toggle-select-closest-stop': true,
@@ -1289,7 +1289,7 @@ function updateSettings() {
     campusChanged();
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
-    $(`div.settings-option[marker-size-option="${settings['marker_size']}"]`).addClass('settings-selected')
+    $(`div.settings-option[marker-size-option="${settings['marker-size']}"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="${settings['map-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
@@ -1305,7 +1305,7 @@ function updateSettings() {
 
         sa_event('settings_change', {
             'setting': settingsOption,
-            'value': $(this).attr('settings-option')
+            'value': $(this).attr(settingsOption + '-option')
         });
 
         // console.log(settingsOption)
@@ -1316,11 +1316,11 @@ function updateSettings() {
             document.documentElement.style.setProperty('--font-family', settings['font'] + ', sans-serif');
         }
 
-        else if (settingsOption === 'marker_size') {
+        else if (settingsOption === 'marker-size') {
             
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
-            settings['marker_size'] = $(this).attr('marker-size-option')
+            settings['marker-size'] = $(this).attr('marker-size-option')
             updateMarkerSize()
 
         }
@@ -1437,8 +1437,8 @@ function toggleDevOptions() {
 
 function updateMarkerSize() {
 
-    const outterDimensions = markerSizeMap[settings['marker_size']]
-    const innerDimensions = innerSizeMap[settings['marker_size']]
+    const outterDimensions = markerSizeMap[settings['marker-size']]
+    const innerDimensions = innerSizeMap[settings['marker-size']]
 
     $('.bus-icon-outer').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
     $('.bus-icon-inner').css('height', innerDimensions + 'px').css('width', innerDimensions + 'px');
