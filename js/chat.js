@@ -1,7 +1,23 @@
 // Show chat UI when chat button is clicked
 $(document).on('click', '.chat-btn', function() {
   $('.chat-wrapper').removeClass('none').show();
+  adjustChatHeight();
 });
+
+// // Adjust chat height based on actual viewport
+// function adjustChatHeight() {
+//   const headerHeight = $('.chat-ui-header').outerHeight();
+//   const inputBarHeight = $('.chat-ui-input-bar').outerHeight();
+//   const availableHeight = window.innerHeight - headerHeight - inputBarHeight;
+//   $('.chat-ui-messages').css('height', availableHeight + 'px');
+// }
+
+// // Adjust on window resize (including keyboard open/close)
+// $(window).on('resize orientationchange', function() {
+//   if ($('.chat-wrapper').is(':visible')) {
+//     setTimeout(adjustChatHeight, 100); // Small delay to ensure layout is updated
+//   }
+// });
 
 // Close chat UI
 $(document).on('click', '.chat-ui-close', function() {
