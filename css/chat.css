@@ -60,7 +60,7 @@
 }
 
 .chat-message {
-  max-width: 57%;
+  max-width: 65%;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   padding: 0.9rem 1.3rem;
   font-size: 1.5rem;
@@ -78,7 +78,7 @@
 .chat-message.bot {
   align-self: flex-start;
   background: linear-gradient(135deg, #f8f5ff, #e0e0ff);
-  color: var(--theme-color);
+  color: black;
   border-radius: 1.2rem 1.2rem 1.2rem 0.3rem;
   opacity: 1;
 }
@@ -101,8 +101,10 @@
 .chat-ui-close {
     top: 0;
     right: 0.5rem;
-    height: 3rem;
-    width: 3rem;
+    height: 2.5rem;
+    width: 2.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
 }
 
 .chat-ui-messages {
@@ -161,4 +163,3 @@
 @media (prefers-reduced-motion: reduce) {
   .chat-ui-send:active { transform: none; }
 }
-
