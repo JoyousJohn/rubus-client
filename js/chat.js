@@ -130,9 +130,10 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 $botMsg.text(data.progress).addClass('loading');
             } else if (data.done) {
                 // Show final answer
-                $botMsg.text(data.answer).removeClass('loading');
-                finalAnswer = data.answer;
-                window.chatHistory.push({ role: 'assistant', content: data.answer });
+                const parts = data.answer.split('final');
+                finalAnswer = parts[parts.length - 1];
+                $botMsg.text(finalAnswer).removeClass('loading');
+                window.chatHistory.push({ role: 'assistant', content: finalAnswer });
                 evtSource.close();
             }
             $messages.scrollTop($messages[0].scrollHeight);
