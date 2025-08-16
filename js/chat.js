@@ -82,9 +82,8 @@ $(document).on('click', '.chat-btn', function() {
 $(document).on('click', '.chat-ui-close', function() {
   $('.chat-wrapper').hide();
 });
-
 window.chatHistory = [];
-// Handle sending a message
+
 $(document).on('submit', '.chat-ui-input-bar', function(e) {
     e.preventDefault();
 
@@ -94,35 +93,58 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     const msg = $input.val().trim();
     if (!msg) return;
     const $messages = $('.chat-ui-messages');
-    // Add user message to DOM and history
     $messages.append(`<div class="chat-message user">${$('<div>').text(msg).html()}</div>`);
     window.chatHistory.push({ role: 'user', content: msg });
     $input.val('');
     $messages.scrollTop($messages[0].scrollHeight);
+
     // Show loading bot message
     const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
     $messages.append($botMsg);
     $messages.scrollTop($messages[0].scrollHeight);
 
-    // Make POST request with updated history
-    $.ajax({
-        url: 'https://talk.rubus.live/chat',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ user_query: msg, conversation_history: window.chatHistory.slice(0, -1) }),  // Send history up to the last message
-        success: function(data) {
-        if (data && data.answer) {
-            $botMsg.text(data.answer).removeClass('loading');
-            window.chatHistory.push({ role: 'assistant', content: data.answer });  // Add bot response to history
-        } else {
-            $botMsg.text('Sorry, I did not understand that.').removeClass('loading');
+    // Prepare conversation history (excluding the just-added user message)
+    const historyToSend = window.chatHistory.slice(0, -1);
+
+    // Build SSE URL with query params
+    const url = 'https://talk.rubus.live/chat/stream'
+        + '?user_query=' + encodeURIComponent(msg)
+        + '&conversation_history=' + encodeURIComponent(JSON.stringify(historyToSend));
+
+    // Close any previous EventSource
+    if (window.currentEventSource) {
+        window.currentEventSource.close();
+    }
+
+    // Open SSE connection
+    const evtSource = new EventSource(url);
+    window.currentEventSource = evtSource;
+
+    let finalAnswer = null;
+
+    evtSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.progress && !data.done) {
+                // Show tool progress/description
+                $botMsg.text(data.progress).addClass('loading');
+            } else if (data.done) {
+                // Show final answer
+                $botMsg.text(data.answer).removeClass('loading');
+                finalAnswer = data.answer;
+                window.chatHistory.push({ role: 'assistant', content: data.answer });
+                evtSource.close();
+            }
+            $messages.scrollTop($messages[0].scrollHeight);
+        } catch (err) {
+            console.error('Error parsing SSE data:', err, event.data);
         }
-        $messages.scrollTop($messages[0].scrollHeight);
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-        console.error('Chat request failed:', textStatus, errorThrown);
+    };
+
+    evtSource.onerror = function(err) {
+        console.error('SSE error:', err);
         $botMsg.text('Sorry, there was a problem connecting to the chatbot.').removeClass('loading');
         $messages.scrollTop($messages[0].scrollHeight);
-        }
-    });
+        evtSource.close();
+    };
 });
