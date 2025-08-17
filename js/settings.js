@@ -359,17 +359,23 @@ $('.settings-toggle .toggle-input').on('change', function () {
             } else {
                 $('.sim-btn').hide();
             }
+            break;
 
         case 'toggle-spoofing':
             settings['toggle-spoofing'] = isChecked;
             spoof = isChecked;
+            break;
 
         case 'toggle-show-chat':
             settings['toggle-show-chat'] = isChecked;
+            break;
+
+        case 'toggle-show-thinking':
+            settings['toggle-show-thinking'] = isChecked;
             if (isChecked) {
-                $('.chat-btn-wrapper').show();
+                $('.chat-thinking-wrapper').show();
             } else {
-                $('.chat-btn-wrapper').hide();
+                $('.chat-thinking-wrapper').hide();
             }
 
         case 'toggle-always-show-second':

@@ -1152,7 +1152,8 @@ const toggleSettings = [
     'toggle-bypass-max-distance',
     'toggle-show-sim',
     'toggle-spoofing',
-    'toggle-show-chat'
+    'toggle-show-chat',
+    'toggle-show-thinking'
 ]
 
 let colorMappings;
@@ -1231,6 +1232,7 @@ let defaultSettings = {
     'toggle-show-sim': false,
     'toggle-spoofing': false,
     'toggle-show-chat': false,
+    'toggle-show-thinking': false,
     
     // going to remove
     'toggle-show-arrival-times': true,

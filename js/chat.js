@@ -130,8 +130,19 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 $botMsg.text(data.progress).addClass('loading');
             } else if (data.done) {
                 // Show final answer
-                const parts = data.answer.split('final');
-                finalAnswer = parts[parts.length - 1];
+                if (settings['toggle-show-thinking']) {
+                    console.log(data.answer);
+                    finalAnswer = data.answer;
+                } else {
+                    // Extract text within <final>...</final> tag
+                    const match = data.answer.match(/<final>([\s\S]*?)<\/final>/i);
+                    if (match) {
+                        finalAnswer = match[1].trim();
+                    } else {
+                        finalAnswer = 'There was an issue formatting the response.';
+                    }
+                }
+                console.log(finalAnswer);
                 $botMsg.text(finalAnswer).removeClass('loading');
                 window.chatHistory.push({ role: 'assistant', content: finalAnswer });
                 evtSource.close();
