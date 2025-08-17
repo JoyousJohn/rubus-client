@@ -127,13 +127,16 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
             const data = JSON.parse(event.data);
             if (data.progress && !data.done) {
                 // Show tool progress/description
-                $botMsg.text(data.progress).addClass('loading');
+                console.log(data);
+                const $thinkingDiv = $(`<div class="chat-message bot loading thinking">${data.progress}</div>`);
+                $thinkingDiv.insertBefore($messages.children().last());
             } else if (data.done) {
+                $('.chat-message.bot.loading.thinking').slideUp();
                 // Show final answer
                 finalAnswer = data.answer;
                 if (settings['toggle-show-thinking']) {
                     // console.log(data.answer);
-                    const $showEntireResponse = $('<div class="text-1p3rem" style="color: #8181f1">Show entire response</div>').click(function() {
+                    const $showEntireResponse = $('<div class="text-1p3rem pointer" style="color: #8181f1">Show entire response</div>').click(function() {
                         $(this).remove();
                         $messages.append(`<div class="text-1p3rem">Response content: ${data.answer}</div>`)
                     });
@@ -141,7 +144,14 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 } 
 
                 // Extract text after assistantFinal
-                const match = data.answer.match(/assistantfinal(.*)/);
+                let match = data.answer.match(/assistantfinal(.*)/);
+                if (!match) {
+                    // If "assistantfinal" is not found, look for the last occurrence of "final"
+                    const lastFinalIndex = data.answer.lastIndexOf("final");
+                    if (lastFinalIndex !== -1) {
+                        match = [null, data.answer.slice(lastFinalIndex + "final".length)];
+                    }
+                }
                 if (match) {
                     finalAnswer = match[1].trim();
                 } else {
