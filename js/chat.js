@@ -130,18 +130,25 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 $botMsg.text(data.progress).addClass('loading');
             } else if (data.done) {
                 // Show final answer
+                finalAnswer = data.answer;
                 if (settings['toggle-show-thinking']) {
-                    console.log(data.answer);
-                    finalAnswer = data.answer;
+                    // console.log(data.answer);
+                    const $showEntireResponse = $('<div class="text-1p3rem" style="color: #8181f1">Show entire response</div>').click(function() {
+                        $(this).remove();
+                        $messages.append(`<div class="text-1p3rem">Response content: ${data.answer}</div>`)
+                    });
+                    $messages.append($showEntireResponse);
+                } 
+
+                // Extract text after assistantFinal
+                const match = data.answer.match(/assistantfinal(.*)/);
+                if (match) {
+                    finalAnswer = match[1].trim();
                 } else {
-                    // Extract text within <final>...</final> tag
-                    const match = data.answer.match(/<final>([\s\S]*?)<\/final>/i);
-                    if (match) {
-                        finalAnswer = match[1].trim();
-                    } else {
-                        finalAnswer = 'There was an issue formatting the response.';
-                    }
+                    finalAnswer = 'There was an issue formatting the response.';       
                 }
+                    
+                
                 console.log(finalAnswer);
                 $botMsg.text(finalAnswer).removeClass('loading');
                 window.chatHistory.push({ role: 'assistant', content: finalAnswer });
