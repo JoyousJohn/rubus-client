@@ -377,6 +377,12 @@ $('.settings-toggle .toggle-input').on('change', function () {
             } else {
                 $('.chat-thinking-wrapper').hide();
             }
+            break;
+
+        case 'toggle-show-buildings':
+            settings['toggle-show-buildings'] = isChecked;
+            loadBuildings();
+            break;
 
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;

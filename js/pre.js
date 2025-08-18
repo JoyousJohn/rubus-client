@@ -783,7 +783,7 @@ async function startOvernight(setColorBack) {
 }
 
 function checkMinRoutes() {
-
+    
     if (selectedCampus !== 'nb') return;
 
     const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });

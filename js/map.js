@@ -7,6 +7,8 @@ let popupBusId;
 let popupStopId;
 let busesDoneInit; // don't check for moves until map is done plotting
 let selectedCampus;
+let popupBuildingName;
+let popupBuildingLatLng;
 
 let mapDragged = false;
 
@@ -371,9 +373,9 @@ function hideInfoBoxes(instantly_hide) {
     // console.log('hideInfoBoxes() triggered')
 
     if (instantly_hide) {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').hide(); 
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').hide(); 
     } else {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup').fadeOut();  
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').fadeOut();  
     }
 
     if (popupStopId) {
@@ -391,6 +393,11 @@ function hideInfoBoxes(instantly_hide) {
         popupBusId = null;
         $('.info-shared-bus-mid').hide();
         // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
+    }
+
+    if (popupBuildingName) {
+        popupBuildingName = null;
+        popupBuildingLatLng = null;
     }
 
     if (sourceBusId) {
@@ -2438,4 +2445,21 @@ function navToStop() {
 
     window.open(url, '_blank');
 
+}
+
+function navToBuilding() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    let url = '';
+
+    if (isIOS) {
+        url = `http://maps.apple.com/?daddr=${popupBuildingLatLng}&dirflg=w`;
+    } else if (isAndroid) {
+        url = `https://www.google.com/maps/dir/?api=1&destination=${popupBuildingLatLng}&travelmode=walking`;
+    } else {
+        // Fallback, use GM
+        url = `https://www.google.com/maps/dir/?api=1&destination=${popupBuildingLatLng}&travelmode=walking`;
+    }
+
+    window.open(url, '_blank');
 }

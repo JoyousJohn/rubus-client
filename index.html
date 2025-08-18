@@ -44,6 +44,7 @@
     <script src="lib/dist.js"></script>
     <script src="lib/depot.js"></script>
     <script src="lib/stopLines.js"></script>
+    <script src="js/buildings.js"></script>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/tailwind.css">
@@ -473,6 +474,29 @@
                 <div class="closest-stops-list grid text-1p8rem gap-x-3rem mt-0p5rem">
 
                 </div>
+            </div>
+        </div>
+
+        <div class="building-info-popup none m-1rem w-100" style="color: var(--theme-color); pointer-events: all; z-index: 402">
+            <div class="building-name text-2rem br-1rem p-1rem center" style="background-color: var(--theme-bg); font-family: var(--font-family);">Hill Center</div>
+
+            <div class="flex justify-between relative mt-0p5rem">
+
+                <div class="building-btns flex gap-x-0p5rem">  
+                    <div class="building-navigate br-1rem align-center pointer" onclick="">
+                        <i class="fa-solid fa-person-walking"></i>
+                    </div>
+                    <script>
+                        $('.building-navigate').click(function() {
+                            $(this).css('background-color', '#565fe5');
+                            setTimeout(() => {
+                                $(this).css('background-color', 'var(--theme-bg)');
+                            }, 250);
+                            navToBuilding();
+                        })
+                    </script>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1062,6 +1086,16 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-thinking" class="toggle-input">
                             <label for="toggle-show-thinking" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Buildings & Parking Layer</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-buildings" class="toggle-input">
+                            <label for="toggle-show-buildings" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>

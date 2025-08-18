@@ -1153,7 +1153,8 @@ const toggleSettings = [
     'toggle-show-sim',
     'toggle-spoofing',
     'toggle-show-chat',
-    'toggle-show-thinking'
+    'toggle-show-thinking',
+    'toggle-show-buildings'
 ]
 
 let colorMappings;
@@ -1233,6 +1234,7 @@ let defaultSettings = {
     'toggle-spoofing': false,
     'toggle-show-chat': false,
     'toggle-show-thinking': false,
+    'toggle-show-buildings': false,
     
     // going to remove
     'toggle-show-arrival-times': true,
