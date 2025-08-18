@@ -46,6 +46,13 @@ function loadBuildings() {
                                 popupBuildingLatLng = feature.properties.lat + ',' + feature.properties.lng;
                             }
                         });
+                        // Prevent map zoom on double-tap/click for building polygons
+                        layer.on('dblclick', function(e) {
+                            e.originalEvent.preventDefault();
+                            e.originalEvent.stopPropagation();
+                            L.DomEvent.stop(e);
+                            return false;
+                        });
                     }
                 }).addTo(map);
             });
