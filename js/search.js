@@ -1,6 +1,8 @@
 $(document).ready(function() {
     $('.search-btn').click(function() {
         $('.search-wrapper').show();
+        const $input = $('.search-wrapper input');
+        $input.val('').focus();
     });
 
     let fuse;
@@ -31,16 +33,33 @@ $(document).ready(function() {
         const $results = $('.search-results');
         $results.empty();
         if (!fuseReady || !query) {
-            $results.html('');
+            $('.search-results-wrapper, .search-results').hide();
             return;
         }
+        $('.search-results-wrapper, .search-results').show();
         const results = fuse.search(query, { limit: 10 });
         if (results.length === 0) {
             $results.html('<div class="dimgray">No buildings found.</div>');
             return;
         }
         results.forEach(({ item }) => {
-            $results.append(`<div class="search-result-item">${item.name}</div>`);
+            let icon = '';
+            if (item.category === 'building') {
+                icon = '<i class="fa-solid fa-building"></i>';
+            } else if (item.category === 'parking') {
+                icon = '<i class="fa-solid fa-square-parking"></i>';
+            }
+            $elm = $(`<div class="search-result-item flex">${icon}<div>${item.name}</div></div>`);
+            $elm.click(function() {
+                closeSearch();
+                console.log('item', item);
+                showBuildingInfo(item);
+
+                map.flyTo([item.lat, item.lng], 17, {
+                    duration: 0.3
+                });
+            });
+            $results.append($elm);
         });
     });
 

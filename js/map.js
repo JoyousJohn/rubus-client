@@ -380,6 +380,7 @@ function hideInfoBoxes(instantly_hide) {
     } else {
         $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup, .search-wrapper').fadeOut();  
     }
+    $('.search-results').empty();
 
     if (popupStopId) {
 
@@ -401,6 +402,7 @@ function hideInfoBoxes(instantly_hide) {
     if (popupBuildingName) {
         popupBuildingName = null;
         popupBuildingLatLng = null;
+        unhighlightBuilding();
     }
 
     if (sourceBusId) {
@@ -1667,6 +1669,9 @@ function popInfo(busId, resetCampusFontSize) {
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes
     $('.stop-info-popup').hide(); // nvm I changed something somewhere to make me need to hide this one too
+    
+    $('.building-info-popup').hide();
+    unhighlightBuilding();
 
     $('.bus-info-popup').stop(true, true).show();
 

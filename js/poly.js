@@ -623,6 +623,9 @@ async function popStopInfo(stopId) {
 
     $('.bus-log-wrapper').hide();
 
+    $('.building-info-popup').hide();
+    unhighlightBuilding();
+
     if (!sim) {
         sa_event('stop_view_test', {
             'stop_id': stopId,
