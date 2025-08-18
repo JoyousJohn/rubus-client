@@ -45,6 +45,7 @@
     <script src="lib/depot.js"></script>
     <script src="lib/stopLines.js"></script>
     <script src="js/buildings.js"></script>
+    <script src="js/search.js"></script>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/tailwind.css">
@@ -57,6 +58,7 @@
     <link rel="stylesheet" type="text/css" href="css/feedback.css">
     <link rel="stylesheet" type="text/css" href="css/sim.css">
     <link rel="stylesheet" type="text/css" href="css/chat.css">
+    <link rel="stylesheet" type="text/css" href="css/search.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
     <link rel="preload" as="image" href="img/stop_marker_selected.png">
@@ -70,6 +72,7 @@
     <link href="https://fonts.cdnfonts.com/css/sidecar" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/br-cobane" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js"></script>
         
     <script>
         (function() {
@@ -639,6 +642,15 @@
         </div>
     </div>
 
+    <div class="search-wrapper none">
+        <div>
+            <input type="text" placeholder="Search for a stop or building">
+            <div class="search-results">
+
+            </div>
+        </div>
+    </div>
+
     <div class="settings-panel">
         <div class="settings-main-heading center">Settings</div>
         <div class="settings-list flex flex-col gap-y-1rem">
@@ -1101,6 +1113,16 @@
                         </div>
                     </div>
 
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Show Search</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-search" class="toggle-input">
+                            <label for="toggle-show-search" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="settings-reset-settings">
                         <div class="settings-heading">REMOVE localStorage.SETTINGS</div>
                         <div class="settings-options grid">
@@ -1198,6 +1220,9 @@
             <div class="right-btns flex flex-col" style="row-gap: 0.8rem">
                 <div class="chat-btn-wrapper none">
                     <div class="chat-btn"><i class="fa-solid fa-comments"></i></div>
+                </div>
+                <div class="search-btn-wrapper none">
+                    <div class="search-btn"><i class="fa-solid fa-search"></i></div>
                 </div>
                 <div class="launch-fireworks-wrapper none">
                     <div class="shoot-fireworks"><i class="fa-solid fa-bahai"></i></div>

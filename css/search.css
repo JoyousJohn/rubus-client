@@ -1,0 +1,36 @@
+.search-wrapper {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    color: var(--theme-color);
+    z-index: 402; /* 402 instead of 401 to get over campus switcher */
+    font-family: var(--font-family);
+}
+
+.search-wrapper > div {
+    background-color: var(--theme-bg);
+    margin: 1rem;
+    border-radius: 1rem;
+    padding: 1rem;
+}
+
+.search-wrapper input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid var(--theme-color);
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
+    margin: 0;
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1rem;
+    font-size: 1.3rem;
+    margin-top: 1rem;
+    margin-left: 0.5rem;
+}

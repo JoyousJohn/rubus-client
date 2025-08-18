@@ -60,7 +60,7 @@ $(document).ready(function() {
     try { document.dispatchEvent(new Event('rubus-map-created')); } catch (_) {}
     try { if (typeof initSpoofing === 'function') { initSpoofing(); } } catch (_) {}
 
-    map.setMinZoom(12);
+    map.setMinZoom(12).doubleClickZoom.disable();
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
 
     let mapTheme;
@@ -194,7 +194,6 @@ $(document).ready(function() {
     });
 
     try { if (typeof initLocationWatchForRiding === 'function') { initLocationWatchForRiding(); } } catch (e) {}
-
 });
 
 function postLoadEvent() {
@@ -377,9 +376,9 @@ function hideInfoBoxes(instantly_hide) {
     // console.log('hideInfoBoxes() triggered')
 
     if (instantly_hide) {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').hide(); 
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup, .search-wrapper').hide(); 
     } else {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').fadeOut();  
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup, .search-wrapper').fadeOut();  
     }
 
     if (popupStopId) {

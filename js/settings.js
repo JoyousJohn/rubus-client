@@ -384,6 +384,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
             loadBuildings();
             break;
 
+        case 'toggle-show-search':
+            settings['toggle-show-search'] = isChecked;
+            if (isChecked) {
+                $('.search-btn-wrapper').show();
+            } else {
+                $('.search-btn-wrapper').hide();
+            }
+            break;
+
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 
@@ -520,6 +529,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-chat']) {
         $('.chat-btn-wrapper').show();
+    }
+
+    if (settings['toggle-show-search']) {
+        $('.search-btn-wrapper').show();
     }
 
     if (settings['toggle-show-campus-switcher']) {
