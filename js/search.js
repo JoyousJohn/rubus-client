@@ -1,8 +1,10 @@
 $(document).ready(function() {
+    const $input = $('.search-wrapper input');
+    $input.val('')
+
     $('.search-btn').click(function() {
         $('.search-wrapper').show();
-        const $input = $('.search-wrapper input');
-        $input.val('').focus();
+        $input.trigger('input').focus();
     });
 
     let fuse;
@@ -37,7 +39,7 @@ $(document).ready(function() {
             return;
         }
         $('.search-results-wrapper, .search-results').show();
-        const results = fuse.search(query, { limit: 10 });
+        const results = fuse.search(query);
         if (results.length === 0) {
             $results.html('<div class="dimgray">No buildings found.</div>');
             return;

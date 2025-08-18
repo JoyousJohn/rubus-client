@@ -36,6 +36,8 @@
     row-gap: 1rem;
     font-size: 1.5rem;
     margin-left: 0.5rem;
+    max-height: 42vh;
+    overflow: auto;
 }
 
 .search-result-item {

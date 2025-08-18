@@ -380,7 +380,7 @@ function hideInfoBoxes(instantly_hide) {
     } else {
         $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup, .search-wrapper').fadeOut();  
     }
-    $('.search-results').empty();
+    $('.search-results').empty().hide();
 
     if (popupStopId) {
 
