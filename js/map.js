@@ -132,6 +132,10 @@ $(document).ready(function() {
                 }
             }
 
+            if (settings['toggle-show-campus-switcher']) {
+                $('.campus-switcher').show();
+            }
+
             if (!shownRoute) {
                 $('[stop-eta]').text('').hide(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
             } else {

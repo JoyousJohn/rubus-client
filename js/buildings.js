@@ -38,10 +38,10 @@ function loadBuildings() {
                     onEachFeature: function(feature, layer) {
                         layer.on('click', function(e) {
                             if (feature.properties && feature.properties.name) {
-                                $('.knight-mover').hide();
+                                $('.knight-mover, .campus-switcher').hide();
                                 hideInfoBoxes();
                                 $('.building-info-popup .building-name').text(feature.properties.name);
-                                $('.building-info-popup').show();
+                                $('.building-info-popup').stop(true, true).show();
                                 popupBuildingName = feature.properties.name;
                                 popupBuildingLatLng = feature.properties.lat + ',' + feature.properties.lng;
                             }
