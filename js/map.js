@@ -428,7 +428,7 @@ function hideInfoBoxes(instantly_hide) {
 
     try { updateRidingBadgeUI(); } catch (_) {}
 
-    checkMinRoutes(); // to reshow knight mover if hidden; so far only hidden by search wrapper opening
+    // checkMinRoutes(); // to reshow knight mover if hidden; so far only hidden by search wrapper opening
 
 }
 
@@ -1711,7 +1711,7 @@ function updateNextStopsMaxHeight() {
     if (nextStops.length === 0) return;
     // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom <-- no longer acccrate 8/19
     const maxHeight = window.innerHeight - nextStops.offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight();
-    console.log(maxHeight);
+    // console.log(maxHeight);
     nextStops.css('max-height', maxHeight - 75);
 }
 

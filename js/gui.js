@@ -1830,3 +1830,8 @@ function selectTheme(theme) {
         changeMapStyle(previewTheme);
     }
 }
+
+window.continueToCampusModal = function() {
+    $('.theme-modal').hide();
+    $('.campus-modal').css('display', 'flex');
+};

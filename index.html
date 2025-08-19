@@ -60,6 +60,7 @@
     <link rel="stylesheet" type="text/css" href="css/chat.css">
     <link rel="stylesheet" type="text/css" href="css/search.css">
     <link rel="stylesheet" type="text/css" href="css/building.css">
+    <link rel="stylesheet" type="text/css" href="css/campus-modal.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
     <link rel="preload" as="image" href="img/stop_marker_selected.png">
@@ -161,13 +162,39 @@
                 })     
             </script>
             <div></div>
-            <div class="theme-modal-confirm theme-modal-confirm-mobile pointer" onclick="selectTheme('confirm')">Confirm ➜</div>
+            <div class="theme-modal-confirm theme-modal-confirm-mobile pointer" onclick="selectTheme('confirm'); continueToCampusModal()">Continue &rarr;</div>
         </div>
     </div>
 
+    <div class="campus-modal none flex-col justify-between h-100vh center">
+        <div class="campus-header">Select Your Campus</div>
+        <div class="campus-carousel-wrapper flex justify-center align-center" style="flex:1; overflow: visible;">
+            <div class="campus-carousel flex align-center" style="overflow-x: auto; scroll-behavior: smooth; width: 100vw;">
+                <div class="campus-carousel-item" data-campus="camden">
+                    <div class="campus-carousel-label">Camden</div>
+                    <img class="campus-carousel-img campus-img-camden" src="img/campus-images/camden-light.png" data-light="img/campus-images/camden-light.png" data-dark="img/campus-images/camden-dark.png">
+                </div>
+                <div class="campus-carousel-item" data-campus="nb">
+                    <div class="campus-carousel-label">New Brunswick</div>
+                    <img class="campus-carousel-img campus-img-nb" src="img/campus-images/nb-light.png" data-light="img/campus-images/nb-light.png" data-dark="img/campus-images/nb-dark.png">
+                </div>
+                <div class="campus-carousel-item" data-campus="newark">
+                    <div class="campus-carousel-label">Newark</div>
+                    <img class="campus-carousel-img campus-img-newark" src="img/campus-images/newark-light.png" data-light="img/campus-images/newark-light.png" data-dark="img/campus-images/newark-dark.png">
+                </div>
+            </div>
+        </div>
+        <div class="campus-modal-confirm campus-modal-confirm-mobile pointer" style="position: absolute; bottom: 2rem; right: 2rem;" onclick="confirmCampusSelection()">Confirm &rarr;</div>
+    </div>
     <script>
+        // Hide campus modal by default
+        document.querySelector('.campus-modal').style.display = 'none';
         if (JSON.parse(localStorage.getItem('settings')) && JSON.parse(localStorage.getItem('settings'))['theme']) {
             document.querySelector('.theme-modal').style.display = 'none';
+            // Only show campus modal if campus is not set
+            if (!JSON.parse(localStorage.getItem('settings'))['campus']) {
+                document.querySelector('.campus-modal').style.display = 'flex';
+            }
         } else if (new URLSearchParams(window.location.search).has('bus')) {
             document.querySelector('.theme-modal').style.display = 'none';
             $(document).ready(async function() {
@@ -501,6 +528,9 @@
             <div class="flex justify-between relative mt-0p5rem">
 
                 <div class="building-btns flex gap-x-0p5rem">  
+                    <div class="building-directions br-1rem align-center pointer" onclick="">
+                        <i class="fa-solid fa-diamond-turn-right"></i>
+                    </div>
                     <div class="building-navigate br-1rem align-center pointer" onclick="">
                         <i class="fa-solid fa-person-walking"></i>
                     </div>

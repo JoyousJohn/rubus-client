@@ -604,7 +604,7 @@ html, body {
     top: 0;
 }
 
-.bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate, .bus-history, .building-navigate {
+.bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate, .bus-history, .building-navigate, .building-directions {
     color: var(--theme-color);
     background-color: var(--theme-bg);
     font-size: 1.7rem;
@@ -1015,7 +1015,7 @@ html, body {
     cursor: pointer;
 }
 
-.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .all-stops > i, .chat-btn > i, .search-btn > i {
+.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .all-stops > i, .chat-btn > i, .search-btn > i, .building-directions > i {
     font-size: 2rem;
 }
 

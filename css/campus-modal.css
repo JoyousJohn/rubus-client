@@ -1,0 +1,112 @@
+/* Campus Modal Carousel Styles */
+.campus-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+	background: var(--theme-bg);
+	font-family: var(--font-family);
+	color: var(--theme-color);
+	padding: 0;
+	pointer-events: all;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: stretch;
+	min-height: 100vh;
+	overflow: hidden;
+}
+.campus-header {
+	font-size: 2.5rem;
+	margin-top: 2rem;
+	text-align: center;
+	color: var(--theme-color);
+	font-family: var(--font-family);
+}
+.campus-carousel-wrapper {
+	width: 100vw;
+	flex: 1;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	overflow: hidden;
+	padding: 0;
+	box-sizing: border-box;
+	max-height: calc(100vh - 8rem);
+}
+.campus-carousel {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	width: 100vw;
+	height: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scroll-behavior: smooth;
+	gap: 2rem;
+	padding-left: 50vw;
+	padding-right: 50vw;
+	scrollbar-width: none;
+}
+.campus-carousel::-webkit-scrollbar { display: none; }
+.campus-carousel-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	transition: all 0.4s cubic-bezier(.4,2,.6,1);
+	cursor: pointer;
+	max-width: 35vw;
+	margin: 0 1rem;
+	opacity: 0.75;
+}
+.campus-carousel-item.selected {
+	transform: scale(1);
+	z-index: 2;
+	opacity: 1;
+	max-width: 50vw;
+}
+.campus-carousel-img {
+	width: auto;
+	max-width: 50vw;
+	height: auto;
+	max-height: calc(100vh - 15rem);
+	object-fit: contain;
+	border-radius: 1.5rem;
+	box-shadow: 0 2px 12px 0 rgba(0,0,0,0.08);
+	background: transparent;
+	transition: box-shadow 0.25s, border 0.25s;
+	border: 3px solid transparent;
+}
+.campus-carousel-item.selected .campus-carousel-img {
+	border: 3px solid var(--theme-color);
+	box-shadow: 0 4px 24px 0 rgba(0,0,0,0.18);
+}
+.campus-carousel-label {
+	font-size: 1.9rem;
+	text-align: center;
+	margin: 0 0 0.7rem 0;
+	color: var(--theme-color);
+	line-height: 1.1;
+	overflow: visible;
+}
+.campus-modal-confirm {
+	background-color: rgb(53, 101, 248);
+	padding: 0.5rem 1.5rem;
+	font-size: 2rem;
+	color: white;
+	border-radius: 3rem;
+	font-weight: 500;
+	margin: 0 1.5rem;
+	align-self: end;
+}
+.campus-modal-confirm:hover {
+	background: #1c2890;
+}
+
+@media (max-width: 600px) {
+	.campus-carousel-item { max-width: 50vw; }
+	.campus-carousel-item.selected { max-width: 55vw; }
+	.campus-header { font-size: 2rem; }
+	.campus-modal-confirm { font-size: 1.5rem; padding: 0.7rem 1.5rem; }
+}

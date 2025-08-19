@@ -786,6 +786,7 @@ async function startOvernight(setColorBack) {
 function checkMinRoutes() {
     
     if (selectedCampus !== 'nb') return;
+    if ($('.search-wrapper').is(':visible')) return;
 
     const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
     // if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check

@@ -127,3 +127,91 @@ $(function(){
         }
     });
 });
+
+$(function() {
+    function updateCampusCarouselTheme() {
+        const theme = document.documentElement.getAttribute('theme');
+        $('.campus-carousel-img').each(function() {
+            const $img = $(this);
+            $img.attr('src', $img.data(theme));
+        });
+    }
+    function centerItem($selected) {
+        if (typeof isDesktop !== 'undefined' && isDesktop) return; // Do not scroll on desktop
+        const $carousel = $('.campus-carousel');
+        const carouselOffset = $carousel.offset().left;
+        const currentScroll = $carousel.scrollLeft();
+        const itemOffset = $selected.offset().left; // relative to doc
+        const itemWidth = $selected.outerWidth();
+        const carouselWidth = $carousel.innerWidth();
+        const targetScrollLeft = (itemOffset - carouselOffset + currentScroll) + (itemWidth / 2) - (carouselWidth / 2);
+        $carousel.stop(true).animate({ scrollLeft: targetScrollLeft }, 150);
+    }
+    function setCampusHeaderBold(campus) {
+        // Unbold all campus labels, then bold only the selected one
+        $('.campus-carousel-label').css('font-weight', '');
+        $(`.campus-carousel-item[data-campus="${campus}"] .campus-carousel-label`).css('font-weight', 'bold');
+    }
+    function selectCampusCarousel(campus, animate = true) {
+        $('.campus-carousel-item').removeClass('selected');
+        const $selected = $(`.campus-carousel-item[data-campus="${campus}"]`).addClass('selected');
+        setCampusHeaderBold(campus);
+        if (animate && !(typeof isDesktop !== 'undefined' && isDesktop)) {
+            centerItem($selected);
+            const onTransitionEnd = (e) => {
+                if (e.target !== $selected[0]) { return; }
+                $selected.off('transitionend', onTransitionEnd);
+                centerItem($selected);
+            };
+            $selected.on('transitionend', onTransitionEnd);
+            setTimeout(() => {
+                $selected.off('transitionend', onTransitionEnd);
+                centerItem($selected);
+            }, 500);
+        }
+        if (window.settings) {
+            settings['campus'] = campus;
+        } else {
+            window.settings = window.settings || {};
+            settings['campus'] = campus;
+        }
+    }
+    updateCampusCarouselTheme();
+    const observer = new MutationObserver(updateCampusCarouselTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['theme'] });
+    $('.campus-carousel-item').on('click touchend', function() {
+        const campus = $(this).data('campus');
+        selectCampusCarousel(campus);
+    });
+    // Default: NB centered perfectly after initial paint
+    const initialCampus = (window.settings && settings['campus']) || 'nb';
+    const $initialSelected = $(`.campus-carousel-item[data-campus="${initialCampus}"]`);
+    $initialSelected.css({
+        'transition': 'none',  // Ensure no transition
+        'transform': 'scale(1)',  // Directly set to selected scale
+        'opacity': '1',
+        'z-index': '2'  // Add other selected styles as needed
+    });
+    selectCampusCarousel(initialCampus, false);  // This will add the class without triggering animation
+    if (!(typeof isDesktop !== 'undefined' && isDesktop)) {
+        requestAnimationFrame(() => {
+            centerItem($initialSelected);
+            requestAnimationFrame(() => {
+                $initialSelected.css('transition', '');  // Re-enable transitions for future interactions
+            });
+        });
+    }
+    // On initial load, set the header bold for the initial campus
+    setCampusHeaderBold(initialCampus);
+    window.confirmCampusSelection = function() {
+        localStorage.setItem('settings', JSON.stringify(settings));
+        campusChanged();
+        // Always center the New Brunswick campus before hiding the modal
+        const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
+        if (!(typeof isDesktop !== 'undefined' && isDesktop)) {
+            centerItem($nb);
+        }
+        $('.campus-modal').fadeOut();
+    };
+});
+
