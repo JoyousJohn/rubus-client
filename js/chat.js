@@ -38,10 +38,52 @@ const exampleChats = [
     }
 ]
 
+// Visual Viewport-aware sizing
+let chatViewportListenersAttached = false;
+let chatVvpHandler = null;
+
+function setChatHeightsForViewportHeight(viewportHeightPx) {
+  const headerHeight = $('.chat-ui-header').outerHeight() || 0;
+  const inputBarHeight = $('.chat-ui-input-bar').outerHeight() || 0;
+  const availableHeight = Math.max(0, viewportHeightPx - headerHeight - inputBarHeight);
+  $('.chat-ui-panel').css('height', viewportHeightPx + 'px');
+  $('.chat-ui-messages').css('height', availableHeight + 'px');
+}
+
+function adjustChatHeights() {
+  const height = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+  setChatHeightsForViewportHeight(height);
+}
+
+function attachChatViewportListeners() {
+  if (chatViewportListenersAttached) return;
+  chatViewportListenersAttached = true;
+  chatVvpHandler = () => requestAnimationFrame(adjustChatHeights);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', chatVvpHandler);
+    window.visualViewport.addEventListener('scroll', chatVvpHandler);
+  }
+  window.addEventListener('resize', chatVvpHandler);
+}
+
+function detachChatViewportListeners() {
+  if (!chatViewportListenersAttached) return;
+  chatViewportListenersAttached = false;
+  if (window.visualViewport && chatVvpHandler) {
+    window.visualViewport.removeEventListener('resize', chatVvpHandler);
+    window.visualViewport.removeEventListener('scroll', chatVvpHandler);
+  }
+  if (chatVvpHandler) {
+    window.removeEventListener('resize', chatVvpHandler);
+  }
+  chatVvpHandler = null;
+}
+
 // Show chat UI when chat button is clicked
 $(document).on('click', '.chat-btn', function() {
   $('.chat-wrapper').removeClass('none').show();
-//   adjustChatHeight();
+  attachChatViewportListeners();
+  adjustChatHeights();
 
     const shuffled = [...exampleChats].sort(() => 0.5 - Math.random());
     shuffled.forEach(example => {
@@ -63,24 +105,21 @@ $(document).on('click', '.chat-btn', function() {
 
 });
 
-// Adjust chat height based on actual viewport
-function adjustChatHeight() {
-  const headerHeight = $('.chat-ui-header').outerHeight();
-  const inputBarHeight = $('.chat-ui-input-bar').outerHeight();
-  const availableHeight = window.innerHeight - headerHeight - inputBarHeight;
-  $('.chat-ui-messages').css('height', availableHeight + 'px');
-}
-
-// Adjust on window resize (including keyboard open/close)
-$(window).on('resize orientationchange', function() {
-  if ($('.chat-wrapper').is(':visible')) {
-    setTimeout(adjustChatHeight, 100); // Small delay to ensure layout is updated
-  }
+// Nudge layout when input gains focus (keyboard opening)
+$(document).on('focus', '.chat-ui-input', function() {
+  setTimeout(adjustChatHeights, 50);
+});
+$(document).on('blur', '.chat-ui-input', function() {
+  setTimeout(adjustChatHeights, 50);
 });
 
 // Close chat UI
 $(document).on('click', '.chat-ui-close', function() {
   $('.chat-wrapper').hide();
+  detachChatViewportListeners();
+  // Clear inline sizing
+  $('.chat-ui-panel').css('height', '');
+  $('.chat-ui-messages').css('height', '');
 });
 window.chatHistory = [];
 
