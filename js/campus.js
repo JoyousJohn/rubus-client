@@ -136,8 +136,10 @@ $(function() {
             $img.attr('src', $img.data(theme));
         });
     }
+    let campusCarouselUserInteracted = false;
     function centerItem($selected) {
         if (typeof isDesktop !== 'undefined' && isDesktop) return; // Do not scroll on desktop
+        if (campusCarouselUserInteracted) return; // Skip if user interacted
         const $carousel = $('.campus-carousel');
         const carouselOffset = $carousel.offset().left;
         const currentScroll = $carousel.scrollLeft();
@@ -168,14 +170,26 @@ $(function() {
     window.centerCampusCarouselToNB = function() {
         if (typeof isDesktop !== 'undefined' && isDesktop) return; // No scroll on desktop
         if (!$('.campus-modal').is(':visible')) return; // Only when modal visible
+        if (campusCarouselUserInteracted) return; // Respect user interaction
         const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
         requestAnimationFrame(() => centerItem($nb));
     }
 
     window.centerCampusCarouselToNBInstant = function() {
         if (typeof isDesktop !== 'undefined' && isDesktop) return; // No scroll on desktop
+        campusCarouselUserInteracted = false; // Reset flag before showing
         const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
-        centerItemInstant($nb);
+        const $carousel = $('.campus-carousel');
+        const carouselOffset = $carousel.offset().left;
+        const currentScroll = $carousel.scrollLeft();
+        const itemOffset = $nb.offset().left; // relative to doc
+        const itemWidth = $nb.outerWidth();
+        const carouselWidth = $carousel.innerWidth();
+        const targetScrollLeft = (itemOffset - carouselOffset + currentScroll) + (itemWidth / 2) - (carouselWidth / 2);
+        const prevBehavior = $carousel.css('scroll-behavior');
+        $carousel.css('scroll-behavior', 'auto');
+        $carousel.scrollLeft(targetScrollLeft);
+        if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
     }
     function setCampusHeaderBold(campus) {
         // Unbold all campus labels, then bold only the selected one
@@ -186,7 +200,7 @@ $(function() {
         $('.campus-carousel-item').removeClass('selected');
         const $selected = $(`.campus-carousel-item[data-campus="${campus}"]`).addClass('selected');
         setCampusHeaderBold(campus);
-        if (animate && !(typeof isDesktop !== 'undefined' && isDesktop)) {
+        if (animate && !(typeof isDesktop !== 'undefined' && isDesktop) && !campusCarouselUserInteracted) {
             centerItem($selected);
             const onTransitionEnd = (e) => {
                 if (e.target !== $selected[0]) { return; }
@@ -212,6 +226,10 @@ $(function() {
     $('.campus-carousel-item').on('click touchend', function() {
         const campus = $(this).data('campus');
         selectCampusCarousel(campus);
+    });
+    // Mark when user interacts so auto-centering won't fight scrolling
+    $('.campus-carousel').on('mousedown touchstart wheel scroll', function() {
+        campusCarouselUserInteracted = true;
     });
     // Default: NB centered perfectly after initial paint
     const initialCampus = (window.settings && settings['campus']) || 'nb';
