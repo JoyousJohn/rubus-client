@@ -463,6 +463,10 @@ function panout() {
         showAllStops();
     }
 
+    sa_event('btn_press', {
+        'btn': 'panout'
+    });
+
 }
 
 function changeMapStyle(newStyle) {
@@ -550,6 +554,10 @@ function centerme() {
     } else {
         console.error('Geolocation is not supported by this browser.');
     }
+
+    sa_event('btn_press', {
+        'btn': 'centerme'
+    });
 }
 
 // Method to calculate Haversine distance between two points in miles

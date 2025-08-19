@@ -169,6 +169,10 @@ async function populateBuildingClosestStopsList(feature) {
                 await startSim();
             }
             flyToStop(Number(stop.stopId));
+            sa_event('btn_press', {
+                'btn': 'building_closest_stop',
+                'stop': stop.name
+            });
         });
         $list.append($item);
         // Populate bus routes badges
@@ -184,6 +188,11 @@ async function populateBuildingClosestStopsList(feature) {
                 setTimeout(() => {
                     toggleRoute(route);
                 }, 1);
+                sa_event('btn_press', {
+                    'btn': 'building_closest_stop_route',
+                    'stop': stop.name,
+                    'route': route
+                });
             });
             $routesDiv.append($badge);
         });
@@ -195,6 +204,9 @@ async function populateBuildingClosestStopsList(feature) {
         $showMore.click(function() {
             $('.building-stop-extra').slideDown(200);
             $(this).hide();
+            sa_event('btn_press', {
+                'btn': 'building_show_more_stops'
+            });
         });
         $list.append($showMore);
     }
@@ -210,6 +222,10 @@ function setupBuildingClosestStopsSwitcher() {
             buildingClosestStopsMode = selected;
             updateBuildingClosestStopsSwitcher();
             populateBuildingClosestStopsList(window._currentBuildingFeatureForStops);
+            sa_event('btn_press', {
+                'btn': 'building_closest_stops_switcher',
+                'mode': selected
+            });
         }
     });
 }
@@ -276,6 +292,9 @@ function loadBuildings() {
                         layer.on('click', function(e) {
                             if (feature.properties && feature.properties.name) {
                                 showBuildingInfo(feature.properties);
+                                sa_event('building_tap', {
+                                    'building': feature.properties.name
+                                });
                             }
                         });
                     }

@@ -7,6 +7,10 @@ $(document).ready(function() {
         $('.knight-mover').hide();
         $('.search-wrapper').show();
         $input.trigger('input').focus();
+
+        sa_event('btn_press', {
+            'btn': 'search'
+        });
     });
 
     let fuse;
@@ -93,6 +97,11 @@ $(document).ready(function() {
                 closeSearch();
                 showBuildingInfo(item);
                 map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
+
+                sa_event('btn_press', {
+                    'btn': 'search_result',
+                    'result': item.name
+                });
             });
             $results.append($elm);
         });
