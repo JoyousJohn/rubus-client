@@ -157,7 +157,7 @@ async function populateBuildingClosestStopsList(feature) {
         const extraClass = idx === 0 ? '' : 'building-stop-extra';
         const $item = $(`
             <div class="flex flex-col mb-0p5rem ${extraClass}" style="${idx > 0 ? 'display:none;' : ''}">
-                <div class="flex align-center gap-x-1rem pointer">
+                <div class="flex align-center gap-x-0p5rem pointer">
                     <div class="building-stop-name" style="font-size:1.5rem;">${stop.name}</div>
                     <div class="building-stop-dist" style="color:gray; font-size:1.2rem;">${distStr}</div>
                 </div>

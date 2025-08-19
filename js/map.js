@@ -165,6 +165,7 @@ $(document).ready(function() {
 
     $(window).resize(function() {
         isDesktop = $(window).width() > 992;
+        updateNextStopsMaxHeight();
     });
     
     if (!$('.theme-modal').is(':visible')) {
@@ -1685,8 +1686,7 @@ function popInfo(busId, resetCampusFontSize) {
 
     $('.bus-info-popup').stop(true, true).show();
 
-    const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 135) // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom
+    updateNextStopsMaxHeight();
 
     if (!popupBusId && settings['toggle-hide-other-routes']) {
         focusBus(busId);
@@ -1706,6 +1706,14 @@ function popInfo(busId, resetCampusFontSize) {
     try { updateRidingBadgeUI(); } catch (_) {}
 }
 
+function updateNextStopsMaxHeight() {
+    const nextStops = $('.info-next-stops');
+    if (nextStops.length === 0) return;
+    // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom <-- no longer acccrate 8/19
+    const maxHeight = window.innerHeight - nextStops.offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight();
+    console.log(maxHeight);
+    nextStops.css('max-height', maxHeight - 75);
+}
 
 function populateBusBreaks(busBreakData) {
 

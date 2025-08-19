@@ -368,6 +368,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-show-chat':
             settings['toggle-show-chat'] = isChecked;
+            if (isChecked) {
+                $('.chat-btn-wrapper').show();
+            } else {
+                $('.chat-btn-wrapper').hide();
+            }
             break;
 
         case 'toggle-show-thinking':
