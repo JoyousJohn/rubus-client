@@ -181,7 +181,9 @@ async function populateBuildingClosestStopsList(feature) {
                     await startSim();
                 }
                 flyToStop(Number(stop.stopId));
-                toggleRoute(route);
+                setTimeout(() => {
+                    toggleRoute(route);
+                }, 1);
             });
             $routesDiv.append($badge);
         });

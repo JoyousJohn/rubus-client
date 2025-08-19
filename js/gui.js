@@ -386,7 +386,11 @@ function toggleRoute(route) {
         hideStopsExcept(route);
 
         // console.log(route)
-        polylines[route].setStyle({ opacity: 1 }); // show this one if it was prev hidden
+        try {
+            polylines[route].setStyle({ opacity: 1 }); // show this one if it was prev hidden
+        } catch (e) {
+            console.log('Error setting style for route:', route, e);
+        }
 
         if (!popupStopId) {
             map.fitBounds(polylines[route].getBounds(), { padding: [10, 10] });
