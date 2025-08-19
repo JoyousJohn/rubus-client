@@ -59,6 +59,7 @@
     <link rel="stylesheet" type="text/css" href="css/sim.css">
     <link rel="stylesheet" type="text/css" href="css/chat.css">
     <link rel="stylesheet" type="text/css" href="css/search.css">
+    <link rel="stylesheet" type="text/css" href="css/building.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
     <link rel="preload" as="image" href="img/stop_marker_selected.png">
@@ -480,8 +481,19 @@
             </div>
         </div>
 
-        <div class="building-info-popup none m-1rem w-100" style="color: var(--theme-color); pointer-events: all; z-index: 403">
-            <div class="building-name text-2rem br-1rem p-1rem center" style="background-color: var(--theme-bg); font-family: var(--font-family);">Hill Center</div>
+        <div class="building-info-popup none m-1rem w-100 center" style="pointer-events: all; z-index: 403; font-family: var(--font-family); position: relative;">
+
+            <div class="br-1rem p-1rem" style="background-color: var(--theme-bg); color: var(--theme-color);">
+                <div class="building-name text-2rem">Hill Center</div>
+                <div class="text-1p3rem mt-0p5rem">Closest Stops</div>
+                <div class="building-closest-stops-options">
+                    <div class="building-closest-stops-option pointer">Active</div>
+                    <div class="building-closest-stops-option pointer">All</div>
+                </div>
+                <div class="building-closest-stops-explain text-1p3rem none mb-1rem" style="color: var(--theme-extra);">(Selecting a stop or route below will trigger the simulator.)</div>
+                <div class="building-closest-stops-list">
+                </div>
+            </div>
 
             <div class="flex justify-between relative mt-0p5rem">
 

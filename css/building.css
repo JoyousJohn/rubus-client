@@ -1,0 +1,38 @@
+/* --- Building Closest Stops Switcher Styles --- */
+.building-closest-stops-options {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.building-closest-stops-option {
+    font-size: 1.5rem;
+    color: var(--theme-color);
+    border: 1px solid var(--theme-color);
+    font-weight: 500;
+    padding: 0.1rem 0.5rem;
+    background: none;
+    transition: background 0.15s, color 0.15s;
+}
+
+.building-closest-stops-option.only-option {
+    border-radius: 0.8rem !important;
+}
+
+.building-closest-stops-option:first-child {
+    border-radius: 0.8rem 0 0 0.8rem;
+}
+
+.building-closest-stops-option:last-child {
+    border-radius: 0 0.8rem 0.8rem 0;
+}
+
+.building-closest-stops-option.selected {
+    background-color: var(--theme-color);
+    color: var(--theme-bg);
+}
+
+
+.building-closest-stops-list {
+    margin: 0 2rem;
+}

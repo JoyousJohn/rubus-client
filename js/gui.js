@@ -361,7 +361,8 @@ function toggleRoute(route) {
             map.fitBounds(polylineBounds) 
         }
         else {
-            updateStopBuses(popupStopId);
+            // Explicitly show all buses in stop info when unselecting the current route filter
+            updateStopBuses(popupStopId, null);
         }
 
         $('[stop-eta]').text('').hide();
@@ -402,7 +403,7 @@ function toggleRoute(route) {
         hideInfoBoxes();
     }
 
-    toggleRouteSelectors(route)
+    toggleRouteSelectors(route);
 
 }
 
@@ -411,12 +412,12 @@ let panelRoute;
 function selectedRoute(route) {
 
     if (panelRoute === route) {
-        closeRouteMenu()
-        return
+        closeRouteMenu();
+        return;
     }
 
     if (shownRoute !== route) {
-        toggleRouteSelectors(route)
+        toggleRouteSelectors(route);
     }
 
     $('.route-name').text(route.toUpperCase()).css('color', colorMappings[route])
@@ -1290,6 +1291,7 @@ function updateSettings() {
         document.documentElement.style.setProperty('--font-family', settings['font'] + ', sans-serif');
 
     } else {
+        console.log('does this run?')
         setDefaultSettings();
     }
 
@@ -1402,7 +1404,21 @@ function updateSettings() {
 
     });
 
-    
+    if (!localStorage.getItem('uid')) {
+        function genUid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        localStorage.setItem('uid', genUid());
+        sa_event('uid_generated', {
+            'uid': localStorage.getItem('uid')
+        });
+    }
+    if (!localStorage.getItem('timeJoined')) {
+        localStorage.setItem('timeJoined', new Date().toISOString());
+    }
 
     getBuildNumber()
 }

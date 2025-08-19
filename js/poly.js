@@ -156,6 +156,14 @@ function getNextStopAfterCurrentGivenPrev(route, prevStopId, currentStopId) {
 
 function updateStopBuses(stopId, actuallyShownRoute) {
 
+    // Determine which route (if any) should be visibly filtered in the stop info
+    // - If caller passed undefined: use current shownRoute (maintains filter during async refreshes)
+    // - If caller passed null/false/empty: show all (explicit override)
+    // - If caller passed a route string: use it (unless 'fav')
+    const visibleRoute = (typeof actuallyShownRoute === 'undefined')
+        ? (shownRoute && shownRoute !== 'fav' ? shownRoute : undefined)
+        : (actuallyShownRoute && actuallyShownRoute !== 'fav' ? actuallyShownRoute : undefined);
+
     let servicingEntries = []
 
     $('.info-stop-servicing').empty();
@@ -181,7 +189,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
     servicedRoutes.forEach(servicedRoute => {
         
         const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`);
-        if (actuallyShownRoute && actuallyShownRoute !== servicedRoute) {
+        if (visibleRoute && visibleRoute !== servicedRoute) {
             $serviedRouteElm.css('color', 'var(--theme-hidden-route-col)');
         } else {
             $serviedRouteElm.css('color', colorMappings[servicedRoute]);
@@ -299,7 +307,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         </div>`)
         $('.stop-info-buses-grid').append($stopBusElm);
 
-        if (actuallyShownRoute && actuallyShownRoute !== data.route) {
+        if (visibleRoute && visibleRoute !== data.route) {
             $('.stop-octagon').last().css('background-color', 'var(--theme-hidden-route-col)').find('div').css('color', 'gray');
         }
 
@@ -317,7 +325,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
         }
 
-        if (actuallyShownRoute && actuallyShownRoute !== data.route) {
+        if (visibleRoute && visibleRoute !== data.route) {
             $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
             $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
             $('.stop-info-buses-grid').children().slice(-4).removeClass('pointer');
@@ -384,7 +392,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
             }
 
-            if (actuallyShownRoute && actuallyShownRoute !== data.route) {
+            if (visibleRoute && visibleRoute !== data.route) {
                 $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
                 $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
                 $('.stop-info-buses-grid-next').children().slice(-4).removeClass('pointer');
@@ -522,6 +530,7 @@ const stopSwitchConfig = {
 };
 
 async function popStopInfo(stopId) {
+    console.log('popStopInfo', stopId);
     if (popupStopId) {
         $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
         busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);

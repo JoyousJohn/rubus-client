@@ -433,10 +433,10 @@ function makeOoS(busId) {
 
     delete busData[busId];   
     console.log("makeOos() busesByRoutes before: ", busesByRoutes)
-    console.log("busData before: ", busDataCopy)
+    console.log("busData before: ", busData)
     makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
     console.log("makeOos() busesByRoutes after: ", busesByRoutes)
-    console.log("busData after: ", busDataCopy)
+    console.log("busData after: ", busData)
     
     if (route && (!busesByRoutes[selectedCampus] || !busesByRoutes[selectedCampus][route])) { // for some reason route can be undefined, investigate. // if no more buses, buses by routes will no longer have a campus key. checking if no longer has this key, but can also update the make function to include the campus anyway.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
@@ -690,6 +690,7 @@ async function fetchWhere() {
 
         updateTimeToStops(validBusIds)
         if (popupStopId) {
+            // Preserve any active route filter in the stop info
             updateStopBuses(popupStopId)
         }
 
@@ -985,6 +986,7 @@ $(document).ready(async function() {
     if (settings) {
         settings = JSON.parse(settings);
     } else {
+        console.log('does this also run?')
         settings = defaultSettings;
     }
 

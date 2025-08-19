@@ -56,6 +56,162 @@ function highlightBuilding(feature) {
     }
 }
 
+// --- Building Closest Stops Switcher ---
+let buildingClosestStopsMode = 'all'; // 'all' or 'active'
+
+function updateBuildingClosestStopsSwitcher() {
+    const $options = $('.building-closest-stops-options .building-closest-stops-option');
+    $options.removeClass('selected');
+    $options.each(function() {
+        if ($(this).text().trim().toLowerCase() === buildingClosestStopsMode) {
+            $(this).addClass('selected');
+        }
+    });
+
+    if (sim) {
+        $('.building-closest-stops-options').hide();
+    } else {
+        // Determine if there are any active buses
+        const hasActive = Object.keys(busData).length > 0;
+        if (!hasActive) {
+            // Only show 'All' option, hide 'Active'
+            $('.building-closest-stops-options .building-closest-stops-option').each(function() {
+                if ($(this).text().trim().toLowerCase() === 'active') {
+                    $(this).hide();
+                } else {
+                    $(this).show().addClass('selected only-option').text('All Routes').removeClass('pointer').show();
+                }
+            });
+            buildingClosestStopsMode = 'all';
+        } else {
+            $('.building-closest-stops-options .building-closest-stops-option').show().removeClass('only-option');
+        }
+        $('.building-closest-stops-options').show();
+        if (buildingClosestStopsMode === 'all') {
+            $('.building-closest-stops-explain').removeClass('none');
+        } else {
+            $('.building-closest-stops-explain').addClass('none');
+        }
+    }
+}
+
+function getAllMainRoutesForStop(stopId) {
+    stopId = Number(stopId);
+    const routes = ['a', 'b', 'bl', 'c', 'ee', 'f', 'h', 'lx', 'rexl', 'rexb'].filter(route => {
+        return stopLists[route].includes(stopId);
+    });
+    return routes;
+}
+
+async function populateBuildingClosestStopsList(feature) {
+    // feature: { name, lat, lng, ... }
+    if (!feature || typeof feature.lat !== 'number' || typeof feature.lng !== 'number') return;
+    const buildingLat = feature.lat;
+    const buildingLng = feature.lng;
+
+    // Use all stops or only active stops
+    let stopIds = buildingClosestStopsMode === 'active' ? (activeStops || []) : Object.keys(stopsData || {});
+    // If stopsData keys are strings, ensure stopIds are strings
+    stopIds = stopIds.map(String);
+
+    // Calculate distances
+    const stopsWithDistance = stopIds.map(stopId => {
+        const stop = stopsData[stopId];
+        if (!stop) return null;
+        const dist = haversine(buildingLat, buildingLng, stop.latitude, stop.longitude);
+        let routes = [];
+        if (buildingClosestStopsMode === 'active') {
+            routes = getRoutesServicingStop(Number(stopId));
+        } else {
+            routes = getAllMainRoutesForStop(stopId);
+        }
+        return routes.length > 0 ? {
+            stopId,
+            name: stop.name,
+            distance: dist,
+            lat: stop.latitude,
+            lng: stop.longitude,
+            routes
+        } : null;
+    }).filter(Boolean);
+
+    // Sort by distance
+    stopsWithDistance.sort((a, b) => a.distance - b.distance);
+
+    // Only show the closest 3 with at least one route
+    const stopsToShow = stopsWithDistance.slice(0, 3);
+
+    // Render
+    const $list = $('.building-closest-stops-list');
+    $list.empty();
+
+    // Show only the closest stop at first
+    stopsToShow.forEach((stop, idx) => {
+        // If less than 1,000ft, show in ft, else in mi
+        let distStr;
+        if (stop.distance < 0.189) { // 1,000ft = 0.189 miles
+            distStr = `${Math.round(stop.distance * 5280)} ft`;
+        } else {
+            distStr = `${stop.distance.toFixed(2)} mi`;
+        }
+        const extraClass = idx === 0 ? '' : 'building-stop-extra';
+        const $item = $(`
+            <div class="flex flex-col mb-0p5rem ${extraClass}" style="${idx > 0 ? 'display:none;' : ''}">
+                <div class="flex align-center gap-x-1rem pointer">
+                    <div class="building-stop-name" style="font-size:1.5rem;">${stop.name}</div>
+                    <div class="building-stop-dist" style="color:gray; font-size:1.2rem;">${distStr}</div>
+                </div>
+                <div class="building-stop-bus-routes flex gap-x-0p5rem"></div>
+            </div>
+        `);
+        $item.click(async () => {
+            if (buildingClosestStopsMode === 'all') {
+                await startSim();
+            }
+            flyToStop(Number(stop.stopId));
+        });
+        $list.append($item);
+        // Populate bus routes badges
+        const $routesDiv = $item.find('.building-stop-bus-routes');
+        stop.routes.forEach(route => {
+            const color = colorMappings[route];
+            const $badge = $(`<div class="building-route-badge pointer" style="background:${color};color:white;padding:0.2rem 0.8rem;border-radius:0.5rem;font-size:1.2rem;">${route.toUpperCase()}</div>`).click(async function(e) {
+                e.stopPropagation();
+                if (buildingClosestStopsMode === 'all') {
+                    await startSim();
+                }
+                flyToStop(Number(stop.stopId));
+                toggleRoute(route);
+            });
+            $routesDiv.append($badge);
+        });
+    });
+
+    // If there are more than 1 stop, add a 'Show more stops' link
+    if (stopsToShow.length > 1) {
+        const $showMore = $('<div class="building-show-more-stops pointer" style="color:rgb(105, 105, 191);font-size:1.2rem;text-align:left;">Show more stops</div>');
+        $showMore.click(function() {
+            $('.building-stop-extra').slideDown(200);
+            $(this).hide();
+        });
+        $list.append($showMore);
+    }
+}
+
+function setupBuildingClosestStopsSwitcher() {
+    // Only set up once
+    if ($('.building-closest-stops-options').data('setup')) return;
+    $('.building-closest-stops-options').data('setup', true);
+    $('.building-closest-stops-options .building-closest-stops-option').off('click').on('click', function() {
+        const selected = $(this).text().trim().toLowerCase();
+        if (selected !== buildingClosestStopsMode) {
+            buildingClosestStopsMode = selected;
+            updateBuildingClosestStopsSwitcher();
+            populateBuildingClosestStopsList(window._currentBuildingFeatureForStops);
+        }
+    });
+}
+
 function showBuildingInfo(feature) {
     $('.knight-mover, .campus-switcher').hide();
     hideInfoBoxes();
@@ -70,6 +226,13 @@ function showBuildingInfo(feature) {
         unhighlightBuilding();
         highlightBuilding(feature);
     }
+
+    // Set up and default the switcher
+    buildingClosestStopsMode = 'all';
+    setupBuildingClosestStopsSwitcher();
+    updateBuildingClosestStopsSwitcher();
+    window._currentBuildingFeatureForStops = feature;
+    populateBuildingClosestStopsList(feature);
 }
 
 function loadBuildings() {

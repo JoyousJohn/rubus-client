@@ -82,12 +82,6 @@ function detachChatViewportListeners() {
 // Show chat UI when chat button is clicked
 $(document).on('click', '.chat-btn', function() {
   $('.chat-wrapper').removeClass('none').show();
-  // Lock background scroll
-  const scrollY = window.scrollY || document.documentElement.scrollTop;
-  document.documentElement.classList.add('scroll-lock');
-  document.body.classList.add('scroll-lock');
-  document.body.dataset.scrollY = String(scrollY);
-  document.body.style.top = `-${scrollY}px`;
   attachChatViewportListeners();
   adjustChatHeights();
 
@@ -126,12 +120,6 @@ $(document).on('click', '.chat-ui-close', function() {
   // Clear inline sizing
   $('.chat-ui-panel').css('height', '');
   $('.chat-ui-messages').css('height', '');
-  // Unlock background scroll, restore position
-  const prevY = parseInt(document.body.dataset.scrollY || '0', 10);
-  document.documentElement.classList.remove('scroll-lock');
-  document.body.classList.remove('scroll-lock');
-  document.body.style.top = '';
-  window.scrollTo(0, prevY);
 });
 window.chatHistory = [];
 

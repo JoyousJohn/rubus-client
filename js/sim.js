@@ -875,6 +875,13 @@ function stopSimMovementLoop() {
 }
 
 async function startSim() {
+
+    $('.sim-btn').hide();
+    $('.updating-buses, .slow-connection, .knight-mover, .past-breaks-wrapper, .bus-btns, .bus-ridership-wrapper, .buses-btn, .campus-switcher').hide();
+    $('.right-btns').removeClass('right-btns-bottom')
+    $('.sim-popup').slideDown();
+    hideInfoBoxes();
+
     sim = true;
     for (const busId in busData) {
         makeOoS(busId);
@@ -887,6 +894,7 @@ async function startSim() {
     populateRouteSelectors(activeRoutes);
     try { updateTimeToStops(Object.keys(busData).map(id => Number(id))); } catch (e) {}
     startSimMovementLoop();
+    return;
 }
 
 async function endSim() {
@@ -944,11 +952,7 @@ function setSimTimeMultiplier(newMultiplier) {
 
 $(document).ready(async function() {
     $('.sim-btn').on('touchstart click', function() {
-        $(this).hide();
-        $('.updating-buses, .slow-connection, .knight-mover, .past-breaks-wrapper, .bus-btns, .bus-ridership-wrapper, .buses-btn, .campus-switcher').hide();
-        $('.right-btns').removeClass('right-btns-bottom')
-        $('.sim-popup').slideDown();
-        hideInfoBoxes();
+        
         startSim();
 
         sa_event('btn_press', {

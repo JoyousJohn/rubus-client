@@ -153,7 +153,8 @@ function openRUBusSocket() {
             updateTimeToStops([busId]) // updates bus's etas to all stops
 
             if (popupStopId && busLocations[busId]) { // also check if in busLocations to not show stops if no info. I think updateStopBuses already prevents this but it was still showing 'bus in service since Invalid Date'
-                updateStopBuses(popupStopId) // this is on the stops wrapper
+                // Preserve any active route filter in the stop info
+                updateStopBuses(popupStopId)
             }
 
             if (popupBusId === busId) {
