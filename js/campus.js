@@ -147,6 +147,36 @@ $(function() {
         const targetScrollLeft = (itemOffset - carouselOffset + currentScroll) + (itemWidth / 2) - (carouselWidth / 2);
         $carousel.stop(true).animate({ scrollLeft: targetScrollLeft }, 150);
     }
+
+    function centerItemInstant($selected) {
+        if (typeof isDesktop !== 'undefined' && isDesktop) return; // Do not scroll on desktop
+        const $carousel = $('.campus-carousel');
+        const carouselOffset = $carousel.offset().left;
+        const currentScroll = $carousel.scrollLeft();
+        const itemOffset = $selected.offset().left; // relative to doc
+        const itemWidth = $selected.outerWidth();
+        const carouselWidth = $carousel.innerWidth();
+        const targetScrollLeft = (itemOffset - carouselOffset + currentScroll) + (itemWidth / 2) - (carouselWidth / 2);
+        const prevBehavior = $carousel.css('scroll-behavior');
+        $carousel.css('scroll-behavior', 'auto');
+        $carousel.scrollLeft(targetScrollLeft);
+        // Restore previous behavior
+        if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
+    }
+
+    // Expose centering function globally to be called when modal is shown
+    window.centerCampusCarouselToNB = function() {
+        if (typeof isDesktop !== 'undefined' && isDesktop) return; // No scroll on desktop
+        if (!$('.campus-modal').is(':visible')) return; // Only when modal visible
+        const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
+        requestAnimationFrame(() => centerItem($nb));
+    }
+
+    window.centerCampusCarouselToNBInstant = function() {
+        if (typeof isDesktop !== 'undefined' && isDesktop) return; // No scroll on desktop
+        const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
+        centerItemInstant($nb);
+    }
     function setCampusHeaderBold(campus) {
         // Unbold all campus labels, then bold only the selected one
         $('.campus-carousel-label').css('font-weight', '');
@@ -193,9 +223,15 @@ $(function() {
         'z-index': '2'  // Add other selected styles as needed
     });
     selectCampusCarousel(initialCampus, false);  // This will add the class without triggering animation
-    if (!(typeof isDesktop !== 'undefined' && isDesktop)) {
+    // If the modal is already visible (e.g., shown programmatically), center NB now
+    if ($('.campus-modal').is(':visible')) {
+        window.centerCampusCarouselToNB();
+    }
+    // Always center NB on initial load
+    const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
+    if (!isDesktop) {
         requestAnimationFrame(() => {
-            centerItem($initialSelected);
+            centerItem($nb);
             requestAnimationFrame(() => {
                 $initialSelected.css('transition', '');  // Re-enable transitions for future interactions
             });
@@ -208,7 +244,7 @@ $(function() {
         campusChanged();
         // Always center the New Brunswick campus before hiding the modal
         const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
-        if (!(typeof isDesktop !== 'undefined' && isDesktop)) {
+        if (!isDesktop) {
             centerItem($nb);
         }
         $('.campus-modal').fadeOut();

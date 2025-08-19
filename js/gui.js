@@ -1833,5 +1833,6 @@ function selectTheme(theme) {
 
 window.continueToCampusModal = function() {
     $('.theme-modal').hide();
+    window.centerCampusCarouselToNBInstant();
     $('.campus-modal').css('display', 'flex');
 };
