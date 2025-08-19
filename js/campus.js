@@ -88,7 +88,7 @@ function campusChanged() {
     }
 
     if (selectedCampus === 'nb') {
-        checkMinRoutes();
+        // checkMinRoutes();
     } else {
         $('.knight-mover, .knight-mover-mini').hide();
     }
