@@ -735,7 +735,7 @@ html, body {
     color: var(--theme-stop-bus-time) /* #616161; */
 }
 
-.stop-info-avg-wait, .stop-info-show-next-loop {
+.stop-info-avg-wait, .stop-info-show-next-loop, .always-show-next-loop {
     font-size: 1.3rem;
     color: gray;
     margin: 0 1rem 1rem 1rem;

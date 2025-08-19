@@ -529,6 +529,19 @@ const stopSwitchConfig = {
     }
 };
 
+$(window).resize(function() {
+    updateStopBusesMaxHeight();
+});
+
+
+function updateStopBusesMaxHeight() {
+    const stopBuses = $('.stop-info-popup-inner');
+    // if (stopBuses.length === 0) return; not sur ei need this
+    const maxHeight = window.innerHeight - stopBuses.offset().top - $('.stop-btns').innerHeight() - $('.bottom').innerHeight();
+    console.log(maxHeight);
+    $('.stop-info-popup-inner').css('max-height', maxHeight - 50);
+}
+
 async function popStopInfo(stopId) {
     console.log('popStopInfo', stopId);
     if (popupStopId) {
@@ -629,6 +642,8 @@ async function popStopInfo(stopId) {
     $('.stop-info-popup').stop(true, true).show();
 
     $('.stop-info-popup-inner').scrollTop(0);
+
+    updateStopBusesMaxHeight();
 
     $('.bus-log-wrapper').hide();
 
