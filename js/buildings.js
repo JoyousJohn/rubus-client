@@ -216,7 +216,7 @@ function setupBuildingClosestStopsSwitcher() {
 
 function showBuildingInfo(feature) {
     $('.knight-mover, .campus-switcher').hide();
-    hideInfoBoxes();
+    hideInfoBoxes(true);
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
     popupBuildingName = feature.name;

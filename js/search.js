@@ -3,6 +3,8 @@ $(document).ready(function() {
     $input.val('')
 
     $('.search-btn').click(function() {
+        hideInfoBoxes(true);
+        $('.knight-mover').hide();
         $('.search-wrapper').show();
         $input.trigger('input').focus();
     });

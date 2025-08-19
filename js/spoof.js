@@ -6,6 +6,20 @@ function initSpoofing() {
     __spoofHandlerAttached = true;
 
     map.on('click', function(e) {
+        // Prevent spoofing if click is on a building or parking lot
+        let isOnBuildingOrParking = false;
+        if (window.buildingsLayer) {
+            window.buildingsLayer.eachLayer(function(layer) {
+                if (layer.getBounds && layer.getBounds().contains(e.latlng)) {
+                    const category = layer.feature?.properties?.category;
+                    if (category === 'building' || category === 'parking') {
+                        isOnBuildingOrParking = true;
+                    }
+                }
+            });
+        }
+        if (isOnBuildingOrParking) { return; }
+
         const spoofEnabled = ((typeof spoof !== 'undefined') && spoof) || ((typeof settings !== 'undefined') && settings['toggle-spoofing']);
         if (!spoofEnabled) { return; }
 
