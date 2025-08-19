@@ -57,6 +57,7 @@
 
 .chat-modal-parent {
     background-color: var(--theme-bg);
+    overscroll-behavior: contain; /* prevent scroll chaining to body */
 }
 
 .chat-message {
@@ -95,6 +96,7 @@
 .chat-ui-panel {
   background: var(--theme-bg);
   color: var(--theme-color);
+  overflow: hidden; /* confine scrolling to messages */
 }
 
 .chat-ui-header {
@@ -166,4 +168,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .chat-ui-send:active { transform: none; }
+}
+
+/* Prevent body/page scroll when chat is open */
+html.scroll-lock, body.scroll-lock {
+  overflow: hidden;
+}
+
+body.scroll-lock {
+  position: fixed;
+  width: 100%;
 }
