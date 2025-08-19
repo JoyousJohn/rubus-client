@@ -825,6 +825,14 @@ function checkMinRoutes() {
         excludeRoutes.push('wknd1', 'wknd2');
     }
 
+    if (activeRoutes.has('summer1') && activeRoutes.has('summer2')) { return; }
+
+    // If only one of 'summer1' or 'summer2' is running, show knight mover mini and return
+    if ((activeRoutes.has('summer1') || activeRoutes.has('summer2')) && !(activeRoutes.has('summer1') && activeRoutes.has('summer2'))) {
+        $('.knight-mover-mini').css('display', 'flex');
+        return;
+    }
+
     if (excludeRoutes.some(route => activeRoutes.has(route))) { return; }
 
     if(!minRoutes.every(str => activeRoutes.has(str))) {
