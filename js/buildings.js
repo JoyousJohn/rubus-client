@@ -216,17 +216,24 @@ function setupBuildingClosestStopsSwitcher() {
     // Only set up once
     if ($('.building-closest-stops-options').data('setup')) return;
     $('.building-closest-stops-options').data('setup', true);
-    $('.building-closest-stops-options .building-closest-stops-option').off('click').on('click', function() {
-        const selected = $(this).text().trim().toLowerCase();
-        if (selected !== buildingClosestStopsMode) {
-            buildingClosestStopsMode = selected;
-            updateBuildingClosestStopsSwitcher();
-            populateBuildingClosestStopsList(window._currentBuildingFeatureForStops);
-            sa_event('btn_press', {
-                'btn': 'building_closest_stops_switcher',
-                'mode': selected
-            });
+    
+    // Click on the container toggles between options
+    $('.building-closest-stops-options').off('click').on('click', function() {
+        // Toggle to the other option
+        const newMode = buildingClosestStopsMode === 'all' ? 'active' : 'all';
+        
+        // Check if the new mode is available (if no active buses, can't switch to active)
+        if (newMode === 'active' && (!Array.isArray(activeStops) || activeStops.length === 0)) {
+            return; // Can't switch to active mode
         }
+        
+        buildingClosestStopsMode = newMode;
+        updateBuildingClosestStopsSwitcher();
+        populateBuildingClosestStopsList(window._currentBuildingFeatureForStops);
+        sa_event('btn_press', {
+            'btn': 'building_closest_stops_switcher',
+            'mode': newMode
+        });
     });
 }
 

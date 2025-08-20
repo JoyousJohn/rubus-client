@@ -2,6 +2,7 @@
 .building-closest-stops-options {
     display: flex;
     justify-content: center;
+    cursor: pointer;
 }
 
 .building-closest-stops-option {
