@@ -1836,7 +1836,7 @@ window.continueToCampusModal = function() {
     $('.campus-modal').css('display', 'flex');
     if (typeof window.centerCampusCarouselToNBInstant === 'function') {
         requestAnimationFrame(() => {
-            window.centerCampusCarouselToNBInstant();
+            window.centerCampusCarouselToNBInstant(true);
         });
     }
 };

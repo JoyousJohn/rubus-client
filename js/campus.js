@@ -147,8 +147,9 @@ $(function() {
 	}
 
 	let currentCarouselAnimCancel = null;
-	function centerToItem($item, instant = false) {
-		if (typeof isDesktop !== 'undefined' && isDesktop) { console.log('[carousel] skip center (desktop)'); return; }
+	function centerToItem($item, instant = false, allowDesktop = false) {
+		const isDesk = (typeof isDesktop !== 'undefined' && isDesktop);
+		if (isDesk && !allowDesktop) { console.log('[carousel] skip center (desktop)'); return; }
 		const $carousel = $('.campus-carousel');
 		const carEl = $carousel[0];
 		const itemEl = $item && $item[0];
@@ -158,14 +159,21 @@ $(function() {
 		if (typeof currentCarouselAnimCancel === 'function') { currentCarouselAnimCancel(); }
 		const prevBehavior = $carousel.css('scroll-behavior');
 		$carousel.css('scroll-behavior', 'auto');
+		// Pre-centering diagnostics
+		const preItem = itemEl.getBoundingClientRect();
+		const preCar = carEl.getBoundingClientRect();
+		const preDelta = (preItem.left + preItem.width / 2) - (preCar.left + preCar.width / 2);
+		console.log('[carousel][verify] before', { preScroll: carEl.scrollLeft, preDelta });
 		if (instant) {
-			// One-shot converge using rect delta loop but single step
-			const itemRect = itemEl.getBoundingClientRect();
-			const carRect = carEl.getBoundingClientRect();
-			const delta = (itemRect.left + itemRect.width / 2) - (carRect.left + carRect.width / 2);
+			const delta = preDelta;
 			carEl.scrollLeft += delta;
+			// Post verify
+			const postItem = itemEl.getBoundingClientRect();
+			const postCar = carEl.getBoundingClientRect();
+			const postDelta = (postItem.left + postItem.width / 2) - (postCar.left + postCar.width / 2);
 			if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
 			console.log('[carousel] centered instantly', { from: carEl.scrollLeft - delta, appliedDelta: delta, finalScroll: carEl.scrollLeft });
+			console.log('[carousel][verify] after', { postScroll: carEl.scrollLeft, postDelta, pass: Math.abs(postDelta) <= 0.6 });
 			return;
 		}
 		// Smooth convergence using rect deltas per frame
@@ -184,7 +192,11 @@ $(function() {
 			if (Math.abs(delta) <= epsilon || elapsed >= maxMs) {
 				carEl.scrollLeft += delta; // snap remaining tiny error
 				if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
+				const postItem = itemEl.getBoundingClientRect();
+				const postCar = carEl.getBoundingClientRect();
+				const postDelta = (postItem.left + postItem.width / 2) - (postCar.left + postCar.width / 2);
 				console.log('[carousel] animation done', { elapsed, finalScroll: carEl.scrollLeft, residual: delta });
+				console.log('[carousel][verify] after', { postScroll: carEl.scrollLeft, postDelta, pass: Math.abs(postDelta) <= epsilon });
 				currentCarouselAnimCancel = null;
 				return;
 			}
@@ -200,11 +212,15 @@ $(function() {
 	}
 
 	// Expose one global helper to center NB instantly (used when opening the modal)
-	window.centerCampusCarouselToNBInstant = function() {
-		if (typeof isDesktop !== 'undefined' && isDesktop) { console.log('[carousel] skip NB instant (desktop)'); return; }
+	window.centerCampusCarouselToNBInstant = function(forceDesktop = true) {
+		if (forceDesktop) {
+			console.log('[carousel] center NB instant trigger (forced)');
+		} else if (typeof isDesktop !== 'undefined' && isDesktop) {
+			console.log('[carousel] skip NB instant (desktop)');
+			return;
+		}
 		const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
-		console.log('[carousel] center NB instant trigger');
-		centerToItem($nb, true);
+		centerToItem($nb, true, /*allowDesktop*/ forceDesktop);
 	}
 
 	function setCampusHeaderBold(campus) {
@@ -255,14 +271,14 @@ $(function() {
 		const campus = $(this).data('campus');
 		const $selected = selectCampusCarousel(campus);
 		console.log('[carousel] item selected (click)', campus);
-		requestAnimationFrame(() => centerToItem($selected, false));
+		requestAnimationFrame(() => centerToItem($selected, false, /*allowDesktop*/ false));
 	});
 	$('.campus-carousel-item').on('touchend', function(e) {
 		if (dragMoved) { console.log('[carousel] suppress tap after drag'); dragMoved = false; return; }
 		const campus = $(this).data('campus');
 		const $selected = selectCampusCarousel(campus);
 		console.log('[carousel] item selected (tap)', campus);
-		requestAnimationFrame(() => centerToItem($selected, false));
+		requestAnimationFrame(() => centerToItem($selected, false, /*allowDesktop*/ false));
 	});
 
 	// Default selection state
