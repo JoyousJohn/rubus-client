@@ -14,6 +14,7 @@
 	align-items: stretch;
 	min-height: 100vh;
 	overflow: hidden;
+    min-height: 50vw;
 }
 .campus-header {
 	font-size: 2.5rem;
@@ -43,7 +44,7 @@
 	overflow-x: auto;
 	overflow-y: hidden;
 	scroll-behavior: smooth;
-	gap: 2rem;
+	gap: 5rem;
 	padding-left: 50vw;
 	padding-right: 50vw;
 	scrollbar-width: none;
@@ -97,16 +98,15 @@
 	color: white;
 	border-radius: 3rem;
 	font-weight: 500;
-	margin: 0 1.5rem;
 	align-self: end;
 }
 .campus-modal-confirm:hover {
 	background: #1c2890;
 }
 
-@media (max-width: 600px) {
+/* @media (max-width: 600px) {
 	.campus-carousel-item { max-width: 50vw; }
 	.campus-carousel-item.selected { max-width: 55vw; }
 	.campus-header { font-size: 2rem; }
 	.campus-modal-confirm { font-size: 1.5rem; padding: 0.7rem 1.5rem; }
-}
+} */

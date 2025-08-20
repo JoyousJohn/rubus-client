@@ -2792,12 +2792,19 @@
     "lat": 40.5258073949769,
     "lng": -74.4364311241
   },
-  "rutgers business school": {
+  "rutgers business school newark": {
     "id": "7491",
-    "name": "Rutgers Business School",
+    "name": "Rutgers Business School Newark",
     "category": "building",
     "lat": 40.74506031140886,
     "lng": -74.170462
+  },
+  "rutgers business school nb": {
+    "id": "4181",
+    "name": "Rutgers Business School NB",
+    "category": "building",
+    "lat": 40.523302598004896,
+    "lng": -74.440669742
   },
   "record retention facility": {
     "id": "4182",

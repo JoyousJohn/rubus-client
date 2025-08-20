@@ -1188,7 +1188,7 @@ const defaultColorMappings = {
     'winter2': 'crimson',
     'fav': 'gold',
     'summer1': 'Plum',
-    'summer2': 'PowderBlue',
+    'summer2': '#2bd6ec',
     'commencement': 'LightSalmon',
 
     'psx': 'LightSalmon',
@@ -1833,6 +1833,10 @@ function selectTheme(theme) {
 
 window.continueToCampusModal = function() {
     $('.theme-modal').hide();
-    window.centerCampusCarouselToNBInstant();
     $('.campus-modal').css('display', 'flex');
+    if (typeof window.centerCampusCarouselToNBInstant === 'function') {
+        requestAnimationFrame(() => {
+            window.centerCampusCarouselToNBInstant();
+        });
+    }
 };

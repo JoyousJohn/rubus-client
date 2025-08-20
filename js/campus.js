@@ -129,143 +129,159 @@ $(function(){
 });
 
 $(function() {
-    function updateCampusCarouselTheme() {
-        const theme = document.documentElement.getAttribute('theme');
-        $('.campus-carousel-img').each(function() {
-            const $img = $(this);
-            $img.attr('src', $img.data(theme));
-        });
-    }
-    let campusCarouselUserInteracted = false;
-    function centerItem($selected) {
-        if (typeof isDesktop !== 'undefined' && isDesktop) return; // Do not scroll on desktop
-        if (campusCarouselUserInteracted) return; // Skip if user interacted
-        const $carousel = $('.campus-carousel');
-        const carouselOffset = $carousel.offset().left;
-        const currentScroll = $carousel.scrollLeft();
-        const itemOffset = $selected.offset().left; // relative to doc
-        const itemWidth = $selected.outerWidth();
-        const carouselWidth = $carousel.innerWidth();
-        const targetScrollLeft = (itemOffset - carouselOffset + currentScroll) + (itemWidth / 2) - (carouselWidth / 2);
-        $carousel.stop(true).animate({ scrollLeft: targetScrollLeft }, 150);
-    }
+	function updateCampusCarouselTheme() {
+		const theme = document.documentElement.getAttribute('theme');
+		$('.campus-carousel-img').each(function() {
+			const $img = $(this);
+			$img.attr('src', $img.data(theme));
+		});
+	}
 
-    function centerItemInstant($selected) {
-        if (typeof isDesktop !== 'undefined' && isDesktop) return; // Do not scroll on desktop
-        const $carousel = $('.campus-carousel');
-        const carouselOffset = $carousel.offset().left;
-        const currentScroll = $carousel.scrollLeft();
-        const itemOffset = $selected.offset().left; // relative to doc
-        const itemWidth = $selected.outerWidth();
-        const carouselWidth = $carousel.innerWidth();
-        const targetScrollLeft = (itemOffset - carouselOffset + currentScroll) + (itemWidth / 2) - (carouselWidth / 2);
-        const prevBehavior = $carousel.css('scroll-behavior');
-        $carousel.css('scroll-behavior', 'auto');
-        $carousel.scrollLeft(targetScrollLeft);
-        // Restore previous behavior
-        if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
-    }
+	function computeCenterScroll($carousel, $item) {
+		const pos = $item.position();
+		const itemCenter = pos.left + ($item.outerWidth() / 2);
+		const viewportCenter = $carousel.innerWidth() / 2;
+		const target = itemCenter - viewportCenter;
+		console.log('[carousel] computeCenterScroll', { itemLeft: pos.left, itemWidth: $item.outerWidth(), itemCenter, viewportCenter, target });
+		return Math.max(0, target);
+	}
 
-    // Expose centering function globally to be called when modal is shown
-    window.centerCampusCarouselToNB = function() {
-        if (typeof isDesktop !== 'undefined' && isDesktop) return; // No scroll on desktop
-        if (!$('.campus-modal').is(':visible')) return; // Only when modal visible
-        if (campusCarouselUserInteracted) return; // Respect user interaction
-        const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
-        requestAnimationFrame(() => centerItem($nb));
-    }
+	let currentCarouselAnimCancel = null;
+	function centerToItem($item, instant = false) {
+		if (typeof isDesktop !== 'undefined' && isDesktop) { console.log('[carousel] skip center (desktop)'); return; }
+		const $carousel = $('.campus-carousel');
+		const carEl = $carousel[0];
+		const itemEl = $item && $item[0];
+		if (!carEl || !itemEl) { console.log('[carousel] missing elements for centering'); return; }
+		// Cancel any prior animations (jQuery or our own)
+		$carousel.stop(true);
+		if (typeof currentCarouselAnimCancel === 'function') { currentCarouselAnimCancel(); }
+		const prevBehavior = $carousel.css('scroll-behavior');
+		$carousel.css('scroll-behavior', 'auto');
+		if (instant) {
+			// One-shot converge using rect delta loop but single step
+			const itemRect = itemEl.getBoundingClientRect();
+			const carRect = carEl.getBoundingClientRect();
+			const delta = (itemRect.left + itemRect.width / 2) - (carRect.left + carRect.width / 2);
+			carEl.scrollLeft += delta;
+			if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
+			console.log('[carousel] centered instantly', { from: carEl.scrollLeft - delta, appliedDelta: delta, finalScroll: carEl.scrollLeft });
+			return;
+		}
+		// Smooth convergence using rect deltas per frame
+		const epsilon = 0.6;
+		const maxMs = 260;
+		const start = performance.now();
+		let cancelled = false;
+		currentCarouselAnimCancel = () => { cancelled = true; };
+		(function step() {
+			if (cancelled) { if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); } console.log('[carousel] animation cancelled'); return; }
+			const now = performance.now();
+			const elapsed = now - start;
+			const itemRect = itemEl.getBoundingClientRect();
+			const carRect = carEl.getBoundingClientRect();
+			const delta = (itemRect.left + itemRect.width / 2) - (carRect.left + carRect.width / 2);
+			if (Math.abs(delta) <= epsilon || elapsed >= maxMs) {
+				carEl.scrollLeft += delta; // snap remaining tiny error
+				if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
+				console.log('[carousel] animation done', { elapsed, finalScroll: carEl.scrollLeft, residual: delta });
+				currentCarouselAnimCancel = null;
+				return;
+			}
+			// Move a fraction of the current delta; ease by time (easeOutCubic)
+			const t = Math.min(1, elapsed / maxMs);
+			const easeOut = 1 - Math.pow(1 - t, 3);
+			const fraction = 0.18 + 0.22 * easeOut; // from 0.18 to ~0.4
+			const stepDelta = delta * fraction;
+			carEl.scrollLeft += stepDelta;
+			console.log('[carousel] animation step', { elapsed, delta, stepDelta, scroll: carEl.scrollLeft });
+			requestAnimationFrame(step);
+		})();
+	}
 
-    window.centerCampusCarouselToNBInstant = function() {
-        if (typeof isDesktop !== 'undefined' && isDesktop) return; // No scroll on desktop
-        campusCarouselUserInteracted = false; // Reset flag before showing
-        const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
-        const $carousel = $('.campus-carousel');
-        const carouselOffset = $carousel.offset().left;
-        const currentScroll = $carousel.scrollLeft();
-        const itemOffset = $nb.offset().left; // relative to doc
-        const itemWidth = $nb.outerWidth();
-        const carouselWidth = $carousel.innerWidth();
-        const targetScrollLeft = (itemOffset - carouselOffset + currentScroll) + (itemWidth / 2) - (carouselWidth / 2);
-        const prevBehavior = $carousel.css('scroll-behavior');
-        $carousel.css('scroll-behavior', 'auto');
-        $carousel.scrollLeft(targetScrollLeft);
-        if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
-    }
-    function setCampusHeaderBold(campus) {
-        // Unbold all campus labels, then bold only the selected one
-        $('.campus-carousel-label').css('font-weight', '');
-        $(`.campus-carousel-item[data-campus="${campus}"] .campus-carousel-label`).css('font-weight', 'bold');
-    }
-    function selectCampusCarousel(campus, animate = true) {
-        $('.campus-carousel-item').removeClass('selected');
-        const $selected = $(`.campus-carousel-item[data-campus="${campus}"]`).addClass('selected');
-        setCampusHeaderBold(campus);
-        if (animate && !(typeof isDesktop !== 'undefined' && isDesktop) && !campusCarouselUserInteracted) {
-            centerItem($selected);
-            const onTransitionEnd = (e) => {
-                if (e.target !== $selected[0]) { return; }
-                $selected.off('transitionend', onTransitionEnd);
-                centerItem($selected);
-            };
-            $selected.on('transitionend', onTransitionEnd);
-            setTimeout(() => {
-                $selected.off('transitionend', onTransitionEnd);
-                centerItem($selected);
-            }, 500);
-        }
-        if (window.settings) {
-            settings['campus'] = campus;
-        } else {
-            window.settings = window.settings || {};
-            settings['campus'] = campus;
-        }
-    }
-    updateCampusCarouselTheme();
-    const observer = new MutationObserver(updateCampusCarouselTheme);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['theme'] });
-    $('.campus-carousel-item').on('click touchend', function() {
-        const campus = $(this).data('campus');
-        selectCampusCarousel(campus);
-    });
-    // Mark when user interacts so auto-centering won't fight scrolling
-    $('.campus-carousel').on('mousedown touchstart wheel scroll', function() {
-        campusCarouselUserInteracted = true;
-    });
-    // Default: NB centered perfectly after initial paint
-    const initialCampus = (window.settings && settings['campus']) || 'nb';
-    const $initialSelected = $(`.campus-carousel-item[data-campus="${initialCampus}"]`);
-    $initialSelected.css({
-        'transition': 'none',  // Ensure no transition
-        'transform': 'scale(1)',  // Directly set to selected scale
-        'opacity': '1',
-        'z-index': '2'  // Add other selected styles as needed
-    });
-    selectCampusCarousel(initialCampus, false);  // This will add the class without triggering animation
-    // If the modal is already visible (e.g., shown programmatically), center NB now
-    if ($('.campus-modal').is(':visible')) {
-        window.centerCampusCarouselToNB();
-    }
-    // Always center NB on initial load
-    const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
-    if (!isDesktop) {
-        requestAnimationFrame(() => {
-            centerItem($nb);
-            requestAnimationFrame(() => {
-                $initialSelected.css('transition', '');  // Re-enable transitions for future interactions
-            });
-        });
-    }
-    // On initial load, set the header bold for the initial campus
-    setCampusHeaderBold(initialCampus);
-    window.confirmCampusSelection = function() {
-        localStorage.setItem('settings', JSON.stringify(settings));
-        campusChanged();
-        // Always center the New Brunswick campus before hiding the modal
-        const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
-        if (!isDesktop) {
-            centerItem($nb);
-        }
-        $('.campus-modal').fadeOut();
-    };
+	// Expose one global helper to center NB instantly (used when opening the modal)
+	window.centerCampusCarouselToNBInstant = function() {
+		if (typeof isDesktop !== 'undefined' && isDesktop) { console.log('[carousel] skip NB instant (desktop)'); return; }
+		const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
+		console.log('[carousel] center NB instant trigger');
+		centerToItem($nb, true);
+	}
+
+	function setCampusHeaderBold(campus) {
+		// Unbold all campus labels, then bold only the selected one
+		$('.campus-carousel-label').css('font-weight', '');
+		$(`.campus-carousel-item[data-campus="${campus}"] .campus-carousel-label`).css('font-weight', 'bold');
+	}
+
+	function selectCampusCarousel(campus) {
+		$('.campus-carousel-item').removeClass('selected');
+		const $selected = $(`.campus-carousel-item[data-campus="${campus}"]`).addClass('selected');
+		setCampusHeaderBold(campus);
+		if (window.settings) {
+			settings['campus'] = campus;
+		} else {
+			window.settings = window.settings || {};
+			settings['campus'] = campus;
+		}
+		return $selected;
+	}
+
+	updateCampusCarouselTheme();
+	const observer = new MutationObserver(updateCampusCarouselTheme);
+	observer.observe(document.documentElement, { attributes: true, attributeFilter: ['theme'] });
+
+	// Prevent accidental selection when user is dragging
+	let dragStartX = 0;
+	let dragStartY = 0;
+	let dragMoved = false;
+	$('.campus-carousel')
+		.on('mousedown touchstart', function(e){
+			const pt = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
+			dragStartX = pt.clientX; dragStartY = pt.clientY; dragMoved = false;
+			$(this).stop(true); // cancel ongoing jQuery animations
+			if (typeof currentCarouselAnimCancel === 'function') { currentCarouselAnimCancel(); }
+			console.log('[carousel] interaction start, stop animations');
+		})
+		.on('mousemove touchmove', function(e){
+			const pt = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
+			if (Math.abs(pt.clientX - dragStartX) > 8 || Math.abs(pt.clientY - dragStartY) > 8) { dragMoved = true; }
+		})
+		.on('mouseup touchend', function(){
+			console.log('[carousel] interaction end', { dragMoved });
+		});
+
+	$('.campus-carousel-item').on('click', function(e) {
+		if (dragMoved) { console.log('[carousel] suppress click after drag'); return; }
+		const campus = $(this).data('campus');
+		const $selected = selectCampusCarousel(campus);
+		console.log('[carousel] item selected (click)', campus);
+		requestAnimationFrame(() => centerToItem($selected, false));
+	});
+	$('.campus-carousel-item').on('touchend', function(e) {
+		if (dragMoved) { console.log('[carousel] suppress tap after drag'); dragMoved = false; return; }
+		const campus = $(this).data('campus');
+		const $selected = selectCampusCarousel(campus);
+		console.log('[carousel] item selected (tap)', campus);
+		requestAnimationFrame(() => centerToItem($selected, false));
+	});
+
+	// Default selection state
+	const initialCampus = (window.settings && settings['campus']) || 'nb';
+	const $initialSelected = selectCampusCarousel(initialCampus);
+	$initialSelected.css({
+		'transition': 'none',
+		'transform': 'scale(1)',
+		'opacity': '1',
+		'z-index': '2'
+	});
+	// Re-enable transitions for future interactions on next frame
+	requestAnimationFrame(() => { $initialSelected.css('transition', ''); });
+
+	// Confirm handler
+	window.confirmCampusSelection = function() {
+		localStorage.setItem('settings', JSON.stringify(settings));
+		campusChanged();
+		$('.campus-modal').fadeOut();
+	};
 });
 
