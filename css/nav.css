@@ -1,0 +1,16 @@
+.navigate-wrapper {
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 403;
+    pointer-events: all;
+    font-family: var(--font-family);
+    color: var(--theme-color);
+    width: 100%;
+    font-size: 1.5rem;
+}
+
+.navigate-inner {
+    background-color: var(--theme-bg);
+}

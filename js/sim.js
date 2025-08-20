@@ -24,13 +24,13 @@ async function generateSimBusData() {
     // Desired distribution per route
     const targetCounts = {
         'c': 1,
-        'lx': Math.floor(Math.random() * (9 - 7 + 1)) + 7,     // 7-9
-        'rexl': Math.floor(Math.random() * (4 - 3 + 1)) + 3,   // 3-4
-        'rexb': Math.floor(Math.random() * (4 - 3 + 1)) + 3,   // 3-4
-        'f': Math.floor(Math.random() * (5 - 3 + 1)) + 3,      // 3-5
-        'ee': 7,                                               // 7
+        'lx': 10,
+        'rexl': Math.floor(Math.random() * (5 - 4 + 1)) + 4,   // 4-5
+        'rexb': Math.floor(Math.random() * (5 - 4 + 1)) + 4,   // 4-5
+        'f': 5,
+        'ee': 8,                                               // 7
         'bl': 2,                                               // 2
-        'b': 5,                                                // 5
+        'b': 8,                                                // 5
         'h': Math.floor(Math.random() * (7 - 4 + 1)) + 4,      // 4-7
         'a': Math.floor(Math.random() * (7 - 4 + 1)) + 4       // 4-7
     };

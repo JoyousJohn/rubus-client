@@ -1,3 +1,5 @@
+let buildingIndex;
+
 $(document).ready(function() {
     const $input = $('.search-wrapper input');
     $input.val('')
@@ -32,6 +34,7 @@ $(document).ready(function() {
     fetch('lib/building_index.json')
         .then(response => response.json())
         .then(data => {
+            buildingIndex = data;
             // Convert object to array with name property and inject aliases
             buildingList = Object.keys(data).map(name => {
                 const obj = { name: name, ...data[name] };

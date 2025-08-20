@@ -46,6 +46,7 @@
     <script src="lib/stopLines.js"></script>
     <script src="js/buildings.js"></script>
     <script src="js/search.js"></script>
+    <script src="js/nav.js"></script>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/tailwind.css">
@@ -61,6 +62,7 @@
     <link rel="stylesheet" type="text/css" href="css/search.css">
     <link rel="stylesheet" type="text/css" href="css/building.css">
     <link rel="stylesheet" type="text/css" href="css/campus-modal.css">
+    <link rel="stylesheet" type="text/css" href="css/nav.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-xmas.png">
     <link rel="preload" as="image" href="img/stop_marker_selected.png">
@@ -493,7 +495,6 @@
                         })
                     </script>
                 </div>
-
             </div>
         </div>
 
@@ -515,13 +516,13 @@
                 <div class="building-name text-2rem">Hill Center</div>
                 <div class="flex justify-between align-center px-1rem mt-1rem">
                     <div class="text-1p4rem mt-0p5rem">Closest Stops:</div>
-                    <div class="building-closest-stops-options">
+                    <div class="building-closest-stops-option select-none">
                         <div class="building-closest-stops-option pointer">Active</div>
                         <div class="building-closest-stops-option pointer">All</div>
                     </div>
                 </div>
                 <div class="building-closest-stops-explain text-1p3rem none mb-1rem left ml-1rem" style="color: var(--theme-extra);">(Selecting a stop or route below will trigger the simulator.)</div>
-                <div class="building-closest-stops-list">
+                <div class="building-closest-stops-list mb-1rem">
                 </div>
             </div>
 
@@ -547,6 +548,25 @@
 
             </div>
         </div>
+    
+        <div class="navigate-wrapper none">
+            <div class="navigate-inner flex flex-col m-1rem br-1rem" style="pointer-events: all; z-index: 403; font-family: var(--font-family); position: relative;">
+                <div class="navigate-to-from flex flex-col">
+                    <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
+                        <div class="center">◯</div>
+                        <div class="nav-from">Start Location</div>
+                        <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
+                            <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
+                        </div>
+                        <div class="center">⋮</div>
+                        <div style="height: 1px; background-color: var(--theme-color);"></div>
+                        <div class="center"><i class="fa-solid fa-location-pin"></i></div>
+                        <div class="nav-to">Destination</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
     </div>
 
     <div class="bus-log-wrapper none">

@@ -237,6 +237,7 @@ function showBuildingInfo(feature) {
     $('.building-info-popup').stop(true, true).show();
     popupBuildingName = feature.name;
     popupBuildingLatLng = feature.lat + ',' + feature.lng;
+    console.log(feature)
 
     // Highlight the polygon if it exists
     if (window.buildingsLayer && window.buildingsLayer.eachLayer) {
