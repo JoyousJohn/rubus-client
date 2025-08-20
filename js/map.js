@@ -1326,7 +1326,12 @@ function popInfo(busId, resetCampusFontSize) {
     if (dataRoute === 'summer1' || dataRoute === 'summer2') {
         dataRoute = dataRoute.slice(0, -1) + ' ' + dataRoute.slice(-1)
     }
-    $('.info-route-mid').text(dataRoute.toUpperCase()).css('color', colorMappings[data.route])
+    $('.info-route-mid').text(dataRoute.toUpperCase()).parent().css('color', colorMappings[data.route])
+    if (data.busName.slice(-1) === "E") {
+        $('.info-bolt').show();
+    } else {
+        $('.info-bolt').hide();
+    }
     
     let busNameElmText = data.busName
     if (showBusId) {
