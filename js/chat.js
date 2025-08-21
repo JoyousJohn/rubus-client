@@ -95,9 +95,10 @@ $(document).on('click', '.chat-btn', function() {
             const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
             $messages.append($botMsg);
             setTimeout(() => {
-                $botMsg.text(example.a).removeClass('loading');
+                const processedExample = example.a.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                $botMsg.html(processedExample).removeClass('loading');
                 $messages.append($botMsg);
-                window.chatHistory.push({ role: 'assistant', content: example.a });  // Add bot response to history
+                window.chatHistory.push({ role: 'assistant', content: processedExample });  // Add bot response to history
             }, 1333);
         }))
     })
@@ -199,8 +200,9 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     
                 
                 console.log(finalAnswer);
-                $botMsg.text(finalAnswer).removeClass('loading');
-                window.chatHistory.push({ role: 'assistant', content: finalAnswer });
+                const processedAnswer = finalAnswer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                $botMsg.html(processedAnswer).removeClass('loading');
+                window.chatHistory.push({ role: 'assistant', content: processedAnswer });
                 evtSource.close();
             }
             $messages.scrollTop($messages[0].scrollHeight);
