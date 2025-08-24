@@ -1381,7 +1381,9 @@ function updateSettings() {
             const id = $(this).find('input[type="checkbox"]').attr('id');
             if (!id) return;
             const checked = $(`#${id}`).is(':checked');
+            
             settings[id] = checked;
+            
             if (id === 'toggle-show-campus-switcher') {
                 if (checked) {
                     $('.campus-switcher').show();

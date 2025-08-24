@@ -557,14 +557,19 @@
                 <div class="navigate-to-from flex flex-col">
                     <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
                         <div class="center">◯</div>
-                        <div class="nav-from">Start Location</div>
+                        <div class="nav-from">
+                            <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
+                        </div>
+                        <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
                         <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
                             <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
                         </div>
                         <div class="center">⋮</div>
                         <div style="height: 1px; background-color: var(--theme-color);"></div>
                         <div class="center"><i class="fa-solid fa-location-pin"></i></div>
-                        <div class="nav-to">Destination</div>
+                        <div class="nav-to">
+                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -859,6 +864,41 @@
                     </label>
                 </div>
             </div>
+
+            <div class="flex justify-between">
+                <div class="settings-heading">Hide Simulator</div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-hide-sim" class="toggle-input">
+                    <label for="toggle-hide-sim" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <script>
+                // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
+                $(function() {
+                    // Ensure settings is loaded
+                    var settings = localStorage.getItem('settings');
+                    if (settings) settings = JSON.parse(settings); else settings = {};
+                    // Set initial state
+                    $('#toggle-hide-sim').prop('checked', !settings['toggle-show-sim']);
+                    // On change, invert toggle-show-sim
+                    $('#toggle-hide-sim').on('change', function() {
+                        var checked = $(this).is(':checked');
+                        settings['toggle-show-sim'] = !checked;
+                        localStorage.setItem('settings', JSON.stringify(settings));
+                        // UI update: mimic the real Simulator toggle
+                        if (!checked) {
+                            if (typeof sim !== 'undefined' && typeof selectedCampus !== 'undefined' && !sim && selectedCampus === 'nb') {
+                                $('.sim-btn').show();
+                            }
+                        } else {
+                            $('.sim-btn').hide();
+                        }
+                    });
+                });
+                </script>
 
             <div class="settings-campus">
                 <div class="settings-heading">CAMPUS</div>
@@ -1414,6 +1454,7 @@
     </div>
 
     <noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif?collect-dnt=true" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
+
 </body>
 
 </html>
