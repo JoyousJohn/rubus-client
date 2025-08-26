@@ -51,6 +51,7 @@ function cleanupOldMap() {
     // need to delete busData before polylines, otherwise new fetch bus data call would think last bus went OoS and would throw error trying to remove polyline
     deleteAllPolylines();
     hideInfoBoxes();
+    hideBikeRacks(); // Clean up bike rack markers when switching campuses
 
     returningToSavedView = false;
     savedCenter = null;
@@ -96,6 +97,14 @@ function campusChanged() {
     if (map) {
         cleanupOldMap();
         makeNewMap();
+    }
+
+    // Update bike racks if the setting is enabled
+    if (settings['toggle-show-bike-racks']) {
+        // Small delay to ensure map is ready
+        setTimeout(() => {
+            showBikeRacks();
+        }, 100);
     }
 
     $('.updating-buses').slideUp();

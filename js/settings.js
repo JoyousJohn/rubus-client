@@ -410,6 +410,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
+        case 'toggle-show-bike-racks':
+            settings['toggle-show-bike-racks'] = isChecked;
+            if (isChecked) {
+                showBikeRacks();
+            } else {
+                hideBikeRacks();
+            }
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
@@ -542,6 +551,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-campus-switcher']) {
         $('.campus-switcher').show();
+    }
+
+    if (settings['toggle-show-bike-racks']) {
+        showBikeRacks();
     }
 
 })

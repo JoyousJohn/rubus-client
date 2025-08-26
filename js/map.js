@@ -9,6 +9,7 @@ let busesDoneInit; // don't check for moves until map is done plotting
 let selectedCampus;
 let popupBuildingName;
 let popupBuildingLatLng;
+let bikeRackMarkers = [];
 
 let mapDragged = false;
 
@@ -2493,4 +2494,44 @@ function navToBuilding() {
     }
 
     window.open(url, '_blank');
+}
+
+function showBikeRacks() {
+    if (!bikeRacks || !bikeRacks[selectedCampus]) {
+        console.log('No bike rack data available for campus:', selectedCampus);
+        return;
+    }
+
+    // Clear any existing bike rack markers
+    hideBikeRacks();
+
+    // Loop through all bike rack locations for the current campus
+    for (const category in bikeRacks[selectedCampus]) {
+        const locations = bikeRacks[selectedCampus][category];
+        for (const location of locations) {
+            const [lng, lat] = location; // Note: bike_racks.js uses [lng, lat] format
+
+            const marker = L.marker([lat, lng], {
+                icon: L.icon({
+                    iconUrl: 'img/bike_rack.png',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                }),
+                zIndexOffset: -100
+            });
+
+            marker.addTo(map);
+            bikeRackMarkers.push(marker);
+        }
+    }
+
+    console.log(`Added ${bikeRackMarkers.length} bike rack markers for campus: ${selectedCampus}`);
+}
+
+function hideBikeRacks() {
+    for (const marker of bikeRackMarkers) {
+        map.removeLayer(marker);
+    }
+    bikeRackMarkers = [];
+    console.log('Removed all bike rack markers');
 }

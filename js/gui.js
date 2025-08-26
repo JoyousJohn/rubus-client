@@ -1128,6 +1128,7 @@ const toggleSettings = [
     'toggle-show-bus-speeds',
     'toggle-stops-above-buses',
     'toggle-always-show-second',
+    'toggle-show-bike-racks',
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
@@ -1208,6 +1209,7 @@ let defaultSettings = {
     'toggle-hide-other-routes': true,
     'toggle-stops-above-buses': false,
     'toggle-always-show-second': false,
+    'toggle-show-bike-racks': false,
     'campus': 'nb',
     
     // dev settings
@@ -1381,7 +1383,7 @@ function updateSettings() {
             const id = $(this).find('input[type="checkbox"]').attr('id');
             if (!id) return;
             const checked = $(`#${id}`).is(':checked');
-            
+
             settings[id] = checked;
             
             if (id === 'toggle-show-campus-switcher') {
