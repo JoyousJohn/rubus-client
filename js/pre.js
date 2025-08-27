@@ -177,6 +177,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         $('.slow-connection').slideUp();
 
         if (!response.ok) {
+            $('.notif-popup').html(`Passio servers are unavailable and incorrect (if any) bus data may be being displayed.`).fadeIn();
+            passioDown = true;
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
@@ -184,6 +186,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
         if (sim) return; // don't allow race cconditions of simming before fetch completed
         // console.log('Response data:', data);
+
 
         if (data.error) {
             $('.notif-popup').html(`Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio is reporting: ${data.error}`).fadeIn();
