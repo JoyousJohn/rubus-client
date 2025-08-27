@@ -19,6 +19,11 @@ $(document).ready(function() {
     let buildingList = [];
     let fuseReady = false;
 
+    // Make fuse variables globally accessible
+    window.fuse = fuse;
+    window.fuseReady = fuseReady;
+    window.buildingList = buildingList;
+
     // Alias mapping: main word -> array of aliases
     const aliasMap = {
         'recreation': ['gym', 'rec', 'fitness', 'workout'],
@@ -31,7 +36,7 @@ $(document).ready(function() {
     };
 
     // Load building_index.json and initialize Fuse.js
-    fetch('lib/building_index.json')
+    fetch('lib/building_index_with_campus.json')
         .then(response => response.json())
         .then(data => {
             buildingIndex = data;
@@ -53,6 +58,11 @@ $(document).ready(function() {
                 includeScore: true,
             });
             fuseReady = true;
+
+            // Update global variables
+            window.fuse = fuse;
+            window.fuseReady = fuseReady;
+            window.buildingList = buildingList;
         });
 
     // Remove the funny result rendering function
@@ -94,7 +104,10 @@ $(document).ready(function() {
                 icon = '<i class="fa-solid fa-building"></i>';
             } else if (item.category === 'parking') {
                 icon = '<i class="fa-solid fa-square-parking"></i>';
+            } else if (item.category === 'stop') {
+                icon = '<i class="fa-solid fa-bus-simple"></i>';
             }
+
             $elm = $(`<div class="search-result-item flex">${icon}<div>${item.name}</div></div>`);
             $elm.click(function() {
                 closeSearch();

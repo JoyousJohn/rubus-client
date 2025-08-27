@@ -20,7 +20,7 @@ let showBusId = false;
 let isDesktop;
 let tileLayer;
 
-const mapBoxToken = 'pk.eyJ1Ijoiam9obi1oYXBweSIsImEiOiJjbWFrMzR2cnYwNDJ1MnFvaGh4dGd5YnlmIn0.cMHFVjIXIo_IaSI-Q6RtfQ';
+const tileToken = 'pk.eyJ1Ijoiam9obi1oYXBweSIsImEiOiJjbWFrMzR2cnYwNDJ1MnFvaGh4dGd5YnlmIn0.cMHFVjIXIo_IaSI-Q6RtfQ';
 
 $(document).ready(function() {
 
@@ -83,9 +83,8 @@ $(document).ready(function() {
         pauseUpdateMarkerPositions = settings['toggle-pause-update-marker'];
     }
 
-    tileLayer = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken, {
+    tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${mapTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`, {
         maxZoom: 20,
-        id: 'mapbox/' + mapTheme
     }).addTo(map);
 
     let isTransitioning = false; // Flag to track if the map is transitioning
@@ -116,6 +115,21 @@ $(document).ready(function() {
             }
 
             hideInfoBoxes();
+
+            // If navigation UI is visible, hide it and reset navigation state
+            if ($('.navigate-wrapper').is(':visible')) {
+                $('.navigate-wrapper').fadeOut(200);
+                clearRouteDisplay();
+                selectedFromBuilding = null;
+                selectedToBuilding = null;
+                currentAutocompleteIndex = -1;
+                // Clear inputs without triggering user-driven logic
+                isSettingInputProgrammatically = true;
+                $('#nav-from-input, #nav-to-input').val('').removeClass('has-value');
+                isSettingInputProgrammatically = false;
+                // Hide any autocomplete dropdowns
+                hideNavigationAutocomplete();
+            }
 
             if (settings['toggle-show-bus-log']) {
                 $('.bus-log-wrapper').show();
@@ -482,7 +496,7 @@ function changeMapStyle(newStyle) {
     }
 
     // console.log("Setting map style to " + newStyle);
-    let newUrl = 'https://api.mapbox.com/styles/v1/mapbox/' + newStyle + '/tiles/{z}/{x}/{y}?access_token=' + mapBoxToken;
+    let newUrl = `https://tiles.rubus.live/styles/v1/${newStyle}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`;
     tileLayer.setUrl(newUrl);
     
     // Force map to immediately update (not require zoom)
@@ -2364,16 +2378,12 @@ $('.satellite-btn').click(function() {
         const newTheme = theme === 'dark' ? 'dark-v11' : 'streets-v11';
         map.removeLayer(tileLayer);
         
-        tileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/${newTheme}/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`, {
-            id: 'mapbox/' + newTheme,
-        }).addTo(map);
+        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${newTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
         
         $(this).css('background-color', 'var(--theme-bg)');
     } else {
         map.removeLayer(tileLayer);
-        tileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}?access_token=${mapBoxToken}`, {
-            id: 'mapbox/satellite-streets-v12',
-        }).addTo(map);
+        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/satellite-streets-v12/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
         
         let theme = settings['theme']
         if (theme === 'auto') {

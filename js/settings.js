@@ -419,6 +419,20 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-road-network':
+            console.log(`Show Road Network is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-road-network'] = isChecked;
+            if (isChecked) {
+                loadAndDisplayRoadNetwork();
+            } else {
+                if (roadNetworkLayer) {
+                    map.removeLayer(roadNetworkLayer);
+                    roadNetworkLayer = null;
+                }
+                showNavigationMessage('Road network hidden');
+            }
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
@@ -555,6 +569,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-bike-racks']) {
         showBikeRacks();
+    }
+
+    if (settings['toggle-show-road-network']) {
+        loadAndDisplayRoadNetwork();
     }
 
 })

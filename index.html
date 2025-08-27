@@ -47,7 +47,7 @@
     <script src="lib/bike_racks.js"></script>
     <script src="js/buildings.js"></script>
     <script src="js/search.js"></script>
-    <script src="js/nav.js"></script>
+    <script defer src="js/nav.js"></script>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/tailwind.css">
@@ -553,29 +553,6 @@
             </div>
         </div>
     
-        <div class="navigate-wrapper none">
-            <div class="navigate-inner flex flex-col m-1rem br-1rem" style="pointer-events: all; z-index: 403; font-family: var(--font-family); position: relative;">
-                <div class="navigate-to-from flex flex-col">
-                    <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
-                        <div class="center">◯</div>
-                        <div class="nav-from">
-                            <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
-                        </div>
-                        <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
-                        <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
-                            <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
-                        </div>
-                        <div class="center">⋮</div>
-                        <div style="height: 1px; background-color: var(--theme-color);"></div>
-                        <div class="center"><i class="fa-solid fa-location-pin"></i></div>
-                        <div class="nav-to">
-                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    
     </div>
 
     <div class="bus-log-wrapper none">
@@ -664,6 +641,36 @@
         </div>
       </div>
     </div>
+
+    <div class="navigate-wrapper none">
+            <div class="navigate-inner flex flex-col m-1rem br-1rem" style="pointer-events: all; z-index: 403; font-family: var(--font-family); position: relative;">
+                <div class="navigate-to-from flex flex-col">
+                    <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
+                        <div class="center">◯</div>
+                        <div class="nav-from">
+                            <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
+                        </div>
+                        <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
+                        <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
+                            <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
+                        </div>
+                        <div class="center">⋮</div>
+                        <div style="height: 1px; background-color: var(--theme-color);"></div>
+                        <div class="center"><i class="fa-solid fa-location-pin"></i></div>
+                        <div class="nav-to">
+                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off">
+                        </div>
+                        <div class="nav-to-search-results none" style="grid-column: span 3;"></div>
+                    </div>
+                </div>
+
+                <div class="nav-directions-wrapper none">
+                    <div class="nav-directions-inner flex flex-col">
+
+                    </div>
+                </div>
+            </div>
+        </div>
 
     <div class="install-pwa-wrapper none">
         <div class="flex justify-center align-center h-full">
@@ -1238,6 +1245,16 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-search" class="toggle-input">
                             <label for="toggle-show-search" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Show Road Network</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-show-road-network" class="toggle-input">
+                            <label for="toggle-show-road-network" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
