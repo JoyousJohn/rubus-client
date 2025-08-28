@@ -221,6 +221,254 @@ function openNav(navTo, navFrom) {
     }
 }
 
+// Find the best combination of start and end stops for routing
+function findBestRouteCombination(startStops, endStops, startBuilding, endBuilding, startIsStop, endIsStop) {
+    const routeOptions = [];
+    const allEvaluatedCombinations = [];
+
+    console.log(`🔍 Evaluating route combinations:`);
+    console.log(`   Start stops: ${startStops.length} (${startStops.map(s => s.name).join(', ')})`);
+    console.log(`   End stops: ${endStops.length} (${endStops.map(s => s.name).join(', ')})`);
+    console.log(`   Total combinations to test: ${startStops.length * endStops.length}`);
+
+    // Try each combination of start and end stops
+    for (const startStop of startStops) {
+        for (const endStop of endStops) {
+            // Skip if it's the same stop
+            if (startStop.id === endStop.id) {
+                console.log(`   ❌ Skipped: ${startStop.name} → ${endStop.name} (same stop)`);
+                allEvaluatedCombinations.push({
+                    startStop: startStop.name,
+                    endStop: endStop.name,
+                    status: 'skipped_same_stop',
+                    routes: 0,
+                    walkingFeet: 0,
+                    score: 0
+                });
+                continue;
+            }
+
+            // Find connecting routes between these stops
+            const connectingRoutes = findConnectingRoutes(startStop.id, endStop.id);
+
+            // Calculate walking distances for this combination
+            const startWalkDistance = startIsStop ? null : calculateWalkingDistance(
+                startBuilding.lat, startBuilding.lng,
+                startStop.latitude, startStop.longitude
+            );
+
+            const endWalkDistance = endIsStop ? null : calculateWalkingDistance(
+                endStop.latitude, endStop.longitude,
+                endBuilding.lat, endBuilding.lng
+            );
+
+            // Calculate total walking distance in feet
+            const totalWalkingFeet = (startWalkDistance?.feet || 0) + (endWalkDistance?.feet || 0);
+
+            if (connectingRoutes.length > 0) {
+                // Score this route combination
+                const score = calculateRouteScore(connectingRoutes, totalWalkingFeet, startStop, endStop);
+
+                routeOptions.push({
+                    startStop,
+                    endStop,
+                    connectingRoutes,
+                    startWalkDistance,
+                    endWalkDistance,
+                    totalWalkingFeet,
+                    score
+                });
+
+                console.log(`   ✅ Valid: ${startStop.name} → ${endStop.name}`);
+                console.log(`      Routes: ${connectingRoutes.length} (${connectingRoutes.map(r => r.name).join(', ')})`);
+                console.log(`      Walking: ${totalWalkingFeet} ft (${startWalkDistance?.feet || 0} + ${endWalkDistance?.feet || 0})`);
+                console.log(`      Score: ${score.toFixed(2)}`);
+
+                allEvaluatedCombinations.push({
+                    startStop: startStop.name,
+                    endStop: endStop.name,
+                    status: 'valid',
+                    routes: connectingRoutes.length,
+                    routeNames: connectingRoutes.map(r => r.name),
+                    walkingFeet: totalWalkingFeet,
+                    score: score,
+                    chosen: false
+                });
+            } else {
+                console.log(`   ❌ No routes: ${startStop.name} → ${endStop.name} (${totalWalkingFeet} ft walking)`);
+
+                allEvaluatedCombinations.push({
+                    startStop: startStop.name,
+                    endStop: endStop.name,
+                    status: 'no_routes',
+                    routes: 0,
+                    walkingFeet: totalWalkingFeet,
+                    score: 0
+                });
+            }
+        }
+    }
+
+    // Sort by score (best first) and return top options
+    const sortedOptions = routeOptions
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5); // Return top 5 options
+
+    // Find the best combination for each route type
+    const bestByRoute = {};
+    routeOptions.forEach(option => {
+        option.connectingRoutes.forEach(route => {
+            const routeName = route.name.toLowerCase();
+            if (!bestByRoute[routeName] || option.score > bestByRoute[routeName].score) {
+                bestByRoute[routeName] = {
+                    combination: option,
+                    route: route
+                };
+            }
+        });
+    });
+
+    // Display best combination for each route type
+    console.log(`\n🏆 Best combination for each route type:`);
+    Object.keys(bestByRoute).sort().forEach(routeName => {
+        const best = bestByRoute[routeName];
+        const combo = best.combination;
+        console.log(`   ${routeName.toUpperCase()}: ${combo.startStop.name} → ${combo.endStop.name}`);
+        console.log(`      Walking: ${combo.totalWalkingFeet} ft (${combo.startWalkDistance?.feet || 0} + ${combo.endWalkDistance?.feet || 0})`);
+        console.log(`      Score: ${combo.score.toFixed(2)}`);
+        console.log(`      Other routes available: ${combo.connectingRoutes.map(r => r.name).join(', ')}`);
+        console.log('');
+    });
+
+    // Mark the chosen combinations (overall best and best for each route)
+    if (sortedOptions.length > 0) {
+        sortedOptions[0].chosen = true;
+        console.log(`🎯 Overall best combination selected:`);
+        console.log(`   ${sortedOptions[0].startStop.name} → ${sortedOptions[0].endStop.name}`);
+        console.log(`   Walking: ${sortedOptions[0].totalWalkingFeet} ft`);
+        console.log(`   Score: ${sortedOptions[0].score.toFixed(2)}`);
+        console.log(`   Routes: ${sortedOptions[0].connectingRoutes.map(r => r.name).join(', ')}`);
+
+        // Update the allEvaluatedCombinations to mark chosen ones
+        allEvaluatedCombinations.forEach(combo => {
+            if (combo.startStop === sortedOptions[0].startStop.name &&
+                combo.endStop === sortedOptions[0].endStop.name) {
+                combo.chosen = true;
+                combo.bestOverall = true;
+            }
+            // Also mark combinations that are best for their route type
+            Object.keys(bestByRoute).forEach(routeName => {
+                const best = bestByRoute[routeName];
+                if (combo.startStop === best.combination.startStop.name &&
+                    combo.endStop === best.combination.endStop.name) {
+                    combo.bestForRoute = combo.bestForRoute || [];
+                    combo.bestForRoute.push(routeName.toUpperCase());
+                }
+            });
+        });
+    }
+
+    console.log(`\n📊 Summary: ${routeOptions.length} valid combinations out of ${startStops.length * endStops.length} tested`);
+
+    // Show route distribution summary
+    const routeDistribution = {};
+    routeOptions.forEach(option => {
+        option.connectingRoutes.forEach(route => {
+            const routeName = route.name.toUpperCase();
+            if (!routeDistribution[routeName]) {
+                routeDistribution[routeName] = 0;
+            }
+            routeDistribution[routeName]++;
+        });
+    });
+
+    console.log(`\n🚌 Route distribution across valid combinations:`);
+    Object.keys(routeDistribution).sort().forEach(routeName => {
+        const bestCombo = bestByRoute[routeName.toLowerCase()];
+        const walking = bestCombo ? bestCombo.combination.totalWalkingFeet : 'N/A';
+        console.log(`   ${routeName}: ${routeDistribution[routeName]} combinations (best: ${walking} ft walking)`);
+    });
+
+    // Log all combinations in a table format for easy reading
+    console.log('\n📋 All evaluated combinations:');
+    console.table(allEvaluatedCombinations.map(combo => {
+        let status = combo.status.replace('_', ' ').toUpperCase();
+        if (combo.bestOverall) {
+            status = '🎯 BEST OVERALL';
+        } else if (combo.bestForRoute && combo.bestForRoute.length > 0) {
+            status = `🏆 BEST FOR ${combo.bestForRoute.join(', ')}`;
+        } else if (combo.chosen) {
+            status = '✅ CHOSEN';
+        }
+
+        return {
+            'Start → End': `${combo.startStop} → ${combo.endStop}`,
+            'Status': status,
+            'Routes': combo.routes || 'N/A',
+            'Walking (ft)': combo.walkingFeet || 'N/A',
+            'Score': combo.bestOverall ? `🎯 ${combo.score.toFixed(2)}` :
+                   (combo.bestForRoute ? `🏆 ${combo.score.toFixed(2)}` : combo.score.toFixed(2))
+        };
+    }));
+
+    // Return both overall best options and best combination per route
+    return { sortedOptions, bestByRoute };
+}
+
+// Calculate a score for a route combination (higher is better)
+function calculateRouteScore(routes, totalWalkingFeet, startStop, endStop) {
+    let score = 0;
+    const scoreBreakdown = [];
+
+    // Base score from number of available routes (more options is better)
+    const routeScore = routes.length * 10;
+    score += routeScore;
+    scoreBreakdown.push(`${routeScore} (routes: ${routes.length})`);
+
+    // Penalize excessive walking (walking over 2000 feet is heavily penalized)
+    let walkingPenalty = 0;
+    if (totalWalkingFeet > 2000) {
+        walkingPenalty = (totalWalkingFeet - 2000) * 0.1;
+        score -= walkingPenalty;
+        scoreBreakdown.push(`-${walkingPenalty.toFixed(1)} (walking: ${totalWalkingFeet} ft > 2000)`);
+    } else if (totalWalkingFeet > 1000) {
+        walkingPenalty = (totalWalkingFeet - 1000) * 0.05;
+        score -= walkingPenalty;
+        scoreBreakdown.push(`-${walkingPenalty.toFixed(1)} (walking: ${totalWalkingFeet} ft > 1000)`);
+    } else {
+        scoreBreakdown.push(`+0 (walking: ${totalWalkingFeet} ft)`);
+    }
+
+    // Prefer routes with fewer stops between start and end
+    const bestRoute = routes[0];
+    let stopsBonus = 0;
+    if (bestRoute) {
+        const total = (bestRoute.stops || []).length;
+        const diff = Math.abs(bestRoute.endIndex - bestRoute.startIndex);
+        const circStopsBetween = total > 0 ? Math.min(diff, total - diff) : diff;
+        stopsBonus = (10 - circStopsBetween) * 5;
+        score += stopsBonus;
+        scoreBreakdown.push(`+${stopsBonus} (stops: ${circStopsBetween} between)`);
+    }
+
+    // Prefer non-weekend/overnight routes for general use
+    const hasRegularRoutes = routes.some(r => {
+        const name = String(r.name || '').toLowerCase();
+        return !name.startsWith('wknd') && !name.startsWith('on');
+    });
+    if (hasRegularRoutes) {
+        score += 20;
+        scoreBreakdown.push(`+20 (regular routes)`);
+    } else {
+        scoreBreakdown.push(`+0 (weekend/overnight only)`);
+    }
+
+    // Log detailed scoring breakdown for debugging
+    console.log(`      Score breakdown: ${scoreBreakdown.join(' + ')} = ${score.toFixed(2)}`);
+
+    return score;
+}
+
 function calculateRoute(from, to) {
     console.log(`Calculating route from "${from}" to "${to}"`);
 
@@ -229,41 +477,27 @@ function calculateRoute(from, to) {
         let startBuilding = null;
         let endBuilding = null;
 
-        // For start building
+        // For start place (building or stop)
         if (selectedFromBuilding) {
-            startBuilding = buildingIndex[selectedFromBuilding];
+            const currentFromInput = $('#nav-from-input').val().trim();
+            startBuilding = resolvePlaceByName(currentFromInput || selectedFromBuilding);
         } else {
-            // Try exact match first, then fuzzy search
-            startBuilding = buildingIndex[from.toLowerCase()];
-            if (!startBuilding) {
-                const fuzzyResult = findBuildingFuzzy(from);
-                if (fuzzyResult) {
-                    startBuilding = fuzzyResult;
-                    console.log(`Using fuzzy match for "${from}": "${fuzzyResult.name}"`);
-                }
-            }
+            startBuilding = resolvePlaceByName(from);
         }
 
-        // For end building
+        // For end place (building or stop)
         if (selectedToBuilding) {
-            endBuilding = buildingIndex[selectedToBuilding];
+            const currentToInput = $('#nav-to-input').val().trim();
+            endBuilding = resolvePlaceByName(currentToInput || selectedToBuilding);
         } else {
-            // Try exact match first, then fuzzy search
-            endBuilding = buildingIndex[to.toLowerCase()];
-            if (!endBuilding) {
-                const fuzzyResult = findBuildingFuzzy(to);
-                if (fuzzyResult) {
-                    endBuilding = fuzzyResult;
-                    console.log(`Using fuzzy match for "${to}": "${fuzzyResult.name}"`);
-                }
-            }
+            endBuilding = resolvePlaceByName(to);
         }
 
         if (!startBuilding || !endBuilding) {
             const missingFrom = !startBuilding ? `"${from}"` : '';
             const missingTo = !endBuilding ? `"${to}"` : '';
             const connector = missingFrom && missingTo ? ' or ' : '';
-            showNavigationMessage(`Could not find building data for ${missingFrom}${connector}${missingTo}`);
+            showNavigationMessage(`Could not find location data for ${missingFrom}${connector}${missingTo}`);
             return;
         }
 
@@ -271,51 +505,69 @@ function calculateRoute(from, to) {
         const startIsStop = String(startBuilding.category || '').toLowerCase() === 'stop';
         const endIsStop = String(endBuilding.category || '').toLowerCase() === 'stop';
 
-        // Resolve boarding/alighting stops
-        const startStop = startIsStop ? {
+        // Resolve boarding/alighting stops - consider multiple options for better routing
+        const startStops = startIsStop ? [{
             id: String(startBuilding.id),
             name: startBuilding.name,
             latitude: startBuilding.lat,
-            longitude: startBuilding.lng
-        } : findClosestStop(startBuilding.lat, startBuilding.lng);
-        const endStop = endIsStop ? {
+            longitude: startBuilding.lng,
+            distance: 0
+        }] : findClosestStops(startBuilding.lat, startBuilding.lng, 5);
+
+        const endStops = endIsStop ? [{
             id: String(endBuilding.id),
             name: endBuilding.name,
             latitude: endBuilding.lat,
-            longitude: endBuilding.lng
-        } : findClosestStop(endBuilding.lat, endBuilding.lng);
+            longitude: endBuilding.lng,
+            distance: 0
+        }] : findClosestStops(endBuilding.lat, endBuilding.lng, 5);
 
-        if (!startStop || !endStop) {
+        if (startStops.length === 0 || endStops.length === 0) {
             showNavigationMessage("Could not find nearby bus stops");
             return;
         }
 
-        // Find connecting routes
-        const connectingRoutes = findConnectingRoutes(startStop.id, endStop.id);
+        // Find the best route combination by trying different start/end stop pairs
+        const { sortedOptions, bestByRoute } = findBestRouteCombination(startStops, endStops, startBuilding, endBuilding, startIsStop, endIsStop);
 
-        if (connectingRoutes.length === 0) {
+        if (!sortedOptions || sortedOptions.length === 0) {
             showNavigationMessage("No bus routes connect these locations");
             return;
+        }
+
+        // Use the best overall route combination for initial selection
+        const bestRoute = sortedOptions[0];
+        const startStop = bestRoute.startStop;
+        const endStop = bestRoute.endStop;
+        const connectingRoutes = bestRoute.connectingRoutes;
+        const startWalkDistance = bestRoute.startWalkDistance;
+        const endWalkDistance = bestRoute.endWalkDistance;
+        const totalWalkingFeet = bestRoute.totalWalkingFeet;
+
+        // Debug: Log route options for testing
+        console.log('Multi-stop routing options considered (overall best list):', sortedOptions.length);
+        console.log('Best route selected:', {
+            startStop: startStop.name,
+            endStop: endStop.name,
+            totalWalkingFeet: totalWalkingFeet,
+            routeCount: connectingRoutes.length,
+            score: bestRoute.score
+        });
+        if (sortedOptions.length > 1) {
+            console.log('Alternative combinations available:', sortedOptions.slice(1, 3).map(opt => ({
+                startStop: opt.startStop.name,
+                endStop: opt.endStop.name,
+                walking: opt.totalWalkingFeet,
+                score: opt.score
+            })));
         }
 
         // Rank routes by desirability (best first)
         const rankedRoutes = selectBestRoute(connectingRoutes, startStop, endStop);
         const hasAlternatives = rankedRoutes.length > 1;
 
-        // Calculate walking distances
-        const startWalkDistance = startIsStop ? null : calculateWalkingDistance(
-            startBuilding.lat, startBuilding.lng,
-            startStop.latitude, startStop.longitude
-        );
-
-        const endWalkDistance = endIsStop ? null : calculateWalkingDistance(
-            endStop.latitude, endStop.longitude,
-            endBuilding.lat, endBuilding.lng
-        );
-
         // Filter out routes with excessive walking unless it's the only choice
         // Using total walking feet threshold (e.g., 2000 ft) – tweakable
-        const totalWalkingFeet = (startWalkDistance?.feet || 0) + (endWalkDistance?.feet || 0);
         const WALKING_CUTOFF_FEET = 2000;
         let filteredRankedRoutes = rankedRoutes;
         if (rankedRoutes.length > 1 && totalWalkingFeet > WALKING_CUTOFF_FEET) {
@@ -333,9 +585,49 @@ function calculateRoute(from, to) {
             return;
         }
 
+        // Hide any previous nav message when proceeding to display a route
+        $('.nav-message').hide(); // remove later?
+
         // Get detailed route information for the primary route
         const primaryRoute = filteredRankedRoutes[0];
         const routeDetails = getRouteDetails(primaryRoute, startStop.id, endStop.id);
+
+        // Build a map of best combination per route for alternate options (route -> start/end stops and walking)
+        const routeCombosMap = {};
+        const allRoutesAcrossBestCombos = [];
+        Object.keys(bestByRoute).forEach(routeNameKey => {
+            const best = bestByRoute[routeNameKey];
+            if (!best || !best.combination || !best.route) return;
+            const combo = best.combination;
+            const routeObj = best.route;
+            const key = String(routeObj.name || '').toLowerCase();
+            routeCombosMap[key] = {
+                startStop: combo.startStop,
+                endStop: combo.endStop,
+                startWalkDistance: combo.startWalkDistance,
+                endWalkDistance: combo.endWalkDistance,
+                totalWalkingFeet: combo.totalWalkingFeet
+            };
+            allRoutesAcrossBestCombos.push(routeObj);
+        });
+
+        // Ensure primary route is present and comes first in selection order
+        const primaryKey = String(primaryRoute.name || '').toLowerCase();
+        const dedupedRoutes = [];
+        const seen = new Set();
+        // Primary first
+        if (!seen.has(primaryKey)) {
+            dedupedRoutes.push(primaryRoute);
+            seen.add(primaryKey);
+        }
+        // Then others from best-per-route
+        allRoutesAcrossBestCombos.forEach(r => {
+            const k = String(r.name || '').toLowerCase();
+            if (!seen.has(k)) {
+                dedupedRoutes.push(r);
+                seen.add(k);
+            }
+        });
 
         // Check if fuzzy matching was used
         const usedFuzzyMatch = {
@@ -350,16 +642,18 @@ function calculateRoute(from, to) {
             startStop,
             endStop,
             route: routeDetails,
-            allRoutes: filteredRankedRoutes,
+            allRoutes: dedupedRoutes,
             selectedRouteIndex: 0,
             startWalkDistance,
             endWalkDistance,
-            hasAlternatives,
-            alternativeRoutes: hasAlternatives ? filteredRankedRoutes.slice(1) : [],
+            hasAlternatives: dedupedRoutes.length > 1,
+            alternativeRoutes: dedupedRoutes.length > 1 ? dedupedRoutes.slice(1) : [],
             usedFuzzyMatch,
             originalInputs: { from, to },
             startIsStop,
-            endIsStop
+            endIsStop,
+            
+            routeCombosMap
         });
 
     } catch (error) {
@@ -531,29 +825,23 @@ function showNavigationAutocomplete(inputElement, query) {
             inputElement.trigger('input');
 
             // Immediately check and trigger route calculation if both are set
-            // This ensures calculation happens as soon as both are chosen from autocomplete
+            // Use resolver to allow bus stops as inputs, not only buildings
             if (selectedFromBuilding && selectedToBuilding) {
                 const fromValue = $('#nav-from-input').val().trim();
                 const toValue = $('#nav-to-input').val().trim();
                 console.log('fromValue:', fromValue);
                 console.log('toValue:', toValue);
-                const fromBuilding = buildingIndex[selectedFromBuilding];
-                const toBuilding = buildingIndex[selectedToBuilding];
-                console.log('fromBuilding:', fromBuilding);
-                console.log('toBuilding:', toBuilding);
-                if (fromBuilding && toBuilding) {
-                    console.log('fromBuilding.name:', fromBuilding.name, '| fromValue:', fromValue);
-                    console.log('toBuilding.name:', toBuilding.name, '| toValue:', toValue);
-                    console.log('fromBuilding.name.toLowerCase() === fromValue.toLowerCase():', fromBuilding.name.toLowerCase() === fromValue.toLowerCase());
-                    console.log('toBuilding.name.toLowerCase() === toValue.toLowerCase():', toBuilding.name.toLowerCase() === toValue.toLowerCase());
-                }
-                if (fromBuilding && toBuilding &&
-                    fromBuilding.name.toLowerCase() === fromValue.toLowerCase() &&
-                    toBuilding.name.toLowerCase() === toValue.toLowerCase()) {
+
+                const fromPlace = resolvePlaceByName(fromValue);
+                const toPlace = resolvePlaceByName(toValue);
+                console.log('fromPlace:', fromPlace);
+                console.log('toPlace:', toPlace);
+
+                if (fromPlace && toPlace) {
                     console.log('[Autocomplete Click] Triggering calculateRoute');
                     calculateRoute(fromValue, toValue);
                 } else {
-                    console.log('[Autocomplete Click] Not triggering calculateRoute: input values do not match selected buildings');
+                    console.log('[Autocomplete Click] Not triggering calculateRoute: could not resolve one or both inputs');
                 }
             } else {
                 // More granular debug: which one is missing?
@@ -613,10 +901,9 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
     return R * c * 1000; // Convert to meters
 }
 
-// Find the closest bus stop to a given latitude and longitude
-function findClosestStop(targetLat, targetLng) {
-    let closestStop = null;
-    let minDistance = Infinity;
+// Find the closest bus stops to a given latitude and longitude (returns top 5)
+function findClosestStops(targetLat, targetLng, maxStops = 5) {
+    const stopsWithDistance = [];
 
     for (const stopId in stopsData) {
         const stop = stopsData[stopId];
@@ -625,19 +912,58 @@ function findClosestStop(targetLat, targetLng) {
             stop.latitude, stop.longitude
         );
 
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestStop = {
-                id: stopId,
+        stopsWithDistance.push({
+            id: stopId,
+            name: stop.name,
+            latitude: stop.latitude,
+            longitude: stop.longitude,
+            distance: distance
+        });
+    }
+
+    // Sort by distance and return top N stops
+    return stopsWithDistance
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, maxStops);
+}
+
+// Keep the original function for backward compatibility (returns only the closest)
+function findClosestStop(targetLat, targetLng) {
+    const closestStops = findClosestStops(targetLat, targetLng, 1);
+    return closestStops.length > 0 ? closestStops[0] : null;
+}
+
+// Resolve an input string to a place object (building or stop)
+function resolvePlaceByName(inputName) {
+    if (!inputName) return null;
+    const normalized = String(inputName).trim().toLowerCase();
+
+    // Exact building match (by normalized key)
+    if (buildingIndex[normalized]) {
+        return buildingIndex[normalized];
+    }
+
+    // Exact stop match (case-insensitive by name)
+    for (const stopId in stopsData) {
+        const stop = stopsData[stopId];
+        if (String(stop.name || '').trim().toLowerCase() === normalized) {
+            return {
                 name: stop.name,
-                latitude: stop.latitude,
-                longitude: stop.longitude,
-                distance: distance
+                lat: stop.latitude,
+                lng: stop.longitude,
+                id: parseInt(stopId, 10),
+                category: 'stop'
             };
         }
     }
 
-    return closestStop;
+    // Fuzzy building match via Fuse.js
+    const fuzzyBuilding = findBuildingFuzzy(inputName);
+    if (fuzzyBuilding) {
+        return fuzzyBuilding;
+    }
+
+    return null;
 }
 
 // Find bus routes that connect two stops
@@ -720,6 +1046,8 @@ function selectBestRoute(routes, startStop, endStop) {
 
     // Return all routes sorted by score (best first)
     scoredRoutes.sort((a, b) => b.score - a.score);
+    console.log(scoredRoutes);
+    console.log('hi')
     return scoredRoutes.map(r => r.route);
 }
 
@@ -734,16 +1062,13 @@ function getRouteDetails(route, startStopId, endStopId) {
         return { ...route, stopsInOrder: stops, direction: 'forward', totalStops: 0 };
     }
 
-    // Compute circular shortest path direction and range
-    const diff = Math.abs(endIndex - startIndex);
+    // Always traverse forward along the route (routes are directional loops)
     const forwardDistance = (endIndex - startIndex + total) % total; // steps going forward wrapping
-    const backwardDistance = (startIndex - endIndex + total) % total; // steps going backward wrapping
-    const goForward = forwardDistance <= backwardDistance; // prefer forward on tie
-    const steps = Math.min(forwardDistance, backwardDistance);
+    const steps = forwardDistance;
 
     // Add stops in circular order
     for (let i = 0; i <= steps; i++) {
-        const idx = goForward ? (startIndex + i) % total : (startIndex - i + total) % total;
+        const idx = (startIndex + i) % total;
         const stopId = route.stops[idx];
         if (stopsData[stopId]) {
             stops.push({
@@ -758,7 +1083,7 @@ function getRouteDetails(route, startStopId, endStopId) {
     return {
         ...route,
         stopsInOrder: stops,
-        direction: goForward ? 'forward' : 'backward',
+        direction: 'forward',
         totalStops: stops.length
     };
 }
@@ -913,11 +1238,13 @@ function displayRoute(routeData) {
         usedFuzzyMatch = { from: false, to: false },
         originalInputs = { from: '', to: '' },
         startIsStop = false,
-        endIsStop = false
+        endIsStop = false,
+        
+        routeCombosMap = {}
     } = routeData;
 
-    // Clear existing route display
-    $('.nav-directions-wrapper').removeClass('none').empty();
+    // Clear existing route display and ensure flex when shown
+    $('.nav-directions-wrapper').removeClass('none').addClass('flex').empty();
 
     const directionsContainer = $('.nav-directions-wrapper');
 
@@ -1043,6 +1370,8 @@ function displayRoute(routeData) {
         `;
     }
 
+    // Removed multi-stop info UI per request
+
     // No longer showing alternative routes info since it's clear from the route selector above
 
     // Create route header
@@ -1063,6 +1392,7 @@ function displayRoute(routeData) {
                 ${summary}
             </div>
             ${fuzzyMatchHtml}
+            
         </div>
         `;
     })();
@@ -1118,7 +1448,7 @@ function displayRoute(routeData) {
                     Get off at <strong>${endStop.name}</strong>
                 </div>
                 <div class="bus-route-info" style="font-size: 0.75rem; color: #6b7280;">
-                    ${route.totalStops} stops total • ${Math.max(0, route.totalStops - 1)} stops between boarding and alighting
+                    ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops to destination
                 </div>
                 ${stopsListHtml}
             </div>
@@ -1184,7 +1514,7 @@ function displayRoute(routeData) {
                         Take Bus <span style="font-weight: 700; font-size: 2rem;">${formatRouteLabelColored(route.name)}</span>
                     </div>
                     <div class="stops-info">
-                        ${route.totalStops} stops total • ${Math.max(0, route.totalStops - 1)} stops to destination
+                        ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops to destination
                     </div>
                     ${stopsListHtml}
                 </div>
@@ -1234,6 +1564,12 @@ function displayRoute(routeData) {
     // Add content to container
     directionsContainer.html(contentWrapperHtml);
 
+    directionsContainer.append(`
+        <div class="flex justify-center mb-2rem">
+            <div class="py-1rem px-2rem br-4rem text-1p6rem white bold-600 w-min" style="background-color: #4444f4;" onclick="closeNavigation()">CLOSE</div>
+        </div>
+    `);
+
     // Position the single global waypoint connector after render
     positionGlobalWaypointConnector();
 
@@ -1262,19 +1598,28 @@ function displayRoute(routeData) {
                 // Track the newly selected route index so we can switch back later
                 selectedRouteDisplayIndex = newRouteIndex;
 
-                // Get the new route details
+                // Get the new route details using best combo per route (start/end stops may differ)
                 const newRoute = routesForDisplay[newRouteIndex].route;
-                const newRouteDetails = getRouteDetails(newRoute, startStop.id, endStop.id);
+                const newRouteKey = String(newRoute.name || '').toLowerCase();
+                const combo = routeCombosMap[newRouteKey];
+
+                // Fallback to current stops if no combo found (shouldn't happen)
+                const effectiveStartStop = combo && combo.startStop ? combo.startStop : startStop;
+                const effectiveEndStop = combo && combo.endStop ? combo.endStop : endStop;
+                const effectiveStartWalk = combo && combo.startWalkDistance ? combo.startWalkDistance : startWalkDistance;
+                const effectiveEndWalk = combo && combo.endWalkDistance ? combo.endWalkDistance : endWalkDistance;
+
+                const newRouteDetails = getRouteDetails(newRoute, effectiveStartStop.id, effectiveEndStop.id);
 
                 // Update the route display with new route information
                 updateRouteDisplay({
                     startBuilding,
                     endBuilding,
-                    startStop,
-                    endStop,
+                    startStop: effectiveStartStop,
+                    endStop: effectiveEndStop,
                     route: newRouteDetails,
-                    startWalkDistance,
-                    endWalkDistance,
+                    startWalkDistance: effectiveStartWalk,
+                    endWalkDistance: effectiveEndWalk,
                     originalInputs,
                     startIsStop,
                     endIsStop
@@ -1288,6 +1633,8 @@ function displayRoute(routeData) {
 
     // Show navigation wrapper if hidden
     $('.navigate-wrapper').show();
+    // Ensure directions wrapper uses flex when visible
+    $('.nav-directions-wrapper').removeClass('none').addClass('flex');
 }
 
 // Position a single vertical connector from the first to the last waypoint circle
@@ -1469,7 +1816,7 @@ function updateRouteDisplay(routeData) {
                     Get off at <strong>${endStop.name}</strong>
                 </div>
                 <div class="bus-route-info" style="font-size: 0.75rem; color: #6b7280;">
-                    ${route.totalStops} stops total • ${Math.max(0, route.totalStops - 1)} stops between boarding and alighting
+                    ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops to destination
                 </div>
                 ${stopsListHtml}
             </div>
@@ -1479,12 +1826,37 @@ function updateRouteDisplay(routeData) {
     // Update the bus segment
     $('.bus-segment').replaceWith(updatedBusHtml);
 
-    showNavigationMessage(`Switched to ${formatRouteLabel(route.name)} route`);
+    // showNavigationMessage(`Switched to ${formatRouteLabel(route.name)} route`);
 }
 
 // Clear the current route display
 function clearRouteDisplay() {
-    $('.nav-directions-wrapper').addClass('none').empty();
+    $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
     showNavigationMessage('Route cleared');
+}
+
+// Fully close and clear navigation UI and state
+function closeNavigation() {
+    try {
+        // Clear route UI
+        $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
+        $('.nav-directions-wtrapper').addClass('none').empty();
+        // Clear inputs
+        isSettingInputProgrammatically = true;
+        $('#nav-from-input').val('').removeClass('has-value');
+        $('#nav-to-input').val('').removeClass('has-value');
+        isSettingInputProgrammatically = false;
+        // Reset selected buildings
+        selectedFromBuilding = null;
+        selectedToBuilding = null;
+        // Hide autocomplete and messages
+        hideNavigationAutocomplete();
+        $('.nav-message').hide();
+        // Fade out wrapper
+        $('.navigate-wrapper').fadeOut(200);
+    } catch (e) {
+        console.error('Error closing navigation:', e);
+        $('.navigate-wrapper').fadeOut(200);
+    }
 }
 

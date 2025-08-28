@@ -58,6 +58,7 @@
     scrollbar-width: thin;
     flex: 1;
     background-color: var(--theme-bg);
+    flex-direction: column;
 }
 
 .nav-directions-wrapper::-webkit-scrollbar {

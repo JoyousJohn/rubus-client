@@ -158,11 +158,15 @@
 
 .px-1rem { padding-left: 1rem; padding-right: 1rem; }
 
+.px-2rem { padding-left: 2rem; padding-right: 2rem; }
+
 .px-3rem { padding-left: 3rem; padding-right: 3rem; }
 
 .px-16rem { padding-left: 16rem; padding-right: 16rem; }
 
 .py-0p5rem { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+.py-1rem { padding-top: 1rem; padding-bottom: 1rem; }
 
 .py-2rem { padding-top: 2rem; padding-bottom: 2rem; }
 
@@ -383,6 +387,9 @@
 .br-1rem { border-radius: 1rem; }
 
 .br-2rem { border-radius: 2rem; }
+
+.br-4rem { border-radius: 4rem; }
+
 
 .select-none { user-select: none; }
 
