@@ -8,10 +8,14 @@
     color: var(--theme-color);
     width: 100%;
     font-size: 1.5rem;
+    height: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
 }
 
 .navigate-inner {
-    background-color: var(--theme-bg);
+    height: 100%;
+    row-gap: 1rem;
 }
 
 /* Navigation input styling */
@@ -50,9 +54,10 @@
 
 /* Navigation directions wrapper styling */
 .nav-directions-wrapper {
-    max-height: 70vh;
     overflow-y: auto;
     scrollbar-width: thin;
+    flex: 1;
+    background-color: var(--theme-bg);
 }
 
 .nav-directions-wrapper::-webkit-scrollbar {

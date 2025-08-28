@@ -12,23 +12,13 @@ $(document).ready(function() {
         const currentBuildingName = popupBuildingName;
 
         hideInfoBoxes();
-
-        // Determine which input to populate based on current focus/context
-        const fromInput = $('#nav-from-input');
-        const toInput = $('#nav-to-input');
-
-        // If "from" input is empty, use it; otherwise use "to" input
-        const targetInput = fromInput.val().trim() === '' ? 'from' : 'to';
-
-        setNavigationFromBuilding(currentBuildingName, targetInput);
+        
+        // Always set the selected building as the destination
+        setNavigationFromBuilding(currentBuildingName, 'to');
         $('.navigate-wrapper').show();
 
-        // Focus on the other input
-        if (targetInput === 'from') {
-            $('#nav-to-input').focus();
-        } else {
-            $('#nav-from-input').focus();
-        }
+        // Focus on the from input for user to enter their starting location
+        $('#nav-from-input').focus();
     });
 
     // Handle navigation input functionality
@@ -42,13 +32,27 @@ function setupNavigationInputs() {
         const toInput = $('#nav-to-input');
         const fromValue = fromInput.val();
         const toValue = toInput.val();
-        
+
         fromInput.val(toValue);
         toInput.val(fromValue);
-        
+
         // Trigger change event to update any dependent logic
         fromInput.trigger('change');
         toInput.trigger('change');
+
+        // Swap the selected building variables as well
+        const tempFromBuilding = selectedFromBuilding;
+        const tempToBuilding = selectedToBuilding;
+        selectedFromBuilding = tempToBuilding;
+        selectedToBuilding = tempFromBuilding;
+
+        // Recalculate route if both inputs have values
+        const newFromValue = fromInput.val().trim();
+        const newToValue = toInput.val().trim();
+
+        if (newFromValue && newToValue) {
+            calculateRoute(newFromValue, newToValue);
+        }
     });
 
     // Handle input changes
@@ -64,10 +68,18 @@ function setupNavigationInputs() {
 
         // Clear the selected building variable on manual edits only
         if (!isSettingInputProgrammatically) {
+            // Only clear if the input value doesn't match the selected building (case-insensitive, trimmed)
+            const inputValue = input.val().trim().toLowerCase();
             if (input.attr('id') === 'nav-from-input') {
-                selectedFromBuilding = null;
+                const buildingName = selectedFromBuilding && buildingIndex[selectedFromBuilding]?.name?.toLowerCase();
+                if (buildingName && inputValue !== buildingName) {
+                    selectedFromBuilding = null;
+                }
             } else if (input.attr('id') === 'nav-to-input') {
-                selectedToBuilding = null;
+                const buildingName = selectedToBuilding && buildingIndex[selectedToBuilding]?.name?.toLowerCase();
+                if (buildingName && inputValue !== buildingName) {
+                    selectedToBuilding = null;
+                }
             }
         }
 
@@ -85,13 +97,34 @@ function setupNavigationInputs() {
         if (value.length > 0) {
             showNavigationAutocomplete(input, value);
         }
+
+        // Add styling to .from-circle when from-input is focused and has search results
+        if (input.attr('id') === 'nav-from-input') {
+            const hasResults = !$('.nav-from-search-results').hasClass('none');
+            if (hasResults) {
+                $('.from-circle').css({
+                    'align-self': 'start',
+                    'margin-top': '0.7rem'
+                });
+            }
+        }
     });
 
     // Handle blur events to hide dropdowns after a delay
     $('#nav-from-input, #nav-to-input').on('blur', function() {
+        const input = $(this);
+
         // Delay hiding to allow clicks on dropdown items
         setTimeout(() => {
             hideNavigationAutocomplete();
+
+            // Remove styling from .from-circle when from-input loses focus
+            if (input.attr('id') === 'nav-from-input') {
+                $('.from-circle').css({
+                    'align-self': '',
+                    'margin-top': ''
+                });
+            }
         }, 200);
     });
 
@@ -395,10 +428,14 @@ function setNavigationFromBuilding(buildingName, targetInput = 'from') {
     // Set the selected building variable
     if (targetInput === 'from') {
         selectedFromBuilding = normalizedName;
+        isSettingInputProgrammatically = true;
         $('#nav-from-input').val(buildingName).trigger('input');
+        isSettingInputProgrammatically = false;
     } else if (targetInput === 'to') {
         selectedToBuilding = normalizedName;
+        isSettingInputProgrammatically = true;
         $('#nav-to-input').val(buildingName).trigger('input');
+        isSettingInputProgrammatically = false;
     }
 
     // Check if we should trigger route calculation
@@ -483,6 +520,10 @@ function showNavigationAutocomplete(inputElement, query) {
                 selectedToBuilding = item.name.toLowerCase();
             }
 
+            // Debug: Log entry into autocomplete click handler
+            console.log('[Autocomplete Click] Handler fired');
+            console.log('selectedFromBuilding:', selectedFromBuilding);
+            console.log('selectedToBuilding:', selectedToBuilding);
             // Hide results
             resultsContainer.addClass('none');
 
@@ -492,16 +533,36 @@ function showNavigationAutocomplete(inputElement, query) {
             // Immediately check and trigger route calculation if both are set
             // This ensures calculation happens as soon as both are chosen from autocomplete
             if (selectedFromBuilding && selectedToBuilding) {
-                // Get the current values from the inputs
                 const fromValue = $('#nav-from-input').val().trim();
                 const toValue = $('#nav-to-input').val().trim();
-                // Only trigger if both input values match the selected buildings
+                console.log('fromValue:', fromValue);
+                console.log('toValue:', toValue);
                 const fromBuilding = buildingIndex[selectedFromBuilding];
                 const toBuilding = buildingIndex[selectedToBuilding];
+                console.log('fromBuilding:', fromBuilding);
+                console.log('toBuilding:', toBuilding);
+                if (fromBuilding && toBuilding) {
+                    console.log('fromBuilding.name:', fromBuilding.name, '| fromValue:', fromValue);
+                    console.log('toBuilding.name:', toBuilding.name, '| toValue:', toValue);
+                    console.log('fromBuilding.name.toLowerCase() === fromValue.toLowerCase():', fromBuilding.name.toLowerCase() === fromValue.toLowerCase());
+                    console.log('toBuilding.name.toLowerCase() === toValue.toLowerCase():', toBuilding.name.toLowerCase() === toValue.toLowerCase());
+                }
                 if (fromBuilding && toBuilding &&
                     fromBuilding.name.toLowerCase() === fromValue.toLowerCase() &&
                     toBuilding.name.toLowerCase() === toValue.toLowerCase()) {
+                    console.log('[Autocomplete Click] Triggering calculateRoute');
                     calculateRoute(fromValue, toValue);
+                } else {
+                    console.log('[Autocomplete Click] Not triggering calculateRoute: input values do not match selected buildings');
+                }
+            } else {
+                // More granular debug: which one is missing?
+                if (!selectedFromBuilding && !selectedToBuilding) {
+                    console.log('[Autocomplete Click] Not triggering calculateRoute: BOTH selectedFromBuilding and selectedToBuilding are missing');
+                } else if (!selectedFromBuilding) {
+                    console.log('[Autocomplete Click] Not triggering calculateRoute: selectedFromBuilding is missing. Value:', selectedFromBuilding);
+                } else if (!selectedToBuilding) {
+                    console.log('[Autocomplete Click] Not triggering calculateRoute: selectedToBuilding is missing. Value:', selectedToBuilding);
                 }
             }
         });
@@ -510,12 +571,26 @@ function showNavigationAutocomplete(inputElement, query) {
     });
 
     resultsContainer.removeClass('none');
+
+    // Add styling to .from-circle when from-input search results are shown
+    if (isFromInput && results.length > 0) {
+        $('.from-circle').css({
+            'align-self': 'start',
+            'margin-top': '0.7rem'
+        });
+    }
 }
 
 // Hide autocomplete dropdowns
 function hideNavigationAutocomplete() {
     $('.nav-from-search-results, .nav-to-search-results').addClass('none');
     currentAutocompleteIndex = -1;
+
+    // Remove styling from .from-circle when search results are hidden
+    $('.from-circle').css({
+        'align-self': '',
+        'margin-top': ''
+    });
 }
 
 // Highlight/unhighlight autocomplete items
@@ -1200,7 +1275,9 @@ function displayRoute(routeData) {
                     route: newRouteDetails,
                     startWalkDistance,
                     endWalkDistance,
-                    originalInputs
+                    originalInputs,
+                    startIsStop,
+                    endIsStop
                 });
 
                 // Reposition connector after content updates
@@ -1211,8 +1288,6 @@ function displayRoute(routeData) {
 
     // Show navigation wrapper if hidden
     $('.navigate-wrapper').show();
-
-    showNavigationMessage('Route calculated successfully!');
 }
 
 // Position a single vertical connector from the first to the last waypoint circle
@@ -1262,7 +1337,9 @@ function updateRouteDisplay(routeData) {
         route,
         startWalkDistance,
         endWalkDistance,
-        originalInputs = { from: '', to: '' }
+        originalInputs = { from: '', to: '' },
+        startIsStop = false,
+        endIsStop = false
     } = routeData;
 
     // Update route summary in header

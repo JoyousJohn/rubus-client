@@ -643,14 +643,14 @@
     </div>
 
     <div class="navigate-wrapper none">
-            <div class="navigate-inner flex flex-col m-1rem br-1rem" style="pointer-events: all; z-index: 403; font-family: var(--font-family); position: relative;">
-                <div class="navigate-to-from flex flex-col">
+            <div class="navigate-inner flex flex-col" style="pointer-events: all; z-index: 403; font-family: var(--font-family); position: relative;">
+                <div class="navigate-to-from flex flex-col br-1rem" style="background-color: var(--theme-bg);">
                     <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
-                        <div class="center">◯</div>
+                        <div class="from-circle center">◯</div>
                         <div class="nav-from">
                             <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
+                            <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
                         </div>
-                        <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
                         <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
                             <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
                         </div>
@@ -664,7 +664,7 @@
                     </div>
                 </div>
 
-                <div class="nav-directions-wrapper none">
+                <div class="nav-directions-wrapper none br-1rem">
                     <div class="nav-directions-inner flex flex-col">
 
                     </div>
