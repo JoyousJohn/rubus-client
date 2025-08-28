@@ -1243,8 +1243,8 @@ let defaultSettings = {
     'toggle-spoofing': false,
     'toggle-show-chat': false,
     'toggle-show-thinking': false,
-    'toggle-show-buildings': false,
-    'toggle-show-search': false,
+    'toggle-show-buildings': true,
+    'toggle-show-search': true,
     'toggle-show-road-network': false,
     
     // going to remove

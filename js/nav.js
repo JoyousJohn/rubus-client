@@ -586,7 +586,7 @@ function calculateRoute(from, to) {
         }
 
         // Hide any previous nav message when proceeding to display a route
-        $('.nav-message').hide(); // remove later?
+        $('.nav-message').hide(); // remove later?-
 
         // Get detailed route information for the primary route
         const primaryRoute = filteredRankedRoutes[0];
