@@ -148,7 +148,9 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
     // Priority: explicit caller flag > forced resume flag > long gap since last update > setting toggle
     const longGapSinceUpdate = (currentTime - (lastUpdateTime || 0)) > (pollDelay + pollDelayBuffer);
     const shouldImmediateUpdate = Boolean(immediatelyUpdate) || forceImmediateUpdate || longGapSinceUpdate || settings['toggle-always-immediate-update'];
-    if (shouldImmediateUpdate && !isInitial) {
+
+    // Allow immediate updates even on initial load if forceImmediateUpdate is set (app resume scenario)
+    if (shouldImmediateUpdate && (!isInitial || forceImmediateUpdate)) {
         immediatelyUpdate = true;
         immediatelyUpdateBusDataPre();
     } else {
