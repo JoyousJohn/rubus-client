@@ -509,7 +509,7 @@ function showNavigationAutocomplete(inputElement, query) {
 
         const $resultElement = $(`<div class="nav-search-result-item">${icon}<div>${item.name}</div></div>`);
 
-        $resultElement.click(function() {
+        $resultElement.on('click touchstart', function() {
             // Set the input value
             inputElement.val(item.name);
 

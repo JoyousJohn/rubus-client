@@ -19,6 +19,7 @@ let showBusId = false;
 
 let isDesktop;
 let tileLayer;
+let currentTileLayerType = 'streets'; // Track the current tile layer type
 
 const tileToken = 'pk.eyJ1Ijoiam9obi1oYXBweSIsImEiOiJjbWFrMzR2cnYwNDJ1MnFvaGh4dGd5YnlmIn0.cMHFVjIXIo_IaSI-Q6RtfQ';
 
@@ -86,6 +87,7 @@ $(document).ready(function() {
     tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${mapTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`, {
         maxZoom: 20,
     }).addTo(map);
+    currentTileLayerType = 'streets';
 
     let isTransitioning = false; // Flag to track if the map is transitioning
     let isFittingBounds = false;
@@ -498,6 +500,7 @@ function changeMapStyle(newStyle) {
     // console.log("Setting map style to " + newStyle);
     let newUrl = `https://tiles.rubus.live/styles/v1/${newStyle}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`;
     tileLayer.setUrl(newUrl);
+    // Note: changeMapStyle only changes between light/dark variants of streets, so currentTileLayerType remains 'streets'
     
     // Force map to immediately update (not require zoom)
     const currentCenter = map.getCenter();
@@ -2367,24 +2370,25 @@ function stopOvertimeCounter() {
 }
 
 $('.satellite-btn').click(function() {
-    const currentId = tileLayer.options.id;
-    if (currentId.includes('satellite')) {
+    if (currentTileLayerType === 'satellite') {
         let theme = settings['theme'];
         if (theme === 'auto') {
             const currentHour = new Date().getHours();
             theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
-        
+
         const newTheme = theme === 'dark' ? 'dark-v11' : 'streets-v11';
         map.removeLayer(tileLayer);
-        
+
         tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${newTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
-        
+        currentTileLayerType = 'streets';
+
         $(this).css('background-color', 'var(--theme-bg)');
     } else {
         map.removeLayer(tileLayer);
-        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/satellite-streets-v12/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
-        
+        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/satellite-streets-v11/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
+        currentTileLayerType = 'satellite';
+
         let theme = settings['theme']
         if (theme === 'auto') {
             const currentHour = new Date().getHours();
