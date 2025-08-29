@@ -8,6 +8,13 @@ $(document).ready(function() {
             return;
         }
 
+        // Track building directions button click
+        sa_event('btn_press', {
+            'btn': 'building_directions',
+            'building': popupBuildingName,
+            'type': window._currentBuildingFeatureForStops?.category || 'unknown'
+        });
+
         // Store the building name before it gets cleared by hideInfoBoxes
         const currentBuildingName = popupBuildingName;
 
@@ -845,6 +852,13 @@ function showNavigationAutocomplete(inputElement, query) {
                 selectedToBuilding = item.name.toLowerCase();
             }
 
+            // Track navigation place selection
+            sa_event('btn_press', {
+                'btn': isFromInput ? 'nav_from_place_selected' : 'nav_to_place_selected',
+                'place': item.name,
+                'category': item.category || 'unknown'
+            });
+
             // Debug: Log entry into autocomplete click handler
             console.log('[Autocomplete Click] Handler fired');
             console.log('selectedFromBuilding:', selectedFromBuilding);
@@ -1599,6 +1613,15 @@ function displayRoute(routeData) {
             const newRouteIndex = parseInt($(this).attr('data-route-index'));
 
             if (newRouteIndex !== selectedRouteDisplayIndex) {
+                // Track alternate route selection
+                const newRoute = routesForDisplay[newRouteIndex].route;
+                sa_event('btn_press', {
+                    'btn': 'nav_alternate_route',
+                    'route': newRoute.name,
+                    'from_route': routesForDisplay[selectedRouteDisplayIndex].route.name,
+                    'route_index': newRouteIndex
+                });
+
                 // Update selected route styling (class and inline styles)
                 const defaultBg = '#f3f4f6';
                 const defaultText = '#6b7280';
@@ -1608,7 +1631,7 @@ function displayRoute(routeData) {
                 });
                 $(this).addClass('selected');
                 // Apply selected colors
-                const selectedRouteName = routesForDisplay[newRouteIndex].route.name.toLowerCase();
+                const selectedRouteName = newRoute.name.toLowerCase();
                 let selectedBg = '#6b7280';
                 if (typeof colorMappings !== 'undefined' && colorMappings[selectedRouteName]) {
                     selectedBg = colorMappings[selectedRouteName];
@@ -1619,7 +1642,6 @@ function displayRoute(routeData) {
                 selectedRouteDisplayIndex = newRouteIndex;
 
                 // Get the new route details using best combo per route (start/end stops may differ)
-                const newRoute = routesForDisplay[newRouteIndex].route;
                 const newRouteKey = String(newRoute.name || '').toLowerCase();
                 const combo = routeCombosMap[newRouteKey];
 

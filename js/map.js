@@ -269,6 +269,13 @@ function postLoadEvent() {
         'ny_time': nyTime,
         'date': new Date()
     });
+
+    sa_event('load', {
+        'device_type': deviceType,
+        'pwa': isPWA,
+        'ny_time': nyTime,
+        'date': new Date()
+    });
 }
 
 function flyToWithCallback(center, zoom, callback) {
@@ -1720,8 +1727,15 @@ function popInfo(busId, resetCampusFontSize) {
             'bus_id': busId,
             'route': data.route,
         });
+        sa_event('view_bus', {
+            'bus_id': busId,
+            'route': data.route,
+        });
     } else {
         sa_event('bus_view_test', {
+            'route': 'sim-' + data.route,
+        });
+        sa_event('view_bus', {
             'route': 'sim-' + data.route,
         });
     }

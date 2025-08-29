@@ -143,8 +143,9 @@ $(document).ready(function() {
                 map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
 
                 sa_event('btn_press', {
-                    'btn': 'search_result',
-                    'result': item.name
+                    'btn': 'search_result_selected',
+                    'result': item.name,
+                    'category': item.category || 'unknown'
                 });
             });
             $results.append($elm);
