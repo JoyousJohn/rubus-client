@@ -19,11 +19,6 @@ function populateRouteSelectors(allActiveRoutes) {
 
     let routesArray = allRoutesArray.filter(route => routesByCampusBase[selectedCampus].includes(route));
 
-    if (routesArray.includes('ftbl')) {
-        routesArray = routesArray.filter(route => route !== 'ftbl');
-        routesArray.push('ftbl');
-    }
-
     routesArray = routesArray.map(route => route || 'undefined');
     routesArray.sort((a, b) => {
         if (a === 'undefined') return 1;
@@ -33,6 +28,11 @@ function populateRouteSelectors(allActiveRoutes) {
 
     if ($('.favs > div').length) {
         routesArray.unshift('fav');
+    }
+
+    if (routesArray.includes('ftbl')) {
+        routesArray = routesArray.filter(route => route !== 'ftbl');
+        routesArray.push('ftbl');
     }
 
     routesArray.forEach(route => {
