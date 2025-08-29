@@ -44,6 +44,7 @@ $(document).ready(function() {
             buildingList = Object.keys(data).map(name => {
                 const obj = { name: name, ...data[name] };
                 obj.aliases = obj.aliases || [];
+                obj.abbreviations = obj.abbreviations || [];
                 // Inject aliases based on aliasMap
                 for (const mainWord in aliasMap) {
                     if (obj.name.toLowerCase().includes(mainWord)) {
@@ -53,7 +54,7 @@ $(document).ready(function() {
                 return obj;
             });
             fuse = new Fuse(buildingList, {
-                keys: ['name', 'aliases'],
+                keys: ['name', 'aliases', 'abbreviations'],
                 threshold: 0.3,
                 includeScore: true,
             });
@@ -67,36 +68,64 @@ $(document).ready(function() {
 
     $('.search-wrapper input').on('input', function() {
         const query = $(this).val().trim();
+        // Remove schedule-style room suffixes like "AB-101" -> "AB"
+        const sanitizedQuery = query.replace(/-[^\s]*/g, '').replace(/\s+/g, ' ').trim();
+        const queryLower = sanitizedQuery.toLowerCase();
         const $results = $('.search-results');
         $results.empty();
-        if (!fuseReady || !query) {
+        if (!fuseReady || !sanitizedQuery) {
             $('.search-results-wrapper, .search-results').hide();
             return;
         }
         $('.search-results-wrapper, .search-results').show();
 
         // Extended search: require all tokens to match in any field
-        const tokens = query.split(/\s+/).filter(Boolean);
+        const tokens = sanitizedQuery.split(/\s+/).filter(Boolean);
         let results;
-        if (tokens.length > 1) {
+        // Exact abbreviation match takes precedence when a single token exactly matches an abbreviation
+        if (tokens.length === 1) {
+            const exactAbbrevMatches = buildingList
+                .map(item => {
+                    const match = (item.abbreviations || []).find(abbr => abbr.toLowerCase() === queryLower);
+                    if (match) {
+                        return { item, matchedAbbreviation: match };
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+
+            if (exactAbbrevMatches.length > 0) {
+                results = exactAbbrevMatches;
+            } else {
+                results = fuse.search(sanitizedQuery);
+            }
+        } else if (tokens.length > 1) {
             const extendedQuery = {
                 $and: tokens.map(token => ({
                     $or: [
                         { name: token },
-                        { aliases: token }
+                        { aliases: token },
+                        { abbreviations: token }
                     ]
                 }))
             };
             results = fuse.search(extendedQuery);
-        } else {
-            results = fuse.search(query);
+            // If any token exactly equals an abbreviation for an item, annotate it
+            const tokenSet = new Set(tokens.map(t => t.toLowerCase()));
+            results = results.map(r => {
+                const item = r.item || r;
+                const abbrMatch = (item.abbreviations || []).find(a => tokenSet.has(a.toLowerCase()));
+                return abbrMatch ? { ...r, matchedAbbreviation: abbrMatch } : r;
+            });
         }
 
         if (results.length === 0) {
             $results.html('<div class="dimgray">No buildings found.</div>');
             return;
         }
-        results.forEach(({ item }) => {
+        results.forEach(result => {
+            const item = result.item ? result.item : result;
+            const matchedAbbreviation = result.matchedAbbreviation;
             let icon = '';
             if (item.category === 'building') {
                 icon = '<i class="fa-solid fa-building"></i>';
@@ -106,7 +135,8 @@ $(document).ready(function() {
                 icon = '<i class="fa-solid fa-bus-simple"></i>';
             }
 
-            $elm = $(`<div class="search-result-item flex">${icon}<div>${item.name}</div></div>`);
+            const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
+            $elm = $(`<div class="search-result-item flex">${icon}<div>${displayText}</div></div>`);
             $elm.click(function() {
                 closeSearch();
                 showBuildingInfo(item);
