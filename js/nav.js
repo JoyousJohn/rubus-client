@@ -1411,11 +1411,11 @@ function displayRoute(routeData) {
     // Create route header
     const headerHtml = (function() {
         let steps = [];
-        if (!startIsStop) {
+        if (!startIsStop && startWalkDistance) {
             steps.push(`Walk ${startWalkDistance.feet} ft`);
         }
         steps.push(`Bus <strong>${formatRouteLabelColored(route.name)}</strong>`);
-        if (!endIsStop) {
+        if (!endIsStop && endWalkDistance) {
             steps.push(`Walk ${endWalkDistance.feet} ft`);
         }
         const summary = steps.join(' → ');
@@ -1432,7 +1432,7 @@ function displayRoute(routeData) {
     })();
 
     // Create walking segment from start to boarding stop
-    const walkingStartHtml = startIsStop ? '' : `
+    const walkingStartHtml = (startIsStop || !startWalkDistance) ? '' : `
         <div class="route-segment walking-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #eff6ff; border-radius: 0.5rem;">
             <div class="segment-icon" style="margin-bottom: 0.5rem;">
                 <span style="color: #2563eb;">🚶</span>
@@ -1440,7 +1440,7 @@ function displayRoute(routeData) {
             </div>
             <div class="segment-details">
                 <div class="segment-distance" style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem;">
-                    ${startWalkDistance.feet} ft
+                    ${startWalkDistance ? startWalkDistance.feet : 0} ft
                 </div>
                 <div class="segment-description">
                     Walk from <strong>${startBuilding.name}</strong> to <strong>${startStop.name}</strong>
@@ -1490,7 +1490,7 @@ function displayRoute(routeData) {
     `;
 
     // Create walking segment from alighting stop to destination
-    const walkingEndHtml = endIsStop ? '' : `
+    const walkingEndHtml = (endIsStop || !endWalkDistance) ? '' : `
         <div class="route-segment walking-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #eff6ff; border-radius: 0.5rem;">
             <div class="segment-icon" style="margin-bottom: 0.5rem;">
                 <span style="color: #2563eb;">🚶</span>
@@ -1498,7 +1498,7 @@ function displayRoute(routeData) {
             </div>
             <div class="segment-details">
                 <div class="segment-distance" style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem;">
-                    ${endWalkDistance.feet} ft
+                    ${endWalkDistance ? endWalkDistance.feet : 0} ft
                 </div>
                 <div class="segment-description">
                     Walk from <strong>${endStop.name}</strong> to <strong>${endBuilding.name}</strong>
@@ -1535,7 +1535,7 @@ function displayRoute(routeData) {
             content = `
                 <div class="waypoint-details">
                     <div class="walking-info">
-                        Walk ${startWalkDistance.feet} ft to boarding stop
+                        Walk ${startWalkDistance ? startWalkDistance.feet : 0} ft to boarding stop
                     </div>
                 </div>
             `;
@@ -1558,9 +1558,7 @@ function displayRoute(routeData) {
             // Alighting stop row
             content = `
                 <div class="waypoint-details">
-                    <div class="walking-info">
-                        Walk ${endWalkDistance.feet} ft to final destination
-                    </div>
+                    ${endWalkDistance ? `<div class="walking-info">Walk ${endWalkDistance.feet} ft to final destination</div>` : ''}
                 </div>
             `;
             connectorText = index < timelineWaypoints.length - 1 ? 'Walk to destination' : '';
@@ -1735,9 +1733,9 @@ function updateRouteDisplay(routeData) {
     const routeSummaryElement = $('.route-summary');
     if (routeSummaryElement.length > 0) {
         const parts = [];
-        if (!startIsStop) parts.push(`Walk ${startWalkDistance.feet} ft`);
+        if (!startIsStop && startWalkDistance) parts.push(`Walk ${startWalkDistance.feet} ft`);
         parts.push(`Bus ${formatRouteLabelColored(route.name)}`);
-        if (!endIsStop) parts.push(`Walk ${endWalkDistance.feet} ft`);
+        if (!endIsStop && endWalkDistance) parts.push(`Walk ${endWalkDistance.feet} ft`);
         routeSummaryElement.html(parts.join(' → '));
     }
 
@@ -1762,7 +1760,7 @@ function updateRouteDisplay(routeData) {
             content = `
                 <div class="waypoint-details">
                     <div class="walking-info">
-                        Walk ${startWalkDistance.feet} ft to boarding stop
+                        Walk ${startWalkDistance ? startWalkDistance.feet : 0} ft to boarding stop
                     </div>
                 </div>
             `;
@@ -1798,9 +1796,7 @@ function updateRouteDisplay(routeData) {
         } else if (waypoint.isAlighting) {
             content = `
                 <div class="waypoint-details">
-                    <div class="walking-info">
-                        Walk ${endWalkDistance.feet} ft to final destination
-                    </div>
+                    ${endWalkDistance ? `<div class="walking-info">Walk ${endWalkDistance.feet} ft to final destination</div>` : ''}
                 </div>
             `;
         }
