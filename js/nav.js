@@ -828,11 +828,17 @@ function showNavigationAutocomplete(inputElement, query) {
         const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
         const $resultElement = $(`<div class="nav-search-result-item">${icon}<div>${displayText}</div></div>`);
 
-        $resultElement.on('click touchstart', function() {
-            // Set the input value
-            inputElement.val(item.name);
+        $resultElement.on('click touchstart', function(e) {
+            // Prevent unintended blur/outer handlers from interfering
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
-            // Set the selected building variable
+            // Set the input value programmatically to avoid clearing selection
+            isSettingInputProgrammatically = true;
+            inputElement.val(item.name);
+            isSettingInputProgrammatically = false;
+
+            // Set the selected place variable (may be building or stop by name)
             if (isFromInput) {
                 selectedFromBuilding = item.name.toLowerCase();
             } else {
@@ -843,39 +849,26 @@ function showNavigationAutocomplete(inputElement, query) {
             console.log('[Autocomplete Click] Handler fired');
             console.log('selectedFromBuilding:', selectedFromBuilding);
             console.log('selectedToBuilding:', selectedToBuilding);
-            // Hide results
-            resultsContainer.addClass('none');
 
-            // Trigger input to update styling
+            // Hide results and refresh input styling/state
+            resultsContainer.addClass('none');
             inputElement.trigger('input');
 
-            // Immediately check and trigger route calculation if both are set
-            // Use resolver to allow bus stops as inputs, not only buildings
-            if (selectedFromBuilding && selectedToBuilding) {
-                const fromValue = $('#nav-from-input').val().trim();
-                const toValue = $('#nav-to-input').val().trim();
-                console.log('fromValue:', fromValue);
-                console.log('toValue:', toValue);
-
+            // Try to compute route based on resolvable input values (do not gate on selected* flags)
+            const fromValue = $('#nav-from-input').val().trim();
+            const toValue = $('#nav-to-input').val().trim();
+            if (fromValue && toValue) {
                 const fromPlace = resolvePlaceByName(fromValue);
                 const toPlace = resolvePlaceByName(toValue);
+                console.log('fromValue:', fromValue);
+                console.log('toValue:', toValue);
                 console.log('fromPlace:', fromPlace);
                 console.log('toPlace:', toPlace);
-
                 if (fromPlace && toPlace) {
                     console.log('[Autocomplete Click] Triggering calculateRoute');
                     calculateRoute(fromValue, toValue);
                 } else {
                     console.log('[Autocomplete Click] Not triggering calculateRoute: could not resolve one or both inputs');
-                }
-            } else {
-                // More granular debug: which one is missing?
-                if (!selectedFromBuilding && !selectedToBuilding) {
-                    console.log('[Autocomplete Click] Not triggering calculateRoute: BOTH selectedFromBuilding and selectedToBuilding are missing');
-                } else if (!selectedFromBuilding) {
-                    console.log('[Autocomplete Click] Not triggering calculateRoute: selectedFromBuilding is missing. Value:', selectedFromBuilding);
-                } else if (!selectedToBuilding) {
-                    console.log('[Autocomplete Click] Not triggering calculateRoute: selectedToBuilding is missing. Value:', selectedToBuilding);
                 }
             }
         });
