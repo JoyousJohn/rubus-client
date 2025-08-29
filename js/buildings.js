@@ -262,11 +262,19 @@ function showBuildingInfo(feature) {
 }
 
 function loadBuildings() {
+    // Prevent multiple simultaneous calls
+    if ($('.buildings-btn').hasClass('loading')) {
+        return;
+    }
+    
     if (buildingsLayer) {
         map.removeLayer(buildingsLayer);
         buildingsLayer = null;
     }
 
+    // Disable button and show loading state
+    $('.buildings-btn').prop('disabled', true).addClass('loading');
+    
     fetch('lib/buildings-parking.json')
         .then(response => response.json())
         .then(data => {
@@ -309,6 +317,15 @@ function loadBuildings() {
             window.buildingsLayer = buildingsLayer;
             // Ensure button reflects active state when layer is shown
             $('.buildings-btn').addClass('active');
+        })
+        .catch(error => {
+            console.error('Error loading buildings:', error);
+            // Re-enable button on error
+            $('.buildings-btn').prop('disabled', false).removeClass('loading');
+        })
+        .finally(() => {
+            // Re-enable button after loading completes (success or error)
+            $('.buildings-btn').prop('disabled', false).removeClass('loading');
         });
 }
 
@@ -317,6 +334,11 @@ document.addEventListener('rubus-map-created', loadBuildings);
 // Add click handler for buildings button
 $(document).ready(function() {
     $('.buildings-btn').click(function() {
+        // Prevent clicks while loading
+        if ($(this).prop('disabled')) {
+            return;
+        }
+        
         // Toggle buildings visibility based on layer presence
         if (buildingsLayer) {
             map.removeLayer(buildingsLayer);
@@ -329,6 +351,10 @@ $(document).ready(function() {
                 'visible': false
             });
         } else {
+            // Check if buildings are currently loading
+            if ($('.buildings-btn').hasClass('loading')) {
+                return;
+            }
             loadBuildings();
             sa_event('btn_press', {
                 'btn': 'buildings_toggle',
