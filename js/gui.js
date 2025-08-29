@@ -1181,7 +1181,7 @@ const defaultColorMappings = {
     'on2': 'MediumTurquoise',
     'wknd1': 'HotPink',
     'wknd2': 'RebeccaPurple',
-    'ftbl': 'gray',
+    'ftbl': '#a63939',
     'none': 'lightgray',
     'c': 'MediumVioletRed',
     'all': 'MediumSpringGreen',
