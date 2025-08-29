@@ -59,6 +59,7 @@
     flex: 1;
     background-color: var(--theme-bg);
     flex-direction: column;
+    pointer-events: all;
 }
 
 .nav-directions-wrapper::-webkit-scrollbar {

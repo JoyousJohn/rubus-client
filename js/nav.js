@@ -866,6 +866,8 @@ function showNavigationAutocomplete(inputElement, query) {
                 console.log('toPlace:', toPlace);
                 if (fromPlace && toPlace) {
                     console.log('[Autocomplete Click] Triggering calculateRoute');
+                    // Dismiss mobile keyboard to reveal directions
+                    try { inputElement.blur(); } catch (err) { /* ignore */ }
                     calculateRoute(fromValue, toValue);
                 } else {
                     console.log('[Autocomplete Click] Not triggering calculateRoute: could not resolve one or both inputs');
