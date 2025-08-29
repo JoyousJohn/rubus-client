@@ -267,49 +267,76 @@ function loadBuildings() {
         buildingsLayer = null;
     }
 
-    if (settings['toggle-show-buildings']) {
-        fetch('lib/buildings-parking.json')
-            .then(response => response.json())
-            .then(data => {
-                buildingsLayer = L.geoJSON(data, {
-                    style: function(feature) {
-                        // You can customize style based on feature properties
-                        if (feature.properties && feature.properties.category === 'building') {
-                            return {
-                                color: '#444',
-                                fillColor: '#888',
-                                fillOpacity: 0.5,
-                                weight: 1
-                            };
-                        } else if (feature.properties && feature.properties.category === 'parking') {
-                            return {
-                                color: '#226622',
-                                fillColor: '#44cc44',
-                                fillOpacity: 0.3,
-                                weight: 1
-                            };
-                        }
+    fetch('lib/buildings-parking.json')
+        .then(response => response.json())
+        .then(data => {
+            buildingsLayer = L.geoJSON(data, {
+                style: function(feature) {
+                    // You can customize style based on feature properties
+                    if (feature.properties && feature.properties.category === 'building') {
                         return {
-                            color: '#333',
-                            fillColor: '#ccc',
+                            color: '#444',
+                            fillColor: '#888',
+                            fillOpacity: 0.5,
+                            weight: 1
+                        };
+                    } else if (feature.properties && feature.properties.category === 'parking') {
+                        return {
+                            color: '#226622',
+                            fillColor: '#44cc44',
                             fillOpacity: 0.3,
                             weight: 1
                         };
-                    },
-                    onEachFeature: function(feature, layer) {
-                        layer.on('click', function(e) {
-                            if (feature.properties && feature.properties.name) {
-                                showBuildingInfo(feature.properties);
-                                sa_event('building_tap', {
-                                    'building': feature.properties.name
-                                });
-                            }
-                        });
                     }
-                }).addTo(map);
-                window.buildingsLayer = buildingsLayer;
-            });
-    }
+                    return {
+                        color: '#333',
+                        fillColor: '#ccc',
+                        fillOpacity: 0.3,
+                        weight: 1
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    layer.on('click', function(e) {
+                        if (feature.properties && feature.properties.name) {
+                            showBuildingInfo(feature.properties);
+                            sa_event('building_tap', {
+                                'building': feature.properties.name
+                            });
+                        }
+                    });
+                }
+            }).addTo(map);
+            window.buildingsLayer = buildingsLayer;
+            // Ensure button reflects active state when layer is shown
+            $('.buildings-btn').addClass('active');
+        });
 }
 
 document.addEventListener('rubus-map-created', loadBuildings);
+
+// Add click handler for buildings button
+$(document).ready(function() {
+    $('.buildings-btn').click(function() {
+        // Toggle buildings visibility based on layer presence
+        if (buildingsLayer) {
+            map.removeLayer(buildingsLayer);
+            buildingsLayer = null;
+            window.buildingsLayer = null;
+            highlightedBuildingLayer = null;
+            $('.buildings-btn').removeClass('active');
+            sa_event('btn_press', {
+                'btn': 'buildings_toggle',
+                'visible': false
+            });
+        } else {
+            loadBuildings();
+            sa_event('btn_press', {
+                'btn': 'buildings_toggle',
+                'visible': true
+            });
+        }
+    });
+    
+    // Initial button state reflects current layer
+    if (buildingsLayer) { $('.buildings-btn').addClass('active'); } else { $('.buildings-btn').removeClass('active'); }
+});

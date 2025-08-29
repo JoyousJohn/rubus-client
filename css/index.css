@@ -1000,7 +1000,7 @@ html, body {
     box-sizing: border-box;
 }
 
-.panout, .buses-btn, .centerme, .fly-closest-stop, .shoot-fireworks, .satellite-btn, .all-stops, .search-btn {
+.panout, .buses-btn, .centerme, .fly-closest-stop, .shoot-fireworks, .satellite-btn, .all-stops, .search-btn, .buildings-btn {
     background-color: var(--theme-bg);
     padding: 1.7rem;
     border-radius: 5rem;
@@ -1015,7 +1015,7 @@ html, body {
     cursor: pointer;
 }
 
-.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .all-stops > i, .chat-btn > i, .search-btn > i, .building-directions > i {
+.panout > i, .buses-btn > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .all-stops > i, .chat-btn > i, .search-btn > i, .building-directions > i, .buildings-btn > i {
     font-size: 2rem;
 }
 
@@ -1026,6 +1026,21 @@ html, body {
 
 .satellite-btn {
     background-color: var(--theme-bg);
+    transition: background-color 0.2s ease;
+}
+
+.satellite-btn.active {
+    background-color: var(--theme-satellite-btn);
+    color: white;
+}
+
+.buildings-btn {
+    transition: background-color 0.2s ease;
+}
+
+.buildings-btn.active {
+    background-color: var(--theme-satellite-btn);
+    color: white;
 }
 
 .centerme-wrapper {

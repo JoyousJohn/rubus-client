@@ -2383,7 +2383,7 @@ $('.satellite-btn').click(function() {
         tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${newTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
         currentTileLayerType = 'streets';
 
-        $(this).css('background-color', 'var(--theme-bg)');
+        $(this).removeClass('active');
     } else {
         map.removeLayer(tileLayer);
         tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/satellite-streets-v11/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
@@ -2394,7 +2394,7 @@ $('.satellite-btn').click(function() {
             const currentHour = new Date().getHours();
             theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
-        $(this).css('background-color', 'var(--theme-satellite-btn)');
+        $(this).addClass('active');
     }
 });
 

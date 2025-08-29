@@ -1160,9 +1160,8 @@ const toggleSettings = [
     'toggle-spoofing',
     'toggle-show-chat',
     'toggle-show-thinking',
-    'toggle-show-buildings',
-    'toggle-show-search',
     'toggle-show-road-network'
+
 ]
 
 let colorMappings;
@@ -1243,8 +1242,6 @@ let defaultSettings = {
     'toggle-spoofing': false,
     'toggle-show-chat': false,
     'toggle-show-thinking': false,
-    'toggle-show-buildings': true,
-    'toggle-show-search': true,
     'toggle-show-road-network': false,
     
     // going to remove

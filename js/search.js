@@ -65,8 +65,6 @@ $(document).ready(function() {
             window.buildingList = buildingList;
         });
 
-    // Remove the funny result rendering function
-
     $('.search-wrapper input').on('input', function() {
         const query = $(this).val().trim();
         const $results = $('.search-results');
@@ -121,9 +119,12 @@ $(document).ready(function() {
             });
             $results.append($elm);
         });
+
+        if (!buildingsLayer) {
+            loadBuildings();
+        }
     });
 
-    
 });
 
 function closeSearch() {

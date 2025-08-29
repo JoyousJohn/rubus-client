@@ -384,19 +384,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
-        case 'toggle-show-buildings':
-            settings['toggle-show-buildings'] = isChecked;
-            loadBuildings();
-            break;
-
-        case 'toggle-show-search':
-            settings['toggle-show-search'] = isChecked;
-            if (isChecked) {
-                $('.search-btn-wrapper').show();
-            } else {
-                $('.search-btn-wrapper').hide();
-            }
-            break;
+        
 
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
@@ -559,10 +547,6 @@ $(document).ready(function() {
         $('.chat-btn-wrapper').show();
     }
 
-    if (settings['toggle-show-search']) {
-        $('.search-btn-wrapper').show();
-    }
-
     if (settings['toggle-show-campus-switcher']) {
         $('.campus-switcher').show();
     }
@@ -574,9 +558,7 @@ $(document).ready(function() {
     if (settings['toggle-show-road-network']) {
         loadAndDisplayRoadNetwork();
     }
-
-})
-
+});
 
 let polygons = {}
 

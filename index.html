@@ -893,6 +893,8 @@
                 </div>
             </div>
 
+            
+
             <script>
                 // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
                 $(function() {
@@ -1231,26 +1233,6 @@
                     </div>
 
                     <div class="flex justify-between">
-                        <div class="settings-heading">Buildings & Parking Layer</div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-show-buildings" class="toggle-input">
-                            <label for="toggle-show-buildings" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between">
-                        <div class="settings-heading">Show Search</div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-show-search" class="toggle-input">
-                            <label for="toggle-show-search" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between">
                         <div class="settings-heading">Show Road Network</div>
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-road-network" class="toggle-input">
@@ -1349,6 +1331,7 @@
         <div class="flex justify-between align-end" style="padding: 0 1rem;">
 
             <div class="left-btns flex flex-col" style="row-gap: 0.8rem">
+                <div class="buildings-btn"><i class="fa-solid fa-building"></i></div>
                 <div class="satellite-btn"><i class="fa-solid fa-earth-americas"></i></div>
                 <div class="buses-btn none" onclick="busesOverview()"><i class="fa-solid fa-bus"></i></div>
                 <div class="all-stops-btn-wrapper"><div class="all-stops"><i class="fa-solid fa-location-dot"></i></div></div>
