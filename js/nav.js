@@ -764,23 +764,45 @@ function showNavigationAutocomplete(inputElement, query) {
         return;
     }
 
-    // Perform fuzzy search
-    const tokens = query.split(/\s+/).filter(Boolean);
+    // Perform fuzzy search with schedule-style sanitization and abbreviation support
+    const sanitizedQuery = query.replace(/-[^\s]*/g, '').replace(/\s+/g, ' ').trim();
+    const tokens = sanitizedQuery.split(/\s+/).filter(Boolean);
+    const queryLower = sanitizedQuery.toLowerCase();
     let results;
 
-    if (tokens.length > 1) {
-        // Multi-token search
+    if (tokens.length === 1) {
+        // Prefer exact abbreviation matches for single-token queries
+        const list = Array.isArray(window.buildingList) ? window.buildingList : [];
+        const exactAbbrevMatches = list
+            .map(item => {
+                const match = (item.abbreviations || []).find(abbr => String(abbr).toLowerCase() === queryLower);
+                return match ? { item, matchedAbbreviation: match } : null;
+            })
+            .filter(Boolean);
+        if (exactAbbrevMatches.length > 0) {
+            results = exactAbbrevMatches;
+        } else {
+            results = window.fuse.search(sanitizedQuery);
+        }
+    } else if (tokens.length > 1) {
+        // Multi-token search across name, aliases, and abbreviations
         const extendedQuery = {
             $and: tokens.map(token => ({
                 $or: [
                     { name: token },
-                    { aliases: token }
+                    { aliases: token },
+                    { abbreviations: token }
                 ]
             }))
         };
         results = window.fuse.search(extendedQuery);
-    } else {
-        results = window.fuse.search(query);
+        // Annotate results when any token exactly equals an abbreviation
+        const tokenSet = new Set(tokens.map(t => t.toLowerCase()));
+        results = results.map(r => {
+            const item = r.item || r;
+            const abbrMatch = (item.abbreviations || []).find(a => tokenSet.has(String(a).toLowerCase()));
+            return abbrMatch ? { ...r, matchedAbbreviation: abbrMatch } : r;
+        });
     }
 
     if (results.length === 0) {
@@ -791,7 +813,9 @@ function showNavigationAutocomplete(inputElement, query) {
 
     // Create result elements (limit to 5 results)
     const maxResults = 5;
-    results.slice(0, maxResults).forEach(({ item }) => {
+    results.slice(0, maxResults).forEach(result => {
+        const item = result.item ? result.item : result;
+        const matchedAbbreviation = result.matchedAbbreviation;
         let icon = '';
         if (item.category === 'building') {
             icon = '<i class="fa-solid fa-building"></i>';
@@ -801,7 +825,8 @@ function showNavigationAutocomplete(inputElement, query) {
             icon = '<i class="fa-solid fa-bus-simple"></i>';
         }
 
-        const $resultElement = $(`<div class="nav-search-result-item">${icon}<div>${item.name}</div></div>`);
+        const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
+        const $resultElement = $(`<div class="nav-search-result-item">${icon}<div>${displayText}</div></div>`);
 
         $resultElement.on('click touchstart', function() {
             // Set the input value
