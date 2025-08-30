@@ -719,7 +719,7 @@ function updateBusOverview(routes) {
 
     const loopTimes = calculateLoopTimes();
 
-    routes = Object.keys(busesByRoutes);
+    routes = Object.keys(busesByRoutes[selectedCampus]);
     if (!routes) { 
         $('.buses-overview-grid').hide().children().not('.bus-overview-heading, .bus-overview-footer').remove();
     } else {
@@ -735,6 +735,7 @@ function updateBusOverview(routes) {
     let totalRidership = 0;
 
     const routeData = routes.map(route => {
+        console.log(route)
         routeRiderships[route] = 0;
         busesByRoutes[selectedCampus][route].forEach(busId => {
             const riders = Math.ceil(busData[busId].capacity/100 * 57)
