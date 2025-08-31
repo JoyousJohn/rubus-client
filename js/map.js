@@ -1038,12 +1038,32 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
     // Cap the maximum animation duration to prevent extremely long animations after app resume
     // uynsure if thi s does anything or is needed
     const cappedTimeSinceLastUpdate = Math.min(timeSinceLastUpdate, 30000); // Max 30 seconds
-    const baseDuration = cappedTimeSinceLastUpdate + 2500;
-    let duration = baseDuration;
+
+    // Use stored animation duration if available (for consistent timing across update sources)
+    let duration;
+    if (busData[busId].websocketAnimationDuration) {
+        duration = busData[busId].websocketAnimationDuration;
+        // Clear the stored duration after use
+        delete busData[busId].websocketAnimationDuration;
+        console.log(`[Animation] Using WebSocket-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
+    } else if (busData[busId].apiAnimationDuration) {
+        duration = busData[busId].apiAnimationDuration;
+        // Clear the stored duration after use
+        delete busData[busId].apiAnimationDuration;
+        console.log(`[Animation] Using API-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
+    } else if (busData[busId].overnightAnimationDuration) {
+        duration = busData[busId].overnightAnimationDuration;
+        // Clear the stored duration after use
+        delete busData[busId].overnightAnimationDuration;
+        console.log(`[Animation] Using Overnight API-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
+    } else {
+        const baseDuration = cappedTimeSinceLastUpdate + 2500;
+        duration = baseDuration;
+    }
     try {
         if (window.sim === true && busData[busId] && busData[busId].type === 'sim') {
             const mult = Math.max(1, (window.SIM_TIME_MULTIPLIER || 1));
-            duration = baseDuration / mult;
+            duration = duration / mult;
         }
     } catch (e) {}
     const startTime = performance.now();

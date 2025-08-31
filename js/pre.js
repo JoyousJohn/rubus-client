@@ -321,7 +321,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 const currentTime = new Date().getTime();
                 const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
                 const animationDuration = timeSinceLastUpdate + 2500; // Base duration calculation
-                
+
+                // Store the calculated duration for consistent animation timing
+                busData[busId].apiAnimationDuration = animationDuration;
+
                 console.log(`[API Polling] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
                 
                 busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
@@ -763,7 +766,10 @@ async function startOvernight(setColorBack) {
                 const currentTime = new Date().getTime();
                 const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
                 const animationDuration = timeSinceLastUpdate + 2500; // Base duration calculation
-                
+
+                // Store the calculated duration for consistent animation timing
+                busData[busId].overnightAnimationDuration = animationDuration;
+
                 console.log(`[Overnight API] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
                 
                 busData[busId].previousTime = currentTime;

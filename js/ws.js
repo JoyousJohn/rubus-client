@@ -118,10 +118,18 @@ class BusWebSocketClient {
         // WebSocket updates are irregular and shouldn't affect animation duration calculations
         const currentTime = new Date().getTime();
         const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
-        const animationDuration = timeSinceLastUpdate + 2500; // Base duration calculation
-        
-        console.log(`[WebSocket] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
-        
+
+                // For WebSocket updates, ensure animation duration accounts for remaining API polling interval
+        // This prevents animations from being too short when WebSocket updates come mid-polling-cycle
+        const pollDelay = 5000; // Should match the API polling interval
+        const remainingPollTime = Math.max(0, pollDelay - timeSinceLastUpdate);
+        const animationDuration = timeSinceLastUpdate + remainingPollTime + 2500; // Base duration calculation
+
+        // Store the calculated duration for use in updateMarkerPosition
+        busData[busId].websocketAnimationDuration = animationDuration;
+
+        console.log(`[WebSocket] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Remaining poll time: ${Math.round(remainingPollTime/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+
         busData[busId].previousPositions.push([parseFloat(data.latitude), parseFloat(data.longitude)]);
 
         // Keep only the last 10 positions to prevent memory bloat
