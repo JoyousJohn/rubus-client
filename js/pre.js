@@ -303,6 +303,9 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             busData[busId].lat = bus.latitude;
             busData[busId].long = bus.longitude;
 
+            // Log position update source
+            console.log(`[API Polling] Bus ${busId} position update: ${bus.latitude}, ${bus.longitude}`);
+
             // getting undefined on previousPositions, but it should be set from both above in pre where new bus and in ws where new bus, so I added a type key to debug this.
             // maybe limit ws to on/none? maybe getting long lat when setting it there is failing? don't think I've ever seen it without coords
             
@@ -316,6 +319,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
                 busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
+                // Update previousTime when position changes
+                busData[busId].previousTime = new Date().getTime();
             }
 
             busData[busId].rotation = parseFloat(bus.calculatedCourse); //+ 45
@@ -743,6 +748,9 @@ async function startOvernight(setColorBack) {
                 busData[busId].busName = bus.name;
                 busData[busId].lat = bus.lat;
                 busData[busId].long = bus.long;
+
+                // Log position update source
+                console.log(`[Overnight API] Bus ${busId} position update: ${bus.lat}, ${bus.lng}`);
     
                 busData[busId].rotation = parseFloat(bus.rotation);
     
@@ -1091,6 +1099,21 @@ $(document).ready(async function() {
     // On app resume/return, force the next update to be immediate and fetch promptly
     const triggerImmediateResumeUpdate = () => {
         forceImmediateUpdate = true;
+
+        // Reset stale timing data for all buses to prevent incorrect animation durations
+        const currentTime = new Date().getTime();
+        for (const busId in busData) {
+            if (busData[busId]) {
+                // Reset previousTime to current time to prevent long animation durations
+                busData[busId].previousTime = currentTime;
+
+                // Reset previousPositions to current position to prevent stale Bézier curve calculations
+                if (busData[busId].lat !== undefined && busData[busId].long !== undefined) {
+                    busData[busId].previousPositions = [[busData[busId].lat, busData[busId].long]];
+                }
+            }
+        }
+
         // Kick a fetch right away to avoid waiting for the interval
         if (!settings['toggle-pause-passio-polling']) { fetchBusData(true); }
     };

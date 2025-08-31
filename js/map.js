@@ -1007,7 +1007,7 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         } else {
             marker.setLatLngPrecise([endLatLng.lat, endLatLng.lng]);
         }
-        
+
         // Update rotation immediately as well
         if (!pauseRotationUpdating) {
             const newRotation = calculateRotation(busId, loc);
@@ -1016,12 +1016,29 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
                 iconElement.style.transform = `rotate(${newRotation}deg)`;
             }
         }
-        
+
+        // Clear two-segment path data to prevent stale path information from affecting future animations
+        // After teleporting, we don't want to use old path endpoints for the next animation
+        if (busLines[busId]) {
+            // Get the marker's position after teleporting to ensure we use the correct current position
+            const currentPosition = marker.getLatLng();
+            // Reset current path to start fresh on next animation
+            busLines[busId]['curr'] = {
+                _latlngs: [currentPosition, currentPosition] // Set both points to current position after teleport
+            };
+            // Clear previous path data since we've teleported and old path is irrelevant
+            delete busLines[busId]['prev'];
+        }
+
         return; // Exit early - no animation needed
     }
 
     // Calculate animation duration (scaled for sim buses)
-    const baseDuration = (new Date().getTime() - busData[busId].previousTime) + 2500;
+    const timeSinceLastUpdate = new Date().getTime() - busData[busId].previousTime;
+    // Cap the maximum animation duration to prevent extremely long animations after app resume
+    // uynsure if thi s does anything or is needed
+    const cappedTimeSinceLastUpdate = Math.min(timeSinceLastUpdate, 30000); // Max 30 seconds
+    const baseDuration = cappedTimeSinceLastUpdate + 2500;
     let duration = baseDuration;
     try {
         if (window.sim === true && busData[busId] && busData[busId].type === 'sim') {

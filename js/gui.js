@@ -735,7 +735,6 @@ function updateBusOverview(routes) {
     let totalRidership = 0;
 
     const routeData = routes.map(route => {
-        console.log(route)
         routeRiderships[route] = 0;
         busesByRoutes[selectedCampus][route].forEach(busId => {
             const riders = Math.ceil(busData[busId].capacity/100 * 57)

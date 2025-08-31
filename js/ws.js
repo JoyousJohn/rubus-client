@@ -108,8 +108,21 @@ class BusWebSocketClient {
 
         busData[busId].lat = data.latitude
         busData[busId].long = data.longitude
+
+        // Log position update source
+        console.log(`[WebSocket] Bus ${busId} position update: ${data.latitude}, ${data.longitude}`);
         busData[busId].rotation = data.course
         busData[busId].capacity = data.paxLoad
+
+        // Update timing data for animation calculations
+        const currentTime = new Date().getTime();
+        busData[busId].previousTime = currentTime;
+        busData[busId].previousPositions.push([parseFloat(data.latitude), parseFloat(data.longitude)]);
+
+        // Keep only the last 10 positions to prevent memory bloat
+        if (busData[busId].previousPositions.length > 10) {
+            busData[busId].previousPositions = busData[busId].previousPositions.slice(-10);
+        }
 
         if (!('speed' in busData[busId])) {
             busData[busId].speed = data.speed
