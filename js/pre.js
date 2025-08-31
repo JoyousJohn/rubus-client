@@ -318,9 +318,16 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             }
 
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
+                const currentTime = new Date().getTime();
+                const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
+                const animationDuration = timeSinceLastUpdate + 2500; // Base duration calculation
+                
+                console.log(`[API Polling] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+                
                 busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
-                // Update previousTime when position changes
-                busData[busId].previousTime = new Date().getTime();
+                // Update previousTime when position changes from API polling
+                // This ensures consistent animation timing based on regular polling intervals
+                busData[busId].previousTime = currentTime;
             }
 
             busData[busId].rotation = parseFloat(bus.calculatedCourse); //+ 45
@@ -751,6 +758,15 @@ async function startOvernight(setColorBack) {
 
                 // Log position update source
                 console.log(`[Overnight API] Bus ${busId} position update: ${bus.lat}, ${bus.lng}`);
+
+                // Update previousTime for overnight API updates to ensure proper animation timing
+                const currentTime = new Date().getTime();
+                const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
+                const animationDuration = timeSinceLastUpdate + 2500; // Base duration calculation
+                
+                console.log(`[Overnight API] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+                
+                busData[busId].previousTime = currentTime;
     
                 busData[busId].rotation = parseFloat(bus.rotation);
     

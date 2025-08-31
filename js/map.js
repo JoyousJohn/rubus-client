@@ -1047,7 +1047,6 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         }
     } catch (e) {}
     const startTime = performance.now();
-    busData[busId].previousTime = new Date().getTime();
 
     const startRotation = parseFloat(marker.getElement().querySelector('.bus-icon-outer').style.transform.replace('rotate(', '').replace('deg)', '') || '0');
     const endRotation = calculateRotation(busId, loc);

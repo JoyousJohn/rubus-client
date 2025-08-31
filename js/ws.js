@@ -114,9 +114,14 @@ class BusWebSocketClient {
         busData[busId].rotation = data.course
         busData[busId].capacity = data.paxLoad
 
-        // Update timing data for animation calculations
+        // Update position history for Bézier curves, but don't reset timing data
+        // WebSocket updates are irregular and shouldn't affect animation duration calculations
         const currentTime = new Date().getTime();
-        busData[busId].previousTime = currentTime;
+        const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
+        const animationDuration = timeSinceLastUpdate + 2500; // Base duration calculation
+        
+        console.log(`[WebSocket] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+        
         busData[busId].previousPositions.push([parseFloat(data.latitude), parseFloat(data.longitude)]);
 
         // Keep only the last 10 positions to prevent memory bloat
