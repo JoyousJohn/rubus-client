@@ -920,6 +920,7 @@ function populateMessages(messages) {
         title = title.replace(/:$/, '');
         title = title.replace(/^[A-Za-z]{3}\s\d{1,2}\/\d{1,2}:\s*/, ''); // Remove date prefix like "Wed 4/23: "
         title = title.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\s/, ''); // Remove date prefix like "Wednesday 8/27 "
+        title = title.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\/\d{2,4}-/, ''); // Remove "Sunday 8/31/25-" style
 
         let desc = message['gtfsAlertDescriptionText'];
         desc = desc.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\/\d{2,4}:\s*/, '');        

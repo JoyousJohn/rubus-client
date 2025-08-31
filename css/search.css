@@ -50,3 +50,45 @@
 .search-result-item i {
     font-size: 1.7rem;
 }
+
+.search-btn {
+    position: relative;
+    color: rgb(255, 255, 255);
+    background-color: #f8f5ff; /* fallback */
+    overflow: clip;
+    isolation: isolate;
+    z-index: 0;
+    padding: 1.7rem;
+    border-radius: 5rem;
+    font-size: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 1;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+.search-btn::before {
+    content: "";
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    background: conic-gradient(
+        from 0deg,
+        hsla(0, 100%, 70%, 1),
+        hsla(30, 100%, 70%, 1),
+        hsla(60, 100%, 70%, 1),
+        hsla(120, 100%, 70%, 1),
+        hsla(180, 100%, 70%, 1),
+        hsla(240, 100%, 70%, 1),
+        hsla(300, 100%, 70%, 1),
+        hsla(360, 100%, 70%, 1)
+    );
+    filter: blur(40px) saturate(1.5);
+    transform-origin: 50% 50%;
+    animation: simGradientSwirl 10s cubic-bezier(.4, 0, .2, 1) infinite alternate;
+    z-index: -1;
+}
