@@ -204,13 +204,13 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 busStopId = busStopId[0];
             }
 
-            if (busData[busId]['at_stop'] && busStopId === stopId) {
+            if (busData[busId]['at_stop'] && busStopId === stopId && isValid(busId)) {
                 servicingEntries.push({
                     busId: busId,
                     route: servicedRoute,
                     eta: 0
                 })
-            } else if (busETAs[busId]) {
+            } else if (busETAs[busId] && isValid(busId)) {
                 if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && stopId === 3) { // special case: show both VIA paths
                     const viaMap = busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
                     if (viaMap && Object.keys(viaMap).length) {
