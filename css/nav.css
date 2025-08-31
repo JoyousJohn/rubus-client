@@ -265,6 +265,7 @@
     align-items: flex-start;
     margin-bottom: 1.5rem;
     position: relative;
+    gap: 0.75rem;
 }
 
 .waypoint-circle {

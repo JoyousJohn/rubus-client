@@ -1359,15 +1359,15 @@ function displayRoute(routeData) {
             const routeKey = entry.route.name.toLowerCase();
             const label = entry.displayName;
 
-            // Get color from colorMappings only for selected route, fallback to gray
-            let backgroundColor = '#f3f4f6'; // Default light gray for unselected
-            let textColor = '#6b7280'; // Default gray text for unselected
+            // Get color from colorMappings only for selected route, fallback to CSS variables
+            backgroundColor = 'var(--theme-unselected-route-bg)';
+            textColor = 'var(--theme-unselected-route-text)';
 
             if (isSelected) {
                 if (typeof colorMappings !== 'undefined' && colorMappings[routeKey]) {
                     backgroundColor = colorMappings[routeKey];
                 } else {
-                    backgroundColor = '#6b7280';
+                    backgroundColor = 'var(--theme-unselected-route-bg)';
                 }
                 textColor = 'white';
             }
@@ -1419,11 +1419,42 @@ function displayRoute(routeData) {
             steps.push(`Walk ${endWalkDistance.feet} ft`);
         }
         const summary = steps.join(' → ');
+        
+        // Calculate total travel time
+        let totalMinutes = 0;
+        if (startWalkDistance) {
+            totalMinutes += Math.ceil(startWalkDistance.feet / 220); // Walking time to first stop
+        }
+        if (endWalkDistance) {
+            totalMinutes += Math.ceil(endWalkDistance.feet / 220); // Walking time to destination
+        }
+        
+        // Add bus travel time using average etas and waits
+        if (route.stopsInOrder && route.stopsInOrder.length > 1) {
+            let totalSeconds = 0;
+            for (let i = 0; i < route.stopsInOrder.length - 1; i++) {
+                const fromStopId = route.stopsInOrder[i];
+                const toStopId = route.stopsInOrder[i + 1];
+                
+                if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
+                    totalSeconds += etas[toStopId].from[fromStopId];
+                }
+                
+                if (i < route.stopsInOrder.length - 2 && waits[toStopId]) {
+                    totalSeconds += waits[toStopId];
+                }
+            }
+            totalMinutes += Math.ceil(totalSeconds / 60);
+        }
+        
         return `
         <div class="route-header" style="margin-bottom: 1rem; text-align: center;">
-            <h3 style="font-size: 1.35rem; font-weight: normal; margin-bottom: 0;">Route from ${startBuilding.name} to ${endBuilding.name}</h3>
-            <div class="route-summary" style="font-size: 1.2rem; color: #4b5563;">
+            <h3 style="font-size: 1.35rem; font-weight: normal; margin-bottom: 0;">${startBuilding.name} to ${endBuilding.name}</h3>
+            <div class="route-summary" style="font-size: 1.2rem; color: var(--theme-color);">
                 ${summary}
+            </div>
+            <div class="total-travel-time" style="font-size: 1.5rem; color: var(--theme-color); margin-top: 0.5rem;">
+                Total travel time: <strong>${totalMinutes}m</strong>
             </div>
             ${fuzzyMatchHtml}
             
@@ -1451,16 +1482,13 @@ function displayRoute(routeData) {
 
     // Create bus segment with detailed stop information
     let stopsListHtml = '';
-    if (route.stopsInOrder && route.stopsInOrder.length > 2) {
+    if (route.stopsInOrder && route.stopsInOrder.length > 0) {
         stopsListHtml = `
-            <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: #dcfce7; border-radius: 0.25rem;">
+            <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem;">
                 <div class="stops-sequence" style="font-size: 1.2rem;">
                     ${route.stopsInOrder.map(stop =>
-                        `<span style="${stop.isBoardingStop ? 'font-weight: 600; color: #047857;' :
-                                     stop.isAlightingStop ? 'font-weight: 600; color: #dc2626;' :
-                                     'color: #4b5563;'}">
-                            ${stop.name}${stop.isBoardingStop ? ' (board)' :
-                                        stop.isAlightingStop ? ' (get off)' : ''}
+                        `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold;' : ''}">
+                            ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
                         </span>`
                     ).join(' → ')}
                 </div>
@@ -1482,7 +1510,7 @@ function displayRoute(routeData) {
                     Get off at <strong>${endStop.name}</strong>
                 </div>
                 <div class="bus-route-info" style="font-size: 0.75rem; color: #6b7280;">
-                    ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops to destination
+                    Take bus ${formatRouteLabelColored(route.name)} for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops
                 </div>
                 ${stopsListHtml}
             </div>
@@ -1544,11 +1572,8 @@ function displayRoute(routeData) {
             // Boarding stop row
             content = `
                 <div class="waypoint-details">
-                    <div class="bus-route-info flex align-center gap-x-0p5rem">
-                        Take Bus <span style="font-weight: 700; font-size: 2rem;">${formatRouteLabelColored(route.name)}</span>
-                    </div>
                     <div class="stops-info">
-                        ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops to destination
+                        Take bus <strong>${formatRouteLabelColored(route.name)}</strong> for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops
                     </div>
                     ${stopsListHtml}
                 </div>
@@ -1567,10 +1592,71 @@ function displayRoute(routeData) {
             content = '';
         }
 
+        // Determine emoji based on waypoint type and context
+        let travelEmoji = '';
+        let walkingTime = '';
+        let busTime = '';
+        if (waypoint.type === 'building' && index === 0) {
+            // Start building - walking to first stop
+            travelEmoji = '🚶';
+            if (startWalkDistance) {
+                const timeMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
+                walkingTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${timeMinutes}m</div>`;
+            }
+        } else if (waypoint.isBoarding) {
+            // Boarding stop - about to ride bus
+            travelEmoji = '🚌';
+            // Calculate bus travel time using average etas and waits
+            let totalSeconds = 0;
+            const routeStops = route.stopsInOrder || [];
+            
+            if (routeStops.length > 1) {
+                // Sum up travel times between consecutive stops
+                for (let i = 0; i < routeStops.length - 1; i++) {
+                    const fromStopId = routeStops[i];
+                    const toStopId = routeStops[i + 1];
+                    
+                    // Add travel time from 'from' stop to 'to' stop
+                    if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
+                        totalSeconds += etas[toStopId].from[fromStopId];
+                    }
+                    
+                    // Add wait time at the 'to' stop (except for the last stop)
+                    if (i < routeStops.length - 2 && waits[toStopId]) {
+                        totalSeconds += waits[toStopId];
+                    }
+                }
+            }
+            
+            if (totalSeconds > 0) {
+                const timeMinutes = Math.ceil(totalSeconds / 60);
+                busTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${timeMinutes}m</div>`;
+            } else {
+                // Fallback to estimated time if no average data available
+                const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
+                const estimatedMinutes = Math.ceil(stopsToDestination * 2.5); // ~2.5 min per stop
+                busTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${estimatedMinutes}m</div>`;
+            }
+        } else if (waypoint.isAlighting) {
+            // Alighting stop - about to walk to destination
+            travelEmoji = '🚶';
+            if (endWalkDistance) {
+                const timeMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
+                walkingTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${timeMinutes}m</div>`;
+            }
+        } else if (waypoint.type === 'building' && index === 3) {
+            // End building - no travel needed
+            travelEmoji = '🏁';
+        }
+
         return `
             <div class="waypoint-row ${waypoint.type}-row ${waypoint.isBoarding ? 'boarding' : ''} ${waypoint.isAlighting ? 'alighting' : ''}" data-waypoint-index="${index}">
+                <div class="waypoint-emoji" style="font-size: 1.5rem; margin-right: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 2rem;">
+                    ${travelEmoji}
+                    ${walkingTime || busTime}
+                </div>
                 <div class="waypoint-circle ${waypoint.type}-circle ${waypoint.isBoarding ? 'boarding-circle' : ''} ${waypoint.isAlighting ? 'alighting-circle' : ''}"></div>
-                <div class="waypoint-content">
+                <div class="waypoint-content" style="margin-left: 0.75rem;">
                     <div class="waypoint-header">
                         <h4 class="waypoint-title">${waypoint.name}</h4>
                         ${waypoint.description ? `<div class="waypoint-description">${waypoint.description}</div>` : ''}
@@ -1581,6 +1667,9 @@ function displayRoute(routeData) {
         `;
     }).join('');
 
+    // After rendering, adjust emoji connector heights
+    // REMOVED: moved to positionEmojiConnectors() and invoked after DOM render
+    
     // Create main content wrapper
     const contentWrapperHtml = `
         <div class="route-content-wrapper">
@@ -1621,8 +1710,8 @@ function displayRoute(routeData) {
                 });
 
                 // Update selected route styling (class and inline styles)
-                const defaultBg = '#f3f4f6';
-                const defaultText = '#6b7280';
+                const defaultBg = 'var(--theme-unselected-route-bg)';
+                const defaultText = 'var(--theme-unselected-route-text)';
                 $('.route-option').each(function() {
                     $(this).removeClass('selected');
                     $(this).attr('style', `background-color: ${defaultBg}; color: ${defaultText};`);
@@ -1649,7 +1738,20 @@ function displayRoute(routeData) {
                 const effectiveStartWalk = combo && combo.startWalkDistance ? combo.startWalkDistance : startWalkDistance;
                 const effectiveEndWalk = combo && combo.endWalkDistance ? combo.endWalkDistance : endWalkDistance;
 
+                // Get detailed route information for the new route with proper stop indices
                 const newRouteDetails = getRouteDetails(newRoute, effectiveStartStop.id, effectiveEndStop.id);
+                
+                // Debug: Log the new route details to ensure we have the right data
+                console.log('[Route Switch] New route details:', {
+                    routeName: newRoute.name,
+                    startStop: effectiveStartStop.name,
+                    endStop: effectiveEndStop.name,
+                    stopsInOrder: newRouteDetails.stopsInOrder?.length || 0,
+                    startIndex: newRoute.startIndex,
+                    endIndex: newRoute.endIndex,
+                    startWalk: effectiveStartWalk?.feet || 0,
+                    endWalk: effectiveEndWalk?.feet || 0
+                });
 
                 // Update the route display with new route information
                 updateRouteDisplay({
@@ -1680,10 +1782,16 @@ function displayRoute(routeData) {
 // Position a single vertical connector from the first to the last waypoint circle
 function positionGlobalWaypointConnector() {
     const container = $('.waypoint-rows-container');
-    if (container.length === 0) return;
+    if (container.length === 0) {
+        console.warn('[Nav] positionGlobalWaypointConnector: no .waypoint-rows-container found');
+        return;
+    }
 
     const circles = container.find('.waypoint-circle');
-    if (circles.length < 2) return;
+    if (circles.length < 2) {
+        console.warn(`[Nav] positionGlobalWaypointConnector: need >=2 circles, found ${circles.length}`);
+        return;
+    }
 
     const first = $(circles.get(0));
     const last = $(circles.get(circles.length - 1));
@@ -1694,14 +1802,30 @@ function positionGlobalWaypointConnector() {
 
     // Position connector starting at the TOP of the first circle
     const firstTop = (firstOffset.top - containerOffset.top);
+    // End at the BOTTOM of the last circle
     const lastBottom = (lastOffset.top - containerOffset.top) + last.outerHeight();
 
     const firstCenterX = (firstOffset.left - containerOffset.left) + (first.outerWidth() / 2);
 
-    const top = Math.min(firstTop, lastBottom);
-    const height = Math.abs(lastBottom - firstTop);
+    const top = firstTop;
+    const height = Math.max(0, lastBottom - firstTop);
 
     const connector = container.find('.waypoint-connector-global');
+
+    // Debug logs
+    try {
+        console.groupCollapsed('[Nav] Connector metrics');
+        console.log('containerOffset:', JSON.stringify(containerOffset));
+        console.log('first offset:', JSON.stringify(firstOffset), 'size:', first.outerWidth(), first.outerHeight());
+        console.log('last offset:', JSON.stringify(lastOffset), 'size:', last.outerWidth(), last.outerHeight());
+        console.log('firstTop:', firstTop, 'lastBottom:', lastBottom, 'firstCenterX:', firstCenterX);
+        console.log('computed top:', top, 'height:', height);
+        console.log('circles count:', circles.length);
+        console.groupEnd();
+    } catch (e) {
+        // ignore logging errors
+    }
+
     connector.css({
         top: `${top}px`,
         left: `${firstCenterX - 1}px`,
@@ -1736,7 +1860,128 @@ function updateRouteDisplay(routeData) {
         if (!startIsStop && startWalkDistance) parts.push(`Walk ${startWalkDistance.feet} ft`);
         parts.push(`Bus ${formatRouteLabelColored(route.name)}`);
         if (!endIsStop && endWalkDistance) parts.push(`Walk ${endWalkDistance.feet} ft`);
-        routeSummaryElement.html(parts.join(' → '));
+        const summary = parts.join(' → ');
+        
+        // Update only the route summary text
+        routeSummaryElement.html(summary);
+        
+        // Update or create the total travel time element separately
+        let totalTravelTimeElement = $('.total-travel-time');
+        if (totalTravelTimeElement.length === 0) {
+            // Create the total travel time element if it doesn't exist
+            routeSummaryElement.after(`
+                <div class="total-travel-time" style="font-size: 1.5rem; color: var(--theme-color); margin-top: 0.5rem;">
+                    Total travel time: <strong>0m</strong>
+                </div>
+            `);
+            totalTravelTimeElement = $('.total-travel-time');
+        }
+        
+        // Calculate total travel time for the new route
+        let totalMinutes = 0;
+        let walkingTime = 0;
+        let busTime = 0;
+        
+        if (startWalkDistance) {
+            const startWalkMinutes = Math.ceil(startWalkDistance.feet / 220); // Walking time to first stop
+            totalMinutes += startWalkMinutes;
+            walkingTime += startWalkMinutes;
+        }
+        if (endWalkDistance) {
+            const endWalkMinutes = Math.ceil(endWalkDistance.feet / 220); // Walking time to destination
+            totalMinutes += endWalkMinutes;
+            walkingTime += endWalkMinutes;
+        }
+        
+        // Debug: Log walking time calculation
+        console.log('[Route Update] Walking time calculation:', {
+            startWalk: startWalkDistance?.feet || 0,
+            endWalk: endWalkDistance?.feet || 0,
+            totalWalkingMinutes: walkingTime
+        });
+        
+        // Add bus travel time using average etas and waits for the new route
+        if (route.stopsInOrder && route.stopsInOrder.length > 1) {
+            let totalSeconds = 0;
+            let etaCount = 0;
+            let waitCount = 0;
+            
+            for (let i = 0; i < route.stopsInOrder.length - 1; i++) {
+                const fromStopId = route.stopsInOrder[i];
+                const toStopId = route.stopsInOrder[i + 1];
+                
+                // Add travel time from 'from' stop to 'to' stop
+                if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
+                    totalSeconds += etas[toStopId].from[fromStopId];
+                    etaCount++;
+                }
+                
+                // Add wait time at the 'to' stop (except for the last stop)
+                if (i < route.stopsInOrder.length - 2 && waits[toStopId]) {
+                    totalSeconds += waits[toStopId];
+                    waitCount++;
+                }
+            }
+            
+            const busMinutes = Math.ceil(totalSeconds / 60);
+            totalMinutes += busMinutes;
+            busTime = busMinutes;
+            
+            // Debug: Log bus time calculation
+            console.log('[Route Update] Bus time calculation:', {
+                stopsInOrder: route.stopsInOrder.length,
+                totalSeconds,
+                etaCount,
+                waitCount,
+                busMinutes,
+                routeName: route.name
+            });
+            
+        } else if (route.stops && route.stops.length > 0) {
+            // Fallback: calculate based on route stops array if stopsInOrder is not available
+            const startIndex = route.startIndex || 0;
+            const endIndex = route.endIndex || 0;
+            const total = route.stops.length;
+            const stopsToDestination = Math.abs(endIndex - startIndex);
+            const circStopsBetween = total > 0 ? Math.min(stopsToDestination, total - stopsToDestination) : stopsToDestination;
+            const estimatedMinutes = Math.ceil(circStopsBetween * 2.5); // ~2.5 min per stop
+            totalMinutes += estimatedMinutes;
+            busTime = estimatedMinutes;
+            
+            console.log('[Route Update] Fallback bus time calculation:', {
+                stops: route.stops.length,
+                startIndex,
+                endIndex,
+                stopsToDestination,
+                circStopsBetween,
+                estimatedMinutes
+            });
+            
+        } else {
+            // Final fallback: use route indices directly
+            const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
+            const estimatedMinutes = Math.ceil(stopsToDestination * 2.5); // ~2.5 min per stop
+            totalMinutes += estimatedMinutes;
+            busTime = estimatedMinutes;
+            
+            console.log('[Route Update] Final fallback bus time calculation:', {
+                startIndex: route.startIndex,
+                endIndex: route.endIndex,
+                stopsToDestination,
+                estimatedMinutes
+            });
+        }
+        
+        // Debug: Log final total calculation
+        console.log('[Route Update] Final total calculation:', {
+            walkingTime,
+            busTime,
+            totalMinutes,
+            routeName: route.name
+        });
+        
+        // Update the total travel time with the new calculation
+        totalTravelTimeElement.html(`Total travel time: <strong>${totalMinutes}m</strong>`);
     }
 
     // Update waypoint rows (the UI built in displayRoute) with new route data
@@ -1766,15 +2011,13 @@ function updateRouteDisplay(routeData) {
             `;
         } else if (waypoint.isBoarding) {
             let innerStopsListHtml = '';
-            if (route.stopsInOrder && route.stopsInOrder.length > 2) {
+            if (route.stopsInOrder && route.stopsInOrder.length > 0) {
                 innerStopsListHtml = `
-                    <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: #dcfce7; border-radius: 0.25rem;">
+                    <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem;">
                         <div class="stops-sequence" style="font-size: 1.2rem;">
                             ${route.stopsInOrder.map(stop =>
-                                `<span style="${stop.isBoardingStop ? 'font-weight: 600; color: #047857;' :
-                                             stop.isAlightingStop ? 'font-weight: 600; color: #dc2626;' :
-                                             'color: #4b5563;'}">
-                                    ${stop.name}${stop.isBoardingStop ? ' (board)' : stop.isAlightingStop ? ' (get off)' : ''}
+                                `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold;' : ''}">
+                                    ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
                                 </span>`
                             ).join(' → ')}
                         </div>
@@ -1784,11 +2027,8 @@ function updateRouteDisplay(routeData) {
 
             content = `
                 <div class="waypoint-details">
-                    <div class="bus-route-info flex align-center gap-x-0p5rem">
-                        Take Bus <span style="font-weight: 700; font-size: 2rem;">${formatRouteLabelColored(route.name)}</span>
-                    </div>
                     <div class="stops-info">
-                        ${route.totalStops} stops total • ${Math.abs(route.endIndex - route.startIndex)} stops to destination
+                        Take bus <strong>${formatRouteLabelColored(route.name)}</strong> for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops
                     </div>
                     ${innerStopsListHtml}
                 </div>
@@ -1801,13 +2041,74 @@ function updateRouteDisplay(routeData) {
             `;
         }
 
+        // Determine emoji based on waypoint type and context
+        let travelEmoji = '';
+        let walkingTime = '';
+        let busTime = '';
+        if (waypoint.type === 'building' && index === 0) {
+            // Start building - walking to first stop
+            travelEmoji = '🚶';
+            if (startWalkDistance) {
+                const timeMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
+                walkingTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${timeMinutes}m</div>`;
+            }
+        } else if (waypoint.isBoarding) {
+            // Boarding stop - about to ride bus
+            travelEmoji = '🚌';
+            // Calculate bus travel time using average etas and waits
+            let totalSeconds = 0;
+            const routeStops = route.stopsInOrder || [];
+            
+            if (routeStops.length > 1) {
+                // Sum up travel times between consecutive stops
+                for (let i = 0; i < routeStops.length - 1; i++) {
+                    const fromStopId = routeStops[i];
+                    const toStopId = routeStops[i + 1];
+                    
+                    // Add travel time from 'from' stop to 'to' stop
+                    if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
+                        totalSeconds += etas[toStopId].from[fromStopId];
+                    }
+                    
+                    // Add wait time at the 'to' stop (except for the last stop)
+                    if (i < routeStops.length - 2 && waits[toStopId]) {
+                        totalSeconds += waits[toStopId];
+                    }
+                }
+            }
+            
+            if (totalSeconds > 0) {
+                const timeMinutes = Math.ceil(totalSeconds / 60);
+                busTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${timeMinutes}m</div>`;
+            } else {
+                // Fallback to estimated time if no average data available
+                const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
+                const estimatedMinutes = Math.ceil(stopsToDestination * 2.5); // ~2.5 min per stop
+                busTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${estimatedMinutes}m</div>`;
+            }
+        } else if (waypoint.isAlighting) {
+            // Alighting stop - about to walk to destination
+            travelEmoji = '🚶';
+            if (endWalkDistance) {
+                const timeMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
+                walkingTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${timeMinutes}m</div>`;
+            }
+        } else if (waypoint.type === 'building' && index === 3) {
+            // End building - no travel needed
+            travelEmoji = '🏁';
+        }
+
         return `
             <div class="waypoint-row ${waypoint.type}-row ${waypoint.isBoarding ? 'boarding' : ''} ${waypoint.isAlighting ? 'alighting' : ''}" data-waypoint-index="${index}">
+                <div class="waypoint-emoji" style="font-size: 1.5rem; margin-right: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 2rem;">
+                    ${travelEmoji}
+                    ${walkingTime || busTime}
+                </div>
                 <div class="waypoint-circle ${waypoint.type}-circle ${waypoint.isBoarding ? 'boarding-circle' : ''} ${waypoint.isAlighting ? 'alighting-circle' : ''}"></div>
-                <div class="waypoint-content">
+                <div class="waypoint-content" style="margin-left: 0.75rem;">
                     <div class="waypoint-header">
                         <h4 class="waypoint-title">${waypoint.name}</h4>
-                        ${waypoint.description ? `<div class=\"waypoint-description\">${waypoint.description}</div>` : ''}
+                        ${waypoint.description ? `<div class="waypoint-description">${waypoint.description}</div>` : ''}
                     </div>
                     ${content}
                 </div>
@@ -1825,14 +2126,11 @@ function updateRouteDisplay(routeData) {
     let stopsListHtml = '';
     if (route.stopsInOrder && route.stopsInOrder.length > 2) {
         stopsListHtml = `
-            <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: #dcfce7; border-radius: 0.25rem;">
+            <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem;">
                 <div class="stops-sequence" style="font-size: 1.2rem;">
                     ${route.stopsInOrder.map(stop =>
-                        `<span style="${stop.isBoardingStop ? 'font-weight: 600; color: #047857;' :
-                                     stop.isAlightingStop ? 'font-weight: 600; color: #dc2626;' :
-                                     'color: #4b5563;'}">
-                            ${stop.name}${stop.isBoardingStop ? ' (board)' :
-                                        stop.isAlightingStop ? ' (get off)' : ''}
+                        `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold;' : ''}">
+                            ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
                         </span>`
                     ).join(' → ')}
                 </div>
@@ -1854,7 +2152,7 @@ function updateRouteDisplay(routeData) {
                     Get off at <strong>${endStop.name}</strong>
                 </div>
                 <div class="bus-route-info" style="font-size: 0.75rem; color: #6b7280;">
-                    ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops to destination
+                    Take bus ${formatRouteLabelColored(route.name)} for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops
                 </div>
                 ${stopsListHtml}
             </div>
@@ -1897,4 +2195,3 @@ function closeNavigation() {
         $('.navigate-wrapper').fadeOut(200);
     }
 }
-

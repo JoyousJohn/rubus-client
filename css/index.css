@@ -17,7 +17,11 @@
     --theme-breaks-min-color: yellow;
     --theme-short-stops-color: #32f832;
     --theme-chat-recs-bg: #4d4d4d;
-    --theme-chat-recs-text: #dedede;    
+    --theme-chat-recs-text: #dedede;
+    --theme-unselected-route-bg: #484848;
+    --theme-unselected-route-text: #9fa1a5;
+    --theme-stops-list-bg: #0f4c3a;
+    --theme-stops-list-text: #10b981;
 }
 
 [theme="light"] {
@@ -36,6 +40,10 @@
     --theme-short-stops-color: #29c529;
     --theme-chat-recs-bg: #f1f1f1;
     --theme-chat-recs-text: #171717;
+    --theme-unselected-route-bg: #f3f4f6;
+    --theme-unselected-route-text: #6b7280;
+    --theme-stops-list-bg: #dcfce7;
+    --theme-stops-list-text: #047857;
 }
 
 @font-face {
