@@ -58,8 +58,8 @@ class BusWebSocketClient {
         // }
 
         if (!busData[busId]) {
-
             // console.log(data)
+
 
             if (!data.route) {
                 console.log("[WHAT] " + busId + " " + JSON.stringify(data) + " doesn't have a route...");
@@ -68,6 +68,9 @@ class BusWebSocketClient {
             }
 
             if (!data.route.includes('ONWK')) return;
+
+            // Don't add overnight buses to map when simulator is active
+            if (sim) return;
 
             console.log(`New bus in WS: ${data.bus} (${busId}) (${data.route})`);
             busData[busId] = {};
@@ -152,7 +155,8 @@ class BusWebSocketClient {
         // }
 
         calculateSpeed(busId);
-        plotBus(busId)
+
+        plotBus(busId);
 
         let route = busData[busId].route
         if (!activeRoutes.has(route)) {

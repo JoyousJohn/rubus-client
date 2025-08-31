@@ -816,12 +816,19 @@ async function startOvernight(setColorBack) {
             // populateRouteSelectors(activeRoutes); 
         }
     }
+
+    checkMinRoutes();
 }
 
 function checkMinRoutes() {
     
     if (selectedCampus !== 'nb') return;
     if ($('.search-wrapper').is(':visible')) return;
+    console.log(activeRoutes)
+    if (activeRoutes.has('on1') || activeRoutes.has('on2')) {
+        $('.knight-mover').hide();
+        return;
+    };
 
     const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
     if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check

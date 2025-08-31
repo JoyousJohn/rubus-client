@@ -894,6 +894,7 @@ async function startSim() {
     populateRouteSelectors(activeRoutes);
     try { updateTimeToStops(Object.keys(busData).map(id => Number(id))); } catch (e) {}
     startSimMovementLoop();
+    $('.knight-mover').hide(); // see why hideinfoboxes didn't do this
     return;
 }
 
@@ -916,6 +917,7 @@ async function endSim() {
     await fetchBusData();
     $('.updating-buses').slideUp();
     fetchWhere();
+    await startOvernight(false);
     checkMinRoutes();
 }
 

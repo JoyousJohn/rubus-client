@@ -622,6 +622,7 @@ async function popStopInfo(stopId) {
 
     if (!settings['toggle-always-show-second']) {
         $('.stop-info-next-loop-wrapper').hide();
+        $('.always-show-next-loop').hide(); // Hide always show button when wrapper is closed
 
         if (getValidBusesServicingStop(stopId).length !== 0) {
             $('.stop-info-show-next-loop').show();
