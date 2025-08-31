@@ -278,7 +278,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         const $routeCell = $('<div class="stop-bus-route"></div>');
         $routeCell.append(`<div>${data.route.toUpperCase()}</div>`);
         if (data.nextStopName) {
-            $routeCell.append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1;">Towards ${data.nextStopName}</div>`);
+            $routeCell.append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1;">To ${data.nextStopName}</div>`);
         }
         $('.stop-info-buses-grid').append($routeCell);
 
@@ -361,6 +361,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true
+
         });
 
 
@@ -369,7 +370,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             const $routeCellNext = $('<div class="stop-bus-route"></div>');
             $routeCellNext.append(`<div>${data.route.toUpperCase()}</div>`);
             if (data.nextStopName) {
-                $routeCellNext.append(`<div class="stop-bus-next-stop" style="font-size: 0.8em; margin-top: 0.1rem; line-height: 1.05;">${data.nextStopName}</div>`);
+                $routeCellNext.append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1;">To ${data.nextStopName}</div>`);
             }
             $('.stop-info-buses-grid-next').append($routeCellNext);
 
