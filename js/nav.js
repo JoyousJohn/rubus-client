@@ -1428,23 +1428,74 @@ function displayRoute(routeData) {
         if (endWalkDistance) {
             totalMinutes += Math.ceil(endWalkDistance.feet / 220); // Walking time to destination
         }
-        
+
         // Add bus travel time using average etas and waits
+        let busTimeMinutes = 0;
         if (route.stopsInOrder && route.stopsInOrder.length > 1) {
             let totalSeconds = 0;
+            let etaCount = 0;
+            let waitCount = 0;
+
             for (let i = 0; i < route.stopsInOrder.length - 1; i++) {
                 const fromStopId = route.stopsInOrder[i];
                 const toStopId = route.stopsInOrder[i + 1];
-                
+
+                // Add travel time from 'from' stop to 'to' stop
                 if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
                     totalSeconds += etas[toStopId].from[fromStopId];
+                    etaCount++;
                 }
-                
+
+                // Add wait time at the 'to' stop (except for the last stop)
                 if (i < route.stopsInOrder.length - 2 && waits[toStopId]) {
                     totalSeconds += waits[toStopId];
+                    waitCount++;
                 }
             }
-            totalMinutes += Math.ceil(totalSeconds / 60);
+
+            if (totalSeconds > 0) {
+                busTimeMinutes = Math.ceil(totalSeconds / 60);
+                totalMinutes += busTimeMinutes;
+                console.log('[Route Display] Bus time calculation:', {
+                    stopsInOrder: route.stopsInOrder.length,
+                    totalSeconds,
+                    etaCount,
+                    waitCount,
+                    busTimeMinutes,
+                    routeName: route.name
+                });
+            } else {
+                // Fallback: calculate based on route stops array if stopsInOrder is not available or no ETA data
+                const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
+                const estimatedMinutes = Math.ceil(stopsToDestination * 2.5); // ~2.5 min per stop
+                busTimeMinutes = estimatedMinutes;
+                totalMinutes += busTimeMinutes;
+                console.log('[Route Display] Fallback bus time calculation:', {
+                    stopsToDestination,
+                    estimatedMinutes,
+                    routeName: route.name
+                });
+            }
+
+        } else if (route.stops && route.stops.length > 0) {
+            // Final fallback: calculate based on route stops array if stopsInOrder is not available
+            const startIndex = route.startIndex || 0;
+            const endIndex = route.endIndex || 0;
+            const total = route.stops.length;
+            const stopsToDestination = Math.abs(endIndex - startIndex);
+            const circStopsBetween = total > 0 ? Math.min(stopsToDestination, total - stopsToDestination) : stopsToDestination;
+            const estimatedMinutes = Math.ceil(circStopsBetween * 2.5); // ~2.5 min per stop
+            busTimeMinutes = estimatedMinutes;
+            totalMinutes += busTimeMinutes;
+            console.log('[Route Display] Final fallback bus time calculation:', {
+                stops: route.stops.length,
+                startIndex,
+                endIndex,
+                stopsToDestination,
+                circStopsBetween,
+                estimatedMinutes,
+                routeName: route.name
+            });
         }
         
         return `
