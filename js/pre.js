@@ -193,7 +193,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         if (!data || data.error) {
             $('.notif-popup').html(
                 `Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio is reporting: ${data.error}` +
-                `<br><br><span class="notif-close-btn" style="color:rgb(138, 193, 248); cursor: pointer; display: inline-block;">Close</span>`
+                `<br><br><span class="notif-close-btn" style="color:rgb(138, 193, 248); cursor: pointer; display: inline-block; pointer-events: all;">Close</span>`
             ).fadeIn();
             $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
                 $('.notif-popup').slideUp();
@@ -1099,7 +1099,7 @@ $(document).ready(async function() {
             $('.knight-mover').hide();
             $('.notif-popup').html(
                 `Passio servers are unavailable. Data shown may be limited. This affects all bus apps.<br><br>You can still see navigation directions, including what bus to take, by tapping the search icon towards the bottom right.<br><br>RUBus will immediately display buses once Passio is back online.` +
-                `<br><br><span class="notif-close-btn" style="color: rgb(138, 193, 248); cursor: pointer; display: inline-block;">Close</span>`
+                `<br><br><span class="notif-close-btn" style="color: rgb(138, 193, 248); cursor: pointer; display: inline-block; pointer-events: all;">Close</span>`
             ).fadeIn();
             $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
                 $('.notif-popup').slideUp();
