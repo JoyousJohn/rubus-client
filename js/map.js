@@ -1045,17 +1045,17 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
         duration = busData[busId].websocketAnimationDuration;
         // Clear the stored duration after use
         delete busData[busId].websocketAnimationDuration;
-        console.log(`[Animation] Using WebSocket-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
+        // console.log(`[Animation] Using WebSocket-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
     } else if (busData[busId].apiAnimationDuration) {
         duration = busData[busId].apiAnimationDuration;
         // Clear the stored duration after use
         delete busData[busId].apiAnimationDuration;
-        console.log(`[Animation] Using API-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
+        // console.log(`[Animation] Using API-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
     } else if (busData[busId].overnightAnimationDuration) {
         duration = busData[busId].overnightAnimationDuration;
         // Clear the stored duration after use
         delete busData[busId].overnightAnimationDuration;
-        console.log(`[Animation] Using Overnight API-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
+        // console.log(`[Animation] Using Overnight API-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
     } else {
         const baseDuration = cappedTimeSinceLastUpdate + 2500;
         duration = baseDuration;

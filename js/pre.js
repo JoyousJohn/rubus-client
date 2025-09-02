@@ -190,7 +190,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         // console.log('Response data:', data);
 
 
-        if (data.error) {
+        if (!data || data.error) {
             $('.notif-popup').html(
                 `Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio is reporting: ${data.error}` +
                 `<br><br><span class="notif-close-btn" style="color:rgb(138, 193, 248); cursor: pointer; display: inline-block;">Close</span>`
@@ -310,7 +310,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             busData[busId].long = bus.longitude;
 
             // Log position update source
-            console.log(`[API Polling] Bus ${busId} position update: ${bus.latitude}, ${bus.longitude}`);
+            // console.log(`[API Polling] Bus ${busId} position update: ${bus.latitude}, ${bus.longitude}`);
 
             // getting undefined on previousPositions, but it should be set from both above in pre where new bus and in ws where new bus, so I added a type key to debug this.
             // maybe limit ws to on/none? maybe getting long lat when setting it there is failing? don't think I've ever seen it without coords
@@ -331,7 +331,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 // Store the calculated duration for consistent animation timing
                 busData[busId].apiAnimationDuration = animationDuration;
 
-                console.log(`[API Polling] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+                // console.log(`[API Polling] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
                 
                 busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
                 // Update previousTime when position changes from API polling
@@ -370,7 +370,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             makeBusesByRoutes(); // this has to go before updateTimeToStops since that calls populateAllStops which uses this. Not sure if moving this back up here broke something else though. Should find a better way to do the thing below.
 
             // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
-            if (Object.keys(etas).length > 0) {
+            if (etas && Object.keys(etas).length > 0) {
                 updateTimeToStops([busId]);
             }
 
@@ -597,7 +597,7 @@ function updateTimeToStops(busIds) {
 
                     // if (arrivedAgoSeconds > 0) {
 
-                    const avgWaitAtStop = waits[prevStopId]
+                    const avgWaitAtStop = waits ? waits[prevStopId] : undefined
 
                     if (avgWaitAtStop) {
                         if (arrivedAgoSeconds < avgWaitAtStop) {
@@ -626,7 +626,7 @@ function updateTimeToStops(busIds) {
 
                 // console.table(etas[thisStopId])
 
-                if (etas[thisStopId] && prevStopId in etas[thisStopId]['from']) {
+                if (etas && etas[thisStopId] && prevStopId in etas[thisStopId]['from']) {
                     currentETA += Math.round(etas[thisStopId]['from'][prevStopId] * (1 - progress))
                     // console.log(Math.round(etas[thisStopId]['from'][prevStopId]))
                 } else {
@@ -637,7 +637,7 @@ function updateTimeToStops(busIds) {
                     // console.log(``)
                 }
 
-                if (i !== 0 && waits[prevStopId]) {
+                if (i !== 0 && waits && waits[prevStopId]) {
                     currentETA += waits[prevStopId]
                     // console.log(`Adding ${waits[prevStopId]}s to currentETA to get to stopId ${thisStopId}`)
                 } else if (i !== 0) {
