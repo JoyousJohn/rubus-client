@@ -195,7 +195,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             passioDown = true;
             return;
         } else {
-            $('.notif-popup').slideUp(); // will this also slide up errors when rubus servers are down? maybe I'll need a second wrapper?
+            // $('.notif-popup').slideUp(); // will this also slide up errors when rubus servers are down? maybe I'll need a second wrapper? <-- maybe
         }
 
         let activeBuses = [];
@@ -856,6 +856,8 @@ function checkMinRoutes() {
         $('.knight-mover').show();
         $('.knight-mover-mini').hide();
 
+
+
         populateRouteSelectors(); // to remove favs
         $('.all-stops-btn-wrapper').hide();
         return;
@@ -921,11 +923,12 @@ function populateMessages(messages) {
         title = title.replace(/^[A-Za-z]{3}\s\d{1,2}\/\d{1,2}:\s*/, ''); // Remove date prefix like "Wed 4/23: "
         title = title.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\s/, ''); // Remove date prefix like "Wednesday 8/27 "
         title = title.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\/\d{2,4}-/, ''); // Remove "Sunday 8/31/25-" style
+        title = title.replace('New Brunswick', 'NB');
 
         let desc = message['gtfsAlertDescriptionText'];
         desc = desc.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\/\d{2,4}:\s*/, '');        
 
-        console.log(message)
+        // console.log(message)
 
         const $msgElm = $(
             `<div data-alert-big="${message['id']}" class="none">
@@ -1082,6 +1085,13 @@ $(document).ready(async function() {
         // setTimeout(() => {
             // $('.bus-info-popup').hide();
         if (!passioDown && selectedCampus === 'nb') $('.knight-mover').show();
+
+        const now = new Date();
+        const hour = now.getHours();
+        if (hour >= 8 && hour < 23) {
+            $('.knight-mover').hide();
+            $('.notif-popup').html(`Passio servers are unavailable. Data shown may be limited. This affects all bus apps.<br><br>You can still see navigation directions, including what bus to take, by tapping the search icon towards the bottom right.<br><br>RUBus will immediately display buses once Passio is back online.`).fadeIn();
+        }
         // }, 5000);
         // $('.centerme-wrapper').addClass('centerme-bottom-right')
         $('.right-btns').addClass('right-btns-bottom')
