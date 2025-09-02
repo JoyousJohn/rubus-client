@@ -1,3 +1,6 @@
+// Global fallback minutes per stop used when ETAs are unavailable
+let NAV_FALLBACK_MIN_PER_STOP = 5;
+
 $(document).ready(function() {
     $('.building-directions').click(function() {
         console.log('Building directions clicked, popupBuildingName:', popupBuildingName);
@@ -1456,13 +1459,13 @@ function displayRoute(routeData) {
                 const toStopId = route.stopsInOrder[i + 1];
 
                 // Add travel time from 'from' stop to 'to' stop
-                if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
+                if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
                     totalSeconds += etas[toStopId].from[fromStopId];
                     etaCount++;
                 }
 
                 // Add wait time at the 'to' stop (except for the last stop)
-                if (i < route.stopsInOrder.length - 2 && waits[toStopId]) {
+                if (i < route.stopsInOrder.length - 2 && waits && waits[toStopId]) {
                     totalSeconds += waits[toStopId];
                     waitCount++;
                 }
@@ -1482,7 +1485,7 @@ function displayRoute(routeData) {
             } else {
                 // Fallback: calculate based on route stops array if stopsInOrder is not available or no ETA data
                 const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-                const estimatedMinutes = Math.ceil(stopsToDestination * 2.5); // ~2.5 min per stop
+                const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
                 busTimeMinutes = estimatedMinutes;
                 totalMinutes += busTimeMinutes;
                 console.log('[Route Display] Fallback bus time calculation:', {
@@ -1499,7 +1502,7 @@ function displayRoute(routeData) {
             const total = route.stops.length;
             const stopsToDestination = Math.abs(endIndex - startIndex);
             const circStopsBetween = total > 0 ? Math.min(stopsToDestination, total - stopsToDestination) : stopsToDestination;
-            const estimatedMinutes = Math.ceil(circStopsBetween * 2.5); // ~2.5 min per stop
+            const estimatedMinutes = Math.ceil(circStopsBetween * NAV_FALLBACK_MIN_PER_STOP);
             busTimeMinutes = estimatedMinutes;
             totalMinutes += busTimeMinutes;
             console.log('[Route Display] Final fallback bus time calculation:', {
@@ -1683,12 +1686,12 @@ function displayRoute(routeData) {
                     const toStopId = routeStops[i + 1];
                     
                     // Add travel time from 'from' stop to 'to' stop
-                    if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
+                    if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
                         totalSeconds += etas[toStopId].from[fromStopId];
                     }
                     
                     // Add wait time at the 'to' stop (except for the last stop)
-                    if (i < routeStops.length - 2 && waits[toStopId]) {
+                    if (i < routeStops.length - 2 && waits && waits[toStopId]) {
                         totalSeconds += waits[toStopId];
                     }
                 }
@@ -1700,7 +1703,7 @@ function displayRoute(routeData) {
             } else {
                 // Fallback to estimated time if no average data available
                 const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-                const estimatedMinutes = Math.ceil(stopsToDestination * 2.5); // ~2.5 min per stop
+                const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
                 busTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${estimatedMinutes}m</div>`;
             }
         } else if (waypoint.isAlighting) {
@@ -1977,31 +1980,46 @@ function updateRouteDisplay(routeData) {
                 const toStopId = route.stopsInOrder[i + 1];
                 
                 // Add travel time from 'from' stop to 'to' stop
-                if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
+                if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
                     totalSeconds += etas[toStopId].from[fromStopId];
                     etaCount++;
                 }
                 
                 // Add wait time at the 'to' stop (except for the last stop)
-                if (i < route.stopsInOrder.length - 2 && waits[toStopId]) {
+                if (i < route.stopsInOrder.length - 2 && waits && waits[toStopId]) {
                     totalSeconds += waits[toStopId];
                     waitCount++;
                 }
             }
             
-            const busMinutes = Math.ceil(totalSeconds / 60);
-            totalMinutes += busMinutes;
-            busTime = busMinutes;
-            
-            // Debug: Log bus time calculation
-            console.log('[Route Update] Bus time calculation:', {
-                stopsInOrder: route.stopsInOrder.length,
-                totalSeconds,
-                etaCount,
-                waitCount,
-                busMinutes,
-                routeName: route.name
-            });
+            if (totalSeconds > 0) {
+                const busMinutes = Math.ceil(totalSeconds / 60);
+                totalMinutes += busMinutes;
+                busTime = busMinutes;
+                
+                // Debug: Log bus time calculation
+                console.log('[Route Update] Bus time calculation:', {
+                    stopsInOrder: route.stopsInOrder.length,
+                    totalSeconds,
+                    etaCount,
+                    waitCount,
+                    busMinutes,
+                    routeName: route.name
+                });
+            } else {
+                // Fallback: use number of stops * NAV_FALLBACK_MIN_PER_STOP minutes when no ETA data
+                const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
+                const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
+                totalMinutes += estimatedMinutes;
+                busTime = estimatedMinutes;
+                
+                console.log('[Route Update] ETA missing, using fallback minutes:', {
+                    stopsInOrder: route.stopsInOrder.length,
+                    stopsToDestination,
+                    estimatedMinutes,
+                    routeName: route.name
+                });
+            }
             
         } else if (route.stops && route.stops.length > 0) {
             // Fallback: calculate based on route stops array if stopsInOrder is not available
@@ -2010,7 +2028,7 @@ function updateRouteDisplay(routeData) {
             const total = route.stops.length;
             const stopsToDestination = Math.abs(endIndex - startIndex);
             const circStopsBetween = total > 0 ? Math.min(stopsToDestination, total - stopsToDestination) : stopsToDestination;
-            const estimatedMinutes = Math.ceil(circStopsBetween * 2.5); // ~2.5 min per stop
+            const estimatedMinutes = Math.ceil(circStopsBetween * NAV_FALLBACK_MIN_PER_STOP);
             totalMinutes += estimatedMinutes;
             busTime = estimatedMinutes;
             
@@ -2026,7 +2044,7 @@ function updateRouteDisplay(routeData) {
         } else {
             // Final fallback: use route indices directly
             const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-            const estimatedMinutes = Math.ceil(stopsToDestination * 2.5); // ~2.5 min per stop
+            const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
             totalMinutes += estimatedMinutes;
             busTime = estimatedMinutes;
             
@@ -2132,12 +2150,12 @@ function updateRouteDisplay(routeData) {
                     const toStopId = routeStops[i + 1];
                     
                     // Add travel time from 'from' stop to 'to' stop
-                    if (etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
+                    if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
                         totalSeconds += etas[toStopId].from[fromStopId];
                     }
                     
                     // Add wait time at the 'to' stop (except for the last stop)
-                    if (i < routeStops.length - 2 && waits[toStopId]) {
+                    if (i < routeStops.length - 2 && waits && waits[toStopId]) {
                         totalSeconds += waits[toStopId];
                     }
                 }
@@ -2149,7 +2167,7 @@ function updateRouteDisplay(routeData) {
             } else {
                 // Fallback to estimated time if no average data available
                 const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-                const estimatedMinutes = Math.ceil(stopsToDestination * 2.5); // ~2.5 min per stop
+                const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
                 busTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${estimatedMinutes}m</div>`;
             }
         } else if (waypoint.isAlighting) {
