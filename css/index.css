@@ -161,7 +161,7 @@ html, body {
 .notif-popup {
     background-color: rgb(172, 53, 53);
     padding: 2rem 3rem;
-    margin: 1rem;
+    /* margin: 1rem; */
     font-family: var(--font-family);
     font-size: 1.5rem;
     border-radius: 0.5rem;

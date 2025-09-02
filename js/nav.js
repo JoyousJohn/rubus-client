@@ -835,10 +835,13 @@ function showNavigationAutocomplete(inputElement, query) {
         const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
         const $resultElement = $(`<div class="nav-search-result-item">${icon}<div>${displayText}</div></div>`);
 
-        $resultElement.on('click touchstart', function(e) {
-            // Prevent unintended blur/outer handlers from interfering
-            if (e && typeof e.preventDefault === 'function') e.preventDefault();
-            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+        // Use a more robust event handling approach for touchpad compatibility
+        const handleSelection = function(e) {
+            // Prevent default only for touch events to avoid interfering with mouse clicks
+            if (e && e.type === 'touchstart') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
 
             // Set the input value programmatically to avoid clearing selection
             isSettingInputProgrammatically = true;
@@ -887,7 +890,19 @@ function showNavigationAutocomplete(inputElement, query) {
                     console.log('[Autocomplete Click] Not triggering calculateRoute: could not resolve one or both inputs');
                 }
             }
+        };
+
+        // Attach multiple event handlers for better touchpad support
+        $resultElement.on('click', handleSelection);
+        $resultElement.on('touchstart', handleSelection);
+        $resultElement.on('pointerdown', function(e) {
+            // For pointer events, handle immediately
+            if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                handleSelection(e);
+            }
         });
+
+
 
         resultsContainer.append($resultElement);
     });

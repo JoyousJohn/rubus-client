@@ -191,7 +191,13 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
 
         if (data.error) {
-            $('.notif-popup').html(`Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio is reporting: ${data.error}`).fadeIn();
+            $('.notif-popup').html(
+                `Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio is reporting: ${data.error}` +
+                `<br><br><span class="notif-close-btn" style="color:rgb(138, 193, 248); cursor: pointer; display: inline-block;">Close</span>`
+            ).fadeIn();
+            $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
+                $('.notif-popup').slideUp();
+            });
             passioDown = true;
             return;
         } else {
@@ -923,6 +929,7 @@ function populateMessages(messages) {
         title = title.replace(/^[A-Za-z]{3}\s\d{1,2}\/\d{1,2}:\s*/, ''); // Remove date prefix like "Wed 4/23: "
         title = title.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\s/, ''); // Remove date prefix like "Wednesday 8/27 "
         title = title.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\/\d{2,4}-/, ''); // Remove "Sunday 8/31/25-" style
+        title = title.replace(/^[A-Za-z]{3,9}\s\d{1,2}\/\d{1,2}\/\d{2,4}:\s*/, '');
         title = title.replace('New Brunswick', 'NB');
 
         let desc = message['gtfsAlertDescriptionText'];
@@ -1090,7 +1097,13 @@ $(document).ready(async function() {
         const hour = now.getHours();
         if (hour >= 8 && hour < 23) {
             $('.knight-mover').hide();
-            $('.notif-popup').html(`Passio servers are unavailable. Data shown may be limited. This affects all bus apps.<br><br>You can still see navigation directions, including what bus to take, by tapping the search icon towards the bottom right.<br><br>RUBus will immediately display buses once Passio is back online.`).fadeIn();
+            $('.notif-popup').html(
+                `Passio servers are unavailable. Data shown may be limited. This affects all bus apps.<br><br>You can still see navigation directions, including what bus to take, by tapping the search icon towards the bottom right.<br><br>RUBus will immediately display buses once Passio is back online.` +
+                `<br><br><span class="notif-close-btn" style="color: rgb(138, 193, 248); cursor: pointer; display: inline-block;">Close</span>`
+            ).fadeIn();
+            $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
+                $('.notif-popup').slideUp();
+            });
         }
         // }, 5000);
         // $('.centerme-wrapper').addClass('centerme-bottom-right')

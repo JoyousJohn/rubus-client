@@ -131,6 +131,10 @@
     border-radius: 0.5rem;
     margin: 0.2rem;
     font-size: 1.3rem;
+    /* user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: manipulation; */
 }
 
 .nav-search-result-item:hover,

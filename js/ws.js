@@ -113,7 +113,7 @@ class BusWebSocketClient {
         busData[busId].long = data.longitude
 
         // Log position update source
-        console.log(`[WebSocket] Bus ${busId} position update: ${data.latitude}, ${data.longitude}`);
+        // console.log(`[WebSocket] Bus ${busId} position update: ${data.latitude}, ${data.longitude}`);
         busData[busId].rotation = data.course
         busData[busId].capacity = data.paxLoad
 
@@ -131,7 +131,7 @@ class BusWebSocketClient {
         // Store the calculated duration for use in updateMarkerPosition
         busData[busId].websocketAnimationDuration = animationDuration;
 
-        console.log(`[WebSocket] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Remaining poll time: ${Math.round(remainingPollTime/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+        // console.log(`[WebSocket] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Remaining poll time: ${Math.round(remainingPollTime/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
 
         busData[busId].previousPositions.push([parseFloat(data.latitude), parseFloat(data.longitude)]);
 
