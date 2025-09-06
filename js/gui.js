@@ -456,7 +456,7 @@ function selectedRoute(route) {
 
     if (!panelRoute) {
         $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight())
-        $('.panout, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops').fadeOut('fast');
+        $('.panout, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops, .buildings-btn, .search-btn-wrapper').fadeOut('fast');
         $('.settings-btn').hide();
         $('.route-panel').slideDown('fast');
 
@@ -1061,7 +1061,7 @@ function updateWaitTimes() {
 
 function closeRouteMenu() {
     $('.route-panel').slideUp('fast');
-    $('.panout, .settings-btn, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops').show();
+    $('.panout, .settings-btn, .buses-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops, .buildings-btn, .search-btn-wrapper').show();
     // if (!sim) $('.sim-btn').show();
     if (userLocation) {
         $('.fly-closest-stop').show();
