@@ -1073,6 +1073,8 @@ $(document).ready(async function() {
 
     await fetchBusData(false, true);
 
+    document.dispatchEvent(new Event('rubus-bus-data-loaded'));
+
     checkShared();
 
     // if (!Object.keys(busData).length) {

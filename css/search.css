@@ -53,8 +53,8 @@
 
 .search-btn {
     position: relative;
-    color: rgb(255, 255, 255);
-    background-color: #f8f5ff; /* fallback */
+    color: var(--theme-color);
+    background-color: var(--theme-bg);
     overflow: clip;
     isolation: isolate;
     z-index: 0;
@@ -67,6 +67,7 @@
     aspect-ratio: 1;
     pointer-events: all;
     cursor: pointer;
+    transition: color 0.3s ease-in-out;
 }
 
 .search-btn::before {
@@ -91,4 +92,10 @@
     transform-origin: 50% 50%;
     animation: simGradientSwirl 10s cubic-bezier(.4, 0, .2, 1) infinite alternate;
     z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.search-btn.gradient-active::before {
+    opacity: 1;
 }

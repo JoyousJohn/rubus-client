@@ -156,6 +156,27 @@ $(document).ready(function() {
         }
     });
 
+    // Handle search button gradient flash after initial bus data fetch completes
+    document.addEventListener('rubus-bus-data-loaded', function() {
+        setTimeout(function() {
+            const $searchBtn = $('.search-btn');
+
+            $searchBtn.addClass('gradient-active').css('color', 'white');
+
+            setTimeout(function() {
+                $searchBtn.removeClass('gradient-active').css('color', 'var(--theme-color)');
+
+                setTimeout(function() {
+                    $searchBtn.addClass('gradient-active').css('color', 'white');
+
+                    setTimeout(function() {
+                        $searchBtn.removeClass('gradient-active').css('color', 'var(--theme-color)');
+                    }, 400);
+                }, 200);
+            }, 400);
+        }, 1000);
+    });
+
 });
 
 function closeSearch() {
