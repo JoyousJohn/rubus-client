@@ -1112,7 +1112,7 @@ $(document).ready(async function() {
     $('.centerme-wrapper').fadeIn();
 
     addStopsToMap()
-    $('.buses-btn').css('display', 'flex');
+    // $('.buses-btn').css('display', 'flex');
 
     setTimeout(() => {
         populateFavs()
