@@ -482,6 +482,20 @@ const stopSwitchConfig = {
                 { label: 'NB', active: false, switch: 1 },
                 { label: 'SB', active: true, switch: 2 }
             ]
+        },
+        8: { // Allison Road Classrooms
+            pair: 9,
+            directions: [
+                { label: 'ARC', active: true, switch: 1 },
+                { label: 'Sci', active: false, switch: 2 }
+            ]
+        },
+        9: { // Science Building
+            pair: 8,
+            directions: [
+                { label: 'ARC', active: false, switch: 1 },
+                { label: 'Sci', active: true, switch: 2 }
+            ]
         }
     },
     'newark': {
