@@ -20,12 +20,13 @@
 }
 
 .building-closest-stops-option:first-child {
-    border-radius: 0.8rem 0 0 0.8rem;
+    /* border-radius: 0.8rem 0 0 0.8rem; */
+    border-radius: 0.8rem;;
 }
 
-.building-closest-stops-option:last-child {
+/* .building-closest-stops-option:last-child {
     border-radius: 0 0.8rem 0.8rem 0;
-}
+} */
 
 .building-closest-stops-option.selected {
     background-color: var(--theme-color);

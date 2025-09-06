@@ -57,7 +57,7 @@ function highlightBuilding(feature) {
 }
 
 // --- Building Closest Stops Switcher ---
-let buildingClosestStopsMode = 'all'; // 'all' or 'active'
+let buildingClosestStopsMode = 'active'; // 'all' or 'active'
 
 function updateBuildingClosestStopsSwitcher() {
     const $options = $('.building-closest-stops-options .building-closest-stops-option');
@@ -74,15 +74,22 @@ function updateBuildingClosestStopsSwitcher() {
         // Determine if there are any active buses
         const hasActive = Object.keys(busData).length > 0;
         if (!hasActive) {
-            // Only show 'All' option, hide 'Active'
+            // $('.building-closest-stops-options .building-closest-stops-option').each(function() {
+            //     if ($(this).text().trim().toLowerCase() === 'active') {
+            //         $(this).hide();
+            //     } else {
+            //         $(this).show().addClass('selected only-option').text('All Routes').removeClass('pointer').show();
+            //     }
+            // });
+            // buildingClosestStopsMode = 'all';
+
             $('.building-closest-stops-options .building-closest-stops-option').each(function() {
                 if ($(this).text().trim().toLowerCase() === 'active') {
-                    $(this).hide();
+                    $(this).show().addClass('selected only-option').text('Active Routes').removeClass('pointer').show();
                 } else {
-                    $(this).show().addClass('selected only-option').text('All Routes').removeClass('pointer').show();
+                    $(this).hide();
                 }
             });
-            buildingClosestStopsMode = 'all';
         } else {
             $('.building-closest-stops-options .building-closest-stops-option').show().removeClass('only-option');
         }
@@ -95,13 +102,13 @@ function updateBuildingClosestStopsSwitcher() {
     }
 }
 
-function getAllMainRoutesForStop(stopId) {
-    stopId = Number(stopId);
-    const routes = ['a', 'b', 'bl', 'c', 'ee', 'f', 'h', 'lx', 'rexl', 'rexb'].filter(route => {
-        return stopLists[route].includes(stopId);
-    });
-    return routes;
-}
+// function getAllMainRoutesForStop(stopId) {
+//     stopId = Number(stopId);
+//     const routes = ['a', 'b', 'bl', 'c', 'ee', 'f', 'h', 'lx', 'rexl', 'rexb'].filter(route => {
+//         return stopLists[route].includes(stopId);
+//     });
+//     return routes;
+// }
 
 async function populateBuildingClosestStopsList(feature) {
     // feature: { name, lat, lng, ... }
@@ -123,7 +130,8 @@ async function populateBuildingClosestStopsList(feature) {
         if (buildingClosestStopsMode === 'active') {
             routes = getRoutesServicingStop(Number(stopId));
         } else {
-            routes = getAllMainRoutesForStop(stopId);
+            // routes = getAllMainRoutesForStop(stopId);
+            routes = []; // No routes when sim is disabled
         }
         return routes.length > 0 ? {
             stopId,
@@ -165,9 +173,9 @@ async function populateBuildingClosestStopsList(feature) {
             </div>
         `);
         $item.click(async () => {
-            if (buildingClosestStopsMode === 'all') {
-                await startSim();
-            }
+            // if (buildingClosestStopsMode === 'all') {
+            //     await startSim();
+            // }
             flyToStop(Number(stop.stopId));
             sa_event('btn_press', {
                 'btn': 'building_closest_stop',
@@ -181,9 +189,9 @@ async function populateBuildingClosestStopsList(feature) {
             const color = colorMappings[route];
             const $badge = $(`<div class="building-route-badge pointer" style="background:${color};color:white;padding:0.2rem 0.8rem;border-radius:0.5rem;font-size:1.2rem;">${route.toUpperCase()}</div>`).click(async function(e) {
                 e.stopPropagation();
-                if (buildingClosestStopsMode === 'all') {
-                    await startSim();
-                }
+                // if (buildingClosestStopsMode === 'all') {
+                //     await startSim();
+                // }
                 flyToStop(Number(stop.stopId));
                 setTimeout(() => {
                     toggleRoute(route);
@@ -216,25 +224,24 @@ function setupBuildingClosestStopsSwitcher() {
     // Only set up once
     if ($('.building-closest-stops-options').data('setup')) return;
     $('.building-closest-stops-options').data('setup', true);
-    
-    // Click on the container toggles between options
-    $('.building-closest-stops-options').off('click').on('click', function() {
-        // Toggle to the other option
-        const newMode = buildingClosestStopsMode === 'all' ? 'active' : 'all';
-        
-        // Check if the new mode is available (if no active buses, can't switch to active)
-        if (newMode === 'active' && (!Array.isArray(activeStops) || activeStops.length === 0)) {
-            return; // Can't switch to active mode
-        }
-        
-        buildingClosestStopsMode = newMode;
-        updateBuildingClosestStopsSwitcher();
-        populateBuildingClosestStopsList(window._currentBuildingFeatureForStops);
-        sa_event('btn_press', {
-            'btn': 'building_closest_stops_switcher',
-            'mode': newMode
-        });
-    });
+
+    // $('.building-closest-stops-options').off('click').on('click', function() {
+    //     // Toggle to the other option
+    //     const newMode = buildingClosestStopsMode === 'all' ? 'active' : 'all';
+    //
+    //     // Check if the new mode is available (if no active buses, can't switch to active)
+    //     if (newMode === 'active' && (!Array.isArray(activeStops) || activeStops.length === 0)) {
+    //         return; // Can't switch to active mode
+    //     }
+    //
+    //     buildingClosestStopsMode = newMode;
+    //     updateBuildingClosestStopsSwitcher();
+    //     populateBuildingClosestStopsList(window._currentBuildingFeatureForStops);
+    //     sa_event('btn_press', {
+    //         'btn': 'building_closest_stops_switcher',
+    //         'mode': newMode
+    //     });
+    // });
 }
 
 function showBuildingInfo(feature) {
@@ -254,7 +261,8 @@ function showBuildingInfo(feature) {
     }
 
     // Set up and default the switcher
-    buildingClosestStopsMode = 'all';
+    // buildingClosestStopsMode = 'all';
+    buildingClosestStopsMode = 'active';
     setupBuildingClosestStopsSwitcher();
     updateBuildingClosestStopsSwitcher();
     window._currentBuildingFeatureForStops = feature;

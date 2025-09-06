@@ -766,7 +766,7 @@ async function startOvernight(setColorBack) {
                 busData[busId].long = bus.long;
 
                 // Log position update source
-                console.log(`[Overnight API] Bus ${busId} position update: ${bus.lat}, ${bus.lng}`);
+                // console.log(`[Overnight API] Bus ${busId} position update: ${bus.lat}, ${bus.lng}`);
 
                 // Update previousTime for overnight API updates to ensure proper animation timing
                 const currentTime = new Date().getTime();

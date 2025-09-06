@@ -80,13 +80,13 @@ function campusChanged() {
     console.log(`campus changed to ${selectedCampus}`)
     stopsData = allStopsData[selectedCampus];
 
-    if (sim) {
-        endSim();
-    } else if (settings['toggle-show-sim'] && selectedCampus === 'nb') {
-        $('.sim-btn').fadeIn();
-    } else {
-        $('.sim-btn').hide();
-    }
+    // if (sim) {
+    //     endSim();
+    // } else if (settings['toggle-show-sim'] && selectedCampus === 'nb') {
+    //     $('.sim-btn').fadeIn();
+    // } else {
+    //     $('.sim-btn').hide();
+    // }
 
     if (selectedCampus === 'nb') {
         // checkMinRoutes();
