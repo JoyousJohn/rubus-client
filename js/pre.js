@@ -620,6 +620,18 @@ function updateTimeToStops(busIds) {
 
                 const thisStopId = sortedStops[i]
 
+                // NOT SURE IF NEEDED??
+                // If the bus is at this stop, set ETA to 0
+                // if (data['at_stop'] && ((Array.isArray(data['stopId']) && thisStopId === data['stopId'][0]) || thisStopId === data['stopId'])) {
+                //     if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1') && thisStopId === 3) {
+                //         if (!busETAs[busId][thisStopId]) busETAs[busId][thisStopId] = {'via': {}}
+                //         busETAs[busId][thisStopId]['via'][prevStopId] = 0;
+                //     } else {
+                //         busETAs[busId][thisStopId] = 0;
+                //     }
+                //     continue;
+                // }
+
                 // console.log('prev stop: ', prevStopId)
                 // console.log('thisStopId stop: ', thisStopId)
                 // console.log('eta: ', currentETA)

@@ -2220,12 +2220,13 @@ function distanceFromLine(busId) {
 }
 
 function isValid(busId) {
-
     if (!busETAs[busId]) return false;
 
-    stopLists[busData[busId].route].forEach(stopId => {
-        if (busETAs[busId][stopId] < 0) return false;
-    })
+    for (const stopId of stopLists[busData[busId].route]) {
+        if (busETAs[busId][stopId] < 0) {
+            return false;
+        }
+    }
 
     return true;
 }

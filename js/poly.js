@@ -204,13 +204,13 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 busStopId = busStopId[0];
             }
 
-            if (busData[busId]['at_stop'] && busStopId === stopId && isValid(busId)) {
+            if (busData[busId]['at_stop'] && busStopId === stopId) {
                 servicingEntries.push({
                     busId: busId,
                     route: servicedRoute,
                     eta: 0
                 })
-            } else if (busETAs[busId] && isValid(busId)) {
+            } else if (busETAs[busId]) {
                 if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && stopId === 3) { // special case: show both VIA paths
                     const viaMap = busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
                     if (viaMap && Object.keys(viaMap).length) {
@@ -317,12 +317,12 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         } else if (Object.is(data.eta, 0)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
             $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
-        } else if (!busData[data.busId].atDepot) {
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${data.eta >= 60 ? Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm' : data.eta + 'm'}</div>`);
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
         } else if (busData[data.busId].atDepot || distanceFromLine(data.busId) || !isValid(data.busId)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Xm</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
+        } else if (!busData[data.busId].atDepot) {
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${data.eta >= 60 ? Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm' : data.eta + 'm'}</div>`);
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
         }
 
         if (visibleRoute && visibleRoute !== data.route) {
