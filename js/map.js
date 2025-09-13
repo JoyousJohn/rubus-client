@@ -1506,7 +1506,7 @@ function popInfo(busId, resetCampusFontSize) {
 
     $('.next-stop-circle').remove(); // remaining .next-stop-circles rom rote menu messes this up
 
-    if ('next_stop' in data && busETAs[busId]) { // instead of checking && busETAs[busId], can also do && !busData[busId].atDepot, since we're just trying to hide next stops when there's no prev stop visited info... wait why not just do that? busData[busId].stopId?
+    if ('next_stop' in data && busETAs[busId] && !busData[busId].atDepot) { // Hide next stops when bus is at depot
         $('.next-stops-grid > div').empty();
 
         if (closestStopId && routesServicing(closestStopId).includes(data.route)) {
