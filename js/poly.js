@@ -333,7 +333,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             }
             console.log(`[${data.busId}] xx:xx due to: ${reason.trim()}`);
         } else if (!busData[data.busId].atDepot) {
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${data.eta >= 60 ? Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm' : data.eta + 'm'}</div>`);
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm'}</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
         }
 
@@ -398,7 +398,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Here</div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="pointer"></div>`);
             } else if (!busData[data.busId].atDepot) {
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer right">${data.eta >= 60 ? Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm' : data.eta + 'm'}</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer right">${data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm'}</div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
             } else if (busData[data.busId].atDepot || distanceFromLine(data.busId)) {
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Xm</div>`);

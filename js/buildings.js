@@ -208,7 +208,7 @@ async function populateBuildingClosestStopsList(feature) {
 
     // If there are more than 1 stop, add a 'Show more stops' link
     if (stopsToShow.length > 1) {
-        const $showMore = $('<div class="building-show-more-stops pointer" style="color:rgb(105, 105, 191);font-size:1.2rem;text-align:left;">Show more stops</div>');
+        const $showMore = $('<div class="building-show-more-stops pointer mt-1rem" style="color:rgb(105, 105, 191); font-size:1.2rem; text-align:left;">Show more stops</div>');
         $showMore.click(function() {
             $('.building-stop-extra').slideDown(200);
             $(this).hide();
