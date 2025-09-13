@@ -1318,8 +1318,8 @@ const campusMappings = {
     'on1': 'All Campus',
     'on2': 'All Campus',
     'ftbl': 'Football',
-    'wknd1': 'All Campus',
-    'wknd2': 'All Campus',
+    'wknd1': '',
+    'wknd2': '',
     'all': 'All Campus',
     'none': 'Unknown',
     'c': 'Busch Commuter',
@@ -1384,10 +1384,18 @@ function popInfo(busId, resetCampusFontSize) {
     const data = busData[busId]
 
     let dataRoute = data.route
-    if (dataRoute === 'summer1' || dataRoute === 'summer2') {
-        dataRoute = dataRoute.slice(0, -1) + ' ' + dataRoute.slice(-1)
+    console.log(dataRoute)
+    let displayRoute;
+    if (dataRoute === 'wknd1' || dataRoute === 'wknd2') {
+        dataRoute = 'Weekend ' + dataRoute.slice(-1);
+        displayRoute = dataRoute.charAt(0).toUpperCase() + dataRoute.slice(1).toLowerCase();
+    } else if (dataRoute === 'summer1' || dataRoute === 'summer2') {
+        dataRoute = dataRoute.slice(0, -1) + ' ' + dataRoute.slice(-1);
+        displayRoute = dataRoute.toUpperCase();
+    } else {
+        displayRoute = dataRoute.toUpperCase();
     }
-    $('.info-route-mid').text(dataRoute.toUpperCase()).parent().css('color', colorMappings[data.route])
+    $('.info-route-mid').text(displayRoute).parent().css('color', colorMappings[data.route])
     if (data.busName.slice(-1) === "E") {
         $('.info-bolt').show();
     } else {
