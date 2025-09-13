@@ -2215,8 +2215,8 @@ function distanceFromLine(busId) {
     }
     
     const distanceMiles = minDist * 0.000621371 * 5280;
-    // console.log(`Bus ${busId} is ${distanceMiles.toFixed(3)} ft from its route`);
-    return (distanceMiles > 200)
+    console.log(`Bus ${busId} is ${distanceMiles.toFixed(3)} ft from its route`);
+    return (distanceMiles > 500)
 }
 
 function isValid(busId) {
