@@ -318,9 +318,9 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
             $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
         } else if (busData[data.busId].atDepot || distanceFromLine(data.busId) || !isValid(data.busId)) {
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Xm</div>`);
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
-            // Print the condition that led to xx:xx
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer"></div>`);
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer"></div>`);
+            // Print the condition that led to 
             let reason = '';
             if (busData[data.busId].atDepot) {
                 reason += '[atDepot] ';
@@ -401,8 +401,8 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer right">${data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm'}</div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
             } else if (busData[data.busId].atDepot || distanceFromLine(data.busId)) {
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Xm</div>`);
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer"></div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer"></div>`);
             }
 
             if (visibleRoute && visibleRoute !== data.route) {
