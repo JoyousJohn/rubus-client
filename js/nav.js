@@ -982,7 +982,7 @@ function findClosestStops(targetLat, targetLng, maxStops = 5) {
 // Keep the original function for backward compatibility (returns only the closest)
 function findClosestStop(targetLat, targetLng) {
     const closestStops = findClosestStops(targetLat, targetLng, 1);
-    return closestStops.length > 0 ? closestStops[0] : null;
+    return closestStops.length > 0 ? closestStops[0] : { distance: Infinity };
 }
 
 // Resolve an input string to a place object (building or stop)

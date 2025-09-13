@@ -555,12 +555,19 @@ function centerme() {
                 sourceBusId = null;
             })
 
-            map.flyTo(userPosition, 18, {
-                animate: true,
-                duration: 0.3
-            });
+            // Check distance before flying and showing nearest stop button
+            const closestStop = findClosestStop(userLat, userLong);
+            const closestDistance = closestStop.distance / 1000 * 0.621371; // Convert meters to miles
+            
+            if (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance']) {
+                // Only fly to location if within distance limit
+                map.flyTo(userPosition, 18, {
+                    animate: true,
+                    duration: 0.3
+                });
 
-            $('.fly-closest-stop-wrapper').show();
+                $('.fly-closest-stop-wrapper').show();
+            }
 
             hideInfoBoxes();
 
