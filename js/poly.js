@@ -320,6 +320,18 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         } else if (busData[data.busId].atDepot || distanceFromLine(data.busId) || !isValid(data.busId)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Xm</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">xx:xx</div>`);
+            // Print the condition that led to xx:xx
+            let reason = '';
+            if (busData[data.busId].atDepot) {
+                reason += '[atDepot] ';
+            }
+            if (distanceFromLine(data.busId)) {
+                reason += '[distanceFromLine] ';
+            }
+            if (!isValid(data.busId)) {
+                reason += '[!isValid] ';
+            }
+            console.log(`[${data.busId}] xx:xx due to: ${reason.trim()}`);
         } else if (!busData[data.busId].atDepot) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${data.eta >= 60 ? Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm' : data.eta + 'm'}</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);

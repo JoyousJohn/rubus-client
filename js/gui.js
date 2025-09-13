@@ -29,6 +29,15 @@ function populateRouteSelectors(allActiveRoutes) {
     if ($('.favs > div').length) {
         routesArray.unshift('fav');
     }
+    
+    if (routesArray.includes('wknd2')) {
+        routesArray = routesArray.filter(route => route !== 'wknd2');
+        routesArray.unshift('wknd2');
+    }
+    if (routesArray.includes('wknd1')) {
+        routesArray = routesArray.filter(route => route !== 'wknd1');
+        routesArray.unshift('wknd1');
+    }
 
     if (routesArray.includes('ftbl')) {
         routesArray = routesArray.filter(route => route !== 'ftbl');
