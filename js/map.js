@@ -1509,7 +1509,8 @@ function popInfo(busId, resetCampusFontSize) {
     if ('next_stop' in data && busETAs[busId] && !busData[busId].atDepot) { // Hide next stops when bus is at depot
         $('.next-stops-grid > div').empty();
 
-        if (closestStopId && routesServicing(closestStopId).includes(data.route)) {
+        if (closestStopId && routesServicing(closestStopId).includes(data.route) && 
+            (userPosition ? (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance']) : true)) {
             const $circle = $('<div class="closest-stop-circle closest-stop-bg" style="margin-right: 1rem;"></div>').css('background-color', colorMappings[data.route])
             $('.next-stops-grid > div').append($(`<div class="flex justify-center align-center closest-stop-bg h-100" style="margin-right: -2rem; margin-left: -1rem; border-radius: 0.8rem 0 0 0.8rem;"></div>`).append($circle))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;">
