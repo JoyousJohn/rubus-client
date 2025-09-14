@@ -45,6 +45,7 @@
     <script src="lib/depot.js"></script>
     <script src="lib/stopLines.js"></script>
     <script src="lib/bike_racks.js"></script>
+    <script src="lib/building_abbreviations.js"></script>
     <script src="js/buildings.js"></script>
     <script src="js/search.js"></script>
     <script defer src="js/nav.js"></script>
@@ -61,6 +62,7 @@
     <link rel="stylesheet" type="text/css" href="css/sim.css">
     <link rel="stylesheet" type="text/css" href="css/chat.css">
     <link rel="stylesheet" type="text/css" href="css/search.css">
+    <link rel="stylesheet" type="text/css" href="css/search-mobile.css">
     <link rel="stylesheet" type="text/css" href="css/building.css">
     <link rel="stylesheet" type="text/css" href="css/campus-modal.css">
     <link rel="stylesheet" type="text/css" href="css/nav.css">
@@ -729,10 +731,14 @@
 
     <div class="search-wrapper none">
         <div>
-            <input type="text" placeholder="Search Rutgers buildings & parking lots">
+            <input type="text" placeholder="Search buildings, classrooms, & lots">
             <div class="search-results-wrapper none mt-1rem">
                 <div class="search-results">
                 </div>
+            </div>
+            <div class="search-recs-wrapper mt-1rem">
+                <div class="text-1p3rem bold-500 ml-0p5rem" style="color: var(--theme-color-lighter)">Popular searches</div>
+                <div class="search-recs mt-0p5rem flex flex-col gap-y-0p5rem text-1p2rem"></div>
             </div>
         </div>
     </div>

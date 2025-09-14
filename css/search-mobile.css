@@ -1,0 +1,6 @@
+@media (min-width: 992px) {
+    .search-wrapper {
+        width: 42%;
+        right: 0;
+    }
+}

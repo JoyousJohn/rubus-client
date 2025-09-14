@@ -9,6 +9,9 @@ $(document).ready(function() {
         $('.knight-mover').hide();
         $('.search-wrapper').show();
         $input.trigger('input').focus();
+        
+        // Populate search recommendations
+        populateSearchRecommendations();
 
         sa_event('btn_press', {
             'btn': 'search'
@@ -73,6 +76,14 @@ $(document).ready(function() {
         const queryLower = sanitizedQuery.toLowerCase();
         const $results = $('.search-results');
         $results.empty();
+        
+        // Hide recommendations when user starts typing
+        if (sanitizedQuery) {
+            $('.search-recs-wrapper').hide();
+        } else {
+            $('.search-recs-wrapper').show();
+        }
+        
         if (!fuseReady || !sanitizedQuery) {
             $('.search-results-wrapper, .search-results').hide();
             return;
@@ -176,6 +187,67 @@ $(document).ready(function() {
             }, 400);
         }, 1000);
     });
+
+    // Keyboard shortcut: 's' key to open search on desktop
+    $(document).on('keydown', function(e) {
+        // Only trigger on desktop and when 's' key is pressed
+        if (isDesktop && e.key.toLowerCase() === 's') {
+            // Don't trigger if user is typing in an input field
+            if (!$(e.target).is('input, textarea, [contenteditable]')) {
+                e.preventDefault();
+                $('.search-btn').click();
+            }
+        }
+    });
+
+    // Populate search recommendations with 5 random popular buildings
+    function populateSearchRecommendations() {
+        const $searchRecs = $('.search-recs');
+        $searchRecs.empty();
+        
+        // Get unique buildings from abbreviations
+        const uniqueBuildings = [];
+        const seenNumbers = new Set();
+        
+        for (const item of buildingAbbreviations) {
+            if (!seenNumbers.has(item.number)) {
+                seenNumbers.add(item.number);
+                uniqueBuildings.push(item);
+            }
+        }
+        
+        // Select 5 random buildings
+        const shuffled = uniqueBuildings.sort(() => 0.5 - Math.random());
+        const selectedBuildings = shuffled.slice(0, 5);
+        
+        // Create recommendation elements
+        selectedBuildings.forEach(building => {
+            const icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
+            
+            const $recItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important;">${icon}<div>${building.name}</div></div>`);
+            $recItem.click(function() {
+                closeSearch();
+                
+                // Find the building in buildingIndex to get coordinates
+                const buildingKey = Object.keys(buildingIndex).find(key => 
+                    buildingIndex[key].id === building.number.toString()
+                );
+                
+                if (buildingKey) {
+                    const buildingData = buildingIndex[buildingKey];
+                    showBuildingInfo(buildingData);
+                    map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
+                }
+
+                sa_event('btn_press', {
+                    'btn': 'search_recommendation_selected',
+                    'result': building.name,
+                    'category': 'building'
+                });
+            });
+            $searchRecs.append($recItem);
+        });
+    }
 
 });
 
