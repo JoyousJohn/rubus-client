@@ -10,8 +10,9 @@ $(document).ready(function() {
         $('.search-wrapper').show();
         $input.trigger('input').focus();
         
-        // Populate search recommendations
+        // Populate search recommendations and recent searches
         populateSearchRecommendations();
+        populateRecentSearches();
 
         sa_event('btn_press', {
             'btn': 'search'
@@ -77,11 +78,13 @@ $(document).ready(function() {
         const $results = $('.search-results');
         $results.empty();
         
-        // Hide recommendations when user starts typing
+        // Hide recommendations and recent searches when user starts typing
         if (sanitizedQuery) {
             $('.search-recs-wrapper').hide();
+            $('.search-recents-wrapper').hide();
         } else {
             $('.search-recs-wrapper').show();
+            $('.search-recents-wrapper').show();
         }
         
         if (!fuseReady || !sanitizedQuery) {
@@ -152,6 +155,9 @@ $(document).ready(function() {
                 closeSearch();
                 showBuildingInfo(item);
                 map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
+                
+                // Save to recent searches
+                saveRecentSearch(item);
 
                 sa_event('btn_press', {
                     'btn': 'search_result_selected',
@@ -200,7 +206,70 @@ $(document).ready(function() {
         }
     });
 
-    // Populate search recommendations with 5 random popular buildings
+    // Recent searches functionality
+    function saveRecentSearch(searchItem) {
+        const recentSearches = getRecentSearches();
+        
+        // Remove if already exists (to move to front)
+        const filtered = recentSearches.filter(item => 
+            !(item.name === searchItem.name && item.category === searchItem.category)
+        );
+        
+        // Add to front
+        filtered.unshift(searchItem);
+        
+        // Keep only last 10 searches (more than we show for better UX)
+        const limited = filtered.slice(0, 10);
+        
+        localStorage.setItem('recentSearches', JSON.stringify(limited));
+    }
+    
+    function getRecentSearches() {
+        const stored = localStorage.getItem('recentSearches');
+        return stored ? JSON.parse(stored) : [];
+    }
+    
+    function populateRecentSearches() {
+        const $searchRecents = $('.search-recents');
+        const $searchRecentsWrapper = $('.search-recents-wrapper');
+        $searchRecents.empty();
+        
+        const recentSearches = getRecentSearches().slice(0, 3); // Show only 3 most recent
+        
+        if (recentSearches.length === 0) {
+            $searchRecentsWrapper.hide();
+            return;
+        }
+        
+        $searchRecentsWrapper.show();
+        
+        recentSearches.forEach(item => {
+            let icon = '';
+            if (item.category === 'building') {
+                icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
+            } else if (item.category === 'parking') {
+                icon = '<i class="fa-solid fa-square-parking" style="color: var(--theme-hidden-route-col)"></i>';
+            } else if (item.category === 'stop') {
+                icon = '<i class="fa-solid fa-bus-simple" style="color: var(--theme-hidden-route-col)"></i>';
+            }
+            
+            const $recentItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important;">${icon}<div>${item.name}</div></div>`);
+            $recentItem.click(function() {
+                closeSearch();
+                showBuildingInfo(item);
+                map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
+
+                sa_event('btn_press', {
+                    'btn': 'recent_search_selected',
+                    'result': item.name,
+                    'category': item.category || 'unknown'
+                });
+            });
+            $searchRecents.append($recentItem);
+        });
+    }
+
+    // Populate search recommendations with 3 random popular buildings
     function populateSearchRecommendations() {
         const $searchRecs = $('.search-recs');
         $searchRecs.empty();
@@ -216,9 +285,9 @@ $(document).ready(function() {
             }
         }
         
-        // Select 5 random buildings
+        // Select 3 random buildings
         const shuffled = uniqueBuildings.sort(() => 0.5 - Math.random());
-        const selectedBuildings = shuffled.slice(0, 5);
+        const selectedBuildings = shuffled.slice(0, 3);
         
         // Create recommendation elements
         selectedBuildings.forEach(building => {
@@ -237,6 +306,9 @@ $(document).ready(function() {
                     const buildingData = buildingIndex[buildingKey];
                     showBuildingInfo(buildingData);
                     map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
+                    
+                    // Save to recent searches
+                    saveRecentSearch(buildingData);
                 }
 
                 sa_event('btn_press', {
