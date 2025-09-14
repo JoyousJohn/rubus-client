@@ -1168,7 +1168,8 @@ const toggleSettings = [
     'toggle-spoofing',
     'toggle-show-chat',
     'toggle-show-thinking',
-    'toggle-show-road-network'
+    'toggle-show-road-network',
+    'toggle-distances-line-on-focus'
 
 ]
 
@@ -1251,6 +1252,7 @@ let defaultSettings = {
     'toggle-show-chat': false,
     'toggle-show-thinking': false,
     'toggle-show-road-network': false,
+    'toggle-distances-line-on-focus': false,
     
     // going to remove
     'toggle-show-arrival-times': true,

@@ -422,6 +422,9 @@ function hideInfoBoxes(instantly_hide) {
         popupBusId = null;
         $('.info-shared-bus-mid').hide();
         // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
+        
+        // Remove distance line when bus is unfocused
+        removeDistanceLineOnFocus();
     }
 
     if (popupBuildingName) {
@@ -2190,6 +2193,22 @@ function focusBus(busId) {
     hideStopsExcept(route)
     hidePolylinesExcept(route)
 
+    // Show distance line on focus if the setting is enabled
+    if (settings['toggle-distances-line-on-focus']) {
+        showDistanceLineOnFocus(busId);
+        // Hide the route polyline when showing distance line
+        if (polylines[route]) {
+            polylines[route].setStyle({ opacity: 0 });
+        }
+    } 
+    // not sure if needed, is route polyline being made visible elsewhere? I think it's correctly handled in settings when setting is toggled.
+    // else {
+    //     // Ensure the route polyline is visible when distance line setting is off
+    //     if (polylines[route]) {
+    //         polylines[route].setStyle({ opacity: 1 });
+    //     }
+    // }
+
     for (const marker in busMarkers) {
         if (marker !== busId.toString()) {
             busMarkers[marker].getElement().style.display = 'none';
@@ -2222,6 +2241,91 @@ function focusBus(busId) {
     if (!savedCenter) {
         savedCenter = map.getCenter();
         savedZoom = map.getZoom();
+    }
+}
+
+// Global variable to store the current distance line layer
+let distanceLineLayer = null;
+
+function showDistanceLineOnFocus(busId) {
+    // Remove any existing distance line
+    removeDistanceLineOnFocus();
+    
+    const route = busData[busId].route;
+    const campusKey = routesByCampus[route] || selectedCampus || 'nb';
+    
+    // Don't show distance line if bus is at depot or out of service
+    if (busData[busId].atDepot || busData[busId].oos) {
+        console.log('Bus', busId, 'is at depot or out of service, not showing distance line');
+        return;
+    }
+    
+    const currentStopId = busData[busId].stopId;
+    const prevStopId = busData[busId].prevStopId;
+    const nextStopId = busData[busId].next_stop;
+    
+    // Determine the correct segment to show
+    let fromStopId, toStopId;
+    
+    if (currentStopId && nextStopId) {
+        // Normal case: show segment from current stop to next stop
+        fromStopId = currentStopId;
+        toStopId = nextStopId;
+    } else if (prevStopId && currentStopId) {
+        // Fallback: show segment from previous stop to current stop
+        fromStopId = prevStopId;
+        toStopId = currentStopId;
+    } else {
+        console.log('Cannot determine route segment for bus', busId, '- missing stop information');
+        console.log('Current stop:', currentStopId, 'Next stop:', nextStopId, 'Previous stop:', prevStopId);
+        return;
+    }
+    
+    // Handle special case buses that visit stop #3 twice
+    if (isSpecialRoute(route) && toStopId === 3) {
+        // Use previous stop ID to determine which approach to stop 3
+        if (prevStopId) {
+            fromStopId = prevStopId;
+            toStopId = 3;
+        } else {
+            console.log('Special route bus missing prevStopId for stop 3');
+            return;
+        }
+    }
+    
+    // Get the distance line segment from percentageDistances
+    const segment = percentageDistances[campusKey] 
+        && percentageDistances[campusKey][String(toStopId)]
+        && percentageDistances[campusKey][String(toStopId)].from
+        ? percentageDistances[campusKey][String(toStopId)].from[String(fromStopId)]
+        : null;
+    
+    if (!segment || !segment.geometry || !Array.isArray(segment.geometry.coordinates)) {
+        console.log('No distance segment found for route from stop', fromStopId, 'to stop', toStopId);
+        return;
+    }
+    
+    // Convert coordinates from [lng, lat] to [lat, lng] for Leaflet
+    const coordinates = segment.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+    
+    // Create the distance line
+    distanceLineLayer = L.polyline(coordinates, {
+        color: colorMappings[route] || '#ff0000',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '10, 5'
+    });
+    
+    // Add to map
+    distanceLineLayer.addTo(map);
+    
+    console.log('Showing distance line from stop', fromStopId, 'to stop', toStopId, 'for bus', busId);
+}
+
+function removeDistanceLineOnFocus() {
+    if (distanceLineLayer) {
+        map.removeLayer(distanceLineLayer);
+        distanceLineLayer = null;
     }
 }
 

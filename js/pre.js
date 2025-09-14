@@ -498,6 +498,7 @@ function makeOoS(busId) {
         console.log(sourceBusId);
         hideInfoBoxes();
         sourceBusId = null;
+        // Distance line will be removed by hideInfoBoxes -> removeDistanceLineOnFocus
     }
 
     if (sharedBus && sharedBus == busId) {
@@ -552,7 +553,7 @@ function updateTimeToStops(busIds) {
 
             const prevStopId = busData[busId]['prevStopId']
             via = prevStopId
-            console.log('special case')
+            // console.log('special case')
             if (prevStopId === 2) {
                 sortedStops = [3, 6, 9, 10, 12, 13, 14, 4, 17, 18, 19, 20, 21, 16, 22, 3, 1, 2] 
             } else if (prevStopId === 22) {
@@ -849,7 +850,7 @@ function checkMinRoutes() {
     
     if (selectedCampus !== 'nb') return;
     if ($('.search-wrapper').is(':visible')) return;
-    console.log(activeRoutes)
+    // console.log(activeRoutes)
     if (activeRoutes.has('on1') || activeRoutes.has('on2')) {
         $('.knight-mover').hide();
         return;

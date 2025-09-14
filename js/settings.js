@@ -193,6 +193,8 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-hide-other-routes'] = isChecked;
 
             if (!isChecked && popupBusId) {
+                // Remove distance line if it was showing
+                removeDistanceLineOnFocus();
                 showAllPolylines();
                 showAllBuses();
                 map.flyTo(savedCenter, savedZoom, {animate: false});
@@ -418,6 +420,37 @@ $('.settings-toggle .toggle-input').on('change', function () {
                     roadNetworkLayer = null;
                 }
                 showNavigationMessage('Road network hidden');
+            }
+            break;
+
+        case 'toggle-distances-line-on-focus':
+            console.log(`Distances Line on Focus is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-distances-line-on-focus'] = isChecked;
+            
+            // If the setting is being turned off and a bus is currently focused,
+            // remove the distance line and restore the route polyline layer.
+            if (!isChecked && popupBusId) {
+                removeDistanceLineOnFocus();
+                try {
+                    const route = busData[popupBusId].route;
+                    if (polylines[route] && !map.hasLayer(polylines[route])) {
+                        polylines[route].addTo(map);
+                    }
+                    if (polylines[route]) {
+                        polylines[route].setStyle({ opacity: 1 });
+                    }
+                } catch (_) {}
+            }
+            // If the setting is being turned on and a bus is currently focused,
+            // show the distance line and remove the route polyline layer.
+            else if (isChecked && popupBusId) {
+                showDistanceLineOnFocus(popupBusId);
+                try {
+                    const route = busData[popupBusId].route;
+                    if (polylines[route] && map.hasLayer(polylines[route])) {
+                        polylines[route].removeFrom(map);
+                    }
+                } catch (_) {}
             }
             break;
 
