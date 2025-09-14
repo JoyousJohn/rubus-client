@@ -1862,9 +1862,21 @@ function populateBusBreaks(busBreakData) {
         return null;
     })();
 
-    // Update overdue break display
     if (lastBreakMin && lastBreakMin > 120) {
+        // Only show if actually overdue (more than 2 hours)
         $('.info-overdue-break').slideDown().html(`<i class="fa-solid fa-clock"></i> Last break ${Math.floor(lastBreakMin / 60)}+ hours ago!`);
+    } else if (settings['toggle-always-show-break-overdue']) {
+        const hours = Math.floor(lastBreakMin / 60);
+        const minutes = lastBreakMin % 60;
+        let timeString = '';
+        if (hours > 0) {
+            timeString += `${hours} hour${hours !== 1 ? 's' : ''}`;
+        }
+        if (minutes > 0 || hours === 0) {
+            if (hours > 0) timeString += ' ';
+            timeString += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        }
+        $('.info-overdue-break').slideDown().html(`<i class="fa-solid fa-clock"></i> Last break ${timeString} ago!`);
     } else {
         $('.info-overdue-break').hide();
     }

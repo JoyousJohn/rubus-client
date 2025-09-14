@@ -1183,7 +1183,8 @@ const toggleSettings = [
     'toggle-show-chat',
     'toggle-show-thinking',
     'toggle-show-road-network',
-    'toggle-distances-line-on-focus'
+    'toggle-distances-line-on-focus',
+    'toggle-always-show-break-overdue'
 
 ]
 
@@ -1268,6 +1269,7 @@ let defaultSettings = {
     'toggle-show-thinking': false,
     'toggle-show-road-network': false,
     'toggle-distances-line-on-focus': false,
+    'toggle-always-show-break-overdue': false,
     
     // going to remove
     'toggle-show-arrival-times': true,

@@ -459,6 +459,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-disable-fireworks-on-open'] = isChecked;
             break;
 
+        case 'toggle-always-show-break-overdue':
+            console.log(`Always Show Break Overdue is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-always-show-break-overdue'] = isChecked;
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
