@@ -2,6 +2,7 @@ let buildingIndex;
 
 $(document).ready(function() {
     const $input = $('.search-wrapper input');
+    const $clearBtn = $('.search-clear-btn');
     $input.val('')
 
     $('.search-btn').click(function() {
@@ -18,6 +19,27 @@ $(document).ready(function() {
             'btn': 'search'
         });
     });
+
+    // Clear button functionality
+    $clearBtn.click(function() {
+        $input.val('').trigger('input').focus();
+        
+        sa_event('btn_press', {
+            'btn': 'search_clear'
+        });
+    });
+
+    // Show/hide clear button based on input
+    function toggleClearButton() {
+        if ($input.val().trim()) {
+            $clearBtn.fadeIn();
+        } else {
+            $clearBtn.fadeOut('fast');
+        }
+    }
+
+    // Initially hide the clear button
+    $clearBtn.hide();
 
     let fuse;
     let buildingList = [];
@@ -77,6 +99,9 @@ $(document).ready(function() {
         const queryLower = sanitizedQuery.toLowerCase();
         const $results = $('.search-results');
         $results.empty();
+        
+        // Toggle clear button visibility
+        toggleClearButton();
         
         // Hide recommendations and recent searches when user starts typing
         if (sanitizedQuery) {
