@@ -254,6 +254,14 @@ $(document).ready(function() {
         return stored ? JSON.parse(stored) : [];
     }
     
+    function removeRecentSearch(itemToRemove) {
+        const recentSearches = getRecentSearches();
+        const filtered = recentSearches.filter(item => 
+            !(item.name === itemToRemove.name && item.category === itemToRemove.category)
+        );
+        localStorage.setItem('recentSearches', JSON.stringify(filtered));
+    }
+    
     function populateRecentSearches() {
         const $searchRecents = $('.search-recents');
         const $searchRecentsWrapper = $('.search-recents-wrapper');
@@ -278,18 +286,46 @@ $(document).ready(function() {
                 icon = '<i class="fa-solid fa-bus-simple" style="color: var(--theme-hidden-route-col)"></i>';
             }
             
-            const $recentItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important;">${icon}<div>${item.name}</div></div>`);
-            $recentItem.click(function() {
-                closeSearch();
-                showBuildingInfo(item);
-                map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
+            const $recentItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important; position: relative;">
+                ${icon}
+                <div style="flex: 1;">${item.name}</div>
+                <button class="recent-remove-btn" type="button" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; opacity: 0.7; transition: opacity 0.2s;">×</button>
+            </div>`);
+            
+            // Handle click on the main item (not the remove button)
+            $recentItem.click(function(e) {
+                if (!$(e.target).hasClass('recent-remove-btn')) {
+                    closeSearch();
+                    showBuildingInfo(item);
+                    map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
 
+                    sa_event('btn_press', {
+                        'btn': 'recent_search_selected',
+                        'result': item.name,
+                        'category': item.category
+                    });
+                }
+            });
+            
+            // Handle remove button click
+            $recentItem.find('.recent-remove-btn').click(function(e) {
+                e.stopPropagation(); // Prevent triggering the main item click
+                removeRecentSearch(item);
+                populateRecentSearches(); // Refresh the list
+                
                 sa_event('btn_press', {
-                    'btn': 'recent_search_selected',
+                    'btn': 'recent_search_removed',
                     'result': item.name,
-                    'category': item.category || 'unknown'
+                    'category': item.category
                 });
             });
+            
+            // Hover effects for remove button
+            $recentItem.find('.recent-remove-btn').hover(
+                function() { $(this).css('opacity', '1'); },
+                function() { $(this).css('opacity', '0.7'); }
+            );
+            
             $searchRecents.append($recentItem);
         });
     }
