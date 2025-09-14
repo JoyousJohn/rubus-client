@@ -11,9 +11,17 @@ $(document).ready(function() {
         $('.search-wrapper').show();
         $input.trigger('input').focus();
         
-        // Populate search recommendations and recent searches
-        populateSearchRecommendations();
-        populateRecentSearches();
+        const hasInput = $input.val().trim();
+        
+        if (hasInput) {
+            // Hide recommendations and recent searches when there's input
+            $('.search-recs-wrapper').hide();
+            $('.search-recents-wrapper').hide();
+        } else {
+            // Populate search recommendations and recent searches when no input
+            populateSearchRecommendations();
+            populateRecentSearches();
+        }
 
         sa_event('btn_press', {
             'btn': 'search'
