@@ -1822,11 +1822,13 @@ function populateBusBreaks(busBreakData) {
 
     if (!busBreakData || busBreakData.error) {
         $('.bus-breaks').empty();
-        $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
+        // $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
+        $('.past-breaks-wrapper').hide();
         $('.show-more-breaks, .show-all-breaks').hide();
         return;
     }
 
+    $('.past-breaks-wrapper').show();
     const breakDiv = $('.bus-breaks');
     breakDiv.empty(); // Clear existing breaks before adding new ones
     
@@ -1937,7 +1939,8 @@ function populateBusBreaks(busBreakData) {
 
     if (breakCount === 0) {
         $('.bus-breaks').children().slice(0, 3).remove();
-        $('.bus-breaks').append(`<div class="no-breaks text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
+        // $('.bus-breaks').append(`<div class="no-breaks text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
+        $('.past-breaks-wrapper').hide();
         $('.show-more-breaks').hide();
         $('.show-all-breaks').click(function() { $('.no-breaks').remove(); });
         $('.show-all-breaks').text("Show Stops");
