@@ -1805,6 +1805,7 @@ function updateNextStopsMaxHeight() {
 }
 
 function populateBusBreaks(busBreakData) {
+    const MAX_INITIAL_BREAKS = 7; // Maximum number of breaks shown initially
 
     if (!busBreakData || busBreakData.error) {
         $('.bus-breaks').empty();
@@ -1840,7 +1841,7 @@ function populateBusBreaks(busBreakData) {
             extraClass += 'none';
         }
 
-        if (breakCount >= 7) {
+        if (breakCount >= MAX_INITIAL_BREAKS) {
             extraClass += ' none';
         }
 
@@ -1906,8 +1907,19 @@ function populateBusBreaks(busBreakData) {
         $('.bus-quickness-breakdown-wrapper').hide();
     }
 
+    // Show "Show All Breaks" button only if there are more long breaks than the limit
+    const totalLongBreaks = busBreakData.filter(breakItem => breakItem.break_duration > 180).length;
+    if (totalLongBreaks > MAX_INITIAL_BREAKS) {
+        $('.show-more-breaks').show();
+    } else {
+        $('.show-more-breaks').hide();
+    }
+    
+    // Show "Show All Stops" button if there are more stops than just the long breaks shown
     if (breakCount !== busBreakData.length) {
-        $('.show-more-breaks, .show-all-breaks').show();
+        $('.show-all-breaks').show();
+    } else {
+        $('.show-all-breaks').hide();
     }
 
     if (breakCount === 0) {
@@ -1920,10 +1932,6 @@ function populateBusBreaks(busBreakData) {
     } else {
         $('.show-all-breaks').text("Show All Stops (Slow)");
     }
-
-
-    // eventually find a way to count breaks vs stops, probably by counting ivs with .long-break, and only show .show-more-breaks if this number is not 7, or whatever var i set to max def visible breaks
-
 }
 
 
