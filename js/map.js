@@ -1596,7 +1596,8 @@ function popInfo(busId, resetCampusFontSize) {
                     console.log("I'm amazed this actually happened, wow"); // encountered this 4/19/2025 six:38 pm at livi dining
                     return;
                 }
-                const prevStopId = i === 0 ? sortedStops[sortedStops.length - 1] : sortedStops[i-1]
+                // Use actual approach prev stop for the first occurrence of 3 to avoid picking the next-loop leg
+                const prevStopId = (i === 0 && busData[busId]['prevStopId']) ? busData[busId]['prevStopId'] : (i === 0 ? sortedStops[sortedStops.length - 1] : sortedStops[i-1])
                 const etaSecs = getETAForStop(busId, 3, prevStopId);
                 eta = Math.round(((etaSecs || 0) + 10)/secondsDivisor);
             } else {
