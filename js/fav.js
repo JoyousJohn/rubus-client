@@ -74,10 +74,54 @@ $('.bus-star').click(function() {
 
         if (shownRoute && shownRoute === 'fav') {
             busMarkers[currentBusId].getElement().style.display = 'none';
-            $('.bus-info-popup').hide();
-            popupBusId = null;
-            if (!favRoutes.has(busData[currentBusId].route)) {
-                polylines[busData[currentBusId].route].setStyle({ opacity: 0 });
+            
+            hideInfoBoxes();
+            
+            // Show only the remaining favorited buses and their polylines
+            const visibleBounds = L.latLngBounds();
+            
+            for (const polyline in polylines) {
+                if (!favRoutes.has(polyline)) {
+                    polylines[polyline].setStyle({ opacity: 0});
+                } else {
+                    if (!map.hasLayer(polylines[polyline])) {
+                        polylines[polyline].addTo(map);
+                    }
+                    polylines[polyline].setStyle({ opacity: 1 });
+                    visibleBounds.extend(polylines[polyline].getBounds());
+                }
+            }
+            for (const marker in busMarkers) {
+                const busId = parseInt(marker);
+                const isFav = favBuses.includes(busId);
+                const isCurrentCampus = routesByCampus[busData[busId].route] === selectedCampus;
+                
+                if (!isFav || !isCurrentCampus) {
+                    busMarkers[marker].getElement().style.display = 'none';
+                } else {
+                    busMarkers[marker].getElement().style.display = '';
+                }
+            }
+            
+            $('[stop-eta]').text('').hide();
+            
+            // Fit map bounds to show remaining favorite polylines
+            if (visibleBounds.isValid()) {
+                map.fitBounds(visibleBounds);
+            } else {
+                // No favorite routes left, show campus bounds
+                map.fitBounds(bounds[selectedCampus]);
+            }
+            
+            // Hide stops except those belonging to remaining favorite routes
+            const stopIdsForExcludedRoutes = Array.from(favRoutes).flatMap(route => stopLists[route] || []);
+            for (const polyline in polylines) {
+                const stopIdsForRoute = stopLists[polyline];
+                stopIdsForRoute.forEach(stopId => {
+                    if (!stopIdsForExcludedRoutes.includes(stopId)) {
+                        busStopMarkers[stopId].remove();
+                    }
+                });
             }
         }
 
