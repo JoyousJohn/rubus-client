@@ -54,14 +54,25 @@ function populateRouteSelectors(allActiveRoutes) {
         let $routeElm;
 
         if (route === 'fav') {
-            $routeElm = $(`<div class="route-selector flex justify-center align-center" routeName="${route}" style="padding: 0.5rem; aspect-ratio: 1;"><i class="fa-solid fa-star"></i></div>`).css('background-color', 'gold')  
+            $routeElm = $(`<div class="route-selector flex justify-center align-center" routeName="${route}" style="padding: 0.5rem; aspect-ratio: 1;"><i class="fa-solid fa-star"></i></div>`).css('background-color', 'gold')
         } else {
             $routeElm = $(`<div class="route-selector" routeName="${route}">${routeFormatted.toUpperCase()}</div>`)  
         }
 
         let color = 'darkgray'
 
-        if (knownRoutes.includes(route)) {
+        if (route === 'fav') {
+            color = 'gold'; // Keep fav route selector gold
+            
+            // Bind minimal handler for favorites selector using existing logic
+            $routeElm.on('click touchend', function(event) {
+                event.preventDefault();
+                if (!panelRoute) {
+                    toggleRouteSelectors('fav');
+                    toggleFavorites();
+                }
+            });
+        } else if (knownRoutes.includes(route)) {
             color = colorMappings[route]
 
             let initialX; // Declare initialX outside to access it later

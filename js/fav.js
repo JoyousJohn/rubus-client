@@ -60,7 +60,12 @@ $('.bus-star').click(function() {
         let favRoutes = new Set([]);
         favBuses.forEach(favId => {
             if (busData[favId]) {
-                favRoutes.add(busData[favId].route);
+                // Only include favorites from the current campus
+                const favRoute = busData[favId].route;
+                const favCampus = routesByCampus[favRoute];
+                if (favCampus === selectedCampus) {
+                    favRoutes.add(favRoute);
+                }
             }
         });
 
@@ -103,6 +108,13 @@ async function populateFavs(popSelectors = true) {
 
     favBuses.forEach(favId => {
         if (busData[favId]) { // RACE CONDITION SOMEWHERE!!!
+            
+            // Only show favorites that belong to the current campus
+            const favRoute = busData[favId].route;
+            const favCampus = routesByCampus[favRoute];
+            if (favCampus !== selectedCampus) {
+                return; // Skip this favorite as it doesn't belong to current campus
+            }
 
             // console.log(`${favId} in `)
             // console.log(busData[favId])
@@ -150,7 +162,12 @@ function toggleFavorites() {
         let favRoutes = new Set([]);
         favBuses.forEach(busId => {
             if (busData[busId]) {
-                favRoutes.add(busData[busId].route);
+                // Only include favorites from the current campus
+                const favRoute = busData[busId].route;
+                const favCampus = routesByCampus[favRoute];
+                if (favCampus === selectedCampus) {
+                    favRoutes.add(favRoute);
+                }
             }
         });
 
@@ -169,7 +186,11 @@ function toggleFavorites() {
             }
         }
         for (const marker in busMarkers) {
-            if (!favBuses.includes(parseInt(marker))) {
+            const busId = parseInt(marker);
+            const isFav = favBuses.includes(busId);
+            const isCurrentCampus = routesByCampus[busData[busId].route] === selectedCampus; // don't think we need busData[busId] && 
+            
+            if (!isFav || !isCurrentCampus) {
                 busMarkers[marker].getElement().style.display = 'none';
             } else {
                 busMarkers[marker].getElement().style.display = '';
