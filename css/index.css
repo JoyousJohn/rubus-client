@@ -423,7 +423,7 @@ html, body {
     overflow-x: hidden;
 }
 
-.info-extra {
+.info-extra, .info-overdue-break {
     font-size: 1.5rem;
     color: var(--theme-extra);
     line-height: 0.7;

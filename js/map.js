@@ -1828,7 +1828,40 @@ function populateBusBreaks(busBreakData) {
         // $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
         $('.past-breaks-wrapper, .bus-history').hide();
         $('.show-more-breaks, .show-all-breaks').hide();
+        $('.info-overdue-break').hide();
         return;
+    }
+
+    // Calculate time since last long break (duration > 180 seconds)
+    const lastBreakMin = (() => {
+        if (busBreakData && busBreakData.length > 0) {
+            // Filter for long breaks only (duration > 180 seconds)
+            const longBreaks = busBreakData.filter(breakItem => breakItem.break_duration > 180);
+            
+            if (longBreaks.length > 0) {
+                // Get the most recent long break
+                const lastLongBreak = longBreaks[longBreaks.length - 1];
+                if (lastLongBreak && lastLongBreak.time_departed) {
+                    const lastBreakTime = new Date(lastLongBreak.time_departed.replace(/\.\d+/, ''));
+                    const currentTime = new Date();
+                    const diffInMs = currentTime - lastBreakTime;
+                    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+                    console.log(`Last long break was ${diffInMinutes} minutes ago`);
+                    return diffInMinutes;
+                }
+            } else {
+                console.log('No long breaks found in data');
+            }
+        }
+        console.log('No break data available');
+        return null;
+    })();
+
+    // Update overdue break display
+    if (lastBreakMin && lastBreakMin > 120) {
+        $('.info-overdue-break').show().text(`Last break ${Math.floor(lastBreakMin / 60)}+ hours ago!`);
+    } else {
+        $('.info-overdue-break').hide();
     }
 
     $('.past-breaks-wrapper').show();
