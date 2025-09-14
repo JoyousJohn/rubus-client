@@ -12,6 +12,7 @@ let popupBuildingLatLng;
 let bikeRackMarkers = [];
 
 let mapDragged = false;
+let shouldSetMaxBoundsAfterDrag = false;
 
 // settings vars
 let showETAsInSeconds = false;
@@ -113,7 +114,7 @@ $(document).ready(function() {
                 if (map.getZoom() < minZoomLevel) {
                     map.setZoom(minZoomLevel);
                 }
-                map.setMaxBounds(bounds[selectedCampus]);
+                shouldSetMaxBoundsAfterDrag = true;
             }
 
             hideInfoBoxes();
@@ -209,6 +210,12 @@ $(document).ready(function() {
 
     map.on('dragend', function() {
         map.scrollWheelZoom.enable();
+        
+        // Set max bounds after user finishes dragging after unfocussing on a bus
+        if (shouldSetMaxBoundsAfterDrag) {
+            map.setMaxBounds(bounds[selectedCampus]);
+            shouldSetMaxBoundsAfterDrag = false; // Reset flag after use
+        }
     });
 
     try { if (typeof initLocationWatchForRiding === 'function') { initLocationWatchForRiding(); } } catch (e) {}
