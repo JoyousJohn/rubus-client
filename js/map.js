@@ -1371,6 +1371,8 @@ let savedCenter;
 let savedZoom;
 
 function popInfo(busId, resetCampusFontSize) {
+
+    $('.bus-ridership-wrapper').show();
     // Only destroy charts if showing a different bus
     if (currentRidershipChartBusId !== busId) {
         for (const existingBusId in busRidershipCharts) {
@@ -1982,11 +1984,32 @@ let busRiderships = {};
 let busRidershipCharts = {};
 let currentRidershipChartBusId = null;
 
+function shouldShowCapacityChart(busId) {
+    const timeRiderships = busRiderships[busId];
+    if (!timeRiderships || Object.keys(timeRiderships).length === 0) {
+        return false;
+    }
+    
+    const values = Object.values(timeRiderships);
+    const allSame = values.every(value => value === values[0]);
+    return !allSame; // Show chart only if values are different
+}
+
 function updateHistoricalCapacity(busId) {
     // Only proceed if this is a new bus selection or data needs refresh
     const currentMinute = new Date().getMinutes();
     const shouldRefresh = currentMinute % 5 === 1 && !busRiderships.lastUpdate || 
                          (currentMinute % 5 === 1 && new Date().getTime() - busRiderships.lastUpdate > 60000);
+    
+    const handleChartUpdate = () => {
+        const shouldShow = shouldShowCapacityChart(busId);
+        if (shouldShow) {
+            createBusRidershipChart(busId);
+            currentRidershipChartBusId = busId;
+        } else {
+            $('.bus-ridership-wrapper, .bus-history').hide();
+        }
+    };
                          
     if (Object.keys(busRiderships).length === 0 || shouldRefresh) {
         fetch('https://demo.rubus.live/bus_ridership')
@@ -1996,16 +2019,14 @@ function updateHistoricalCapacity(busId) {
                 busRiderships = data;
                 busRiderships.lastUpdate = new Date().getTime();
                 if (!busRidershipCharts[busId] || dataChanged) {
-                    createBusRidershipChart(busId);
-                    currentRidershipChartBusId = busId;
+                    handleChartUpdate();
                 }
             })
             .catch(error => {
                 console.error('Error fetching bus ridership data:', error);
             });
     } else if (!busRidershipCharts[busId]) {
-        createBusRidershipChart(busId);
-        currentRidershipChartBusId = busId;
+        handleChartUpdate();
     }
 }
 
