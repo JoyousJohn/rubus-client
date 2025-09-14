@@ -337,8 +337,6 @@ function loadBuildings() {
         });
 }
 
-document.addEventListener('rubus-map-created', loadBuildings);
-
 // Add click handler for buildings button
 $(document).ready(function() {
     $('.buildings-btn').click(function() {
@@ -354,6 +352,10 @@ $(document).ready(function() {
             window.buildingsLayer = null;
             highlightedBuildingLayer = null;
             $('.buildings-btn').removeClass('active');
+            
+            settings['toggle-show-buildings'] = false;
+            localStorage.setItem('settings', JSON.stringify(settings));
+            
             sa_event('btn_press', {
                 'btn': 'buildings_toggle',
                 'visible': false
@@ -364,6 +366,11 @@ $(document).ready(function() {
                 return;
             }
             loadBuildings();
+            
+            // Save state to settings
+            settings['toggle-show-buildings'] = true;
+            localStorage.setItem('settings', JSON.stringify(settings));
+            
             sa_event('btn_press', {
                 'btn': 'buildings_toggle',
                 'visible': true
@@ -373,4 +380,23 @@ $(document).ready(function() {
     
     // Initial button state reflects current layer
     if (buildingsLayer) { $('.buildings-btn').addClass('active'); } else { $('.buildings-btn').removeClass('active'); }
+});
+
+// Function to restore building layer state from settings
+function restoreBuildingLayerState() {
+    if (settings['toggle-show-buildings'] && !buildingsLayer) {
+        loadBuildings();
+    } else if (!settings['toggle-show-buildings'] && buildingsLayer) {
+        // Hide buildings if they're currently shown but setting is false
+        map.removeLayer(buildingsLayer);
+        buildingsLayer = null;
+        window.buildingsLayer = null;
+        highlightedBuildingLayer = null;
+        $('.buildings-btn').removeClass('active');
+    }
+}
+
+// Listen for settings update to restore building state
+document.addEventListener('rubus-settings-updated', function() {
+    restoreBuildingLayerState();
 });

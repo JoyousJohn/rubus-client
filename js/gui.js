@@ -1151,6 +1151,7 @@ const toggleSettings = [
     'toggle-always-show-second',
     'toggle-show-bike-racks',
     'toggle-disable-fireworks-on-open',
+    'toggle-show-buildings',
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
@@ -1235,6 +1236,7 @@ let defaultSettings = {
     'toggle-always-show-second': false,
     'toggle-show-bike-racks': false,
     'toggle-disable-fireworks-on-open': false,
+    'toggle-show-buildings': true,
     'campus': 'nb',
     
     // dev settings
@@ -1453,6 +1455,9 @@ function updateSettings() {
     if (!localStorage.getItem('timeJoined')) {
         localStorage.setItem('timeJoined', new Date().toISOString());
     }
+
+    // Dispatch event to notify other components that settings are updated
+    document.dispatchEvent(new CustomEvent('rubus-settings-updated'));
 
     getBuildNumber()
 }
