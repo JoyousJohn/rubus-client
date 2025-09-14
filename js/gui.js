@@ -25,10 +25,6 @@ function populateRouteSelectors(allActiveRoutes) {
         if (b === 'undefined') return -1;
         return a.localeCompare(b);
     });
-
-    if ($('.favs > div').length) {
-        routesArray.unshift('fav');
-    }
     
     if (routesArray.includes('wknd2')) {
         routesArray = routesArray.filter(route => route !== 'wknd2');
@@ -37,6 +33,10 @@ function populateRouteSelectors(allActiveRoutes) {
     if (routesArray.includes('wknd1')) {
         routesArray = routesArray.filter(route => route !== 'wknd1');
         routesArray.unshift('wknd1');
+    }
+
+    if ($('.favs > div').length) {
+        routesArray.unshift('fav');
     }
 
     if (routesArray.includes('ftbl')) {
