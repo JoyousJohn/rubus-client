@@ -94,6 +94,10 @@ function openRUBusSocket() {
 
                 if (popupBusId === busId) {
                     startStoppedForTimer(busId);
+                    
+                    if (settings['toggle-distances-line-on-focus']) {
+                        showDistanceLineOnFocus(busId);
+                    }
                 }
 
                 busData[busId].progress = 0;
