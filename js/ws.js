@@ -116,6 +116,11 @@ class BusWebSocketClient {
         // console.log(`[WebSocket] Bus ${busId} position update: ${data.latitude}, ${data.longitude}`);
         busData[busId].rotation = data.course
         busData[busId].capacity = data.paxLoad
+        
+        // Update distance line position marker if this bus is focused
+        if (popupBusId === busId && settings['toggle-distances-line-on-focus']) {
+            updateDistanceLinePositionMarker(busId);
+        }
 
         // Update position history for Bézier curves, but don't reset timing data
         // WebSocket updates are irregular and shouldn't affect animation duration calculations

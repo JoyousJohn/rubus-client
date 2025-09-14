@@ -2246,6 +2246,8 @@ function focusBus(busId) {
 
 // Global variable to store the current distance line layer
 let distanceLineLayer = null;
+// Global variable to store the red dot marker showing bus position on distance line
+let distanceLinePositionMarker = null;
 
 function showDistanceLineOnFocus(busId) {
     // Remove any existing distance line
@@ -2319,6 +2321,9 @@ function showDistanceLineOnFocus(busId) {
     // Add to map
     distanceLineLayer.addTo(map);
     
+    // Update the red dot position marker
+    updateDistanceLinePositionMarker(busId);
+    
     console.log('Showing distance line from stop', fromStopId, 'to stop', toStopId, 'for bus', busId);
 }
 
@@ -2327,6 +2332,50 @@ function removeDistanceLineOnFocus() {
         map.removeLayer(distanceLineLayer);
         distanceLineLayer = null;
     }
+    if (distanceLinePositionMarker) {
+        map.removeLayer(distanceLinePositionMarker);
+        distanceLinePositionMarker = null;
+    }
+}
+
+function findClosestPointOnDistanceLine(busId) {
+    const busLatLng = L.latLng(busData[busId].lat, busData[busId].long);
+    const lineCoordinates = distanceLineLayer.getLatLngs();
+    
+    let minDist = Infinity;
+    let closestPoint = null;
+    
+    // Find closest existing point in the line coordinates (no interpolation)
+    for (let i = 0; i < lineCoordinates.length; i++) {
+        const point = lineCoordinates[i];
+        const distance = busLatLng.distanceTo(point);
+        
+        if (distance < minDist) {
+            minDist = distance;
+            closestPoint = point;
+        }
+    }
+    
+    return closestPoint;
+}
+
+function updateDistanceLinePositionMarker(busId) {
+    const closestPoint = findClosestPointOnDistanceLine(busId);
+    
+    // Remove existing marker
+    if (distanceLinePositionMarker) {
+        map.removeLayer(distanceLinePositionMarker);
+    }
+    
+    // Create new red dot marker
+    distanceLinePositionMarker = L.circleMarker(closestPoint, {
+        radius: 6,
+        fillColor: '#ff0000',
+        color: '#ffffff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map);
 }
 
 function distanceFromLine(busId) {

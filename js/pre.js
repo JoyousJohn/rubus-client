@@ -337,6 +337,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 // Update previousTime when position changes from API polling
                 // This ensures consistent animation timing based on regular polling intervals
                 busData[busId].previousTime = currentTime;
+                
+                // Update distance line position marker if this bus is focused
+                if (popupBusId === busId && settings['toggle-distances-line-on-focus']) {
+                    updateDistanceLinePositionMarker(busId);
+                }
             }
 
             busData[busId].rotation = parseFloat(bus.calculatedCourse); //+ 45
