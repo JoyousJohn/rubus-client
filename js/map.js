@@ -2362,20 +2362,33 @@ function findClosestPointOnDistanceLine(busId) {
 function updateDistanceLinePositionMarker(busId) {
     const closestPoint = findClosestPointOnDistanceLine(busId);
     
+    // Calculate distance from bus to closest point
+    const busLatLng = L.latLng(busData[busId].lat, busData[busId].long);
+    const distanceMeters = busLatLng.distanceTo(closestPoint);
+    const distanceFeet = Math.round(distanceMeters * 3.28084); // Convert meters to feet
+    
     // Remove existing marker
     if (distanceLinePositionMarker) {
         map.removeLayer(distanceLinePositionMarker);
     }
     
-    // Create new red dot marker
-    distanceLinePositionMarker = L.circleMarker(closestPoint, {
-        radius: 6,
-        fillColor: '#ff0000',
-        color: '#ffffff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8
+    // Create new red dot marker with custom HTML tooltip (matching stop ETA pattern)
+    distanceLinePositionMarker = L.marker(closestPoint, {
+        icon: L.divIcon({
+            className: 'custom-distance-marker',
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+            html: `
+                <div class="distance-marker-wrapper">
+                    <div class="distance-dot"></div>
+                    <div class="distance-tooltip" distance-value="${distanceFeet}">${distanceFeet} ft</div>
+                </div>
+            `
+        }),
+        zIndexOffset: 1000
     }).addTo(map);
+    
+    console.log('Created distance line position marker with tooltip:', distanceFeet, 'ft');
 }
 
 function distanceFromLine(busId) {

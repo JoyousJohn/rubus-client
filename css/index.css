@@ -126,6 +126,38 @@ html, body {
     /* border: 1px solid black; */
 }
 
+/* Distance line marker and tooltip styling - matches ETA tooltip styling */
+.custom-distance-marker .distance-marker-wrapper {
+    position: relative;
+    width: 12px;
+    height: 12px;
+}
+
+.custom-distance-marker .distance-dot {
+    width: 12px;
+    height: 12px;
+    background-color: #ff0000;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.custom-distance-marker .distance-tooltip {
+    position: absolute;
+    top: -2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: black;
+    color: white;
+    font-size: 1rem;
+    padding: 1px 4px;
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    white-space: pre;
+    display: block;
+    z-index: 1001;
+}
+
 
 .info-popup-wrapper, .route-panel-wrapper, .buses-panel-wrapper, .all-stops-wrapper, .install-pwa-wrapper, .leave-feedback-wrapper {
     width: 100%;
