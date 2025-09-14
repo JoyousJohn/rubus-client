@@ -51,6 +51,11 @@
     src: url('../lib/Dunkin.otf') format('opentype');
 }
 
+@font-face {
+    font-family: 'blockcraft';
+    src: url('../lib/blockcraft.otf') format('opentype');
+}
+
 body {
     margin: 0;
     height: 100dvh; /* cool unit */
