@@ -185,7 +185,7 @@ $(document).ready(function() {
         updateNextStopsMaxHeight();
     });
     
-    if (!$('.theme-modal').is(':visible')) {
+    if (!$('.theme-modal').is(':visible') && !settings['toggle-disable-fireworks-on-open']) {
         launchFireworks(12);
     }
 

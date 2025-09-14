@@ -454,6 +454,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-disable-fireworks-on-open':
+            // console.log(`Disable Fireworks on Open is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-disable-fireworks-on-open'] = isChecked;
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;

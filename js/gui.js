@@ -1137,6 +1137,7 @@ const toggleSettings = [
     'toggle-stops-above-buses',
     'toggle-always-show-second',
     'toggle-show-bike-racks',
+    'toggle-disable-fireworks-on-open',
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
@@ -1219,6 +1220,7 @@ let defaultSettings = {
     'toggle-stops-above-buses': false,
     'toggle-always-show-second': false,
     'toggle-show-bike-racks': false,
+    'toggle-disable-fireworks-on-open': false,
     'campus': 'nb',
     
     // dev settings
