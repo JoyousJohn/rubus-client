@@ -1597,9 +1597,11 @@ function popInfo(busId, resetCampusFontSize) {
                     return;
                 }
                 const prevStopId = i === 0 ? sortedStops[sortedStops.length - 1] : sortedStops[i-1]
-                eta = Math.round((busETAs[busId][3]['via'][prevStopId] + 10)/secondsDivisor);
+                const etaSecs = getETAForStop(busId, 3, prevStopId);
+                eta = Math.round(((etaSecs || 0) + 10)/secondsDivisor);
             } else {
-                eta = Math.round((busETAs[busId][sortedStops[i]] + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
+                const etaSecs = getETAForStop(busId, sortedStops[i]);
+                eta = Math.round(((etaSecs || 0) + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
             }
 
             if (eta < 0 && !settings['toggle-show-invalid-etas']) {
@@ -2247,7 +2249,8 @@ function isValid(busId) {
     if (!busETAs[busId]) return false;
 
     for (const stopId of stopLists[busData[busId].route]) {
-        if (busETAs[busId][stopId] < 0) {
+        const etaVal = getETAForStop(busId, stopId);
+        if (typeof etaVal === 'number' && etaVal < 0) {
             return false;
         }
     }

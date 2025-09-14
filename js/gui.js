@@ -334,7 +334,7 @@ function updateTooltips(route) {
     
             routeBuses.forEach(busId => {
                 if (busETAs[busId]) {
-                    const eta = busETAs[busId][stopId]
+                    const eta = getETAForStop(busId, stopId)
                     if (eta < lowestETA) {
                         lowestETA = eta;
                         lowestBusId = busId;
@@ -509,17 +509,17 @@ function selectedRoute(route) {
         positiveBuses
             .sort((a, b) => {
                 const getETA = (busId) => {
-                    
-                    if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && busETAs[busId] && busETAs[busId][stopId] && previousStopId) {
+                    if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId) {
                         if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) {
                             return 0;
                         }
-                        // Use the previous stop to determine which 'via' path to use
-                        return busETAs[busId][stopId]['via'][previousStopId] || Infinity;
+                        const val = getETAForStop(busId, stopId, previousStopId);
+                        return (val === undefined) ? Infinity : val;
                     } else if (busData[busId].at_stop && (Array.isArray(busData[busId].stopId) ? stopId === busData[busId].stopId[0] : stopId === busData[busId].stopId)) {
                         return 0;
                     }
-                    return busETAs[busId] ? busETAs[busId][stopId] : Infinity;
+                    const val = getETAForStop(busId, stopId);
+                    return (val === undefined) ? Infinity : val;
                 };
                 return Math.round(getETA(a) / 60) - Math.round(getETA(b) / 60);
             })
@@ -580,11 +580,10 @@ function selectedRoute(route) {
                         return;
                     } else {
                         $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
-                        if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId && busETAs[busId][stopId]) {
-                            // Use the previous stop to determine which 'via' path to use
-                            eta = busETAs[busId][stopId]['via'][previousStopId];
+                        if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId) {
+                            eta = getETAForStop(busId, stopId, previousStopId);
                         } else {
-                            eta = busETAs[busId][stopId];
+                            eta = getETAForStop(busId, stopId);
                         }
                     }
 

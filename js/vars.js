@@ -46,3 +46,26 @@ function makeBusesByRoutes() {
         busesByRoutes[campus][route].push(bus);
     }
 }
+
+// Special-route handling for SAC North (stop 3)
+function isSpecialRoute(route) {
+    return route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1';
+}
+
+// Unified ETA accessor that hides schema differences
+function getETAForStop(busId, stopId, previousStopId) {
+    if (!busETAs || !busETAs[busId]) return undefined;
+    const route = busData && busData[busId] ? busData[busId].route : undefined;
+    const special = isSpecialRoute(route);
+    if (special && stopId === 3) {
+        const viaMap = busETAs[busId][3] && busETAs[busId][3]['via'];
+        if (!viaMap) return undefined;
+        if (previousStopId !== undefined && previousStopId !== null) {
+            return viaMap[previousStopId];
+        }
+        const values = Object.values(viaMap).filter(v => typeof v === 'number');
+        if (!values.length) return undefined;
+        return Math.min.apply(null, values);
+    }
+    return busETAs[busId][stopId];
+}

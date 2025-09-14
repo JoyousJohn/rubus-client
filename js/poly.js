@@ -231,7 +231,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                         })
                     }
                 } else {
-                    const etaSecs = busETAs[busId][stopId]
+                    const etaSecs = getETAForStop(busId, stopId)
                     if (etaSecs !== undefined) {
                         servicingEntries.push({
                             busId: busId,

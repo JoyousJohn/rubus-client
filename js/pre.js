@@ -527,6 +527,7 @@ function updateTimeToStops(busIds) {
         }
 
         const busRoute = busData[busId].route
+        const isSpecialRoute = (busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1')
         const nextStop = getNextStopId(busRoute, stopId)
         busData[busId].next_stop = nextStop
         // console.log(`next stop for bus ${busId} is ${nextStop}`)
@@ -534,6 +535,7 @@ function updateTimeToStops(busIds) {
         let routeStops = stopLists[busRoute]
         // console.log(routeStops.length)
         let sortedStops = []
+        let via; // capture approach leg only when special-case applies
 
         const nextStopIndex = routeStops.indexOf(nextStop);
         if (nextStopIndex !== -1) {
@@ -662,9 +664,14 @@ function updateTimeToStops(busIds) {
 
                 // console.log(thisStopId)
 
-                if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1') && thisStopId === 3) { // special case
-                    if (!busETAs[busId][thisStopId]) busETAs[busId][thisStopId] = {'via': {}}
-                    busETAs[busId][thisStopId]['via'][prevStopId] = Math.round(currentETA)
+                if (isSpecialRoute && thisStopId === 3) { // special handling for SAC North
+                    // Determine the approach leg for this occurrence of 3
+                    const approachPrev = (i === 0 && busData[busId] && busData[busId]['prevStopId']) ? busData[busId]['prevStopId'] : prevStopId;
+                    if (approachPrev !== undefined) {
+                        if (!busETAs[busId][thisStopId]) busETAs[busId][thisStopId] = {'via': {}}
+                        busETAs[busId][thisStopId]['via'][approachPrev] = Math.round(currentETA)
+                    }
+                    // Do not overwrite stop 3 with a numeric ETA on special routes
                 } else {
                     busETAs[busId][thisStopId] = Math.round(currentETA)
                 }
