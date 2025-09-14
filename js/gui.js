@@ -1830,7 +1830,6 @@ function selectTheme(theme) {
 
         // Update the global attributes on confirm
         document.documentElement.setAttribute('data-selected-theme', selectedTheme);
-        document.documentElement.setAttribute('theme', activeTheme);
         changeMapStyle(activeTheme);
         launchFireworks(12);
         return;
@@ -1852,11 +1851,7 @@ function selectTheme(theme) {
     
     // Immediately update the global theme attributes and styles.
     document.documentElement.setAttribute('data-selected-theme', theme);
-    document.documentElement.setAttribute('theme', previewTheme);
-
-    if (!tileLayer.options.id.includes('satellite')) {
-        changeMapStyle(previewTheme);
-    }
+    changeMapStyle(previewTheme);
 }
 
 window.continueToCampusModal = function() {

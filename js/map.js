@@ -507,6 +507,11 @@ function panout() {
 function changeMapStyle(newStyle) {
 
     document.documentElement.setAttribute('theme', newStyle);
+    
+    // Early return if satellite mode is enabled - don't change map tiles
+    if (currentTileLayerType === 'satellite') {
+        return;
+    }
 
     if (newStyle === 'light') {
         newStyle = 'streets-v11';
@@ -1859,7 +1864,7 @@ function populateBusBreaks(busBreakData) {
 
     // Update overdue break display
     if (lastBreakMin && lastBreakMin > 120) {
-        $('.info-overdue-break').show().text(`Last break ${Math.floor(lastBreakMin / 60)}+ hours ago!`);
+        $('.info-overdue-break').slideDown().html(`<i class="fa-solid fa-clock"></i> Last break ${Math.floor(lastBreakMin / 60)}+ hours ago!`);
     } else {
         $('.info-overdue-break').hide();
     }
