@@ -422,8 +422,15 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     if (waits[stopId]) {
         const avgWait = waits[stopId];
-        const waitStr = `${Math.floor(avgWait / 60)}m ${avgWait % 60}s`;
-    
+        const mins = Math.floor(avgWait / 60);
+        const secs = avgWait % 60;
+        let waitStr = '';
+        if (mins >= 1) {
+            waitStr = `${mins}m ${secs}s`;
+        } else {
+            waitStr = `${secs}s`;
+        }
+
         if (!jQuery.isEmptyObject(busData)) {
             $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`).show();
         }

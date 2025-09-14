@@ -213,7 +213,7 @@ $(document).ready(function() {
         
         // Set max bounds after user finishes dragging after unfocussing on a bus
         if (shouldSetMaxBoundsAfterDrag) {
-            map.setMaxBounds(bounds[selectedCampus]);
+            map.setMaxBounds(expandBounds(bounds[selectedCampus], 2));
             shouldSetMaxBoundsAfterDrag = false; // Reset flag after use
         }
     });
@@ -2415,7 +2415,7 @@ function distanceFromLine(busId) {
     }
     
     const distanceMiles = minDist * 0.000621371 * 5280;
-    console.log(`Bus ${busId} is ${distanceMiles.toFixed(3)} ft from its route`);
+    // console.log(`Bus ${busId} is ${distanceMiles.toFixed(3)} ft from its route`);
     return (distanceMiles > 500)
 }
 
