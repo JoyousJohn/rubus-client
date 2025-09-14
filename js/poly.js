@@ -674,6 +674,8 @@ async function popStopInfo(stopId) {
         $('.stop-info-back').hide();
     }
 
+    $('.stop-info-use-route-selectors-notice').hide();
+
     $('.stop-info-popup').stop(true, true).show();
 
     $('.stop-info-popup-inner').scrollTop(0);

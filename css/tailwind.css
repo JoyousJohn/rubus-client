@@ -234,6 +234,8 @@
 
 .ml-2rem { margin-left: 2rem; }
 
+.mx-0 { margin-left: 0; margin-right: 0; }
+
 .mx-1rem { margin-left: 1rem; margin-right: 1rem; }
 
 .mx-3rem { margin-left: 3rem; margin-right: 3rem; }
@@ -241,6 +243,8 @@
 .mx-5rem { margin-left: 5rem; margin-right: 5rem; }
 
 .mx-16rem { margin: 0 16rem; }
+
+.my-0p5rem { margin-top: 0.5rem; margin-bottom: 0.5rem; }
 
 .my-2rem { margin-top: 2rem; margin-bottom: 2rem; }
 

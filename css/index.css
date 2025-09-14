@@ -696,6 +696,12 @@ html, body {
     font-weight: bold;
 }
 
+.stop-info-use-route-selectors-notice {
+    border: 1px solid green;
+    background-color: rgb(166 232 166);
+    color: green;
+}
+
 .no-buses, .closest-stop {
     color: white;
     background-color: black;

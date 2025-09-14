@@ -282,6 +282,8 @@ function toggleRouteSelectors(route) {
 
     }
 
+    $('.stop-info-use-route-selectors-notice').slideUp('fast');
+
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
 
