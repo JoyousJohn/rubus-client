@@ -113,7 +113,7 @@ $(document).ready(function() {
                 if (map.getZoom() < minZoomLevel) {
                     map.setZoom(minZoomLevel);
                 }
-                // map.setMaxBounds(bounds[selectedCampus]);
+                map.setMaxBounds(bounds[selectedCampus]);
             }
 
             hideInfoBoxes();
@@ -1762,7 +1762,7 @@ function popInfo(busId, resetCampusFontSize) {
 
     if (!isDesktop) {
         const expandedBounds = expandBounds(bounds[selectedCampus], 2.8);
-        // map.setMaxBounds(expandedBounds);
+        map.setMaxBounds(expandedBounds);
         map.setMinZoom(9);
     }
 
