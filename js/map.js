@@ -1568,6 +1568,32 @@ function popInfo(busId, resetCampusFontSize) {
                 .concat(routeStops.slice(0, nextStopIndex));
         }
 
+        // Special-case ordering for SAC NB (stop 3) approach legs on weekend/all-style routes
+        if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'summer1') && nextStop === 3) {
+            let approachPrev = busData[busId]['prevStopId'];
+            if (!approachPrev) {
+                const viaMap = busETAs && busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
+                const via22 = viaMap && (viaMap['22'] ?? viaMap[22]);
+                const via2 = viaMap && (viaMap['2'] ?? viaMap[2]);
+                if (typeof via22 === 'number' && typeof via2 === 'number') {
+                    approachPrev = via22 <= via2 ? 22 : 2;
+                }
+            }
+            if (approachPrev === 2) {
+                // Base is [3, ..., 22, 1, 2]; insert second 3 between 22 and 1
+                const idx22 = sortedStops.indexOf(22);
+                if (idx22 !== -1) {
+                    const head = sortedStops.slice(0, idx22 + 1); // includes 22
+                    const tail = sortedStops.slice(idx22 + 1);     // typically [1,2]
+                    sortedStops = head.concat([3]).concat(tail);
+                }
+            } else if (approachPrev === 22) {
+                // Move [1,2] right after first 3 and add a second 3 before continuing
+                const afterFirst3 = sortedStops.slice(1).filter(s => s !== 1 && s !== 2);
+                sortedStops = [3, 1, 2, 3].concat(afterFirst3);
+            }
+        }
+
         if (busData[busId].at_stop && !(closestStopId && closestStopId === busData[busId].stopId)) {
 
             let stopId = busData[busId].stopId
@@ -1864,7 +1890,7 @@ function populateBusBreaks(busBreakData) {
 
     if (lastBreakMin && lastBreakMin > 120) {
         // Only show if actually overdue (more than 2 hours)
-        $('.info-overdue-break').slideDown().html(`<i class="fa-solid fa-clock"></i> Last break ${Math.floor(lastBreakMin / 60)}+ hours ago!`);
+        $('.info-overdue-break').slideDown().html(`<i class="fa-solid fa-clock"></i> ${Math.floor(lastBreakMin / 60)} HOURS SINCE BREAK`);
     } else if (settings['toggle-always-show-break-overdue']) {
         const hours = Math.floor(lastBreakMin / 60);
         const minutes = lastBreakMin % 60;

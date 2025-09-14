@@ -429,6 +429,10 @@ html, body {
     line-height: 0.7;
 }
 
+.info-overdue-break {
+    font-size: 1.3rem !important;
+}
+
 .info-capacity {
     color: var(--theme-color);
 }
