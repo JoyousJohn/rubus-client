@@ -355,8 +355,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             busData[busId].atDepot = isAtDepot(bus.longitude, bus.latitude);
 
             if (routesByCampus[busData[busId].route] === selectedCampus) {
-                plotBus(busId, immediatelyUpdate);
-                if (immediatelyUpdate) {
+                plotBus(busId, shouldImmediateUpdate);
+                if (shouldImmediateUpdate) {
                     busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
                 }   
             }
@@ -397,7 +397,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
         }
 
-        if (immediatelyUpdate) {
+        if (shouldImmediateUpdate) {
             immediatelyUpdateBusDataPost();
         }
 
