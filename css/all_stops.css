@@ -6,6 +6,11 @@
     overflow-y: scroll;
 }
 
+.all-stops-selected-menu {
+    background-color: rgb(53, 101, 248) !important;
+    color: white !important;
+}
+
 .all-stops-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

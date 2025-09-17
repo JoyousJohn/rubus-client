@@ -583,49 +583,62 @@
         </div>
     </div>
 
-    <div class="buses-panel-wrapper justify-center">
-        <div class="ridership-title">Network Overview</div>
-        <div class="flex justify-center">
-            <div class="live-overview">LIVE</div>
-        </div>
-        <div class="flex justify-center">
-            <div class="buses-overview-grid grid">
-                <div class="bus-overview-heading"></div>
-                <div class="bus-overview-heading">Ridership<br>Estimate</div>
-                <div class="bus-overview-heading">Loop<br>Time</div>
-
-                <div class="bus-overview-footer total">Total</div>
-                <div class="bus-overview-header bus-overview-footer total-ridership"></div>
-
-            </div>
-        </div>
-
-        <div class="ridership-super-wrapper select-none">
+    <div class="all-stops-wrapper none">
+        <div class="grid grid-cols-2 gap-x-1rem text-1p5rem m-1rem center">
             <div class="flex justify-center">
-                <div class="ridership-history-title center mt-3rem">Ridership Today</div>
+                <div class="flex justify-center align-center gap-x-0p5rem all-stops-selected-menu w-min px-1rem py-0p5rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="$('.buses-panel-wrapper').hide(); $('.all-stops-inner').show(); $('.all-stops-selected-menu').removeClass('all-stops-selected-menu'); $(this).addClass('all-stops-selected-menu')">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <div>Stops</div>
+                </div>
             </div>
-            <div class="ridership-chart-wrapper select-none">
-                <canvas id="ridership-chart"></canvas>
+            <div class="flex justify-center">
+                <div class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-0p5rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="busesOverview(); $('.all-stops-inner').hide(); $('.all-stops-selected-menu').removeClass('all-stops-selected-menu'); $(this).addClass('all-stops-selected-menu')">
+                    <i class="fa-solid fa-bus"></i>
+                    <div>Network</div>
+                </div>
+            </div>
+        </div>
+        <div class="all-stops-inner p-2rem mb-8rem"></div>
+        <div class="buses-panel-wrapper justify-center">
+            <div class="ridership-title">Network Overview</div>
+            <div class="flex justify-center">
+                <div class="live-overview">LIVE</div>
+            </div>
+            <div class="flex justify-center">
+                <div class="buses-overview-grid grid">
+                    <div class="bus-overview-heading"></div>
+                    <div class="bus-overview-heading">Ridership<br>Estimate</div>
+                    <div class="bus-overview-heading">Loop<br>Time</div>
+    
+                    <div class="bus-overview-footer total">Total</div>
+                    <div class="bus-overview-header bus-overview-footer total-ridership"></div>
+    
+                </div>
             </div>
     
-            <div class="flex justify-evenly">
-                <div class="ridership-avg"></div>
-                <div class="ridership-max"></div>
+            <div class="ridership-super-wrapper select-none">
+                <div class="flex justify-center">
+                    <div class="ridership-history-title center mt-3rem">Ridership Today</div>
+                </div>
+                <div class="ridership-chart-wrapper select-none">
+                    <canvas id="ridership-chart"></canvas>
+                </div>
+        
+                <div class="flex justify-evenly">
+                    <div class="ridership-avg"></div>
+                    <div class="ridership-max"></div>
+                </div>
             </div>
+    
+            <div class="busy-wrapper flex flex-col align-center mb-8rem mt-5rem">
+                <div class="flex justify-center">
+                    <div class="ridership-history-title wait-title center pointer" onclick="$('.wait-times').slideDown(); $('.wait-title').text('Bus Wait Times');">Show Bus Wait Times</div>
+                </div>
+                <div class="wait-times gap-1rem none">
+                </div>
+            </div>
+            <div class="buses-close justify-center align-center">X</div>
         </div>
-
-        <div class="busy-wrapper flex flex-col align-center mb-8rem mt-5rem">
-            <div class="flex justify-center">
-                <div class="ridership-history-title wait-title center pointer" onclick="$('.wait-times').slideDown(); $('.wait-title').text('Bus Wait Times');">Show Bus Wait Times</div>
-            </div>
-            <div class="wait-times gap-1rem none">
-            </div>
-        </div>
-        <div class="buses-close justify-center align-center">X</div>
-    </div>
-
-    <div class="all-stops-wrapper none">
-        <div class="all-stops-inner p-2rem mb-8rem"></div>
         <div class="flex all-stops-close justify-center align-center">X</div>
     </div>
 
@@ -1380,7 +1393,7 @@
             <div class="left-btns flex flex-col" style="row-gap: 0.8rem">
                 <div class="buildings-btn"><i class="fa-solid fa-building"></i></div>
                 <div class="satellite-btn"><i class="fa-solid fa-earth-americas text-2rem"></i></div>
-                <div class="buses-btn none" onclick="busesOverview()"><i class="fa-solid fa-bus"></i></div>
+                <!-- <div class="buses-btn none" onclick="busesOverview()"><i class="fa-solid fa-bus"></i></div> -->
                 <div class="all-stops-btn-wrapper"><div class="all-stops"><i class="fa-solid fa-location-dot"></i></div></div>
             </div>
 
