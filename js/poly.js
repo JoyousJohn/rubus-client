@@ -573,7 +573,7 @@ function updateStopBusesMaxHeight() {
     // if (stopBuses.length === 0) return; not sur ei need this
     const maxHeight = window.innerHeight - stopBuses.offset().top - $('.stop-btns').innerHeight() - $('.bottom').innerHeight();
     // console.log(maxHeight);
-    $('.stop-info-popup-inner').css('max-height', maxHeight - 135);
+    $('.stop-info-popup-inner').css('max-height', maxHeight - 75);
 }
 
 async function popStopInfo(stopId) {
