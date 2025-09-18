@@ -148,6 +148,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
     // Priority: explicit caller flag > forced resume flag > long gap since last update > setting toggle
     const longGapSinceUpdate = (currentTime - (lastUpdateTime || 0)) > (pollDelay + pollDelayBuffer);
     const shouldImmediateUpdate = Boolean(immediatelyUpdate) || forceImmediateUpdate || longGapSinceUpdate || settings['toggle-always-immediate-update'];
+    
+    // Debug logging for immediate update decisions
+    if (shouldImmediateUpdate) {
+        console.log(`Immediate update triggered: immediatelyUpdate=${immediatelyUpdate}, forceImmediateUpdate=${forceImmediateUpdate}, longGap=${longGapSinceUpdate}, timeGap=${currentTime - (lastUpdateTime || 0)}ms`);
+    }
 
     // Allow immediate updates even on initial load if forceImmediateUpdate is set (app resume scenario)
     if (shouldImmediateUpdate && (!isInitial || forceImmediateUpdate)) {
@@ -403,6 +408,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
 
         // Mark the time of the last successful update and clear force flag
         lastUpdateTime = currentTime;
+        localStorage.setItem('lastUpdateTime', lastUpdateTime.toString());
         forceImmediateUpdate = false;
 
         // console.log('activeBuses', activeBuses)
@@ -1082,6 +1088,12 @@ $(document).ready(async function() {
         settings = defaultSettings;
     }
 
+    // Restore timing variables from localStorage to survive bfcache restoration
+    const storedLastUpdateTime = localStorage.getItem('lastUpdateTime');
+    if (storedLastUpdateTime) {
+        lastUpdateTime = parseInt(storedLastUpdateTime);
+    }
+
     async function fetchJoinTimes() {
         try {
             const response = await fetch('https://demo.rubus.live/joined_service');
@@ -1182,6 +1194,7 @@ $(document).ready(async function() {
 
     // On app resume/return, force the next update to be immediate and fetch promptly
     const triggerImmediateResumeUpdate = () => {
+        console.log('App resumed - triggering immediate bus update');
         forceImmediateUpdate = true;
 
         // Reset stale timing data for all buses to prevent incorrect animation durations
@@ -1201,6 +1214,7 @@ $(document).ready(async function() {
         // Kick a fetch right away to avoid waiting for the interval
         if (!settings['toggle-pause-passio-polling']) { fetchBusData(true); }
     };
+
     window.addEventListener('focus', triggerImmediateResumeUpdate);
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
@@ -1210,6 +1224,7 @@ $(document).ready(async function() {
     window.addEventListener('pageshow', (ev) => {
         // pageshow fires when bfcache restores the page in Safari/iOS/Chrome
         if (ev.persisted) {
+            console.log('Bfcache restoration detected - using standard resume handler');
             triggerImmediateResumeUpdate();
         }
     });
