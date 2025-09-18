@@ -304,6 +304,11 @@ $(document).ready(function() {
             $recentItem.click(function(e) {
                 if (!$(e.target).hasClass('recent-remove-btn')) {
                     closeSearch();
+                    
+                    if (!buildingsLayer) {
+                        loadBuildings();
+                    }
+                    
                     showBuildingInfo(item);
                     map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
 
@@ -373,6 +378,11 @@ $(document).ready(function() {
                 
                 if (buildingKey) {
                     const buildingData = buildingIndex[buildingKey];
+                    
+                    if (!buildingsLayer) {
+                        loadBuildings();
+                    }
+                    
                     showBuildingInfo(buildingData);
                     map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
                     
