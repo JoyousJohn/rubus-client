@@ -989,14 +989,17 @@ function populateMessages(messages) {
 
         $('.passio-messages-list').append($msgElm)
 
-        $('.passio-mini').append(`<div data-alert-mini="${message['id']}" class="passio-mini-alert gap-x-0p5rem pointer">
+        const $miniElm = $(`<div data-alert-mini="${message['id']}" class="passio-mini-alert gap-x-0p5rem pointer">
             <div class="br-1rem bold flex justify-center align-center" style="background-color: white; color: red; aspect-ratio: 1; height: 100%;">!</div>
-            <div class="pr-0p5rem">${title}</span>
-        </div>`)
-        .click(function() {
+            <div class="pr-0p5rem">${title}</div>
+        </div>`);
+        
+        $miniElm.click(function() {
             $(`[data-alert-big="${message['id']}"]`).slideDown();
             $(`[data-alert-mini="${message['id']}"]`).hide();
-        })
+        });
+        
+        $('.passio-mini').append($miniElm);
 
     })
 
