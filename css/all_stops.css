@@ -1,4 +1,4 @@
-.all-stops-wrapper {
+.info-panels-wrapper {
     height: 100%;
     background-color: var(--theme-bg);
     color: var(--theme-color);
@@ -24,10 +24,6 @@
     padding: 1rem;
 }
 
-.all-stops-close {
-    right: 2rem;
-    bottom: 2rem;
-}
 
 .incoming-wrapper {
     transition: 200ms;

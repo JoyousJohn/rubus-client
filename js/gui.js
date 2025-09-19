@@ -113,8 +113,10 @@ function populateRouteSelectors(allActiveRoutes) {
                 const moved = Math.abs(initialX - (event.originalEvent.clientX || event.changedTouches[0].clientX)) > 10;
 
                 if (!isLongPress && !moved) {
+                    // Check if we're in the Routes tab of info panels
+                    const routesTabActive = $('.info-panels-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
 
-                    if (panelRoute && route !== 'fav') {
+                    if ((panelRoute || routesTabActive) && route !== 'fav') {
                         selectedRoute(route)
                     } else if (route !== 'fav') {
                         toggleRoute(route);
@@ -436,7 +438,6 @@ function toggleRoute(route) {
 let panelRoute;
 
 function selectedRoute(route) {
-
     if (panelRoute === route) {
         closeRouteMenu();
         return;
@@ -476,20 +477,18 @@ function selectedRoute(route) {
         $('.active-buses').append($busElm)
     })
 
-    if (!panelRoute) {
-        $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight())
-        $('.panout, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops, .buildings-btn, .search-btn-wrapper').fadeOut('fast');
-        $('.settings-btn').hide();
-        $('.route-panel').slideDown('fast');
-
-        if (isDesktop) {
-            const routeSelectorsWidth = $('.route-selectors').width() / parseFloat(getComputedStyle(document.documentElement).fontSize) + 2;
-            $('.route-panel').css('padding-left', routeSelectorsWidth + 'rem');
-        }
-
+    // Check if info panels are open with routes tab active
+    const routesTabActive = $('.info-panels-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
+    
+    if (!panelRoute && !routesTabActive) {
+        // Show info panels with routes tab selected
+        $('.info-panels-wrapper').show();
+        selectInfoPanel('routes');
     }
-
-
+    
+    // Make sure route panel is visible by removing the 'none' class
+    $('.route-panel').show();
+    
     $('.route-stops-grid').empty();
 
     let firstCircle;
@@ -820,7 +819,6 @@ function busesOverview() {
 
     if (!isDesktop) {
         $('.bottom, .leaflet-control-attribution').hide();
-        $('.buses-close').addClass('flex');
         $('.buses-panel-wrapper').css('margin-left', 0);
     } else {
         const routeSelectorsWidth = $('.route-selectors').width() / parseFloat(getComputedStyle(document.documentElement).fontSize) + 3;
@@ -1081,15 +1079,13 @@ function updateWaitTimes() {
 
 
 function closeRouteMenu() {
-    $('.route-panel').slideUp('fast');
-    $('.panout, .settings-btn, .centerme, .fly-closest-stop, .satellite-btn, .shoot-fireworks, .all-stops, .buildings-btn, .search-btn-wrapper').show();
-    // if (!sim) $('.sim-btn').show();
-    if (userLocation) {
-        $('.fly-closest-stop').show();
-    }
-
-    $(this).hide();
-    $('.route-close').hide();
+    // Hide info panels and show bottom controls
+    $('.info-panels-wrapper').hide();
+    $('.bottom').show();
+    
+    // Hide the route close button and show all other buttons
+    $('.route-close').css('display', 'none');
+    $('.left-btns, .right-btns, .settings-btn').show();
 
     if (shownBeforeRoute && shownBeforeRoute !== panelRoute) {
         toggleRoute(shownBeforeRoute);
@@ -1101,9 +1097,6 @@ function closeRouteMenu() {
     panelRoute = null;
 }
 
-$('.route-close').click(function() {
-    closeRouteMenu();
-})
 
 $('.settings-btn').on('touchstart click', function() { // why do i need touchstart here but not below? idk
     $('.leaflet-control-attribution').hide();
@@ -1123,11 +1116,6 @@ $('.settings-close').click(function() {
     $(this).hide();
 })
 
-$('.buses-close').click(function() {
-    $('.buses-panel-wrapper').slideUp('fast');
-    $('.bottom').show();
-    $('.buses-close').removeClass('flex');
-})
 
 const markerSizeMap = {
     'small': '20',

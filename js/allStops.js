@@ -65,8 +65,9 @@ function populateAllStops() {
                 </div>`)
                 .click(function() {
                     flyToStop(stopId);
-                    $('.all-stops-wrapper').hide();
+                    $('.info-panels-wrapper').hide();
                     $('.bottom').show();
+                    $('.left-btns, .right-btns, .settings-btn').show();
                 });
 
                 $allStopsGridElm.append($stopsElm);
@@ -98,7 +99,7 @@ function populateAllStops() {
                             .click(function() {
                                 flyToStop(stopId);
                                 toggleRoute(route);
-                                $('.all-stops-wrapper').hide();
+                                $('.info-panels-wrapper').hide();
                                 $('.bottom').show();
                             })
                         )
@@ -123,11 +124,8 @@ function populateAllStops() {
 
 $('.all-stops').click(function() {
     populateAllStops();
-    $('.all-stops-wrapper').show().scrollTop(0);
-    $('.bottom').hide();
-})
-
-$('.all-stops-close').click(function() {
-    $('.all-stops-wrapper').hide();
-    $('.bottom').show();
+    $('.info-panels-wrapper').show().scrollTop(0);
+    // Find the routes tab element and pass it to selectInfoPanel
+    const routesTab = $('.info-panels-wrapper [data-panel="routes"]')[0];
+    selectInfoPanel('routes', routesTab);
 })

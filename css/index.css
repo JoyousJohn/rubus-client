@@ -164,7 +164,7 @@ html, body {
 }
 
 
-.info-popup-wrapper, .route-panel-wrapper, .buses-panel-wrapper, .all-stops-wrapper, .install-pwa-wrapper, .leave-feedback-wrapper {
+.info-popup-wrapper, .route-panel-wrapper, .buses-panel-wrapper, .info-panels-wrapper, .install-pwa-wrapper, .leave-feedback-wrapper {
     width: 100%;
     position: fixed;
     /* left: 0; */
@@ -461,9 +461,6 @@ html, body {
     background-color: blue;
 }
 
-.bus-info-main {
-    
-}
 
 .bus-info-main-right {
     background-color: green;
@@ -1181,6 +1178,7 @@ html, body {
     margin-right: 1rem;
 }
 
+
 .settings-btn {
     background-color: black;
     padding: 0 !important;
@@ -1276,7 +1274,7 @@ html, body {
     border-left: 1px solid rgb(185, 185, 185);
 }
 
-.settings-close > div, .buses-close, .events-close, .all-stops-close, .feedback-x, .chat-ui-close {
+.settings-close > div, .events-close, .feedback-x, .chat-ui-close, .info-panels-close {
     background-color: rgb(208, 77, 77);
     position: fixed;
     bottom: 1rem;
@@ -1307,9 +1305,6 @@ html, body {
     margin-left: 0.7rem;
 }
 
-.buses-close {
-    display: none;
-}
 
 .small-marker {
     height: 20px;
