@@ -140,6 +140,11 @@ function populateRouteSelectors(allActiveRoutes) {
         }
         $routeElm.css('background-color', color);
         $('.settings-btn').before($routeElm);
+        
+        // Convert icons after adding to DOM
+        if (route === 'fav') {
+            replaceFontAwesomeIcons();
+        }
     });
 
     $('.route-selectors').scrollLeft(0);
