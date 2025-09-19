@@ -2573,7 +2573,28 @@ function populateNavigationExamples() {
     console.log('populateNavigationExamples called');
     
     const $examplesContainer = $('.search-nav-examples');
+    const $examplesWrapper = $('.search-nav-examples-wrapper');
     
+    if ($examplesContainer.length === 0 || $examplesWrapper.length === 0) {
+        console.warn('Navigation examples container not found');
+        return;
+    }
+    
+    // Count recent searches
+    const recentSearchesCount = $('.search-recents .search-result-item').length;
+    const maxExamples = 3;
+    const examplesToShow = Math.max(0, maxExamples - recentSearchesCount);
+    
+    console.log(`Recent searches: ${recentSearchesCount}, Examples to show: ${examplesToShow}`);
+    
+    // Hide wrapper if no examples to show
+    if (examplesToShow === 0) {
+        $examplesWrapper.hide();
+        return;
+    }
+    
+    // Show wrapper and clear container
+    $examplesWrapper.show();
     $examplesContainer.empty();
     
     // Get popular buildings from building abbreviations (same as search recommendations)
@@ -2587,18 +2608,18 @@ function populateNavigationExamples() {
         }
     }
     
-    if (uniqueBuildings.length < 6) {
+    if (uniqueBuildings.length < examplesToShow * 2) {
         console.warn('Not enough popular buildings for navigation examples');
         return;
     }
 
-    // Shuffle and select 6 random buildings
+    // Shuffle and select buildings (need 2 per example)
     const shuffled = uniqueBuildings.sort(() => 0.5 - Math.random());
-    const selectedBuildings = shuffled.slice(0, 6);
+    const selectedBuildings = shuffled.slice(0, examplesToShow * 2);
     
-    // Create 3 example pairs (start -> destination)
+    // Create example pairs (start -> destination)
     const examples = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < examplesToShow; i++) {
         const startBuilding = selectedBuildings[i * 2];
         const endBuilding = selectedBuildings[i * 2 + 1];
         
@@ -2614,8 +2635,8 @@ function populateNavigationExamples() {
             examples.push({
                 start: buildingIndex[startBuildingKey],
                 end: buildingIndex[endBuildingKey],
-                startName: startBuilding.name,
-                endName: endBuilding.name
+                startName: startBuilding.short_name || startBuilding.name,
+                endName: endBuilding.short_name || endBuilding.name
             });
         }
     }
@@ -2627,7 +2648,7 @@ function populateNavigationExamples() {
                 <i class="fa-solid fa-route" style="color: var(--theme-hidden-route-col); font-size: 1.7rem; flex-shrink: 0;"></i>
                 <div class="nav-example-text" style="color: var(--theme-color);">
                     <span>${example.startName}</span>
-                    <span style="margin: 0 0.5rem; color: var(--theme-color-lighter);">→</span>
+                    <span style="color: var(--theme-color-lighter);">→</span>
                     <span>${example.endName}</span>
                 </div>
             </div>

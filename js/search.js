@@ -330,6 +330,8 @@ $(document).ready(function() {
                 e.stopPropagation(); // Prevent triggering the main item click
                 removeRecentSearch(item);
                 populateRecentSearches(); // Refresh the list
+                // Repopulate navigation examples based on new recent searches count
+                populateNavigationExamples();
                 
                 sa_event('btn_press', {
                     'btn': 'recent_search_removed',
