@@ -280,6 +280,7 @@ function openNav(navTo, navFrom) {
 
 // Find the best combination of start and end stops for routing
 function findBestRouteCombination(startStops, endStops, startBuilding, endBuilding, startIsStop, endIsStop) {
+    console.log('🔍 findBestRouteCombination called with:', startStops.length, 'start stops,', endStops.length, 'end stops');
     const routeOptions = [];
     const allEvaluatedCombinations = [];
 
@@ -318,6 +319,7 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
             const totalWalkingFeet = (startWalkDistance?.feet || 0) + (endWalkDistance?.feet || 0);
 
             if (connectingRoutes.length > 0) {
+                
                 // Score this route combination
                 const score = calculateRouteScore(connectingRoutes, totalWalkingFeet, startStop, endStop);
 
@@ -376,10 +378,25 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
     });
 
     // Display best combination for each route type
+    console.log(`\n🏆 Best combination for each route type:`);
+    Object.keys(bestByRoute).sort().forEach(routeName => {
+        const best = bestByRoute[routeName];
+        const combo = best.combination;
+        console.log(`   ${routeName.toUpperCase()}: ${combo.startStop.name} → ${combo.endStop.name}`);
+        console.log(`      Walking: ${combo.totalWalkingFeet} ft (${combo.startWalkDistance?.feet || 0} + ${combo.endWalkDistance?.feet || 0})`);
+        console.log(`      Score: ${combo.score.toFixed(2)}`);
+        console.log(`      Other routes available: ${combo.connectingRoutes.map(r => r.name).join(', ')}`);
+        console.log('');
+    });
 
     // Mark the chosen combinations (overall best and best for each route)
     if (sortedOptions.length > 0) {
         sortedOptions[0].chosen = true;
+        console.log(`🎯 Overall best combination selected:`);
+        console.log(`   ${sortedOptions[0].startStop.name} → ${sortedOptions[0].endStop.name}`);
+        console.log(`   Walking: ${sortedOptions[0].totalWalkingFeet} ft`);
+        console.log(`   Score: ${sortedOptions[0].score.toFixed(2)}`);
+        console.log(`   Routes: ${sortedOptions[0].connectingRoutes.map(r => r.name).join(', ')}`);
 
         // Update the allEvaluatedCombinations to mark chosen ones
         allEvaluatedCombinations.forEach(combo => {
@@ -413,10 +430,49 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
         });
     });
 
+    console.log(`\n📊 Summary: ${routeOptions.length} valid combinations out of ${startStops.length * endStops.length} tested`);
 
+    console.log(`\n🚌 Route distribution across valid combinations:`);
+    Object.keys(routeDistribution).sort().forEach(routeName => {
+        const bestCombo = bestByRoute[routeName.toLowerCase()];
+        const walking = bestCombo ? bestCombo.combination.totalWalkingFeet : 'N/A';
+        console.log(`   ${routeName}: ${routeDistribution[routeName]} combinations (best: ${walking} ft walking)`);
+    });
+
+    // Log all combinations in a table format for easy reading
+    console.log('\n📋 All evaluated combinations:');
+    console.table(allEvaluatedCombinations.map(combo => {
+        let status = combo.status.replace('_', ' ').toUpperCase();
+        if (combo.bestOverall) {
+            status = '🎯 BEST OVERALL';
+        } else if (combo.bestForRoute && combo.bestForRoute.length > 0) {
+            status = `🏆 BEST FOR ${combo.bestForRoute.join(', ')}`;
+        } else if (combo.chosen) {
+            status = '✅ CHOSEN';
+        }
+
+        return {
+            'Start → End': `${combo.startStop} → ${combo.endStop}`,
+            'Status': status,
+            'Walking (ft)': combo.walkingFeet || 'N/A',
+            'Score': combo.bestOverall ? `🎯 ${combo.score.toFixed(2)}` :
+                   (combo.bestForRoute ? `🏆 ${combo.score.toFixed(2)}` : combo.score.toFixed(2))
+        };
+    }));
 
     // Return both overall best options and best combination per route
     return { sortedOptions, bestByRoute };
+}
+
+// Helper function to calculate forward distance on circular route
+function calculateForwardDistance(startIndex, endIndex, totalStops) {
+    if (endIndex >= startIndex) {
+        // Normal forward travel
+        return endIndex - startIndex;
+    } else {
+        // Wrapping around from end to beginning
+        return (totalStops - startIndex) + endIndex;
+    }
 }
 
 // Calculate a score for a route combination (higher is better)
@@ -424,35 +480,46 @@ function calculateRouteScore(routes, totalWalkingFeet, startStop, endStop) {
     let score = 0;
     const scoreBreakdown = [];
 
-    // Base score from number of available routes (more options is better)
-    const routeScore = routes.length * 10;
-    score += routeScore;
-    scoreBreakdown.push(`${routeScore} (routes: ${routes.length})`);
-
-    // Penalize excessive walking (walking over 2000 feet is heavily penalized)
-    let walkingPenalty = 0;
-    if (totalWalkingFeet > 2000) {
-        walkingPenalty = (totalWalkingFeet - 2000) * 0.1;
-        score -= walkingPenalty;
-        scoreBreakdown.push(`-${walkingPenalty.toFixed(1)} (walking: ${totalWalkingFeet} ft > 2000)`);
-    } else if (totalWalkingFeet > 1000) {
-        walkingPenalty = (totalWalkingFeet - 1000) * 0.05;
-        score -= walkingPenalty;
-        scoreBreakdown.push(`-${walkingPenalty.toFixed(1)} (walking: ${totalWalkingFeet} ft > 1000)`);
-    } else {
-        scoreBreakdown.push(`+0 (walking: ${totalWalkingFeet} ft)`);
+    // MAJOR BONUS: Direct distance to destination (closer stops get big bonus)
+    const endStopDistance = endStop.distance || 0; // Distance from end stop to final destination
+    const directDistanceBonus = Math.max(0, 1000 - endStopDistance) * 0.1; // 10 points per 100m closer
+    if (directDistanceBonus > 0) {
+        score += directDistanceBonus;
+        scoreBreakdown.push(`+${directDistanceBonus.toFixed(1)} (direct distance bonus: ${endStopDistance}m)`);
     }
 
-    // Prefer routes with fewer stops between start and end
+    // Penalize walking distance (every foot of walking reduces score) - INCREASED WEIGHT
+    const walkingPenalty = totalWalkingFeet * 0.05; // 5 points penalty per 100 feet of walking (increased from 2)
+    score -= walkingPenalty;
+    scoreBreakdown.push(`-${walkingPenalty.toFixed(1)} (walking: ${totalWalkingFeet} ft)`);
+
+    // MAJOR FACTOR: Penalize bus travel time heavily (fewer stops = better)
     const bestRoute = routes[0];
-    let stopsBonus = 0;
+    let busTimePenalty = 0;
     if (bestRoute) {
         const total = (bestRoute.stops || []).length;
-        const diff = Math.abs(bestRoute.endIndex - bestRoute.startIndex);
-        const circStopsBetween = total > 0 ? Math.min(diff, total - diff) : diff;
-        stopsBonus = (10 - circStopsBetween) * 5;
-        score += stopsBonus;
-        scoreBreakdown.push(`+${stopsBonus} (stops: ${circStopsBetween} between)`);
+        
+        const circStopsBetween = calculateForwardDistance(bestRoute.startIndex, bestRoute.endIndex, total);
+        
+        // Heavy penalty for bus stops: 10 points per stop (much more than walking)
+        busTimePenalty = circStopsBetween * 10;
+        score -= busTimePenalty;
+        scoreBreakdown.push(`-${busTimePenalty} (bus stops: ${circStopsBetween} between)`);
+        
+        // Bonus for very short bus rides (1-2 stops)
+        if (circStopsBetween <= 2) {
+            const shortRideBonus = (3 - circStopsBetween) * 15;
+            score += shortRideBonus;
+            scoreBreakdown.push(`+${shortRideBonus} (short ride bonus)`);
+        }
+    }
+
+    // PRIORITIZE CLOSER STOPS: When bus travel is similar, prefer closer walking distance
+    // This ensures that if two stops have similar bus routes/stops, the closer one wins
+    const walkingDistanceBonus = Math.max(0, 2000 - totalWalkingFeet) * 0.01; // Bonus for shorter walks
+    if (walkingDistanceBonus > 0) {
+        score += walkingDistanceBonus;
+        scoreBreakdown.push(`+${walkingDistanceBonus.toFixed(1)} (walking distance bonus)`);
     }
 
     // Prefer non-weekend/overnight routes for general use
@@ -467,11 +534,11 @@ function calculateRouteScore(routes, totalWalkingFeet, startStop, endStop) {
         scoreBreakdown.push(`+0 (weekend/overnight only)`);
     }
 
-
     return score;
 }
 
 function calculateRoute(from, to) {
+    console.log('🚀 calculateRoute called with:', from, '→', to);
 
     try {
         // Get building data - use selected building if available, otherwise fuzzy search
