@@ -1,3 +1,16 @@
+/* Pulse animation for loading road names */
+@keyframes navPulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}
+
 .navigate-wrapper {
     position: fixed;
     top: 0;

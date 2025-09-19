@@ -147,14 +147,18 @@ class PathfindingEngine {
         let nearestNodeId = null;
         let minDistance = Infinity;
 
+        if (PATHFINDING_DEBUG) console.log(`Finding nearest node to [${targetCoord[0]}, ${targetCoord[1]}]`);
+
         for (const [nodeId, nodeData] of this.graph) {
             const distance = this.calculateDistance(targetCoord, nodeData.coordinates);
             if (distance < minDistance) {
                 minDistance = distance;
                 nearestNodeId = nodeId;
             }
+            // Note: Early exit removed as it was causing issues with finding distinct nodes
         }
 
+        if (PATHFINDING_DEBUG) console.log(`Found nearest node: ${nearestNodeId} at distance ${minDistance}m`);
         return nearestNodeId;
     }
 
@@ -179,6 +183,19 @@ class PathfindingEngine {
 
         if (PATHFINDING_DEBUG) console.log(`Finding path from node ${startNodeId} to ${endNodeId}`);
 
+        // Performance optimization: Check if start and end are very close
+        const directDistance = this.calculateDistance(startCoord, endCoord);
+        if (PATHFINDING_DEBUG) console.log(`Direct distance: ${directDistance}m`);
+        if (directDistance < 25) { // Less than 25m apart
+            if (PATHFINDING_DEBUG) console.log('Very short distance, returning direct path');
+            return {
+                path: [startCoord, endCoord],
+                distance: directDistance,
+                success: true,
+                route: []
+            };
+        }
+
         // Dijkstra's algorithm
         const distances = new Map();
         const previous = new Map();
@@ -192,6 +209,9 @@ class PathfindingEngine {
         distances.set(startNodeId, 0);
 
         while (unvisited.size > 0) {
+            // Timeout check to prevent extremely long computations
+            // Note: Timeout check removed as startTime variable was removed
+            
             // Find unvisited node with minimum distance
             let currentNodeId = null;
             let minDistance = Infinity;
@@ -362,13 +382,7 @@ async function testPathfinding() {
         
         const result = await pathfinder.computePath(startLocation, endLocation);
         
-        if (result.success) {
-            if (PATHFINDING_DEBUG) {
-                console.log('Path found successfully!');
-                console.log(`Total distance: ${Math.round(result.distance)} meters`);
-                console.log(`Number of waypoints: ${result.path.length}`);
-                console.log('Path coordinates:', result.path.map(p => p.coordinates));
-            }
+            if (result.success) {
             
             // You could also display this path on a map using Leaflet
             return result;
