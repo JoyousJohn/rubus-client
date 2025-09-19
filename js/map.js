@@ -1337,8 +1337,8 @@ const campusMappings = {
     'b': 'Livingston/Busch',
     'bhe': 'Livi/Busch',
     'bl': 'Livi/Busch',
-    'on1': 'All Campus',
-    'on2': 'All Campus',
+    'on1': '',
+    'on2': '',
     'ftbl': 'Football',
     'wknd1': '',
     'wknd2': '',
@@ -1413,6 +1413,9 @@ function popInfo(busId, resetCampusFontSize) {
     if (dataRoute === 'wknd1' || dataRoute === 'wknd2') {
         dataRoute = 'Weekend ' + dataRoute.slice(-1);
         displayRoute = dataRoute.charAt(0).toUpperCase() + dataRoute.slice(1).toLowerCase();
+    } else if (dataRoute === 'on1' || dataRoute === 'on2') {
+        dataRoute = 'Overnight ' + dataRoute.slice(-1);
+        displayRoute = dataRoute;
     } else if (dataRoute === 'summer1' || dataRoute === 'summer2') {
         dataRoute = dataRoute.slice(0, -1) + ' ' + dataRoute.slice(-1);
         displayRoute = dataRoute.toUpperCase();
