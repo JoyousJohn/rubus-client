@@ -669,9 +669,9 @@ async function popStopInfo(stopId) {
     updateStopBuses(stopId, shownRoute);
 
     if (sourceBusId && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
-        $('.stop-info-back').show();
+        $('.stop-info-back-wrapper').css('display', 'flex');
     } else {
-        $('.stop-info-back').hide();
+        $('.stop-info-back-wrapper').hide();
     }
 
     $('.stop-info-use-route-selectors-notice').hide();

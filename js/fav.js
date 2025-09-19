@@ -8,7 +8,7 @@ $('.bus-star').click(function() {
         console.log('hmm')
 
         favBuses.push(parseInt(currentBusId)); 
-        $(this).find('i').css('color', 'gold').removeClass('fa-regular').addClass('fa-solid')
+        $(this).find('i').css('color', 'gold').removeClass('icon-star').addClass('icon-star-solid')
         const $thisFav = $(`<div class="br-1rem" data-fav-id="${currentBusId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[currentBusId].route]}">${busData[currentBusId].route.toUpperCase()}</span>${busData[currentBusId].busName}</div>`)
         $thisFav.click(function() {
             if (busData[currentBusId]) {
@@ -38,7 +38,7 @@ $('.bus-star').click(function() {
         console.log('hmm2')
 
         favBuses = favBuses.filter(busId => busId !== currentBusId);
-        $(this).find('i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
+        $(this).find('i').css('color', 'var(--theme-color)').removeClass('icon-star-solid').addClass('icon-star')
         $(`div[data-fav-id="${currentBusId}"]`).remove();
         busMarkers[currentBusId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'var(--theme-bus-icon-inner)';
     

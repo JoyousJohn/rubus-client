@@ -1792,16 +1792,16 @@ function popInfo(busId, resetCampusFontSize) {
     }
     
     if (sourceStopId) {
-        $('.bus-info-back').show();
+        $('.bus-info-back-wrapper').css('display', 'flex');
     } else {
-        $('.bus-info-back').hide(); 
+        $('.bus-info-back-wrapper').hide();
     }
     sourceBusId = busId;
 
     if (favBuses.includes(parseInt(busId))) {
-        $('.bus-star > i').css('color', 'gold').removeClass('fa-regular').addClass('fa-solid')
+        $('.bus-star > i').css('color', 'gold').removeClass('icon-star').addClass('icon-star-solid')
     } else {
-        $('.bus-star > i').css('color', 'var(--theme-color)').removeClass('fa-solid').addClass('fa-regular')
+        $('.bus-star > i').css('color', 'var(--theme-color)').removeClass('icon-star-solid').addClass('icon-star')
     }
 
     if (!isDesktop) {

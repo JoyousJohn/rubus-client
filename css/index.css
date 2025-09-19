@@ -630,18 +630,18 @@ html, body {
     padding: 1rem;
 }
 
-.stop-info-back, .bus-info-back {
+.stop-info-back-wrapper, .bus-info-back-wrapper {
     font-size: 1.7rem;
     background-color: var(--theme-bg);
     color: var(--theme-color);
     border-radius: 1rem;
-    padding: 0 1.5rem 0 0.5rem;
+    padding: 0 1.5rem 0 1.2rem;
+    display: none; /* Hidden by default */
     transition: 100ms;
-    display: none;
     height: 3.5rem;
 }
 
-.stop-info-back:hover {
+.stop-info-back-wrapper:hover {
     background-color: rgb(88, 88, 234);
     color: rgb(242, 242, 242)
 }
@@ -667,7 +667,7 @@ html, body {
 
 .bus-info-bottom i {
     aspect-ratio: 1;
-    padding: 1rem;
+    padding: 0;
 }
 
 .bus-share > i { /* just this one? */

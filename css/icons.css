@@ -1,0 +1,55 @@
+/* Custom FontAwesome SVG Icons */
+
+/* Base icon class */
+.icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+    /* Use currentColor to inherit text color */
+    background-color: currentColor;
+    /* Mask properties for SVG icons - consolidated to prevent repetition */
+    -webkit-mask: var(--icon-mask) no-repeat center;
+    -webkit-mask-size: contain;
+    mask: var(--icon-mask) no-repeat center;
+    mask-size: contain;
+}
+
+/* Individual icon classes */
+.icon-building { --icon-mask: url('../img/icons/building.svg'); }
+.icon-parking { --icon-mask: url('../img/icons/parking.svg'); }
+.icon-bus-simple { --icon-mask: url('../img/icons/bus-simple.svg'); }
+.icon-route { --icon-mask: url('../img/icons/route.svg'); }
+.icon-bolt { --icon-mask: url('../img/icons/bolt.svg'); }
+.icon-arrow-left { --icon-mask: url('../img/icons/arrow-left.svg'); }
+.icon-map-pin { --icon-mask: url('../img/icons/map-pin.svg'); }
+.icon-message { --icon-mask: url('../img/icons/message.svg'); }
+.icon-clock { --icon-mask: url('../img/icons/clock.svg'); }
+.icon-share-nodes { --icon-mask: url('../img/icons/share-nodes.svg'); }
+.icon-star { --icon-mask: url('../img/icons/star-regular.svg'); }
+.icon-star-solid { --icon-mask: url('../img/icons/star-solid.svg'); }
+.icon-phone { --icon-mask: url('../img/icons/phone.svg'); }
+.icon-person-walking { --icon-mask: url('../img/icons/person-walking.svg'); }
+.icon-diamond-turn-right { --icon-mask: url('../img/icons/diamond-turn-right.svg'); }
+.icon-location-dot { --icon-mask: url('../img/icons/location-dot.svg'); }
+.icon-bus { --icon-mask: url('../img/icons/bus.svg'); }
+.icon-arrow-up { --icon-mask: url('../img/icons/arrow-up.svg'); }
+.icon-arrow-right-arrow-left { --icon-mask: url('../img/icons/arrow-right-arrow-left.svg'); }
+.icon-location-pin { --icon-mask: url('../img/icons/location-pin.svg'); }
+.icon-clock-rotate-left { --icon-mask: url('../img/icons/clock-rotate-left.svg'); }
+.icon-rocket { --icon-mask: url('../img/icons/rocket.svg'); }
+.icon-fire-flame-curved { --icon-mask: url('../img/icons/fire-flame-curved.svg'); }
+.icon-earth-americas { --icon-mask: url('../img/icons/earth-americas.svg'); }
+.icon-comments { --icon-mask: url('../img/icons/comments.svg'); }
+.icon-search { --icon-mask: url('../img/icons/search.svg'); }
+.icon-bahai { --icon-mask: url('../img/icons/bahai.svg'); }
+.icon-location-arrow { --icon-mask: url('../img/icons/location-arrow.svg'); }
+.icon-location-crosshairs { --icon-mask: url('../img/icons/location-crosshairs.svg'); }
+.icon-gear { --icon-mask: url('../img/icons/gear.svg'); }
+.icon-filter { --icon-mask: url('../img/icons/filter.svg'); }
+
+/* Size variations */
+.icon-sm { width: 0.8em; height: 0.8em; }
+.icon-lg { width: 1.2em; height: 1.2em; }
+.icon-xl { width: 1.5em; height: 1.5em; }
+.icon-2x { width: 2em; height: 2em; }
