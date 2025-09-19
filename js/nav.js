@@ -67,6 +67,46 @@ function setupNavigationInputs() {
         }
     });
 
+    // Clear button functionality
+    $('#nav-from-clear-btn, #nav-to-clear-btn').click(function() {
+        const isFromInput = $(this).attr('id') === 'nav-from-clear-btn';
+        const input = isFromInput ? $('#nav-from-input') : $('#nav-to-input');
+        
+        input.val('').trigger('input').focus();
+        
+        // Clear the selected building variable
+        if (isFromInput) {
+            selectedFromBuilding = null;
+        } else {
+            selectedToBuilding = null;
+        }
+        
+        sa_event('btn_press', {
+            'btn': isFromInput ? 'nav_from_clear' : 'nav_to_clear'
+        });
+    });
+
+    // Show/hide clear buttons based on input
+    function toggleNavClearButtons() {
+        const fromValue = $('#nav-from-input').val().trim();
+        const toValue = $('#nav-to-input').val().trim();
+        
+        if (fromValue) {
+            $('#nav-from-clear-btn').fadeIn();
+        } else {
+            $('#nav-from-clear-btn').fadeOut('fast');
+        }
+        
+        if (toValue) {
+            $('#nav-to-clear-btn').fadeIn();
+        } else {
+            $('#nav-to-clear-btn').fadeOut('fast');
+        }
+    }
+
+    // Initially hide the clear buttons
+    $('#nav-from-clear-btn, #nav-to-clear-btn').hide();
+
     // Handle input changes
     $('#nav-from-input, #nav-to-input').on('input', function() {
         const input = $(this);
@@ -77,6 +117,9 @@ function setupNavigationInputs() {
         } else {
             input.removeClass('has-value');
         }
+        
+        // Toggle clear button visibility
+        toggleNavClearButtons();
 
         // Clear the selected building variable on manual edits only
         if (!isSettingInputProgrammatically) {
@@ -737,11 +780,15 @@ function setNavigationFromBuilding(buildingName, targetInput = 'from') {
         isSettingInputProgrammatically = true;
         $('#nav-from-input').val(buildingName).trigger('input');
         isSettingInputProgrammatically = false;
+        // Show clear button
+        $('#nav-from-clear-btn').fadeIn();
     } else if (targetInput === 'to') {
         selectedToBuilding = normalizedName;
         isSettingInputProgrammatically = true;
         $('#nav-to-input').val(buildingName).trigger('input');
         isSettingInputProgrammatically = false;
+        // Show clear button
+        $('#nav-to-clear-btn').fadeIn();
     }
 
     // Check if we should trigger route calculation
@@ -2505,6 +2552,8 @@ function closeNavigation() {
         $('#nav-from-input').val('').removeClass('has-value');
         $('#nav-to-input').val('').removeClass('has-value');
         isSettingInputProgrammatically = false;
+        // Hide clear buttons
+        $('#nav-from-clear-btn, #nav-to-clear-btn').hide();
         // Reset selected buildings
         selectedFromBuilding = null;
         selectedToBuilding = null;

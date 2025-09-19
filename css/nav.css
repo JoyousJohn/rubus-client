@@ -18,6 +18,12 @@
     row-gap: 1rem;
 }
 
+/* Navigation input containers */
+.nav-from,
+.nav-to {
+    position: relative;
+}
+
 /* Navigation input styling */
 .nav-input {
     box-sizing: border-box;
