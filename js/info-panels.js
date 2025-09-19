@@ -28,6 +28,9 @@ function selectInfoPanel(panel, element) {
             $('.route-selectors').show();
             $('.settings-btn').hide();
             
+            // Hide the favorite star icon when routes menu opens
+            $('.route-selector[routeName="fav"]').hide();
+            
             // Show route close button and hide info panels close button
             $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight());
             $('.info-panels-close').hide();

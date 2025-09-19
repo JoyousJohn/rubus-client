@@ -1101,6 +1101,11 @@ function closeRouteMenu() {
     $('.route-close').css('display', 'none');
     $('.left-btns, .right-btns, .settings-btn').show();
 
+    // Show the favorite star icon again if there are favorited buses
+    if ($('.favs > div').length > 0) {
+        $('.route-selector[routeName="fav"]').show();
+    }
+
     if (shownBeforeRoute && shownBeforeRoute !== panelRoute) {
         toggleRoute(shownBeforeRoute);
         shownBeforeRoute = null;
