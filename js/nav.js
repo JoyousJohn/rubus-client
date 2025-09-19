@@ -64,7 +64,7 @@ function setupNavigationInputs() {
         if (newFromValue && newToValue) {
             // Run route calculation in background to prevent blocking UI
             setTimeout(() => {
-                calculateRoute(newFromValue, newToValue);
+            calculateRoute(newFromValue, newToValue);
             }, 0);
         }
     });
@@ -861,7 +861,7 @@ function showNavigationAutocomplete(inputElement, query) {
                     try { inputElement.blur(); } catch (err) { /* ignore */ }
                     // Run route calculation in background to prevent blocking UI
                     setTimeout(() => {
-                        calculateRoute(fromValue, toValue);
+                    calculateRoute(fromValue, toValue);
                     }, 0);
                 }
             }
@@ -1425,6 +1425,17 @@ async function loadStartWalkingRoads(startBuilding, startStop) {
                 startRoadsList.find('.roads-sequence').html(
                     `<span style="color: var(--theme-stops-list-text);">${roadText}</span>`
                 );
+                
+                // Add Google Maps link
+                const googleMapsUrl = `https://www.google.com/maps/dir/${startCoord[1]},${startCoord[0]}/${stopCoord[1]},${stopCoord[0]}/data=!3m1!4b1!4m2!4m1!3e2`;
+                startRoadsList.after(`
+                    <div class="google-maps-link" style="text-align: left;">
+                        <a href="${googleMapsUrl}" target="_blank" style="color: var(--theme-link); text-decoration: none; font-size: 1.2rem; font-weight: 500;">
+                            ↪ Open in Google Maps
+                        </a>
+                    </div>
+                `);
+                
                 // Elements are already visible, just reposition connector
                 positionGlobalWaypointConnector();
                 if (NAV_DEBUG) console.log('Start roads list shown');
@@ -1480,6 +1491,17 @@ async function loadEndWalkingRoads(endBuilding, endStop) {
                 endRoadsList.find('.roads-sequence').html(
                     `<span style="color: var(--theme-stops-list-text);">${roadText}</span>`
                 );
+                
+                // Add Google Maps link
+                const googleMapsUrl = `https://www.google.com/maps/dir/${stopCoord[1]},${stopCoord[0]}/${endCoord[1]},${endCoord[0]}/data=!3m1!4b1!4m2!4m1!3e2`;
+                endRoadsList.after(`
+                    <div class="google-maps-link" style="text-align: left;">
+                        <a href="${googleMapsUrl}" target="_blank" style="color: var(--theme-link); text-decoration: none; font-size: 1.2rem; font-weight: 500;">
+                            ↪ Open in Google Maps
+                        </a>
+                    </div>
+                `);
+                
                 // Elements are already visible, just reposition connector
                 positionGlobalWaypointConnector();
                 if (NAV_DEBUG) console.log('End roads list shown');
@@ -2043,21 +2065,21 @@ function displayRoute(routeData) {
                 
                 // Run route display update in background to prevent blocking UI
                 setTimeout(() => {
-                    updateRouteDisplay({
-                        startBuilding,
-                        endBuilding,
-                        startStop: effectiveStartStop,
-                        endStop: effectiveEndStop,
-                        route: newRouteDetails,
-                        startWalkDistance: effectiveStartWalk,
-                        endWalkDistance: effectiveEndWalk,
-                        originalInputs,
-                        startIsStop,
-                        endIsStop
-                    });
+                updateRouteDisplay({
+                    startBuilding,
+                    endBuilding,
+                    startStop: effectiveStartStop,
+                    endStop: effectiveEndStop,
+                    route: newRouteDetails,
+                    startWalkDistance: effectiveStartWalk,
+                    endWalkDistance: effectiveEndWalk,
+                    originalInputs,
+                    startIsStop,
+                    endIsStop
+                });
 
-                    // Reposition connector after content updates
-                    positionGlobalWaypointConnector();
+                // Reposition connector after content updates
+                positionGlobalWaypointConnector();
                 }, 0);
             }
         });

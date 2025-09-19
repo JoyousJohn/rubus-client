@@ -22,6 +22,7 @@
     --theme-unselected-route-text: #9fa1a5;
     --theme-stops-list-bg: #0f4c3a;
     --theme-stops-list-text: #10b981;
+    --theme-link: #8ab4f8;
 }
 
 [theme="light"] {
@@ -44,6 +45,7 @@
     --theme-unselected-route-text: #6b7280;
     --theme-stops-list-bg: #dcfce7;
     --theme-stops-list-text: #047857;
+    --theme-link: #1a73e8;
 }
 
 @font-face {
