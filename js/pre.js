@@ -495,7 +495,7 @@ function makeOoS(busId) {
         }
 
     } else if (!route) {
-        alert("Undefined route went OoS!")
+        // alert("Undefined route went OoS!")
         console.log("A bus with an undefined route claimed to go out of service... busData:");
         console.log(busDataCopy)
     }
