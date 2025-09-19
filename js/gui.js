@@ -26,6 +26,15 @@ function populateRouteSelectors(allActiveRoutes) {
         return a.localeCompare(b);
     });
     
+	if (routesArray.includes('on2')) {
+		routesArray = routesArray.filter(route => route !== 'on2');
+		routesArray.unshift('on2');
+	}
+	if (routesArray.includes('on1')) {
+		routesArray = routesArray.filter(route => route !== 'on1');
+		routesArray.unshift('on1');
+	}
+
     if (routesArray.includes('wknd2')) {
         routesArray = routesArray.filter(route => route !== 'wknd2');
         routesArray.unshift('wknd2');
