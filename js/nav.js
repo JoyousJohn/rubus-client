@@ -377,26 +377,31 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
         });
     });
 
-    // Display best combination for each route type
-    console.log(`\n🏆 Best combination for each route type:`);
-    Object.keys(bestByRoute).sort().forEach(routeName => {
-        const best = bestByRoute[routeName];
-        const combo = best.combination;
-        console.log(`   ${routeName.toUpperCase()}: ${combo.startStop.name} → ${combo.endStop.name}`);
-        console.log(`      Walking: ${combo.totalWalkingFeet} ft (${combo.startWalkDistance?.feet || 0} + ${combo.endWalkDistance?.feet || 0})`);
-        console.log(`      Score: ${combo.score.toFixed(2)}`);
-        console.log(`      Other routes available: ${combo.connectingRoutes.map(r => r.name).join(', ')}`);
-        console.log('');
-    });
+    if (NAV_DEBUG) {
+        // Display best combination for each route type
+        console.log(`\n🏆 Best combination for each route type:`);
+        Object.keys(bestByRoute).sort().forEach(routeName => {
+            const best = bestByRoute[routeName];
+            const combo = best.combination;
+            console.log(`   ${routeName.toUpperCase()}: ${combo.startStop.name} → ${combo.endStop.name}`);
+            console.log(`      Walking: ${combo.totalWalkingFeet} ft (${combo.startWalkDistance?.feet || 0} + ${combo.endWalkDistance?.feet || 0})`);
+            console.log(`      Score: ${combo.score.toFixed(2)}`);
+            console.log(`      Other routes available: ${combo.connectingRoutes.map(r => r.name).join(', ')}`);
+            console.log('');
+        });
+    }
 
     // Mark the chosen combinations (overall best and best for each route)
     if (sortedOptions.length > 0) {
         sortedOptions[0].chosen = true;
-        console.log(`🎯 Overall best combination selected:`);
-        console.log(`   ${sortedOptions[0].startStop.name} → ${sortedOptions[0].endStop.name}`);
-        console.log(`   Walking: ${sortedOptions[0].totalWalkingFeet} ft`);
-        console.log(`   Score: ${sortedOptions[0].score.toFixed(2)}`);
-        console.log(`   Routes: ${sortedOptions[0].connectingRoutes.map(r => r.name).join(', ')}`);
+        
+        if (NAV_DEBUG) {
+            console.log(`🎯 Overall best combination selected:`);
+            console.log(`   ${sortedOptions[0].startStop.name} → ${sortedOptions[0].endStop.name}`);
+            console.log(`   Walking: ${sortedOptions[0].totalWalkingFeet} ft`);
+            console.log(`   Score: ${sortedOptions[0].score.toFixed(2)}`);
+            console.log(`   Routes: ${sortedOptions[0].connectingRoutes.map(r => r.name).join(', ')}`);
+        }
 
         // Update the allEvaluatedCombinations to mark chosen ones
         allEvaluatedCombinations.forEach(combo => {
@@ -430,35 +435,39 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
         });
     });
 
-    console.log(`\n📊 Summary: ${routeOptions.length} valid combinations out of ${startStops.length * endStops.length} tested`);
+    if (NAV_DEBUG) {
+        console.log(`\n📊 Summary: ${routeOptions.length} valid combinations out of ${startStops.length * endStops.length} tested`);
 
-    console.log(`\n🚌 Route distribution across valid combinations:`);
-    Object.keys(routeDistribution).sort().forEach(routeName => {
-        const bestCombo = bestByRoute[routeName.toLowerCase()];
-        const walking = bestCombo ? bestCombo.combination.totalWalkingFeet : 'N/A';
-        console.log(`   ${routeName}: ${routeDistribution[routeName]} combinations (best: ${walking} ft walking)`);
-    });
+        console.log(`\n🚌 Route distribution across valid combinations:`);
+        Object.keys(routeDistribution).sort().forEach(routeName => {
+            const bestCombo = bestByRoute[routeName.toLowerCase()];
+            const walking = bestCombo ? bestCombo.combination.totalWalkingFeet : 'N/A';
+            console.log(`   ${routeName}: ${routeDistribution[routeName]} combinations (best: ${walking} ft walking)`);
+        });
+    }
 
-    // Log all combinations in a table format for easy reading
-    console.log('\n📋 All evaluated combinations:');
-    console.table(allEvaluatedCombinations.map(combo => {
-        let status = combo.status.replace('_', ' ').toUpperCase();
-        if (combo.bestOverall) {
-            status = '🎯 BEST OVERALL';
-        } else if (combo.bestForRoute && combo.bestForRoute.length > 0) {
-            status = `🏆 BEST FOR ${combo.bestForRoute.join(', ')}`;
-        } else if (combo.chosen) {
-            status = '✅ CHOSEN';
-        }
+    if (NAV_DEBUG) {
+        // Log all combinations in a table format for easy reading
+        console.log('\n📋 All evaluated combinations:');
+        console.table(allEvaluatedCombinations.map(combo => {
+            let status = combo.status.replace('_', ' ').toUpperCase();
+            if (combo.bestOverall) {
+                status = '🎯 BEST OVERALL';
+            } else if (combo.bestForRoute && combo.bestForRoute.length > 0) {
+                status = `🏆 BEST FOR ${combo.bestForRoute.join(', ')}`;
+            } else if (combo.chosen) {
+                status = '✅ CHOSEN';
+            }
 
-        return {
-            'Start → End': `${combo.startStop} → ${combo.endStop}`,
-            'Status': status,
-            'Walking (ft)': combo.walkingFeet || 'N/A',
-            'Score': combo.bestOverall ? `🎯 ${combo.score.toFixed(2)}` :
-                   (combo.bestForRoute ? `🏆 ${combo.score.toFixed(2)}` : combo.score.toFixed(2))
-        };
-    }));
+            return {
+                'Start → End': `${combo.startStop} → ${combo.endStop}`,
+                'Status': status,
+                'Walking (ft)': combo.walkingFeet || 'N/A',
+                'Score': combo.bestOverall ? `🎯 ${combo.score.toFixed(2)}` :
+                       (combo.bestForRoute ? `🏆 ${combo.score.toFixed(2)}` : combo.score.toFixed(2))
+            };
+        }));
+    }
 
     // Return both overall best options and best combination per route
     return { sortedOptions, bestByRoute };
