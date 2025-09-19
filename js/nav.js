@@ -1688,11 +1688,13 @@ function displayRoute(routeData) {
     const headerHtml = (function() {
         let steps = [];
         if (!startIsStop && startWalkDistance) {
-            steps.push(`Walk ${startWalkDistance.feet} ft`);
+            const startWalkMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
+            steps.push(`Walk ${startWalkMinutes}m`);
         }
         steps.push(`Bus <strong>${formatRouteLabelColored(route.name)}</strong>`);
         if (!endIsStop && endWalkDistance) {
-            steps.push(`Walk ${endWalkDistance.feet} ft`);
+            const endWalkMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
+            steps.push(`Walk ${endWalkMinutes}m`);
         }
         const summary = steps.join(' → ');
         
@@ -2209,9 +2211,15 @@ function updateRouteDisplay(routeData) {
     const routeSummaryElement = $('.route-summary');
     if (routeSummaryElement.length > 0) {
         const parts = [];
-        if (!startIsStop && startWalkDistance) parts.push(`Walk ${startWalkDistance.feet} ft`);
-        parts.push(`Bus ${formatRouteLabelColored(route.name)}`);
-        if (!endIsStop && endWalkDistance) parts.push(`Walk ${endWalkDistance.feet} ft`);
+        if (!startIsStop && startWalkDistance) {
+            const startWalkMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
+            parts.push(`Walk ${startWalkMinutes}m`);
+        }
+        parts.push(`Bus <strong>${formatRouteLabelColored(route.name)}</strong>`);
+        if (!endIsStop && endWalkDistance) {
+            const endWalkMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
+            parts.push(`Walk ${endWalkMinutes}m`);
+        }
         const summary = parts.join(' → ');
         
         // Update only the route summary text
@@ -2374,6 +2382,11 @@ function updateRouteDisplay(routeData) {
                     <div class="walking-info">
                         Walk ${startWalkDistance ? startWalkDistance.feet : 0} ft to boarding stop
                     </div>
+                    <div class="walking-roads-list" id="start-walking-roads" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem; display: none;">
+                        <div class="roads-sequence" style="font-size: 1.2rem;">
+                            <span style="color: var(--theme-stops-list-text);">Loading road names...</span>
+                        </div>
+                    </div>
                 </div>
             `;
         } else if (waypoint.isBoarding) {
@@ -2404,6 +2417,13 @@ function updateRouteDisplay(routeData) {
             content = `
                 <div class="waypoint-details">
                     ${endWalkDistance ? `<div class="walking-info">Walk ${endWalkDistance.feet} ft to final destination</div>` : ''}
+                    ${endWalkDistance ? `
+                        <div class="walking-roads-list" id="end-walking-roads" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem; display: none;">
+                            <div class="roads-sequence" style="font-size: 1.2rem;">
+                                <span style="color: var(--theme-stops-list-text);">Loading road names...</span>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
