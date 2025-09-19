@@ -37,6 +37,11 @@
     position: relative;
 }
 
+/* Navigation input wrapper for clear button positioning */
+.nav-input-wrapper {
+    position: relative;
+}
+
 /* Navigation input styling */
 .nav-input {
     box-sizing: border-box;

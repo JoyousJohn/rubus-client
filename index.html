@@ -673,8 +673,10 @@
                     <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
                         <div class="from-circle center">◯</div>
                         <div class="nav-from">
-                            <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
-                            <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
+                            <div class="nav-input-wrapper">
+                                <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
+                                <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
+                            </div>
                             <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
                         </div>
                         <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
@@ -762,11 +764,11 @@
             </div>
             <div class="search-recents-wrapper mt-1rem">
                 <div class="text-1p4rem bold-500 ml-0p3rem" style="color: var(--theme-color-lighter)"><i class="fa-solid fa-clock-rotate-left"></i> Recent searches</div>
-                <div class="search-recents mt-0p5rem flex flex-col gap-y-0p5rem text-1p3rem"></div>
+                <div class="search-recents mt-0p5rem flex flex-col gap-y-0p5rem text-1p5rem"></div>
             </div>
             <div class="search-recs-wrapper mt-1rem">
                 <div class="text-1p4rem bold-500 ml-0p3rem" style="color: var(--theme-color-lighter)"><i class="fa-solid fa-fire-flame-curved"></i> Popular places</div>
-                <div class="search-recs mt-0p5rem flex flex-col gap-y-0p5rem text-1p3rem"></div>
+                <div class="search-recs mt-0p5rem flex flex-col gap-y-0p5rem text-1p5rem"></div>
             </div>
         </div>
     </div>
