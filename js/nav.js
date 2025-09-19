@@ -1,6 +1,8 @@
 // Global fallback minutes per stop used when ETAs are unavailable
 let NAV_FALLBACK_MIN_PER_STOP = 5;
 
+let NAV_DEBUG = false;
+
 $(document).ready(function() {
     $('.building-directions').click(function() {
         console.log('Building directions clicked, popupBuildingName:', popupBuildingName);
@@ -1054,6 +1056,132 @@ function calculateWalkingDistance(lat1, lng1, lat2, lng2) {
     };
 }
 
+// Get road names for walking path using pathfinding
+async function getWalkingPathRoadNames(startCoord, endCoord) {
+    try {
+        if (!window.pathfinder) {
+            console.warn('Pathfinder not available');
+            return [];
+        }
+
+        // Validate coordinates
+        if (!startCoord || !endCoord || 
+            startCoord.length !== 2 || endCoord.length !== 2 ||
+            startCoord.some(coord => coord === undefined || coord === null) ||
+            endCoord.some(coord => coord === undefined || coord === null)) {
+            console.warn('Invalid coordinates provided:', { startCoord, endCoord });
+            return [];
+        }
+
+            if (NAV_DEBUG) console.log('Computing pathfinding for coordinates:', { startCoord, endCoord });
+
+        const pathResult = await pathfinder.computePath(startCoord, endCoord);
+        
+        if (!pathResult.success || !pathResult.path) {
+            console.warn('Pathfinding failed or returned no path:', pathResult);
+            return [];
+        }
+
+        // Extract unique road names from the path
+        const roadNames = new Set();
+        
+        // Go through each segment of the path to find road names
+        for (let i = 0; i < pathResult.path.length - 1; i++) {
+            const currentNode = pathResult.path[i];
+            const nextNode = pathResult.path[i + 1];
+            
+            // Find the edge between these nodes in the graph
+            if (window.pathfinder.graph && window.pathfinder.graph.has(currentNode.nodeId)) {
+                const nodeData = window.pathfinder.graph.get(currentNode.nodeId);
+                const edgeData = nodeData.neighbors.get(nextNode.nodeId);
+                
+                if (edgeData && edgeData.properties) {
+                    let roadName = null;
+                    
+                    // Debug: log the properties for the first few edges
+                    if (i < 3) {
+                        if (NAV_DEBUG) console.log(`Edge ${i} properties:`, {
+                            name: edgeData.properties.name,
+                            highway: edgeData.properties.highway,
+                            other_tags: edgeData.properties.other_tags
+                        });
+                    }
+                    
+                    // First try the direct 'name' property
+                    if (edgeData.properties.name) {
+                        roadName = edgeData.properties.name;
+                    } else if (edgeData.properties.other_tags) {
+                        // Try to extract name from other_tags
+                        const otherTags = edgeData.properties.other_tags;
+                        
+                        // Look for tiger:name_base and tiger:name_type
+                        const nameBaseMatch = otherTags.match(/tiger:name_base"=>"([^"]+)"/);
+                        const nameTypeMatch = otherTags.match(/tiger:name_type"=>"([^"]+)"/);
+                        
+                        if (nameBaseMatch && nameTypeMatch) {
+                            roadName = `${nameBaseMatch[1]} ${nameTypeMatch[1]}`;
+                        } else if (nameBaseMatch) {
+                            roadName = nameBaseMatch[1];
+                        }
+                        
+                        // Also check for ref property
+                        if (!roadName) {
+                            const refMatch = otherTags.match(/ref"=>"([^"]+)"/);
+                            if (refMatch) {
+                                roadName = `Route ${refMatch[1]}`;
+                            }
+                        }
+                    }
+                    
+                    // Add roads and paths that are suitable for walking
+                    if (roadName && edgeData.properties.highway) {
+                        // Include named roads and paths
+                        roadNames.add(roadName);
+                                 if (i < 3 && NAV_DEBUG) console.log(`Added road name: ${roadName}`);
+                    } else if (edgeData.properties.highway === 'footway' && edgeData.properties.other_tags) {
+                        // Handle footways with special types
+                        const otherTags = edgeData.properties.other_tags;
+                        
+                        if (otherTags.includes('footway"=>"sidewalk')) {
+                            roadNames.add('Sidewalk');
+                        } else if (otherTags.includes('footway"=>"crossing')) {
+                            roadNames.add('Crosswalk');
+                        } else if (otherTags.includes('footway"=>"path')) {
+                            roadNames.add('Path');
+                        } else {
+                            roadNames.add('Walkway');
+                        }
+                        
+                                 if (i < 3 && NAV_DEBUG) console.log(`Added footway type: ${otherTags}`);
+                    } else if (edgeData.properties.highway === 'cycleway') {
+                        roadNames.add('Bike Path');
+                        if (i < 3 && NAV_DEBUG) console.log(`Added cycleway`);
+                    } else if (i < 3) {
+                        if (NAV_DEBUG) console.log(`Skipped road: name=${roadName}, highway=${edgeData.properties.highway}`);
+                    }
+                }
+            }
+        }
+
+        // Remove consecutive duplicates and format for display
+        const roadNamesArray = Array.from(roadNames);
+        const filteredRoadNames = [];
+        
+        for (let i = 0; i < roadNamesArray.length; i++) {
+            // Don't add if it's the same as the previous one
+            if (i === 0 || roadNamesArray[i] !== roadNamesArray[i - 1]) {
+                filteredRoadNames.push(roadNamesArray[i]);
+            }
+        }
+        
+        if (NAV_DEBUG) console.log('Extracted road names:', filteredRoadNames);
+        return filteredRoadNames;
+    } catch (error) {
+        console.warn('Error getting road names for walking path:', error);
+        return [];
+    }
+}
+
 // Select the best route from available options based on various criteria
 function selectBestRoute(routes, startStop, endStop) {
     if (routes.length === 0) return [];
@@ -1271,6 +1399,89 @@ function formatRouteLabelColored(routeName) {
     }
     const color = (typeof colorMappings !== 'undefined' && colorMappings[n]) ? colorMappings[n] : '#111827';
     return `<span style="color: ${color};">${original.toUpperCase()}</span>`;
+}
+
+// Load road names for walking segments and update the UI
+async function loadWalkingRoadNames(startBuilding, endBuilding, startStop, endStop, startIsStop, endIsStop) {
+    try {
+        // Load road names for start walking segment
+        if (!startIsStop && startBuilding && startStop) {
+            // Buildings use 'lat' and 'lng', stops use 'latitude' and 'longitude'
+            const startCoord = [startBuilding.lng, startBuilding.lat];
+            const stopCoord = [startStop.longitude, startStop.latitude];
+            
+            if (NAV_DEBUG) console.log('Start walking path coordinates:', { startCoord, stopCoord });
+            
+            const roadNames = await getWalkingPathRoadNames(startCoord, stopCoord);
+            
+            const startRoadsList = $('#start-walking-roads');
+            if (NAV_DEBUG) console.log('Start roads list found:', startRoadsList.length, 'Road names:', roadNames);
+            
+            if (startRoadsList.length > 0) {
+                if (roadNames.length > 0) {
+                    const roadText = roadNames.length === 1 && roadNames[0] === 'Sidewalk' 
+                        ? 'Use sidewalks and crosswalks'
+                        : roadNames.join(' → ');
+                    
+                    if (NAV_DEBUG) console.log('Setting start road text:', roadText);
+                    startRoadsList.find('.roads-sequence').html(
+                        `<span style="color: var(--theme-stops-list-text);">${roadText}</span>`
+                    );
+                    startRoadsList.slideDown('fast', function() {
+                        // Reposition waypoint connector line after road names slide down
+                        positionGlobalWaypointConnector();
+                    });
+                    if (NAV_DEBUG) console.log('Start roads list shown');
+                } else {
+                    if (NAV_DEBUG) console.log('Hiding start roads list - no road names');
+                    startRoadsList.hide();
+                }
+            } else {
+                if (NAV_DEBUG) console.log('Start roads list element not found');
+            }
+        }
+
+        // Load road names for end walking segment
+        if (!endIsStop && endBuilding && endStop) {
+            // Buildings use 'lat' and 'lng', stops use 'latitude' and 'longitude'
+            const stopCoord = [endStop.longitude, endStop.latitude];
+            const endCoord = [endBuilding.lng, endBuilding.lat];
+            
+            if (NAV_DEBUG) console.log('End walking path coordinates:', { stopCoord, endCoord });
+            
+            const roadNames = await getWalkingPathRoadNames(stopCoord, endCoord);
+            
+            const endRoadsList = $('#end-walking-roads');
+            if (NAV_DEBUG) console.log('End roads list found:', endRoadsList.length, 'Road names:', roadNames);
+            
+            if (endRoadsList.length > 0) {
+                if (roadNames.length > 0) {
+                    const roadText = roadNames.length === 1 && roadNames[0] === 'Sidewalk' 
+                        ? 'Use sidewalks and crosswalks'
+                        : roadNames.join(' → ');
+                    
+                    if (NAV_DEBUG) console.log('Setting end road text:', roadText);
+                    endRoadsList.find('.roads-sequence').html(
+                        `<span style="color: var(--theme-stops-list-text);">${roadText}</span>`
+                    );
+                    endRoadsList.slideDown('fast', function() {
+                        // Reposition waypoint connector line after road names slide down
+                        positionGlobalWaypointConnector();
+                    });
+                    if (NAV_DEBUG) console.log('End roads list shown');
+                } else {
+                    if (NAV_DEBUG) console.log('Hiding end roads list - no road names');
+                    endRoadsList.hide();
+                }
+            } else {
+                if (NAV_DEBUG) console.log('End roads list element not found');
+            }
+        }
+    } catch (error) {
+        console.warn('Error loading walking road names:', error);
+        // Hide the road lists if there's an error
+        $('#start-walking-roads, #end-walking-roads').hide();
+    }
 }
 
 // Display the calculated route in the navigation UI
@@ -1533,7 +1744,7 @@ function displayRoute(routeData) {
 
     // Create walking segment from start to boarding stop
     const walkingStartHtml = (startIsStop || !startWalkDistance) ? '' : `
-        <div class="route-segment walking-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #eff6ff; border-radius: 0.5rem;">
+        <div class="route-segment walking-segment" id="walking-start-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #eff6ff; border-radius: 0.5rem;">
             <div class="segment-icon" style="margin-bottom: 0.5rem;">
                 <span style="color: #2563eb;">🚶</span>
                 <span class="segment-type" style="font-weight: 500;">Walk to Bus Stop</span>
@@ -1544,6 +1755,11 @@ function displayRoute(routeData) {
                 </div>
                 <div class="segment-description">
                     Walk from <strong>${startBuilding.name}</strong> to <strong>${startStop.name}</strong>
+                </div>
+                <div class="walking-roads-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem; display: none;">
+                    <div class="roads-sequence" style="font-size: 1.2rem;">
+                        <span style="color: var(--theme-stops-list-text);">Loading road names...</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1588,7 +1804,7 @@ function displayRoute(routeData) {
 
     // Create walking segment from alighting stop to destination
     const walkingEndHtml = (endIsStop || !endWalkDistance) ? '' : `
-        <div class="route-segment walking-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #eff6ff; border-radius: 0.5rem;">
+        <div class="route-segment walking-segment" id="walking-end-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #eff6ff; border-radius: 0.5rem;">
             <div class="segment-icon" style="margin-bottom: 0.5rem;">
                 <span style="color: #2563eb;">🚶</span>
                 <span class="segment-type" style="font-weight: 500;">Walk to Destination</span>
@@ -1599,6 +1815,11 @@ function displayRoute(routeData) {
                 </div>
                 <div class="segment-description">
                     Walk from <strong>${endStop.name}</strong> to <strong>${endBuilding.name}</strong>
+                </div>
+                <div class="walking-roads-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem; display: none;">
+                    <div class="roads-sequence" style="font-size: 1.2rem;">
+                        <span style="color: var(--theme-stops-list-text);">Loading road names...</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1634,6 +1855,11 @@ function displayRoute(routeData) {
                     <div class="walking-info">
                         Walk ${startWalkDistance ? startWalkDistance.feet : 0} ft to boarding stop
                     </div>
+                    <div class="walking-roads-list" id="start-walking-roads" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem; display: none;">
+                        <div class="roads-sequence" style="font-size: 1.2rem;">
+                            <span style="color: var(--theme-stops-list-text);">Loading road names...</span>
+                        </div>
+                    </div>
                 </div>
             `;
             connectorText = index < timelineWaypoints.length - 1 ? 'Walk to stop' : '';
@@ -1653,6 +1879,13 @@ function displayRoute(routeData) {
             content = `
                 <div class="waypoint-details">
                     ${endWalkDistance ? `<div class="walking-info">Walk ${endWalkDistance.feet} ft to final destination</div>` : ''}
+                    ${endWalkDistance ? `
+                        <div class="walking-roads-list" id="end-walking-roads" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem; display: none;">
+                            <div class="roads-sequence" style="font-size: 1.2rem;">
+                                <span style="color: var(--theme-stops-list-text);">Loading road names...</span>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
             connectorText = index < timelineWaypoints.length - 1 ? 'Walk to destination' : '';
@@ -1759,6 +1992,9 @@ function displayRoute(routeData) {
             <div class="py-1rem px-2rem br-4rem text-1p6rem white bold-600 w-min" style="background-color: #4444f4;" onclick="closeNavigation()">CLOSE</div>
         </div>
     `);
+
+    // Load road names for walking segments asynchronously
+    loadWalkingRoadNames(startBuilding, endBuilding, startStop, endStop, startIsStop, endIsStop);
 
     // Position the single global waypoint connector after render
     positionGlobalWaypointConnector();
@@ -2245,6 +2481,9 @@ function updateRouteDisplay(routeData) {
 
     // Update the bus segment
     $('.bus-segment').replaceWith(updatedBusHtml);
+
+    // Load road names for walking segments when route is updated
+    loadWalkingRoadNames(startBuilding, endBuilding, startStop, endStop, startIsStop, endIsStop);
 
     // showNavigationMessage(`Switched to ${formatRouteLabel(route.name)} route`);
 }
