@@ -11,6 +11,7 @@ class PathfindingEngine {
         this.roadNetwork = null;
         this.graph = null;
         this.isLoaded = false;
+        this.pathCache = new Map(); // Cache for computed paths
     }
 
     /**
@@ -252,6 +253,21 @@ class PathfindingEngine {
     }
 
     /**
+     * Generate a cache key for a path between two locations
+     * @param {Array} location1 - [longitude, latitude] of start point
+     * @param {Array} location2 - [longitude, latitude] of end point
+     * @returns {string} Cache key
+     */
+    generateCacheKey(location1, location2) {
+        // Round coordinates to 6 decimal places (~0.1m precision) for cache key
+        const precision = 6;
+        const key1 = `${location1[0].toFixed(precision)},${location1[1].toFixed(precision)}`;
+        const key2 = `${location2[0].toFixed(precision)},${location2[1].toFixed(precision)}`;
+        // Always use the same key regardless of order (A->B = B->A)
+        return key1 < key2 ? `${key1}|${key2}` : `${key2}|${key1}`;
+    }
+
+    /**
      * Main function to compute path between two locations
      * @param {Array} location1 - [longitude, latitude] of start location
      * @param {Array} location2 - [longitude, latitude] of end location
@@ -263,16 +279,27 @@ class PathfindingEngine {
                 await this.loadRoadNetwork();
             }
 
+            // Check cache first
+            const cacheKey = this.generateCacheKey(location1, location2);
+            if (this.pathCache.has(cacheKey)) {
+                if (PATHFINDING_DEBUG) console.log(`Using cached path for key: ${cacheKey}`);
+                return this.pathCache.get(cacheKey);
+            }
+
             if (PATHFINDING_DEBUG) console.log(`Computing path from [${location1[0]}, ${location1[1]}] to [${location2[0]}, ${location2[1]}]`);
             
             const result = this.findPath(location1, location2);
             
             if (PATHFINDING_DEBUG) console.log(`Path found: ${result.path.length} waypoints, ${Math.round(result.distance)}m total distance`);
             
+            // Cache the result
+            this.pathCache.set(cacheKey, result);
+            if (PATHFINDING_DEBUG) console.log(`Cached path with key: ${cacheKey}`);
+            
             return result;
         } catch (error) {
             console.error('Error computing path:', error);
-            return {
+            const errorResult = {
                 path: [],
                 distance: 0,
                 startNode: null,
@@ -280,7 +307,30 @@ class PathfindingEngine {
                 success: false,
                 error: error.message
             };
+            // Cache error results too to avoid retrying failed paths
+            const cacheKey = this.generateCacheKey(location1, location2);
+            this.pathCache.set(cacheKey, errorResult);
+            return errorResult;
         }
+    }
+
+    /**
+     * Clear the path cache
+     */
+    clearCache() {
+        this.pathCache.clear();
+        if (PATHFINDING_DEBUG) console.log('Path cache cleared');
+    }
+
+    /**
+     * Get cache statistics
+     * @returns {Object} Cache stats
+     */
+    getCacheStats() {
+        return {
+            size: this.pathCache.size,
+            keys: Array.from(this.pathCache.keys())
+        };
     }
 }
 
@@ -411,3 +461,7 @@ async function findAndDisplayPath(startCoord, endCoord, map = null) {
 window.testPathfinding = testPathfinding;
 window.displayPathOnMap = displayPathOnMap;
 window.findAndDisplayPath = findAndDisplayPath;
+
+// Expose cache management functions globally
+window.clearPathfindingCache = () => pathfinder.clearCache();
+window.getPathfindingCacheStats = () => pathfinder.getCacheStats();
