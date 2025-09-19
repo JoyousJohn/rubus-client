@@ -1113,6 +1113,10 @@ function closeRouteMenu() {
 
 
 $('.settings-btn').on('touchstart click', function() { // why do i need touchstart here but not below? idk
+    sa_event('btn_press', {
+        'btn': 'settings'
+    });
+    
     $('.leaflet-control-attribution').hide();
     $('.settings-panel').show();
     // if (!isDesktop) {

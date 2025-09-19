@@ -3,6 +3,12 @@ let NAV_FALLBACK_MIN_PER_STOP = 5;
 
 let NAV_DEBUG = true;
 
+// Helper function to get pluralized stop count
+function getStopCountText(route) {
+    const count = Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1);
+    return count === 1 ? 'stop' : 'stops';
+}
+
 $(document).ready(function() {
     $('.building-directions').click(function() {
 
@@ -1507,7 +1513,7 @@ async function loadStartWalkingRoads(startBuilding, startStop) {
                 startRoadsList.after(`
                     <div class="google-maps-link" style="text-align: left;">
                         <a href="${googleMapsUrl}" target="_blank" style="color: var(--theme-link); text-decoration: none; font-size: 1.2rem; font-weight: 500;">
-                            ↪ Open in Google Maps
+                            Open in Google Maps →
                         </a>
                     </div>
                 `);
@@ -1573,7 +1579,7 @@ async function loadEndWalkingRoads(endBuilding, endStop) {
                 endRoadsList.after(`
                     <div class="google-maps-link" style="text-align: left;">
                         <a href="${googleMapsUrl}" target="_blank" style="color: var(--theme-link); text-decoration: none; font-size: 1.2rem; font-weight: 500;">
-                            ↪ Open in Google Maps
+                            Open in Google Maps →
                         </a>
                     </div>
                 `);
@@ -1885,7 +1891,7 @@ function displayRoute(routeData) {
                     Get off at <strong>${endStop.name}</strong>
                 </div>
                 <div class="bus-route-info" style="font-size: 0.75rem; color: #6b7280;">
-                    Take bus ${formatRouteLabelColored(route.name)} for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops
+                    Take bus ${formatRouteLabelColored(route.name)} for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} ${getStopCountText(route)}
                 </div>
                 ${stopsListHtml}
             </div>
@@ -1958,7 +1964,7 @@ function displayRoute(routeData) {
             content = `
                 <div class="waypoint-details">
                     <div class="stops-info">
-                        Take bus <strong>${formatRouteLabelColored(route.name)}</strong> for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops
+                        Take bus <strong>${formatRouteLabelColored(route.name)}</strong> for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} ${getStopCountText(route)}
                     </div>
                     ${stopsListHtml}
                 </div>
@@ -2387,7 +2393,7 @@ function updateRouteDisplay(routeData) {
             content = `
                 <div class="waypoint-details">
                     <div class="stops-info">
-                        Take bus <strong>${formatRouteLabelColored(route.name)}</strong> for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops
+                        Take bus <strong>${formatRouteLabelColored(route.name)}</strong> for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} ${getStopCountText(route)}
                     </div>
                     ${innerStopsListHtml}
                 </div>
@@ -2518,7 +2524,7 @@ function updateRouteDisplay(routeData) {
                     Get off at <strong>${endStop.name}</strong>
                 </div>
                 <div class="bus-route-info" style="font-size: 0.75rem; color: #6b7280;">
-                    Take bus ${formatRouteLabelColored(route.name)} for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} stops
+                    Take bus ${formatRouteLabelColored(route.name)} for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} ${getStopCountText(route)}
                 </div>
                 ${stopsListHtml}
             </div>

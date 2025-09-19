@@ -58,6 +58,11 @@
     src: url('../lib/blockcraft.otf') format('opentype');
 }
 
+@font-face {
+    font-family: 'comic-sans';
+    src: url('../lib/Comic Sans MS.ttf') format('truetype');
+}
+
 body {
     margin: 0;
     height: 100dvh; /* cool unit */
