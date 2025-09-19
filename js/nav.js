@@ -2163,6 +2163,7 @@ function displayRoute(routeData) {
 
     // Show navigation wrapper if hidden
     $('.navigate-wrapper').show();
+    
     // Ensure directions wrapper uses flex when visible
     $('.nav-directions-wrapper').removeClass('none').addClass('flex');
     
@@ -2565,4 +2566,105 @@ function closeNavigation() {
         console.error('Error closing navigation:', e);
         $('.navigate-wrapper').fadeOut(200);
     }
+}
+
+// Populate navigation examples using popular locations from search recommendations
+function populateNavigationExamples() {
+    console.log('populateNavigationExamples called');
+    
+    const $examplesContainer = $('.search-nav-examples');
+    
+    $examplesContainer.empty();
+    
+    // Get popular buildings from building abbreviations (same as search recommendations)
+    const uniqueBuildings = [];
+    const seenNumbers = new Set();
+    
+    for (const item of buildingAbbreviations) {
+        if (!seenNumbers.has(item.number)) {
+            seenNumbers.add(item.number);
+            uniqueBuildings.push(item);
+        }
+    }
+    
+    if (uniqueBuildings.length < 6) {
+        console.warn('Not enough popular buildings for navigation examples');
+        return;
+    }
+
+    // Shuffle and select 6 random buildings
+    const shuffled = uniqueBuildings.sort(() => 0.5 - Math.random());
+    const selectedBuildings = shuffled.slice(0, 6);
+    
+    // Create 3 example pairs (start -> destination)
+    const examples = [];
+    for (let i = 0; i < 3; i++) {
+        const startBuilding = selectedBuildings[i * 2];
+        const endBuilding = selectedBuildings[i * 2 + 1];
+        
+        // Find the building data in buildingIndex
+        const startBuildingKey = Object.keys(buildingIndex).find(key => 
+            buildingIndex[key].id === startBuilding.number.toString()
+        );
+        const endBuildingKey = Object.keys(buildingIndex).find(key => 
+            buildingIndex[key].id === endBuilding.number.toString()
+        );
+        
+        if (startBuildingKey && endBuildingKey) {
+            examples.push({
+                start: buildingIndex[startBuildingKey],
+                end: buildingIndex[endBuildingKey],
+                startName: startBuilding.name,
+                endName: endBuilding.name
+            });
+        }
+    }
+    
+    // Create example elements
+    examples.forEach(example => {
+        const $exampleItem = $(`
+            <div class="nav-example-item flex pointer" style="column-gap: 0.3rem !important; align-items: flex-start;">
+                <i class="fa-solid fa-route" style="color: var(--theme-hidden-route-col); font-size: 1.7rem; flex-shrink: 0;"></i>
+                <div class="nav-example-text" style="color: var(--theme-color);">
+                    <span>${example.startName}</span>
+                    <span style="margin: 0 0.5rem; color: var(--theme-color-lighter);">→</span>
+                    <span>${example.endName}</span>
+                </div>
+            </div>
+        `);
+        
+        // Add click handler
+        $exampleItem.click(function() {
+            // Track navigation example click
+            sa_event('btn_press', {
+                'btn': 'nav_example_selected',
+                'from': example.startName,
+                'to': example.endName,
+                'example_index': examples.indexOf(example)
+            });
+            
+            // Set the navigation inputs
+            isSettingInputProgrammatically = true;
+            $('#nav-from-input').val(example.startName).trigger('input');
+            $('#nav-to-input').val(example.endName).trigger('input');
+            isSettingInputProgrammatically = false;
+            
+            // Set the selected building variables
+            selectedFromBuilding = example.start.name.toLowerCase();
+            selectedToBuilding = example.end.name.toLowerCase();
+            
+            // Show clear buttons
+            $('#nav-from-clear-btn, #nav-to-clear-btn').fadeIn();
+            
+            // Hide autocomplete dropdowns
+            hideNavigationAutocomplete();
+            
+            // Calculate and display the route
+            setTimeout(() => {
+                calculateRoute(example.startName, example.endName);
+            }, 100);
+        });
+        
+        $examplesContainer.append($exampleItem);
+    });
 }

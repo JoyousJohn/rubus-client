@@ -17,10 +17,13 @@ $(document).ready(function() {
             // Hide recommendations and recent searches when there's input
             $('.search-recs-wrapper').hide();
             $('.search-recents-wrapper').hide();
+            $('.search-nav-examples-wrapper').hide();
         } else {
             // Populate search recommendations and recent searches when no input
             populateSearchRecommendations();
             populateRecentSearches();
+            // Also populate navigation examples
+            populateNavigationExamples();
         }
 
         sa_event('btn_press', {
@@ -115,9 +118,11 @@ $(document).ready(function() {
         if (sanitizedQuery) {
             $('.search-recs-wrapper').hide();
             $('.search-recents-wrapper').hide();
+            $('.search-nav-examples-wrapper').hide();
         } else {
             $('.search-recs-wrapper').show();
             $('.search-recents-wrapper').show();
+            $('.search-nav-examples-wrapper').show();
         }
         
         if (!fuseReady || !sanitizedQuery) {
