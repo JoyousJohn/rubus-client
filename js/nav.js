@@ -1517,7 +1517,7 @@ async function loadStartWalkingRoads(startBuilding, startStop) {
                 startRoadsList.after(`
                     <div class="google-maps-link" style="text-align: left;">
                         <a href="${googleMapsUrl}" target="_blank" style="color: var(--theme-link); text-decoration: none; font-size: 1.2rem; font-weight: 500;">
-                            Open in Google Maps →
+                            <i class="fa-solid fa-arrows-turn-right"></i> Open in Google Maps
                         </a>
                     </div>
                 `);
@@ -1583,7 +1583,7 @@ async function loadEndWalkingRoads(endBuilding, endStop) {
                 endRoadsList.after(`
                     <div class="google-maps-link" style="text-align: left;">
                         <a href="${googleMapsUrl}" target="_blank" style="color: var(--theme-link); text-decoration: none; font-size: 1.2rem; font-weight: 500;">
-                            Open in Google Maps →
+                            <i class="fa-solid fa-arrows-turn-right"></i> Open in Google Maps
                         </a>
                     </div>
                 `);
@@ -2060,7 +2060,7 @@ function displayRoute(routeData) {
                 <div class="waypoint-circle ${waypoint.type}-circle ${waypoint.isBoarding ? 'boarding-circle' : ''} ${waypoint.isAlighting ? 'alighting-circle' : ''}"></div>
                 <div class="waypoint-content" style="margin-left: 0.75rem;">
                     <div class="waypoint-header">
-                        <h4 class="waypoint-title">${waypoint.name}</h4>
+                        <h4 class="waypoint-title clickable-waypoint" data-waypoint-type="${waypoint.type}" data-waypoint-name="${waypoint.name}" data-is-boarding="${waypoint.isBoarding || false}" data-is-alighting="${waypoint.isAlighting || false}" style="cursor: pointer; user-select: none;">${waypoint.name} <i class="fa-duotone fa-solid fa-right" style="--fa-primary-color: var(--theme-link); --fa-secondary-color: color-mix(in srgb, var(--theme-link) 70%, white);"></i></h4>
                         ${waypoint.description ? `<div class="waypoint-description">${waypoint.description}</div>` : ''}
                     </div>
                     ${content}
@@ -2098,6 +2098,73 @@ function displayRoute(routeData) {
 
     // Position the single global waypoint connector after render
     positionGlobalWaypointConnector();
+
+    // Add click handlers for waypoint titles
+    $(document).on('click', '.clickable-waypoint', function() {
+        const waypointType = $(this).data('waypoint-type');
+        const waypointName = $(this).data('waypoint-name');
+        const isBoarding = $(this).data('is-boarding');
+        const isAlighting = $(this).data('is-alighting');
+        
+        if (waypointType === 'building') {
+            // Find and select the building on the map
+            const buildingKey = Object.keys(buildingIndex).find(key => 
+                buildingIndex[key].name.toLowerCase() === waypointName.toLowerCase()
+            );
+            
+            if (buildingKey) {
+                showBuildingInfo(buildingIndex[buildingKey]);
+                
+                // Fly to the building location
+                const building = buildingIndex[buildingKey];
+                if (building && building.lat && building.lng) {
+                    map.flyTo([building.lat, building.lng], 18, {
+                        duration: 1.5
+                    });
+                }
+                
+                // Close navigation wrapper and hide search
+                closeNavigation();
+                $('.search-wrapper').hide();
+                
+                sa_event('btn_press', {
+                    'btn': 'nav_waypoint_building_clicked',
+                    'building': waypointName,
+                    'context': 'navigation'
+                });
+            }
+        } else if (waypointType === 'stop') {
+            // Find the stop and show stop info
+            const stopId = Object.keys(stopsData).find(id => 
+                stopsData[id].name.toLowerCase() === waypointName.toLowerCase()
+            );
+            
+            if (stopId && typeof popStopInfo === 'function') {
+                const stop = stopsData[stopId];
+                
+                // Fly to the stop location
+                if (stop && stop.latitude && stop.longitude) {
+                    map.flyTo([stop.latitude, stop.longitude], 18, {
+                        duration: 1.5
+                    });
+                }
+                
+                // Show stop info and close navigation
+                popStopInfo(parseInt(stopId));
+                closeNavigation();
+                $('.search-wrapper').hide();
+                
+                sa_event('btn_press', {
+                    'btn': 'nav_waypoint_stop_clicked',
+                    'stop': waypointName,
+                    'stop_id': stopId,
+                    'is_boarding': isBoarding,
+                    'is_alighting': isAlighting,
+                    'context': 'navigation'
+                });
+            }
+        }
+    });
 
     // Add click handlers for route switching
     if (routesForDisplay.length > 1) {
@@ -2483,7 +2550,7 @@ function updateRouteDisplay(routeData) {
                 <div class="waypoint-circle ${waypoint.type}-circle ${waypoint.isBoarding ? 'boarding-circle' : ''} ${waypoint.isAlighting ? 'alighting-circle' : ''}"></div>
                 <div class="waypoint-content" style="margin-left: 0.75rem;">
                     <div class="waypoint-header">
-                        <h4 class="waypoint-title">${waypoint.name}</h4>
+                        <h4 class="waypoint-title clickable-waypoint" data-waypoint-type="${waypoint.type}" data-waypoint-name="${waypoint.name}" data-is-boarding="${waypoint.isBoarding || false}" data-is-alighting="${waypoint.isAlighting || false}" style="cursor: pointer; user-select: none;">${waypoint.name} <i class="fa-duotone fa-solid fa-right" style="--fa-primary-color: var(--theme-link); --fa-secondary-color: color-mix(in srgb, var(--theme-link) 70%, white);"></i></h4>
                         ${waypoint.description ? `<div class="waypoint-description">${waypoint.description}</div>` : ''}
                     </div>
                     ${content}
