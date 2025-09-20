@@ -7,6 +7,7 @@ let dragStartY = 0;
 let dragEndX = 0;
 let dragEndY = 0;
 let isDragging = false;
+let initialScrollLeft = 0;
 
 // Panel order for swipe navigation (matches HTML order: routes > stops > network)
 const panelOrder = ['routes', 'stops', 'network'];
@@ -45,35 +46,6 @@ function selectInfoPanel(panel, element) {
         $('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
         if (element) {
             $(element).addClass('all-stops-selected-menu');
-        }
-
-        // Show/hide sections based on selection
-        if (panel === 'stops') {
-            $('.buses-panel-wrapper').hide();
-            $('.route-panel-wrapper').hide();
-            $('.all-stops-inner').show();
-            $('.info-panels-close').show();
-        } else if (panel === 'routes') {
-            $('.all-stops-inner').hide();
-            $('.buses-panel-wrapper').hide();
-            $('.route-panel-wrapper').show();
-            
-            // Show bottom container and only route selectors, hide other buttons that open wrappers
-            $('.bottom').show();
-            $('.left-btns, .right-btns').hide();
-            $('.route-selectors').show();
-            $('.settings-btn').hide();
-            
-            // Hide the favorite star icon when routes menu opens
-            $('.route-selector[routeName="fav"]').hide();
-        } else if (panel === 'network') {
-            $('.all-stops-inner').hide();
-            $('.route-panel-wrapper').hide();
-            $('.buses-panel-wrapper').show().css('display', 'block');
-            $('.bottom').hide();
-            $('.info-panels-close').show();
-            // Ensure overview panel is visible and updated
-            busesOverview();
         }
     } catch (error) {
         console.error('Error selecting info panel:', error);
@@ -119,6 +91,9 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
         dragStartY = e.clientY;
     }
     
+    // Store initial scroll position
+    initialScrollLeft = $('.info-panels-content').scrollLeft();
+    
     isDragging = false;
     e.preventDefault(); // Prevent text selection and scrolling
 });
@@ -149,10 +124,8 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
         isDragging = true;
         e.preventDefault(); // Prevent scrolling while dragging
         
-        // Show visual feedback during drag
-        const containerWidth = $('.info-panels-content').width();
-        const currentScrollPosition = $('.info-panels-content').scrollLeft();
-        const newScrollPosition = currentScrollPosition - deltaX;
+        // Show visual feedback during drag - calculate from initial position
+        const newScrollPosition = initialScrollLeft - deltaX;
         
         $('.info-panels-content').scrollLeft(newScrollPosition);
     }
@@ -200,10 +173,21 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
             targetPanelIndex = closestPanelIndex;
         }
         
-        // Snap to the target panel
+        // Snap to the target panel with smooth animation
         const targetPanel = panelOrder[targetPanelIndex];
         currentPanelIndex = targetPanelIndex;
-        updatePanelPosition(targetPanel);
+        
+        // Calculate target scroll position
+        const targetScrollPosition = targetPanelIndex * containerWidth;
+        
+        // Animate to the target position
+        $('.info-panels-content').animate({
+            scrollLeft: targetScrollPosition
+        }, 300, 'swing', function() {
+            console.log('Animation completed');
+            // Update panel position after animation completes
+            updatePanelPosition(targetPanel);
+        });
         
         // Update the header button selection
         const targetElement = $(`.info-panels-header-buttons [data-panel="${targetPanel}"]`);

@@ -21,6 +21,7 @@
 .info-panels-header-buttons {
     flex-shrink: 0; /* Prevent shrinking */
     z-index: 404;
+    margin-bottom: 1rem;
 }
 
 .subpanels-container {
