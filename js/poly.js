@@ -305,7 +305,12 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             stopDepotVisibilityClass = '';
         }
 
-        const $stopBusElm = $(`<div class="flex justify-between align-center pointer">
+        let busContainerStyle = '';
+        if (data.eta === undefined || busData[data.busId].atDepot || distanceFromLine(data.busId) || !isValid(data.busId)) {
+            busContainerStyle = ' style="grid-column: span 3;"';
+        }
+
+        const $stopBusElm = $(`<div class="flex justify-between align-center pointer"${busContainerStyle}>
             <div class="flex gap-x-0p5rem">
                 <div class="stop-bus-id">${busData[data.busId].busName}</div>
                 <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
@@ -326,8 +331,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
             $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
         } else if (data.eta === undefined || busData[data.busId].atDepot || distanceFromLine(data.busId) || !isValid(data.busId)) {
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer"></div>`);
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer"></div>`);
+            // For invalid buses, the bus container already spans the remaining columns
             // Print the condition that led to
             let reason = '';
             if (data.eta === undefined) {
