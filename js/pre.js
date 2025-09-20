@@ -125,7 +125,7 @@ async function immediatelyUpdateBusDataPre() {
 
 async function immediatelyUpdateBusDataPost() {
     // if (!Object.keys(busData).length) { // maybe add a condition here to only cheeck on weekends at night?
-        startOvernight(true);
+        startOvernight(true, true);
     // }
     $('.updating-buses').slideUp();
 }
@@ -777,7 +777,7 @@ async function fetchWhere() {
 }
 
 
-async function startOvernight(setColorBack) {
+async function startOvernight(setColorBack, immediatelyUpdate = false) {
 
     response = await fetch('https://demo.rubus.live/overnight');
 
@@ -836,7 +836,7 @@ async function startOvernight(setColorBack) {
 
                 busData[busId].capacity = bus.capacity;
     
-                plotBus(busId);
+                plotBus(busId, immediatelyUpdate);
                 calculateSpeed(busId);
 
                 if (setColorBack) {
