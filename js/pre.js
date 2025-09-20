@@ -279,6 +279,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             } else {
                 if (busData[busId].route !== routeStr) { // Route changed for existing bus...
                     const oldRoute = busData[busId].route;
+                    console.log(`[ROUTE CHANGE] Bus ${busData[busId].busName} (${busId}) changed routes: ${oldRoute} → ${routeStr}`);
                     busData[busId]['route_change'] = {
                         'old_route': oldRoute,
                         'route_change_time': new Date(),

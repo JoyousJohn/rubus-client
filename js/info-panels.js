@@ -64,6 +64,21 @@ function moveRouteSelectorsToMain() {
     }
 }
 
+// Function to restore the last selected panel position when opening info panels
+function restorePanelPosition() {
+    const currentPanel = panelOrder[currentPanelIndex];
+    const panelIndex = currentPanelIndex;
+    const panelWidth = $('.info-panels-content').width();
+    const targetX = -1 * panelIndex * panelWidth;
+    
+    // Apply transform directly without animation to restore position
+    $('.subpanels-container').css('transform', 'translateX(' + targetX + 'px)');
+    
+    // Update panel classes
+    $('.subpanels-container').removeClass('panel-stops panel-routes panel-network');
+    $('.subpanels-container').addClass(`panel-${currentPanel}`);
+}
+
 // Calculate target panel position and animate there with physics-like momentum
 function animateToTargetPanel(initialVelocity, options) {
     const opts = options || {};

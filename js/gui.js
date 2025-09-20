@@ -312,12 +312,13 @@ function hideAllStops() {
 }
 
 function hideStopsExcept(excludedRoute) {
+    console.log('hideStopsExcept', excludedRoute)
     const stopIdsForSelectedRoute = stopLists[excludedRoute]
     for (const polyline in polylines) {
         const stopIdsForRoute = stopLists[polyline]
         stopIdsForRoute.forEach(stopId => {
             if (!(stopIdsForSelectedRoute).includes(stopId)) {
-                // console.log(stopId)
+                console.log(stopId)
                 busStopMarkers[stopId].remove();
             }
         })
@@ -526,10 +527,10 @@ function selectedRoute(route) {
         // Move route selectors into the route subpanel
         moveRouteSelectorsToSubpanel();
         
-        // Find the routes tab element and pass it to selectInfoPanel
-        const routesTab = $('.info-panels-wrapper [data-panel="routes"]')[0];
-        console.log('Calling selectInfoPanel with routes');
-        selectInfoPanel('routes', routesTab);
+        // Don't force a specific panel - let the system remember the last selected panel
+        // The panel state is already preserved in currentPanelIndex and header button styling
+        // Restore the panel position to match the remembered state
+        restorePanelPosition();
     }
     
     // Make sure route panel is visible by removing the 'none' class

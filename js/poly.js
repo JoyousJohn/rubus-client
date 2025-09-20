@@ -359,7 +359,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                     }
                 }
             }
-            console.log(`[${data.busId}] xx:xx due to: ${reason.trim()}`);
+            // console.log(`[${data.busId}] xx:xx due to: ${reason.trim()}`);
         } else {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm'}</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);

@@ -107,8 +107,11 @@ $('.all-stops').click(function() {
     $('.info-panels-show-hide-wrapper').show().scrollTop(0);
     // Populate the network panel
     busesOverview();
-    // Select the stops panel to ensure correct positioning and scrolling
-    selectInfoPanel('stops', $('.all-stops-selected-menu'));
+    // Don't force a specific panel - let the system remember the last selected panel
+    // The panel state is already preserved in currentPanelIndex and header button styling
+    // Restore the panel position to match the remembered state
+    restorePanelPosition();
+    
     // Populate all stops after panels are visible
     populateAllStops();
     
