@@ -125,7 +125,7 @@ function populateAllStops() {
 $('.all-stops').click(function() {
     populateAllStops();
     $('.info-panels-wrapper').show().scrollTop(0);
-    // Find the routes tab element and pass it to selectInfoPanel
-    const routesTab = $('.info-panels-wrapper [data-panel="routes"]')[0];
-    selectInfoPanel('routes', routesTab);
+    // Find the stops tab element and pass it to selectInfoPanel
+    const stopsTab = $('.info-panels-wrapper [data-panel="stops"]')[0];
+    selectInfoPanel('stops', stopsTab);
 })

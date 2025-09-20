@@ -497,7 +497,9 @@ function selectedRoute(route) {
     if (!panelRoute && !routesTabActive) {
         // Show info panels with routes tab selected
         $('.info-panels-wrapper').show();
-        selectInfoPanel('routes');
+        // Find the routes tab element and pass it to selectInfoPanel
+        const routesTab = $('.info-panels-wrapper [data-panel="routes"]')[0];
+        selectInfoPanel('routes', routesTab);
     }
     
     // Make sure route panel is visible by removing the 'none' class
@@ -1097,8 +1099,10 @@ function closeRouteMenu() {
     $('.info-panels-wrapper').hide();
     $('.bottom').show();
     
-    // Hide the route close button and show all other buttons
-    $('.route-close').css('display', 'none');
+    // Reset bottom position to default
+    $('.bottom').css('bottom', '0px');
+    
+    // Show all other buttons
     $('.left-btns, .right-btns, .settings-btn').show();
 
     // Show the favorite star icon again if there are favorited buses

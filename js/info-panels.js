@@ -15,7 +15,6 @@ function selectInfoPanel(panel, element) {
             $('.route-panel-wrapper').hide();
             $('.all-stops-inner').show();
             $('.bottom').hide();
-            $('.route-close').css('display', 'none');
             $('.info-panels-close').show();
         } else if (panel === 'routes') {
             $('.all-stops-inner').hide();
@@ -28,18 +27,20 @@ function selectInfoPanel(panel, element) {
             $('.route-selectors').show();
             $('.settings-btn').hide();
             
+            // Set bottom position to be above the info-panels-header-buttons
+            const headerButtonsHeight = $('.info-panels-header-buttons').height();
+            $('.bottom').css('bottom', headerButtonsHeight + 'px');
+            
             // Hide the favorite star icon when routes menu opens
             $('.route-selector[routeName="fav"]').hide();
             
-            // Show route close button and hide info panels close button
-            $('.route-close').css('display', 'flex').css('height', $('.route-selector').innerHeight());
+            // Hide info panels close button
             $('.info-panels-close').hide();
         } else if (panel === 'network') {
             $('.all-stops-inner').hide();
             $('.route-panel-wrapper').hide();
             $('.buses-panel-wrapper').show();
             $('.bottom').hide();
-            $('.route-close').css('display', 'none');
             $('.info-panels-close').show();
             // Ensure overview panel is visible and updated
             busesOverview();
@@ -53,15 +54,12 @@ function selectInfoPanel(panel, element) {
 $('.info-panels-close').click(function() {
     $('.info-panels-wrapper').hide();
     $('.bottom').show();
+    // Reset bottom position to default
+    $('.bottom').css('bottom', '0px');
     // Ensure all buttons are visible when info panels are closed
     $('.left-btns, .right-btns, .route-selectors, .settings-btn').show();
-    $('.route-close').css('display', 'none');
     $('.info-panels-close').show();
 })
 
-// Handle closing via the route close button
-$('.route-close').click(function() {
-    closeRouteMenu();
-})
 
 

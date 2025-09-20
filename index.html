@@ -570,44 +570,27 @@
     </div>
 
     <div class="info-panels-wrapper none">
-        <div class="grid grid-cols-3 gap-x-1rem text-1p5rem m-1rem center select-none">
-            <div class="flex justify-center">
-                <div data-panel="stops" class="flex justify-center align-center gap-x-0p5rem all-stops-selected-menu w-min px-1rem py-0p5rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('stops', this)">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <div>Stops</div>
+        <div class="info-panels-layout-container">
+        <!-- Top row: Subpanels content -->
+        <div class="info-panels-content flex-1 overflow-y-auto">
+            <div class="all-stops-inner p-2rem mb-8rem"></div>
+            <div class="route-panel-wrapper">
+                <div class="route-panel none">
+                    <div class="flex flex-col h-100">
+                        <div class="flex align-center gap-x-1rem justify-between">
+                            <div class="flex gap-x-1rem">
+                                <div class="route-name"></div>
+                                <div class="route-campuses flex align-center"></div>
+                            </div>
+                            <div class="color-circle"></div>
+                        </div>  
+                        <div class="route-active-buses center"></div>
+                        <div class="active-buses"></div>
+                        <div class="route-stops-grid"></div>
+                    </div>
                 </div>
             </div>
-            <div class="flex justify-center">
-                <div data-panel="routes" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-0p5rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('routes', this)">
-                    <i class="fa-solid fa-route"></i>
-                    <div>Routes</div>
-                </div>
-            </div>
-            <div class="flex justify-center">
-                <div data-panel="network" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-0p5rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('network', this)">
-                    <i class="fa-solid fa-bus"></i>
-                    <div>Network</div>
-                </div>
-            </div>
-        </div>
-        <div class="all-stops-inner p-2rem mb-8rem"></div>
-        <div class="route-panel-wrapper">
-            <div class="route-panel none">
-                <div class="flex flex-col h-100">
-                    <div class="flex align-center gap-x-1rem justify-between">
-                        <div class="flex gap-x-1rem">
-                            <div class="route-name"></div>
-                            <div class="route-campuses flex align-center"></div>
-                        </div>
-                        <div class="color-circle"></div>
-                    </div>  
-                    <div class="route-active-buses center"></div>
-                    <div class="active-buses"></div>
-                    <div class="route-stops-grid"></div>
-                </div>
-            </div>
-        </div>
-        <div class="buses-panel-wrapper justify-center">
+            <div class="buses-panel-wrapper justify-center">
             <div class="ridership-title">Network Overview</div>
             <div class="flex justify-center">
                 <div class="live-overview">LIVE</div>
@@ -646,7 +629,31 @@
                 </div>
             </div>
         </div>
-        <div class="flex info-panels-close justify-center align-center select-none">X</div>
+        </div>
+        
+        <!-- Bottom row: Header buttons -->
+        <div class="info-panels-header-buttons grid gap-x-1rem text-1p5rem p-1rem center select-none" style="background-color: var(--theme-bg); border-top: 1px solid var(--theme-border); grid-template-columns: 1fr 1fr 1fr auto;">
+            <div class="flex justify-center">
+                <div data-panel="routes" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-0p5rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('routes', this)">
+                    <i class="fa-solid fa-route"></i>
+                    <div>Routes</div>
+                </div>
+            </div>
+            <div class="flex justify-center">
+                <div data-panel="stops" class="flex justify-center align-center gap-x-0p5rem all-stops-selected-menu w-min px-1rem py-0p5rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('stops', this)">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <div>Stops</div>
+                </div>
+            </div>
+            <div class="flex justify-center">
+                <div data-panel="network" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-0p5rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('network', this)">
+                    <i class="fa-solid fa-bus"></i>
+                    <div>Network</div>
+                </div>
+            </div>
+            <div class="flex info-panels-close justify-center align-center select-none pointer white bold-600">X</div>
+        </div>
+        </div>
     </div>
 
     <div class="chat-wrapper none">
@@ -1437,7 +1444,6 @@
                 <!-- <div class="route-selector sim-btn none">SIM</div> -->
                 <div class="route-selector settings-btn"><i class="fa-solid fa-gear"></i></div>
             </div>
-            <div class="route-close none justify-center align-center">X</div>
         </div>
     </div>
 

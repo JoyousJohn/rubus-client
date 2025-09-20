@@ -1,9 +1,25 @@
 .info-panels-wrapper {
-    height: 100%;
+    height: 100vh;
     background-color: var(--theme-bg);
     color: var(--theme-color);
     font-family: var(--font-family);
-    overflow-y: scroll;
+}
+
+.info-panels-layout-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.info-panels-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0; /* Important for flex scrolling */
+}
+
+.info-panels-header-buttons {
+    flex-shrink: 0; /* Prevent shrinking */
+    z-index: 404;
 }
 
 .all-stops-selected-menu {
