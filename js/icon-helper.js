@@ -77,6 +77,7 @@ const observer = new MutationObserver(function(mutations) {
             const faIcons = mutation.target.querySelectorAll ? 
                 mutation.target.querySelectorAll('i[class*="fa-"]') : [];
             if (faIcons.length > 0) {
+                console.log('Found', faIcons.length, 'FontAwesome icons, converting...');
                 replaceFontAwesomeIcons();
             }
         }

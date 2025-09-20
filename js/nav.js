@@ -963,6 +963,9 @@ function showNavigationAutocomplete(inputElement, query) {
 
         resultsContainer.append($resultElement);
     });
+    
+    // Convert FontAwesome icons to custom icons
+    replaceFontAwesomeIcons();
 
     resultsContainer.removeClass('none');
 
@@ -2694,4 +2697,7 @@ function populateNavigationExamples() {
         
         $examplesContainer.append($exampleItem);
     });
+    
+    // Convert FontAwesome icons to custom icons
+    replaceFontAwesomeIcons();
 }

@@ -205,6 +205,9 @@ $(document).ready(function() {
             });
             $results.append($elm);
         });
+        
+        // Convert FontAwesome icons to custom icons
+        replaceFontAwesomeIcons();
 
         if (!buildingsLayer) {
             loadBuildings();
