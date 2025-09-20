@@ -28,11 +28,11 @@ function openRUBusSocket() {
         // fetchBusData(true); // immediately update positions
     }
 
-    if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
-        socket = new WebSocket('ws://127.0.0.1:5000/ws');
-    } else {
+    // if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
+        // socket = new WebSocket('ws://127.0.0.1:5000/ws');
+    // } else {
         socket = new WebSocket('wss://demo.rubus.live/ws');
-    }
+    // }
 
     socket.addEventListener("open", (event) => {
         // console.log("Passio WebSocket connection opened");
