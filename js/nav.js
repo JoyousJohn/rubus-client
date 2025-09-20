@@ -1989,7 +1989,7 @@ function displayRoute(routeData) {
                 </div>
             `;
             connectorText = index < timelineWaypoints.length - 1 ? 'Walk to destination' : '';
-        } else if (waypoint.type === 'building' && index === 3) {
+        } else if (waypoint.type === 'building' && index === timelineWaypoints.length - 1) {
             // End building row (no extra arrival message)
             content = '';
         }
@@ -2039,6 +2039,9 @@ function displayRoute(routeData) {
                 const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
                 busTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${estimatedMinutes}m</div>`;
             }
+        } else if (index === timelineWaypoints.length - 1) {
+            // Final destination - no travel needed
+            travelEmoji = '🏁';
         } else if (waypoint.isAlighting) {
             // Alighting stop - about to walk to destination
             travelEmoji = '🚶';
@@ -2046,9 +2049,6 @@ function displayRoute(routeData) {
                 const timeMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
                 walkingTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${timeMinutes}m</div>`;
             }
-        } else if (waypoint.type === 'building' && index === 3) {
-            // End building - no travel needed
-            travelEmoji = '🏁';
         }
 
         return `
@@ -2462,6 +2462,9 @@ function updateRouteDisplay(routeData) {
                 const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
                 busTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${estimatedMinutes}m</div>`;
             }
+        } else if (index === timelineWaypoints.length - 1) {
+            // Final destination - no travel needed
+            travelEmoji = '🏁';
         } else if (waypoint.isAlighting) {
             // Alighting stop - about to walk to destination
             travelEmoji = '🚶';
@@ -2469,9 +2472,6 @@ function updateRouteDisplay(routeData) {
                 const timeMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
                 walkingTime = `<div style="font-size: 1rem; color: var(--theme-color); text-align: center; margin-top: 0.2rem;">${timeMinutes}m</div>`;
             }
-        } else if (waypoint.type === 'building' && index === 3) {
-            // End building - no travel needed
-            travelEmoji = '🏁';
         }
 
         return `
