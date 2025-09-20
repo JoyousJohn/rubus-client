@@ -484,7 +484,7 @@
                 </div>
                 
                 <div class="stop-info-show-next-loop pointer" style="color: #6969bf;" onclick="$('.stop-info-next-loop-wrapper').slideDown(); $('.stop-info-show-next-loop').hide(); $('.always-show-next-loop').show();">Show next loop</div>
-                <div class="always-show-next-loop pointer none" style="color: #6969bf;" onclick="$('.always-show-next-loop').hide(); settings['toggle-always-show-second'] = true; localStorage.setItem('settings', JSON.stringify(settings));">Always show next loop</div>
+                <div class="always-show-next-loop pointer none" style="color: #6969bf;" onclick="$('.always-show-next-loop').hide(); settings['toggle-always-show-second'] = true; localStorage.setItem('settings', JSON.stringify(settings)); $('#toggle-always-show-second').prop('checked', true);">Always show next loop</div>
                 <div class="stop-info-avg-wait"></div>
             </div>
 

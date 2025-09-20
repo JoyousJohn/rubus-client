@@ -2258,6 +2258,9 @@ function displayRoute(routeData) {
     
     // Ensure directions wrapper uses flex when visible
     $('.nav-directions-wrapper').removeClass('none').addClass('flex');
+
+    // Scroll to top of route content wrapper
+    $('.nav-directions-wrapper').scrollTop(0);
     
 }
 
