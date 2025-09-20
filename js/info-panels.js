@@ -130,6 +130,8 @@ function animateToTargetPanel(initialVelocity) {
         complete: function() {
             // Update panel position after animation completes
             updatePanelPosition(targetPanel);
+            // Clamp scroll position to target to avoid in-between states
+            $('.info-panels-content').scrollLeft(targetScrollPosition);
         }
     });
     
@@ -329,9 +331,6 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
     
     // Only process the drag if we were actually dragging horizontally
     if (isDragging && dragStartX && dragStartY) {
-        // Stop any ongoing animations before starting new momentum animation
-        $('.info-panels-content').stop(true);
-        
         const deltaX = dragEndX - dragStartX;
         
         // Convert velocity from pixels per millisecond to a more usable scale
