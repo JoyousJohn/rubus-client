@@ -67,6 +67,7 @@ function populateAllStops() {
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();
+                        moveRouteSelectorsToMain();
                     });
                 $allStopsGridElm.append($stopsElm);
                 servicingRoutes.forEach(route => {
