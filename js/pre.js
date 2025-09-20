@@ -453,7 +453,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             }
             checkMinRoutes();
         } else {
-            $('.all-stops-btn-wrapper').hide();
+            // Only hide all-stops button if there are truly no buses at all (including overnight buses)
+            if (Object.keys(busData).length === 0) {
+                $('.all-stops-btn-wrapper').hide();
+            }
         }
 
     } catch (error) {
@@ -529,6 +532,11 @@ function makeOoS(busId) {
 
     populateMeClosestStops();
     populateFavs(popSelectors=false); // Do I need this? <-- yes you do
+
+    // Hide all-stops button if no buses remain
+    if (Object.keys(busData).length === 0) {
+        $('.all-stops-btn-wrapper').hide();
+    }
 
 }
 
@@ -861,6 +869,11 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
             }
 
             addStopsToMap();
+
+            // Show all-stops button if buses exist
+            if (Object.keys(busData).length > 0) {
+                $('.all-stops-btn-wrapper').show();
+            }
 
             // console.log(activeRoutes)
             // console.log(polylines)
