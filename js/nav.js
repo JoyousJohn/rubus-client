@@ -2754,8 +2754,9 @@ function populateNavigationExamples() {
             // Show clear buttons
             $('#nav-from-clear-btn, #nav-to-clear-btn').fadeIn();
             
-            // Hide autocomplete dropdowns
+            // Hide autocomplete dropdowns and search wrapper
             hideNavigationAutocomplete();
+            $('.search-wrapper').hide();
             
             // Calculate and display the route
             setTimeout(() => {
