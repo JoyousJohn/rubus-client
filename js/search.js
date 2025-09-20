@@ -40,6 +40,57 @@ $(document).ready(function() {
         });
     });
 
+    // Track current rotation for the refresh buttons
+    let currentRotation = 0;
+    let navCurrentRotation = 0;
+    
+    // Refresh button functionality for popular places
+    $('.search-recs-refresh-btn').click(function() {
+        const $btn = $(this);
+        const $icon = $btn.find('i');
+        
+        // Calculate target rotation (current + 360 degrees)
+        const targetRotation = currentRotation + 360;
+        
+        // Set transition and rotate to target
+        $icon.css('transition', 'transform 0.5s ease-in-out');
+        $icon.css('transform', `rotate(${targetRotation}deg)`);
+        
+        // Update current rotation
+        currentRotation = targetRotation;
+        
+        // Refresh the recommendations
+        populateSearchRecommendations();
+        
+        sa_event('btn_press', {
+            'btn': 'search_recommendations_refresh'
+        });
+    });
+
+    // Refresh button functionality for navigation examples
+    $('.search-nav-examples-refresh-btn').click(function() {
+        const $btn = $(this);
+        const $icon = $btn.find('i');
+        
+        // Calculate target rotation (current + 360 degrees)
+        const targetRotation = navCurrentRotation + 360;
+        
+        // Set transition and rotate to target
+        $icon.css('transition', 'transform 0.5s ease-in-out');
+        $icon.css('transform', `rotate(${targetRotation}deg)`);
+        
+        // Update current rotation
+        navCurrentRotation = targetRotation;
+        
+        // Refresh the navigation examples
+        populateNavigationExamples();
+        
+        sa_event('btn_press', {
+            'btn': 'navigation_examples_refresh'
+        });
+    });
+
+
     // Show/hide clear button based on input
     function toggleClearButton() {
         if ($input.val().trim()) {
@@ -484,6 +535,9 @@ $(document).ready(function() {
             });
             $searchRecs.append($recItem);
         });
+        
+        // Convert FontAwesome icons to custom icons
+        replaceFontAwesomeIcons();
     }
 
 });

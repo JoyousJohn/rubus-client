@@ -47,6 +47,7 @@
 .icon-location-crosshairs { --icon-mask: url('../img/icons/location-crosshairs.svg'); }
 .icon-gear { --icon-mask: url('../img/icons/gear.svg'); }
 .icon-filter { --icon-mask: url('../img/icons/filter.svg'); }
+.icon-rotate-right { --icon-mask: url('../img/icons/rotate-right.svg'); }
 
 /* Size variations */
 .icon-sm { width: 0.8em; height: 0.8em; }

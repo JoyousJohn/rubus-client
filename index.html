@@ -772,15 +772,34 @@
                 </div>
             </div>
             <div class="search-recents-wrapper mt-1rem">
-                <div class="text-1p4rem bold-500 ml-0p3rem" style="color: var(--theme-color-lighter)"><i class="fa-solid fa-clock-rotate-left"></i> Recent searches</div>
+                <div class="flex align-center ml-0p3rem" style="color: var(--theme-color-lighter)">
+                    <i class="fa-solid fa-clock-rotate-left" style="font-size: 1.4rem;"></i>
+                    <span class="text-1p4rem bold-500 ml-0p5rem">Recent searches</span>
+                </div>
                 <div class="search-recents mt-0p5rem flex flex-col gap-y-0p5rem text-1p5rem"></div>
             </div>
             <div class="search-nav-examples-wrapper mt-1rem">
-                <div class="text-1p4rem bold-500 ml-0p3rem" style="color: var(--theme-color-lighter)"><i class="fa-solid fa-rocket"></i> Navigation examples</div>
+                <div class="flex justify-between align-center ml-0p3rem mr-0p3rem">
+                    <div class="flex align-center" style="color: var(--theme-color-lighter)">
+                        <i class="fa-solid fa-rocket" style="font-size: 1.4rem;"></i>
+                        <span class="text-1p4rem bold-500 ml-0p5rem">Navigation examples</span>
+                    </div>
+                    <button class="search-nav-examples-refresh-btn pointer" type="button" style="background: none; border: none; color: var(--theme-color-lighter); font-size: 1.4rem; padding: 0.25rem; border-radius: 0.25rem;" title="Refresh navigation examples">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
                 <div class="search-nav-examples mt-0p5rem flex flex-col gap-y-0p5rem text-1p5rem"></div>
             </div>
             <div class="search-recs-wrapper mt-1rem">
-                <div class="text-1p4rem bold-500 ml-0p3rem" style="color: var(--theme-color-lighter)"><i class="fa-solid fa-fire-flame-curved"></i> Popular places</div>
+                <div class="flex justify-between align-center ml-0p3rem mr-0p3rem">
+                    <div class="flex align-center" style="color: var(--theme-color-lighter)">
+                        <i class="fa-solid fa-fire-flame-curved" style="font-size: 1.4rem;"></i>
+                        <span class="text-1p4rem bold-500 ml-0p5rem">Popular places</span>
+                    </div>
+                    <button class="search-recs-refresh-btn pointer" type="button" style="background: none; border: none; color: var(--theme-color-lighter); font-size: 1.4rem; padding: 0.25rem; border-radius: 0.25rem;" title="Refresh popular places">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
                 <div class="search-recs mt-0p5rem flex flex-col gap-y-0p5rem text-1p5rem"></div>
             </div>
         </div>

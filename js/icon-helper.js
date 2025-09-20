@@ -37,7 +37,8 @@ function replaceFontAwesomeIcons() {
         'fa-solid fa-location-arrow': 'icon icon-location-arrow',
         'fa-solid fa-location-crosshairs': 'icon icon-location-crosshairs',
         'fa-solid fa-gear': 'icon icon-gear',
-        'fa-solid fa-filter': 'icon icon-filter'
+        'fa-solid fa-filter': 'icon icon-filter',
+        'fa-solid fa-rotate-right': 'icon icon-rotate-right'
     };
 
     // Replace all FontAwesome icons
