@@ -206,7 +206,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             passioDown = true;
             return;
         } else {
-            // $('.notif-popup').slideUp(); // will this also slide up errors when rubus servers are down? maybe I'll need a second wrapper? <-- maybe
+            // Server is responding successfully, hide notification popup and reset passioDown flag
+            if (passioDown) {
+                $('.notif-popup').slideUp();
+                passioDown = false;
+            }
         }
 
         let activeBuses = [];
@@ -410,6 +414,12 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         lastUpdateTime = currentTime;
         localStorage.setItem('lastUpdateTime', lastUpdateTime.toString());
         forceImmediateUpdate = false;
+
+        // Server is responding successfully, hide notification popup and reset passioDown flag
+        if (passioDown) {
+            $('.notif-popup').slideUp();
+            passioDown = false;
+        }
 
         // console.log('activeBuses', activeBuses)
 

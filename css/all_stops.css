@@ -16,6 +16,10 @@
     overflow-y: auto;
     overflow-x: auto; /* Allow horizontal scrolling */
     min-height: 0; /* Important for flex scrolling */
+    /* Prevent native horizontal momentum; allow vertical pan */
+    touch-action: pan-y;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-inline: contain;
 }
 
 .info-panels-header-buttons {

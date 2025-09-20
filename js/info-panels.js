@@ -16,6 +16,7 @@ let lastMoveX = 0;
 
 // Touch handling state
 let touchStartTime = 0;
+let lastTouchEndTime = 0;
 
 // Panel order for swipe navigation (matches HTML order: routes > stops > network)
 const panelOrder = ['routes', 'stops', 'network'];
@@ -128,13 +129,10 @@ function animateToTargetPanel(initialVelocity) {
         duration: totalDuration,
         easing: 'momentum', // Custom easing for smooth momentum
         complete: function() {
-            // Update panel position after animation completes
-            updatePanelPosition(targetPanel);
+            // Update panel position after animation completes (without forcing another scroll)
+            updatePanelPosition(targetPanel, { skipScroll: true });
         }
     });
-    // Removed the conflicting call to selectInfoPanel.
-    // The necessary logic is now handled by the animation's `complete` callback
-    // and the code that runs before the animation starts.
 }
 
 
@@ -185,71 +183,35 @@ $('.info-panels-close').click(function() {
 })
 
 // Function to update panel position visually
-function updatePanelPosition(panel) {
+function updatePanelPosition(panel, options) {
+    const opts = options || {};
     $('.subpanels-container').removeClass('panel-stops panel-routes panel-network');
     $('.subpanels-container').addClass(`panel-${panel}`);
-    
+
+    if (opts.skipScroll) {
+        return;
+    }
+
     // Scroll to the correct panel position using actual scrollable content width
     const panelIndex = panelOrder.indexOf(panel);
-    const viewportWidth = window.innerWidth;
     const scrollWidth = $('.info-panels-content')[0].scrollWidth;
-    const contentWidth = $('.info-panels-content').width();
     const actualPanelWidth = Math.floor(scrollWidth / 3); // Use actual scrollable width divided by 3
     const scrollPosition = panelIndex * actualPanelWidth;
-
-    console.log('=== PANEL POSITIONING DEBUG ===');
-    console.log('Panel:', panel);
-    console.log('PanelIndex:', panelIndex);
-    console.log('ViewportWidth:', viewportWidth);
-    console.log('ScrollWidth:', scrollWidth);
-    console.log('ContentWidth:', contentWidth);
-    console.log('ActualPanelWidth:', actualPanelWidth);
-    console.log('Calculated scrollPosition:', scrollPosition);
-    console.log('Expected positions: Routes=0, Stops=' + actualPanelWidth + ', Network=' + (actualPanelWidth * 2));
-    console.log('Actual scrollLeft before:', $('.info-panels-content').scrollLeft());
-    
-    // Check for padding/margin issues
-    const subpanelsContainer = $('.subpanels-container')[0];
-    const computedStyle = window.getComputedStyle(subpanelsContainer);
-    console.log('Subpanels container padding:', computedStyle.paddingLeft, computedStyle.paddingRight);
-    console.log('Subpanels container margin:', computedStyle.marginLeft, computedStyle.marginRight);
-    console.log('Subpanels container width:', computedStyle.width);
-    
-    // Check individual subpanel styles
-    const subpanels = $('.subpanel');
-    subpanels.each(function(index) {
-        const subpanelStyle = window.getComputedStyle(this);
-        console.log(`Subpanel ${index} width:`, subpanelStyle.width);
-        console.log(`Subpanel ${index} padding:`, subpanelStyle.paddingLeft, subpanelStyle.paddingRight);
-        console.log(`Subpanel ${index} margin:`, subpanelStyle.marginLeft, subpanelStyle.marginRight);
-    });
-    
     $('.info-panels-content').scrollLeft(scrollPosition);
-    
-    const finalScrollLeft = $('.info-panels-content').scrollLeft();
-    console.log('Actual scrollLeft after:', finalScrollLeft);
-    console.log('Difference from expected:', Math.abs(finalScrollLeft - scrollPosition));
-    
-    // Calculate how far over to the right it is
-    const expectedCenter = actualPanelWidth * panelIndex + (actualPanelWidth / 2);
-    const actualCenter = finalScrollLeft + (contentWidth / 2);
-    const offsetFromCenter = actualCenter - expectedCenter;
-    console.log('Expected center position:', expectedCenter);
-    console.log('Actual center position:', actualCenter);
-    console.log('Offset from center (positive = too far right):', offsetFromCenter);
-    console.log('================================');
 }
 
 // Unified pointer event handlers for touch and mouse
 $('.info-panels-content').on('touchstart mousedown', function(e) {
-    // Stop any ongoing animation
-    $('.info-panels-content').stop();
+    // Stop any ongoing animation and clear queued animations
+    $('.info-panels-content').stop(true);
     
     // Get coordinates from touch or mouse event
     if (e.type === 'touchstart') {
         dragStartX = e.originalEvent.touches[0].clientX;
         dragStartY = e.originalEvent.touches[0].clientY;
     } else {
+        // Ignore synthetic mouse events that immediately follow a touch
+        if (Date.now() - lastTouchEndTime < 400) return;
         dragStartX = e.clientX;
         dragStartY = e.clientY;
     }
@@ -271,10 +233,10 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 $('.info-panels-content').on('touchmove mousemove', function(e) {
     if (!dragStartX || !dragStartY) return;
     
-    // Check if the drag is happening on route selectors - if so, don't handle subpanel scrolling
+    // Check if the drag is happening on route selectors or ridership chart - if so, don't handle subpanel scrolling
     const target = $(e.target);
-    if (target.closest('.bottom, .route-selectors, .route-selector').length > 0) {
-        return; // Let the route selectors handle their own scrolling
+    if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .buses-overview-grid').length > 0) {
+        return; // Let these elements handle their own interactions
     }
     
     // Get coordinates from touch or mouse event
@@ -329,6 +291,14 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
 });
 
 $('.info-panels-content').on('touchend mouseup', function(e) {
+    // Ignore synthetic mouseup fired right after touchend
+    if (e.type === 'mouseup' && Date.now() - lastTouchEndTime < 400) {
+        return;
+    }
+    if (e.type === 'touchend') {
+        lastTouchEndTime = Date.now();
+    }
+    
     // Check if the drag was happening on route selectors - if so, don't handle subpanel scrolling
     const target = $(e.target);
     if (target.closest('.bottom, .route-selectors, .route-selector').length > 0) {
