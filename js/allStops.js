@@ -125,6 +125,18 @@ function populateAllStops() {
 $('.all-stops').click(function() {
     populateAllStops();
     $('.info-panels-wrapper').show().scrollTop(0);
+    // Populate the network panel
+    busesOverview();
+    
+    // Move route selectors into the route subpanel
+    moveRouteSelectorsToSubpanel();
+    
+    // Show and position route selectors immediately when info panels are opened
+    $('.bottom').show();
+    $('.left-btns, .right-btns').hide();
+    $('.route-selectors').show();
+    $('.settings-btn').hide();
+    
     // Find the stops tab element and pass it to selectInfoPanel
     const stopsTab = $('.info-panels-wrapper [data-panel="stops"]')[0];
     selectInfoPanel('stops', stopsTab);

@@ -495,10 +495,18 @@ function selectedRoute(route) {
     const routesTabActive = $('.info-panels-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
     
     if (!panelRoute && !routesTabActive) {
+        console.log('Opening info panels with routes tab');
         // Show info panels with routes tab selected
         $('.info-panels-wrapper').show();
+        // Populate the network panel
+        busesOverview();
+        
+        // Move route selectors into the route subpanel
+        moveRouteSelectorsToSubpanel();
+        
         // Find the routes tab element and pass it to selectInfoPanel
         const routesTab = $('.info-panels-wrapper [data-panel="routes"]')[0];
+        console.log('Calling selectInfoPanel with routes');
         selectInfoPanel('routes', routesTab);
     }
     

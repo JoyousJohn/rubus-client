@@ -573,24 +573,33 @@
         <div class="info-panels-layout-container">
         <!-- Top row: Subpanels content -->
         <div class="info-panels-content flex-1 overflow-y-auto">
-            <div class="all-stops-inner p-2rem mb-8rem"></div>
-            <div class="route-panel-wrapper">
-                <div class="route-panel none">
-                    <div class="flex flex-col h-100">
-                        <div class="flex align-center gap-x-1rem justify-between">
-                            <div class="flex gap-x-1rem">
-                                <div class="route-name"></div>
-                                <div class="route-campuses flex align-center"></div>
+            <div class="subpanels-container">
+                <div class="subpanel route-panel">
+                    <div class="route-panel-wrapper">
+                        <div class="route-panel none">
+                            <div class="flex flex-col h-100">
+                                <div class="flex align-center gap-x-1rem justify-between">
+                                    <div class="flex gap-x-1rem">
+                                        <div class="route-name"></div>
+                                        <div class="route-campuses flex align-center"></div>
+                                    </div>
+                                    <div class="color-circle"></div>
+                                </div>  
+                                <div class="route-active-buses center"></div>
+                                <div class="active-buses"></div>
+                                <div class="route-stops-grid"></div>
                             </div>
-                            <div class="color-circle"></div>
-                        </div>  
-                        <div class="route-active-buses center"></div>
-                        <div class="active-buses"></div>
-                        <div class="route-stops-grid"></div>
+                        </div>
                     </div>
+                    
+                    <!-- Route selectors will be moved here dynamically -->
+                    <div id="route-selectors-container"></div>
                 </div>
-            </div>
-            <div class="buses-panel-wrapper justify-center">
+                <div class="subpanel all-stops-panel">
+                    <div class="all-stops-inner p-2rem mb-8rem"></div>
+                </div>
+                <div class="subpanel buses-panel">
+                    <div class="buses-panel-wrapper justify-center">
             <div class="ridership-title">Network Overview</div>
             <div class="flex justify-center">
                 <div class="live-overview">LIVE</div>
@@ -628,7 +637,9 @@
                 <div class="wait-times gap-1rem none">
                 </div>
             </div>
-        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Bottom row: Header buttons -->
