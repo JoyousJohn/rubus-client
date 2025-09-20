@@ -130,13 +130,11 @@ function animateToTargetPanel(initialVelocity) {
         complete: function() {
             // Update panel position after animation completes
             updatePanelPosition(targetPanel);
-            // Clamp scroll position to target to avoid in-between states
-            $('.info-panels-content').scrollLeft(targetScrollPosition);
         }
     });
-    
-    // Trigger the panel selection logic
-    selectInfoPanel(targetPanel, targetElement[0]);
+    // Removed the conflicting call to selectInfoPanel.
+    // The necessary logic is now handled by the animation's `complete` callback
+    // and the code that runs before the animation starts.
 }
 
 
@@ -144,15 +142,28 @@ function selectInfoPanel(panel, element) {
     try {
         // Update current panel index
         currentPanelIndex = panelOrder.indexOf(panel);
-        
+
         // Update visual panel position
         updatePanelPosition(panel);
-        
+
         // Toggle selected menu class
         $('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
         if (element) {
             $(element).addClass('all-stops-selected-menu');
         }
+
+        // Initialize panel content based on selected panel
+        // if (panel === 'network') {
+        //     // Initialize buses overview for network panel
+        //     if (typeof busesOverview === 'function') {
+        //         busesOverview();
+        //     }
+        // } else if (panel === 'stops') {
+        //     // Initialize stops panel
+        //     if (typeof populateAllStops === 'function') {
+        //         populateAllStops();
+        //     }
+        // }
     } catch (error) {
         console.error('Error selecting info panel:', error);
     }

@@ -1,0 +1,74 @@
+/* Ridership Chart and Overview Styles */
+
+.ridership-super-wrapper {
+    display: none;
+}
+
+.ridership-title {
+    font-size: 2.5rem;
+    text-align: center;
+    margin-top: 2rem;
+    color: var(--theme-color)
+}
+
+.ridership-chart-wrapper {
+    margin: 2rem 1rem;
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    padding: 2rem;
+}
+
+.ridership-stats-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 1rem 0;
+    margin-bottom: 8rem;
+}
+
+.ridership-avg, .ridership-max {
+    font-size: 1.5rem;
+    color: gray;
+    flex: 1;
+    text-align: center;
+}
+
+/* Bus Overview Grid Styles */
+.buses-overview-grid {
+    margin-top: 2rem;
+    font-size: 2rem;
+    grid-template-columns: auto 1fr 1fr;
+    column-gap: 3rem;
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    padding: 2rem 3rem;
+}
+
+.bus-overview-heading {
+    /* text-decoration: underline; */
+    font-weight: 500;
+    color: var(--theme-extra);
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.bus-overview-ridership, .bus-overview-loop-time, .bus-overview-footer:not(.total) {
+    color: var(--theme-color-lighter)
+}
+
+.total {
+    color: var(--theme-color);
+}
+
+/* Total row styling - add visual separation */
+.buses-overview-grid .bus-overview-name:contains("Total") {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--theme-color-lighter);
+}
+
+.buses-overview-grid .bus-overview-name:contains("Total") + .bus-overview-ridership,
+.buses-overview-grid .bus-overview-name:contains("Total") + .bus-overview-ridership + .bus-overview-loop-time {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+}

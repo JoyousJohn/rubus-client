@@ -763,11 +763,18 @@ function updateBusOverview(routes) {
 
     const loopTimes = calculateLoopTimes();
 
+    // Check if busesByRoutes and selectedCampus exist before accessing
+    if (!busesByRoutes || !busesByRoutes[selectedCampus]) {
+        console.log('No buses data available for campus:', selectedCampus);
+        $('.buses-overview-grid').hide().children().not('.bus-overview-heading').remove();
+        return;
+    }
+
     routes = Object.keys(busesByRoutes[selectedCampus]);
-    if (!routes) { 
-        $('.buses-overview-grid').hide().children().not('.bus-overview-heading, .bus-overview-footer').remove();
+    if (!routes || routes.length === 0) { 
+        $('.buses-overview-grid').hide().children().not('.bus-overview-heading').remove();
     } else {
-        $('.buses-over-grid').show();
+        $('.buses-overview-grid').show();
     }
 
     if (routes.includes('undefined')) { // Should I even track this?
@@ -790,15 +797,41 @@ function updateBusOverview(routes) {
 
     routeData.sort((a, b) => b.ridership - a.ridership);
 
+    // Create total row if it doesn't exist (only once at the bottom after all routes)
+    let $totalRowExists = $('.buses-overview-grid .bus-overview-name:contains("Total")').length > 0;
+    if (!($totalRowExists)) {
+        const $grid = $('.buses-overview-grid').first();
+        const $totalName = $(`<div class="bus-overview-name bold">Total</div>`);
+        const $totalRidership = $(`<div class="bus-overview-ridership">${totalRidership} riding</div>`);
+        const $totalLoopTime = $(`<div class="bus-overview-loop-time"></div>`);
+
+        // Insert total row elements directly into the main grid
+        $grid.append($totalName);
+        $grid.append($totalRidership);
+        $grid.append($totalLoopTime);
+    }
+
     routeData.forEach(({route}) => {
         if ($(`.bus-overview-ridership[route="${route}"]`).length === 0) {
             const $busName = $(`<div class="bus-overview-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]); // (${busesByRoutes[selectedCampus][route].length})
             const $busRidership = $(`<div class="bus-overview-ridership" route="${route}">${routeRiderships[route]} riders</div>`);
             const $loopTime = $(`<div class="bus-overview-loop-time" route="${route}">${loopTimes[route]} min</div>`);
-            const $footer = $('.buses-overview-grid > .bus-overview-footer').first();
-            $footer.before($busName);
-            $footer.before($busRidership);
-            $footer.before($loopTime);
+            const $grid = $('.buses-overview-grid').first();
+            // Insert new routes before the total row in correct order
+            const $firstTotalElement = $grid.find('.bus-overview-name:contains("Total")').first();
+
+            if ($firstTotalElement.length > 0) {
+                // Insert elements in the correct DOM order for grid: Route | Ridership | Loop Time
+                // before() method inserts in reverse, so we insert Route last to make it first
+                $firstTotalElement.before($busName);      // Route (becomes first in DOM)
+                $firstTotalElement.before($busRidership); // Ridership (becomes second in DOM)
+                $firstTotalElement.before($loopTime);     // Loop Time (becomes third in DOM)
+            } else {
+                // No total row yet, insert in correct DOM order
+                $grid.append($busName);      // Route (first in DOM)
+                $grid.append($busRidership); // Ridership (second in DOM)
+                $grid.append($loopTime);     // Loop Time (third in DOM)
+            }
         } else {
             const prevRiders = parseInt($(`.bus-overview-ridership[route="${route}"]`).text().split(' ')[0]);
             const newRiders = (routeRiderships[route])
@@ -817,25 +850,27 @@ function updateBusOverview(routes) {
                     $(`.bus-overview-ridership[route="${route}"]`).text(`${routeRiderships[route]} riders`).css('color', color).css('transition', 'color 0.25s');
 
                     const ridersChange = newRiders - prevRiders;
-                    const nowTotalRidership = parseInt($('.total-ridership').text().split(' ')[0])
-                    $('.total-ridership').text(`${nowTotalRidership + ridersChange} riding`).css('color', color).css('transition', 'color 0.25s');
+
+                    // Update total ridership at the same time as route update for real-time appearance
+                    const $totalRidershipElement = $('.buses-overview-grid .bus-overview-name:contains("Total")').next('.bus-overview-ridership');
+                    if ($totalRidershipElement.length > 0) {
+                        const nowTotalRidership = parseInt($totalRidershipElement.text().split(' ')[0]);
+                        $totalRidershipElement.text(`${nowTotalRidership + ridersChange} riding`).css('color', color).css('transition', 'color 0.25s');
+                    }
 
                     setTimeout(() => {
-                        $(`.bus-overview-ridership[route="${route}"], .total-ridership`).css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
+                        $(`.bus-overview-ridership[route="${route}"]`).css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
+
+                        // Fade total color back to normal after route animation completes
+                        $('.buses-overview-grid .bus-overview-name:contains("Total")').next('.bus-overview-ridership').css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
                     }, 1000);
                 }, Math.random() * 5000);
             }
         }
     });
 
-    if (!$('.total-ridership').text().length) {
-        $('.total-ridership').text(totalRidership + ' riding');
-    } else {
-        const textTotalRidership = parseInt($('.total-ridership').text().split(' ')[0])
-        if (textTotalRidership !== totalRidership) { // total became unsynced because of
-            $('.total-ridership').text(totalRidership + ' riding'); // ^^ the autocomplete for that comment is so funny haha
-        }
-    }
+    // Note: Total row is only created/updated when individual routes change, not here
+    // This ensures total only updates alongside route changes, not independently
 }
 
 
@@ -852,8 +887,14 @@ function busesOverview() {
     }
 
     $('.buses-panel-wrapper').slideDown('fast');
-    
+
     updateBusOverview();
+
+    // Ensure chart is initialized before updating
+    if (!ridershipChart) {
+        makeRidershipChart();
+    }
+
     updateRidershipChart();
     updateWaitTimes();
 }
@@ -861,10 +902,29 @@ function busesOverview() {
 let ridershipChart;
 
 async function makeRidershipChart() {
+    console.log('makeRidershipChart called. Buses panel visible:', $('.buses-panel-wrapper').is(':visible'));
+    try {
+        // Check if Chart.js is loaded and canvas element exists
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js not loaded');
+            return;
+        }
 
-    // const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
+        const canvas = document.getElementById('ridership-chart');
+        if (!canvas) {
+            console.error('Ridership chart canvas not found. Looking for element with id "ridership-chart"');
+            console.error('Available canvas elements:', document.querySelectorAll('canvas'));
+            console.error('Buses panel wrapper visibility:', $('.buses-panel-wrapper').css('display'));
+            return;
+        }
 
-    const ctx = document.getElementById('ridership-chart').getContext('2d');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.error('Could not get 2D context for ridership chart');
+            return;
+        }
+
+        // const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
     ridershipChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -908,13 +968,19 @@ async function makeRidershipChart() {
                         display: false,
                     },
                     grid: {
-                        color: 'rgba(200, 200, 200, 0.3)'
+                        display: false
+                    },
+                    border: {
+                        display: false
                     }
                 },
                 x: {
                     grid: {
-                        color: 'rgba(200, 200, 200, 0.3)'
+                        display: false
                     },
+                    // border: {
+                    //     display: false
+                    // },
                     ticks: {
                         autoSkip: false,
                         maxRotation: 45,
@@ -938,6 +1004,11 @@ async function makeRidershipChart() {
         }
     });
 
+        console.log('Ridership chart initialized successfully. Canvas found:', !!canvas, 'Chart created:', !!ridershipChart);
+    } catch (error) {
+        console.error('Error initializing ridership chart:', error);
+        ridershipChart = null;
+    }
 }
 
 async function updateRidershipChart() {
@@ -981,7 +1052,13 @@ async function updateRidershipChart() {
 
         const labels = Object.keys(sortedData);
         const values = Object.values(sortedData);
-        
+
+        // Check if chart is initialized before trying to update it
+        if (!ridershipChart) {
+            console.error('Ridership chart not initialized');
+            return;
+        }
+
         ridershipChart.data.labels = labels;
         ridershipChart.data.datasets[0].data = values;
         ridershipChart.update();

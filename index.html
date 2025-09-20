@@ -54,6 +54,7 @@
     <script src="js/icon-helper.js"></script>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
+    <link rel="stylesheet" type="text/css" href="css/ridership.css">
     <link rel="stylesheet" type="text/css" href="css/tailwind.css">
     <link rel="stylesheet" type="text/css" href="css/mobile.css">
     <link rel="stylesheet" type="text/css" href="css/modal.css">
@@ -283,7 +284,7 @@
                     </div>
 
                     <div class="mt-3rem bus-ridership-wrapper mb-1rem">
-                        <div class="text-1p5rem lightgray center">Ridership Today</div>
+                        <!-- <div class="text-1p5rem lightgray center">Ridership Today</div> -->
                         <div class="bus-historical-capacity mt-0p5rem"></div>
                     </div>
 
@@ -598,7 +599,7 @@
                 </div>
                 <div class="subpanel all-stops-panel">
                     <div class="subpanel-inner">
-                        <div class="all-stops-inner p-2rem mb-8rem"></div>
+                        <div class="all-stops-inner p-1rem mb-8rem"></div>
                     </div>
                 </div>
                 <div class="subpanel buses-panel">
@@ -610,7 +611,18 @@
                             </div>
                             <div class="flex justify-center">
                                 <div class="buses-overview-grid grid">
-                                    <div class="bus-overview-heading"></div>
+                                    <div class="bus-overview-heading">Route</div>
+                                    <div class="bus-overview-heading">Ridership</div>
+                                    <div class="bus-overview-heading">Loop Time</div>
+                                </div>
+                            </div>
+                            <div class="ridership-super-wrapper">
+                                <div class="ridership-chart-wrapper">
+                                    <canvas id="ridership-chart" width="400" height="200"></canvas>
+                                </div>
+                                <div class="ridership-stats-row">
+                                    <div class="ridership-avg"></div>
+                                    <div class="ridership-max"></div>
                                 </div>
                             </div>
                         </div>

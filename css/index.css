@@ -976,39 +976,6 @@ html, body {
     display: block !important;
 }
 
-.buses-overview-grid {
-    margin-top: 2rem;
-    font-size: 2rem;
-    grid-template-columns: auto 1fr 1fr;
-    column-gap: 2rem;
-}
-
-.bus-overview-heading {
-    /* text-decoration: underline; */
-    font-weight: 500;
-    color: var(--theme-extra);
-    font-size: 1.8rem;
-    line-height: 1;
-}
-
-.bus-overview-ridership, .bus-overview-loop-time, .bus-overview-footer:not(.total) {
-    color: var(--theme-color-lighter)
-}
-
-.total {
-    color: var(--theme-color);
-}
-
-.ridership-super-wrapper {
-    display: none;
-}
-
-.ridership-title {
-    font-size: 2.5rem;
-    text-align: center;
-    margin-top: 2rem;
-    color: var(--theme-color)
-}
 
 .live-overview {
     padding: 0.2rem 1.3rem;
@@ -1017,26 +984,6 @@ html, body {
     background-color: #2adb2a;
     border-radius: 0.5rem;
 }
-
-.ridership-chart-wrapper {
-    margin: 1rem;
-    /* margin-top: 2rem; */
-}
-
-.ridership-history-title {
-    font-size: 1.5rem;
-    color: var(--theme-color);
-    /* background-color: var(--theme-color); */
-    padding: 0.5rem 1.5rem;
-    border-radius: 0.8rem;
-    text-decoration: underline;
-}
-
-.ridership-avg, .ridership-max {
-    font-size: 1.5rem;
-    color: gray;
-}
-
 
 .wait-times {
     font-size: 1.4rem;
