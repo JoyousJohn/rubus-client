@@ -97,16 +97,11 @@ $(document).ready(function() {
         // Get all available options (buildings and active stops)
         const allOptions = [];
         
-        // Add buildings from building abbreviations
-        for (const item of buildingAbbreviations) {
-            const buildingKey = Object.keys(buildingIndex).find(key => 
-                buildingIndex[key].id === item.number.toString()
-            );
-            
-            if (buildingKey) {
-                const buildingData = buildingIndex[buildingKey];
+        // Add all buildings from buildingList
+        if (buildingList) {
+            for (const building of buildingList) {
                 allOptions.push({
-                    ...buildingData,
+                    ...building,
                     category: 'building',
                     type: 'building'
                 });
