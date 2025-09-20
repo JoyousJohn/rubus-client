@@ -12,7 +12,7 @@
 }
 
 .ridership-chart-wrapper {
-    margin: 2rem 1rem;
+    margin-top: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
     padding: 1rem;
@@ -20,7 +20,7 @@
 
 .ridership-stats-row {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-evenly;
     width: 100%;
     margin: 1rem 0;
     margin-bottom: 8rem;
@@ -29,7 +29,6 @@
 .ridership-avg, .ridership-max {
     font-size: 1.5rem;
     color: gray;
-    flex: 1;
     text-align: center;
 }
 
@@ -61,14 +60,7 @@
 }
 
 /* Total row styling - add visual separation */
-.buses-overview-grid .bus-overview-name:contains("Total") {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--theme-color-lighter);
-}
-
-.buses-overview-grid .bus-overview-name:contains("Total") + .bus-overview-ridership,
-.buses-overview-grid .bus-overview-name:contains("Total") + .bus-overview-ridership + .bus-overview-loop-time {
-    margin-top: 0.5rem;
+.buses-overview-grid .total-row {
+    margin-top: 0.25rem;
     padding-top: 0.5rem;
 }

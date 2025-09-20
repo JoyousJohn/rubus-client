@@ -175,7 +175,7 @@ function selectInfoPanel(panel, element) {
 
 // Handle closing the info panels wrapper
 $('.info-panels-close').click(function() {
-    $('.info-panels-wrapper').hide();
+    $('.info-panels-show-hide-wrapper').hide();
     
     // Move route selectors back to the main page
     moveRouteSelectorsToMain();

@@ -570,90 +570,90 @@
         </div>
     </div>
 
-    <div class="info-panels-wrapper none">
-        <div class="info-panels-layout-container">
-        <!-- Top row: Subpanels content -->
-        <div class="info-panels-content flex-1 overflow-y-auto">
-            <div class="subpanels-container">
-                <div class="subpanel route-panel">
-                    <div class="subpanel-inner">
-                        <div class="route-panel-wrapper">
-                            <div class="route-panel none">
-                                <div class="flex flex-col h-100">
-                                    <div class="flex align-center gap-x-1rem justify-between">
-                                        <div class="flex gap-x-1rem">
-                                            <div class="route-name"></div>
-                                            <div class="route-campuses flex align-center"></div>
-                                        </div>
-                                        <div class="color-circle"></div>
-                                    </div>  
-                                    <div class="route-active-buses center"></div>
-                                    <div class="active-buses"></div>
-                                    <div class="route-stops-grid"></div>
+    <div class="info-panels-show-hide-wrapper none">
+        <div class="info-panels-wrapper">
+            <div class="info-panels-layout-container">
+            <!-- Top row: Subpanels content -->
+            <div class="info-panels-content">
+                <div class="subpanels-container">
+                    <div class="subpanel route-panel">
+                        <div class="subpanel-inner">
+                            <div class="route-panel-wrapper">
+                                <div class="route-panel none">
+                                    <div class="flex flex-col">
+                                        <div class="flex align-center gap-x-1rem justify-between">
+                                            <div class="flex gap-x-1rem">
+                                                <div class="route-name"></div>
+                                                <div class="route-campuses flex align-center"></div>
+                                            </div>
+                                            <div class="color-circle"></div>
+                                        </div>  
+                                        <div class="route-active-buses center"></div>
+                                        <div class="active-buses"></div>
+                                        <div class="route-stops-grid"></div>
+                                    </div>
                                 </div>
                             </div>
+                            <!-- Route selectors will be moved here dynamically -->
+                            <div id="route-selectors-container"></div>
                         </div>
-                        <!-- Route selectors will be moved here dynamically -->
-                        <div id="route-selectors-container"></div>
                     </div>
-                </div>
-                <div class="subpanel all-stops-panel">
-                    <div class="subpanel-inner">
-                        <div class="all-stops-inner p-1rem mb-8rem"></div>
+                    <div class="subpanel all-stops-panel">
+                        <div class="subpanel-inner">
+                            <div class="all-stops-inner p-1rem mb-8rem"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="subpanel buses-panel">
-                    <div class="subpanel-inner">
-                        <div class="buses-panel-wrapper justify-center">
-                            <div class="ridership-title">Network Overview</div>
-                            <div class="flex justify-center">
-                                <div class="live-overview">LIVE</div>
-                            </div>
-                            <div class="flex justify-center">
+                    <div class="subpanel buses-panel">
+                        <div class="subpanel-inner">
+                            <div class="buses-panel-wrapper justify-center">
+                                <div class="ridership-title">Network Overview</div>
+                                <div class="flex justify-center">
+                                    <div class="live-overview">LIVE</div>
+                                </div>
                                 <div class="buses-overview-grid grid">
-                                    <div class="bus-overview-heading">Route</div>
-                                    <div class="bus-overview-heading">Ridership</div>
-                                    <div class="bus-overview-heading">Loop Time</div>
+                                        <div class="bus-overview-heading">Route</div>
+                                        <div class="bus-overview-heading">Ridership</div>
+                                        <div class="bus-overview-heading">Loop Time</div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="ridership-super-wrapper">
-                                <div class="ridership-chart-wrapper">
-                                    <!-- <div class="ridership-title">Ridership Today</div> -->
-                                    <canvas id="ridership-chart" width="400" height="200"></canvas>
-                                </div>
-                                <div class="ridership-stats-row">
-                                    <div class="ridership-avg"></div>
-                                    <div class="ridership-max"></div>
+                                <div class="ridership-super-wrapper">
+                                    <div class="ridership-chart-wrapper">
+                                        <!-- <div class="ridership-title">Ridership Today</div> -->
+                                        <canvas id="ridership-chart" width="400" height="200"></canvas>
+                                    </div>
+                                    <div class="ridership-stats-row">
+                                        <div class="ridership-avg"></div>
+                                        <div class="ridership-max"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Bottom row: Header buttons -->
-        <div class="info-panels-header-buttons grid gap-x-0p5rem text-1p6rem p-1rem center select-none" style="background-color: var(--theme-bg); border-top: 1px solid var(--theme-border); grid-template-columns: 1fr 1fr 1fr auto;">
-            <div class="flex justify-center">
-                <div data-panel="routes" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-1rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('routes', this)">
-                    <i class="fa-solid fa-route"></i>
-                    <div>Routes</div>
+            
+            <!-- Bottom row: Header buttons -->
+            <div class="info-panels-header-buttons grid gap-x-0p5rem text-1p6rem p-1rem center select-none" style="background-color: var(--theme-bg); border-top: 1px solid var(--theme-border); grid-template-columns: 1fr 1fr 1fr auto;">
+                <div class="flex justify-center">
+                    <div data-panel="routes" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-1rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('routes', this)">
+                        <i class="fa-solid fa-route"></i>
+                        <div>Routes</div>
+                    </div>
                 </div>
-            </div>
-            <div class="flex justify-center">
-                <div data-panel="stops" class="flex justify-center align-center gap-x-0p5rem all-stops-selected-menu w-min px-1rem py-1rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('stops', this)">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <div>Stops</div>
+                <div class="flex justify-center">
+                    <div data-panel="stops" class="flex justify-center align-center gap-x-0p5rem all-stops-selected-menu w-min px-1rem py-1rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('stops', this)">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <div>Stops</div>
+                    </div>
                 </div>
-            </div>
-            <div class="flex justify-center">
-                <div data-panel="network" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-1rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('network', this)">
-                    <i class="fa-solid fa-bus"></i>
-                    <div>Network</div>
+                <div class="flex justify-center">
+                    <div data-panel="network" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-1rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('network', this)">
+                        <i class="fa-solid fa-bus"></i>
+                        <div>Network</div>
+                    </div>
                 </div>
+                <div class="flex info-panels-close justify-center align-center select-none pointer white bold-600">X</div>
             </div>
-            <div class="flex info-panels-close justify-center align-center select-none pointer white bold-600">X</div>
-        </div>
         </div>
     </div>
 

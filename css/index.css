@@ -966,9 +966,9 @@ html, body {
     font-family: var(--font-family);
     /* padding: 1rem; */
     display: none;
-    overflow-y: scroll;
+    /* overflow-y: scroll; */
+    height: min-content;
     width: 100%;
-    height: 100%;
 }
 
 /* Show buses panel when it's the active panel */

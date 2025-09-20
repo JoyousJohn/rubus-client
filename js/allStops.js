@@ -64,7 +64,7 @@ function populateAllStops() {
                     </div>`)
                     .click(function() {
                         flyToStop(stopId);
-                        $('.info-panels-wrapper').hide();
+                        $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();
                     });
@@ -103,7 +103,7 @@ $('.all-stops').click(function() {
         // $('.search-wrapper input').blur();
     }
     
-    $('.info-panels-wrapper').show().scrollTop(0);
+    $('.info-panels-show-hide-wrapper').show().scrollTop(0);
     // Populate the network panel
     busesOverview();
     // Select the stops panel to ensure correct positioning and scrolling

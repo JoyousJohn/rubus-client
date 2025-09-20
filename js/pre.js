@@ -766,7 +766,7 @@ async function fetchWhere() {
         }
 
         // Update all stops menu if info panels are open (after activeStops is created)
-        if ($('.info-panels-wrapper').is(':visible')) {
+        if ($('.info-panels-show-hide-wrapper').is(':visible')) {
             populateAllStops();
         }
 

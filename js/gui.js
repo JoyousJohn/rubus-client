@@ -123,7 +123,7 @@ function populateRouteSelectors(allActiveRoutes) {
 
                 if (!isLongPress && !moved) {
                     // Check if we're in the Routes tab of info panels
-                    const routesTabActive = $('.info-panels-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
+                    const routesTabActive = $('.info-panels-show-hide-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
 
                     if ((panelRoute || routesTabActive) && route !== 'fav') {
                         selectedRoute(route)
@@ -454,7 +454,7 @@ let panelRoute;
 function selectedRoute(route) {
     if (panelRoute === route) {
         // Check if we're in the Routes tab of info panels
-        const routesTabActive = $('.info-panels-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
+        const routesTabActive = $('.info-panels-show-hide-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
         
         if (routesTabActive) {
             // We're in the routes subpanel - just unselect the route and stay in the panel
@@ -514,12 +514,12 @@ function selectedRoute(route) {
     })
 
     // Check if info panels are open with routes tab active
-    const routesTabActive = $('.info-panels-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
+    const routesTabActive = $('.info-panels-show-hide-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
     
     if (!panelRoute && !routesTabActive) {
         console.log('Opening info panels with routes tab');
         // Show info panels with routes tab selected
-        $('.info-panels-wrapper').show();
+        $('.info-panels-show-hide-wrapper').show();
         // Populate the network panel
         busesOverview();
         
@@ -823,9 +823,9 @@ function updateBusOverview(routes) {
     let $totalRowExists = $('.buses-overview-grid .bus-overview-name:contains("Total")').length > 0;
     if (!($totalRowExists)) {
         const $grid = $('.buses-overview-grid').first();
-        const $totalName = $(`<div class="bus-overview-name bold">Total</div>`);
-        const $totalRidership = $(`<div class="bus-overview-ridership">${totalRidership} riding</div>`);
-        const $totalLoopTime = $(`<div class="bus-overview-loop-time"></div>`);
+        const $totalName = $(`<div class="bus-overview-name bold total-row">Total</div>`);
+        const $totalRidership = $(`<div class="bus-overview-ridership total-row">${totalRidership} riding</div>`);
+        const $totalLoopTime = $(`<div class="bus-overview-loop-time total-row"></div>`);
 
         // Insert total row elements directly into the main grid
         $grid.append($totalName);
@@ -1214,7 +1214,7 @@ function updateWaitTimes() {
 
 function closeRouteMenu() {
     // Hide info panels and show bottom controls
-    $('.info-panels-wrapper').hide();
+    $('.info-panels-show-hide-wrapper').hide();
     $('.bottom').show();
     
     // Reset bottom position to default
