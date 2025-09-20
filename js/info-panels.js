@@ -9,9 +9,25 @@ let dragEndY = 0;
 let isDragging = false;
 let initialScrollLeft = 0;
 
+// Velocity tracking for momentum-based animation
+let velocityX = 0;
+let lastMoveTime = 0;
+let lastMoveX = 0;
+
 // Panel order for swipe navigation (matches HTML order: routes > stops > network)
 const panelOrder = ['routes', 'stops', 'network'];
 let currentPanelIndex = 1; // Default to stops panel (middle position)
+
+// Register custom easing function for smooth momentum
+$.easing.momentum = function (x, t, b, c, d) {
+    // Custom easing that starts fast and decelerates smoothly
+    // x: current time, t: current position, b: start value, c: change in value, d: duration
+    // Returns a value between 0 and 1 representing the easing progress
+    
+    // Use a subtle ease-out curve that feels more natural than swing
+    // This creates a gentle deceleration without the abrupt velocity changes
+    return 1 - Math.pow(1 - x, 1.5);
+};
 
 // Function to move route selectors into the route subpanel
 function moveRouteSelectorsToSubpanel() {
@@ -32,6 +48,87 @@ function moveRouteSelectorsToMain() {
         // Move the bottom element back to the main page (after the settings panel)
         bottomElement.insertAfter('.settings-panel');
     }
+}
+
+// Calculate target panel position and animate there with physics-like momentum
+function animateToTargetPanel(initialVelocity) {
+    const currentScrollPosition = $('.info-panels-content').scrollLeft();
+    const actualPanelWidth = Math.floor($('.info-panels-content')[0].scrollWidth / 3);
+    
+    // Determine target panel based on drag direction (user intent) rather than final position
+    let targetPanelIndex = currentPanelIndex;
+    
+    // Check if user was dragging with significant velocity
+    if (Math.abs(initialVelocity) > 5) {
+        // User was dragging with intent - prioritize direction over final position
+        if (initialVelocity < 0) {
+            // Dragging left (negative velocity) = moving to right panel (higher index)
+            targetPanelIndex = Math.min(currentPanelIndex + 1, panelOrder.length - 1);
+        } else {
+            // Dragging right (positive velocity) = moving to left panel (lower index)
+            targetPanelIndex = Math.max(currentPanelIndex - 1, 0);
+        }
+        
+    } else {
+        // Low velocity - use area-based selection as fallback
+        const viewportCenter = $('.info-panels-content').width() / 2;
+        const currentCenter = currentScrollPosition + viewportCenter;
+        
+        let closestPanelIndex = 0;
+        let minDistance = Infinity;
+        
+        for (let i = 0; i < panelOrder.length; i++) {
+            const panelCenter = (i * actualPanelWidth) + (actualPanelWidth / 2);
+            const distance = Math.abs(currentCenter - panelCenter);
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPanelIndex = i;
+            }
+        }
+        
+        targetPanelIndex = closestPanelIndex;
+        
+    }
+    
+    const targetPanel = panelOrder[targetPanelIndex];
+    currentPanelIndex = targetPanelIndex;
+    
+    // Calculate target scroll position
+    const targetScrollPosition = targetPanelIndex * actualPanelWidth;
+    
+    // Calculate animation duration based on velocity and distance
+    const distance = Math.abs(targetScrollPosition - currentScrollPosition);
+    const velocityMagnitude = Math.abs(initialVelocity);
+    
+    // Base duration of 300ms, but extend it if we have high velocity
+    // This creates a more natural feel where faster swipes take longer to settle
+    const baseDuration = 300;
+    const velocityDuration = Math.min(velocityMagnitude * 8, 500); // Cap at 500ms
+    const totalDuration = Math.max(baseDuration, velocityDuration);
+    
+    // Update the header button selection immediately
+    const targetElement = $(`.info-panels-header-buttons [data-panel="${targetPanel}"]`);
+    $('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
+    if (targetElement.length) {
+        targetElement.addClass('all-stops-selected-menu');
+    }
+    
+    // Single smooth animation to the target position
+    // Use custom 'momentum' easing for natural deceleration without abrupt velocity changes
+    $('.info-panels-content').animate({
+        scrollLeft: targetScrollPosition
+    }, {
+        duration: totalDuration,
+        easing: 'momentum', // Custom easing for smooth momentum
+        complete: function() {
+            // Update panel position after animation completes
+            updatePanelPosition(targetPanel);
+        }
+    });
+    
+    // Trigger the panel selection logic
+    selectInfoPanel(targetPanel, targetElement[0]);
 }
 
 
@@ -126,6 +223,9 @@ function updatePanelPosition(panel) {
 
 // Unified pointer event handlers for touch and mouse
 $('.info-panels-content').on('touchstart mousedown', function(e) {
+    // Stop any ongoing animation
+    $('.info-panels-content').stop();
+    
     // Get coordinates from touch or mouse event
     if (e.type === 'touchstart') {
         dragStartX = e.originalEvent.touches[0].clientX;
@@ -137,6 +237,11 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
     
     // Store initial scroll position
     initialScrollLeft = $('.info-panels-content').scrollLeft();
+    
+    // Reset velocity tracking variables
+    velocityX = 0;
+    lastMoveTime = 0;
+    lastMoveX = dragStartX;
     
     isDragging = false;
     e.preventDefault(); // Prevent text selection and scrolling
@@ -168,6 +273,21 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
         isDragging = true;
         e.preventDefault(); // Prevent scrolling while dragging
         
+        // Calculate velocity for physics
+        const currentTime = Date.now();
+        if (lastMoveTime > 0) {
+            const timeDelta = currentTime - lastMoveTime;
+            const positionDelta = dragEndX - lastMoveX;
+            
+            // Calculate velocity (pixels per millisecond)
+            if (timeDelta > 0) {
+                velocityX = positionDelta / timeDelta;
+            }
+        }
+        
+        lastMoveTime = currentTime;
+        lastMoveX = dragEndX;
+        
         // Show visual feedback during drag - calculate from initial position
         const newScrollPosition = initialScrollLeft - deltaX;
         
@@ -182,87 +302,28 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
         // Reset drag state
         dragStartX = dragStartY = dragEndX = dragEndY = 0;
         isDragging = false;
+        lastMoveTime = 0;
+        lastMoveX = 0;
         return; // Let the route selectors handle their own scrolling
     }
     
     if (isDragging && dragStartX && dragStartY) {
         const deltaX = dragEndX - dragStartX;
-        const scrollableWidth = $('.info-panels-content')[0].scrollWidth / 3; // Total scroll width divided by 3 panels
-        const currentScrollPosition = $('.info-panels-content').scrollLeft();
         
-        // Determine which panel is most visible based on scroll position
-        let targetPanelIndex = currentPanelIndex;
+        // Convert velocity from pixels per millisecond to a more usable scale
+        // Multiply by 20 to approximate 60fps frame time for smoother physics and more responsive feel
+        const scaledVelocity = velocityX * 20;
         
-        // Calculate which panel center is closest to the current scroll position
-        const panelWidth = scrollableWidth; // Each panel is the calculated scrollable width
-        const viewportCenter = $('.info-panels-content').width() / 2; // Center of the visible viewport
-        const currentCenter = currentScrollPosition + viewportCenter;
-
-        console.log('=== DRAG DEBUG ===');
-        console.log('ScrollableWidth:', scrollableWidth);
-        console.log('CurrentScrollPosition:', currentScrollPosition);
-        console.log('PanelWidth:', panelWidth);
-        console.log('ViewportCenter:', viewportCenter);
-        console.log('CurrentCenter:', currentCenter);
-        
-        // Find the panel whose center is closest to the viewport center
-        let closestPanelIndex = 0;
-        let minDistance = Infinity;
-        
-        for (let i = 0; i < panelOrder.length; i++) {
-            const panelCenter = (i * panelWidth) + (panelWidth / 2);
-            const distance = Math.abs(currentCenter - panelCenter);
-            
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestPanelIndex = i;
-            }
-        }
-        
-        // Only switch if we've dragged far enough (minimum threshold)
-        if (Math.abs(deltaX) > 30) {
-            targetPanelIndex = closestPanelIndex;
-        }
-        
-        // Snap to the target panel with smooth animation
-        const targetPanel = panelOrder[targetPanelIndex];
-        currentPanelIndex = targetPanelIndex;
-        
-        // Calculate target scroll position using actual panel width
-        const actualPanelWidth = Math.floor($('.info-panels-content')[0].scrollWidth / 3);
-        const targetScrollPosition = targetPanelIndex * actualPanelWidth;
-        
-        console.log('=== SNAPPING DEBUG ===');
-        console.log('TargetPanelIndex:', targetPanelIndex);
-        console.log('ViewportWidth:', viewportWidth);
-        console.log('TargetScrollPosition:', targetScrollPosition);
-        console.log('Current scrollLeft before animation:', $('.info-panels-content').scrollLeft());
-        
-        // Animate to the target position
-        $('.info-panels-content').animate({
-            scrollLeft: targetScrollPosition
-        }, 300, 'swing', function() {
-            console.log('Animation completed. Final scrollLeft:', $('.info-panels-content').scrollLeft());
-            console.log('Animation completed');
-            // Update panel position after animation completes
-            updatePanelPosition(targetPanel);
-        });
-        
-        // Update the header button selection
-        const targetElement = $(`.info-panels-header-buttons [data-panel="${targetPanel}"]`);
-        $('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
-        if (targetElement.length) {
-            targetElement.addClass('all-stops-selected-menu');
-        }
-        
-        // Trigger the panel selection logic
-        selectInfoPanel(targetPanel, targetElement[0]);
+        // Always animate to target panel with momentum-based duration and easing
+        animateToTargetPanel(scaledVelocity);
     }
     
-    // Reset values
+    // Reset drag values
     dragStartX = 0;
     dragStartY = 0;
     isDragging = false;
+    lastMoveTime = 0;
+    lastMoveX = 0;
 });
 
 // Prevent context menu on right click during drag
@@ -277,6 +338,9 @@ $('.info-panels-content').on('mouseleave touchcancel', function(e) {
     dragStartX = 0;
     dragStartY = 0;
     isDragging = false;
+    lastMoveTime = 0;
+    lastMoveX = 0;
+    velocityX = 0;
 });
 
 function navigateToPanel(direction) {
