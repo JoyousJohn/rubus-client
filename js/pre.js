@@ -283,7 +283,12 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                         'old_route': oldRoute,
                         'route_change_time': new Date(),
                     };
+
+                    // Clear stale ETAs when route changes to prevent type mismatches - only affects non special buses switching to special route (on/wknd #1) routes. pre.js:782 Error fetching bus locations: TypeError: Cannot set properties of undefined (setting '16') at pre.js:702:73 at Array.forEach (<anonymous>) at updateTimeToStops (pre.js:546:12) at fetchWhere (pre.js:766:9) at async immediatelyUpdateBusDataPre (pre.js:121:5)
+                    delete busETAs[busId];
                     busData[busId].route = routeStr;
+                    
+                    updateTimeToStops([busId]);
 
                     try {
                         busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr]; // somehow got  busMarkers[busId] is undefined... how was busId in busData but not busMarkers? don't understand...
