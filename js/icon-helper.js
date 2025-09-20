@@ -45,7 +45,9 @@ function replaceFontAwesomeIcons() {
     Object.entries(iconMap).forEach(([faClass, customClass]) => {
         const elements = document.querySelectorAll(`i.${faClass.replace(' ', '.')}`);
         elements.forEach(element => {
-            element.className = customClass;
+            // Preserve non-FontAwesome classes (like 'none' for visibility)
+            const existingClasses = Array.from(element.classList).filter(cls => !cls.startsWith('fa-'));
+            element.className = customClass + (existingClasses.length > 0 ? ' ' + existingClasses.join(' ') : '');
         });
     });
 }
