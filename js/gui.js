@@ -453,8 +453,30 @@ let panelRoute;
 
 function selectedRoute(route) {
     if (panelRoute === route) {
-        closeRouteMenu();
-        return;
+        // Check if we're in the Routes tab of info panels
+        const routesTabActive = $('.info-panels-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
+        
+        if (routesTabActive) {
+            // We're in the routes subpanel - just unselect the route and stay in the panel
+            toggleRouteSelectors(route);
+            
+            // Clear the route panel data since no route is selected
+            $('.route-name').text('').css('color', '');
+            $('.route-campuses').text('');
+            $('.color-circle').css('background-color', '');
+            $('.route-active-buses').text('');
+            $('.active-buses').empty();
+            $('.route-stops-grid').empty();
+            
+            // Reset panelRoute so the route can be selected again
+            panelRoute = null;
+            
+            return;
+        } else {
+            // We're not in the routes subpanel - close the menu as before
+            closeRouteMenu();
+            return;
+        }
     }
 
     if (shownRoute !== route) {

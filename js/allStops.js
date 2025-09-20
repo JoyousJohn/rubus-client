@@ -97,6 +97,12 @@ function populateAllStops() {
 
 
 $('.all-stops').click(function() {
+    // Hide search wrapper and unfocus search input if it's open
+    if ($('.search-wrapper').is(':visible')) {
+        closeSearch();
+        // $('.search-wrapper input').blur();
+    }
+    
     $('.info-panels-wrapper').show().scrollTop(0);
     // Populate the network panel
     busesOverview();

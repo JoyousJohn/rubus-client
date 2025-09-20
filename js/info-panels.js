@@ -59,8 +59,12 @@ function animateToTargetPanel(initialVelocity) {
     // Ensure any existing animations are stopped before starting new one
     $('.info-panels-content').stop(true);
     
-    const currentScrollPosition = $('.info-panels-content').scrollLeft();
-    const actualPanelWidth = Math.floor($('.info-panels-content')[0].scrollWidth / 3);
+    const $content = $('.info-panels-content');
+    // Guard interactions during animation
+    $content.addClass('is-animating');
+    
+    const currentScrollPosition = $content.scrollLeft();
+    const actualPanelWidth = Math.floor($content[0].scrollWidth / 3);
     
     // Determine target panel based on drag direction (user intent) rather than final position
     let targetPanelIndex = currentPanelIndex;
@@ -123,7 +127,7 @@ function animateToTargetPanel(initialVelocity) {
     
     // Single smooth animation to the target position
     // Use custom 'momentum' easing for natural deceleration without abrupt velocity changes
-    $('.info-panels-content').animate({
+    $content.animate({
         scrollLeft: targetScrollPosition
     }, {
         duration: totalDuration,
@@ -131,6 +135,8 @@ function animateToTargetPanel(initialVelocity) {
         complete: function() {
             // Update panel position after animation completes (without forcing another scroll)
             updatePanelPosition(targetPanel, { skipScroll: true });
+            // Re-enable interactions
+            $content.removeClass('is-animating');
         }
     });
 }
@@ -203,7 +209,7 @@ function updatePanelPosition(panel, options) {
 // Unified pointer event handlers for touch and mouse
 $('.info-panels-content').on('touchstart mousedown', function(e) {
     // Stop any ongoing animation and clear queued animations
-    $('.info-panels-content').stop(true);
+    $('.info-panels-content').stop(true).removeClass('is-animating');
     
     // Get coordinates from touch or mouse event
     if (e.type === 'touchstart') {
@@ -364,6 +370,25 @@ function navigateToPanel(direction) {
     // Switch to the new panel
     selectInfoPanel(newPanel, newElement[0]);
 }
+
+// Ensure preventDefault works on touchmove (non-passive) to block native momentum on touch devices
+(function attachNonPassiveTouchMove() {
+    if (typeof window === 'undefined') return;
+    const init = () => {
+        const el = document.querySelector('.info-panels-content');
+        if (!el) return;
+        el.addEventListener('touchmove', function(e) {
+            if (isDragging) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    };
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+    } else {
+        document.addEventListener('DOMContentLoaded', init);
+    }
+})();
 
 
 
