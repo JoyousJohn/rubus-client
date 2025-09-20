@@ -22,7 +22,8 @@ $(document).ready(function() {
         sa_event('btn_press', {
             'btn': 'building_directions',
             'building': popupBuildingName,
-            'type': window._currentBuildingFeatureForStops?.category || 'unknown'
+            'type': window._currentBuildingFeatureForStops?.category,
+            'category': window._currentBuildingFeatureForStops?.category
         });
 
         // Store the building name before it gets cleared by hideInfoBoxes

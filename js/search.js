@@ -90,6 +90,76 @@ $(document).ready(function() {
         });
     });
 
+    // Surprise me functionality
+    $('.search-surprise-me').click(function() {
+        closeSearch();
+        
+        // Get all available options (buildings and active stops)
+        const allOptions = [];
+        
+        // Add buildings from building abbreviations
+        for (const item of buildingAbbreviations) {
+            const buildingKey = Object.keys(buildingIndex).find(key => 
+                buildingIndex[key].id === item.number.toString()
+            );
+            
+            if (buildingKey) {
+                const buildingData = buildingIndex[buildingKey];
+                allOptions.push({
+                    ...buildingData,
+                    category: 'building',
+                    type: 'building'
+                });
+            }
+        }
+        
+        // Add active stops if available
+        if (typeof activeStops !== 'undefined' && activeStops !== null && typeof stopsData !== 'undefined') {
+            for (const stopId of activeStops) {
+                const stop = stopsData[stopId];
+                if (stop) {
+                    allOptions.push({
+                        id: stopId,
+                        name: stop.name,
+                        lat: stop.latitude,
+                        lng: stop.longitude,
+                        category: 'stop',
+                        type: 'stop'
+                    });
+                }
+            }
+        }
+        
+        // Select a random option
+        if (allOptions.length > 0) {
+            const randomIndex = Math.floor(Math.random() * allOptions.length);
+            const selectedItem = allOptions[randomIndex];
+            
+            // Handle the selected item
+            if (selectedItem.type === 'stop') {
+                popStopInfo(Number(selectedItem.id));
+            } else {
+                // Handle building selection
+                if (!buildingsLayer) {
+                    loadBuildings();
+                }
+                showBuildingInfo(selectedItem);
+            }
+            
+            // Fly to the location
+            map.flyTo([selectedItem.lat, selectedItem.lng], 17, { duration: 0.3 });
+            
+            // Save to recent searches
+            saveRecentSearch(selectedItem);
+            
+            sa_event('btn_press', {
+                'btn': 'surprise_me_selected',
+                'result': selectedItem.name,
+                'category': selectedItem.category,
+            });
+        }
+    });
+
 
     // Show/hide clear button based on input
     function toggleClearButton() {
