@@ -1,5 +1,19 @@
 let buildingIndex;
 
+// Function to update search placeholder with building count
+function updateSearchPlaceholder(buildingCount) {
+    const $searchInput = $('.search-wrapper input');
+    if ($searchInput.length === 0) {
+        return;
+    }
+    
+    const formattedCount = buildingCount.toLocaleString();
+    
+    const originalPlaceholder = $searchInput.attr('placeholder');
+    const updatedPlaceholder = originalPlaceholder.replace('{num}', formattedCount);
+    $searchInput.attr('placeholder', updatedPlaceholder);
+}
+
 $(document).ready(function() {
     const $input = $('.search-wrapper input');
     const $clearBtn = $('.search-clear-btn');
@@ -217,6 +231,9 @@ $(document).ready(function() {
             window.fuse = fuse;
             window.fuseReady = fuseReady;
             window.buildingList = buildingList;
+            
+            // Update search placeholder with actual building count
+            updateSearchPlaceholder(buildingList.length);
         });
 
     $('.search-wrapper input').on('input', function() {
