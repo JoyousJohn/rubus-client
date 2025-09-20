@@ -191,7 +191,15 @@ $(document).ready(function() {
             $elm = $(`<div class="search-result-item flex">${icon}<div>${displayText}</div></div>`);
             $elm.click(function() {
                 closeSearch();
-                showBuildingInfo(item);
+                
+                if (item.category === 'stop') {
+                    // Handle stop selection
+                    popStopInfo(Number(item.id));
+                } else {
+                    // Handle building/parking selection
+                    showBuildingInfo(item);
+                }
+                
                 map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
                 
                 // Save to recent searches
@@ -313,11 +321,17 @@ $(document).ready(function() {
                 if (!$(e.target).hasClass('recent-remove-btn')) {
                     closeSearch();
                     
-                    if (!buildingsLayer) {
-                        loadBuildings();
+                    if (item.category === 'stop') {
+                        // Handle stop selection
+                        popStopInfo(Number(item.id));
+                    } else {
+                        // Handle building/parking selection
+                        if (!buildingsLayer) {
+                            loadBuildings();
+                        }
+                        showBuildingInfo(item);
                     }
                     
-                    showBuildingInfo(item);
                     map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
 
                     sa_event('btn_press', {
@@ -353,7 +367,7 @@ $(document).ready(function() {
         });
     }
 
-    // Populate search recommendations with 3 random popular buildings
+    // Populate search recommendations with 3 random popular buildings and active stops
     function populateSearchRecommendations() {
         const $searchRecs = $('.search-recs');
         $searchRecs.empty();
@@ -369,41 +383,103 @@ $(document).ready(function() {
             }
         }
         
-        // Select 3 random buildings
-        const shuffled = uniqueBuildings.sort(() => 0.5 - Math.random());
-        const selectedBuildings = shuffled.slice(0, 3);
+        let selectedItems = [];
+        
+        // Check if we have active stops
+        if (typeof activeStops !== 'undefined' && activeStops !== null && typeof stopsData !== 'undefined') {
+            // Get active stops data
+            const activeStopItems = [];
+            for (const stopId of activeStops) {
+                const stop = stopsData[stopId];
+                if (stop) {
+                    activeStopItems.push({
+                        id: stopId,
+                        name: stop.name,
+                        category: 'stop',
+                        lat: stop.latitude,
+                        lng: stop.longitude
+                    });
+                }
+            }
+            
+            if (activeStopItems.length > 0) {
+                // Select 1-2 random stops
+                const numStopsToShow = Math.min(Math.floor(Math.random() * 2) + 1, activeStopItems.length, 2);
+                const shuffledStops = activeStopItems.sort(() => 0.5 - Math.random());
+                const selectedStops = shuffledStops.slice(0, numStopsToShow);
+                
+                // Fill remaining slots with popular buildings
+                const numBuildingsToShow = 3 - numStopsToShow;
+                const shuffledBuildings = uniqueBuildings.sort(() => 0.5 - Math.random());
+                const selectedBuildings = shuffledBuildings.slice(0, numBuildingsToShow).map(building => ({
+                    ...building,
+                    category: 'building'
+                }));
+                
+                // Combine and shuffle the final selection
+                selectedItems = [...selectedStops, ...selectedBuildings].sort(() => 0.5 - Math.random());
+            } else {
+                // No active stops available, use 3 random buildings
+                const shuffledBuildings = uniqueBuildings.sort(() => 0.5 - Math.random());
+                selectedItems = shuffledBuildings.slice(0, 3).map(building => ({
+                    ...building,
+                    category: 'building'
+                }));
+            }
+        } else {
+            // No active stops, use 3 random buildings
+            const shuffledBuildings = uniqueBuildings.sort(() => 0.5 - Math.random());
+            selectedItems = shuffledBuildings.slice(0, 3).map(building => ({
+                ...building,
+                category: 'building'
+            }));
+        }
         
         // Create recommendation elements
-        selectedBuildings.forEach(building => {
-            const icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
+        selectedItems.forEach(item => {
+            let icon = '';
+            if (item.category === 'stop') {
+                icon = '<i class="fa-solid fa-bus-simple" style="color: var(--theme-hidden-route-col)"></i>';
+            } else {
+                icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
+            }
             
-            const $recItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important;">${icon}<div>${building.name}</div></div>`);
+            const $recItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important;">${icon}<div>${item.name}</div></div>`);
             $recItem.click(function() {
                 closeSearch();
                 
-                // Find the building in buildingIndex to get coordinates
-                const buildingKey = Object.keys(buildingIndex).find(key => 
-                    buildingIndex[key].id === building.number.toString()
-                );
-                
-                if (buildingKey) {
-                    const buildingData = buildingIndex[buildingKey];
-                    
-                    if (!buildingsLayer) {
-                        loadBuildings();
-                    }
-                    
-                    showBuildingInfo(buildingData);
-                    map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
+                if (item.category === 'stop') {
+                    // Handle stop selection
+                    popStopInfo(Number(item.id));
+                    map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
                     
                     // Save to recent searches
-                    saveRecentSearch(buildingData);
+                    saveRecentSearch(item);
+                } else {
+                    // Handle building selection
+                    const buildingKey = Object.keys(buildingIndex).find(key => 
+                        buildingIndex[key].id === item.number.toString()
+                    );
+                    
+                    if (buildingKey) {
+                        const buildingData = buildingIndex[buildingKey];
+                        
+                        if (!buildingsLayer) {
+                            loadBuildings();
+                        }
+                        
+                        showBuildingInfo(buildingData);
+                        map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
+                        
+                        // Save to recent searches
+                        saveRecentSearch(buildingData);
+                    }
                 }
 
                 sa_event('btn_press', {
                     'btn': 'search_recommendation_selected',
-                    'result': building.name,
-                    'category': 'building'
+                    'result': item.name,
+                    'category': item.category
                 });
             });
             $searchRecs.append($recItem);
