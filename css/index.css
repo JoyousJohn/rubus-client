@@ -855,7 +855,7 @@ html, body {
 .route-panel {
     background-color: var(--theme-bg);
     font-family: var(--font-family);
-    padding: 1rem;
+    /* margin: 1rem; */
     height: 100vh;
 }
 

@@ -73,12 +73,55 @@ function updatePanelPosition(panel) {
     $('.subpanels-container').removeClass('panel-stops panel-routes panel-network');
     $('.subpanels-container').addClass(`panel-${panel}`);
     
-    // Scroll to the correct panel position
+    // Scroll to the correct panel position using actual scrollable content width
     const panelIndex = panelOrder.indexOf(panel);
-    const containerWidth = $('.info-panels-content').width();
-    const scrollPosition = panelIndex * containerWidth;
+    const viewportWidth = window.innerWidth;
+    const scrollWidth = $('.info-panels-content')[0].scrollWidth;
+    const contentWidth = $('.info-panels-content').width();
+    const actualPanelWidth = Math.floor(scrollWidth / 3); // Use actual scrollable width divided by 3
+    const scrollPosition = panelIndex * actualPanelWidth;
+
+    console.log('=== PANEL POSITIONING DEBUG ===');
+    console.log('Panel:', panel);
+    console.log('PanelIndex:', panelIndex);
+    console.log('ViewportWidth:', viewportWidth);
+    console.log('ScrollWidth:', scrollWidth);
+    console.log('ContentWidth:', contentWidth);
+    console.log('ActualPanelWidth:', actualPanelWidth);
+    console.log('Calculated scrollPosition:', scrollPosition);
+    console.log('Expected positions: Routes=0, Stops=' + actualPanelWidth + ', Network=' + (actualPanelWidth * 2));
+    console.log('Actual scrollLeft before:', $('.info-panels-content').scrollLeft());
+    
+    // Check for padding/margin issues
+    const subpanelsContainer = $('.subpanels-container')[0];
+    const computedStyle = window.getComputedStyle(subpanelsContainer);
+    console.log('Subpanels container padding:', computedStyle.paddingLeft, computedStyle.paddingRight);
+    console.log('Subpanels container margin:', computedStyle.marginLeft, computedStyle.marginRight);
+    console.log('Subpanels container width:', computedStyle.width);
+    
+    // Check individual subpanel styles
+    const subpanels = $('.subpanel');
+    subpanels.each(function(index) {
+        const subpanelStyle = window.getComputedStyle(this);
+        console.log(`Subpanel ${index} width:`, subpanelStyle.width);
+        console.log(`Subpanel ${index} padding:`, subpanelStyle.paddingLeft, subpanelStyle.paddingRight);
+        console.log(`Subpanel ${index} margin:`, subpanelStyle.marginLeft, subpanelStyle.marginRight);
+    });
     
     $('.info-panels-content').scrollLeft(scrollPosition);
+    
+    const finalScrollLeft = $('.info-panels-content').scrollLeft();
+    console.log('Actual scrollLeft after:', finalScrollLeft);
+    console.log('Difference from expected:', Math.abs(finalScrollLeft - scrollPosition));
+    
+    // Calculate how far over to the right it is
+    const expectedCenter = actualPanelWidth * panelIndex + (actualPanelWidth / 2);
+    const actualCenter = finalScrollLeft + (contentWidth / 2);
+    const offsetFromCenter = actualCenter - expectedCenter;
+    console.log('Expected center position:', expectedCenter);
+    console.log('Actual center position:', actualCenter);
+    console.log('Offset from center (positive = too far right):', offsetFromCenter);
+    console.log('================================');
 }
 
 // Unified pointer event handlers for touch and mouse
@@ -144,16 +187,23 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
     
     if (isDragging && dragStartX && dragStartY) {
         const deltaX = dragEndX - dragStartX;
-        const containerWidth = $('.info-panels-content').width();
+        const scrollableWidth = $('.info-panels-content')[0].scrollWidth / 3; // Total scroll width divided by 3 panels
         const currentScrollPosition = $('.info-panels-content').scrollLeft();
         
         // Determine which panel is most visible based on scroll position
         let targetPanelIndex = currentPanelIndex;
         
         // Calculate which panel center is closest to the current scroll position
-        const panelWidth = containerWidth; // Each panel is full container width
-        const viewportCenter = containerWidth / 2; // Center of the viewport
+        const panelWidth = scrollableWidth; // Each panel is the calculated scrollable width
+        const viewportCenter = $('.info-panels-content').width() / 2; // Center of the visible viewport
         const currentCenter = currentScrollPosition + viewportCenter;
+
+        console.log('=== DRAG DEBUG ===');
+        console.log('ScrollableWidth:', scrollableWidth);
+        console.log('CurrentScrollPosition:', currentScrollPosition);
+        console.log('PanelWidth:', panelWidth);
+        console.log('ViewportCenter:', viewportCenter);
+        console.log('CurrentCenter:', currentCenter);
         
         // Find the panel whose center is closest to the viewport center
         let closestPanelIndex = 0;
@@ -178,13 +228,21 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
         const targetPanel = panelOrder[targetPanelIndex];
         currentPanelIndex = targetPanelIndex;
         
-        // Calculate target scroll position
-        const targetScrollPosition = targetPanelIndex * containerWidth;
+        // Calculate target scroll position using actual panel width
+        const actualPanelWidth = Math.floor($('.info-panels-content')[0].scrollWidth / 3);
+        const targetScrollPosition = targetPanelIndex * actualPanelWidth;
+        
+        console.log('=== SNAPPING DEBUG ===');
+        console.log('TargetPanelIndex:', targetPanelIndex);
+        console.log('ViewportWidth:', viewportWidth);
+        console.log('TargetScrollPosition:', targetScrollPosition);
+        console.log('Current scrollLeft before animation:', $('.info-panels-content').scrollLeft());
         
         // Animate to the target position
         $('.info-panels-content').animate({
             scrollLeft: targetScrollPosition
         }, 300, 'swing', function() {
+            console.log('Animation completed. Final scrollLeft:', $('.info-panels-content').scrollLeft());
             console.log('Animation completed');
             // Update panel position after animation completes
             updatePanelPosition(targetPanel);
