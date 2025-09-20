@@ -9,6 +9,16 @@ let dragEndY = 0;
 let isDragging = false;
 let initialScrollLeft = 0;
 
+// Helper function to get the current X translation from a CSS transform matrix
+function getTranslateX($element) {
+    const transformMatrix = $element.css('transform');
+    if (transformMatrix && transformMatrix !== 'none') {
+        const matrixValues = transformMatrix.match(/matrix.*\((.+)\)/)[1].split(', ');
+        return parseFloat(matrixValues[4]);
+    }
+    return 0;
+}
+
 // Velocity tracking for momentum-based animation
 let velocityX = 0;
 let lastMoveTime = 0;
@@ -55,22 +65,26 @@ function moveRouteSelectorsToMain() {
 }
 
 // Calculate target panel position and animate there with physics-like momentum
-function animateToTargetPanel(initialVelocity) {
-    // Ensure any existing animations are stopped before starting new one
-    $('.info-panels-content').stop(true);
-    
+function animateToTargetPanel(initialVelocity, options) {
+    const opts = options || {};
+
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+
     const $content = $('.info-panels-content');
-    // Guard interactions during animation
-    $content.addClass('is-animating');
-    
-    const currentScrollPosition = $content.scrollLeft();
-    const actualPanelWidth = Math.floor($content[0].scrollWidth / 3);
-    
+    const $container = $('.subpanels-container');
+
+    // Make sure CSS transitions are off for the JS animation
+    $container.css('transition', 'none');
+
+    const startX = getTranslateX($container);
+    const panelWidth = $content.width();
+
     // Determine target panel based on drag direction (user intent) rather than final position
     let targetPanelIndex = currentPanelIndex;
-    
-    // Check if user was dragging with significant velocity
-    if (Math.abs(initialVelocity) > 5) {
+
+    if (opts.targetIndex === undefined && Math.abs(initialVelocity) > 5) {
         // User was dragging with intent - prioritize direction over final position
         if (initialVelocity < 0) {
             // Dragging left (negative velocity) = moving to right panel (higher index)
@@ -79,18 +93,18 @@ function animateToTargetPanel(initialVelocity) {
             // Dragging right (positive velocity) = moving to left panel (lower index)
             targetPanelIndex = Math.max(currentPanelIndex - 1, 0);
         }
-        
+    } else if (opts.targetIndex !== undefined) {
+        // A specific target index was provided (e.g., from a button click)
+        targetPanelIndex = opts.targetIndex;
     } else {
         // Low velocity - use area-based selection as fallback
-        const viewportCenter = $('.info-panels-content').width() / 2;
-        const currentCenter = currentScrollPosition + viewportCenter;
-        
+        // startX is already the translateX value, so we need to find which panel we're closest to
         let closestPanelIndex = 0;
         let minDistance = Infinity;
         
         for (let i = 0; i < panelOrder.length; i++) {
-            const panelCenter = (i * actualPanelWidth) + (actualPanelWidth / 2);
-            const distance = Math.abs(currentCenter - panelCenter);
+            const panelX = -i * panelWidth; // This is where panel i should be positioned
+            const distance = Math.abs(startX - panelX);
             
             if (distance < minDistance) {
                 minDistance = distance;
@@ -99,75 +113,77 @@ function animateToTargetPanel(initialVelocity) {
         }
         
         targetPanelIndex = closestPanelIndex;
-        
     }
-    
+
     const targetPanel = panelOrder[targetPanelIndex];
     currentPanelIndex = targetPanelIndex;
-    
-    // Calculate target scroll position
-    const targetScrollPosition = targetPanelIndex * actualPanelWidth;
-    
+
+    const targetX = -1 * targetPanelIndex * panelWidth;
+
     // Calculate animation duration based on velocity and distance
-    const distance = Math.abs(targetScrollPosition - currentScrollPosition);
+    const distance = Math.abs(targetX - startX);
     const velocityMagnitude = Math.abs(initialVelocity);
-    
-    // Base duration of 250ms, but extend it if we have high velocity
+
+    // Base duration of 125ms (~50% faster), but extend it if we have high velocity
     // This creates a more natural feel where faster swipes take longer to settle
-    const baseDuration = 250;
-    const velocityDuration = Math.min(velocityMagnitude * 6, 400); // Cap at 400ms
+    const baseDuration = 125;
+    const velocityDuration = Math.min(velocityMagnitude * 3, 200); // Cap at 200ms
     const totalDuration = Math.max(baseDuration, velocityDuration);
-    
+
     // Update the header button selection immediately
     const targetElement = $(`.info-panels-header-buttons [data-panel="${targetPanel}"]`);
     $('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
     if (targetElement.length) {
         targetElement.addClass('all-stops-selected-menu');
     }
-    
-    // Single smooth animation to the target position
-    // Use custom 'momentum' easing for natural deceleration without abrupt velocity changes
-    $content.animate({
-        scrollLeft: targetScrollPosition
-    }, {
-        duration: totalDuration,
-        easing: 'momentum', // Custom easing for smooth momentum
-        complete: function() {
-            // Update panel position after animation completes (without forcing another scroll)
-            updatePanelPosition(targetPanel, { skipScroll: true });
-            // Re-enable interactions
-            $content.removeClass('is-animating');
+
+    const startTime = performance.now();
+
+    function frame(currentTime) {
+        const elapsedTime = currentTime - startTime;
+        let progress = Math.min(elapsedTime / totalDuration, 1);
+
+        // Apply our custom easing function
+        progress = $.easing.momentum(progress);
+
+        const newX = startX + (targetX - startX) * progress;
+        $container.css('transform', 'translateX(' + newX + 'px)');
+
+        if (elapsedTime < totalDuration) {
+            animationFrameId = requestAnimationFrame(frame);
+        } else {
+            // Animation complete, ensure it's at the exact final position
+            $container.css('transform', 'translateX(' + targetX + 'px)');
+            // Remove the class to re-enable CSS transitions for other interactions
+            $container.removeClass('is-dragging-or-animating');
+            // Update panel classes
+            updatePanelPosition(targetPanel, { skipMove: true });
+            animationFrameId = null;
         }
-    });
+    }
+
+    animationFrameId = requestAnimationFrame(frame);
 }
 
 
 function selectInfoPanel(panel, element) {
     try {
-        // Update current panel index
-        currentPanelIndex = panelOrder.indexOf(panel);
+        const currentPanel = panelOrder[currentPanelIndex];
+        const targetIndex = panelOrder.indexOf(panel);
 
-        // Update visual panel position
-        updatePanelPosition(panel);
+        // Only animate if the panel is actually changing
+        if (panel !== currentPanel) {
+            // Use a high, consistent velocity to trigger a fast animation
+            const artificialVelocity = 25;
+            const options = { targetIndex: targetIndex };
+            animateToTargetPanel(artificialVelocity, options);
+        }
 
         // Toggle selected menu class
         $('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
         if (element) {
             $(element).addClass('all-stops-selected-menu');
         }
-
-        // Initialize panel content based on selected panel
-        // if (panel === 'network') {
-        //     // Initialize buses overview for network panel
-        //     if (typeof busesOverview === 'function') {
-        //         busesOverview();
-        //     }
-        // } else if (panel === 'stops') {
-        //     // Initialize stops panel
-        //     if (typeof populateAllStops === 'function') {
-        //         populateAllStops();
-        //     }
-        // }
     } catch (error) {
         console.error('Error selecting info panel:', error);
     }
@@ -191,46 +207,63 @@ $('.info-panels-close').click(function() {
 // Function to update panel position visually
 function updatePanelPosition(panel, options) {
     const opts = options || {};
-    $('.subpanels-container').removeClass('panel-stops panel-routes panel-network');
-    $('.subpanels-container').addClass(`panel-${panel}`);
+    const $container = $('.subpanels-container');
+    $container.removeClass('panel-stops panel-routes panel-network');
+    $container.addClass(`panel-${panel}`);
 
-    if (opts.skipScroll) {
+    if (opts.skipMove) {
         return;
     }
 
-    // Scroll to the correct panel position using actual scrollable content width
+    // Use transform for instant panel switching
     const panelIndex = panelOrder.indexOf(panel);
-    const scrollWidth = $('.info-panels-content')[0].scrollWidth;
-    const actualPanelWidth = Math.floor(scrollWidth / 3); // Use actual scrollable width divided by 3
-    const scrollPosition = panelIndex * actualPanelWidth;
-    $('.info-panels-content').scrollLeft(scrollPosition);
+    const panelWidth = $('.info-panels-content').width();
+    const targetX = -1 * panelIndex * panelWidth;
+
+    // Apply transform directly; CSS transition should handle the animation
+    $container.css('transform', 'translateX(' + targetX + 'px)');
+    
+    // Update currentPanelIndex to match
+    currentPanelIndex = panelIndex;
 }
+
+let initialTransformX = 0;
+let animationFrameId = null;
 
 // Unified pointer event handlers for touch and mouse
 $('.info-panels-content').on('touchstart mousedown', function(e) {
-    // Stop any ongoing animation and clear queued animations
-    $('.info-panels-content').stop(true).removeClass('is-animating');
-    
+    // Cancel any ongoing JS animation frame
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    const $container = $('.subpanels-container');
+    // Stop any ongoing jQuery animation and add class to disable CSS transitions
+    $container.stop(true).addClass('is-dragging-or-animating');
+
     // Get coordinates from touch or mouse event
     if (e.type === 'touchstart') {
         dragStartX = e.originalEvent.touches[0].clientX;
         dragStartY = e.originalEvent.touches[0].clientY;
     } else {
         // Ignore synthetic mouse events that immediately follow a touch
-        if (Date.now() - lastTouchEndTime < 400) return;
+        if (Date.now() - lastTouchEndTime < 400) {
+            return;
+        }
         dragStartX = e.clientX;
         dragStartY = e.clientY;
     }
-    
-    // Store initial scroll position
-    initialScrollLeft = $('.info-panels-content').scrollLeft();
-    
+
+    // Store initial transform position
+    initialTransformX = getTranslateX($container);
+
     // Reset velocity tracking variables
     velocityX = 0;
     lastMoveTime = 0;
     lastMoveX = dragStartX;
     touchStartTime = Date.now();
-    
+
     isDragging = false;
     // Don't prevent default here - let vertical scrolling work normally
     // We'll only prevent default if we detect horizontal movement
@@ -239,7 +272,9 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 $('.info-panels-content').on('touchmove mousemove', function(e) {
     if (!dragStartX || !dragStartY) return;
     
-    // Check if the drag is happening on route selectors or ridership chart - if so, don't handle subpanel scrolling
+    const $container = $('.subpanels-container');
+
+    // Check if the drag is happening on route selectors - if so, don't handle subpanel scrolling
     const target = $(e.target);
     if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .buses-overview-grid').length > 0) {
         return; // Let these elements handle their own interactions
@@ -268,7 +303,7 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
         if (!isDragging || Math.abs(deltaX) > Math.abs(deltaY)) {
             isDragging = true;
             e.preventDefault(); // Prevent scrolling while dragging
-            
+
             // Calculate velocity for physics
             const currentTime = Date.now();
             if (lastMoveTime > 0) {
@@ -283,11 +318,10 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
             
             lastMoveTime = currentTime;
             lastMoveX = dragEndX;
-            
+
             // Show visual feedback during drag - calculate from initial position
-            const newScrollPosition = initialScrollLeft - deltaX;
-            
-            $('.info-panels-content').scrollLeft(newScrollPosition);
+            const newTransformX = initialTransformX + deltaX;
+            $container.css('transform', 'translateX(' + newTransformX + 'px)');
         }
     } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 15) {
         // This is clearly a vertical scroll - don't interfere
@@ -318,16 +352,23 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
     
     // Only process the drag if we were actually dragging horizontally
     if (isDragging && dragStartX && dragStartY) {
+        // Stop any ongoing animations before starting new momentum animation
+        // Removed: $('.info-panels-content').stop(true);
+
         const deltaX = dragEndX - dragStartX;
-        
+
         // Convert velocity from pixels per millisecond to a more usable scale
         // Multiply by 20 to approximate 60fps frame time for smoother physics and more responsive feel
         const scaledVelocity = velocityX * 20;
-        
+
         // Always animate to target panel with momentum-based duration and easing
         animateToTargetPanel(scaledVelocity);
+    } else {
+        // Removed: console.log('❌ Not processing - isDragging:', isDragging, 'dragStartX:', !!dragStartX);
+        // Disable horizontal scrolling since no animation will start
+        // Removed: $('.info-panels-content').css('overflow-x', 'hidden');
     }
-    
+
     // Reset drag values
     dragStartX = 0;
     dragStartY = 0;
@@ -371,24 +412,15 @@ function navigateToPanel(direction) {
     selectInfoPanel(newPanel, newElement[0]);
 }
 
-// Ensure preventDefault works on touchmove (non-passive) to block native momentum on touch devices
-(function attachNonPassiveTouchMove() {
-    if (typeof window === 'undefined') return;
-    const init = () => {
-        const el = document.querySelector('.info-panels-content');
-        if (!el) return;
-        el.addEventListener('touchmove', function(e) {
-            if (isDragging) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-    };
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        init();
-    } else {
-        document.addEventListener('DOMContentLoaded', init);
-    }
-})();
+// Monitor for multiple animation calls
+let animationCallCount = 0;
+const originalAnimateToTargetPanel = animateToTargetPanel;
+animateToTargetPanel = function(velocity, options) {
+    animationCallCount++;
+    return originalAnimateToTargetPanel(velocity, options);
+};
+
+// Non-passive touchmove listener removed - was causing interference
 
 
 

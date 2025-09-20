@@ -616,7 +616,7 @@ function selectedRoute(route) {
                     ? thisStopIndex - busIndex - 1
                     : (stopLists[route].length - busIndex) + thisStopIndex - 1;
 
-                console.log(stopsAway)
+                // console.log(stopsAway)
 
                 if (busETAs[busId]) {
 
@@ -668,7 +668,7 @@ function selectedRoute(route) {
 
             });
 
-        console.log('---')
+        // console.log('---')
 
         $('.route-stops-grid').append($stopElm);
         previousStopId = stopId;

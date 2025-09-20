@@ -330,6 +330,23 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             }
             if (!isValid(data.busId)) {
                 reason += '[!isValid] ';
+                // Add detailed reason why validation failed
+                if (!busETAs[data.busId]) {
+                    reason += '(no busETAs) ';
+                } else {
+                    // Check for negative ETA values
+                    const route = busData[data.busId].route;
+                    const invalidStops = [];
+                    for (const stopId of stopLists[route]) {
+                        const etaVal = getETAForStop(data.busId, stopId);
+                        if (typeof etaVal === 'number' && etaVal < 0) {
+                            invalidStops.push(`stop${stopId}:${etaVal}`);
+                        }
+                    }
+                    if (invalidStops.length > 0) {
+                        reason += `(negative ETAs: ${invalidStops.join(', ')}) `;
+                    }
+                }
             }
             console.log(`[${data.busId}] xx:xx due to: ${reason.trim()}`);
         } else if (!busData[data.busId].atDepot) {

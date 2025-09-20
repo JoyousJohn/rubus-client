@@ -18,15 +18,18 @@
 .info-panels-content {
     flex: 1 1 0; /* Grow and shrink, but start from 0 height */
     overflow-y: auto;
+    overflow-x: hidden; /* Disable native horizontal scrolling */
     min-height: 0; /* Allow content to shrink below natural size */
+    /* Completely disable horizontal touch interactions */
+    touch-action: pan-y;
+    overscroll-behavior: none;
+    /* Disable all native momentum scrolling */
+    -webkit-overflow-scrolling: auto;
+    /* Force programmatic control */
+    scroll-behavior: auto;
 }
 
-.info-panels-content.is-animating {
-    /* Block touch and pointer events during animation to avoid native momentum interference */
-    pointer-events: none;
-    -ms-touch-action: none;
-    touch-action: none;
-}
+/* Removed .is-animating styles - were causing interference */
 
 .info-panels-header-buttons {
     flex: 0 0 auto; /* Don't grow, don't shrink, size based on content */
@@ -38,6 +41,8 @@
     width: 300vw; /* 3 panels side by side, each 100vw */
     height: 100%; /* Take full height of parent */
     transition: transform 0.3s ease;
+    /* Start at stops panel (index 1): translateX(-100vw) */
+    transform: translateX(-100vw); /* may be causing performance issue for some reason? initial jitter when letting go of finger drag before smoothly animating to final location */
 }
 
 .subpanel {

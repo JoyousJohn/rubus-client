@@ -37,10 +37,10 @@
     margin-top: 2rem;
     font-size: 2rem;
     grid-template-columns: auto 1fr 1fr;
-    column-gap: 3rem;
+    column-gap: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
-    padding: 2rem 3rem;
+    padding: 2rem;
 }
 
 .bus-overview-heading {
