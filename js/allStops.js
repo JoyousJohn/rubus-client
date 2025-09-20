@@ -43,78 +43,52 @@ function getSoonestBus(stopId, route) {
 }
 
 function populateAllStops() {
+    if (typeof activeStops === 'undefined') {
+        return;
+    }
 
     $('.all-stops-inner').empty();
-
     for (campus in stopsByCampus[selectedCampus]) {
-
         const stops = stopsByCampus[selectedCampus][campus];
-
         let campusHasBuses = false;
-
         const $allStopsGridElm = $('<div class="all-stops-grid mb-2rem"></div>')
-
         stops.forEach(stopId => {
             if (activeStops.includes(stopId)) {
-
-                campusHasBuses = true;
-
-                const $stopsElm = $(`<div class="pointer incoming-wrapper">
-                    <div class="text-1p3rem center mb-0p5rem">${stopsData[stopId].name}</div>
-                    <div class="incoming-list grid gap-y-0p5rem align-center" style="grid-template-columns: auto 1fr;"></div>
-                </div>`)
-                .click(function() {
-                    flyToStop(stopId);
-                    $('.info-panels-wrapper').hide();
-                    $('.bottom').show();
-                    $('.left-btns, .right-btns, .settings-btn').show();
-                });
-
+                let servicingRoutes = getRoutesServicingStop(stopId);
+                if (servicingRoutes.length > 0) {
+                    campusHasBuses = true;
+                }
+                    const $stopsElm = $(`<div class="pointer incoming-wrapper">
+                        <div class="text-1p3rem center mb-0p5rem">${stopsData[stopId].name}</div>
+                        <div class="incoming-list grid gap-y-0p5rem align-center" style="grid-template-columns: auto 1fr;"></div>
+                    </div>`)
+                    .click(function() {
+                        flyToStop(stopId);
+                        $('.info-panels-wrapper').hide();
+                        $('.bottom').show();
+                        $('.left-btns, .right-btns, .settings-btn').show();
+                    });
                 $allStopsGridElm.append($stopsElm);
-
-                const servicingRoutes = getRoutesServicingStop(stopId);
-
                 servicingRoutes.forEach(route => {
-
-                    [busId, eta] = getSoonestBus(stopId, route);
-
+                    let [busId, eta] = getSoonestBus(stopId, route);
+                    
                     if (busData[busId]) {
-
                         if (eta >= 60) {
                             const minutes = Math.floor(eta / 60);
-                            if (settings['toggle-show-etas-in-seconds']) {
-                                const seconds = eta % 60;
-                                eta = `${minutes}m ${seconds}s`;
-                            } else {
-                                eta = `${minutes}m`;
-                            }
-                            
+                            eta = `${minutes}m`;
                         } else {
                             eta = `${eta}s`;
                         }
-                    
-                        //                            <div class="text-1p4rem">${busData[busId].busName}</div>
                         $stopsElm.find('.incoming-list').append(
                             $(`<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busId].route]}; padding: 0.2rem 1rem;">${busData[busId].route.toUpperCase()}</div>`)
-                            .click(function() {
-                                flyToStop(stopId);
-                                toggleRoute(route);
-                                $('.info-panels-wrapper').hide();
-                                $('.bottom').show();
-                            })
-                        )
-                        $stopsElm.find('.incoming-list').append(`<div class="text-1p6rem bold right">${eta}</div>`)
-                    
+                        );
+                        $stopsElm.find('.incoming-list').append(`<div class="text-1p6rem bold right">${eta}</div>`);
                     }
                 })
-    
             }
         })
-
         if (campusHasBuses) {
-
             const $campusElm = $(`<div class="campus text-1p7rem ml-0p5rem">${campus}</div>`)
-
             $('.all-stops-inner').append($campusElm);
             $('.all-stops-inner').append($allStopsGridElm);
         }
@@ -123,10 +97,13 @@ function populateAllStops() {
 
 
 $('.all-stops').click(function() {
-    populateAllStops();
     $('.info-panels-wrapper').show().scrollTop(0);
     // Populate the network panel
     busesOverview();
+    // Select the stops panel to ensure correct positioning and scrolling
+    selectInfoPanel('stops', $('.all-stops-selected-menu'));
+    // Populate all stops after panels are visible
+    populateAllStops();
     
     // Move route selectors into the route subpanel
     moveRouteSelectorsToSubpanel();
@@ -136,8 +113,4 @@ $('.all-stops').click(function() {
     $('.left-btns, .right-btns').hide();
     $('.route-selectors').show();
     $('.settings-btn').hide();
-    
-    // Find the stops tab element and pass it to selectInfoPanel
-    const stopsTab = $('.info-panels-wrapper [data-panel="stops"]')[0];
-    selectInfoPanel('stops', stopsTab);
 })

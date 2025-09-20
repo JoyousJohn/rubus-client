@@ -34,6 +34,7 @@ function moveRouteSelectorsToMain() {
     }
 }
 
+
 function selectInfoPanel(panel, element) {
     try {
         // Update current panel index

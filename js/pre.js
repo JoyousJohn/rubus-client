@@ -755,9 +755,15 @@ async function fetchWhere() {
             popInfo(popupBusId)
         }
 
+        // Update all stops menu if info panels are open (after activeStops is created)
+        if ($('.info-panels-wrapper').is(':visible')) {
+            populateAllStops();
+        }
+
     } catch (error) {
         console.error('Error fetching bus locations:', error);
     }
+
 }
 
 
@@ -1155,6 +1161,9 @@ $(document).ready(async function() {
     $('.centerme-wrapper').fadeIn();
 
     addStopsToMap()
+    
+    
+    
     // $('.buses-btn').css('display', 'flex');
 
     setTimeout(() => {
@@ -1164,7 +1173,11 @@ $(document).ready(async function() {
 
     await fetchETAs();
 
+    
+
     await fetchWhere();
+
+    
 
     function populateJoinedService() {
         if (popupBusId) {
