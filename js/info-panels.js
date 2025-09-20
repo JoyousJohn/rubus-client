@@ -55,6 +55,9 @@ function moveRouteSelectorsToMain() {
 
 // Calculate target panel position and animate there with physics-like momentum
 function animateToTargetPanel(initialVelocity) {
+    // Ensure any existing animations are stopped before starting new one
+    $('.info-panels-content').stop(true);
+    
     const currentScrollPosition = $('.info-panels-content').scrollLeft();
     const actualPanelWidth = Math.floor($('.info-panels-content')[0].scrollWidth / 3);
     
@@ -326,6 +329,9 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
     
     // Only process the drag if we were actually dragging horizontally
     if (isDragging && dragStartX && dragStartY) {
+        // Stop any ongoing animations before starting new momentum animation
+        $('.info-panels-content').stop(true);
+        
         const deltaX = dragEndX - dragStartX;
         
         // Convert velocity from pixels per millisecond to a more usable scale
