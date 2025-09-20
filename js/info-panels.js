@@ -14,14 +14,17 @@ let velocityX = 0;
 let lastMoveTime = 0;
 let lastMoveX = 0;
 
+// Touch handling state
+let touchStartTime = 0;
+
 // Panel order for swipe navigation (matches HTML order: routes > stops > network)
 const panelOrder = ['routes', 'stops', 'network'];
 let currentPanelIndex = 1; // Default to stops panel (middle position)
 
 // Register custom easing function for smooth momentum
-$.easing.momentum = function (x, t, b, c, d) {
+$.easing.momentum = function (x) {
     // Custom easing that starts fast and decelerates smoothly
-    // x: current time, t: current position, b: start value, c: change in value, d: duration
+    // x: normalized progress (0 to 1)
     // Returns a value between 0 and 1 representing the easing progress
     
     // Use a subtle ease-out curve that feels more natural than swing
@@ -101,10 +104,10 @@ function animateToTargetPanel(initialVelocity) {
     const distance = Math.abs(targetScrollPosition - currentScrollPosition);
     const velocityMagnitude = Math.abs(initialVelocity);
     
-    // Base duration of 300ms, but extend it if we have high velocity
+    // Base duration of 250ms, but extend it if we have high velocity
     // This creates a more natural feel where faster swipes take longer to settle
-    const baseDuration = 300;
-    const velocityDuration = Math.min(velocityMagnitude * 8, 500); // Cap at 500ms
+    const baseDuration = 250;
+    const velocityDuration = Math.min(velocityMagnitude * 6, 400); // Cap at 400ms
     const totalDuration = Math.max(baseDuration, velocityDuration);
     
     // Update the header button selection immediately
@@ -242,9 +245,11 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
     velocityX = 0;
     lastMoveTime = 0;
     lastMoveX = dragStartX;
+    touchStartTime = Date.now();
     
     isDragging = false;
-    e.preventDefault(); // Prevent text selection and scrolling
+    // Don't prevent default here - let vertical scrolling work normally
+    // We'll only prevent default if we detect horizontal movement
 });
 
 $('.info-panels-content').on('touchmove mousemove', function(e) {
@@ -268,30 +273,42 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
     const deltaX = dragEndX - dragStartX;
     const deltaY = dragEndY - dragStartY;
     
-    // Only consider it a drag if horizontal movement is greater than vertical
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-        isDragging = true;
-        e.preventDefault(); // Prevent scrolling while dragging
-        
-        // Calculate velocity for physics
-        const currentTime = Date.now();
-        if (lastMoveTime > 0) {
-            const timeDelta = currentTime - lastMoveTime;
-            const positionDelta = dragEndX - lastMoveX;
+    // Only consider it a horizontal drag if:
+    // 1. Horizontal movement is significantly greater than vertical movement
+    // 2. We've moved enough to be considered intentional
+    // 3. We haven't already determined this is a vertical scroll
+    // 4. We've given enough time for the user's intent to be clear (at least 50ms)
+    const touchDuration = Date.now() - touchStartTime;
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 15 && touchDuration > 50) {
+        // Only prevent default and start dragging if we haven't already determined this is vertical scrolling
+        if (!isDragging || Math.abs(deltaX) > Math.abs(deltaY)) {
+            isDragging = true;
+            e.preventDefault(); // Prevent scrolling while dragging
             
-            // Calculate velocity (pixels per millisecond)
-            if (timeDelta > 0) {
-                velocityX = positionDelta / timeDelta;
+            // Calculate velocity for physics
+            const currentTime = Date.now();
+            if (lastMoveTime > 0) {
+                const timeDelta = currentTime - lastMoveTime;
+                const positionDelta = dragEndX - lastMoveX;
+                
+                // Calculate velocity (pixels per millisecond)
+                if (timeDelta > 0) {
+                    velocityX = positionDelta / timeDelta;
+                }
             }
+            
+            lastMoveTime = currentTime;
+            lastMoveX = dragEndX;
+            
+            // Show visual feedback during drag - calculate from initial position
+            const newScrollPosition = initialScrollLeft - deltaX;
+            
+            $('.info-panels-content').scrollLeft(newScrollPosition);
         }
-        
-        lastMoveTime = currentTime;
-        lastMoveX = dragEndX;
-        
-        // Show visual feedback during drag - calculate from initial position
-        const newScrollPosition = initialScrollLeft - deltaX;
-        
-        $('.info-panels-content').scrollLeft(newScrollPosition);
+    } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 15) {
+        // This is clearly a vertical scroll - don't interfere
+        isDragging = false;
+        return;
     }
 });
 
@@ -307,6 +324,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
         return; // Let the route selectors handle their own scrolling
     }
     
+    // Only process the drag if we were actually dragging horizontally
     if (isDragging && dragStartX && dragStartY) {
         const deltaX = dragEndX - dragStartX;
         
@@ -324,6 +342,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
     isDragging = false;
     lastMoveTime = 0;
     lastMoveX = 0;
+    touchStartTime = 0;
 });
 
 // Prevent context menu on right click during drag
@@ -341,6 +360,7 @@ $('.info-panels-content').on('mouseleave touchcancel', function(e) {
     lastMoveTime = 0;
     lastMoveX = 0;
     velocityX = 0;
+    touchStartTime = 0;
 });
 
 function navigateToPanel(direction) {
