@@ -150,9 +150,12 @@ $(document).ready(function() {
             } else {
                 // Handle building selection
                 if (!buildingsLayer) {
-                    loadBuildings();
+                    loadBuildings().then(() => {
+                        showBuildingInfo(selectedItem);
+                    });
+                } else {
+                    showBuildingInfo(selectedItem);
                 }
-                showBuildingInfo(selectedItem);
             }
             
             // Fly to the location
@@ -330,7 +333,13 @@ $(document).ready(function() {
                     popStopInfo(Number(item.id));
                 } else {
                     // Handle building/parking selection
-                    showBuildingInfo(item);
+                    if (!buildingsLayer) {
+                        loadBuildings().then(() => {
+                            showBuildingInfo(item);
+                        });
+                    } else {
+                        showBuildingInfo(item);
+                    }
                 }
                 
                 map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
@@ -460,9 +469,12 @@ $(document).ready(function() {
                     } else {
                         // Handle building/parking selection
                         if (!buildingsLayer) {
-                            loadBuildings();
+                            loadBuildings().then(() => {
+                                showBuildingInfo(item);
+                            });
+                        } else {
+                            showBuildingInfo(item);
                         }
-                        showBuildingInfo(item);
                     }
                     
                     map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
@@ -598,11 +610,14 @@ $(document).ready(function() {
                         const buildingData = buildingIndex[buildingKey];
                         
                         if (!buildingsLayer) {
-                            loadBuildings();
+                            loadBuildings().then(() => {
+                                showBuildingInfo(buildingData);
+                                map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
+                            });
+                        } else {
+                            showBuildingInfo(buildingData);
+                            map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
                         }
-                        
-                        showBuildingInfo(buildingData);
-                        map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
                         
                         // Save to recent searches
                         saveRecentSearch(buildingData);

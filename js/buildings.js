@@ -272,7 +272,7 @@ function showBuildingInfo(feature) {
 function loadBuildings() {
     // Prevent multiple simultaneous calls
     if ($('.buildings-btn').hasClass('loading')) {
-        return;
+        return Promise.resolve();
     }
     
     if (buildingsLayer) {
@@ -283,7 +283,7 @@ function loadBuildings() {
     // Disable button and show loading state
     $('.buildings-btn').prop('disabled', true).addClass('loading');
     
-    fetch('lib/buildings-parking.json')
+    return fetch('lib/buildings-parking.json')
         .then(response => response.json())
         .then(data => {
             buildingsLayer = L.geoJSON(data, {
@@ -330,6 +330,7 @@ function loadBuildings() {
             console.error('Error loading buildings:', error);
             // Re-enable button on error
             $('.buildings-btn').prop('disabled', false).removeClass('loading');
+            throw error;
         })
         .finally(() => {
             // Re-enable button after loading completes (success or error)

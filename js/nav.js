@@ -2113,14 +2113,29 @@ function displayRoute(routeData) {
             );
             
             if (buildingKey) {
-                showBuildingInfo(buildingIndex[buildingKey]);
-                
-                // Fly to the building location
                 const building = buildingIndex[buildingKey];
-                if (building && building.lat && building.lng) {
-                    map.flyTo([building.lat, building.lng], 18, {
-                        duration: 1.5
+                
+                // Ensure buildings layer is loaded before showing building info
+                if (!buildingsLayer) {
+                    loadBuildings().then(() => {
+                        showBuildingInfo(building);
+                        
+                        // Fly to the building location
+                        if (building && building.lat && building.lng) {
+                            map.flyTo([building.lat, building.lng], 18, {
+                                duration: 1.5
+                            });
+                        }
                     });
+                } else {
+                    showBuildingInfo(building);
+                    
+                    // Fly to the building location
+                    if (building && building.lat && building.lng) {
+                        map.flyTo([building.lat, building.lng], 18, {
+                            duration: 1.5
+                        });
+                    }
                 }
                 
                 // Close navigation wrapper and hide search
