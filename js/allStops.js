@@ -103,21 +103,23 @@ $('.all-stops').click(function() {
         closeSearch();
         // $('.search-wrapper input').blur();
     }
-    
+
     $('.info-panels-show-hide-wrapper').show().scrollTop(0);
-    // Populate the network panel
+
+    // Populate the network panel first to avoid layout shifts affecting positioning
     busesOverview();
+
     // Don't force a specific panel - let the system remember the last selected panel
     // The panel state is already preserved in currentPanelIndex and header button styling
     // Restore the panel position to match the remembered state
     restorePanelPosition();
-    
-    // Populate all stops after panels are visible
+
+    // Populate all stops after positioning is set
     populateAllStops();
-    
+
     // Move route selectors into the route subpanel
     moveRouteSelectorsToSubpanel();
-    
+
     // Show and position route selectors immediately when info panels are opened
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();

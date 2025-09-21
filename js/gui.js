@@ -925,119 +925,95 @@ function busesOverview() {
 let ridershipChart;
 
 async function makeRidershipChart() {
-    console.log('makeRidershipChart called. Buses panel visible:', $('.buses-panel-wrapper').is(':visible'));
-    try {
-        // Check if Chart.js is loaded and canvas element exists
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js not loaded');
-            return;
-        }
+   
+    const canvas = document.getElementById('ridership-chart');
+    const ctx = canvas.getContext('2d');
 
-        const canvas = document.getElementById('ridership-chart');
-        if (!canvas) {
-            console.error('Ridership chart canvas not found. Looking for element with id "ridership-chart"');
-            console.error('Available canvas elements:', document.querySelectorAll('canvas'));
-            console.error('Buses panel wrapper visibility:', $('.buses-panel-wrapper').css('display'));
-            return;
-        }
+    // Destroy existing chart if it exists
+    if (ridershipChart) {
+        ridershipChart.destroy();
+        ridershipChart = null;
+    }
 
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-            console.error('Could not get 2D context for ridership chart');
-            return;
-        }
-
-        // Destroy existing chart if it exists
-        if (ridershipChart) {
-            ridershipChart.destroy();
-            ridershipChart = null;
-        }
-
-        // const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
-        ridershipChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.5,
-                    pointRadius: 0,
-                    fill: true
-                }]
+    // const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
+    ridershipChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.5,
+                pointRadius: 0,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
             },
-            options: {
-                responsive: true,
-                interaction: {
+            plugins: {
+                tooltip: {
+                    enabled: true,
+                    mode: 'index',
                     intersect: false,
-                    mode: 'index'
-                },
-                plugins: {
-                    tooltip: {
-                        enabled: true,
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.parsed.y} riders`;
-                            },
-                            title: function(tooltipItems) {
-                                return tooltipItems[0].label;
-                            }
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y} riders`;
+                        },
+                        title: function(tooltipItems) {
+                            return tooltipItems[0].label;
                         }
+                    }
+                },
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        display: false,
                     },
-                    legend: {
+                    grid: {
+                        display: false
+                    },
+                    border: {
                         display: false
                     }
                 },
-                scales: {
-                    y: {
-                        ticks: {
-                            display: false,
-                        },
-                        grid: {
-                            display: false
-                        },
-                        border: {
-                            display: false
-                        }
+                x: {
+                    grid: {
+                        display: false
                     },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        // border: {
-                        //     display: false
-                        // },
-                        ticks: {
-                            autoSkip: false,
-                            maxRotation: 45,
-                            // color: themeColor,
-                            callback: function(val, index) {
-                                const time = this.getLabelForValue(val);
-                                const hour = parseInt(time.split(':')[0]); 
-                                
-                                const totalDataPoints = this.chart.data.labels.length;
-                                if (totalDataPoints > 150) { // check if the 150 num should be changed later
-                                    // Skip odd-hour labels if there are more than 150 data points
-                                    return hour % 2 !== 0 || !time.includes(':00') ? '' : hour + time.split(' ')[1];
-                                } else {
-                                    return time.includes(':00') ? hour + time.split(' ')[1] : '';
-                                }
+                    // border: {
+                    //     display: false
+                    // },
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        // color: themeColor,
+                        callback: function(val, index) {
+                            const time = this.getLabelForValue(val);
+                            const hour = parseInt(time.split(':')[0]); 
+                            
+                            const totalDataPoints = this.chart.data.labels.length;
+                            if (totalDataPoints > 150) { // check if the 150 num should be changed later
+                                // Skip odd-hour labels if there are more than 150 data points
+                                return hour % 2 !== 0 || !time.includes(':00') ? '' : hour + time.split(' ')[1];
+                            } else {
+                                return time.includes(':00') ? hour + time.split(' ')[1] : '';
                             }
                         }
                     }
-                },
-                maintainAspectRatio: false
-            }
-        });
-
-        console.log('Ridership chart initialized successfully. Canvas found:', !!canvas, 'Chart created:', !!ridershipChart);
-    } catch (error) {
-        console.error('Error initializing ridership chart:', error);
-        ridershipChart = null;
-    }
+                }
+            },
+            maintainAspectRatio: false
+        }
+    });
 }
 
 async function updateRidershipChart() {
