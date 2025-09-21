@@ -300,7 +300,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     }
 
                     makeActiveRoutes();
-                    if (!activeRoutes.has(routeStr)) {
+                    if (!activeRoutes.has(oldRoute)) {
                         populateRouteSelectors(activeRoutes);
                         console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
                         console.log('Polylines on map before remove:', map.hasLayer(polylines[oldRoute]));
