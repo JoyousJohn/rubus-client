@@ -1018,7 +1018,7 @@ html, body {
     box-sizing: border-box;
 }
 
-.panout, .centerme, .fly-closest-stop, .shoot-fireworks, .satellite-btn, .all-stops, .search-btn, .buildings-btn {
+.panout, .centerme, .fly-closest-stop, .shoot-fireworks, .satellite-btn, .info-panels, .search-btn, .buildings-btn {
     background-color: var(--theme-bg);
     padding: 1.7rem;
     border-radius: 5rem;
@@ -1033,7 +1033,7 @@ html, body {
     cursor: pointer;
 }
 
-.panout > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .all-stops > i, .chat-btn > i, .search-btn > i, .building-directions > i, .buildings-btn > i {
+.panout > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .info-panels > i, .chat-btn > i, .search-btn > i, .building-directions > i, .buildings-btn > i {
     font-size: 2rem;
 }
 

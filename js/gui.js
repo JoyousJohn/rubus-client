@@ -461,8 +461,8 @@ let panelRoute;
 
 function selectedRoute(route) {
     if (panelRoute === route) {
-        // Check if we're in the Routes tab of info panels
-        const routesTabActive = $('.info-panels-show-hide-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
+        // Determine if routes subpanel is currently active
+        const routesTabActive = $('.subpanels-container').hasClass('panel-routes');
         
         if (routesTabActive) {
             // We're in the routes subpanel - just unselect the route and stay in the panel
@@ -521,24 +521,30 @@ function selectedRoute(route) {
         $('.active-buses').append($busElm)
     })
 
-    // Check if info panels are open with routes tab active
-    const routesTabActive = $('.info-panels-show-hide-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
-    
-    if (!panelRoute && !routesTabActive) {
-        console.log('Opening info panels with routes tab');
-        // Show info panels with routes tab selected
+    // Ensure routes subpanel is active and selectors are moved when selecting a route
+    const routesTabActive = $('.subpanels-container').hasClass('panel-routes');
+
+    // Always show panels and move selectors when invoked via long-press or when panels are closed
+    if (!$('.info-panels-show-hide-wrapper').is(':visible') || isLongPress) {
         $('.info-panels-show-hide-wrapper').show();
-        // Populate the network panel
         busesOverview();
-        
-        // Move route selectors into the route subpanel
         moveRouteSelectorsToSubpanel();
-        
-        // Don't force a specific panel - let the system remember the last selected panel
-        // The panel state is already preserved in currentPanelIndex and header button styling
-        // Restore the panel position to match the remembered state
-        restorePanelPosition();
+        // Force switch to routes subpanel
+        const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
+        selectInfoPanel('routes', $routesHeaderBtn[0]);
+    } else if (!routesTabActive) {
+        // Panels are open but on a different subpanel: move selectors and switch to routes
+        moveRouteSelectorsToSubpanel();
+        const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
+        selectInfoPanel('routes', $routesHeaderBtn[0]);
+    } else {
+        // Already in routes: ensure selectors are in subpanel
+        moveRouteSelectorsToSubpanel();
     }
+    // Ensure route selectors are visible and nav buttons are hidden in subpanel
+    $('.bottom').show();
+    $('.left-btns, .right-btns').hide();
+    $('.route-selectors').show();
     
     // Make sure route panel is visible by removing the 'none' class
     $('.route-panel').show();

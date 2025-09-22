@@ -97,7 +97,7 @@ function populateAllStops() {
 }
 
 
-$('.all-stops').click(function() {
+$('.info-panels').click(function() {
     // Hide search wrapper and unfocus search input if it's open
     if ($('.search-wrapper').is(':visible')) {
         closeSearch();

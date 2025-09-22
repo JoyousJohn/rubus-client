@@ -384,7 +384,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             }
 
             if (isNew) {
-                $('.all-stops-btn-wrapper').show();
+                $('.info-panels-btn-wrapper').show();
             }
 
             makeBusesByRoutes(); // this has to go before updateTimeToStops since that calls populateAllStops which uses this. Not sure if moving this back up here broke something else though. Should find a better way to do the thing below.
@@ -461,7 +461,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         } else {
             // Only hide all-stops button if there are truly no buses at all (including overnight buses)
             if (Object.keys(busData).length === 0) {
-                $('.all-stops-btn-wrapper').hide();
+                $('.info-panels-btn-wrapper').hide();
             }
         }
 
@@ -541,7 +541,7 @@ function makeOoS(busId) {
 
     // Hide all-stops button if no buses remain
     if (Object.keys(busData).length === 0) {
-        $('.all-stops-btn-wrapper').hide();
+        $('.info-panels-btn-wrapper').hide();
     }
 
 }
@@ -878,7 +878,7 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
 
             // Show all-stops button if buses exist
             if (Object.keys(busData).length > 0) {
-                $('.all-stops-btn-wrapper').show();
+                $('.info-panels-btn-wrapper').show();
             }
 
             // console.log(activeRoutes)
@@ -931,7 +931,7 @@ function checkMinRoutes() {
 
 
         populateRouteSelectors(); // to remove favs
-        $('.all-stops-btn-wrapper').hide();
+        $('.info-panels-btn-wrapper').hide();
         return;
     }
 

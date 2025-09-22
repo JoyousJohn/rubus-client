@@ -105,7 +105,7 @@ class BusWebSocketClient {
 
             $('.knight-mover, .knight-mover-mini').hide();
 
-            $('.all-stops-btn-wrapper').show();
+            $('.info-panels-btn-wrapper').show();
 
         }
 
