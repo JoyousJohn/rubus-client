@@ -943,6 +943,10 @@ html, body {
     overflow-y: scroll;
     margin-bottom: 8rem;
     padding-bottom: 18rem;
+    scrollbar-width: none; /* Firefox */
+}
+.route-stops-grid::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 .route-stop-name {

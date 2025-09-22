@@ -99,4 +99,5 @@
     padding: 1rem;
     box-sizing: border-box;
     min-height: 100%;
+    overflow-y: auto;
 }
