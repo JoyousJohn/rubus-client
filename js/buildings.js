@@ -151,7 +151,25 @@ async function populateBuildingClosestStopsList(feature) {
 
     // Render
     const $list = $('.building-closest-stops-list');
+    const $heading = $('.building-closest-stops-heading');
     $list.empty();
+
+    // Prepare the bottom action wrapper and the Google Maps button (always visible)
+    const $showMoreWrapper = $('<div class="flex justify-between"></div>');
+    const $openInGoogleMaps = $('<div class="building-open-in-google-maps pointer mt-1rem" style="color:rgb(105, 105, 191); font-size:1.2rem; text-align:left;">Open in Google Maps</div>');
+    $openInGoogleMaps.click(function() {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${buildingLat},${buildingLng}`, '_blank');
+    });
+
+    if (stopsToShow.length === 0) {
+        $heading.hide();
+        // Only Google Maps button when no stops
+        $showMoreWrapper.append($openInGoogleMaps);
+        $list.append($showMoreWrapper);
+        return;
+    } else {
+        $heading.show();
+    }
 
     // Show only the closest stop at first
     stopsToShow.forEach((stop, idx) => {
@@ -216,8 +234,12 @@ async function populateBuildingClosestStopsList(feature) {
                 'btn': 'building_show_more_stops'
             });
         });
-        $list.append($showMore);
+        $showMoreWrapper.append($showMore);
     }
+    // Always include Google Maps button
+    $showMoreWrapper.append($openInGoogleMaps);
+    $list.append($showMoreWrapper);
+
 }
 
 function setupBuildingClosestStopsSwitcher() {
@@ -249,6 +271,7 @@ function showBuildingInfo(feature) {
     hideInfoBoxes(true);
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
+    $('.building-closest-stops-heading').hide(); // hide initially to avoid flicker until list populated
     popupBuildingName = feature.name;
     popupBuildingLatLng = feature.lat + ',' + feature.lng;
     console.log(feature)
