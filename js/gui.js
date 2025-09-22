@@ -1746,6 +1746,18 @@ function updateNearestStop() {
 
     closestDistance = thisClosestDistance;
 
+    // Show buttons when user enters campus bounds (distance becomes acceptable)
+    if (thisClosestDistance <= maxDistanceMiles || settings['toggle-bypass-max-distance']) {
+        $('.centerme-wrapper').show();
+        if (thisClosestStopId) {
+            $('.fly-closest-stop-wrapper').show();
+        }
+    } else {
+        // Hide buttons when user goes outside campus bounds
+        $('.centerme-wrapper').hide();
+        $('.fly-closest-stop-wrapper').hide();
+    }
+
     return [closestStop, thisClosestStopId, thisClosestDistance]
 
 }
