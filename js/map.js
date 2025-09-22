@@ -438,6 +438,7 @@ function hideInfoBoxes(instantly_hide) {
         popupBuildingName = null;
         popupBuildingLatLng = null;
         unhighlightBuilding();
+		checkMinRoutes(); // reshow knight mover if needed after closing building info
     }
 
     if (sourceBusId) {

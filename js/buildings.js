@@ -245,7 +245,7 @@ function setupBuildingClosestStopsSwitcher() {
 }
 
 function showBuildingInfo(feature) {
-    $('.knight-mover, .campus-switcher').hide();
+    $('.knight-mover, .knight-mover-mini, .campus-switcher').hide();
     hideInfoBoxes(true);
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
