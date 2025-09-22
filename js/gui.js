@@ -431,10 +431,17 @@ function toggleRoute(route) {
             console.log('Error setting style for route:', route, e);
         }
 
-        if (!popupStopId) {
-            map.fitBounds(polylines[route].getBounds(), { padding: [10, 10] });
-            $('.bus-info-popup, .stop-info-popup').hide();
-        }
+		if (!popupStopId) {
+			const routePolyline = polylines[route];
+			const routeBounds = routePolyline.getBounds();
+			const routeBuses = busesByRoutes[selectedCampus][route];
+			const hasInService = routeBuses.some(id => !busData[id].oos);
+			const boundsToFit = hasInService
+				? routeBounds
+				: routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(routeBounds));
+			map.fitBounds(boundsToFit, { padding: [10, 10] });
+			$('.bus-info-popup, .stop-info-popup').hide();
+		}
         else {
             updateStopBuses(popupStopId, route);
         }
