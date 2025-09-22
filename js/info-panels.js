@@ -201,12 +201,15 @@ function selectInfoPanel(panel, element) {
 
 // Handle closing the info panels wrapper
 $('.info-panels-close').click(function() {
+	console.log('Info panels close button clicked');
 	$('.info-panels-show-hide-wrapper').hide();
     moveRouteSelectorsToMain();
     $('.bottom').show();
     $('.bottom').css('bottom', '0px');
     $('.left-btns, .right-btns, .route-selectors, .settings-btn').show();
     $('.info-panels-close').show();
+    // Restore original route selection if needed
+    closeRouteMenu();
 })
 
 // Function to update panel position visually

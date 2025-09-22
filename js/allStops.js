@@ -63,11 +63,13 @@ function populateAllStops() {
                         <div class="incoming-list grid gap-y-0p5rem align-center" style="grid-template-columns: auto 1fr;"></div>
                     </div>`)
                     .click(function() {
+                        console.log('Stop clicked, closing info panels');
                         flyToStop(stopId);
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();
                         moveRouteSelectorsToMain();
+                        // Note: Not calling closeRouteMenu() here as this is switching to stop view
                     });
                 $allStopsGridElm.append($stopsElm);
                 servicingRoutes.forEach(route => {
@@ -103,6 +105,10 @@ $('.info-panels').click(function() {
         closeSearch();
         // $('.search-wrapper input').blur();
     }
+
+    // Store the original route selection from state before opening panels
+    originalShownRoute = shownRoute || null;
+    console.log('Storing originalShownRoute for restoration (entry):', originalShownRoute);
 
     $('.info-panels-show-hide-wrapper').show().scrollTop(0);
 

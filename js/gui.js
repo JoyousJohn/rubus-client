@@ -92,16 +92,22 @@ function populateRouteSelectors(allActiveRoutes) {
                 initialX = event.pageX || event.originalEvent.touches[0].pageX; // Store initial position
               
                 longPressTimer = setTimeout(() => {
-    
+
                     isLongPress = true;
+                    console.log('Long press triggered for route:', route);
+                    // Remember current map selection state so we can restore it on close
+                    routePanelOpenedFromLongPress = true;
+                    // Note: originalShownRoute is now stored in selectedRoute function when first opening panel
                     if (shownRoute) {
                         shownBeforeRoute = shownRoute;
+                        console.log('Storing shownBeforeRoute:', shownBeforeRoute);
                     }
 
                     if (panelRoute !== route && route !== 'fav') {
+                        console.log('Calling selectedRoute from long press while in subpanel');
                         selectedRoute(route);
                     }
-                    
+
                 }, 500); 
             });
 
@@ -247,11 +253,14 @@ function clearRouteSelectors() {
 
 let shownRoute;  
 let shownBeforeRoute;
+let routePanelOpenedFromLongPress = false; // Track if routes panel opened via long-press
+let originalShownRoute = null; // Preserve map selection before opening panel
+let lastMapShownRoute = null; // Tracks current map selection when panels are closed
 let isLongPress = false; // Flag to track if a long press occurred
 
 function toggleRouteSelectors(route) {
-
-    console.log("Toggline for: " + route);
+    console.log("toggleRouteSelectors called with:", route);
+    console.log("shownRoute before toggleRouteSelectors:", shownRoute);
 
     if (shownRoute === route) {
 
@@ -299,6 +308,7 @@ function toggleRouteSelectors(route) {
     }
 
     $('.stop-info-use-route-selectors-notice').slideUp('fast');
+    console.log("shownRoute after toggleRouteSelectors:", shownRoute);
 
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
@@ -318,7 +328,7 @@ function hideStopsExcept(excludedRoute) {
         const stopIdsForRoute = stopLists[polyline]
         stopIdsForRoute.forEach(stopId => {
             if (!(stopIdsForSelectedRoute).includes(stopId)) {
-                console.log(stopId)
+                // console.log(stopId)
                 busStopMarkers[stopId].remove();
             }
         })
@@ -387,11 +397,14 @@ function updateTooltips(route) {
 }
 
 function toggleRoute(route) {
+    console.log('toggleRoute called with:', route);
+    console.log('shownRoute before toggle:', shownRoute);
 
     if (route === 'fav') { toggleFavorites(); return; }
 
     // Show all polylines and buses
     if (shownRoute === route) {
+        console.log('Toggling off route:', route);
         showAllPolylines();  
         showAllBuses();
         showAllStops();
@@ -408,6 +421,7 @@ function toggleRoute(route) {
 
     // Hide other polylines and buses
     } else {
+        console.log('Selecting route:', route);
 
         showAllStops();
 
@@ -453,13 +467,35 @@ function toggleRoute(route) {
         hideInfoBoxes();
     }
 
+    // Update last known map selection state (panels closed scenario)
+    if (!$('.info-panels-show-hide-wrapper').is(':visible')) {
+        lastMapShownRoute = (shownRoute === route) ? null : route;
+        console.log('Updated lastMapShownRoute:', lastMapShownRoute);
+    }
+
+    console.log('About to call toggleRouteSelectors with:', route);
     toggleRouteSelectors(route);
+    console.log('shownRoute after toggleRoute:', shownRoute);
 
 }
 
 let panelRoute;
 
 function selectedRoute(route) {
+    console.log('selectedRoute called with:', route);
+    console.log('panelRoute:', panelRoute);
+    console.log('isLongPress:', isLongPress);
+    console.log('routePanelOpenedFromLongPress:', routePanelOpenedFromLongPress);
+
+    // Store the current map selection exactly once when entering panels
+    if (!$('.info-panels-show-hide-wrapper').is(':visible')) {
+        // Prefer lastMapShownRoute if available (accurate map state), otherwise shownRoute
+        originalShownRoute = (lastMapShownRoute !== null && lastMapShownRoute !== undefined)
+            ? lastMapShownRoute
+            : (shownRoute || null);
+        console.log('Storing originalShownRoute for restoration (entry):', originalShownRoute);
+    }
+
     if (panelRoute === route) {
         // Determine if routes subpanel is currently active
         const routesTabActive = $('.subpanels-container').hasClass('panel-routes');
@@ -1203,13 +1239,22 @@ function updateWaitTimes() {
 
 
 function closeRouteMenu() {
+    console.log('closeRouteMenu called');
+    console.log('routePanelOpenedFromLongPress:', routePanelOpenedFromLongPress);
+    console.log('originalShownRoute:', originalShownRoute);
+    console.log('shownRoute before close:', shownRoute);
+    console.log('panelRoute before close:', panelRoute);
+    console.log('shownBeforeRoute before close:', shownBeforeRoute);
+
     // Hide info panels and show bottom controls
     $('.info-panels-show-hide-wrapper').hide();
+    // Move selectors back to main UI
+    moveRouteSelectorsToMain();
     $('.bottom').show();
-    
+
     // Reset bottom position to default
     $('.bottom').css('bottom', '0px');
-    
+
     // Show all other buttons
     $('.left-btns, .right-btns, .settings-btn').show();
 
@@ -1218,12 +1263,36 @@ function closeRouteMenu() {
         $('.route-selector[routeName="fav"]').show();
     }
 
-    if (shownBeforeRoute && shownBeforeRoute !== panelRoute) {
-        toggleRoute(shownBeforeRoute);
-        shownBeforeRoute = null;
-    } else if (!shownBeforeRoute) {
-        toggleRouteSelectors(panelRoute);
+    // Restore original map route selection strictly from state
+    let routeToRestore = originalShownRoute;
+    console.log('Restoring original route selection (state):', routeToRestore);
+
+    if (routeToRestore) {
+        // Ensure we end with the original single-route filter
+        if (shownRoute !== routeToRestore) {
+            console.log('Toggling to original route:', routeToRestore);
+            toggleRoute(routeToRestore);
+        } else {
+            console.log('Already on original route:', routeToRestore);
+        }
+    } else {
+        // Ensure we end with the "all buses" view (no single route selected)
+        if (shownRoute) {
+            console.log('Toggling off current route to show all buses');
+            toggleRoute(shownRoute);
+        } else {
+            console.log('Already showing all buses');
+        }
     }
+    // Reset state holders
+    routePanelOpenedFromLongPress = false;
+    originalShownRoute = null;
+    // Update last map selection tracker after restore
+    lastMapShownRoute = shownRoute;
+    shownBeforeRoute = null;
+    console.log('shownRoute after restore:', shownRoute);
+
+    console.log('shownRoute after closeRouteMenu:', shownRoute);
 
     panelRoute = null;
 }
@@ -1987,9 +2056,7 @@ function selectTheme(theme) {
 window.continueToCampusModal = function() {
     $('.theme-modal').hide();
     $('.campus-modal').css('display', 'flex');
-    if (typeof window.centerCampusCarouselToNBInstant === 'function') {
-        requestAnimationFrame(() => {
-            window.centerCampusCarouselToNBInstant(true);
-        });
-    }
+    requestAnimationFrame(() => {
+        window.centerCampusCarouselToNBInstant(true);
+    });
 };
