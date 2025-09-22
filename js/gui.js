@@ -565,14 +565,14 @@ function selectedRoute(route) {
         $('.info-panels-show-hide-wrapper').show();
         busesOverview();
         moveRouteSelectorsToSubpanel();
-        // Force switch to routes subpanel
+        // Force switch to routes subpanel (not user explicit selection)
         const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
-        selectInfoPanel('routes', $routesHeaderBtn[0]);
+        selectInfoPanel('routes', $routesHeaderBtn[0], false);
     } else if (!routesTabActive) {
-        // Panels are open but on a different subpanel: move selectors and switch to routes
+        // Panels are open but on a different subpanel: move selectors and switch to routes (not user explicit selection)
         moveRouteSelectorsToSubpanel();
         const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
-        selectInfoPanel('routes', $routesHeaderBtn[0]);
+        selectInfoPanel('routes', $routesHeaderBtn[0], false);
     } else {
         // Already in routes: ensure selectors are in subpanel
         moveRouteSelectorsToSubpanel();

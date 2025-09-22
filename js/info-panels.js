@@ -43,6 +43,7 @@ let lastTouchEndTime = 0;
 // Panel order for swipe navigation (matches HTML order: routes > stops > network)
 const panelOrder = ['routes', 'stops', 'network'];
 let currentPanelIndex = 1; // Default to stops panel (middle position)
+let lastUserSelectedPanelIndex = 1; // Track user's last explicitly selected panel
 
 // Register custom easing function for smooth momentum
 $.easing.momentum = function (x) {
@@ -64,8 +65,8 @@ function moveRouteSelectorsToMain() {
 
 // Function to restore the last selected panel position when opening info panels
 function restorePanelPosition() {
-	const currentPanel = panelOrder[currentPanelIndex];
-	const panelIndex = currentPanelIndex;
+	const currentPanel = panelOrder[lastUserSelectedPanelIndex];
+	const panelIndex = lastUserSelectedPanelIndex;
 	const targetX = -100 * panelIndex * (window.innerWidth / 100);
 
 	// Ensure all subpanel wrappers are visible and enforce DOM order
@@ -90,6 +91,16 @@ function restorePanelPosition() {
 	// Update panel classes
 	$container.removeClass('panel-stops panel-routes panel-network');
 	$container.addClass(`panel-${currentPanel}`);
+
+	// Update currentPanelIndex to match the restored position
+	currentPanelIndex = panelIndex;
+
+	// Update header button styling to match the restored panel
+	$('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
+	const $targetHeaderBtn = $(`.info-panels-header-buttons [data-panel="${currentPanel}"]`);
+	if ($targetHeaderBtn.length) {
+		$targetHeaderBtn.addClass('all-stops-selected-menu');
+	}
 
 	// Re-enable transitions after positioning is complete (only if not dragging)
 	setTimeout(() => {
@@ -183,7 +194,7 @@ function animateToTargetPanel(initialVelocity, options) {
 	animationFrameId = requestAnimationFrame(frame);
 }
 
-function selectInfoPanel(panel, element) {
+function selectInfoPanel(panel, element, isUserExplicitSelection = true) {
     try {
 		const currentPanel = panelOrder[currentPanelIndex];
 		const targetIndex = panelOrder.indexOf(panel);
@@ -195,6 +206,10 @@ function selectInfoPanel(panel, element) {
         $('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
         if (element) {
             $(element).addClass('all-stops-selected-menu');
+        }
+        // Only update user's last selected panel if this is an explicit user action
+        if (isUserExplicitSelection) {
+            lastUserSelectedPanelIndex = targetIndex;
         }
 	} catch (error) {}
 }
