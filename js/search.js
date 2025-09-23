@@ -420,6 +420,39 @@ $(document).ready(function() {
         return stored ? JSON.parse(stored) : [];
     }
     
+    function saveRecentNavigation(fromBuilding, toBuilding) {
+        const recentNavigations = getRecentNavigations();
+        
+        // Create navigation entry
+        const navigationEntry = {
+            type: 'navigation',
+            from: fromBuilding.name || fromBuilding,
+            to: toBuilding.name || toBuilding,
+            fromBuilding: fromBuilding,
+            toBuilding: toBuilding,
+            timestamp: Date.now()
+        };
+        
+        // Remove if already exists (to move to front)
+        const filtered = recentNavigations.filter(item => 
+            !(item.from === navigationEntry.from && item.to === navigationEntry.to)
+        );
+        
+        // Add to front and keep only 5 most recent
+        filtered.unshift(navigationEntry);
+        const recent = filtered.slice(0, 5);
+        
+        localStorage.setItem('recentNavigations', JSON.stringify(recent));
+    }
+    
+    // Make saveRecentNavigation globally accessible
+    window.saveRecentNavigation = saveRecentNavigation;
+    
+    function getRecentNavigations() {
+        const stored = localStorage.getItem('recentNavigations');
+        return stored ? JSON.parse(stored) : [];
+    }
+    
     function removeRecentSearch(itemToRemove) {
         const recentSearches = getRecentSearches();
         const filtered = recentSearches.filter(item => 
@@ -428,33 +461,60 @@ $(document).ready(function() {
         localStorage.setItem('recentSearches', JSON.stringify(filtered));
     }
     
+    function removeRecentNavigation(itemToRemove) {
+        const recentNavigations = getRecentNavigations();
+        const filtered = recentNavigations.filter(item => 
+            !(item.from === itemToRemove.from && item.to === itemToRemove.to)
+        );
+        localStorage.setItem('recentNavigations', JSON.stringify(filtered));
+    }
+    
     function populateRecentSearches() {
         const $searchRecents = $('.search-recents');
         const $searchRecentsWrapper = $('.search-recents-wrapper');
         $searchRecents.empty();
         
         const recentSearches = getRecentSearches().slice(0, 3); // Show only 3 most recent
+        const recentNavigations = getRecentNavigations().slice(0, 3); // Show only 3 most recent
         
-        if (recentSearches.length === 0) {
+        // Combine and limit total to 3 items
+        const allRecent = [...recentSearches, ...recentNavigations]
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .slice(0, 3);
+        
+        if (allRecent.length === 0) {
             $searchRecentsWrapper.hide();
             return;
         }
         
         $searchRecentsWrapper.show();
         
-        recentSearches.forEach(item => {
+        allRecent.forEach(item => {
             let icon = '';
-            if (item.category === 'building') {
-                icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
-            } else if (item.category === 'parking') {
-                icon = '<i class="fa-solid fa-square-parking" style="color: var(--theme-hidden-route-col)"></i>';
-            } else if (item.category === 'stop') {
-                icon = '<i class="fa-solid fa-bus-simple" style="color: var(--theme-hidden-route-col)"></i>';
+            let displayText = '';
+            let itemData = {};
+            
+            if (item.type === 'navigation') {
+                // Navigation entry
+                icon = '<i class="fa-solid fa-route" style="color: var(--theme-hidden-route-col)"></i>';
+                displayText = `${item.from} → ${item.to}`;
+                itemData = { type: 'navigation', from: item.from, to: item.to, fromBuilding: item.fromBuilding, toBuilding: item.toBuilding };
+            } else {
+                // Building/parking/stop entry
+                if (item.category === 'building') {
+                    icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
+                } else if (item.category === 'parking') {
+                    icon = '<i class="fa-solid fa-square-parking" style="color: var(--theme-hidden-route-col)"></i>';
+                } else if (item.category === 'stop') {
+                    icon = '<i class="fa-solid fa-bus-simple" style="color: var(--theme-hidden-route-col)"></i>';
+                }
+                displayText = item.name;
+                itemData = item;
             }
             
             const $recentItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important; position: relative;">
                 ${icon}
-                <div style="flex: 1;">${item.name}</div>
+                <div style="flex: 1;">${displayText}</div>
                 <button class="recent-remove-btn" type="button" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; opacity: 0.7; transition: opacity 0.2s;">×</button>
             </div>`);
             
@@ -463,9 +523,28 @@ $(document).ready(function() {
                 if (!$(e.target).hasClass('recent-remove-btn')) {
                     closeSearch();
                     
-                    if (item.category === 'stop') {
+                    if (item.type === 'navigation') {
+                        // Handle navigation selection - open navigation with the saved route
+                        const toBuildingKey = Object.keys(buildingIndex).find(key => 
+                            buildingIndex[key].name.toLowerCase() === item.to.toLowerCase()
+                        );
+                        openNav(toBuildingKey, item.from);
+                        
+                        sa_event('btn_press', {
+                            'btn': 'recent_navigation_selected',
+                            'from': item.from,
+                            'to': item.to
+                        });
+                    } else if (item.category === 'stop') {
                         // Handle stop selection
                         popStopInfo(Number(item.id));
+                        map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
+                        
+                        sa_event('btn_press', {
+                            'btn': 'recent_search_selected',
+                            'result': item.name,
+                            'category': item.category
+                        });
                     } else {
                         // Handle building/parking selection
                         if (!buildingsLayer) {
@@ -475,31 +554,41 @@ $(document).ready(function() {
                         } else {
                             showBuildingInfo(item);
                         }
-                    }
-                    
-                    map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
+                        
+                        map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
 
-                    sa_event('btn_press', {
-                        'btn': 'recent_search_selected',
-                        'result': item.name,
-                        'category': item.category
-                    });
+                        sa_event('btn_press', {
+                            'btn': 'recent_search_selected',
+                            'result': item.name,
+                            'category': item.category
+                        });
+                    }
                 }
             });
             
             // Handle remove button click
             $recentItem.find('.recent-remove-btn').click(function(e) {
                 e.stopPropagation(); // Prevent triggering the main item click
-                removeRecentSearch(item);
+                
+                if (item.type === 'navigation') {
+                    removeRecentNavigation(item);
+                    sa_event('btn_press', {
+                        'btn': 'recent_navigation_removed',
+                        'from': item.from,
+                        'to': item.to
+                    });
+                } else {
+                    removeRecentSearch(item);
+                    sa_event('btn_press', {
+                        'btn': 'recent_search_removed',
+                        'result': item.name,
+                        'category': item.category
+                    });
+                }
+                
                 populateRecentSearches(); // Refresh the list
                 // Repopulate navigation examples based on new recent searches count
                 populateNavigationExamples();
-                
-                sa_event('btn_press', {
-                    'btn': 'recent_search_removed',
-                    'result': item.name,
-                    'category': item.category
-                });
             });
             
             // Hover effects for remove button

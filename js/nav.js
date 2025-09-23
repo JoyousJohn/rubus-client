@@ -277,11 +277,24 @@ function openNav(navTo, navFrom) {
 
     $('.navigate-wrapper').show();
     
-    // Focus on the appropriate input
-    if (navFrom) {
-        $('#nav-to-input').focus();
+    // If both inputs are provided, automatically calculate the route
+    if (navFrom && toBuilding) {
+        // Set the selected building variables for proper routing
+        selectedFromBuilding = navFrom.toLowerCase();
+        selectedToBuilding = toBuilding.name.toLowerCase();
+        
+        // Show clear buttons
+        $('#nav-from-clear-btn, #nav-to-clear-btn').fadeIn();
+        
+        // Calculate and display the route
+        calculateRoute(navFrom, toBuilding.name);
     } else {
-        $('#nav-from-input').focus();
+        // Focus on the appropriate input if not both provided
+        if (navFrom) {
+            $('#nav-to-input').focus();
+        } else {
+            $('#nav-from-input').focus();
+        }
     }
 }
 
@@ -701,6 +714,9 @@ function calculateRoute(from, to) {
             from: selectedFromBuilding ? false : buildingIndex[from.toLowerCase()] ? false : findBuildingFuzzy(from) !== null,
             to: selectedToBuilding ? false : buildingIndex[to.toLowerCase()] ? false : findBuildingFuzzy(to) !== null
         };
+
+        // Save to recent navigations
+        saveRecentNavigation(startBuilding, endBuilding);
 
         // Display the route
         displayRoute({
