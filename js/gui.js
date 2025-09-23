@@ -1953,7 +1953,7 @@ function populateMeClosestStops() {
         $('.closest-stops-list').append(stopNameDiv);
         $('.closest-stops-list').append(stopDistDiv);
 
-        const $routesHereDiv = $(`<div class="flex gap-x-0p5rem mb-1rem"></div>`)
+        const $routesHereDiv = $(`<div class="flex gap-0p5rem mb-1rem" style="flex-wrap: wrap;"></div>`)
 
         // console.log(stopId)
         const busesHere = routesServicing(parseInt(stopId))
