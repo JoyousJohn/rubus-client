@@ -259,6 +259,9 @@ $(document).ready(function() {
             $('.search-recs-wrapper').show();
             $('.search-recents-wrapper').show();
             $('.search-nav-examples-wrapper').show();
+            
+            // Repopulate the content when showing (in case it was updated)
+            populateRecentSearches();
         }
         
         if (!fuseReady || !sanitizedQuery) {
@@ -401,13 +404,19 @@ $(document).ready(function() {
     function saveRecentSearch(searchItem) {
         const recentSearches = getRecentSearches();
         
+        // Add timestamp to search item
+        const searchItemWithTimestamp = {
+            ...searchItem,
+            timestamp: Date.now()
+        };
+        
         // Remove if already exists (to move to front)
         const filtered = recentSearches.filter(item => 
             !(item.name === searchItem.name && item.category === searchItem.category)
         );
         
         // Add to front
-        filtered.unshift(searchItem);
+        filtered.unshift(searchItemWithTimestamp);
         
         // Keep only last 10 searches (more than we show for better UX)
         const limited = filtered.slice(0, 10);
