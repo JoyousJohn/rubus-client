@@ -496,6 +496,15 @@ $(document).ready(function() {
             return;
         }
         
+        // Update Recent heading count using ALL saved recents
+        (function updateRecentHeadingCount() {
+            const totalSavedRecents = (getRecentSearches().length) + (getRecentNavigations().length);
+            const $heading = $('.search-recents-wrapper .text-1p4rem.bold-500').first();
+            if ($heading.length) {
+                $heading.html(`Recent <span style="color: var(--theme-hidden-route-col)">(${totalSavedRecents})</span>`);
+            }
+        })();
+        
         $searchRecentsWrapper.show();
         
         function tryApplyMarquee($text) {
