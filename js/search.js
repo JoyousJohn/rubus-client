@@ -498,6 +498,44 @@ $(document).ready(function() {
         
         $searchRecentsWrapper.show();
         
+        function tryApplyMarquee($text) {
+
+            const el = $text.get(0);
+            const clientWidth = el.clientWidth;
+            const scrollWidth = el.scrollWidth;
+
+            const isOverflowing = scrollWidth > clientWidth + 1;
+
+            if (isOverflowing) { // strict width comparison
+                // Immediately wrap the text in a container that applies the fade effect
+                const $wrapper = $('<div class="overflow-fade"></div>');
+                $text.wrap($wrapper);
+
+                // Wait 1.5s before applying the scrolling effect to give user time to read
+                setTimeout(function() {
+                    // Ensure the element still exists in the DOM before modifying it
+                    if (!document.body.contains(el)) return;
+
+                    const original = $text.text();
+                    const gap = 48;
+                    const duration = Math.min(45, Math.max(12, Math.round((scrollWidth + gap) / 28)));
+                    const $marqueeContainer = $('<div class="marquee-container" style="width: 100%;"></div>');
+                    // Prevent marquee text from sliding underneath the remove button
+                    const btnEl = $text.closest('.search-result-item').find('.recent-remove-btn').get(0);
+                    if (btnEl) {
+                        const btnRect = btnEl.getBoundingClientRect();
+                        $marqueeContainer.css('padding-right', Math.ceil(btnRect.width + 12) + 'px');
+                    }
+                    const $track = $('<div class="marquee-track"></div>').css('--marquee-duration', duration + 's');
+                    const $span1 = $('<span class="marquee-text"></span>').text(original);
+                    const $span2 = $('<span class="marquee-text"></span>').text(original);
+                    $track.append($span1, $span2);
+                    $marqueeContainer.append($track);
+                    $text.replaceWith($marqueeContainer);
+                }, 1500);
+            }
+        }
+
         allRecent.forEach(item => {
             let icon = '';
             let displayText = '';
@@ -523,7 +561,7 @@ $(document).ready(function() {
             
             const $recentItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important; position: relative;">
                 ${icon}
-                <div style="flex: 1;">${displayText}</div>
+                <div class="recent-text" style="flex: 1; white-space: pre; overflow: hidden;">${displayText}</div>
                 <button class="recent-remove-btn" type="button" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; opacity: 0.7; transition: opacity 0.2s;">×</button>
             </div>`);
             
@@ -607,6 +645,9 @@ $(document).ready(function() {
             );
             
             $searchRecents.append($recentItem);
+
+            // After mount, if text overflows, convert to marquee
+            tryApplyMarquee($recentItem.find('.recent-text'));
         });
     }
 

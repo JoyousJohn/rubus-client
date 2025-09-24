@@ -144,3 +144,51 @@
 .search-btn.gradient-active::before {
     opacity: 1;
 }
+
+/* Marquee scrolling for overflowing recent search/navigation text */
+.marquee-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.marquee-track {
+    display: inline-flex;
+    white-space: nowrap;
+    will-change: transform;
+    animation-name: searchMarqueeScroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-duration: var(--marquee-duration, 12s);
+}
+
+.marquee-text {
+    padding-right: 3rem; /* gap between repetitions so it doesn't look cramped */
+}
+
+@keyframes searchMarqueeScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); } /* two identical spans in track, shift by half for seamless loop */
+}
+
+/* Pause marquee on hover for accessibility */
+.marquee-container:hover .marquee-track {
+    animation-play-state: paused;
+}
+
+/* New wrapper to apply the fade effect instantly */
+.overflow-fade {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
+.overflow-fade::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 6rem; /* Increased width for a longer fade */
+    background: linear-gradient(to left, var(--theme-bg) 30%, transparent 100%); /* Start solid, then fade */
+    pointer-events: none; /* Allows clicks to pass through to elements behind it */
+}
