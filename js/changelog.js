@@ -1,4 +1,15 @@
 async function getChangelog() {
+    // Toggle behavior: if already visible, hide and unselect
+    if ($('.changelog-wrapper').is(':visible')) {
+        $('.changelog-wrapper').hide();
+        $('.changelog').removeClass('footer-selected');
+        return;
+    }
+
+    // Preparing to show changelog: hide contact and unselect it
+    $('.footer-contact-wrapper').hide();
+    $('.contact').removeClass('footer-selected');
+
     $.ajax({
         url: 'https://api.github.com/repos/JoyousJohn/rubus-client/commits',
         type: 'GET',
@@ -62,6 +73,7 @@ async function getChangelog() {
             }
 
             $('.changelog-wrapper').show();
+            $('.changelog').addClass('footer-selected');
         }
     });
 }

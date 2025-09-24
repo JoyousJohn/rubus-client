@@ -3,6 +3,9 @@ let contact;
 function showContact() {
     $('.contact').addClass('footer-selected');
     $('.footer-contact-wrapper').show();
+    // Hide changelog when showing contact
+    $('.changelog-wrapper').hide();
+    $('.changelog').removeClass('footer-selected');
 }
 
 function popContact() {
