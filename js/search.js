@@ -527,7 +527,21 @@ $(document).ready(function() {
 
                     const original = $text.text();
                     const gap = 48;
-                    const duration = Math.min(45, Math.max(12, Math.round((scrollWidth + gap) / 28)));
+                    // Speed up a bit by increasing pixels/second
+                    const SPEED_PX_PER_SEC = 50;
+                    const travelPx = scrollWidth + gap;
+                    const travelSeconds = Math.max(4, Math.round(travelPx / SPEED_PX_PER_SEC));
+                    const HOLD_SECONDS = 1.5;
+                    const totalSeconds = travelSeconds + HOLD_SECONDS;
+
+                    // Create a per-instance keyframes with an initial hold period
+                    const holdPercent = Math.min(40, Math.max(5, (HOLD_SECONDS / totalSeconds) * 100));
+                    const animName = `searchMarqueeScrollHold_${Date.now()}_${Math.floor(Math.random()*100000)}`;
+                    const styleEl = document.createElement('style');
+                    styleEl.type = 'text/css';
+                    styleEl.textContent = `@keyframes ${animName} { 0% { transform: translateX(0); } ${holdPercent}% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`;
+                    document.head.appendChild(styleEl);
+
                     const $marqueeContainer = $('<div class="marquee-container" style="width: 100%;"></div>');
                     // Prevent marquee text from sliding underneath the remove button
                     const btnEl = $text.closest('.search-result-item').find('.recent-remove-btn').get(0);
@@ -535,7 +549,13 @@ $(document).ready(function() {
                         const btnRect = btnEl.getBoundingClientRect();
                         $marqueeContainer.css('padding-right', Math.ceil(btnRect.width + 12) + 'px');
                     }
-                    const $track = $('<div class="marquee-track"></div>').css('--marquee-duration', duration + 's');
+                    const $track = $('<div class="marquee-track"></div>');
+                    $track.css({
+                        animationName: animName,
+                        animationDuration: `${totalSeconds}s`,
+                        animationTimingFunction: 'linear',
+                        animationIterationCount: 'infinite'
+                    });
                     const $span1 = $('<span class="marquee-text"></span>').text(original);
                     const $span2 = $('<span class="marquee-text"></span>').text(original);
                     $track.append($span1, $span2);
