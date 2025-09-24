@@ -661,7 +661,7 @@ html, body {
     top: 0;
 }
 
-.bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate, .bus-history, .building-navigate, .building-directions {
+.bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate, .stop-directions, .bus-history, .building-navigate, .building-directions {
     color: var(--theme-color);
     background-color: var(--theme-bg);
     font-size: 1.7rem;

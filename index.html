@@ -497,10 +497,41 @@
                 </div>
 
                 <div class="stop-btns flex gap-x-0p5rem">  
+                    <div class="stop-directions br-1rem align-center pointer flex gap-x-0p5rem" onclick="">
+                        <i class="fa-solid fa-diamond-turn-right"></i>
+                        <div class="bold-500 font-1p7rem">NAV</div>
+                    </div>
                     <div class="stop-navigate br-1rem align-center pointer" onclick="navToStop();">
                         <i class="fa-solid fa-person-walking"></i>
                     </div>
                     <script>
+                        $('.stop-directions').click(function() {
+                            // Check if we have a stop selected - needed?
+                            // if (!popupStopId) {
+                            //     showNavigationMessage('No stop selected. Please click on a stop first.');
+                            //     return;
+                            // }
+
+                            // Track stop directions button click
+                            sa_event('btn_press', {
+                                'btn': 'stop_directions',
+                                'stop_name': stopsData[popupStopId].name,
+                                'stopId': popupStopId
+                            });
+
+                            // Store the stop ID before it gets cleared by hideInfoBoxes
+                            const currentStopId = popupStopId;
+
+                            hideInfoBoxes();
+                            
+                            // Always set the selected stop as the destination
+                            setNavigationFromStop(currentStopId, 'to');
+                            $('.navigate-wrapper').show();
+
+                            // Focus on the from input for user to enter their starting location
+                            $('#nav-from-input').focus();
+                        });
+
                         $('.stop-navigate').click(function() {
                             $(this).css('background-color', '#565fe5');
                             setTimeout(() => {

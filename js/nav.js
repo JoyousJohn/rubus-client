@@ -12,11 +12,11 @@ function getStopCountText(route) {
 $(document).ready(function() {
     $('.building-directions').click(function() {
 
-        // Check if we have a building selected BEFORE calling hideInfoBoxes
-        if (!popupBuildingName) {
-            showNavigationMessage('No building selected. Please click on a building first.');
-            return;
-        }
+        // Check if we have a building selected BEFORE calling hideInfoBoxes - needed?
+        // if (!popupBuildingName) {
+        //     showNavigationMessage('No building selected. Please click on a building first.');
+        //     return;
+        // }
 
         // Track building directions button click
         sa_event('btn_press', {
@@ -83,11 +83,13 @@ function setupNavigationInputs() {
         
         input.val('').trigger('input').focus();
         
-        // Clear the selected building variable
+        // Clear the selected building and stop variables
         if (isFromInput) {
             selectedFromBuilding = null;
+            selectedFromStop = null;
         } else {
             selectedToBuilding = null;
+            selectedToStop = null;
         }
         
         sa_event('btn_press', {
@@ -136,13 +138,21 @@ function setupNavigationInputs() {
             const inputValue = input.val().trim().toLowerCase();
             if (input.attr('id') === 'nav-from-input') {
                 const buildingName = selectedFromBuilding && buildingIndex[selectedFromBuilding]?.name?.toLowerCase();
+                const stopName = selectedFromStop && stopsData[selectedFromStop]?.name?.toLowerCase();
                 if (buildingName && inputValue !== buildingName) {
                     selectedFromBuilding = null;
                 }
+                if (stopName && inputValue !== stopName) {
+                    selectedFromStop = null;
+                }
             } else if (input.attr('id') === 'nav-to-input') {
                 const buildingName = selectedToBuilding && buildingIndex[selectedToBuilding]?.name?.toLowerCase();
+                const stopName = selectedToStop && stopsData[selectedToStop]?.name?.toLowerCase();
                 if (buildingName && inputValue !== buildingName) {
                     selectedToBuilding = null;
+                }
+                if (stopName && inputValue !== stopName) {
+                    selectedToStop = null;
                 }
             }
         }
@@ -578,6 +588,15 @@ function calculateRoute(from, to) {
         if (selectedFromBuilding) {
             const currentFromInput = $('#nav-from-input').val().trim();
             startBuilding = resolvePlaceByName(currentFromInput || selectedFromBuilding);
+        } else if (selectedFromStop) {
+            const stopData = stopsData[selectedFromStop];
+            startBuilding = {
+                name: stopData.name,
+                lat: stopData.latitude,
+                lng: stopData.longitude,
+                category: 'stop',
+                id: selectedFromStop
+            };
         } else {
             startBuilding = resolvePlaceByName(from);
         }
@@ -586,6 +605,15 @@ function calculateRoute(from, to) {
         if (selectedToBuilding) {
             const currentToInput = $('#nav-to-input').val().trim();
             endBuilding = resolvePlaceByName(currentToInput || selectedToBuilding);
+        } else if (selectedToStop) {
+            const stopData = stopsData[selectedToStop];
+            endBuilding = {
+                name: stopData.name,
+                lat: stopData.latitude,
+                lng: stopData.longitude,
+                category: 'stop',
+                id: selectedToStop
+            };
         } else {
             endBuilding = resolvePlaceByName(to);
         }
@@ -710,9 +738,24 @@ function calculateRoute(from, to) {
         });
 
         // Check if fuzzy matching was used
+        const fromNormalized = String(from || '').trim().toLowerCase();
+        const toNormalized = String(to || '').trim().toLowerCase();
+        const startResolvedName = String((startBuilding && startBuilding.name) || '').trim().toLowerCase();
+        const endResolvedName = String((endBuilding && endBuilding.name) || '').trim().toLowerCase();
+
         const usedFuzzyMatch = {
-            from: selectedFromBuilding ? false : buildingIndex[from.toLowerCase()] ? false : findBuildingFuzzy(from) !== null,
-            to: selectedToBuilding ? false : buildingIndex[to.toLowerCase()] ? false : findBuildingFuzzy(to) !== null
+            from: startIsStop
+                ? false
+                : (
+                    fromNormalized !== startResolvedName &&
+                    (selectedFromBuilding ? false : (buildingIndex[from.toLowerCase()] ? false : findBuildingFuzzy(from) !== null))
+                  ),
+            to: endIsStop
+                ? false
+                : (
+                    toNormalized !== endResolvedName &&
+                    (selectedToBuilding ? false : (buildingIndex[to.toLowerCase()] ? false : findBuildingFuzzy(to) !== null))
+                  )
         };
 
         // Save to recent navigations
@@ -767,6 +810,8 @@ let roadNetworkLayer = null; // Global variable to store the road network layer
 // Variables to track building selections from map clicks
 let selectedFromBuilding = null; // normalized building name from map click for "from" input
 let selectedToBuilding = null;   // normalized building name from map click for "to" input
+let selectedFromStop = null;     // stop ID from map click for "from" input
+let selectedToStop = null;       // stop ID from map click for "to" input
 let isSettingInputProgrammatically = false; // prevent clearing on programmatic input
 
 // Variables to track autocomplete navigation
@@ -777,16 +822,30 @@ function checkAndTriggerRouteCalculation() {
     const fromValue = $('#nav-from-input').val().trim();
     const toValue = $('#nav-to-input').val().trim();
 
-    // Only trigger if both inputs have values and both have selected buildings from autocomplete
-    if (fromValue && toValue && selectedFromBuilding && selectedToBuilding) {
-        // Verify that the current input values match the selected buildings
-        const fromBuilding = buildingIndex[selectedFromBuilding];
-        const toBuilding = buildingIndex[selectedToBuilding];
+    // Only trigger if both inputs have values and both have selected places from autocomplete
+    if (fromValue && toValue && (selectedFromBuilding || selectedFromStop) && (selectedToBuilding || selectedToStop)) {
+        let fromMatches = false;
+        let toMatches = false;
 
-        if (fromBuilding && toBuilding &&
-            fromBuilding.name.toLowerCase() === fromValue.toLowerCase() &&
-            toBuilding.name.toLowerCase() === toValue.toLowerCase()) {
+        // Check if from input matches selected building or stop
+        if (selectedFromBuilding) {
+            const fromBuilding = buildingIndex[selectedFromBuilding];
+            fromMatches = fromBuilding && fromBuilding.name.toLowerCase() === fromValue.toLowerCase();
+        } else if (selectedFromStop) {
+            const fromStop = stopsData[selectedFromStop];
+            fromMatches = fromStop && fromStop.name.toLowerCase() === fromValue.toLowerCase();
+        }
 
+        // Check if to input matches selected building or stop
+        if (selectedToBuilding) {
+            const toBuilding = buildingIndex[selectedToBuilding];
+            toMatches = toBuilding && toBuilding.name.toLowerCase() === toValue.toLowerCase();
+        } else if (selectedToStop) {
+            const toStop = stopsData[selectedToStop];
+            toMatches = toStop && toStop.name.toLowerCase() === toValue.toLowerCase();
+        }
+
+        if (fromMatches && toMatches) {
             calculateRoute(fromValue, toValue);
         }
     }
@@ -814,6 +873,37 @@ function setNavigationFromBuilding(buildingName, targetInput = 'from') {
         selectedToBuilding = normalizedName;
         isSettingInputProgrammatically = true;
         $('#nav-to-input').val(buildingName).trigger('input');
+        isSettingInputProgrammatically = false;
+        // Show clear button
+        $('#nav-to-clear-btn').fadeIn();
+    }
+
+    // Check if we should trigger route calculation
+    checkAndTriggerRouteCalculation();
+}
+
+// Set navigation input from stop click
+function setNavigationFromStop(stopId, targetInput = 'to') {
+    if (!stopId || !stopsData[stopId]) {
+        console.error('Stop ID is invalid or stop data not found');
+        showNavigationMessage('No stop selected. Please click on a stop first.');
+        return;
+    }
+
+    const stopName = stopsData[stopId].name;
+
+    // Set the selected stop variable
+    if (targetInput === 'from') {
+        selectedFromStop = stopId;
+        isSettingInputProgrammatically = true;
+        $('#nav-from-input').val(stopName).trigger('input');
+        isSettingInputProgrammatically = false;
+        // Show clear button
+        $('#nav-from-clear-btn').fadeIn();
+    } else if (targetInput === 'to') {
+        selectedToStop = stopId;
+        isSettingInputProgrammatically = true;
+        $('#nav-to-input').val(stopName).trigger('input');
         isSettingInputProgrammatically = false;
         // Show clear button
         $('#nav-to-clear-btn').fadeIn();
@@ -2665,9 +2755,11 @@ function closeNavigation() {
         isSettingInputProgrammatically = false;
         // Hide clear buttons
         $('#nav-from-clear-btn, #nav-to-clear-btn').hide();
-        // Reset selected buildings
+        // Reset selected buildings and stops
         selectedFromBuilding = null;
         selectedToBuilding = null;
+        selectedFromStop = null;
+        selectedToStop = null;
         // Hide autocomplete and messages
         hideNavigationAutocomplete();
         $('.nav-message').hide();

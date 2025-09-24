@@ -91,3 +91,49 @@
     71%  { transform: translate(10%, 8%) rotate(310deg) scale(1.15); }
     100% { transform: translate(0%, 0%) rotate(360deg) scale(1); }
 }
+
+/* Stop Directions Button Styling */
+.stop-directions {
+    aspect-ratio: auto;
+    padding: 0 1rem;
+    width: auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.stop-directions > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Force white content above gradient */
+.stop-directions.stop-directions,
+.stop-directions.stop-directions > * {
+    color: #fff;
+}
+
+/* --- Stop Directions Gradient Animation --- */
+
+.stop-directions::before {
+    content: "";
+    position: absolute;
+    /* top: -100%; */
+    /* left: -100%; */
+    width: 500%;
+    height: 500%;
+    background: conic-gradient(
+        from 0deg,
+        hsla(0, 100%, 70%, 1),
+        hsla(30, 100%, 70%, 1),
+        hsla(60, 100%, 70%, 1),
+        hsla(120, 100%, 70%, 1),
+        hsla(180, 100%, 70%, 1),
+        hsla(240, 100%, 70%, 1),
+        hsla(300, 100%, 70%, 1),
+        hsla(360, 100%, 70%, 1)
+    );
+    filter: blur(40px) saturate(1.5);
+    transform-origin: 50% 50%;
+    animation: simGradientSwirl 10s cubic-bezier(.4, 0, .2, 1) infinite alternate;
+    z-index: 0;
+}
