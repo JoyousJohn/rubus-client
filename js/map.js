@@ -470,12 +470,22 @@ function hideInfoBoxes(instantly_hide) {
 function panout() {
     // Add visual feedback
     const $btn = $('.panout');
-    const originalBg = $btn.css('background-color');
-    $btn.css('background-color', 'var(--theme-satellite-btn)').css('color', 'white');
     
-    setTimeout(() => {
-        $btn.css('background-color', originalBg).css('color', 'rgb(185, 185, 185)');
+    // Clear any existing timeout and restore state
+    if ($btn.data('feedback-timeout')) {
+        clearTimeout($btn.data('feedback-timeout'));
+        $btn.removeClass('btn-feedback-active');
+    }
+    
+    // Apply feedback state and set timeout
+    $btn.addClass('btn-feedback-active');
+    
+    const timeoutId = setTimeout(() => {
+        $btn.removeClass('btn-feedback-active');
+        $btn.removeData('feedback-timeout');
     }, 200);
+    
+    $btn.data('feedback-timeout', timeoutId);
 
     if (polylineBounds) {
         $('[stop-eta]').text('').hide();
@@ -539,31 +549,56 @@ function changeMapStyle(newStyle) {
 let userPosition;
 
 function centerme() {
-    // Add visual feedback
     const $btn = $('.centerme');
-    const originalBg = $btn.css('background-color');
-    $btn.css('background-color', 'var(--theme-satellite-btn)').css('color', 'white');
     
-    setTimeout(() => {
-        $btn.css('background-color', originalBg).css('color', '');
-    }, 200);
+    // Prevent multiple simultaneous location requests
+    if ($btn.data('location-requesting')) {
+        return;
+    }
+    
+    // Clear any existing timeout and restore state
+    if ($btn.data('feedback-timeout')) {
+        clearTimeout($btn.data('feedback-timeout'));
+        $btn.removeData('feedback-timeout');
+    }
+    
+    // Apply feedback state immediately
+    $btn.addClass('btn-feedback-active');
 
     if (userPosition) {
+        // User position already available - quick feedback then return to normal
         map.flyTo(userPosition, 18, {
             animate: true,
             duration: 0.3
         });
         hideInfoBoxes(true);
         $('.my-location-popup').show();
+        
+        // Remove feedback after short delay
+        const timeoutId = setTimeout(() => {
+            $btn.removeClass('btn-feedback-active');
+            $btn.removeData('feedback-timeout');
+        }, 200);
+        
+        $btn.data('feedback-timeout', timeoutId);
         return;
     }
 
     if (navigator.geolocation) {
-
+        // Mark that we're requesting location
+        $btn.data('location-requesting', true);
+        
+        // Switch from static feedback to pulse animation
+        $btn.removeClass('btn-feedback-active').addClass('btn-pulse');
+        
         console.log("Trying to get location...")
         $('.getting-location-popup').fadeIn(300);
 
         navigator.geolocation.getCurrentPosition((position) => {
+            // Location request succeeded - remove feedback state
+            $btn.removeClass('btn-pulse');
+            $btn.removeData('location-requesting');
+            
             const userLat = position.coords.latitude;
             const userLong = position.coords.longitude;
             userPosition = [userLat, userLong];
@@ -607,12 +642,18 @@ function centerme() {
             findNearestStop(false);
 
         }, (error) => {
+            // Location request failed - remove feedback state
+            $btn.removeClass('btn-pulse');
+            $btn.removeData('location-requesting');
+            
             console.error('Error getting user location:', error);
             $('.getting-location-popup').slideUp();
         }, {
             enableHighAccuracy: true,
         });
     } else {
+        // Geolocation not supported - remove feedback state
+        $btn.removeClass('btn-feedback-active');
         console.error('Geolocation is not supported by this browser.');
     }
 

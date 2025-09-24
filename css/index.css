@@ -1038,6 +1038,24 @@ html, body {
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+.btn-feedback-active {
+    background-color: var(--theme-satellite-btn) !important;
+    color: white !important;
+}
+
+.btn-pulse {
+    animation: btn-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes btn-pulse {
+    0%, 100% {
+        background-color: var(--theme-satellite-btn);
+    }
+    50% {
+        background-color: #5a7ce8;
+    }
+}
+
 .panout > i, .centerme > i, .fly-closest-stop > i, .shoot-fireworks > i, .info-panels > i, .chat-btn > i, .search-btn > i, .building-directions > i, .buildings-btn > i {
     font-size: 2rem;
 }

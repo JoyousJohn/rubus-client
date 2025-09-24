@@ -1744,12 +1744,22 @@ function updateNearestStop() {
 
     $('.fly-closest-stop').off('click').click(function() { 
         const $btn = $(this);
-        const originalBg = $btn.css('background-color');
-        $btn.css('background-color', 'var(--theme-satellite-btn)').css('color', 'white');
         
-        setTimeout(() => {
-            $btn.css('background-color', originalBg).css('color', '');
+        // Clear any existing timeout and restore state
+        if ($btn.data('feedback-timeout')) {
+            clearTimeout($btn.data('feedback-timeout'));
+            $btn.removeClass('btn-feedback-active');
+        }
+        
+        // Apply feedback state and set timeout
+        $btn.addClass('btn-feedback-active');
+        
+        const timeoutId = setTimeout(() => {
+            $btn.removeClass('btn-feedback-active');
+            $btn.removeData('feedback-timeout');
         }, 200);
+        
+        $btn.data('feedback-timeout', timeoutId);
         
         flyToStop(thisClosestStopId);
         const stopName = stopsData[thisClosestStopId]?.name;
@@ -1947,12 +1957,22 @@ function flyToStop(stopId) {
 function flyToClosestStop() {
     if (closestStopId) {
         const $btn = $('.fly-closest-stop');
-        const originalBg = $btn.css('background-color');
-        $btn.css('background-color', 'var(--theme-satellite-btn)').css('color', 'white');
         
-        setTimeout(() => {
-            $btn.css('background-color', originalBg).css('color', '');
+        // Clear any existing timeout and restore state
+        if ($btn.data('feedback-timeout')) {
+            clearTimeout($btn.data('feedback-timeout'));
+            $btn.removeClass('btn-feedback-active');
+        }
+        
+        // Apply feedback state and set timeout
+        $btn.addClass('btn-feedback-active');
+        
+        const timeoutId = setTimeout(() => {
+            $btn.removeClass('btn-feedback-active');
+            $btn.removeData('feedback-timeout');
         }, 200);
+        
+        $btn.data('feedback-timeout', timeoutId);
         
         flyToStop(closestStopId);
         const stopName = stopsData[closestStopId]?.name;
