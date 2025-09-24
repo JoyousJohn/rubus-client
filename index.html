@@ -53,6 +53,7 @@
     <script defer src="js/nav.js"></script>
     <script src="js/pathfinding.js"></script>
     <script src="js/icon-helper.js"></script>
+    <script src="js/changelog.js"></script>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/ridership.css">
@@ -1443,6 +1444,7 @@
             <div class="settings-rubus-attribution flex justify-around select-none gray777777 mt-1p5rem mb-2rem">
                 <!-- <div>About</div> -->
                 <div class="contact pointer" onclick="contactClicked();">Contact</div>
+                <div class="changelog pointer" onclick="getChangelog();">Changelog</div>
                 <!-- <div>Terms</div> -->
                 <div class="events-link pointer">Events</div>
                 <div class="pointer" onclick="window.open('https://joyousjohn.github.io/ruguessr/', '_blank')">RutgersGuessr</div>
@@ -1456,6 +1458,10 @@
                             <div class="footer-contact-email-blurb text-1p3rem italics gray777777 mt-0p5rem mb-1rem center" style="grid-column: span 2; max-width: 90vw;">You may receive a response from a non-@rubus.live email.</div>
                         </div>
                     </div>
+                </div>
+
+                <div class="changelog-wrapper none text-1p4rem">
+                    <div class="changelog-list"></div>
                 </div>
             </div>
 
