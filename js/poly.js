@@ -712,7 +712,7 @@ async function popStopInfo(stopId) {
 
     $('.stop-info-popup-inner').scrollTop(0);
 
-    updateStopBusesMaxHeight();
+    setTimeout(updateStopBusesMaxHeight, 0);
 
     $('.bus-log-wrapper').hide();
 
