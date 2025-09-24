@@ -468,6 +468,14 @@ function hideInfoBoxes(instantly_hide) {
 }
 
 function panout() {
+    // Add visual feedback
+    const $btn = $('.panout');
+    const originalBg = $btn.css('background-color');
+    $btn.css('background-color', 'var(--theme-satellite-btn)').css('color', 'white');
+    
+    setTimeout(() => {
+        $btn.css('background-color', originalBg).css('color', 'rgb(185, 185, 185)');
+    }, 200);
 
     if (polylineBounds) {
         $('[stop-eta]').text('').hide();
@@ -484,10 +492,6 @@ function panout() {
     } else { // no buses running, show all of nb
         map.fitBounds(bounds[selectedCampus]);
     }
-    $('.panout').css('color', 'blue');
-    setTimeout(() => {
-        $('.panout').css('color', 'rgb(185, 185, 185)');
-    }, 500);
 
     hideInfoBoxes();
 
@@ -535,6 +539,14 @@ function changeMapStyle(newStyle) {
 let userPosition;
 
 function centerme() {
+    // Add visual feedback
+    const $btn = $('.centerme');
+    const originalBg = $btn.css('background-color');
+    $btn.css('background-color', 'var(--theme-satellite-btn)').css('color', 'white');
+    
+    setTimeout(() => {
+        $btn.css('background-color', originalBg).css('color', '');
+    }, 200);
 
     if (userPosition) {
         map.flyTo(userPosition, 18, {

@@ -609,7 +609,7 @@ function updateStopBusesMaxHeight() {
 }
 
 async function popStopInfo(stopId) {
-    console.log('popStopInfo', stopId);
+    // console.log('popStopInfo', stopId);
     if (popupStopId) {
         $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
         busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);

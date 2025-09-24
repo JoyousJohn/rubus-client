@@ -1742,7 +1742,22 @@ function updateNearestStop() {
         $('.closest-stop').show();
     }
 
-    $('.fly-closest-stop').off('click').click(function() { flyToStop(thisClosestStopId) });
+    $('.fly-closest-stop').off('click').click(function() { 
+        const $btn = $(this);
+        const originalBg = $btn.css('background-color');
+        $btn.css('background-color', 'var(--theme-satellite-btn)').css('color', 'white');
+        
+        setTimeout(() => {
+            $btn.css('background-color', originalBg).css('color', '');
+        }, 200);
+        
+        flyToStop(thisClosestStopId);
+        const stopName = stopsData[thisClosestStopId]?.name;
+        sa_event('btn_press', {
+            'btn': 'fly_closest_stop',
+            'stop_name': stopName
+        });
+    });
 
     closestDistance = thisClosestDistance;
 
@@ -1927,6 +1942,25 @@ function flyToStop(stopId) {
     );
 
     popStopInfo(Number(stopId));
+}
+
+function flyToClosestStop() {
+    if (closestStopId) {
+        const $btn = $('.fly-closest-stop');
+        const originalBg = $btn.css('background-color');
+        $btn.css('background-color', 'var(--theme-satellite-btn)').css('color', 'white');
+        
+        setTimeout(() => {
+            $btn.css('background-color', originalBg).css('color', '');
+        }, 200);
+        
+        flyToStop(closestStopId);
+        const stopName = stopsData[closestStopId]?.name;
+        sa_event('btn_press', {
+            'btn': 'fly_closest_stop',
+            'stop_name': stopName
+        });
+    }
 }
 
 
