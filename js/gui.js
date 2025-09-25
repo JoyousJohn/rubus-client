@@ -2043,6 +2043,14 @@ function flyToClosestStop() {
         // Apply feedback state immediately and keep it active until map moves
         $btn.addClass('btn-feedback-active');
 
+        // Set up immediate drag handler to clear feedback if user interrupts animation
+        const immediateDragHandler = () => {
+            $btn.removeClass('btn-feedback-active');
+            $btn.removeData('fly-to-closest-stop-in-progress');
+            map.off('dragstart', immediateDragHandler);
+        };
+        map.on('dragstart', immediateDragHandler);
+
         // Clear panout background since we're moving the map
         clearPanoutFeedback();
         
@@ -2051,12 +2059,15 @@ function flyToClosestStop() {
             // Mark fly-to-closest-stop as no longer in progress
             $btn.removeData('fly-to-closest-stop-in-progress');
             // Set up drag handler to clear fly-to-closest-stop feedback when user manually moves map
-            const flyToClosestStopDragHandler = () => {
-                // Clear feedback directly since we know the operation is complete
-                $btn.removeClass('btn-feedback-active');
-                map.off('dragstart', flyToClosestStopDragHandler);
-            };
-            map.on('dragstart', flyToClosestStopDragHandler);
+            // (only if the immediate handler hasn't already been triggered)
+            if ($btn.hasClass('btn-feedback-active')) {
+                const flyToClosestStopDragHandler = () => {
+                    // Clear feedback directly since we know the operation is complete
+                    $btn.removeClass('btn-feedback-active');
+                    map.off('dragstart', flyToClosestStopDragHandler);
+                };
+                map.on('dragstart', flyToClosestStopDragHandler);
+            }
         };
 
         // Use a timeout to ensure feedback stays active for the animation duration

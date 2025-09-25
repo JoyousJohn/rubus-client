@@ -629,6 +629,14 @@ function centerme() {
     // Apply feedback state immediately and keep it active until map moves
     $btn.addClass('btn-feedback-active');
 
+    // Set up immediate drag handler to clear feedback if user interrupts animation
+    const immediateCentermeDragHandler = () => {
+        $btn.removeClass('btn-feedback-active');
+        $btn.removeData('centerme-in-progress');
+        map.off('dragstart', immediateCentermeDragHandler);
+    };
+    map.on('dragstart', immediateCentermeDragHandler);
+
     if (userPosition) {
         // User position already available - fly to location and keep background active
         map.flyTo(userPosition, 18, {
@@ -637,7 +645,7 @@ function centerme() {
         });
         hideInfoBoxes(true);
         $('.my-location-popup').show();
-        
+
         // Clear panout background since we're flying to location
         clearPanoutFeedback();
         
@@ -646,11 +654,14 @@ function centerme() {
             // Mark centerme as no longer in progress
             $btn.removeData('centerme-in-progress');
             // Set up drag handler to clear centerme feedback when user manually moves map
-            const centermeDragHandler = () => {
-                clearCentermeFeedback();
-                map.off('dragstart', centermeDragHandler);
-            };
-            map.on('dragstart', centermeDragHandler);
+            // (only if the immediate handler hasn't already been triggered)
+            if ($btn.hasClass('btn-feedback-active')) {
+                const centermeDragHandler = () => {
+                    clearCentermeFeedback();
+                    map.off('dragstart', centermeDragHandler);
+                };
+                map.on('dragstart', centermeDragHandler);
+            }
         };
 
         // Listen for moveend to know when flyTo animation is complete
@@ -716,11 +727,14 @@ function centerme() {
                     // Mark centerme as no longer in progress
                     $btn.removeData('centerme-in-progress');
                     // Set up drag handler to clear centerme feedback when user manually moves map
-                    const centermeDragHandler = () => {
-                        clearCentermeFeedback();
-                        map.off('dragstart', centermeDragHandler);
-                    };
-                    map.on('dragstart', centermeDragHandler);
+                    // (only if the immediate handler hasn't already been triggered)
+                    if ($btn.hasClass('btn-feedback-active')) {
+                        const centermeDragHandler = () => {
+                            clearCentermeFeedback();
+                            map.off('dragstart', centermeDragHandler);
+                        };
+                        map.on('dragstart', centermeDragHandler);
+                    }
                 };
 
                 // Listen for moveend to know when flyTo animation is complete
@@ -2009,7 +2023,7 @@ function updateNextStopsMaxHeight() {
     nextStops.css('max-height', maxHeight - 75);
 }
 
-function populateBusBreaks(busBreakData) {
+function populateBusBreaks(busBreakData, busId) {
     const MAX_INITIAL_BREAKS = 7; // Maximum number of breaks shown initially
 
     if (!busBreakData || busBreakData.error) {
@@ -2019,6 +2033,13 @@ function populateBusBreaks(busBreakData) {
         $('.show-more-breaks, .show-all-breaks').hide();
         $('.info-overdue-break').hide();
         return;
+    }
+
+    // Get bus route and expected stops for comparison
+    const busRoute = busData[busId]?.route;
+    let expectedStops = [];
+    if (busRoute && stopLists[busRoute]) {
+        expectedStops = stopLists[busRoute];
     }
 
     // Calculate time since last long break (duration > 180 seconds)
