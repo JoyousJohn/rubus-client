@@ -1577,7 +1577,6 @@ function popInfo(busId, resetCampusFontSize) {
     const data = busData[busId]
 
     let dataRoute = data.route
-    console.log(dataRoute)
     let displayRoute;
     if (dataRoute === 'wknd1' || dataRoute === 'wknd2') {
         dataRoute = 'Weekend ' + dataRoute.slice(-1);
@@ -2038,10 +2037,10 @@ function populateBusBreaks(busBreakData, busId) {
     // Get bus route and expected stops for comparison
     const busRoute = busData[busId]?.route;
     let expectedStops = [];
-    if (busRoute && stopLists[busRoute]) {
+    if (busRoute && stopLists[busRoute] && stopLists[busRoute].length > 0) {
         expectedStops = stopLists[busRoute];
     }
-
+    
     // Calculate time since last long break (duration > 180 seconds)
     const lastBreakMin = (() => {
         if (busBreakData && busBreakData.length > 0) {
@@ -2056,7 +2055,7 @@ function populateBusBreaks(busBreakData, busId) {
                     const currentTime = new Date();
                     const diffInMs = currentTime - lastBreakTime;
                     const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-                    console.log(`Last long break was ${diffInMinutes} minutes ago`);
+                    // console.log(`Last long break was ${diffInMinutes} minutes ago`);
                     return diffInMinutes;
                 }
             } else {
@@ -2102,56 +2101,110 @@ function populateBusBreaks(busBreakData, busId) {
     let totalBusStopTime = 0;
 
     const reversedData = [...busBreakData].reverse();
+    const actualStops = new Set(reversedData.map(breakItem => breakItem.stop_id));
 
+    // Create combined list of actual stops + missed stops in chronological order
+    const allStopsToShow = [];
+
+    // Add all actual stops in chronological order (most recent first)
     for (const breakItem of reversedData) {
+        allStopsToShow.push({ breakItem, isMissed: false });
+    }
 
+    // Add missed stops if we have route data
+    if (expectedStops && expectedStops.length > 0 && actualStops.size > 0) {
+        // Find missed stops by looking at the route sequence
+        const missedStops = [];
+        
+        // Go through the route sequence and find gaps between consecutive actual stops
+        for (let i = 0; i < expectedStops.length - 1; i++) {
+            const currentStop = expectedStops[i];
+            const nextStop = expectedStops[i + 1];
+            
+            // If both consecutive stops in the route were visited, check for missed stops between them
+            if (actualStops.has(currentStop) && actualStops.has(nextStop)) {
+                // Find any stops between currentStop and nextStop in the route that were missed
+                for (let j = i + 1; j < expectedStops.indexOf(nextStop); j++) {
+                    const potentialMissedStop = expectedStops[j];
+                    if (!actualStops.has(potentialMissedStop)) {
+                        missedStops.push(potentialMissedStop);
+                    }
+                }
+            }
+        }
+        
+        // Log if bus missed stops
+        if (missedStops.length > 0) {
+            console.log(`Bus ${busId} (${busData[busId]?.busName}) missed ${missedStops.length} stops:`, missedStops.map(stopId => stopsData[stopId]?.name || stopId));
+        }
+        
+        // Add missed stops to the list (these will be hidden initially and shown when "Show All Stops" is clicked)
+        for (const missedStopId of missedStops) {
+            allStopsToShow.push({ stopId: missedStopId, isMissed: true });
+        }
+    }
+
+    for (const stopData of allStopsToShow) {
         let extraClass = '';
 
-        if (breakItem.break_duration > 180) {
-            extraClass = 'long-break';
-            breakCount++;
+        if (!stopData.isMissed) {
+            const breakItem = stopData.breakItem;
+            if (breakItem.break_duration > 180) {
+                extraClass = 'long-break';
+                breakCount++;
+            } else {
+                extraClass += 'none';
+            }
+
+            if (breakCount >= MAX_INITIAL_BREAKS) {
+                extraClass += ' none';
+            }
+
+            const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
+            const formattedTime = timeArrived.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            breakDiv.append(`<div class="${extraClass}" style="color:#656565;">${formattedTime}</div>`);
+            breakDiv.append(`<div class="${extraClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name}</div>`);
+
+            let durationDiffPercent = Math.round(((breakItem.break_duration - waits[breakItem.stop_id])/breakItem.break_duration * 100));
+
+            let percentDiffCol = ''
+            if (durationDiffPercent > 0) { // slower than average
+                percentDiffCol = '#f84949';
+                durationDiffPercent = '+' + durationDiffPercent;
+            } else if (durationDiffPercent < 0) { // faster than average
+                percentDiffCol = 'var(--theme-short-stops-color)';
+            }
+
+            breakDiv.append(`<div class="${extraClass}"><div class="flex gap-x-0p5rem justify-between">
+                <div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>
+                <div class="stop-dur-percent none text-1p2rem" style="color: ${percentDiffCol};">${durationDiffPercent}%</div>
+            </div></div>`);
+
+            if (!consideredStops.has(breakItem.stop_id)) {
+                totalAvgBreakTime += waits[breakItem.stop_id];
+                totalBusBreakTime += breakItem.break_duration;
+                consideredStops.add(breakItem.stop_id);
+            }
+
+            if (breakItem.break_duration > 180) {
+                totalBusStopTime += breakItem.break_duration;
+            }
         } else {
-            extraClass += 'none';
-        }
+            // Handle missed stops - these should always be hidden initially
+            const stopId = stopData.stopId;
+            const stopName = stopsData[stopId].shortName || stopsData[stopId].name;
 
-        if (breakCount >= MAX_INITIAL_BREAKS) {
-            extraClass += ' none';
-        }
+            // Missed stops are always hidden initially (shown only when "Show All Stops" is clicked)
+            const missedStopExtraClass = ' none';
 
-        const timeArrived = new Date(breakItem.time_arrived.replace(/\.\d+/, ''));
-        const formattedTime = timeArrived.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
-        
-        breakDiv.append(`<div class="${extraClass}" style="color:#656565;">${formattedTime}</div>`);
-        breakDiv.append(`<div class="${extraClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name}</div>`);
-        
-        let durationDiffPercent = Math.round(((breakItem.break_duration - waits[breakItem.stop_id])/breakItem.break_duration * 100));
-        
-        let percentDiffCol = ''
-        if (durationDiffPercent > 0) { // slower than average
-            percentDiffCol = '#f84949';
-            durationDiffPercent = '+' + durationDiffPercent;
-        } else if (durationDiffPercent < 0) { // faster than average
-            percentDiffCol = 'var(--theme-short-stops-color)';
-        }
-
-
-        breakDiv.append(`<div class="${extraClass}"><div class="flex gap-x-0p5rem justify-between">
-            <div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>
-            <div class="stop-dur-percent none text-1p2rem" style="color: ${percentDiffCol};">${durationDiffPercent}%</div>
-        </div></div>`);
-
-        if (!consideredStops.has(breakItem.stop_id)) {
-            totalAvgBreakTime += waits[breakItem.stop_id];
-            totalBusBreakTime += breakItem.break_duration;
-            consideredStops.add(breakItem.stop_id);
-        }
-
-        if (breakItem.break_duration > 180) {   
-            totalBusStopTime += breakItem.break_duration;
+            breakDiv.append(`<div class="${missedStopExtraClass}" style="color:#656565;">--:--</div>`);
+            breakDiv.append(`<div class="${missedStopExtraClass}" style="color: var(--theme-extra); text-decoration: line-through;">${stopName}</div>`);
+            breakDiv.append(`<div class="${missedStopExtraClass}"><div class="bold-500" style="color: #f84949;">Missed</div></div>`);
         }
     }
 
@@ -2210,13 +2263,73 @@ function populateBusBreaks(busBreakData, busId) {
 
 let busBreaksCache = {};
 
+function checkAllBusesForMissedStops() {
+    console.log('Checking all active buses for missed stops...');
+    
+    if (!busesByRoutes || !busesByRoutes[selectedCampus]) {
+        console.log('No buses data available for campus:', selectedCampus);
+        return;
+    }
+    
+    let busesWithMissedStops = 0;
+    let totalBuses = 0;
+    
+    // Loop through all routes
+    for (const route in busesByRoutes[selectedCampus]) {
+        const routeBuses = busesByRoutes[selectedCampus][route];
+        
+        for (const busId of routeBuses) {
+            totalBuses++;
+            
+            // Get the bus's route and expected stops
+            const busRoute = busData[busId]?.route;
+            if (!busRoute || !stopLists[busRoute] || stopLists[busRoute].length === 0) {
+                continue;
+            }
+            
+            const expectedStops = stopLists[busRoute];
+            
+            // Get actual stops from bus break data
+            if (busBreaksCache[busId] && busBreaksCache[busId].data && !busBreaksCache[busId].data.error) {
+                const busBreakData = busBreaksCache[busId].data;
+                const actualStops = new Set(busBreakData.map(breakItem => breakItem.stop_id));
+                
+                // Find missed stops using the same logic as populateBusBreaks
+                const missedStops = [];
+                
+                for (let i = 0; i < expectedStops.length - 1; i++) {
+                    const currentStop = expectedStops[i];
+                    const nextStop = expectedStops[i + 1];
+                    
+                    if (actualStops.has(currentStop) && actualStops.has(nextStop)) {
+                        for (let j = i + 1; j < expectedStops.indexOf(nextStop); j++) {
+                            const potentialMissedStop = expectedStops[j];
+                            if (!actualStops.has(potentialMissedStop)) {
+                                missedStops.push(potentialMissedStop);
+                            }
+                        }
+                    }
+                }
+                
+                if (missedStops.length > 0) {
+                    busesWithMissedStops++;
+                    console.log(`🚌 Bus ${busId} (${busData[busId]?.busName}) on route ${route.toUpperCase()} missed ${missedStops.length} stops:`, 
+                        missedStops.map(stopId => stopsData[stopId]?.name || stopId));
+                }
+            }
+        }
+    }
+    
+    console.log(`📊 Summary: ${busesWithMissedStops} out of ${totalBuses} buses have missed stops`);
+}
+
 function getBusBreaks(busId) {
     const currentTime = new Date().getTime();
     const THREE_MINUTES = 3 * 60 * 1000;
 
-    if (busBreaksCache[busId] && 
+    if (busBreaksCache[busId] &&
         (currentTime - busBreaksCache[busId].timestamp) < THREE_MINUTES) {
-        populateBusBreaks(busBreaksCache[busId].data);
+        populateBusBreaks(busBreaksCache[busId].data, busId);
         return;
     }
 
@@ -2226,8 +2339,8 @@ function getBusBreaks(busId) {
             busBreaksCache[busId] = {
                 data: data,
                 timestamp: currentTime
-            };                
-            populateBusBreaks(data);
+            };
+            populateBusBreaks(data, busId);
         })
         .catch(error => {
             console.error('Error fetching bus breaks:', error);
