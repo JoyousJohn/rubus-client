@@ -1698,14 +1698,14 @@ function popInfo(busId, resetCampusFontSize) {
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;">
                 <div class="next-stop-closest closest-stop">Closest Stop</div>
                 <div class="next-stop-name flex">${stopsData[closestStopId].name}</div>
-            </div>`).click(() => { 
-                flyToStop(closestStopId); 
+            </div>`).click(() => {
+                flyToStop(closestStopId, true); // true indicates user interaction
             }));
             $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
                 <div class="next-stop-eta closest-stop-eta" data-stop-id="${closestStopId}">temp</div>
                 <div class="next-stop-time closest-stop-time">temp:temp</div>
-            </div>`).click(() => { 
-                flyToStop(closestStopId);  
+            </div>`).click(() => {
+                flyToStop(closestStopId, true); // true indicates user interaction
             }));
             $('.next-stops-grid > .grid').css('margin-top', '-0.5rem')
             // $('.next-stops-grid > div').append('<div class="closest-stop-divider"><hr></div>')

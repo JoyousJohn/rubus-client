@@ -66,7 +66,7 @@ function populateAllStops() {
                         console.log('Stop clicked, closing info panels');
                         clearPanoutFeedback();
                         
-                        flyToStop(stopId);
+                        flyToStop(stopId, true); // true indicates user interaction
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();

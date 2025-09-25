@@ -194,7 +194,7 @@ async function populateBuildingClosestStopsList(feature) {
             // if (buildingClosestStopsMode === 'all') {
             //     await startSim();
             // }
-            flyToStop(Number(stop.stopId));
+            flyToStop(Number(stop.stopId), true); // true indicates user interaction
             sa_event('btn_press', {
                 'btn': 'building_closest_stop',
                 'stop': stop.name
@@ -210,7 +210,7 @@ async function populateBuildingClosestStopsList(feature) {
                 // if (buildingClosestStopsMode === 'all') {
                 //     await startSim();
                 // }
-                flyToStop(Number(stop.stopId));
+                flyToStop(Number(stop.stopId), true); // true indicates user interaction
                 setTimeout(() => {
                     toggleRoute(route);
                 }, 1);

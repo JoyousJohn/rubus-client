@@ -1868,7 +1868,7 @@ function handleNearestStop(fly) {
             sourceStopId = null;
             sourceBusId = null;
             if (!sharedBus) {
-                flyToStop(thisClosestStopId);
+                flyToStop(thisClosestStopId, false); // false indicates automatic navigation, no analytics event
                 console.log("Flying to closest stop");
             }    
         } else {
@@ -1940,7 +1940,7 @@ async function checkIfLocationShared() {
     }
 }
 
-function flyToStop(stopId) {
+function flyToStop(stopId, fromUserInteraction = false) {
     const stopData = stopsData[stopId];
     const lat = Number(stopData.latitude);
     const long = Number(stopData.longitude);
@@ -1956,6 +1956,15 @@ function flyToStop(stopId) {
     );
 
     popStopInfo(Number(stopId));
+
+    // Only send analytics event if this was from explicit user interaction
+    if (fromUserInteraction) {
+        const stopName = stopsData[stopId]?.name;
+        sa_event('btn_press', {
+            'btn': 'fly_closest_stop',
+            'stop_name': stopName
+        });
+    }
 }
 
 function flyToClosestStop() {
@@ -2002,12 +2011,7 @@ function flyToClosestStop() {
             onFlyToComplete();
         }, 600); // Slightly longer than the 0.5s animation duration
         
-        flyToStop(closestStopId);
-        const stopName = stopsData[closestStopId]?.name;
-        sa_event('btn_press', {
-            'btn': 'fly_closest_stop',
-            'stop_name': stopName
-        });
+        flyToStop(closestStopId, true); // true indicates this is from user interaction
     }
 }
 

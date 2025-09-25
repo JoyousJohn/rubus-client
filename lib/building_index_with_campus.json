@@ -694,13 +694,16 @@
       "lng": -74.449415929,
       "campus": "college_ave"
     },
-    "college avenue student center casc": {
+    "college avenue student center": {
       "id": "3133",
-      "name": "College Avenue Student Center CASC",
+      "name": "College Avenue Student Center",
       "category": "building",
       "lat": 40.502638503809116,
       "lng": -74.4521825625,
-      "campus": "college_ave"
+      "campus": "college_ave",
+      "abbreviations": [
+        "CASC"
+      ]
     },
     "school of communication & information sc&i": {
       "id": "3134",
@@ -2032,13 +2035,16 @@
       "lng": -74.4524698528,
       "campus": "busch"
     },
-    "busch student center bsc": {
+    "busch student center": {
       "id": "3834",
-      "name": "Busch Student Center BSC",
+      "name": "Busch Student Center",
       "category": "building",
       "lat": 40.523297938604514,
       "lng": -74.458744226,
-      "campus": "busch"
+      "campus": "busch",
+      "abbreviations": [
+        "BSC"
+      ]
     },
     "lawn maintenance garage": {
       "id": "3835",
@@ -3015,13 +3021,16 @@
       "lng": -74.44233646451057,
       "campus": "livingston"
     },
-    "livingston student center lsc": {
+    "livingston student center": {
       "id": "4160",
-      "name": "Livingston Student Center LSC",
+      "name": "Livingston Student Center",
       "category": "building",
       "lat": 40.52355506326436,
       "lng": -74.4371668797,
-      "campus": "livingston"
+      "campus": "livingston",
+      "abbreviations": [
+        "LSC"
+      ]
     },
     "janice h levin building": {
       "id": "4163",
@@ -5003,13 +5012,16 @@
       "lat": 39.519105277805444,
       "lng": -75.20781547022752
     },
-    "cook student center csc": {
+    "cook student center": {
       "id": "6290",
-      "name": "Cook Student Center CSC",
+      "name": "Cook Student Center",
       "category": "building",
       "lat": 40.479090752910004,
       "lng": -74.4313581542,
-      "campus": "cook_douglass"
+      "campus": "cook_douglass",
+      "abbreviations": [
+        "CSC"
+      ]
     },
     "starkey apartments 525-548": {
       "id": "6292",
@@ -7369,7 +7381,10 @@
       "category": "building",
       "lat": 40.48470884462477,
       "lng": -74.4366336262,
-      "campus": "cook_douglass"
+      "campus": "cook_douglass",
+      "abbreviations": [
+        "DSC"
+      ]
     },
     "loree gymnasium": {
       "id": "8321",

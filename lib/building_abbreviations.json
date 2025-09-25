@@ -47,5 +47,11 @@
     { "abbr": "VH", "number": 3013 },
     { "abbr": "WAL", "number": 6000 },
     { "abbr": "WL", "number": 3556 },
-    { "abbr": "ZAM", "number": 3013 }
+    { "abbr": "ZAM", "number": 3013 },
+
+    { "abbr": "LSC", "number": 4160 },
+    { "abbr": "CASC", "number": 3133 },
+    { "abbr": "BSC", "number": 3834 },
+    { "abbr": "CSC", "number": 6290 },
+    { "abbr": "DSC", "number": 8320 }
 ]
