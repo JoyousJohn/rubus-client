@@ -102,6 +102,24 @@ function populateAllStops() {
 
 
 $('.info-panels').click(function() {
+    const $btn = $(this);
+    
+    // Clear any existing timeout and restore state
+    if ($btn.data('feedback-timeout')) {
+        clearTimeout($btn.data('feedback-timeout'));
+        $btn.removeClass('btn-feedback-active');
+    }
+    
+    // Apply feedback state and set timeout
+    $btn.addClass('btn-feedback-active');
+    
+    const timeoutId = setTimeout(() => {
+        $btn.removeClass('btn-feedback-active');
+        $btn.removeData('feedback-timeout');
+    }, 200);
+    
+    $btn.data('feedback-timeout', timeoutId);
+    
     // Hide search wrapper and unfocus search input if it's open
     if ($('.search-wrapper').is(':visible')) {
         closeSearch();

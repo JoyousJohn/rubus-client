@@ -1745,32 +1745,33 @@ function updateNearestStop() {
         $('.closest-stop').show();
     }
 
-    $('.fly-closest-stop').off('click').click(function() { 
+    // OLD CONFLICTING HANDLER - COMMENTED OUT
+    /* $('.fly-closest-stop').off('click').click(function() {
         const $btn = $(this);
-        
+
         // Clear any existing timeout and restore state
         if ($btn.data('feedback-timeout')) {
             clearTimeout($btn.data('feedback-timeout'));
             $btn.removeClass('btn-feedback-active');
         }
-        
+
         // Apply feedback state and set timeout
         $btn.addClass('btn-feedback-active');
-        
+
         const timeoutId = setTimeout(() => {
             $btn.removeClass('btn-feedback-active');
             $btn.removeData('feedback-timeout');
         }, 200);
-        
+
         $btn.data('feedback-timeout', timeoutId);
-        
+
         flyToStop(thisClosestStopId);
         const stopName = stopsData[thisClosestStopId]?.name;
         sa_event('btn_press', {
             'btn': 'fly_closest_stop',
             'stop_name': stopName
         });
-    });
+    }); */
 
     closestDistance = thisClosestDistance;
 
@@ -1960,22 +1961,46 @@ function flyToStop(stopId) {
 function flyToClosestStop() {
     if (closestStopId) {
         const $btn = $('.fly-closest-stop');
-        
-        // Clear any existing timeout and restore state
-        if ($btn.data('feedback-timeout')) {
-            clearTimeout($btn.data('feedback-timeout'));
-            $btn.removeClass('btn-feedback-active');
+
+        // Check if we're already at closest stop and haven't moved since
+        if ($btn.hasClass('btn-feedback-active')) {
+            const stopData = stopsData[closestStopId];
+            const currentCenter = map.getCenter();
+            const stopLatLng = L.latLng(stopData.latitude, stopData.longitude);
+            const distance = currentCenter.distanceTo(stopLatLng);
+
+            // If we're still at the closest stop (within ~1 meter), don't allow another press
+            if (distance < 1) {
+                return;
+            }
         }
-        
-        // Apply feedback state and set timeout
+
+        // Mark that fly-to-closest-stop is in progress to prevent clearing feedback during operation
+        $btn.data('fly-to-closest-stop-in-progress', true);
+
+        // Apply feedback state immediately and keep it active until map moves
         $btn.addClass('btn-feedback-active');
+
+        // Clear panout background since we're moving the map
+        clearPanoutFeedback();
         
-        const timeoutId = setTimeout(() => {
-            $btn.removeClass('btn-feedback-active');
-            $btn.removeData('feedback-timeout');
-        }, 200);
-        
-        $btn.data('feedback-timeout', timeoutId);
+        // Set up fly-to-closest-stop feedback clearing after flyTo animation completes
+        const onFlyToComplete = () => {
+            // Mark fly-to-closest-stop as no longer in progress
+            $btn.removeData('fly-to-closest-stop-in-progress');
+            // Set up drag handler to clear fly-to-closest-stop feedback when user manually moves map
+            const flyToClosestStopDragHandler = () => {
+                // Clear feedback directly since we know the operation is complete
+                $btn.removeClass('btn-feedback-active');
+                map.off('dragstart', flyToClosestStopDragHandler);
+            };
+            map.on('dragstart', flyToClosestStopDragHandler);
+        };
+
+        // Use a timeout to ensure feedback stays active for the animation duration
+        setTimeout(() => {
+            onFlyToComplete();
+        }, 600); // Slightly longer than the 0.5s animation duration
         
         flyToStop(closestStopId);
         const stopName = stopsData[closestStopId]?.name;

@@ -473,17 +473,48 @@ let panoutDragHandler = null;
 
 function clearPanoutFeedback() {
     if (panoutFeedbackActive) {
-        console.log('Panout: Clearing feedback due to map movement');
         const $btn = $('.panout');
         $btn.removeClass('btn-feedback-active');
-        
+
         // Remove drag handler if it exists
         if (panoutDragHandler) {
             map.off('dragstart', panoutDragHandler);
             panoutDragHandler = null;
         }
-        
+
         panoutFeedbackActive = false;
+    }
+
+    // Also clear other location button feedbacks when map moves
+    clearCentermeFeedback();
+    clearFlyToClosestStopFeedback();
+
+    // Also clear fly-to-closest-stop feedback if operation is complete
+    const $flyBtn = $('.fly-closest-stop');
+    const hasClass = $flyBtn.hasClass('btn-feedback-active');
+    const inProgress = $flyBtn.data('fly-to-closest-stop-in-progress');
+
+    if (hasClass && !inProgress) {
+        $flyBtn.removeClass('btn-feedback-active');
+    }
+}
+
+function clearCentermeFeedback() {
+    const $btn = $('.centerme');
+    // Only clear centerme feedback if we're not currently in the middle of a centerme operation
+    if ($btn.hasClass('btn-feedback-active') && !$btn.data('location-requesting') && !$btn.data('centerme-in-progress')) {
+        $btn.removeClass('btn-feedback-active');
+    }
+}
+
+function clearFlyToClosestStopFeedback() {
+    const $btn = $('.fly-closest-stop');
+    const hasClass = $btn.hasClass('btn-feedback-active');
+    const inProgress = $btn.data('fly-to-closest-stop-in-progress');
+
+    // Clear feedback if we have the class and we're not in progress
+    if (hasClass && !inProgress) {
+        $btn.removeClass('btn-feedback-active');
     }
 }
 
@@ -503,7 +534,7 @@ function panout() {
     
     // Set up drag handler immediately - it won't interfere with fitBounds
     map.on('dragstart', panoutDragHandler);
-    
+
     if (polylineBounds) {
         $('[stop-eta]').text('').hide();
         savedCenter = null;
@@ -573,17 +604,33 @@ function centerme() {
         return;
     }
     
+    // Check if we're already at user location and haven't moved since
+    if (userPosition && $btn.hasClass('btn-feedback-active')) {
+        // Check if we're still at the same location
+        const currentCenter = map.getCenter();
+        const userLatLng = L.latLng(userPosition);
+        const distance = currentCenter.distanceTo(userLatLng);
+        
+        // If we're still at the user location, don't allow another press
+        if (distance < 1) { // Very small threshold just to prevent exact duplicate presses
+            return;
+        }
+    }
+    
     // Clear any existing timeout and restore state
     if ($btn.data('feedback-timeout')) {
         clearTimeout($btn.data('feedback-timeout'));
         $btn.removeData('feedback-timeout');
     }
     
-    // Apply feedback state immediately
+    // Mark that centerme is in progress to prevent clearing feedback during operation
+    $btn.data('centerme-in-progress', true);
+    
+    // Apply feedback state immediately and keep it active until map moves
     $btn.addClass('btn-feedback-active');
 
     if (userPosition) {
-        // User position already available - quick feedback then return to normal
+        // User position already available - fly to location and keep background active
         map.flyTo(userPosition, 18, {
             animate: true,
             duration: 0.3
@@ -591,13 +638,28 @@ function centerme() {
         hideInfoBoxes(true);
         $('.my-location-popup').show();
         
-        // Remove feedback after short delay
-        const timeoutId = setTimeout(() => {
-            $btn.removeClass('btn-feedback-active');
-            $btn.removeData('feedback-timeout');
-        }, 200);
+        // Clear panout background since we're flying to location
+        clearPanoutFeedback();
         
-        $btn.data('feedback-timeout', timeoutId);
+        // Set up centerme feedback clearing after flyTo animation completes
+        const onFlyToComplete = () => {
+            // Mark centerme as no longer in progress
+            $btn.removeData('centerme-in-progress');
+            // Set up drag handler to clear centerme feedback when user manually moves map
+            const centermeDragHandler = () => {
+                clearCentermeFeedback();
+                map.off('dragstart', centermeDragHandler);
+            };
+            map.on('dragstart', centermeDragHandler);
+        };
+
+        // Listen for moveend to know when flyTo animation is complete
+        const moveEndHandler = () => {
+            map.off('moveend', moveEndHandler);
+            onFlyToComplete();
+        };
+        map.on('moveend', moveEndHandler);
+        
         return;
     }
 
@@ -607,7 +669,7 @@ function centerme() {
         
         // Switch from static feedback to pulse animation
         $btn.removeClass('btn-feedback-active').addClass('btn-pulse');
-        
+
         console.log("Trying to get location...")
         $('.getting-location-popup').fadeIn(300);
 
@@ -645,6 +707,28 @@ function centerme() {
                     animate: true,
                     duration: 0.3
                 });
+
+                // Clear panout background since we're flying to location
+                clearPanoutFeedback();
+
+                // Set up centerme feedback clearing after flyTo animation completes
+                const onFlyToComplete = () => {
+                    // Mark centerme as no longer in progress
+                    $btn.removeData('centerme-in-progress');
+                    // Set up drag handler to clear centerme feedback when user manually moves map
+                    const centermeDragHandler = () => {
+                        clearCentermeFeedback();
+                        map.off('dragstart', centermeDragHandler);
+                    };
+                    map.on('dragstart', centermeDragHandler);
+                };
+
+                // Listen for moveend to know when flyTo animation is complete
+                const moveEndHandler = () => {
+                    map.off('moveend', moveEndHandler);
+                    onFlyToComplete();
+                };
+                map.on('moveend', moveEndHandler);
 
                 $('.fly-closest-stop-wrapper').show();
             }
