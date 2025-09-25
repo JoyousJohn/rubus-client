@@ -35,8 +35,14 @@ function popContact() {
 
 
 function contactClicked() {
+    // Immediately hide changelog and show contact loading state
+    $('.changelog-wrapper').hide();
+    $('.changelog').removeClass('footer-selected');
+    $('.footer-contact-loading').show();
+    $('.footer-contact-wrapper').hide();
+    $('.contact').addClass('footer-selected');
+    
     if (!contact) {
-        $('.footer-contact-loading').show();
         fetch('https://demo.rubus.live/contact')
             .then(response => response.json())
             .then(data => {
@@ -48,11 +54,7 @@ function contactClicked() {
                 console.error('Error fetching contact data:', error);
             });
     } else {
-        if ($('.footer-contact-wrapper').is(':visible')) {
-            $('.footer-contact-wrapper').hide();
-            $('.contact').removeClass('footer-selected');
-        } else {
-            showContact();
-        }
+        $('.footer-contact-loading').hide();
+        showContact();
     }
 }
