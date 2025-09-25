@@ -2265,6 +2265,7 @@ function displayRoute(routeData) {
                 
                 // Fly to the stop location
                 if (stop && stop.latitude && stop.longitude) {
+                    clearPanoutFeedback();
                     map.flyTo([stop.latitude, stop.longitude], 18, {
                         duration: 1.5
                     });

@@ -784,6 +784,7 @@ async function addStopsToMap() {
 
                 sourceStopId = null;
                 sourceBusId = null;
+                clearPanoutFeedback();
                 popStopInfo(stopId);
                 if (!shownRoute) {
                     showAllBuses();

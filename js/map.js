@@ -467,26 +467,43 @@ function hideInfoBoxes(instantly_hide) {
 
 }
 
-function panout() {
-    // Add visual feedback
-    const $btn = $('.panout');
-    
-    // Clear any existing timeout and restore state
-    if ($btn.data('feedback-timeout')) {
-        clearTimeout($btn.data('feedback-timeout'));
-        $btn.removeClass('btn-feedback-active');
-    }
-    
-    // Apply feedback state and set timeout
-    $btn.addClass('btn-feedback-active');
-    
-    const timeoutId = setTimeout(() => {
-        $btn.removeClass('btn-feedback-active');
-        $btn.removeData('feedback-timeout');
-    }, 200);
-    
-    $btn.data('feedback-timeout', timeoutId);
+// Global flag to track when panout feedback should be active
+let panoutFeedbackActive = false;
+let panoutDragHandler = null;
 
+function clearPanoutFeedback() {
+    if (panoutFeedbackActive) {
+        console.log('Panout: Clearing feedback due to map movement');
+        const $btn = $('.panout');
+        $btn.removeClass('btn-feedback-active');
+        
+        // Remove drag handler if it exists
+        if (panoutDragHandler) {
+            map.off('dragstart', panoutDragHandler);
+            panoutDragHandler = null;
+        }
+        
+        panoutFeedbackActive = false;
+    }
+}
+
+function panout() {
+    // Clear any existing panout feedback
+    clearPanoutFeedback();
+    
+    // Apply feedback state immediately
+    $('.panout').addClass('btn-feedback-active');
+    panoutFeedbackActive = true;
+    
+    // Set up drag handler to detect manual user dragging
+    panoutDragHandler = () => {
+        console.log('Panout: User started dragging, removing feedback');
+        clearPanoutFeedback();
+    };
+    
+    // Set up drag handler immediately - it won't interfere with fitBounds
+    map.on('dragstart', panoutDragHandler);
+    
     if (polylineBounds) {
         $('[stop-eta]').text('').hide();
         savedCenter = null;
@@ -2351,6 +2368,8 @@ function createBusRidershipChart(busId) {
 }
 
 function focusBus(busId) {
+    // Clear panout feedback when focusing on a bus
+    clearPanoutFeedback();
 
     const route = busData[busId].route;
 

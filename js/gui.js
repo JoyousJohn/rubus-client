@@ -446,6 +446,9 @@ function toggleRoute(route) {
         }
 
 		if (!popupStopId) {
+			
+            clearPanoutFeedback();
+			
 			const routePolyline = polylines[route];
 			const routeBounds = routePolyline.getBounds();
 			const routeBuses = busesByRoutes[selectedCampus][route];
@@ -1996,8 +1999,14 @@ function populateMeClosestStops() {
 
         if (!activeStops.includes(parseInt(stopId))) continue;
         
-        const stopNameDiv = $(`<div class="name pointer">${stopsData[stopId].name}</div>`).click(() => { flyToStop(stopId)})
-        const stopDistDiv = $(`<div class="dist bold pointer">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>`).click(() => { flyToStop(stopId)}) // add meter option later
+        const stopNameDiv = $(`<div class="name pointer">${stopsData[stopId].name}</div>`).click(() => { 
+            clearPanoutFeedback();
+            flyToStop(stopId);
+        })
+        const stopDistDiv = $(`<div class="dist bold pointer">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>`).click(() => { 
+            clearPanoutFeedback();
+            flyToStop(stopId);
+        }) // add meter option later
 
         if (count >= 3) {
             stopNameDiv.hide();
@@ -2017,6 +2026,7 @@ function populateMeClosestStops() {
             .css('background-color', colorMappings[route])
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
+                clearPanoutFeedback();
                 toggleRoute(route);
                 flyToStop(stopId);
             }))

@@ -64,6 +64,8 @@ function populateAllStops() {
                     </div>`)
                     .click(function() {
                         console.log('Stop clicked, closing info panels');
+                        clearPanoutFeedback();
+                        
                         flyToStop(stopId);
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
