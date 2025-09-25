@@ -23,7 +23,6 @@
     justify-content: space-evenly;
     width: 100%;
     margin: 1rem 0;
-    margin-bottom: 8rem;
 }
 
 .ridership-avg, .ridership-max {
@@ -63,4 +62,41 @@
 .buses-overview-grid .total-row {
     margin-top: 0.25rem;
     padding-top: 0.5rem;
+}
+
+/* Average Wait Panel */
+.avg-wait-wrapper {
+    margin-top: 2rem;
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    padding: 2rem;
+    margin-bottom: 7rem;
+}
+
+.avg-wait-title {
+    text-align: center;
+}
+
+.avg-wait-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.6rem 1rem;
+    font-size: 2rem;
+}
+
+.avg-wait-heading {
+    color: var(--theme-extra);
+    font-weight: 500;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.avg-wait-name {
+    font-weight: 500;
+}
+
+.avg-wait-value { 
+    text-align: right; 
+    color: var(--theme-color-lighter);
+    font-weight: 500;
 }

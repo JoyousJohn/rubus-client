@@ -944,8 +944,7 @@ function updateBusOverview(routes) {
         }
     });
 
-    // Note: Total row is only created/updated when individual routes change, not here
-    // This ensures total only updates alongside route changes, not independently
+    updateAverageWaitByRoute();
 }
 
 
@@ -972,6 +971,7 @@ function busesOverview() {
 
     updateRidershipChart();
     updateWaitTimes();
+    updateAverageWaitByRoute();
 }
 
 let ridershipChart;
@@ -1238,6 +1238,59 @@ function updateWaitTimes() {
     } else {
         $('.wait-title').show(); 
     }
+}
+
+
+function getActiveBusCount(route) {
+    return busesByRoutes[selectedCampus][route].length;
+}
+
+function calculateAverageWaitByRoute() {
+    // Average wait ~= loop time / active buses
+    const loopTimes = calculateLoopTimes();
+    const waitByRoute = {};
+    for (const route in loopTimes) {
+        const buses = getActiveBusCount(route);
+        if (buses > 0 && loopTimes[route] !== undefined && loopTimes[route] !== null) {
+            waitByRoute[route] = loopTimes[route] / buses; // minutes
+        }
+    }
+    return waitByRoute;
+}
+
+function updateAverageWaitByRoute() {
+    const $grid = $('.avg-wait-grid');
+    if (!$grid.length) return;
+
+    // Clear previous (keep headings)
+    $grid.children().not('.avg-wait-heading').remove();
+
+    // Ensure data available
+    if (!busesByRoutes || !busesByRoutes[selectedCampus]) {
+        $('.avg-wait-wrapper').hide();
+        return;
+    }
+
+    const waitByRoute = calculateAverageWaitByRoute();
+    const routes = Object.keys(waitByRoute)
+        .filter(r => r !== 'undefined')
+        .sort((a, b) => a.localeCompare(b));
+
+    if (routes.length === 0) {
+        $('.avg-wait-wrapper').hide();
+        return;
+    } else {
+        $('.avg-wait-wrapper').show();
+    }
+
+    routes.forEach(route => {
+        const minutes = waitByRoute[route];
+        const text = (minutes >= 1) ? `${Math.round(minutes)}m` : `${Math.max(1, Math.round(minutes * 60))}s`;
+        const $name = $(`<div class="avg-wait-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]);
+        const $val = $(`<div class="avg-wait-value">${text}</div>`);
+        $grid.append($name);
+        $grid.append($val);
+    });
 }
 
 
