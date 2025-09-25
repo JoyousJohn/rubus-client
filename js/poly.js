@@ -458,7 +458,11 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         const secs = avgWait % 60;
         let waitStr = '';
         if (mins >= 1) {
-            waitStr = `${mins}m ${secs}s`;
+            if (secs === 0) {
+                waitStr = `${mins}m`;
+            } else {
+                waitStr = `${mins}m ${secs}s`;
+            }
         } else {
             waitStr = `${secs}s`;
         }
