@@ -51,7 +51,7 @@ function populateAllStops() {
     for (campus in stopsByCampus[selectedCampus]) {
         const stops = stopsByCampus[selectedCampus][campus];
         let campusHasBuses = false;
-        const $allStopsGridElm = $('<div class="all-stops-grid mb-2rem"></div>')
+        const $allStopsGridElm = $('<div class="all-stops-grid mb-2rem select-none"></div>')
         stops.forEach(stopId => {
             if (activeStops.includes(stopId)) {
                 let servicingRoutes = getRoutesServicingStop(stopId);
