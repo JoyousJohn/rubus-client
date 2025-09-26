@@ -584,6 +584,7 @@ function selectedRoute(route) {
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
     $('.route-selectors').show();
+    $('.settings-btn').hide();
     
     // Make sure route panel is visible by removing the 'none' class
     $('.route-panel').show();
