@@ -685,6 +685,9 @@ async function popStopInfo(stopId) {
     }
 
     $('.bus-info-popup, .route-panel, .my-location-popup, .knight-mover').hide();
+    
+    // Update route selectors to only show routes that service this stop
+    populateRouteSelectors(activeRoutes, stopId);
 
     // return;
 

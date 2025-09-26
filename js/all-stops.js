@@ -71,6 +71,12 @@ function populateAllStops() {
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();
                         moveRouteSelectorsToMain();
+                        // Restore route selectors based on current stop selection
+                        if (popupStopId) {
+                            populateRouteSelectors(activeRoutes, popupStopId);
+                        } else {
+                            populateRouteSelectors(activeRoutes);
+                        }
                         // Note: Not calling closeRouteMenu() here as this is switching to stop view
                     });
                 $allStopsGridElm.append($stopsElm);
@@ -145,6 +151,14 @@ $('.info-panels').click(function() {
 
     // Move route selectors into the route subpanel
     moveRouteSelectorsToSubpanel();
+    
+    // Show all route selectors in subpanel (not filtered by stop selection)
+    populateRouteSelectors(activeRoutes);
+    
+    // Select any previously selected route after selectors are populated
+    if (shownRoute) {
+        toggleRouteSelectors(shownRoute);
+    }
 
     // Show and position route selectors immediately when info panels are opened
     $('.bottom').show();

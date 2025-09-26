@@ -1163,7 +1163,7 @@ html, body {
 }
 
 .route-selector:last-child {
-    margin-right: 1rem;
+    margin-right: 2rem;
 }
 
 
@@ -1178,6 +1178,12 @@ html, body {
     align-items: center;
     line-height: 1;
     box-sizing: border-box;
+    margin-left: 1rem;
+}
+
+/* Remove margin when settings button is at the end */
+.settings-btn:last-child {
+    margin-left: 0;
 }
 
 .info-speed-wrapper {

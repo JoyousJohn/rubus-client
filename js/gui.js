@@ -2,7 +2,7 @@ let longPressTimer
 
 let selectedCampusRoutes = [];
 
-function populateRouteSelectors(allActiveRoutes) {
+function populateRouteSelectors(allActiveRoutes, stopId = null) {
     $('.route-selectors > div').not('.settings-btn, .sim-btn').remove();
 
     if (!allActiveRoutes) return;
@@ -18,6 +18,13 @@ function populateRouteSelectors(allActiveRoutes) {
     }
 
     let routesArray = allRoutesArray.filter(route => routesByCampusBase[selectedCampus].includes(route));
+    
+    // If a stop is selected, filter routes to only show those that service this stop
+    if (stopId !== null) {
+        routesArray = routesArray.filter(route => {
+            return stopLists[route] && stopLists[route].includes(stopId);
+        });
+    }
 
     routesArray = routesArray.map(route => route || 'undefined');
     routesArray.sort((a, b) => {
@@ -532,6 +539,34 @@ function selectedRoute(route) {
         }
     }
 
+    // Ensure routes subpanel is active and selectors are moved when selecting a route
+    const routesTabActive = $('.subpanels-container').hasClass('panel-routes');
+
+    // Always show panels and move selectors when invoked via long-press or when panels are closed
+    if (!$('.info-panels-show-hide-wrapper').is(':visible') || isLongPress) {
+        $('.info-panels-show-hide-wrapper').show();
+        busesOverview();
+        moveRouteSelectorsToSubpanel();
+        // Show all route selectors in subpanel (not filtered by stop selection)
+        populateRouteSelectors(activeRoutes);
+        // Force switch to routes subpanel (not user explicit selection)
+        const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
+        selectInfoPanel('routes', $routesHeaderBtn[0], false);
+    } else if (!routesTabActive) {
+        // Panels are open but on a different subpanel: move selectors and switch to routes (not user explicit selection)
+        moveRouteSelectorsToSubpanel();
+        // Show all route selectors in subpanel (not filtered by stop selection)
+        populateRouteSelectors(activeRoutes);
+        const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
+        selectInfoPanel('routes', $routesHeaderBtn[0], false);
+    } else {
+        // Already in routes: ensure selectors are in subpanel
+        moveRouteSelectorsToSubpanel();
+        // Show all route selectors in subpanel (not filtered by stop selection)
+        populateRouteSelectors(activeRoutes);
+    }
+
+    // Now perform route selection after selectors are populated
     if (shownRoute !== route) {
         toggleRouteSelectors(route);
     }
@@ -565,27 +600,6 @@ function selectedRoute(route) {
         
         $('.active-buses').append($busElm)
     })
-
-    // Ensure routes subpanel is active and selectors are moved when selecting a route
-    const routesTabActive = $('.subpanels-container').hasClass('panel-routes');
-
-    // Always show panels and move selectors when invoked via long-press or when panels are closed
-    if (!$('.info-panels-show-hide-wrapper').is(':visible') || isLongPress) {
-        $('.info-panels-show-hide-wrapper').show();
-        busesOverview();
-        moveRouteSelectorsToSubpanel();
-        // Force switch to routes subpanel (not user explicit selection)
-        const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
-        selectInfoPanel('routes', $routesHeaderBtn[0], false);
-    } else if (!routesTabActive) {
-        // Panels are open but on a different subpanel: move selectors and switch to routes (not user explicit selection)
-        moveRouteSelectorsToSubpanel();
-        const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
-        selectInfoPanel('routes', $routesHeaderBtn[0], false);
-    } else {
-        // Already in routes: ensure selectors are in subpanel
-        moveRouteSelectorsToSubpanel();
-    }
     // Ensure route selectors are visible and nav buttons are hidden in subpanel
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
@@ -1329,10 +1343,30 @@ function closeRouteMenu() {
         $('.route-selector[routeName="fav"]').show();
     }
 
-    // Restore original map route selection strictly from state
+    // Store the original route selection before resetting state holders
     let routeToRestore = originalShownRoute;
     console.log('Restoring original route selection (state):', routeToRestore);
 
+    // Reset state holders
+    routePanelOpenedFromLongPress = false;
+    originalShownRoute = null;
+    // Update last map selection tracker after restore
+    lastMapShownRoute = shownRoute;
+    shownBeforeRoute = null;
+    console.log('shownRoute after restore:', shownRoute);
+
+    console.log('shownRoute after closeRouteMenu:', shownRoute);
+
+    panelRoute = null;
+    
+    // Update route selectors based on current stop selection
+    if (popupStopId) {
+        populateRouteSelectors(activeRoutes, popupStopId);
+    } else {
+        populateRouteSelectors(activeRoutes);
+    }
+    
+    // Now restore the original route selection after selectors are populated
     if (routeToRestore) {
         // Ensure we end with the original single-route filter
         if (shownRoute !== routeToRestore) {
@@ -1350,17 +1384,6 @@ function closeRouteMenu() {
             console.log('Already showing all buses');
         }
     }
-    // Reset state holders
-    routePanelOpenedFromLongPress = false;
-    originalShownRoute = null;
-    // Update last map selection tracker after restore
-    lastMapShownRoute = shownRoute;
-    shownBeforeRoute = null;
-    console.log('shownRoute after restore:', shownRoute);
-
-    console.log('shownRoute after closeRouteMenu:', shownRoute);
-
-    panelRoute = null;
 }
 
 
