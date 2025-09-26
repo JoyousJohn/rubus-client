@@ -31,7 +31,7 @@
         aspect-ratio: auto;
     }
 
-    .route-selector:last-child {
+    .route-selector:first-child {
         margin-right: 0; /* For settings */
     }
 
