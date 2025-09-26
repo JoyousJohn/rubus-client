@@ -1024,14 +1024,19 @@
             </div>
 
             <div class="flex justify-between">
-                <div class="settings-heading">Move Settings to End</div>
+                <div class="settings-heading flex flex-1 align-center span-i-settings-end">Move Settings to End<span class="span-i pointer select-none">i</span></div>
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-settings-btn-end" class="toggle-input">
                     <label for="toggle-settings-btn-end" class="toggle-label">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
-            </div>     
+            </div>  
+            
+            <div class="settings-end-explain none ml-0p5rem text-1p3rem dimgray">Move the settings button to after the route buttons to clear up space in front for more routes and scroll less.</div>
+            <script>
+            $('.span-i-settings-end').click(function() {$('.settings-end-explain').slideToggle();})
+            </script>
 
             <!-- <script>
                 // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
