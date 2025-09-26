@@ -35,6 +35,14 @@ function popContact() {
 
 
 function contactClicked() {
+    // Check if contact wrapper is currently visible
+    if ($('.footer-contact-wrapper').is(':visible')) {
+        $('.footer-contact-wrapper').hide();
+        $('.contact').removeClass('footer-selected');
+        return;
+    }
+    
+    // If not visible, show contact
     // Immediately hide changelog and show contact loading state
     $('.changelog-wrapper').hide();
     $('.changelog').removeClass('footer-selected');
