@@ -1,6 +1,7 @@
 let currentPage = 1;
 let allCommits = new Map(); // Store all commits grouped by date
 let previousCommitCount = 0; // Track how many commits were rendered before
+let changelogInitialized = false; // Track if changelog has been loaded before
 
 async function getChangelog() {
     // Toggle behavior: if already visible, hide and unselect
@@ -16,7 +17,16 @@ async function getChangelog() {
     $('.footer-contact-wrapper').hide();
     $('.contact').removeClass('footer-selected');
     $('.status-wrapper').hide();
+    $('.status').removeClass('footer-selected');
     stopStatusUpdates();
+
+    // If changelog was already initialized, just show it again
+    if (changelogInitialized) {
+        renderChangelog();
+        $('.changelog-wrapper').show();
+        $('.changelog').addClass('footer-selected');
+        return;
+    }
 
     // Reset for new changelog view
     currentPage = 1;
@@ -144,5 +154,6 @@ function renderChangelog() {
         // Hide status
         $('.status-wrapper').hide();
         stopStatusUpdates();
+        changelogInitialized = true;
     }
 }

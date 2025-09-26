@@ -412,6 +412,9 @@ function hideInfoBoxes(instantly_hide) {
     } else {
         $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup, .search-wrapper').fadeOut();  
     }
+    
+    // Hide the out of service hide button when closing popups
+    $('.stop-info-hide-oos').hide();
     $('.search-results').empty().hide();
 
     if (popupStopId) {

@@ -91,6 +91,7 @@ function showStatus() {
     statusUpdateInterval = setInterval(updateStatusDisplay, 1000);
 
     $('.status-wrapper').show();
+    $('.status').addClass('footer-selected');
 }
 
 function stopStatusUpdates() {

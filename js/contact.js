@@ -8,6 +8,7 @@ function showContact() {
     $('.changelog').removeClass('footer-selected');
     // Hide status
     $('.status-wrapper').hide();
+    $('.status').removeClass('footer-selected');
     stopStatusUpdates();
 }
 
@@ -52,6 +53,7 @@ function contactClicked() {
     $('.changelog-wrapper').hide();
     $('.changelog').removeClass('footer-selected');
     $('.status-wrapper').hide();
+    $('.status').removeClass('footer-selected');
     stopStatusUpdates();
     $('.footer-contact-loading').show();
     $('.footer-contact-wrapper').hide();

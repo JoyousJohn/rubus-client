@@ -276,6 +276,11 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     sortedEntries.forEach(data => {
 
+        // Skip out of service buses if hide setting is enabled
+        if (hideOutOfServiceBuses && busData[data.busId].oos) {
+            return;
+        }
+
         const currentTime = new Date();
         currentTime.setMinutes(currentTime.getMinutes() + data.eta);
         const formattedTime = currentTime.toLocaleTimeString('en-US', {
@@ -707,6 +712,23 @@ async function popStopInfo(stopId) {
         $('.stop-info-show-next-loop').hide();
     }
     updateStopBuses(stopId, shownRoute);
+
+    // Check if there are out of service buses and show hide button if not already hidden
+    const servicedRoutes = routesServicing(stopId);
+    let hasOutOfServiceBuses = false;
+    servicedRoutes.forEach(route => {
+        busesByRoutes[selectedCampus][route].forEach(busId => {
+            if (busData[busId].oos) {
+                hasOutOfServiceBuses = true;
+            }
+        });
+    });
+    
+    if (hasOutOfServiceBuses && !hideOutOfServiceBuses) {
+        $('.stop-info-hide-oos').show();
+    } else {
+        $('.stop-info-hide-oos').hide();
+    }
 
     if (sourceBusId && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
         $('.stop-info-back-wrapper').css('display', 'flex');

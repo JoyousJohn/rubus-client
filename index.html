@@ -486,7 +486,8 @@
                 </div>
                 
                 <div class="stop-info-show-next-loop pointer" style="color: #6969bf;" onclick="$('.stop-info-next-loop-wrapper').slideDown(); $('.stop-info-show-next-loop').hide(); $('.always-show-next-loop').show();">Show next loop</div>
-                <div class="always-show-next-loop pointer none" style="color: #6969bf;" onclick="$('.always-show-next-loop').hide(); settings['toggle-always-show-second'] = true; localStorage.setItem('settings', JSON.stringify(settings)); $('#toggle-always-show-second').prop('checked', true);">Always show next loop</div>
+                <div class="always-show-next-loop pointer none" style="color: #6969bf; margin-bottom: 0.5rem;" onclick="$('.always-show-next-loop').hide(); settings['toggle-always-show-second'] = true; localStorage.setItem('settings', JSON.stringify(settings)); $('#toggle-always-show-second').prop('checked', true);">Always show next loop</div>
+                <div class="stop-info-hide-oos pointer none m-1rem text-1p2rem" style="color:rgb(105, 105, 191); text-align: left; margin-top: 0.5rem !important;" onclick="hideOutOfServiceBuses = true; $('.stop-info-hide-oos').hide(); updateStopBuses(popupStopId, shownRoute);">Hide out of service this session</div>
                 <div class="stop-info-avg-wait"></div>
             </div>
 
