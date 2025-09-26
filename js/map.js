@@ -552,20 +552,15 @@ function panout() {
     // Set up drag handler immediately - it won't interfere with fitBounds
     map.on('dragstart', panoutDragHandler);
 
-    if (polylineBounds) {
-        $('[stop-eta]').text('').hide();
-        savedCenter = null;
-        savedView = null;
-        returningToSavedView = false; // not sure if I need this, this will be so hard to trigger within 88ms. drag and then panout...
+    $('[stop-eta]').text('').hide();
+    savedCenter = null;
+    savedView = null;
+    returningToSavedView = false; // not sure if I need this, this will be so hard to trigger within 88ms. drag and then panout...
 
-        if (shownRoute) {
-            map.fitBounds(routeBounds[shownRoute]);
-        } else {
-            map.fitBounds(polylineBounds);
-        }
-
-    } else { // no buses running, show all of nb
-        map.fitBounds(bounds[selectedCampus]);
+    if (shownRoute) {
+        map.fitBounds(routeBounds[shownRoute]);
+    } else {
+        map.fitBounds(polylineBounds);
     }
 
     hideInfoBoxes();
@@ -2638,7 +2633,7 @@ function createBusRidershipChart(busId) {
     });
 }
 
-function focusBus(busId) {
+async function focusBus(busId) {
     // Clear panout feedback when focusing on a bus
     clearPanoutFeedback();
 
@@ -2646,6 +2641,11 @@ function focusBus(busId) {
 
     hideStopsExcept(route)
     hidePolylinesExcept(route)
+
+    // Ensure the route polyline exists for focusing (temporary show for OOS routes)
+    if (!polylines[route]) {
+        try { await addPolylineForRoute(route); } catch (e) {}
+    }
 
     // Show distance line on focus if the setting is enabled
     if (settings['toggle-distances-line-on-focus']) {
@@ -2672,7 +2672,10 @@ function focusBus(busId) {
     // if (!popupBusId) {
         const topContainerHeight = 1 - ($(window).height() - $('.bus-btns').offset().top)/$(window).height()
 
-        let focusBounds = polylines[route].getBounds()
+        let focusBounds = null;
+        if (polylines[route]) {
+            focusBounds = polylines[route].getBounds();
+        }
 
         if (busData[busId].atDepot) {
             const busLocBounds = L.latLngBounds([L.latLng(busData[busId].lat, busData[busId].long)]);

@@ -308,6 +308,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                             console.log('Polylines on map after remove:', map.hasLayer(polylines[oldRoute]));
                         // $(`.route-selector[routename="${route}"]`).remove(); // not sure if i need this or if it's triggered elsewhere
                         // checkMinRoutes(); // also unsure if i need this
+                        updatePolylineBoundsIfNeeded();
 
                         if (shownRoute && shownRoute === oldRoute) {
                             toggleRoute(oldRoute);
@@ -504,6 +505,8 @@ function makeOoS(busId) {
         activeRoutes.delete(route);
         if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polylines, have to ensure code works flawlessly!
             console.log(`Removing polyline for route ${route}`);
+            // Update global bounds since a route was removed
+            updatePolylineBoundsIfNeeded();
             console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
             polylines[route].remove();
             console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
@@ -1177,6 +1180,7 @@ $(document).ready(async function() {
 
     makeActiveRoutes();
     // setPolylines(activeRoutes);
+    updatePolylineBoundsIfNeeded();
 
     // console.log(activeRoutes)
 

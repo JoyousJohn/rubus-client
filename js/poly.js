@@ -1,5 +1,6 @@
-let polylineBounds;
+let polylineBounds = null;
 let routeBounds = {};
+let previousRoutesWithPolylines = new Set();
 
 async function setPolylines(activeRoutes) {
     // console.log("activeRoutes: ", activeRoutes)
@@ -84,13 +85,8 @@ async function setPolylines(activeRoutes) {
     if (fetchPromises.length === 0) return // no routes to populate
 
     Promise.all(fetchPromises).then(() => {
-        // Compute global bounds from cached routeBounds (works even if some layers were pruned)
-        const allBounds = Object.values(routeBounds);
-        if (allBounds.length) {
-            const group = new L.featureGroup(allBounds.map(b => L.rectangle(b)));
-            polylineBounds = group.getBounds();
-            map.fitBounds(polylineBounds, { padding: [10, 10] });
-        }
+        updatePolylineBoundsIfNeeded();
+        map.fitBounds(polylineBounds, { padding: [10, 10] });
     });
 }
 
@@ -172,6 +168,51 @@ async function addPolylineForRoute(routeName) {
     }
 }
 
+// Update polylineBounds efficiently - only when polylines actually change
+function updatePolylineBoundsIfNeeded() {
+    try {
+        // Get current routes that have polylines
+        const currentRoutesWithPolylines = new Set(
+            Object.keys(polylines).filter(route =>
+                routesByCampusBase[selectedCampus]?.includes(route)
+            )
+        );
+
+        // Quick check: if no routes changed, return early
+        const currentRoutesArray = Array.from(currentRoutesWithPolylines).sort();
+        const previousRoutesArray = Array.from(previousRoutesWithPolylines).sort();
+
+        if (JSON.stringify(currentRoutesArray) === JSON.stringify(previousRoutesArray)) {
+            return; // No changes
+        }
+
+        let combinedBounds = null;
+
+        // Compute bounds from current polylines
+        for (const route of currentRoutesWithPolylines) {
+            if (routeBounds[route]) {
+                if (combinedBounds === null) {
+                    combinedBounds = routeBounds[route];
+                } else {
+                    combinedBounds = combinedBounds.extend(routeBounds[route]);
+                }
+            }
+        }
+
+        // If no active routes, use campus bounds as default
+        if (!combinedBounds) {
+            combinedBounds = bounds[selectedCampus];
+        }
+
+        polylineBounds = combinedBounds;
+        previousRoutesWithPolylines = currentRoutesWithPolylines;
+    } catch (e) {
+        console.log('Error updating polyline bounds', e);
+        polylineBounds = null;
+        previousRoutesWithPolylines.clear();
+    }
+}
+
 // Remove polylines for routes that currently have no in-service buses
 function prunePolylinesWithoutInService() {
     try {
@@ -185,8 +226,32 @@ function prunePolylinesWithoutInService() {
                 // Keep routeBounds cached for potential reuse (e.g., quick fit on reselect)
             }
         });
+        updatePolylineBoundsIfNeeded();
     } catch (e) {
         console.log('Error pruning polylines without in-service buses', e);
+    }
+}
+
+// Precompute and cache bounds for all campus routes without adding layers
+async function precomputeAllRouteBounds() {
+    try {
+        const campusRoutes = routesByCampusBase[selectedCampus] || [];
+        const fetches = campusRoutes.map(async (routeName) => {
+            if (routeBounds[routeName]) return;
+            const coords = await getPolylineData(routeName);
+            if (!coords || !coords.length) return;
+            let coordinates;
+            if (Object.keys(coords[0])[0] === 'lat') {
+                coordinates = coords.map(point => [point.lat, point.lng]);
+            } else {
+                coordinates = coords.map(point => [point[1], point[0]]);
+            }
+            const tmp = L.polyline(coordinates, { opacity: 0 });
+            routeBounds[routeName] = tmp.getBounds();
+        });
+        await Promise.all(fetches);
+    } catch (e) {
+        console.log('Error precomputing all route bounds', e);
     }
 }
 

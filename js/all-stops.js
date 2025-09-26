@@ -90,9 +90,24 @@ function populateAllStops() {
                         } else {
                             eta = `${eta}s`;
                         }
-                        $stopsElm.find('.incoming-list').append(
-                            $(`<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busId].route]}; padding: 0.2rem 1rem;">${busData[busId].route.toUpperCase()}</div>`)
-                        );
+                        const $routeChip = $(`<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busId].route]}; padding: 0.2rem 1rem;">${busData[busId].route.toUpperCase()}</div>`)
+                            .on('click', function(e) {
+                                // Prevent the parent stop click from firing
+                                e.stopPropagation();
+
+                                clearPanoutFeedback();
+
+                                // Match parent behavior: close panels and restore main UI
+                                $('.info-panels-show-hide-wrapper').hide();
+                                $('.bottom').show();
+                                moveRouteSelectorsToMain();
+                                $('.left-btns, .right-btns, .settings-btn').show();
+
+                                // Set the route filter and then fly to the stop
+                                toggleRoute(route);
+                                flyToStop(stopId, true);
+                            });
+                        $stopsElm.find('.incoming-list').append($routeChip);
                         $stopsElm.find('.incoming-list').append(`<div class="text-1p6rem bold right">${eta}</div>`);
                     }
                 })

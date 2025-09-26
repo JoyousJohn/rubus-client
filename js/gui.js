@@ -103,17 +103,18 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
 
                 initialX = event.pageX || (event.originalEvent && event.originalEvent.touches && event.originalEvent.touches[0] ? event.originalEvent.touches[0].pageX : 0); // Store initial position
               
+                // Store the original route state BEFORE any click/long-press processing
+                if (!routePanelOpenedFromLongPress) {
+                    shownBeforeRoute = shownRoute;
+                    console.log('Storing shownBeforeRoute before interaction:', shownBeforeRoute);
+                }
+              
                 longPressTimer = setTimeout(() => {
 
                     isLongPress = true;
                     console.log('Long press triggered for route:', route);
                     // Remember current map selection state so we can restore it on close
                     routePanelOpenedFromLongPress = true;
-                    // Note: originalShownRoute is now stored in selectedRoute function when first opening panel
-                    if (shownRoute) {
-                        shownBeforeRoute = shownRoute;
-                        console.log('Storing shownBeforeRoute:', shownBeforeRoute);
-                    }
 
                     if (panelRoute !== route && route !== 'fav') {
                         console.log('Calling selectedRoute from long press while in subpanel');
@@ -170,6 +171,33 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
             replaceFontAwesomeIcons();
         }
     });
+
+    // Apply selection styling to the currently selected route if it exists in the filtered routes
+    if (shownRoute && routesArray.includes(shownRoute)) {
+        // Use the existing toggleRouteSelectors logic to select the route
+        $('.route-selector').each(function() {
+            const rn = $(this).attr('routeName');
+            if (rn && rn !== shownRoute) {
+                $(this).css('background-color', 'gray');
+            }
+        });
+
+        $(`.route-selector[routeName="${shownRoute}"]`).css('background-color', colorMappings[shownRoute]).css('box-shadow', `0 0 10px ${colorMappings[shownRoute]}`)
+
+        const container = $('.route-selectors');
+
+        if (container[0].scrollWidth > $(document).width()) {
+            const element = $(`.route-selector[routeName="${shownRoute}"]`);
+            const containerWidth = container.width();
+            const elementWidth = element.outerWidth();
+
+            const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
+            
+            container.animate({
+                scrollLeft: scrollTo
+            }, 180);
+        }
+    }
 
     $('.route-selectors').scrollLeft(0);
 
@@ -434,7 +462,7 @@ async function toggleRoute(route) {
         prunePolylinesWithoutInService();
         
         if (!popupStopId) {
-            map.fitBounds(polylineBounds) 
+            map.fitBounds(polylineBounds);
         }
         else {
             // Explicitly show all buses in stop info when unselecting the current route filter
@@ -1370,8 +1398,10 @@ function closeRouteMenu() {
     }
 
     // Store the original route selection before resetting state holders
-    let routeToRestore = originalShownRoute;
+    // If opened via long-press, use shownBeforeRoute; otherwise use originalShownRoute
+    let routeToRestore = routePanelOpenedFromLongPress ? shownBeforeRoute : originalShownRoute;
     console.log('Restoring original route selection (state):', routeToRestore);
+    console.log('Using shownBeforeRoute because routePanelOpenedFromLongPress:', routePanelOpenedFromLongPress);
 
     // Reset state holders
     routePanelOpenedFromLongPress = false;
@@ -1402,10 +1432,10 @@ function closeRouteMenu() {
             console.log('Already on original route:', routeToRestore);
         }
     } else {
-        // Ensure we end with the "all buses" view (no single route selected)
+        // No original route to restore - clear any active selection to show all routes
         if (shownRoute) {
-            console.log('Toggling off current route to show all buses');
-            toggleRoute(shownRoute);
+            console.log('Clearing route selection to show all routes');
+            toggleRoute(shownRoute); // This will unselect the current route
         } else {
             console.log('Already showing all buses');
         }

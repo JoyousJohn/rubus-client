@@ -64,10 +64,24 @@ async function makeNewMap() {
 
     activeRoutes.clear(); // only used to avoid having to call populateRouteSelectors below to trigger const newRoutes = pollActiveRoutes.difference(activeRoutes); in pre.js. doesn't affect addstopstoMap bc we're padding isInitial true to fetchBusData
     await fetchETAs();
+    // Precompute route bounds for all campus routes to enable immediate fits even when OOS
+	try { await precomputeAllRouteBounds(); } catch (e) {}
     await fetchBusData(false, true);
     fetchWhere();
     addStopsToMap();
-    // setPolylines(activeRoutes);
+
+    // Set polylines for routes that have in-service buses
+    const routesWithInServiceBuses = Array.from(activeRoutes).filter(route => {
+        try {
+            const routeBuses = busesByRoutes[selectedCampus][route];
+            return routeBuses.some(busId => !busData[busId].oos);
+        } catch (e) {
+            return false;
+        }
+    });
+    if (routesWithInServiceBuses.length > 0) {
+        setPolylines(new Set(routesWithInServiceBuses));
+    }
 }
 
 
@@ -82,6 +96,9 @@ function campusChanged() {
 
     // Clear building location cache when switching campuses since coordinates are campus-specific
     clearBuildingLocationCache();
+
+    // Set default polyline bounds to campus bounds (no active routes initially)
+    polylineBounds = bounds[selectedCampus];
 
     // if (sim) {
     //     endSim();
