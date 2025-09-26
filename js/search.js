@@ -255,10 +255,12 @@ $(document).ready(function() {
             $('.search-recs-wrapper').hide();
             $('.search-recents-wrapper').hide();
             $('.search-nav-examples-wrapper').hide();
+            $('.search-surprise-me').hide();
         } else {
             $('.search-recs-wrapper').show();
             $('.search-recents-wrapper').show();
             $('.search-nav-examples-wrapper').show();
+            $('.search-surprise-me').show();
             
             // Repopulate the content when showing (in case it was updated)
             populateRecentSearches();
