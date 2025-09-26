@@ -265,8 +265,15 @@ function setupNavigationInputs() {
                     calculateRoute(fromValue, toValue);
                 }
             } else if (e.target.id === 'nav-from-input' && fromValue) {
-                // Move focus to destination input
-                $('#nav-to-input').focus();
+                // Only move focus to destination input if autocomplete results are visible
+                // (meaning no selection was made via Enter on autocomplete)
+                const fromResultsVisible = !$('.nav-from-search-results').hasClass('none');
+                const toResultsVisible = !$('.nav-to-search-results').hasClass('none');
+                
+                if (!fromResultsVisible && !toResultsVisible) {
+                    // Move focus to destination input only if no autocomplete selection was made
+                    $('#nav-to-input').focus();
+                }
             }
         }
     });
