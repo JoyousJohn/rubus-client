@@ -521,14 +521,15 @@ function clearFlyToClosestStopFeedback() {
 function panout() {
     // Clear any existing panout feedback
     clearPanoutFeedback();
-    
+    clearCentermeFeedback();
+    clearFlyToClosestStopFeedback();
+
     // Apply feedback state immediately
     $('.panout').addClass('btn-feedback-active');
     panoutFeedbackActive = true;
     
     // Set up drag handler to detect manual user dragging
     panoutDragHandler = () => {
-        console.log('Panout: User started dragging, removing feedback');
         clearPanoutFeedback();
     };
     
@@ -646,8 +647,9 @@ function centerme() {
         hideInfoBoxes(true);
         $('.my-location-popup').show();
 
-        // Clear panout background since we're flying to location
+        // Clear other location button backgrounds since we're flying to location
         clearPanoutFeedback();
+        clearFlyToClosestStopFeedback();
         
         // Set up centerme feedback clearing after flyTo animation completes
         const onFlyToComplete = () => {
