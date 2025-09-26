@@ -1178,7 +1178,7 @@ html, body {
     align-items: center;
     line-height: 1;
     box-sizing: border-box;
-    margin-left: 1rem;
+    /* margin-left: 1rem; */
 }
 
 /* Remove margin when settings button is at the end */

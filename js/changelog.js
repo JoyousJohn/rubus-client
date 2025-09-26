@@ -1,3 +1,7 @@
+let currentPage = 1;
+let allCommits = new Map(); // Store all commits grouped by date
+let previousCommitCount = 0; // Track how many commits were rendered before
+
 async function getChangelog() {
     // Toggle behavior: if already visible, hide and unselect
     if ($('.changelog-wrapper').is(':visible')) {
@@ -14,13 +18,26 @@ async function getChangelog() {
     $('.status-wrapper').hide();
     stopStatusUpdates();
 
+    // Reset for new changelog view
+    currentPage = 1;
+    allCommits.clear();
+    previousCommitCount = 0;
+    
+    loadCommitsPage(currentPage);
+}
+
+function loadCommitsPage(page) {
     $.ajax({
-        url: 'https://api.github.com/repos/JoyousJohn/rubus-client/commits',
+        url: `https://api.github.com/repos/JoyousJohn/rubus-client/commits?per_page=57&page=${page}`,
         type: 'GET',
         success: function(data, textStatus, jqXHR) {
-            // Group commits by formatted date (M.D.YY)
-            const dateToCommits = new Map();
+            // If no more commits, hide the button
+            if (data.length === 0) {
+                $('.show-more-commits-btn').hide();
+                return;
+            }
 
+            // Group commits by formatted date (M.D.YY)
             data.forEach(item => {
                 const commit = item.commit;
                 const message = commit.message;
@@ -33,54 +50,99 @@ async function getChangelog() {
                 const yy = (d.getUTCFullYear() % 100).toString();
                 const formatted = `${m}.${day}.${yy}`; // no leading zeros per spec
 
-                if (!dateToCommits.has(formatted)) {
-                    dateToCommits.set(formatted, []);
+                if (!allCommits.has(formatted)) {
+                    allCommits.set(formatted, []);
                 }
-                dateToCommits.get(formatted).push({ message });
+                allCommits.get(formatted).push({ message });
             });
 
-            const $list = $('.changelog-list');
-            $list.empty();
-            // Inline styles for list container (single flex column)
-            $list.css({
-                display: 'flex',
-                flexDirection: 'column',
-                rowGap: '1.2rem'
-            });
-
-            // Render as a single flex column list: date header once, then messages for that date
-            for (const [dateLabel, commits] of dateToCommits) {
-                const $dayContainer = $('<div class="changelog-day"></div>');
-                const $dateHeader = $(`<div class="changelog-date bold-500">${dateLabel}</div>`);
-                // Align date header with start of list text (not bullets)
-                $dateHeader.css({
-                    marginLeft: '2rem',
-                    fontWeight: 500
-                });
-                const $ul = $('<ul class="changelog-items"></ul>');
-                // Ensure bullet text alignment and spacing
-                $ul.css({
-                    listStyle: 'disc',
-                    listStylePosition: 'outside',
-                    margin: '0.3rem 0 1.2rem 0',
-                    paddingLeft: '2rem'
-                });
-
-                commits.forEach(c => {
-                    const $li = $(`<li class="changelog-message">${c.message}</li>`);
-                    $ul.append($li);
-                });
-
-                $dayContainer.append($dateHeader);
-                $dayContainer.append($ul);
-                $list.append($dayContainer);
+            renderChangelog();
+            
+            // Show the button if we got a full page of commits
+            if (data.length === 57) {
+                $('.show-more-commits-btn').show();
+            } else {
+                $('.show-more-commits-btn').hide();
             }
-
-            $('.changelog-wrapper').show();
-            $('.changelog').addClass('footer-selected');
-            // Hide status
-            $('.status-wrapper').hide();
-            stopStatusUpdates();
         }
     });
+}
+
+function renderChangelog() {
+    const $list = $('.changelog-list');
+    const isInitialLoad = previousCommitCount === 0;
+    
+    if (isInitialLoad) {
+        $list.empty();
+    }
+    
+    // Inline styles for list container (single flex column)
+    $list.css({
+        display: 'flex',
+        flexDirection: 'column',
+        rowGap: '1.2rem'
+    });
+
+    // Count total commits to determine what's new
+    let totalCommits = 0;
+    for (const [dateLabel, commits] of allCommits) {
+        totalCommits += commits.length;
+    }
+
+    // Render as a single flex column list: date header once, then messages for that date
+    for (const [dateLabel, commits] of allCommits) {
+        const $dayContainer = $('<div class="changelog-day"></div>');
+        const $dateHeader = $(`<div class="changelog-date bold-500">${dateLabel}</div>`);
+        // Align date header with start of list text (not bullets)
+        $dateHeader.css({
+            marginLeft: '2rem',
+            fontWeight: 500
+        });
+        const $ul = $('<ul class="changelog-items"></ul>');
+        // Ensure bullet text alignment and spacing
+        $ul.css({
+            listStyle: 'disc',
+            listStylePosition: 'outside',
+            margin: '0.3rem 0 1.2rem 0',
+            paddingLeft: '2rem'
+        });
+
+        commits.forEach(c => {
+            const $li = $(`<li class="changelog-message">${c.message}</li>`);
+            $ul.append($li);
+        });
+
+        $dayContainer.append($dateHeader);
+        $dayContainer.append($ul);
+        
+        if (isInitialLoad) {
+            $list.append($dayContainer);
+        } else {
+            // For subsequent loads, append and slide down
+            $dayContainer.hide();
+            $list.append($dayContainer);
+            $dayContainer.slideDown(300);
+        }
+    }
+
+    // Add show more button if not already present
+    if ($('.show-more-commits-btn').length === 0) {
+        const $showMoreBtn = $('<div class="show-more-commits-btn pointer text-1p4rem center mt-1rem" style="color: #1a73e8; font-weight: 500;"><i class="fa-solid fa-plus"></i> Show more commits</div>');
+        $showMoreBtn.click(function() {
+            currentPage++;
+            loadCommitsPage(currentPage);
+        });
+        $list.after($showMoreBtn);
+    }
+
+    // Update the count of rendered commits
+    previousCommitCount = totalCommits;
+
+    if (isInitialLoad) {
+        $('.changelog-wrapper').show();
+        $('.changelog').addClass('footer-selected');
+        // Hide status
+        $('.status-wrapper').hide();
+        stopStatusUpdates();
+    }
 }
