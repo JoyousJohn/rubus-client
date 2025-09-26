@@ -29,6 +29,7 @@ function sendFeedback() {
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.error("Error sending feedback:", textStatus, errorThrown);
+                markRubusRequestsFailing();
             }
         });
     } 

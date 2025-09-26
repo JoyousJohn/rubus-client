@@ -35,7 +35,9 @@ function openRUBusSocket() {
     // }
 
     socket.addEventListener("open", (event) => {
-        // console.log("Passio WebSocket connection opened");
+        // console.log("RUBus WebSocket connection opened");
+        // Update response time to indicate WebSocket is active
+        updateRubusResponseTime();
     });
 
     function processEventData(eventData) {
@@ -201,6 +203,9 @@ function openRUBusSocket() {
             const eventData = JSON.parse(event.data);
             // console.log("Formatted message from server:", eventData);
             processEventData(eventData);
+
+            // Update RUBus response time since WebSocket is active
+            updateRubusResponseTime();
         } catch (error) {
             console.error("Error parsing JSON:", error);
             console.log(event.data)
@@ -213,7 +218,8 @@ function openRUBusSocket() {
     });
 
     socket.addEventListener("error", (event) => {
-        console.error("Passio WebSocket error:", event);
+        console.error("RUBus WebSocket error:", event);
+        // Don't mark RUBus as failing on WebSocket errors - only HTTP request failures matter
     });
 
 }

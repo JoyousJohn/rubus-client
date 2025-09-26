@@ -103,6 +103,7 @@ async function getPolylineData(routeName) {
         return polylineData;
     } catch (error) {
         console.error(`Error fetching polyline data for route ${routeName}:`, error);
+        markRubusRequestsFailing();
     }
 } 
 

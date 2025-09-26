@@ -46,6 +46,7 @@ $('.events-link').click(function() {
         })
         .catch(error => {
             console.error('Error fetching events:', error);
+            markRubusRequestsFailing();
         });
 
 })

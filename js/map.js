@@ -2374,9 +2374,11 @@ function getBusBreaks(busId) {
                 timestamp: currentTime
             };
             populateBusBreaks(data, busId);
+            updateRubusResponseTime();
         })
         .catch(error => {
             console.error('Error fetching bus breaks:', error);
+            markRubusRequestsFailing();
         });
 }
 
@@ -2422,9 +2424,11 @@ function updateHistoricalCapacity(busId) {
                 if (!busRidershipCharts[busId] || dataChanged) {
                     handleChartUpdate();
                 }
+                updateRubusResponseTime();
             })
             .catch(error => {
                 console.error('Error fetching bus ridership data:', error);
+                markRubusRequestsFailing();
             });
     } else if (!busRidershipCharts[busId]) {
         handleChartUpdate();

@@ -20,6 +20,7 @@
     <link rel="manifest" href="manifest.json">
 
     <script src="js/vars.js"></script>
+    <script src="js/status.js"></script>
     <script defer src="js/leaflet.edgebuffer.js"></script>
     <script defer src="js/map.js"></script>
     <script defer src="js/riding.js"></script>
@@ -1460,9 +1461,13 @@
                 <!-- <div>About</div> -->
                 <div class="contact pointer" onclick="contactClicked();">Contact</div>
                 <div class="changelog pointer" onclick="getChangelog();">Changelog</div>
-                <!-- <div>Terms</div> -->
+                <div class="status pointer" onclick="showStatus();">Status</div>
+            </div>
+
+            <div class="settings-rubus-attribution flex justify-around select-none gray777777 mt-1p5rem mb-2rem">
                 <div class="events-link pointer">Events</div>
                 <div class="pointer" onclick="window.open('https://joyousjohn.github.io/ruguessr/', '_blank')">RutgersGuessr</div>
+                <div class="source pointer" onclick="window.open('https://src.rubus.live', '_blank')">Source</div>
             </div>
 
             <div class="footer flex justify-center mb-10rem">
@@ -1477,6 +1482,11 @@
 
                 <div class="changelog-wrapper none text-1p4rem">
                     <div class="changelog-list"></div>
+                </div>
+
+                <div class="status-wrapper none flex justify-around w-full text-1p3rem">
+                    <div class="passio-status"></div>
+                    <div class="rubus-status"></div>
                 </div>
             </div>
 

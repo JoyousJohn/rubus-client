@@ -31,3 +31,18 @@
     aspect-ratio: 1;
     height: auto;
 }
+
+.ai-logo {
+    background-image: url('../img/ai.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
+    aspect-ratio: 1;
+    margin: 0.5rem;
+}
+
+.ai-title {
+    font-size: 1.8rem;
+    font-family: Firegrant Stinklez;
+    /* font-family: Sidecar; */
+}

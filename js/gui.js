@@ -1087,6 +1087,8 @@ async function updateRidershipChart() {
         
         const timeRiderships = await response.json();
 
+        updateRubusResponseTime();
+
         if (!Object.keys(timeRiderships).length) {
             return; // Don't show chart if no ridership data
         }
@@ -1143,6 +1145,7 @@ async function updateRidershipChart() {
         
     } catch (error) {
         console.error('Error fetching ridership:', error);
+        markRubusRequestsFailing();
     }
 }
 

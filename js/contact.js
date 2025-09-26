@@ -6,6 +6,10 @@ function showContact() {
     // Hide changelog when showing contact
     $('.changelog-wrapper').hide();
     $('.changelog').removeClass('footer-selected');
+    // Hide status
+    $('.status-wrapper').hide();
+    $('.status').removeClass('footer-selected');
+    stopStatusUpdates();
 }
 
 function popContact() {
@@ -39,13 +43,19 @@ function contactClicked() {
     if ($('.footer-contact-wrapper').is(':visible')) {
         $('.footer-contact-wrapper').hide();
         $('.contact').removeClass('footer-selected');
+        $('.status-wrapper').hide();
+        $('.status').removeClass('footer-selected');
+        stopStatusUpdates();
         return;
     }
-    
+
     // If not visible, show contact
-    // Immediately hide changelog and show contact loading state
+    // Immediately hide changelog and status, show contact loading state
     $('.changelog-wrapper').hide();
     $('.changelog').removeClass('footer-selected');
+    $('.status-wrapper').hide();
+    $('.status').removeClass('footer-selected');
+    stopStatusUpdates();
     $('.footer-contact-loading').show();
     $('.footer-contact-wrapper').hide();
     $('.contact').addClass('footer-selected');
@@ -57,9 +67,11 @@ function contactClicked() {
                 contact = data;
                 $('.footer-contact-loading').hide();
                 popContact();
+                updateRubusResponseTime();
             })
             .catch(error => {
                 console.error('Error fetching contact data:', error);
+                markRubusRequestsFailing();
             });
     } else {
         $('.footer-contact-loading').hide();

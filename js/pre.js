@@ -421,6 +421,8 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         localStorage.setItem('lastUpdateTime', lastUpdateTime.toString());
         forceImmediateUpdate = false;
 
+        updatePassioResponseTime();
+
         // Server is responding successfully, hide notification popup and reset passioDown flag
         if (passioDown) {
             $('.notif-popup').slideUp();
@@ -737,6 +739,8 @@ async function fetchWhere() {
         const busLocations = data;
         // console.log('Bus locations fetched:', busLocations);
 
+        updateRubusResponseTime();
+
         const validBusIds = []
         for (const busId in busLocations) {
 
@@ -786,19 +790,20 @@ async function fetchWhere() {
 
     } catch (error) {
         console.error('Error fetching bus locations:', error);
+        markRubusRequestsFailing();
     }
 
 }
 
 
 async function startOvernight(setColorBack, immediatelyUpdate = false) {
+    try {
+        response = await fetch('https://demo.rubus.live/overnight');
 
-    response = await fetch('https://demo.rubus.live/overnight');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
 
-    if (!response.ok) {
-        throw new Error('Network response was not ok');
-
-    } else {
         const data = await response.json();
 
         if (Object.keys(data).length) {
@@ -887,6 +892,9 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
             // console.log(polylines)
             // populateRouteSelectors(activeRoutes); 
         }
+    } catch (error) {
+        console.error('Error fetching overnight data:', error);
+        markRubusRequestsFailing();
     }
 
     checkMinRoutes();
@@ -1091,8 +1099,11 @@ async function fetchETAs() {
         etas = data[selectedCampus];
         // console.log('ETAs fetched:', etas);
         // updateTimeToStops('all')
+
+        updateRubusResponseTime();
     } catch (error) {
         console.error('Error fetching ETAs:', error);
+        markRubusRequestsFailing();
 
         $('.notif-popup').text('RUBus/Passio servers are experiencing issues and ETAs could not be fetched. Accurate, live bus positioning is still available.').fadeIn();
 
@@ -1107,8 +1118,11 @@ async function fetchETAs() {
         waits = data[selectedCampus];
         updateWaitTimes();
         // console.log('Waits fetched:', waits);
+
+        updateRubusResponseTime();
     } catch (error) {
         console.error('Error fetching waits:', error);
+        markRubusRequestsFailing();
     }
 
 }
@@ -1140,6 +1154,7 @@ $(document).ready(async function() {
 
         } catch (error) {
             console.error('Error fetching joined service times:', error);
+            markRubusRequestsFailing();
         }
     }
 
