@@ -2,6 +2,7 @@ let currentPage = 1;
 let allCommits = new Map(); // Store all commits grouped by date
 let previousCommitCount = 0; // Track how many commits were rendered before
 let changelogInitialized = false; // Track if changelog has been loaded before
+let renderedCommits = new Map(); // Track which commits have already been rendered
 
 async function getChangelog() {
     // Toggle behavior: if already visible, hide and unselect
@@ -20,17 +21,20 @@ async function getChangelog() {
     $('.status').removeClass('footer-selected');
     stopStatusUpdates();
 
+    // Immediately select changelog and show wrapper
+    $('.changelog').addClass('footer-selected');
+    $('.changelog-wrapper').show();
+
     // If changelog was already initialized, just show it again
     if (changelogInitialized) {
         renderChangelog();
-        $('.changelog-wrapper').show();
-        $('.changelog').addClass('footer-selected');
         return;
     }
 
     // Reset for new changelog view
     currentPage = 1;
     allCommits.clear();
+    renderedCommits.clear();
     previousCommitCount = 0;
     
     loadCommitsPage(currentPage);
@@ -99,8 +103,21 @@ function renderChangelog() {
         totalCommits += commits.length;
     }
 
-    // Render as a single flex column list: date header once, then messages for that date
+    // Render only new commits that haven't been rendered yet
     for (const [dateLabel, commits] of allCommits) {
+        // Check if this date group has been rendered before
+        const dateKey = dateLabel;
+        const existingRendered = renderedCommits.get(dateKey) || [];
+        
+        // Find new commits for this date
+        const newCommits = commits.filter(commit => 
+            !existingRendered.some(rendered => rendered.message === commit.message)
+        );
+        
+        if (newCommits.length === 0) {
+            continue; // No new commits for this date
+        }
+        
         const $dayContainer = $('<div class="changelog-day"></div>');
         const $dateHeader = $(`<div class="changelog-date bold-500">${dateLabel}</div>`);
         // Align date header with start of list text (not bullets)
@@ -117,7 +134,7 @@ function renderChangelog() {
             paddingLeft: '2rem'
         });
 
-        commits.forEach(c => {
+        newCommits.forEach(c => {
             const $li = $(`<li class="changelog-message">${c.message}</li>`);
             $ul.append($li);
         });
@@ -128,11 +145,14 @@ function renderChangelog() {
         if (isInitialLoad) {
             $list.append($dayContainer);
         } else {
-            // For subsequent loads, append and slide down
+            // For subsequent loads, append and slide down only new commits
             $dayContainer.hide();
             $list.append($dayContainer);
             $dayContainer.slideDown(300);
         }
+        
+        // Update rendered commits for this date
+        renderedCommits.set(dateKey, commits);
     }
 
     // Add show more button if not already present
@@ -149,8 +169,6 @@ function renderChangelog() {
     previousCommitCount = totalCommits;
 
     if (isInitialLoad) {
-        $('.changelog-wrapper').show();
-        $('.changelog').addClass('footer-selected');
         // Hide status
         $('.status-wrapper').hide();
         stopStatusUpdates();
