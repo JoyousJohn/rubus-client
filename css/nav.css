@@ -14,7 +14,7 @@
 .navigate-wrapper {
     position: fixed;
     top: 0;
-    left: 0;
+    /* left: 0; */
     z-index: 403;
     pointer-events: none;
     font-family: var(--font-family);

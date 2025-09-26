@@ -3,4 +3,9 @@
         width: 42%;
         right: 0;
     }
+
+    .navigate-wrapper { /* needs override */
+        width: 42% !important;
+        right: 0;
+    }
 }

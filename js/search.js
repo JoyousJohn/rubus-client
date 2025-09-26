@@ -19,7 +19,43 @@ $(document).ready(function() {
     const $clearBtn = $('.search-clear-btn');
     $input.val('')
 
-    $('.search-btn').click(function() {
+    // Track press and hold state
+    let pressAndHoldTimer = null;
+    let isPressAndHold = false;
+
+    $('.search-btn').on('mousedown touchstart', function(e) {
+        isPressAndHold = false;
+        pressAndHoldTimer = setTimeout(() => {
+            isPressAndHold = true;
+            // Press and hold detected - open navigation wrapper
+            hideInfoBoxes(true);
+            $('.knight-mover').hide();
+            $('.search-wrapper').hide();
+            
+            // Open navigation wrapper
+            $('.navigate-wrapper').show();
+            $('#nav-from-input').focus();
+            
+            sa_event('btn_press', {
+                'btn': 'search_press_hold_nav'
+            });
+        }, 200); // 800ms hold time
+    });
+
+    $('.search-btn').on('mouseup touchend', function(e) {
+        if (pressAndHoldTimer) {
+            clearTimeout(pressAndHoldTimer);
+            pressAndHoldTimer = null;
+        }
+    });
+
+    $('.search-btn').click(function(e) {
+        // Prevent click if it was a press and hold
+        if (isPressAndHold) {
+            isPressAndHold = false;
+            return;
+        }
+        
         hideInfoBoxes(true);
         $('.knight-mover').hide();
         $('.search-wrapper').show();

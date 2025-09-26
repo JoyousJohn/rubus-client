@@ -753,16 +753,10 @@ function calculateRoute(from, to) {
         const usedFuzzyMatch = {
             from: startIsStop
                 ? false
-                : (
-                    fromNormalized !== startResolvedName &&
-                    (selectedFromBuilding ? false : (buildingIndex[from.toLowerCase()] ? false : findBuildingFuzzy(from) !== null))
-                  ),
+                : fromNormalized !== startResolvedName,
             to: endIsStop
                 ? false
-                : (
-                    toNormalized !== endResolvedName &&
-                    (selectedToBuilding ? false : (buildingIndex[to.toLowerCase()] ? false : findBuildingFuzzy(to) !== null))
-                  )
+                : toNormalized !== endResolvedName
         };
 
         // Save to recent navigations
@@ -1854,13 +1848,13 @@ function displayRoute(routeData) {
     // Create fuzzy match info if applicable
     let fuzzyMatchHtml = '';
     if (usedFuzzyMatch.from || usedFuzzyMatch.to) {
-        const fromMatch = usedFuzzyMatch.from ? `"${originalInputs.from}" → "${startBuilding.name}"` : '';
-        const toMatch = usedFuzzyMatch.to ? `"${originalInputs.to}" → "${endBuilding.name}"` : '';
-        const connector = fromMatch && toMatch ? ', ' : '';
+        const fromMatch = usedFuzzyMatch.from ? `"${originalInputs.from}" as "${startBuilding.name}"` : '';
+        const toMatch = usedFuzzyMatch.to ? `"${originalInputs.to}" as "${endBuilding.name}"` : '';
+        const connector = fromMatch && toMatch ? ' and ' : '';
         fuzzyMatchHtml = `
             <div class="fuzzy-match-info" style="margin-bottom: 0.5rem; padding: 0.5rem; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.25rem;">
                 <div style="font-size: 1.1rem; color: #1d4ed8;">
-                    🔍 Used smart matching: ${fromMatch}${connector}${toMatch}
+                    Matched ${fromMatch}${connector}${toMatch}
                 </div>
             </div>
         `;
