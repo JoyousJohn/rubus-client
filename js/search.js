@@ -179,26 +179,7 @@ $(document).ready(function() {
             const selectedItem = allOptions[randomIndex];
             
             // Handle the selected item
-            if (selectedItem.type === 'stop') {
-                popStopInfo(Number(selectedItem.id));
-            } else {
-                // Handle building selection
-                if (!buildingsLayer) {
-                    loadBuildings().then(() => {
-                        showBuildingInfo(selectedItem);
-                    });
-                } else {
-                    showBuildingInfo(selectedItem);
-                }
-            }
-            
-            // Fly to the location
-            map.flyTo([selectedItem.lat, selectedItem.lng], 17, { duration: 0.3 });
-            
-            // Save to recent searches
-            saveRecentSearch(selectedItem);
-            
-            sa_event('btn_press', {
+            handleSearchItemSelection(selectedItem, {
                 'btn': 'surprise_me_selected',
                 'result': selectedItem.name,
                 'category': selectedItem.category,
@@ -372,28 +353,7 @@ $(document).ready(function() {
             const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
             $elm = $(`<div class="search-result-item flex">${icon}<div>${displayText}</div></div>`);
             $elm.click(function() {
-                closeSearch();
-                
-                if (item.category === 'stop') {
-                    // Handle stop selection
-                    popStopInfo(Number(item.id));
-                } else {
-                    // Handle building/parking selection
-                    if (!buildingsLayer) {
-                        loadBuildings().then(() => {
-                            showBuildingInfo(item);
-                        });
-                    } else {
-                        showBuildingInfo(item);
-                    }
-                }
-                
-                map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
-                
-                // Save to recent searches
-                saveRecentSearch(item);
-
-                sa_event('btn_press', {
+                handleSearchItemSelection(item, {
                     'btn': 'search_result_selected',
                     'result': item.name,
                     'category': item.category
@@ -406,7 +366,10 @@ $(document).ready(function() {
         replaceFontAwesomeIcons();
 
         if (!buildingsLayer) {
-            loadBuildings();
+            loadBuildings().then(() => {
+                // Temporarily show buildings layer if setting is disabled but we just loaded it
+                showBuildingsTemporarily();
+            });
         }
     });
 
@@ -499,6 +462,45 @@ $(document).ready(function() {
     
     // Make saveRecentNavigation globally accessible
     window.saveRecentNavigation = saveRecentNavigation;
+    
+    // Helper function to handle building selection with immediate response and highlighting
+    function selectBuilding(buildingData) {
+        // Show building info and fly to location immediately
+        showBuildingInfo(buildingData);
+        map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
+        
+        if (!buildingsLayer) {
+            loadBuildings().then(() => {
+                // Temporarily show buildings layer for this selection
+                showBuildingsTemporarily();
+                // Highlight the selected building
+                highlightBuildingByName(buildingData.name);
+            });
+        } else {
+            // Make sure buildings layer is visible for this selection
+            showBuildingsTemporarily();
+            // Highlight the selected building
+            highlightBuildingByName(buildingData.name);
+        }
+    }
+    
+    // Helper function to handle search item selection (stop or building)
+    function handleSearchItemSelection(item, eventData) {
+        closeSearch();
+        
+        if (item.category === 'stop') {
+            // Handle stop selection
+            popStopInfo(Number(item.id));
+            map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
+            saveRecentSearch(item);
+        } else {
+            // Handle building selection
+            selectBuilding(item);
+            saveRecentSearch(item);
+        }
+        
+        sa_event('btn_press', eventData);
+    }
     
     function getRecentNavigations() {
         const stored = localStorage.getItem('recentNavigations');
@@ -663,29 +665,9 @@ $(document).ready(function() {
                             'from': item.from,
                             'to': item.to
                         });
-                    } else if (item.category === 'stop') {
-                        // Handle stop selection
-                        popStopInfo(Number(item.id));
-                        map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
-                        
-                        sa_event('btn_press', {
-                            'btn': 'recent_search_selected',
-                            'result': item.name,
-                            'category': item.category
-                        });
                     } else {
-                        // Handle building/parking selection
-                        if (!buildingsLayer) {
-                            loadBuildings().then(() => {
-                                showBuildingInfo(item);
-                            });
-                        } else {
-                            showBuildingInfo(item);
-                        }
-                        
-                        map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
-
-                        sa_event('btn_press', {
+                        // Handle stop or building selection
+                        handleSearchItemSelection(item, {
                             'btn': 'recent_search_selected',
                             'result': item.name,
                             'category': item.category
@@ -831,44 +813,28 @@ $(document).ready(function() {
             
             const $recItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important;">${icon}<div>${item.name}</div></div>`);
             $recItem.click(function() {
-                closeSearch();
-                
                 if (item.category === 'stop') {
-                    // Handle stop selection
-                    popStopInfo(Number(item.id));
-                    map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
-                    
-                    // Save to recent searches
-                    saveRecentSearch(item);
+                    // Handle stop selection directly
+                    handleSearchItemSelection(item, {
+                        'btn': 'search_recommendation_selected',
+                        'result': item.name,
+                        'category': item.category
+                    });
                 } else {
-                    // Handle building selection
+                    // Handle building selection - need to find building data first
                     const buildingKey = Object.keys(buildingIndex).find(key => 
                         buildingIndex[key].id === item.number.toString()
                     );
                     
                     if (buildingKey) {
                         const buildingData = buildingIndex[buildingKey];
-                        
-                        if (!buildingsLayer) {
-                            loadBuildings().then(() => {
-                                showBuildingInfo(buildingData);
-                                map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
-                            });
-                        } else {
-                            showBuildingInfo(buildingData);
-                            map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
-                        }
-                        
-                        // Save to recent searches
-                        saveRecentSearch(buildingData);
+                        handleSearchItemSelection(buildingData, {
+                            'btn': 'search_recommendation_selected',
+                            'result': item.name,
+                            'category': item.category
+                        });
                     }
                 }
-
-                sa_event('btn_press', {
-                    'btn': 'search_recommendation_selected',
-                    'result': item.name,
-                    'category': item.category
-                });
             });
             $searchRecs.append($recItem);
         });

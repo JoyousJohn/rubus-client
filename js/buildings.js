@@ -482,6 +482,43 @@ $(document).ready(function() {
     if (buildingsLayer) { $('.buildings-btn').addClass('active'); } else { $('.buildings-btn').removeClass('active'); }
 });
 
+// Function to temporarily show buildings layer (for search selections)
+function showBuildingsTemporarily() {
+    if (buildingsLayer && !map.hasLayer(buildingsLayer)) {
+        buildingsLayer.addTo(map);
+        $('.buildings-btn').addClass('active');
+    }
+}
+
+// Function to highlight a specific building by name after layer loads
+function highlightBuildingByName(buildingName) {
+    if (!buildingsLayer || !buildingSpatialIndex) return;
+    
+    // Get the building layer directly by name (O(1) lookup)
+    const targetLayer = buildingSpatialIndex.getBuildingLayerByName(buildingName);
+    if (!targetLayer) return;
+    
+    // Clear previous highlight
+    if (highlightedBuildingLayer) {
+        highlightedBuildingLayer.setStyle({
+            color: '#333',
+            fillColor: '#ccc',
+            fillOpacity: 0.3,
+            weight: 1
+        });
+    }
+    
+    // Style the new highlighted building
+    targetLayer.setStyle({
+        color: '#ff6b6b',
+        fillColor: '#ff6b6b',
+        fillOpacity: 0.6,
+        weight: 3
+    });
+    
+    highlightedBuildingLayer = targetLayer;
+}
+
 // Function to restore building layer state from settings
 function restoreBuildingLayerState() {
     if (settings['toggle-show-buildings'] && !buildingsLayer) {
@@ -594,15 +631,19 @@ class BuildingSpatialIndex {
         this.gridSize = gridSize;
         this.grid = new Map();
         this.allBuildings = [];
+        this.nameToLayer = new Map(); // Direct mapping from building name to layer
     }
 
     // Add a building to the spatial index
-    addBuilding(feature) {
+    addBuilding(feature, layer = null) {
         if (!feature || !feature.geometry || feature.geometry.type !== 'Polygon') {
             return;
         }
 
         this.allBuildings.push(feature);
+        
+        // Store name-to-layer mapping for O(1) lookup
+        this.nameToLayer.set(feature.properties.name, layer);
 
         const bbox = this.getBoundingBox(feature.geometry.coordinates[0]);
         const gridCells = this.getGridCellsForBBox(bbox);
@@ -660,18 +701,31 @@ class BuildingSpatialIndex {
     buildIndex(layer) {
         this.grid.clear();
         this.allBuildings = [];
+        this.nameToLayer.clear();
 
-        layer.eachLayer(layer => {
-            if (layer.feature) {
-                this.addBuilding(layer.feature);
+        layer.eachLayer(layerItem => {
+            if (layerItem.feature) {
+                this.addBuilding(layerItem.feature, layerItem);
             }
         });
+    }
+
+    // Get building by name (O(1) lookup)
+    getBuildingByName(buildingName) {
+        return this.allBuildings.find(feature => feature.properties.name === buildingName
+        );
+    }
+    
+    // Get building layer by name (O(1) lookup)
+    getBuildingLayerByName(buildingName) {
+        return this.nameToLayer.get(buildingName);
     }
 
     // Clear the index
     clear() {
         this.grid.clear();
         this.allBuildings = [];
+        this.nameToLayer.clear();
     }
 }
 
