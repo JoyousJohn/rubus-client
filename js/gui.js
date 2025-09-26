@@ -51,6 +51,11 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         routesArray.unshift('wknd1');
     }
 
+    // This settings toggle reverses the routes somewhere else
+	if (!settings['toggle-settings-btn-end']) {
+		routesArray.reverse();
+	}
+
     if ($('.favs > div').length) {
         routesArray.unshift('fav');
     }
