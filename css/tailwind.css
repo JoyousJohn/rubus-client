@@ -158,6 +158,8 @@
 
 .pb-25rem { padding-bottom: 25rem; }
 
+.px-0p5rem { padding-left: 0.5rem; padding-right: 0.5rem; }
+
 .px-1rem { padding-left: 1rem; padding-right: 1rem; }
 
 .px-2rem { padding-left: 2rem; padding-right: 2rem; }
@@ -249,6 +251,8 @@
 .mx-16rem { margin: 0 16rem; }
 
 .my-0p5rem { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+
+.my-1rem { margin-top: 1rem; margin-bottom: 1rem; }
 
 .my-2rem { margin-top: 2rem; margin-bottom: 2rem; }
 

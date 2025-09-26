@@ -76,9 +76,12 @@ function campusChanged() {
     $('.updating-buses').show();
 
     selectedCampus = settings['campus']
-    try { if (typeof setSelectedCampusButton === 'function') { setSelectedCampusButton(selectedCampus); } } catch (_) {}
+    setSelectedCampusButton(selectedCampus);
     console.log(`campus changed to ${selectedCampus}`)
     stopsData = allStopsData[selectedCampus];
+
+    // Clear building location cache when switching campuses since coordinates are campus-specific
+    clearBuildingLocationCache();
 
     // if (sim) {
     //     endSim();
@@ -165,7 +168,7 @@ $(function() {
 		if (!carEl || !itemEl) { console.log('[carousel] missing elements for centering'); return; }
 		// Cancel any prior animations (jQuery or our own)
 		$carousel.stop(true);
-		if (typeof currentCarouselAnimCancel === 'function') { currentCarouselAnimCancel(); }
+		currentCarouselAnimCancel();
 		const prevBehavior = $carousel.css('scroll-behavior');
 		$carousel.css('scroll-behavior', 'auto');
 		// Pre-centering diagnostics
@@ -264,7 +267,7 @@ $(function() {
 			const pt = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
 			dragStartX = pt.clientX; dragStartY = pt.clientY; dragMoved = false;
 			$(this).stop(true); // cancel ongoing jQuery animations
-			if (typeof currentCarouselAnimCancel === 'function') { currentCarouselAnimCancel(); }
+			currentCarouselAnimCancel();
 			console.log('[carousel] interaction start, stop animations');
 		})
 		.on('mousemove touchmove', function(e){

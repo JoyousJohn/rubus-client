@@ -20,7 +20,7 @@ function initSpoofing() {
         }
         if (isOnBuildingOrParking) { return; }
 
-        const spoofEnabled = ((typeof spoof !== 'undefined') && spoof) || ((typeof settings !== 'undefined') && settings['toggle-spoofing']);
+        const spoofEnabled = (spoof) || (settings && settings['toggle-spoofing']);
         if (!spoofEnabled) { return; }
 
         const lat = e.latlng.lat;

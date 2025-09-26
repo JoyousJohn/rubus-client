@@ -1,5 +1,6 @@
 let buildingsLayer = null;
 let highlightedBuildingLayer = null;
+let buildingSpatialIndex = null; // For O(1) spatial lookups
 
 function unhighlightBuilding() {
     if (highlightedBuildingLayer) {
@@ -299,7 +300,7 @@ function loadBuildings() {
     if ($('.buildings-btn').hasClass('loading')) {
         return Promise.resolve();
     }
-    
+
     if (buildingsLayer) {
         map.removeLayer(buildingsLayer);
         buildingsLayer = null;
@@ -307,7 +308,7 @@ function loadBuildings() {
 
     // Disable button and show loading state
     $('.buildings-btn').prop('disabled', true).addClass('loading');
-    
+
     return fetch('lib/buildings-parking.json')
         .then(response => response.json())
         .then(data => {
@@ -338,18 +339,89 @@ function loadBuildings() {
                 },
                 onEachFeature: function(feature, layer) {
                     layer.on('click', function(e) {
+                        // Prevent event from bubbling to map click handler
+                        L.DomEvent.stopPropagation(e);
+
                         if (feature.properties && feature.properties.name) {
-                            showBuildingInfo(feature.properties);
-                            sa_event('building_tap', {
-                                'building': feature.properties.name
-                            });
+                            // Check if this is the same building that's already selected
+                            const isSameBuilding = highlightedBuildingLayer &&
+                                highlightedBuildingLayer.feature.properties.name === feature.properties.name;
+
+                            if (isSameBuilding) {
+                                // Second click on same building - update spoofed location
+                                const lat = feature.properties.lat;
+                                const lng = feature.properties.lng;
+
+                                // Hide building info popup since we're now spoofing to this location
+                                $('.building-info-popup').hide();
+
+                                // Update user position (spoofed)
+                                userPosition = [lat, lng];
+
+                                // Clear any existing location watch
+                                if (watchPositionId) {
+                                    navigator.geolocation.clearWatch(watchPositionId);
+                                    watchPositionId = null;
+                                }
+
+                                // Update location marker (similar to spoof.js)
+                                let locationMarker = window.locationMarker;
+                                if (locationMarker && typeof locationMarker.setLatLng === 'function') {
+                                    if (typeof locationMarker.setLatLngPrecise === 'function') {
+                                        locationMarker.setLatLngPrecise([lat, lng]);
+                                    } else {
+                                        locationMarker.setLatLng([lat, lng]);
+                                    }
+                                } else {
+                                    // Create new location marker if none exists
+                                    locationMarker = L.marker([lat, lng], {
+                                        icon: L.icon({
+                                            iconUrl: 'img/location_marker.png',
+                                            iconSize: [24, 24],
+                                            iconAnchor: [12, 12]
+                                        })
+                                    }).addTo(map);
+                                    locationMarker.on('click', function() {
+                                        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();
+                                        $('.my-location-popup').show();
+                                    });
+                                    window.locationMarker = locationMarker;
+                                }
+
+                                // Update UI
+                                updateNearestStop();
+                                populateMeClosestStops();
+
+                                $('.fly-closest-stop-wrapper').fadeIn();
+                                $('.my-location-popup').show();
+
+                                sa_event('building_spoof_location', {
+                                    'building': feature.properties.name,
+                                    'lat': lat,
+                                    'lng': lng
+                                });
+                            } else {
+                                // First click on building - show building info
+                                showBuildingInfo(feature.properties);
+                                sa_event('building_tap', {
+                                    'building': feature.properties.name
+                                });
+                            }
                         }
                     });
                 }
-            }).addTo(map);
+            });
             window.buildingsLayer = buildingsLayer;
-            // Ensure button reflects active state when layer is shown
-            $('.buildings-btn').addClass('active');
+
+            // Build spatial index for efficient lookups
+            buildingSpatialIndex = new BuildingSpatialIndex();
+            buildingSpatialIndex.buildIndex(buildingsLayer);
+
+            // Only add to map if buildings setting is enabled
+            if (settings['toggle-show-buildings']) {
+                buildingsLayer.addTo(map);
+                $('.buildings-btn').addClass('active');
+            }
         })
         .catch(error => {
             console.error('Error loading buildings:', error);
@@ -377,6 +449,7 @@ $(document).ready(function() {
             buildingsLayer = null;
             window.buildingsLayer = null;
             highlightedBuildingLayer = null;
+            buildingSpatialIndex = null; // Clear spatial index
             $('.buildings-btn').removeClass('active');
             
             settings['toggle-show-buildings'] = false;
@@ -418,11 +491,215 @@ function restoreBuildingLayerState() {
         buildingsLayer = null;
         window.buildingsLayer = null;
         highlightedBuildingLayer = null;
+        buildingSpatialIndex = null; // Clear spatial index
         $('.buildings-btn').removeClass('active');
     }
+}
+
+// Cache for building lookup results to avoid repeated calculations
+let buildingLocationCache = new Map();
+let cacheTimeout = 5000; // 5 seconds cache
+
+// Function to check if a point is inside any building (O(1) with spatial index)
+function getBuildingAtLocation(lat, lng) {
+    if (!buildingSpatialIndex) {
+        return null;
+    }
+
+    // Create a cache key from rounded coordinates
+    // Rounding to 4 decimal places gives ~10m precision, which is sufficient for building detection
+    // This significantly reduces cache fragmentation and improves cache hit rates
+    const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    const cached = buildingLocationCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < cacheTimeout) {
+        return cached.building;
+    }
+
+    let foundBuilding = null;
+
+    // Use spatial index for O(1) lookup - get only buildings in the same grid cell
+    const candidateBuildings = buildingSpatialIndex.getBuildingsNearPoint(lat, lng);
+
+    // Check each candidate building for actual containment
+    for (const feature of candidateBuildings) {
+        if (foundBuilding) break; // Stop if we already found a building
+
+        if (!feature || !feature.geometry || feature.geometry.type !== 'Polygon') {
+            continue;
+        }
+
+        // Only do expensive polygon test on spatially nearby buildings
+        const coordinates = feature.geometry.coordinates[0];
+        if (isPointInPolygon(lat, lng, coordinates)) {
+            foundBuilding = feature.properties;
+            break; // Found the building, no need to check others
+        }
+    }
+
+    // Cache the result (including negative results to avoid repeated checks)
+    buildingLocationCache.set(cacheKey, {
+        building: foundBuilding,
+        timestamp: Date.now()
+    });
+
+    // Limit cache size to prevent memory issues
+    if (buildingLocationCache.size > 100) {
+        const firstKey = buildingLocationCache.keys().next().value;
+        buildingLocationCache.delete(firstKey);
+    }
+
+    return foundBuilding;
+}
+
+// Helper function to get bounding box of a polygon
+function getBoundingBox(coordinates) {
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+
+    coordinates.forEach(([lng, lat]) => {
+        minLat = Math.min(minLat, lat);
+        maxLat = Math.max(maxLat, lat);
+        minLng = Math.min(minLng, lng);
+        maxLng = Math.max(maxLng, lng);
+    });
+
+    return { minLat, maxLat, minLng, maxLng };
+}
+
+// Function to clear the building location cache
+function clearBuildingLocationCache() {
+    buildingLocationCache.clear();
+}
+
+// Function to clear cache when user moves significantly
+function onUserLocationChanged(newLat, newLng) {
+    // Clear cache if user moved more than ~10m
+    const threshold = 0.0001; // ~10m in degrees
+    if (typeof lastUserLat !== 'undefined' && typeof lastUserLng !== 'undefined') {
+        const distance = Math.sqrt(
+            Math.pow(newLat - lastUserLat, 2) +
+            Math.pow(newLng - lastUserLng, 2)
+        );
+        if (distance > threshold) {
+            clearBuildingLocationCache();
+        }
+    }
+    lastUserLat = newLat;
+    lastUserLng = newLng;
+}
+
+// Simple grid-based spatial index for O(1) building lookups
+class BuildingSpatialIndex {
+    constructor(gridSize = 0.0001) { // ~10m grid cells (matches 4-decimal precision)
+        this.gridSize = gridSize;
+        this.grid = new Map();
+        this.allBuildings = [];
+    }
+
+    // Add a building to the spatial index
+    addBuilding(feature) {
+        if (!feature || !feature.geometry || feature.geometry.type !== 'Polygon') {
+            return;
+        }
+
+        this.allBuildings.push(feature);
+
+        const bbox = this.getBoundingBox(feature.geometry.coordinates[0]);
+        const gridCells = this.getGridCellsForBBox(bbox);
+
+        gridCells.forEach(cellKey => {
+            if (!this.grid.has(cellKey)) {
+                this.grid.set(cellKey, []);
+            }
+            this.grid.get(cellKey).push(feature);
+        });
+    }
+
+    // Get buildings that could contain the point (based on grid cells)
+    getBuildingsNearPoint(lat, lng) {
+        const cellKey = this.getGridCellKey(lat, lng);
+        return this.grid.get(cellKey) || [];
+    }
+
+    // Convert lat/lng to grid cell key
+    getGridCellKey(lat, lng) {
+        const x = Math.floor(lng / this.gridSize);
+        const y = Math.floor(lat / this.gridSize);
+        return `${x},${y}`;
+    }
+
+    // Get all grid cells that intersect with a bounding box
+    getGridCellsForBBox(bbox) {
+        const cells = [];
+        const minX = Math.floor(bbox.minLng / this.gridSize);
+        const maxX = Math.floor(bbox.maxLng / this.gridSize);
+        const minY = Math.floor(bbox.minLat / this.gridSize);
+        const maxY = Math.floor(bbox.maxLat / this.gridSize);
+
+        for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+                cells.push(`${x},${y}`);
+            }
+        }
+        return cells;
+    }
+
+    // Get bounding box of a polygon
+    getBoundingBox(coordinates) {
+        let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+        coordinates.forEach(([lng, lat]) => {
+            minLat = Math.min(minLat, lat);
+            maxLat = Math.max(maxLat, lat);
+            minLng = Math.min(minLng, lng);
+            maxLng = Math.max(maxLng, lng);
+        });
+        return { minLat, maxLat, minLng, maxLng };
+    }
+
+    // Build the spatial index from all buildings in the layer
+    buildIndex(layer) {
+        this.grid.clear();
+        this.allBuildings = [];
+
+        layer.eachLayer(layer => {
+            if (layer.feature) {
+                this.addBuilding(layer.feature);
+            }
+        });
+    }
+
+    // Clear the index
+    clear() {
+        this.grid.clear();
+        this.allBuildings = [];
+    }
+}
+
+// Helper function to check if a point is inside a polygon using ray-casting algorithm
+function isPointInPolygon(lat, lng, polygon) {
+    let inside = false;
+
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i][0], yi = polygon[i][1];
+        const xj = polygon[j][0], yj = polygon[j][1];
+
+        if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+            inside = !inside;
+        }
+    }
+
+    return inside;
 }
 
 // Listen for settings update to restore building state
 document.addEventListener('rubus-settings-updated', function() {
     restoreBuildingLayerState();
 });
+
+// Make functions globally accessible
+window.loadBuildings = loadBuildings;
+window.showBuildingInfo = showBuildingInfo;
+window.getBuildingAtLocation = getBuildingAtLocation;
+window.getBoundingBox = getBoundingBox;
+window.clearBuildingLocationCache = clearBuildingLocationCache;
+window.BuildingSpatialIndex = BuildingSpatialIndex;
+window.onUserLocationChanged = onUserLocationChanged;

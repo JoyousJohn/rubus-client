@@ -2130,6 +2130,25 @@ function populateMeClosestStops() {
     if (!closestStopsMap) { return; }
 
     $('.closest-stops-list').empty();
+
+    // Check if user is in a building and display building name
+    if (userPosition && userPosition.length === 2) {
+        // Ensure buildings are loaded for location checking (data is always available)
+        if (!window.buildingsLayer) {
+            loadBuildings(); // Will show on map only if setting is enabled
+        }
+
+        // Update building location cache if user moved significantly
+        onUserLocationChanged(userPosition[0], userPosition[1]);
+
+        const building = getBuildingAtLocation(userPosition[0], userPosition[1]);
+        const $currentLocationDiv = $('.current-location');
+        if (building && building.name) {
+            $currentLocationDiv.text(`At ${building.name}`).removeClass('none');
+        } else {
+            $currentLocationDiv.text('').addClass('none');
+        }
+    }
     
     let count = 0;
     
