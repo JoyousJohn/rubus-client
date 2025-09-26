@@ -2165,9 +2165,9 @@ function populateMeClosestStops() {
         const building = getBuildingAtLocation(userPosition[0], userPosition[1]);
         const $currentLocationDiv = $('.current-location');
         if (building && building.name) {
-            $currentLocationDiv.text(`At ${building.name}`).removeClass('none');
+            $currentLocationDiv.text(`You're at ${building.name}`)
         } else {
-            $currentLocationDiv.text('').addClass('none');
+            $currentLocationDiv.text('You');
         }
     }
     
