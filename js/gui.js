@@ -277,11 +277,13 @@ function toggleRouteSelectors(route) {
 
     if (shownRoute === route) {
 
-        for (const polyline in polylines) {
-            if (polyline !== route) {
-                $(`.route-selector[routeName="${polyline}"]`).css('background-color', colorMappings[polyline]);
+        // Restore all route selectors (including those without polylines) to their colors
+        $('.route-selector').each(function() {
+            const rn = $(this).attr('routeName');
+            if (rn && rn !== 'fav') {
+                $(this).css('background-color', colorMappings[rn]);
             }
-        }
+        });
         $(`.route-selector[routeName="${route}"]`).css('box-shadow', '');
         shownRoute = null;  
         shownBeforeRoute = null;
@@ -292,12 +294,13 @@ function toggleRouteSelectors(route) {
 
     else {
 
-        for (const polyline in polylines) {
-            if (polyline !== route) {
-                $(`.route-selector[routeName="${polyline}"]`).css('background-color', 'gray');
+        // Gray out all route selectors (including those without polylines) except the selected one
+        $('.route-selector').each(function() {
+            const rn = $(this).attr('routeName');
+            if (rn && rn !== route) {
+                $(this).css('background-color', 'gray');
             }
-        }
-        $(`.route-selector[routeName="fav"]`).css('background-color', 'gray');
+        });
 
         $(`.route-selector[routeName="${route}"]`).css('background-color', colorMappings[route]).css('box-shadow', `0 0 10px ${colorMappings[route]}`)
         $(`.route-selector[routeName="${shownRoute}"]`).css('box-shadow', '');
@@ -337,15 +340,16 @@ function hideAllStops() {
 function hideStopsExcept(excludedRoute) {
     console.log('hideStopsExcept', excludedRoute)
     const stopIdsForSelectedRoute = stopLists[excludedRoute]
-    for (const polyline in polylines) {
-        const stopIdsForRoute = stopLists[polyline]
+    // Hide stops for all routes except the selected one, even if a route has no polyline
+    const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
+    campusRoutes.forEach(routeName => {
+        const stopIdsForRoute = stopLists[routeName]
         stopIdsForRoute.forEach(stopId => {
-            if (!(stopIdsForSelectedRoute).includes(stopId)) {
-                // console.log(stopId)
+            if (!stopIdsForSelectedRoute.includes(stopId) ) {
                 busStopMarkers[stopId].remove();
             }
         })
-    }    
+    })
 }
 
 function hidePolylinesExcept(route) {
@@ -409,7 +413,7 @@ function updateTooltips(route) {
     
 }
 
-function toggleRoute(route) {
+async function toggleRoute(route) {
     console.log('toggleRoute called with:', route);
     console.log('shownRoute before toggle:', shownRoute);
 
@@ -421,6 +425,8 @@ function toggleRoute(route) {
         showAllPolylines();  
         showAllBuses();
         showAllStops();
+        // If any route polylines were force-added while selected, remove those that have no in-service buses now
+        prunePolylinesWithoutInService();
         
         if (!popupStopId) {
             map.fitBounds(polylineBounds) 
@@ -453,7 +459,13 @@ function toggleRoute(route) {
 
         // console.log(route)
         try {
-            polylines[route].setStyle({ opacity: 1 }); // show this one if it was prev hidden
+            if (!polylines[route]) {
+                // If user selects a route with no active buses, ensure its polyline is present
+                await addPolylineForRoute(route);
+            }
+            if (polylines[route]) {
+                polylines[route].setStyle({ opacity: 1 }); // show this one if it was prev hidden
+            }
         } catch (e) {
             console.log('Error setting style for route:', route, e);
         }
@@ -463,13 +475,22 @@ function toggleRoute(route) {
             clearPanoutFeedback();
 			
 			const routePolyline = polylines[route];
-			const routeBounds = routePolyline.getBounds();
 			const routeBuses = busesByRoutes[selectedCampus][route];
-			const hasInService = routeBuses.some(id => !busData[id].oos);
-			const boundsToFit = hasInService
-				? routeBounds
-				: routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(routeBounds));
-			map.fitBounds(boundsToFit, { padding: [10, 10] });
+			let boundsToFit = null;
+			if (routePolyline) {
+				const rb = routePolyline.getBounds();
+				const hasInService = routeBuses.some(id => !busData[id].oos);
+				boundsToFit = hasInService
+					? rb
+					: routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(rb));
+			} else if (routeBuses.length) {
+				// No polyline exists yet, fit to buses of this route
+				const first = routeBuses[0];
+				boundsToFit = routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(L.latLng(busData[first].lat, busData[first].long), L.latLng(busData[first].lat, busData[first].long)));
+			}
+			if (boundsToFit) {
+				map.fitBounds(boundsToFit, { padding: [10, 10] });
+			}
 			$('.bus-info-popup, .stop-info-popup').hide();
 		}
         else {

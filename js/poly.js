@@ -3,7 +3,16 @@ let routeBounds = {};
 
 async function setPolylines(activeRoutes) {
     // console.log("activeRoutes: ", activeRoutes)
-    const routesToSet = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
+    // Only set polylines for routes on this campus that currently have at least one in-service bus
+    const routesToSet = Array.from(activeRoutes).filter(route => {
+        if (!routesByCampusBase[selectedCampus].includes(route)) return false;
+        try {
+            const routeBuses = busesByRoutes[selectedCampus][route];
+            return routeBuses.some(busId => !busData[busId].oos);
+        } catch (e) {
+            return false;
+        }
+    });
 
     // console.log("Setting polylines for routesToSet: ", routesToSet)
     
@@ -65,7 +74,9 @@ async function setPolylines(activeRoutes) {
 
         polylines[routeName] = polyline;
 
-        routeBounds[routeName] = polyline.getBounds();
+        // Cache route bounds even if layer later gets pruned
+        const bounds = polyline.getBounds();
+        routeBounds[routeName] = bounds;
 
         fetchPromises.push(coordinates);
     }
@@ -73,9 +84,13 @@ async function setPolylines(activeRoutes) {
     if (fetchPromises.length === 0) return // no routes to populate
 
     Promise.all(fetchPromises).then(() => {
-        const group = new L.featureGroup(Object.values(polylines));
-        polylineBounds = group.getBounds();
-        map.fitBounds(polylineBounds, { padding: [10, 10] });
+        // Compute global bounds from cached routeBounds (works even if some layers were pruned)
+        const allBounds = Object.values(routeBounds);
+        if (allBounds.length) {
+            const group = new L.featureGroup(allBounds.map(b => L.rectangle(b)));
+            polylineBounds = group.getBounds();
+            map.fitBounds(polylineBounds, { padding: [10, 10] });
+        }
     });
 }
 
@@ -119,6 +134,60 @@ function getValidBusesServicingStop(stopId) {
         })
     })
     return validBuses;
+}
+
+// Force-add a polyline for a specific route regardless of bus in-service state
+async function addPolylineForRoute(routeName) {
+    try {
+        if (polylines[routeName]) return;
+        if (!routesByCampusBase[selectedCampus].includes(routeName)) return;
+
+        let coordinates = await getPolylineData(routeName);
+        if (!coordinates || !coordinates.length) return;
+
+        if (Object.keys(coordinates[0])[0] === 'lat') {
+            coordinates = coordinates.map(point => [point.lat, point.lng]);
+        } else {
+            coordinates = coordinates.map(point => [point[1], point[0]]);
+        }
+
+        const polylineOptions = {
+            color: colorMappings[routeName],
+            weight: 4,
+            opacity: 1,
+            smoothFactor: 1,
+        };
+
+        if (settings['toggle-polyline-padding']) {
+            polylineOptions.renderer = L.svg({ padding: 1.0 });
+        }
+
+        const polyline = L.polyline(coordinates, polylineOptions);
+        polyline.addTo(map);
+        polylines[routeName] = polyline;
+        const bounds = polyline.getBounds();
+        routeBounds[routeName] = bounds;
+    } catch (e) {
+        console.log('Failed to add polyline for route', routeName, e);
+    }
+}
+
+// Remove polylines for routes that currently have no in-service buses
+function prunePolylinesWithoutInService() {
+    try {
+        const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
+        campusRoutes.forEach(routeName => {
+            const routeBuses = busesByRoutes[selectedCampus][routeName];
+            const hasInService = routeBuses.some(busId => !busData[busId].oos);
+            if (!hasInService && polylines[routeName]) {
+                try { polylines[routeName].remove(); } catch (e) {}
+                delete polylines[routeName];
+                // Keep routeBounds cached for potential reuse (e.g., quick fit on reselect)
+            }
+        });
+    } catch (e) {
+        console.log('Error pruning polylines without in-service buses', e);
+    }
 }
 
 

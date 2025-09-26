@@ -2847,7 +2847,12 @@ function updateDistanceLinePositionMarker(busId) {
 
 function distanceFromLine(busId) {
     const busLatLng = L.latLng(busData[busId].lat, busData[busId].long);
-    const polyline = polylines[busData[busId].route];
+    const route = busData[busId].route;
+    const polyline = route ? polylines[route] : null;
+    if (!polyline) {
+        // No polyline available for this route; treat as on-line for UI purposes
+        return false;
+    }
     const polyPoints = polyline.getLatLngs();
     
     let minDist = Infinity;

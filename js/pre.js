@@ -394,7 +394,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 updateTimeToStops([busId]);
             }
 
-            pollActiveRoutes.add(busData[busId].route);
+            // Only consider routes that have at least one in-service bus
+            if (!busData[busId].oos) {
+                pollActiveRoutes.add(busData[busId].route);
+            }
             // console.log('-')
             // console.log(pollActiveRoutes)
             const newRoutes = pollActiveRoutes.difference(activeRoutes);
@@ -499,7 +502,7 @@ function makeOoS(busId) {
     if (route && (!busesByRoutes[selectedCampus] || !busesByRoutes[selectedCampus][route])) { // for some reason route can be undefined, investigate. // if no more buses, buses by routes will no longer have a campus key. checking if no longer has this key, but can also update the make function to include the campus anyway.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
-        if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polelines, have to ensure code works flawlessly!
+        if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polylines, have to ensure code works flawlessly!
             console.log(`Removing polyline for route ${route}`);
             console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
             polylines[route].remove();
