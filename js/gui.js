@@ -2071,9 +2071,9 @@ function flyToClosestStop() {
         };
         map.on('dragstart', immediateDragHandler);
 
-        // Clear other location button backgrounds since we're moving the map
+        // Clear other location button backgrounds since we're moving the map (force clear to override in-progress states)
         clearPanoutFeedback();
-        clearCentermeFeedback();
+        clearCentermeFeedback(true);
         
         // Set up fly-to-closest-stop feedback clearing after flyTo animation completes
         const onFlyToComplete = () => {

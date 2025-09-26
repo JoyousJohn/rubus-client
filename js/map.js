@@ -499,30 +499,40 @@ function clearPanoutFeedback() {
     }
 }
 
-function clearCentermeFeedback() {
+function clearCentermeFeedback(force = false) {
     const $btn = $('.centerme');
-    // Only clear centerme feedback if we're not currently in the middle of a centerme operation
-    if ($btn.hasClass('btn-feedback-active') && !$btn.data('location-requesting') && !$btn.data('centerme-in-progress')) {
+    // Clear centerme feedback if we have the class and either we're not in progress OR we're forcing the clear
+    if ($btn.hasClass('btn-feedback-active') && (force || (!$btn.data('location-requesting') && !$btn.data('centerme-in-progress')))) {
         $btn.removeClass('btn-feedback-active');
+        // If forcing, also clear the in-progress flags
+        if (force) {
+            $btn.removeData('location-requesting');
+            $btn.removeData('centerme-in-progress');
+        }
     }
 }
 
-function clearFlyToClosestStopFeedback() {
+function clearFlyToClosestStopFeedback(force = false) {
     const $btn = $('.fly-closest-stop');
     const hasClass = $btn.hasClass('btn-feedback-active');
     const inProgress = $btn.data('fly-to-closest-stop-in-progress');
 
-    // Clear feedback if we have the class and we're not in progress
-    if (hasClass && !inProgress) {
+    // Clear feedback if we have the class and either we're not in progress OR we're forcing the clear
+    if (hasClass && (force || !inProgress)) {
         $btn.removeClass('btn-feedback-active');
+        // If forcing, also clear the in-progress flag
+        if (force) {
+            $btn.removeData('fly-to-closest-stop-in-progress');
+        }
     }
 }
 
 function panout() {
     // Clear any existing panout feedback
     clearPanoutFeedback();
-    clearCentermeFeedback();
-    clearFlyToClosestStopFeedback();
+    // Clear other location button backgrounds (force clear to override in-progress states)
+    clearCentermeFeedback(true);
+    clearFlyToClosestStopFeedback(true);
 
     // Apply feedback state immediately
     $('.panout').addClass('btn-feedback-active');
@@ -647,9 +657,9 @@ function centerme() {
         hideInfoBoxes(true);
         $('.my-location-popup').show();
 
-        // Clear other location button backgrounds since we're flying to location
+        // Clear other location button backgrounds since we're flying to location (force clear to override in-progress states)
         clearPanoutFeedback();
-        clearFlyToClosestStopFeedback();
+        clearFlyToClosestStopFeedback(true);
         
         // Set up centerme feedback clearing after flyTo animation completes
         const onFlyToComplete = () => {

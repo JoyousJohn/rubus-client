@@ -4,7 +4,6 @@ async function getChangelog() {
         $('.changelog-wrapper').hide();
         $('.changelog').removeClass('footer-selected');
         $('.status-wrapper').hide();
-        $('.status').removeClass('footer-selected');
         stopStatusUpdates();
         return;
     }
@@ -13,7 +12,6 @@ async function getChangelog() {
     $('.footer-contact-wrapper').hide();
     $('.contact').removeClass('footer-selected');
     $('.status-wrapper').hide();
-    $('.status').removeClass('footer-selected');
     stopStatusUpdates();
 
     $.ajax({
@@ -82,7 +80,6 @@ async function getChangelog() {
             $('.changelog').addClass('footer-selected');
             // Hide status
             $('.status-wrapper').hide();
-            $('.status').removeClass('footer-selected');
             stopStatusUpdates();
         }
     });

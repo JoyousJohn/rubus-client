@@ -75,10 +75,9 @@ function showStatus() {
         clearInterval(statusUpdateInterval);
     }
 
-    // Set footer tab styling
+    // Remove footer tab selection from other tabs
     $('.contact').removeClass('footer-selected');
     $('.changelog').removeClass('footer-selected');
-    $('.status').addClass('footer-selected');
 
     // Hide other wrappers
     $('.footer-contact-wrapper').hide();
