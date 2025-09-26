@@ -838,7 +838,6 @@ html, body {
 }
 
 .dist {
-    grid-row: span 2;
     display: flex;
     align-items: center;
 }

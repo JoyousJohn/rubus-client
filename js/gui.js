@@ -140,19 +140,29 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
 
                 const moved = Math.abs(initialX - (event.originalEvent.clientX || (event.changedTouches && event.changedTouches[0] ? event.changedTouches[0].clientX : 0))) > 10;
 
-                if (!isLongPress && !moved) {
-                    // Check if we're in the Routes tab of info panels
-                    const routesTabActive = $('.info-panels-show-hide-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
+                // Determine if routes subpanel is active BEFORE long-press gating
+                const routesTabActive = $('.info-panels-show-hide-wrapper').is(':visible') && $('.route-panel-wrapper').is(':visible');
 
-                    if ((panelRoute || routesTabActive) && route !== 'fav') {
-                        selectedRoute(route)
-                    } else if (route !== 'fav') {
+                // Allow immediate taps inside routes subpanel regardless of prior long-press
+                if ((routesTabActive || panelRoute) && !moved) {
+                    if (route !== 'fav') {
+                        selectedRoute(route);
+                    } else if (!panelRoute && route === 'fav') {
+                        toggleRouteSelectors('fav');
+                        toggleFavorites();
+                    }
+                    isLongPress = false;
+                    return;
+                }
+
+                // Otherwise, apply normal gating outside of panels
+                if (!isLongPress && !moved) {
+                    if (route !== 'fav') {
                         toggleRoute(route);
                     } else if (!panelRoute && route === 'fav') {
                         toggleRouteSelectors('fav');
                         toggleFavorites();
                     }
-
                 }
                 isLongPress = false;
             })
@@ -2232,7 +2242,13 @@ function populateMeClosestStops() {
             clearPanoutFeedback();
             flyToStop(stopId);
         })
-        const stopDistDiv = $(`<div class="dist bold pointer">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>`).click(() => { 
+        const stopDistDiv = $(`<div class="center" style="grid-row: span 2; color: var(--theme-color-lighter)">
+            <div class="dist bold pointer">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>
+            <div class="text-1p3rem flex align-center justify-center">
+                <i class="fa-solid fa-person-walking text-1rem"></i>
+                <div>${Math.round((distance * 1000 * 3.28084) / 220)}m</div>
+            </div>
+        </div>`).click(() => { 
             clearPanoutFeedback();
             flyToStop(stopId);
         }) // add meter option later

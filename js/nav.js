@@ -1619,8 +1619,8 @@ async function getNearestAddress(lat, lng) {
         }
 
         // Only return if we're reasonably close (within ~50 meters)
-        // Exclude footways (the main culprit for "Unnamed footway road")
-        const excludedRoadTypes = ['footway', 'path', 'cycleway', 'track', 'bridleway', 'steps'];
+        // Exclude footways and service roads (the main culprits for "Unnamed X road")
+        const excludedRoadTypes = ['footway', 'path', 'cycleway', 'track', 'bridleway', 'steps', 'service'];
         // Use the same threshold as other parts of the app (~50 meters)
         const roadDistanceThreshold = 0.00045; // ~50 meters
         if (roadName && minDistance < roadDistanceThreshold && !excludedRoadTypes.includes(properties.highway)) {
@@ -2416,8 +2416,7 @@ function displayRoute(routeData) {
                     'btn': 'nav_waypoint_stop_clicked',
                     'stop': waypointName,
                     'stop_id': stopId,
-                    'is_boarding': isBoarding,
-                    'is_alighting': isAlighting,
+                    'action': isBoarding ? 'boarding' : 'departing',
                     'context': 'navigation'
                 });
             }

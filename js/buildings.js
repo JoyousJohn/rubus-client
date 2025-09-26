@@ -395,7 +395,8 @@ function loadBuildings() {
                                 $('.fly-closest-stop-wrapper').fadeIn();
                                 $('.my-location-popup').show();
 
-                                sa_event('building_spoof_location', {
+                                sa_event('btn_press', {
+                                    'btn': 'building_spoof_location',
                                     'building': feature.properties.name,
                                     'lat': lat,
                                     'lng': lng
