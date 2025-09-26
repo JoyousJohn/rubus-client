@@ -158,20 +158,18 @@ $(document).ready(function() {
             }
         }
         
-        // Add active stops if available
-        if (typeof activeStops !== 'undefined' && activeStops !== null && typeof stopsData !== 'undefined') {
-            for (const stopId of activeStops) {
-                const stop = stopsData[stopId];
-                if (stop) {
-                    allOptions.push({
-                        id: stopId,
-                        name: stop.name,
-                        lat: stop.latitude,
-                        lng: stop.longitude,
-                        category: 'stop',
-                        type: 'stop'
-                    });
-                }
+        // Add active stops (assume presence; fail fast if missing)
+        for (const stopId of activeStops) {
+            const stop = stopsData[stopId];
+            if (stop) {
+                allOptions.push({
+                    id: stopId,
+                    name: stop.name,
+                    lat: stop.latitude,
+                    lng: stop.longitude,
+                    category: 'stop',
+                    type: 'stop'
+                });
             }
         }
         
@@ -391,7 +389,7 @@ $(document).ready(function() {
                 sa_event('btn_press', {
                     'btn': 'search_result_selected',
                     'result': item.name,
-                    'category': item.category || 'unknown'
+                    'category': item.category
                 });
             });
             $results.append($elm);
@@ -521,27 +519,36 @@ $(document).ready(function() {
         const $searchRecentsWrapper = $('.search-recents-wrapper');
         $searchRecents.empty();
         
-        const recentSearches = getRecentSearches().slice(0, 3); // Show only 3 most recent
-        const recentNavigations = getRecentNavigations().slice(0, 3); // Show only 3 most recent
+        const recentSearches = getRecentSearches();
+        const recentNavigations = getRecentNavigations();
         
-        // Combine and limit total to 3 items
+        // Combine all items and sort by most recent
         const allRecent = [...recentSearches, ...recentNavigations]
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-            .slice(0, 3);
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        // Dedupe by logical identity, keeping the most recent instance
+        const seenKeys = new Set();
+        const uniqueRecents = [];
+        for (const item of allRecent) {
+            const key = item.type === 'navigation'
+                ? `nav:${item.from}\u2192${item.to}`
+                : `srch:${item.category}:${item.name}`;
+            if (!seenKeys.has(key)) {
+                seenKeys.add(key);
+                uniqueRecents.push(item);
+            }
+        }
         
-        if (allRecent.length === 0) {
+        if (uniqueRecents.length === 0) {
             $searchRecentsWrapper.hide();
             return;
         }
         
-        // Update Recent heading count using ALL saved recents
-        (function updateRecentHeadingCount() {
-            const totalSavedRecents = (getRecentSearches().length) + (getRecentNavigations().length);
-            const $heading = $('.search-recents-wrapper .text-1p4rem.bold-500').first();
-            if ($heading.length) {
-                $heading.html(`Recent <span style="color: var(--theme-hidden-route-col)">(${totalSavedRecents})</span>`);
-            }
-        })();
+        // Update Recent heading count directly from the deduped list
+        const $heading = $('.search-recents-wrapper .text-1p4rem.bold-500').first();
+        if ($heading.length) {
+            $heading.html(`Recent <span style="color: var(--theme-hidden-route-col)">(${uniqueRecents.length})</span>`);
+        }
         
         $searchRecentsWrapper.show();
         
@@ -603,7 +610,7 @@ $(document).ready(function() {
             }
         }
 
-        allRecent.forEach(item => {
+        function appendRecentItem(item) {
             let icon = '';
             let displayText = '';
             let itemData = {};
@@ -715,7 +722,37 @@ $(document).ready(function() {
 
             // After mount, if text overflows, convert to marquee
             tryApplyMarquee($recentItem.find('.recent-text'));
-        });
+        }
+
+        // Reset container styles before measuring/appending
+        $searchRecents.css({ height: '', maxHeight: '', overflowY: '' });
+
+        const total = uniqueRecents.length;
+        const firstCount = Math.min(3, total);
+
+        // Append the first three items
+        for (let i = 0; i < firstCount; i++) {
+            appendRecentItem(uniqueRecents[i]);
+        }
+
+        if (total <= 3) {
+            // No need to set fixed height or scrolling
+            return;
+        }
+
+        // Measure using bounding box rect height for the first three rows
+        (function measureAndLockThreeRowHeight() {
+            const el = $searchRecents.get(0);
+            const rect = el ? el.getBoundingClientRect() : null;
+            const bboxHeight = rect ? rect.height : 0;
+            $searchRecents.css({ height: Math.ceil(bboxHeight) + 'px', overflowY: 'auto' });
+            // Debug log removed
+        })();
+
+        // Append the remaining items
+        for (let i = 3; i < total; i++) {
+            appendRecentItem(uniqueRecents[i]);
+        }
     }
 
     // Populate search recommendations with 3 random popular buildings and active stops
@@ -736,49 +773,39 @@ $(document).ready(function() {
         
         let selectedItems = [];
         
-        // Check if we have active stops
-        if (typeof activeStops !== 'undefined' && activeStops !== null && typeof stopsData !== 'undefined') {
-            // Get active stops data
-            const activeStopItems = [];
-            for (const stopId of activeStops) {
-                const stop = stopsData[stopId];
-                if (stop) {
-                    activeStopItems.push({
-                        id: stopId,
-                        name: stop.name,
-                        category: 'stop',
-                        lat: stop.latitude,
-                        lng: stop.longitude
-                    });
-                }
+        // Get active stops data (assume presence; fail fast if missing)
+        const activeStopItems = [];
+        for (const stopId of activeStops) {
+            const stop = stopsData[stopId];
+            if (stop) {
+                activeStopItems.push({
+                    id: stopId,
+                    name: stop.name,
+                    category: 'stop',
+                    lat: stop.latitude,
+                    lng: stop.longitude
+                });
             }
+        }
+        
+        if (activeStopItems.length > 0) {
+            // Select 1-2 random stops
+            const numStopsToShow = Math.min(Math.floor(Math.random() * 2) + 1, activeStopItems.length, 2);
+            const shuffledStops = activeStopItems.sort(() => 0.5 - Math.random());
+            const selectedStops = shuffledStops.slice(0, numStopsToShow);
             
-            if (activeStopItems.length > 0) {
-                // Select 1-2 random stops
-                const numStopsToShow = Math.min(Math.floor(Math.random() * 2) + 1, activeStopItems.length, 2);
-                const shuffledStops = activeStopItems.sort(() => 0.5 - Math.random());
-                const selectedStops = shuffledStops.slice(0, numStopsToShow);
-                
-                // Fill remaining slots with popular buildings
-                const numBuildingsToShow = 3 - numStopsToShow;
-                const shuffledBuildings = uniqueBuildings.sort(() => 0.5 - Math.random());
-                const selectedBuildings = shuffledBuildings.slice(0, numBuildingsToShow).map(building => ({
-                    ...building,
-                    category: 'building'
-                }));
-                
-                // Combine and shuffle the final selection
-                selectedItems = [...selectedStops, ...selectedBuildings].sort(() => 0.5 - Math.random());
-            } else {
-                // No active stops available, use 3 random buildings
-                const shuffledBuildings = uniqueBuildings.sort(() => 0.5 - Math.random());
-                selectedItems = shuffledBuildings.slice(0, 3).map(building => ({
-                    ...building,
-                    category: 'building'
-                }));
-            }
+            // Fill remaining slots with popular buildings
+            const numBuildingsToShow = 3 - numStopsToShow;
+            const shuffledBuildings = uniqueBuildings.sort(() => 0.5 - Math.random());
+            const selectedBuildings = shuffledBuildings.slice(0, numBuildingsToShow).map(building => ({
+                ...building,
+                category: 'building'
+            }));
+            
+            // Combine and shuffle the final selection
+            selectedItems = [...selectedStops, ...selectedBuildings].sort(() => 0.5 - Math.random());
         } else {
-            // No active stops, use 3 random buildings
+            // No active stops available, use 3 random buildings
             const shuffledBuildings = uniqueBuildings.sort(() => 0.5 - Math.random());
             selectedItems = shuffledBuildings.slice(0, 3).map(building => ({
                 ...building,
