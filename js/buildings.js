@@ -180,12 +180,14 @@ async function populateBuildingClosestStopsList(feature) {
         } else {
             distStr = `${stop.distance.toFixed(2)} mi`;
         }
+
         const extraClass = idx === 0 ? '' : 'building-stop-extra';
         const $item = $(`
             <div class="flex flex-col mb-0p5rem ${extraClass}" style="${idx > 0 ? 'display:none;' : ''}">
-                <div class="flex align-center gap-x-0p5rem pointer">
-                    <div class="building-stop-name" style="font-size:1.5rem;">${stop.name}</div>
-                    <div class="building-stop-dist" style="color:gray; font-size:1.2rem;">${distStr}</div>
+                <div class="flex align-center pointer">
+                    <div class="building-stop-name mr-0p5rem text-1p5rem">${stop.name}</div>
+                    <div class="building-stop-dist text-1p2rem" style="color: gray;">${distStr}</div>
+                    <div class="text-1p2rem" style="color: gray;">&nbsp;• ${campusShortNamesMappings[stopsData[stop.stopId].campus]}</div>
                 </div>
                 <div class="building-stop-bus-routes flex gap-x-0p5rem"></div>
             </div>
