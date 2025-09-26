@@ -1728,6 +1728,14 @@ $(document).ready(function() {
         }
     });
 
+    // Handle disable bus log button click
+    $('.disable-bus-log-btn').click(function() {
+        $('#toggle-show-bus-log').prop('checked', false);
+        $('.bus-log-wrapper').hide();
+        settings['toggle-show-bus-log'] = false;
+        localStorage.setItem('settings', JSON.stringify(settings));
+    });
+
 })
 
 function toggleDevOptions() {
@@ -2171,7 +2179,6 @@ async function getBuildNumber() {
         }
     });
 }
-
 
 
 let selectedTheme = 'auto';
