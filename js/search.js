@@ -239,8 +239,15 @@ $(document).ready(function() {
         'livingston': ['livi']
     };
 
-    // Load building_index.json and initialize Fuse.js
-    fetch('lib/building_index_with_campus.json')
+    // Load campus-specific building index and initialize Fuse.js
+    const campusKey = (window.settings && settings['campus']);
+    const campusToFile = {
+        'nb': 'lib/building_index_nb.json',
+        'newark': 'lib/building_index_newark.json',
+        'camden': 'lib/building_index_camden.json'
+    };
+    const buildingsJsonPath = campusToFile[campusKey];
+    fetch(buildingsJsonPath)
         .then(response => response.json())
         .then(data => {
             buildingIndex = data;
@@ -805,7 +812,7 @@ $(document).ready(function() {
             // Combine and shuffle the final selection
             selectedItems = [...selectedStops, ...selectedBuildings].sort(() => 0.5 - Math.random());
         } else {
-            // No active stops available, use 3 random buildings
+            // No active stops available — show 3 random buildings as recommendations (not saved to recents)
             const shuffledBuildings = uniqueBuildings.sort(() => 0.5 - Math.random());
             selectedItems = shuffledBuildings.slice(0, 3).map(building => ({
                 ...building,

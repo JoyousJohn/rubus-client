@@ -1,0 +1,856 @@
+{
+  "central heating plant": {
+    "id": "7226",
+    "name": "Central Heating Plant",
+    "category": "building",
+    "lat": 40.7410405797991,
+    "lng": -74.176732
+  },
+  "rutgers business school newark": {
+    "id": "7491",
+    "name": "Rutgers Business School Newark",
+    "category": "building",
+    "lat": 40.74506031140886,
+    "lng": -74.170462
+  },
+  "ackerson hall": {
+    "id": "7214",
+    "name": "Ackerson Hall",
+    "category": "building",
+    "lat": 40.74141391269527,
+    "lng": -74.173459
+  },
+  "boyden hall": {
+    "id": "7217",
+    "name": "Boyden Hall",
+    "category": "building",
+    "lat": 40.741040046519174,
+    "lng": -74.174578
+  },
+  "conklin hall": {
+    "id": "7218",
+    "name": "Conklin Hall",
+    "category": "building",
+    "lat": 40.74169669668114,
+    "lng": -74.174197
+  },
+  "john cotton dana library": {
+    "id": "7219",
+    "name": "John Cotton Dana Library",
+    "category": "building",
+    "lat": 40.74179925434112,
+    "lng": -74.1749623867572
+  },
+  "paul robeson campus center prcc": {
+    "id": "7220",
+    "name": "Paul Robeson Campus Center PRCC",
+    "category": "building",
+    "lat": 40.74206447889521,
+    "lng": -74.176045
+  },
+  "chiller plant": {
+    "id": "7221",
+    "name": "Chiller Plant",
+    "category": "building",
+    "lat": 40.74140073,
+    "lng": -74.17451785
+  },
+  "smith hall": {
+    "id": "7223",
+    "name": "Smith Hall",
+    "category": "building",
+    "lat": 40.740745452620374,
+    "lng": -74.17581
+  },
+  "hill hall": {
+    "id": "7225",
+    "name": "Hill Hall",
+    "category": "building",
+    "lat": 40.741326115218484,
+    "lng": -74.176382
+  },
+  "engelhard hall": {
+    "id": "7227",
+    "name": "Engelhard Hall",
+    "category": "building",
+    "lat": 40.740865195379826,
+    "lng": -74.173795
+  },
+  "facilities operations & services - newark": {
+    "id": "7228",
+    "name": "Facilities Operations & Services - Newark",
+    "category": "building",
+    "lat": 40.744652394386236,
+    "lng": -74.172695
+  },
+  "olson hall": {
+    "id": "7229",
+    "name": "Olson Hall",
+    "category": "building",
+    "lat": 40.74033298640968,
+    "lng": -74.175403
+  },
+  "110 warren": {
+    "id": "7230",
+    "name": "110 Warren",
+    "category": "building",
+    "lat": 40.73998359608863,
+    "lng": -74.177517
+  },
+  "university ave parking deck 1 / public safety": {
+    "id": "7231",
+    "name": "University Ave Parking Deck 1 / Public Safety",
+    "category": "building",
+    "lat": 40.74021078825799,
+    "lng": -74.174137
+  },
+  "golden dome athletic center": {
+    "id": "7233",
+    "name": "Golden Dome Athletic Center",
+    "category": "building",
+    "lat": 40.73931375004826,
+    "lng": -74.174252
+  },
+  "softball field press box": {
+    "id": "7234",
+    "name": "Softball Field Press Box",
+    "category": "building",
+    "lat": 40.73931933375455,
+    "lng": -74.176653
+  },
+  "athletic storage shed": {
+    "id": "7235",
+    "name": "Athletic Storage Shed",
+    "category": "building",
+    "lat": 40.739315234007606,
+    "lng": -74.176681
+  },
+  "graduate student housing - 77 bleeker": {
+    "id": "7236",
+    "name": "Graduate Student Housing - 77 Bleeker",
+    "category": "building",
+    "lat": 40.7423056479436,
+    "lng": -74.174251
+  },
+  "talbott apartments": {
+    "id": "7237",
+    "name": "Talbott Apartments",
+    "category": "building",
+    "lat": 40.74297241858601,
+    "lng": -74.175432
+  },
+  "washington st parking deck 2": {
+    "id": "7238",
+    "name": "Washington St Parking Deck 2",
+    "category": "building",
+    "lat": 40.73889794,
+    "lng": -74.17272042
+  },
+  "rutgers cooperative extension of essex county efnep": {
+    "id": "7238.04",
+    "name": "Rutgers Cooperative Extension of Essex County EFNEP",
+    "category": "building",
+    "lat": 40.73910021,
+    "lng": -74.17313149
+  },
+  "25 james street garage": {
+    "id": "7239",
+    "name": "25 James Street Garage",
+    "category": "building",
+    "lat": 40.74433284,
+    "lng": -74.17167148
+  },
+  "mfa in creative writing": {
+    "id": "7240",
+    "name": "MFA in Creative Writing",
+    "category": "building",
+    "lat": 40.74184437400354,
+    "lng": -74.17282712950676
+  },
+  "45 bleeker": {
+    "id": "7241",
+    "name": "45 Bleeker",
+    "category": "building",
+    "lat": 40.74188305390523,
+    "lng": -74.17290135564545
+  },
+  "cornwall center for metropolitan studies": {
+    "id": "7242",
+    "name": "Cornwall Center For Metropolitan Studies",
+    "category": "building",
+    "lat": 40.741926139681915,
+    "lng": -74.172977
+  },
+  "clement price institute": {
+    "id": "7243",
+    "name": "Clement Price Institute",
+    "category": "building",
+    "lat": 40.741908099038994,
+    "lng": -74.173084
+  },
+  "life sciences center lsc1": {
+    "id": "7245",
+    "name": "Life Sciences Center LSC1",
+    "category": "building",
+    "lat": 40.740192112538864,
+    "lng": -74.174994
+  },
+  "university square residence hall": {
+    "id": "7247",
+    "name": "University Square Residence Hall",
+    "category": "building",
+    "lat": 40.74249187442503,
+    "lng": -74.173783
+  },
+  "small business development center sbdc": {
+    "id": "7248",
+    "name": "Small Business Development Center SBDC",
+    "category": "building",
+    "lat": 40.74421904646374,
+    "lng": -74.171742
+  },
+  "washington st parking deck 3": {
+    "id": "7249",
+    "name": "Washington St Parking Deck 3",
+    "category": "building",
+    "lat": 40.73844282113065,
+    "lng": -74.173316
+  },
+  "life sciences 2 - ls2": {
+    "id": "7250",
+    "name": "Life Sciences 2 - LS2",
+    "category": "building",
+    "lat": 40.74051962326691,
+    "lng": -74.174771
+  },
+  "doctors office center doc": {
+    "id": "7251",
+    "name": "Doctors Office Center DOC",
+    "category": "building",
+    "lat": 40.74158369026627,
+    "lng": -74.191243
+  },
+  "stanley s. bergen jr. building ssb": {
+    "id": "7252",
+    "name": "Stanley S. Bergen Jr. Building SSB",
+    "category": "building",
+    "lat": 40.74340103907744,
+    "lng": -74.191888
+  },
+  "school of dental medicine": {
+    "id": "7253",
+    "name": "School of Dental Medicine",
+    "category": "building",
+    "lat": 40.74141588770767,
+    "lng": -74.189523
+  },
+  "george f. smith library": {
+    "id": "7254",
+    "name": "George F. Smith Library",
+    "category": "building",
+    "lat": 40.740499646399726,
+    "lng": -74.188031
+  },
+  "international center for public health icph": {
+    "id": "7255",
+    "name": "International Center for Public Health ICPH",
+    "category": "building",
+    "lat": 40.74334384371152,
+    "lng": -74.182883
+  },
+  "medical science building msb": {
+    "id": "7257",
+    "name": "Medical Science Building MSB",
+    "category": "building",
+    "lat": 40.740188430784315,
+    "lng": -74.18945
+  },
+  "behavioral health science building bhsb": {
+    "id": "7258",
+    "name": "Behavioral Health Science Building BHSB",
+    "category": "building",
+    "lat": 40.739259516512845,
+    "lng": -74.189874
+  },
+  "njms cancer center": {
+    "id": "7259",
+    "name": "NJMS Cancer Center",
+    "category": "building",
+    "lat": 40.739303810669654,
+    "lng": -74.19121912254319
+  },
+  "180 west market": {
+    "id": "7260",
+    "name": "180 West Market",
+    "category": "building",
+    "lat": 40.7408726459277,
+    "lng": -74.186455
+  },
+  "power plant/cogeneration": {
+    "id": "7261",
+    "name": "Power Plant/Cogeneration",
+    "category": "building",
+    "lat": 40.739320746877766,
+    "lng": -74.187273
+  },
+  "p1-norfolk parking deck": {
+    "id": "7262",
+    "name": "P1-Norfolk Parking Deck",
+    "category": "building",
+    "lat": 40.740372629164575,
+    "lng": -74.186698
+  },
+  "p2-bergen parking deck": {
+    "id": "7263",
+    "name": "P2-Bergen Parking Deck",
+    "category": "building",
+    "lat": 40.739550753910486,
+    "lng": -74.192373
+  },
+  "p3-doctors office center parking deck": {
+    "id": "7264",
+    "name": "P3-Doctors Office Center Parking Deck",
+    "category": "building",
+    "lat": 40.741957326386576,
+    "lng": -74.190477
+  },
+  "ambulatory care center acc": {
+    "id": "7265",
+    "name": "Ambulatory Care Center ACC",
+    "category": "building",
+    "lat": 40.74060091946122,
+    "lng": -74.191889
+  },
+  "ubhc gym": {
+    "id": "7266",
+    "name": "UBHC Gym",
+    "category": "building",
+    "lat": 40.73972004,
+    "lng": -74.19102898
+  },
+  "administration complex admc 1": {
+    "id": "7267",
+    "name": "Administration Complex ADMC 1",
+    "category": "building",
+    "lat": 40.74471001,
+    "lng": -74.18951393
+  },
+  "administration complex admc 2": {
+    "id": "7268",
+    "name": "Administration Complex ADMC 2",
+    "category": "building",
+    "lat": 40.744321,
+    "lng": -74.1887475
+  },
+  "administration complex admc 3": {
+    "id": "7269",
+    "name": "Administration Complex ADMC 3",
+    "category": "building",
+    "lat": 40.74420266,
+    "lng": -74.18892051
+  },
+  "administration complex admc 4": {
+    "id": "7270",
+    "name": "Administration Complex ADMC 4",
+    "category": "building",
+    "lat": 40.74394218,
+    "lng": -74.18824261
+  },
+  "administration complex admc 5": {
+    "id": "7271",
+    "name": "Administration Complex ADMC 5",
+    "category": "building",
+    "lat": 40.74357322,
+    "lng": -74.18845951
+  },
+  "administration complex admc 6 (under construction)": {
+    "id": "7272",
+    "name": "Administration Complex ADMC 6 (under construction)",
+    "category": "building",
+    "lat": 40.74363278,
+    "lng": -74.18918942
+  },
+  "administration complex admc 7 (under construction)": {
+    "id": "7273",
+    "name": "Administration Complex ADMC 7 (under construction)",
+    "category": "building",
+    "lat": 40.74345352,
+    "lng": -74.18931761
+  },
+  "administration complex admc 8 (under construction)": {
+    "id": "7274",
+    "name": "Administration Complex ADMC 8 (under construction)",
+    "category": "building",
+    "lat": 40.74322008,
+    "lng": -74.18944183
+  },
+  "administration complex admc 9 (under construction)": {
+    "id": "7275",
+    "name": "Administration Complex ADMC 9 (under construction)",
+    "category": "building",
+    "lat": 40.74303234,
+    "lng": -74.1895425
+  },
+  "administration complex admc 10 (under construction)": {
+    "id": "7276",
+    "name": "Administration Complex ADMC 10 (under construction)",
+    "category": "building",
+    "lat": 40.74277454,
+    "lng": -74.18968016
+  },
+  "administration complex admc 11 (under construction)": {
+    "id": "7277",
+    "name": "Administration Complex ADMC 11 (under construction)",
+    "category": "building",
+    "lat": 40.74258957,
+    "lng": -74.18978603
+  },
+  "administration complex admc 12 (under construction)": {
+    "id": "7278",
+    "name": "Administration Complex ADMC 12 (under construction)",
+    "category": "building",
+    "lat": 40.7428412,
+    "lng": -74.19057962
+  },
+  "administration complex admc 13 (under construction)": {
+    "id": "7279",
+    "name": "Administration Complex ADMC 13 (under construction)",
+    "category": "building",
+    "lat": 40.74303051,
+    "lng": -74.19048542
+  },
+  "administration complex admc 14 (under construction)": {
+    "id": "7280",
+    "name": "Administration Complex ADMC 14 (under construction)",
+    "category": "building",
+    "lat": 40.74327355,
+    "lng": -74.19036356
+  },
+  "administration complex admc 15 (under construction)": {
+    "id": "7281",
+    "name": "Administration Complex ADMC 15 (under construction)",
+    "category": "building",
+    "lat": 40.74352979,
+    "lng": -74.19022903
+  },
+  "administration complex admc 16 (under construction)": {
+    "id": "7282",
+    "name": "Administration Complex ADMC 16 (under construction)",
+    "category": "building",
+    "lat": 40.74378604,
+    "lng": -74.19009405
+  },
+  "university hospital uh": {
+    "id": "7284",
+    "name": "University Hospital UH",
+    "category": "building",
+    "lat": 40.74031431670593,
+    "lng": -74.19085735416019
+  },
+  "administration complex admc 17": {
+    "id": "7286",
+    "name": "Administration Complex ADMC 17",
+    "category": "building",
+    "lat": 40.74326151,
+    "lng": -74.1884103
+  },
+  "alumni center": {
+    "id": "7289",
+    "name": "Alumni Center",
+    "category": "building",
+    "lat": 40.74225567534001,
+    "lng": -74.17139
+  },
+  "rbhs lot 1 security booth": {
+    "id": "7291",
+    "name": "RBHS Lot 1 Security Booth",
+    "category": "building",
+    "lat": 40.73903631,
+    "lng": -74.18888212
+  },
+  "rbhs msb loading dock security booth": {
+    "id": "7292",
+    "name": "RBHS MSB Loading Dock Security Booth",
+    "category": "building",
+    "lat": 40.73906989,
+    "lng": -74.19069545
+  },
+  "university hospital uh valet parking booth": {
+    "id": "7296",
+    "name": "University Hospital UH Valet Parking Booth",
+    "category": "building",
+    "lat": 40.74080173,
+    "lng": -74.19064457
+  },
+  "university hospital uh parking booth": {
+    "id": "7297",
+    "name": "University Hospital UH Parking Booth",
+    "category": "building",
+    "lat": 40.74095451,
+    "lng": -74.19068779
+  },
+  "kindercare learning center cclc at newark": {
+    "id": "7321",
+    "name": "KinderCare Learning Center CCLC at Newark",
+    "category": "building",
+    "lat": 40.74393604581585,
+    "lng": -74.192397
+  },
+  "honors living learning community hllc": {
+    "id": "7327",
+    "name": "Honors Living Learning Community HLLC",
+    "category": "building",
+    "lat": 40.74023900494319,
+    "lng": -74.172076
+  },
+  "graduate student housing - 29 james": {
+    "id": "7487",
+    "name": "Graduate Student Housing - 29 James",
+    "category": "building",
+    "lat": 40.74432565286975,
+    "lng": -74.171943
+  },
+  "center for urban & public service cps": {
+    "id": "7488",
+    "name": "Center for Urban & Public Service CPS",
+    "category": "building",
+    "lat": 40.74106119096188,
+    "lng": -74.172831
+  },
+  "center for law & justice clj": {
+    "id": "7492",
+    "name": "Center for Law & Justice CLJ",
+    "category": "building",
+    "lat": 40.7405198694368,
+    "lng": -74.173173
+  },
+  "blumenthal hall": {
+    "id": "7493",
+    "name": "Blumenthal Hall",
+    "category": "building",
+    "lat": 40.73908895846682,
+    "lng": -74.175788
+  },
+  "athletic field press box": {
+    "id": "7494",
+    "name": "Athletic Field Press Box",
+    "category": "building",
+    "lat": 40.739981387086786,
+    "lng": -74.175613
+  },
+  "woodward residence hall & stonsby dining facility": {
+    "id": "7496",
+    "name": "Woodward Residence Hall & Stonsby Dining Facility",
+    "category": "building",
+    "lat": 40.74272045529725,
+    "lng": -74.174497
+  },
+  "ruth bader ginsburg hall": {
+    "id": "7498",
+    "name": "Ruth Bader Ginsburg Hall",
+    "category": "building",
+    "lat": 40.744322288270865,
+    "lng": -74.171089
+  },
+  "aidekman research center": {
+    "id": "7499",
+    "name": "Aidekman Research Center",
+    "category": "building",
+    "lat": 40.740781301788566,
+    "lng": -74.175123
+  },
+  "athletic field house / restrooms": {
+    "id": "7821",
+    "name": "Athletic Field House / Restrooms",
+    "category": "building",
+    "lat": 40.73920308101843,
+    "lng": -74.176283
+  },
+  "165 halsey": {
+    "id": "8725",
+    "name": "165 Halsey",
+    "category": "building",
+    "lat": 40.73671384,
+    "lng": -74.17392502
+  },
+  "hahne and company hah - express newark": {
+    "id": "8734",
+    "name": "Hahne and Company HAH - Express Newark",
+    "category": "building",
+    "lat": 40.74049870240097,
+    "lng": -74.170337
+  },
+  "rutgers community health center": {
+    "id": "8735",
+    "name": "Rutgers Community Health Center",
+    "category": "building",
+    "lat": 40.73866369195043,
+    "lng": -74.1959315726
+  },
+  "school of public health - riverfront plaza": {
+    "id": "8744",
+    "name": "School of Public Health - Riverfront Plaza",
+    "category": "building",
+    "lat": 40.73583665110497,
+    "lng": -74.1643804055
+  },
+  "rutgers university newark - admissions": {
+    "id": "8756",
+    "name": "Rutgers University Newark - Admissions",
+    "category": "building",
+    "lat": 40.73978377,
+    "lng": -74.17359425
+  },
+  "ubhc adult apartments - newark": {
+    "id": "8876",
+    "name": "UBHC Adult Apartments - Newark",
+    "category": "building",
+    "lat": 40.73265137744705,
+    "lng": -74.1899071132
+  },
+  "golden dome lot 507": {
+    "id": "30001",
+    "name": "Golden Dome Lot 507",
+    "category": "parking",
+    "lat": 40.73882778437345,
+    "lng": -74.17396572409649
+  },
+  "blumenthal lot": {
+    "id": "30002",
+    "name": "Blumenthal Lot",
+    "category": "parking",
+    "lat": 40.739200856088374,
+    "lng": -74.17555802755093
+  },
+  "lot 508": {
+    "id": "30003",
+    "name": "Lot 508",
+    "category": "parking",
+    "lat": 40.73989661417706,
+    "lng": -74.17697373051733
+  },
+  "lot 502": {
+    "id": "30006",
+    "name": "Lot 502",
+    "category": "parking",
+    "lat": 40.74133672430427,
+    "lng": -74.17268410324436
+  },
+  "lot 504b smith": {
+    "id": "30007",
+    "name": "Lot 504B Smith",
+    "category": "parking",
+    "lat": 40.740790881759445,
+    "lng": -74.17651186460432
+  },
+  "lot 504a hill": {
+    "id": "30008",
+    "name": "Lot 504A Hill",
+    "category": "parking",
+    "lat": 40.74086784697375,
+    "lng": -74.17699811119616
+  },
+  "lot 506 essex": {
+    "id": "30009",
+    "name": "Lot 506 Essex",
+    "category": "parking",
+    "lat": 40.745005213783514,
+    "lng": -74.17181827567124
+  },
+  "lot 505 physical plant": {
+    "id": "30010",
+    "name": "Lot 505 Physical Plant",
+    "category": "parking",
+    "lat": 40.74488889339454,
+    "lng": -74.1728189442601
+  },
+  "lot 509b eagle west": {
+    "id": "30011",
+    "name": "Lot 509B Eagle West",
+    "category": "parking",
+    "lat": 40.74638862011973,
+    "lng": -74.17296573712234
+  },
+  "plaza parking lot": {
+    "id": "30012",
+    "name": "Plaza Parking Lot",
+    "category": "parking",
+    "lat": 40.74219809025851,
+    "lng": -74.17527088639108
+  },
+  "deck 2": {
+    "id": "30013",
+    "name": "Deck 2",
+    "category": "parking",
+    "lat": 40.73889164025388,
+    "lng": -74.17274776472965
+  },
+  "deck 3": {
+    "id": "30014",
+    "name": "Deck 3",
+    "category": "parking",
+    "lat": 40.73844015210957,
+    "lng": -74.17330919357812
+  },
+  "deck 1": {
+    "id": "30015",
+    "name": "Deck 1",
+    "category": "parking",
+    "lat": 40.74021078825799,
+    "lng": -74.17413741108064
+  },
+  "lot 509a eagle east": {
+    "id": "30017",
+    "name": "Lot 509A Eagle East",
+    "category": "parking",
+    "lat": 40.74617905545,
+    "lng": -74.17215928871134
+  },
+  "lot 12 nwk": {
+    "id": "30018",
+    "name": "Lot 12 NWK",
+    "category": "parking",
+    "lat": 40.742773483959546,
+    "lng": -74.19250849257362
+  },
+  "lot 1a": {
+    "id": "30019",
+    "name": "Lot 1A",
+    "category": "parking",
+    "lat": 40.73856041551484,
+    "lng": -74.18788162856931
+  },
+  "lot 4a": {
+    "id": "30020",
+    "name": "Lot 4A",
+    "category": "parking",
+    "lat": 40.74102487836068,
+    "lng": -74.18766528857256
+  },
+  "icph1 lot": {
+    "id": "30021",
+    "name": "ICPH1 Lot",
+    "category": "parking",
+    "lat": 40.74324194764269,
+    "lng": -74.1839338980696
+  },
+  "lot 9 nwk(under construction)": {
+    "id": "30022",
+    "name": "Lot 9 NWK(under construction)",
+    "category": "parking",
+    "lat": 40.74379981383621,
+    "lng": -74.18962732793587
+  },
+  "lot 5b": {
+    "id": "30023",
+    "name": "Lot 5B",
+    "category": "parking",
+    "lat": 40.743958105948835,
+    "lng": -74.19309163380409
+  },
+  "lot 7 nwk": {
+    "id": "30024",
+    "name": "Lot 7 NWK",
+    "category": "parking",
+    "lat": 40.743885803664156,
+    "lng": -74.19151551370597
+  },
+  "lot 11 nwk": {
+    "id": "30025",
+    "name": "Lot 11 NWK",
+    "category": "parking",
+    "lat": 40.74362804159626,
+    "lng": -74.18798626817446
+  },
+  "lot 6 nwk": {
+    "id": "30026",
+    "name": "Lot 6 NWK",
+    "category": "parking",
+    "lat": 40.742869877857224,
+    "lng": -74.19139001141146
+  },
+  "lot 1 nwk": {
+    "id": "30028",
+    "name": "Lot 1 NWK",
+    "category": "parking",
+    "lat": 40.73906563001958,
+    "lng": -74.1891516489968
+  },
+  "lot 2 nwk": {
+    "id": "30029",
+    "name": "Lot 2 NWK",
+    "category": "parking",
+    "lat": 40.740258061989984,
+    "lng": -74.19150253177754
+  },
+  "lot 8(under construction)": {
+    "id": "30030",
+    "name": "Lot 8(under construction)",
+    "category": "parking",
+    "lat": 40.7425357798277,
+    "lng": -74.19025952130042
+  },
+  "lot 10 nwk(under construction)": {
+    "id": "30031",
+    "name": "Lot 10 NWK(under construction)",
+    "category": "parking",
+    "lat": 40.74311138979354,
+    "lng": -74.18905262980762
+  },
+  "lot 5 nwk": {
+    "id": "30032",
+    "name": "Lot 5 NWK",
+    "category": "parking",
+    "lat": 40.743510776480015,
+    "lng": -74.1925633394898
+  },
+  "lot 5a": {
+    "id": "30033",
+    "name": "Lot 5A",
+    "category": "parking",
+    "lat": 40.74352282354654,
+    "lng": -74.19307059853512
+  },
+  "lot 1b": {
+    "id": "30035",
+    "name": "Lot 1B",
+    "category": "parking",
+    "lat": 40.739659121803534,
+    "lng": -74.18817061190616
+  },
+  "p2 bergen parking deck": {
+    "id": "30036",
+    "name": "P2 Bergen Parking Deck",
+    "category": "parking",
+    "lat": 40.739550753910486,
+    "lng": -74.19237330219424
+  },
+  "p3 doctor's parking deck": {
+    "id": "30037",
+    "name": "P3 Doctor's Parking Deck",
+    "category": "parking",
+    "lat": 40.741957326386576,
+    "lng": -74.19047708294168
+  },
+  "p1 norfolk parking deck": {
+    "id": "30038",
+    "name": "P1 Norfolk Parking Deck",
+    "category": "parking",
+    "lat": 40.740372629164575,
+    "lng": -74.18669782095088
+  },
+  "deck 4": {
+    "id": "30039",
+    "name": "Deck 4",
+    "category": "parking",
+    "lat": 40.739926,
+    "lng": -74.172226
+  },
+  "deck 3 surface lot": {
+    "id": "30000",
+    "name": "Deck 3 Surface Lot",
+    "category": "parking",
+    "lat": 40.738264,
+    "lng": -74.172865
+  }
+}

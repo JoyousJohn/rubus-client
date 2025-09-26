@@ -1,0 +1,450 @@
+{
+  "science building": {
+    "id": "7002",
+    "name": "Science Building",
+    "category": "building",
+    "lat": 39.94866823058471,
+    "lng": -75.1226053015
+  },
+  "paul robeson library": {
+    "id": "7003",
+    "name": "Paul Robeson Library",
+    "category": "building",
+    "lat": 39.94844874626235,
+    "lng": -75.1210490706
+  },
+  "camden campus center": {
+    "id": "7004",
+    "name": "Camden Campus Center",
+    "category": "building",
+    "lat": 39.94806667351483,
+    "lng": -75.1224597122
+  },
+  "camden administrative building": {
+    "id": "7006",
+    "name": "Camden Administrative Building",
+    "category": "building",
+    "lat": 39.94485006616119,
+    "lng": -75.12162474688174
+  },
+  "admissions office - undergraduate & graduate": {
+    "id": "7017",
+    "name": "Admissions Office - Undergraduate & Graduate",
+    "category": "building",
+    "lat": 39.94787617041444,
+    "lng": -75.1213704688
+  },
+  "honors college & cooper classroom building": {
+    "id": "7018",
+    "name": "Honors College & Cooper Classroom Building",
+    "category": "building",
+    "lat": 39.94755654863491,
+    "lng": -75.1225468312
+  },
+  "armitage hall": {
+    "id": "7036",
+    "name": "Armitage Hall",
+    "category": "building",
+    "lat": 39.948763998812396,
+    "lng": -75.1206606107
+  },
+  "camden administrative services building": {
+    "id": "7039",
+    "name": "Camden Administrative Services Building",
+    "category": "building",
+    "lat": 39.94954609947865,
+    "lng": -75.12159255244045
+  },
+  "central heating plant chp": {
+    "id": "7039.01",
+    "name": "Central Heating Plant CHP",
+    "category": "building",
+    "lat": 39.94968805009831,
+    "lng": -75.12174154356593
+  },
+  "mpp / political science office building": {
+    "id": "7041",
+    "name": "MPP / Political Science Office Building",
+    "category": "building",
+    "lat": 39.94732882606608,
+    "lng": -75.1218148127
+  },
+  "sociology building": {
+    "id": "7042",
+    "name": "Sociology Building",
+    "category": "building",
+    "lat": 39.94732214842301,
+    "lng": -75.12169716185986
+  },
+  "office of the provost": {
+    "id": "7046",
+    "name": "Office of the Provost",
+    "category": "building",
+    "lat": 39.94743955,
+    "lng": -75.12238649
+  },
+  "211 north 5th": {
+    "id": "7051",
+    "name": "211 North 5th",
+    "category": "building",
+    "lat": 39.947397502531004,
+    "lng": -75.12080565334044
+  },
+  "camden law school": {
+    "id": "7052",
+    "name": "Camden Law School",
+    "category": "building",
+    "lat": 39.94779236530069,
+    "lng": -75.1205563995
+  },
+  "426 lawrence": {
+    "id": "7053",
+    "name": "426 Lawrence",
+    "category": "building",
+    "lat": 39.94747021162595,
+    "lng": -75.1210496985
+  },
+  "428 lawrence garage": {
+    "id": "7054",
+    "name": "428 Lawrence Garage",
+    "category": "building",
+    "lat": 39.94745546671584,
+    "lng": -75.1209854857
+  },
+  "321 cooper": {
+    "id": "7055",
+    "name": "321 Cooper",
+    "category": "building",
+    "lat": 39.94744097,
+    "lng": -75.12246724
+  },
+  "athletic & fitness center": {
+    "id": "7056",
+    "name": "Athletic & Fitness Center",
+    "category": "building",
+    "lat": 39.94985142942227,
+    "lng": -75.12210938151065
+  },
+  "fine arts building": {
+    "id": "7057",
+    "name": "Fine Arts Building",
+    "category": "building",
+    "lat": 39.949037884496526,
+    "lng": -75.1221457908
+  },
+  "424 lawrence": {
+    "id": "7058",
+    "name": "424 Lawrence",
+    "category": "building",
+    "lat": 39.94748524687595,
+    "lng": -75.1211255481
+  },
+  "429 cooper": {
+    "id": "7063",
+    "name": "429 Cooper",
+    "category": "building",
+    "lat": 39.9471599556649,
+    "lng": -75.1208436304
+  },
+  "artis building": {
+    "id": "7065",
+    "name": "Artis Building",
+    "category": "building",
+    "lat": 39.94736156552986,
+    "lng": -75.1221848423
+  },
+  "mail services building": {
+    "id": "7066",
+    "name": "Mail Services Building",
+    "category": "building",
+    "lat": 39.94767278305149,
+    "lng": -75.1221919288
+  },
+  "volatile storage building": {
+    "id": "7067",
+    "name": "Volatile Storage Building",
+    "category": "building",
+    "lat": 39.94888036200697,
+    "lng": -75.1227220619
+  },
+  "walter rand institute for public affairs": {
+    "id": "7068",
+    "name": "Walter Rand Institute for Public Affairs",
+    "category": "building",
+    "lat": 39.94724355689286,
+    "lng": -75.1215096492
+  },
+  "camden apartments": {
+    "id": "7071",
+    "name": "Camden Apartments",
+    "category": "building",
+    "lat": 39.94790030305192,
+    "lng": -75.1242216702
+  },
+  "johnson park library": {
+    "id": "7072",
+    "name": "Johnson Park Library",
+    "category": "building",
+    "lat": 39.94844870257472,
+    "lng": -75.1252387625
+  },
+  "business & science building": {
+    "id": "7073",
+    "name": "Business & Science Building",
+    "category": "building",
+    "lat": 39.94884544307143,
+    "lng": -75.1233605717
+  },
+  "camden towers": {
+    "id": "7074",
+    "name": "Camden Towers",
+    "category": "building",
+    "lat": 39.948427115632,
+    "lng": -75.1241504766
+  },
+  "utilities maintenance shop": {
+    "id": "7075",
+    "name": "Utilities Maintenance Shop",
+    "category": "building",
+    "lat": 39.94981929538456,
+    "lng": -75.12150205117142
+  },
+  "division of diversity, inclusion, and community engagement": {
+    "id": "7076",
+    "name": "Division of Diversity, Inclusion, and Community Engagement",
+    "category": "building",
+    "lat": 39.94919299134532,
+    "lng": -75.1260751971
+  },
+  "421 cooper": {
+    "id": "7078",
+    "name": "421 Cooper",
+    "category": "building",
+    "lat": 39.94717634993713,
+    "lng": -75.1211205243
+  },
+  "camden chancellor's office": {
+    "id": "7080",
+    "name": "Camden Chancellor's Office",
+    "category": "building",
+    "lat": 39.94756489852001,
+    "lng": -75.1231800514
+  },
+  "writers house": {
+    "id": "7081",
+    "name": "Writers House",
+    "category": "building",
+    "lat": 39.947543740765866,
+    "lng": -75.1230378674
+  },
+  "mid-atlantic regional center for the humanities march": {
+    "id": "7082",
+    "name": "Mid-Atlantic Regional Center for the Humanities MARCH",
+    "category": "building",
+    "lat": 39.947440715224104,
+    "lng": -75.1223256593
+  },
+  "415 cooper": {
+    "id": "7086",
+    "name": "415 Cooper",
+    "category": "building",
+    "lat": 39.94727704405947,
+    "lng": -75.1213212216
+  },
+  "nj small business development center sbdc": {
+    "id": "7087",
+    "name": "NJ Small Business Development Center SBDC",
+    "category": "building",
+    "lat": 39.947217154524076,
+    "lng": -75.1212016328
+  },
+  "432 lawrence": {
+    "id": "7089",
+    "name": "432 Lawrence",
+    "category": "building",
+    "lat": 39.94743087,
+    "lng": -75.1209098
+  },
+  "rutgers community park facilities building": {
+    "id": "7090",
+    "name": "Rutgers Community Park Facilities Building",
+    "category": "building",
+    "lat": 39.95078841054196,
+    "lng": -75.1248393422
+  },
+  "418 lawrence": {
+    "id": "7092",
+    "name": "418 Lawrence",
+    "category": "building",
+    "lat": 39.94750458136422,
+    "lng": -75.121264607
+  },
+  "422 lawrence": {
+    "id": "7093",
+    "name": "422 Lawrence",
+    "category": "building",
+    "lat": 39.947495,
+    "lng": -75.121172
+  },
+  "413 cooper": {
+    "id": "7095",
+    "name": "413 Cooper",
+    "category": "building",
+    "lat": 39.94729305048716,
+    "lng": -75.1213816798
+  },
+  "417 cooper": {
+    "id": "7097",
+    "name": "417 Cooper",
+    "category": "building",
+    "lat": 39.94722364976134,
+    "lng": -75.1212621392
+  },
+  "alumni house & development office": {
+    "id": "7190",
+    "name": "Alumni House & Development Office",
+    "category": "building",
+    "lat": 39.94708038036301,
+    "lng": -75.1229644377
+  },
+  "nursing & science building": {
+    "id": "7194",
+    "name": "Nursing & Science Building",
+    "category": "building",
+    "lat": 39.943803165017115,
+    "lng": -75.1205917205
+  },
+  "121 market": {
+    "id": "7195",
+    "name": "121 Market",
+    "category": "building",
+    "lat": 39.94671622,
+    "lng": -75.12522886
+  },
+  "330 cooper": {
+    "id": "7196",
+    "name": "330 Cooper",
+    "category": "building",
+    "lat": 39.946907107810354,
+    "lng": -75.1226785754
+  },
+  "knight early learning research academy": {
+    "id": "7197",
+    "name": "Knight Early Learning Research Academy",
+    "category": "building",
+    "lat": 39.94715588231534,
+    "lng": -75.1204749222
+  },
+  "336 friends": {
+    "id": "7200",
+    "name": "336 Friends",
+    "category": "building",
+    "lat": 39.94943441964146,
+    "lng": -75.1233758734
+  },
+  "338 friends street": {
+    "id": "7201",
+    "name": "338 Friends Street",
+    "category": "building",
+    "lat": 39.94938306450346,
+    "lng": -75.123193271
+  },
+  "311 cooper": {
+    "id": "8842",
+    "name": "311 Cooper",
+    "category": "building",
+    "lat": 39.9476569451412,
+    "lng": -75.1228404874
+  },
+  "lot c12": {
+    "id": "20001",
+    "name": "Lot C12",
+    "category": "parking",
+    "lat": 39.948150702199335,
+    "lng": -75.12354905539972
+  },
+  "lot c13": {
+    "id": "20002",
+    "name": "Lot C13",
+    "category": "parking",
+    "lat": 39.949294658945156,
+    "lng": -75.12321340758466
+  },
+  "lot c14": {
+    "id": "20003",
+    "name": "Lot C14",
+    "category": "parking",
+    "lat": 39.95004044599222,
+    "lng": -75.12297115221114
+  },
+  "lot c1": {
+    "id": "20004",
+    "name": "Lot C1",
+    "category": "parking",
+    "lat": 39.94926224034136,
+    "lng": -75.12075446550104
+  },
+  "lot c2": {
+    "id": "20005",
+    "name": "Lot C2",
+    "category": "parking",
+    "lat": 39.94834909825404,
+    "lng": -75.11992234808199
+  },
+  "lot c3": {
+    "id": "20006",
+    "name": "Lot C3",
+    "category": "parking",
+    "lat": 39.947500437681434,
+    "lng": -75.1192515287309
+  },
+  "lot c10": {
+    "id": "20007",
+    "name": "Lot C10",
+    "category": "parking",
+    "lat": 39.946567458626916,
+    "lng": -75.12274121687496
+  },
+  "lot c17": {
+    "id": "20009",
+    "name": "Lot C17",
+    "category": "parking",
+    "lat": 39.947685120962014,
+    "lng": -75.12232210023947
+  },
+  "lot c8": {
+    "id": "20011",
+    "name": "Lot C8",
+    "category": "parking",
+    "lat": 39.94785567650983,
+    "lng": -75.12293613947115
+  },
+  "lot c15": {
+    "id": "20012",
+    "name": "Lot C15",
+    "category": "parking",
+    "lat": 39.95185507762812,
+    "lng": -75.12573931718153
+  },
+  "camden tech center parking deck": {
+    "id": "20015",
+    "name": "Camden Tech Center Parking Deck",
+    "category": "parking",
+    "lat": 39.94706859769512,
+    "lng": -75.11859735739957
+  },
+  "lot c16": {
+    "id": "20013",
+    "name": "Lot C16",
+    "category": "parking",
+    "lat": 39.953814429357195,
+    "lng": -75.12521994272787
+  },
+  "lot c18": {
+    "id": "20016",
+    "name": "Lot C18",
+    "category": "parking",
+    "lat": 39.94502308676177,
+    "lng": -75.12206488380731
+  }
+}

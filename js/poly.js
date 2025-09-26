@@ -1,5 +1,5 @@
 let polylineBounds;
-let routeBounds ={};
+let routeBounds = {};
 
 async function setPolylines(activeRoutes) {
     // console.log("activeRoutes: ", activeRoutes)

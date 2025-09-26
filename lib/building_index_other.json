@@ -1,0 +1,2032 @@
+{
+  "worlds fair drive wfd": {
+    "id": "3191",
+    "name": "Worlds Fair Drive WFD",
+    "category": "building",
+    "lat": 40.535957835661314,
+    "lng": -74.5100961705
+  },
+  "rutgers center for recovery and wellbeing": {
+    "id": "3696",
+    "name": "Rutgers Center for Recovery and Wellbeing",
+    "category": "building",
+    "lat": 40.60676205,
+    "lng": -74.40411432
+  },
+  "ubhc centennial ave": {
+    "id": "3697",
+    "name": "UBHC Centennial Ave",
+    "category": "building",
+    "lat": 40.542446130644144,
+    "lng": -74.4991565522
+  },
+  "33 knightsbridge": {
+    "id": "3912",
+    "name": "33 Knightsbridge",
+    "category": "building",
+    "lat": 40.54813348978728,
+    "lng": -74.4808124537
+  },
+  "45 knightsbridge": {
+    "id": "3914",
+    "name": "45 Knightsbridge",
+    "category": "building",
+    "lat": 40.54851001971969,
+    "lng": -74.4791647627
+  },
+  "41 knightsbridge garage": {
+    "id": "3915",
+    "name": "41 Knightsbridge Garage",
+    "category": "building",
+    "lat": 40.54749795972614,
+    "lng": -74.4788678929
+  },
+  "33 knightsbridge generator": {
+    "id": "3916",
+    "name": "33 Knightsbridge Generator",
+    "category": "building",
+    "lat": 40.54938284,
+    "lng": -74.48047978
+  },
+  "cape shore bath house": {
+    "id": "6167",
+    "name": "Cape Shore Bath House",
+    "category": "building",
+    "lat": 39.07239115731675,
+    "lng": -74.9099026374784
+  },
+  "rutgers specialty crop research metal shed": {
+    "id": "6170",
+    "name": "Rutgers Specialty Crop Research Metal Shed",
+    "category": "building",
+    "lat": 40.1168579102832,
+    "lng": -74.5261697405
+  },
+  "rutgers specialty crop research garage": {
+    "id": "6171",
+    "name": "Rutgers Specialty Crop Research Garage",
+    "category": "building",
+    "lat": 40.11677805,
+    "lng": -74.52561067
+  },
+  "rutgers specialty crop research brick shed": {
+    "id": "6172",
+    "name": "Rutgers Specialty Crop Research Brick Shed",
+    "category": "building",
+    "lat": 40.11642919550947,
+    "lng": -74.5259083106
+  },
+  "cape shore pump house 1": {
+    "id": "6173",
+    "name": "Cape Shore Pump House 1",
+    "category": "building",
+    "lat": 39.07408044439167,
+    "lng": -74.9121401069
+  },
+  "marucci center shop building": {
+    "id": "6175",
+    "name": "Marucci Center Shop Building",
+    "category": "building",
+    "lat": 39.714016468238135,
+    "lng": -74.5112765505
+  },
+  "rutgers specialty crop research farm dwelling": {
+    "id": "6176",
+    "name": "Rutgers Specialty Crop Research Farm Dwelling",
+    "category": "building",
+    "lat": 40.11655301922779,
+    "lng": -74.5260644112
+  },
+  "rutgers specialty crop research metal barn 1": {
+    "id": "6177",
+    "name": "Rutgers Specialty Crop Research Metal Barn 1",
+    "category": "building",
+    "lat": 40.11691963902988,
+    "lng": -74.525388276
+  },
+  "cape shore pump house 2": {
+    "id": "6180",
+    "name": "Cape Shore Pump House 2",
+    "category": "building",
+    "lat": 39.07312240788857,
+    "lng": -74.91273582925602
+  },
+  "cape shore shellfish laboratory office": {
+    "id": "6181",
+    "name": "Cape Shore Shellfish Laboratory Office",
+    "category": "building",
+    "lat": 39.073810888668234,
+    "lng": -74.9120614777
+  },
+  "cape shore dormitory": {
+    "id": "6182",
+    "name": "Cape Shore Dormitory",
+    "category": "building",
+    "lat": 39.07325232052096,
+    "lng": -74.912517692
+  },
+  "adelphia farms farm supervisor's dwelling": {
+    "id": "6184",
+    "name": "Adelphia Farms Farm Supervisor's Dwelling",
+    "category": "building",
+    "lat": 40.22053342197289,
+    "lng": -74.2523107169
+  },
+  "adelphia farms metal barn": {
+    "id": "6186",
+    "name": "Adelphia Farms Metal Barn",
+    "category": "building",
+    "lat": 40.22039262853099,
+    "lng": -74.2598283903
+  },
+  "adelphia farms two family dwelling": {
+    "id": "6187",
+    "name": "Adelphia Farms Two Family Dwelling",
+    "category": "building",
+    "lat": 40.226500269553505,
+    "lng": -74.2539180733
+  },
+  "adelphia farms field house": {
+    "id": "6189",
+    "name": "Adelphia Farms Field House",
+    "category": "building",
+    "lat": 40.227928169482134,
+    "lng": -74.25463413548944
+  },
+  "adelphia farms butler equipment storage metal barn": {
+    "id": "6190",
+    "name": "Adelphia Farms Butler Equipment Storage Metal Barn",
+    "category": "building",
+    "lat": 40.22609673819421,
+    "lng": -74.254500411
+  },
+  "l. g. cook 4-h camp dining hall & kitchen": {
+    "id": "6191",
+    "name": "L. G. Cook 4-H Camp Dining Hall & Kitchen",
+    "category": "building",
+    "lat": 41.16972563784983,
+    "lng": -74.8461633701
+  },
+  "l. g. cook 4-h camp cabin 1": {
+    "id": "6192",
+    "name": "L. G. Cook 4-H Camp Cabin 1",
+    "category": "building",
+    "lat": 41.16919324298365,
+    "lng": -74.8470518035
+  },
+  "l. g. cook 4-h camp cabin 2": {
+    "id": "6193",
+    "name": "L. G. Cook 4-H Camp Cabin 2",
+    "category": "building",
+    "lat": 41.16944047155059,
+    "lng": -74.846930207
+  },
+  "l. g. cook 4-h camp cabin 3": {
+    "id": "6194",
+    "name": "L. G. Cook 4-H Camp Cabin 3",
+    "category": "building",
+    "lat": 41.16962175530293,
+    "lng": -74.8468042002
+  },
+  "l. g. cook 4-h camp cabin 4": {
+    "id": "6195",
+    "name": "L. G. Cook 4-H Camp Cabin 4",
+    "category": "building",
+    "lat": 41.17003071478448,
+    "lng": -74.8460460971
+  },
+  "l. g. cook 4-h camp cabin 5": {
+    "id": "6196",
+    "name": "L. G. Cook 4-H Camp Cabin 5",
+    "category": "building",
+    "lat": 41.17011131633205,
+    "lng": -74.8457683007
+  },
+  "l. g. cook 4-h camp cabin 6": {
+    "id": "6197",
+    "name": "L. G. Cook 4-H Camp Cabin 6",
+    "category": "building",
+    "lat": 41.170220261692705,
+    "lng": -74.8454998621
+  },
+  "l. g. cook 4-h camp cabin 7": {
+    "id": "6198",
+    "name": "L. G. Cook 4-H Camp Cabin 7",
+    "category": "building",
+    "lat": 41.17044916087915,
+    "lng": -74.8454080823
+  },
+  "l. g. cook 4-h camp cabin 8": {
+    "id": "6199",
+    "name": "L. G. Cook 4-H Camp Cabin 8",
+    "category": "building",
+    "lat": 41.1707051467869,
+    "lng": -74.8454344714
+  },
+  "l. g. cook 4-h camp cabin 9": {
+    "id": "6200",
+    "name": "L. G. Cook 4-H Camp Cabin 9",
+    "category": "building",
+    "lat": 41.17072464289291,
+    "lng": -74.8451843784
+  },
+  "l. g. cook 4-h camp cabin 10": {
+    "id": "6201",
+    "name": "L. G. Cook 4-H Camp Cabin 10",
+    "category": "building",
+    "lat": 41.170518644293146,
+    "lng": -74.8450013621
+  },
+  "l. g. cook 4-h camp cabin 11": {
+    "id": "6202",
+    "name": "L. G. Cook 4-H Camp Cabin 11",
+    "category": "building",
+    "lat": 41.17034097266453,
+    "lng": -74.844821159
+  },
+  "l. g. cook 4-h camp lavatory building": {
+    "id": "6203",
+    "name": "L. G. Cook 4-H Camp Lavatory Building",
+    "category": "building",
+    "lat": 41.1701526469675,
+    "lng": -74.8464481147
+  },
+  "l. g. cook 4-h camp crafts building": {
+    "id": "6204",
+    "name": "L. G. Cook 4-H Camp Crafts Building",
+    "category": "building",
+    "lat": 41.171005076497934,
+    "lng": -74.8457540004
+  },
+  "l. g. cook 4-h camp staff house 1": {
+    "id": "6205",
+    "name": "L. G. Cook 4-H Camp Staff House 1",
+    "category": "building",
+    "lat": 41.17052762205898,
+    "lng": -74.8446171713
+  },
+  "l. g. cook 4-h camp main office": {
+    "id": "6206",
+    "name": "L. G. Cook 4-H Camp Main Office",
+    "category": "building",
+    "lat": 41.17053210181692,
+    "lng": -74.8460678603
+  },
+  "l. g. cook 4-h camp director residence": {
+    "id": "6207",
+    "name": "L. G. Cook 4-H Camp Director Residence",
+    "category": "building",
+    "lat": 41.17009523,
+    "lng": -74.84738776
+  },
+  "l. g. cook 4-h camp staff house": {
+    "id": "6207.01",
+    "name": "L. G. Cook 4-H Camp Staff House",
+    "category": "building",
+    "lat": 41.16985949,
+    "lng": -74.84738951
+  },
+  "l. g. cook 4-h camp maintenance": {
+    "id": "6208",
+    "name": "L. G. Cook 4-H Camp Maintenance",
+    "category": "building",
+    "lat": 41.1705980700504,
+    "lng": -74.8464513282
+  },
+  "l. g. cook 4-h camp - winter camp headquarters": {
+    "id": "6209",
+    "name": "L. G. Cook 4-H Camp - Winter Camp Headquarters",
+    "category": "building",
+    "lat": 41.17081951160839,
+    "lng": -74.8461182758
+  },
+  "l. g. cook 4-h camp recreation hall": {
+    "id": "6210",
+    "name": "L. G. Cook 4-H Camp Recreation Hall",
+    "category": "building",
+    "lat": 41.170087632822224,
+    "lng": -74.8451767151
+  },
+  "l. g. cook 4-h camp store": {
+    "id": "6211",
+    "name": "L. G. Cook 4-H Camp Store",
+    "category": "building",
+    "lat": 41.16990906956668,
+    "lng": -74.8464962463
+  },
+  "l. g. cook 4-h flammable storage": {
+    "id": "6212",
+    "name": "L. G. Cook 4-H Flammable Storage",
+    "category": "building",
+    "lat": 41.17071600692804,
+    "lng": -74.8463774886
+  },
+  "cape shore storage shed 1": {
+    "id": "6216",
+    "name": "Cape Shore Storage Shed 1",
+    "category": "building",
+    "lat": 39.07297098412731,
+    "lng": -74.9124141207113
+  },
+  "cape shore storage shed 2": {
+    "id": "6217",
+    "name": "Cape Shore Storage Shed 2",
+    "category": "building",
+    "lat": 39.07297066151023,
+    "lng": -74.91245567014026
+  },
+  "cape shore storage shed 3": {
+    "id": "6218",
+    "name": "Cape Shore Storage Shed 3",
+    "category": "building",
+    "lat": 39.07297167940525,
+    "lng": -74.91250267698028
+  },
+  "cape shore storage shed 4": {
+    "id": "6219",
+    "name": "Cape Shore Storage Shed 4",
+    "category": "building",
+    "lat": 39.07297104164898,
+    "lng": -74.91254735588839
+  },
+  "cape shore storage shed 5": {
+    "id": "6220",
+    "name": "Cape Shore Storage Shed 5",
+    "category": "building",
+    "lat": 39.073066617746484,
+    "lng": -74.91227601542153
+  },
+  "cape shore pump shed": {
+    "id": "6221",
+    "name": "Cape Shore Pump Shed",
+    "category": "building",
+    "lat": 39.07379351263469,
+    "lng": -74.91199040562381
+  },
+  "cape shore maintenance shed": {
+    "id": "6222",
+    "name": "Cape Shore Maintenance Shed",
+    "category": "building",
+    "lat": 39.07309640567492,
+    "lng": -74.91232355618293
+  },
+  "rutgers specialty crop research cold storage": {
+    "id": "6224",
+    "name": "Rutgers Specialty Crop Research Cold Storage",
+    "category": "building",
+    "lat": 40.11781988,
+    "lng": -74.52548933
+  },
+  "rutgers agricultural research equipment storage": {
+    "id": "6235",
+    "name": "Rutgers Agricultural Research Equipment Storage",
+    "category": "building",
+    "lat": 39.51763111,
+    "lng": -75.20118601
+  },
+  "adelphia farms plastic greenhouse 2": {
+    "id": "6250",
+    "name": "Adelphia Farms Plastic Greenhouse 2",
+    "category": "building",
+    "lat": 40.22738982466707,
+    "lng": -74.25540652471344
+  },
+  "rutgers agricultural research & extension center": {
+    "id": "6251",
+    "name": "Rutgers Agricultural Research & Extension Center",
+    "category": "building",
+    "lat": 39.518776660867275,
+    "lng": -75.20616363688472
+  },
+  "rutgers specialty crop research packing & cold storage": {
+    "id": "6252",
+    "name": "Rutgers Specialty Crop Research Packing & Cold Storage",
+    "category": "building",
+    "lat": 40.11772615812227,
+    "lng": -74.525452925
+  },
+  "rutgers specialty crop research storage barn": {
+    "id": "6253",
+    "name": "Rutgers Specialty Crop Research Storage Barn",
+    "category": "building",
+    "lat": 40.11715292673708,
+    "lng": -74.5251401462
+  },
+  "rutgers agricultural research shop & post harvest": {
+    "id": "6254",
+    "name": "Rutgers Agricultural Research Shop & Post Harvest",
+    "category": "building",
+    "lat": 39.518634879346145,
+    "lng": -75.20699719879657
+  },
+  "adelphia farms headhouse": {
+    "id": "6255",
+    "name": "Adelphia Farms Headhouse",
+    "category": "building",
+    "lat": 40.227446957584604,
+    "lng": -74.25509729362457
+  },
+  "marucci center greenhouse 1": {
+    "id": "6256",
+    "name": "Marucci Center Greenhouse 1",
+    "category": "building",
+    "lat": 39.71421866281536,
+    "lng": -74.5113952045
+  },
+  "philip e. marucci blueberry and cranberry research center": {
+    "id": "6281",
+    "name": "Philip E. Marucci Blueberry and Cranberry Research Center",
+    "category": "building",
+    "lat": 39.71555143598536,
+    "lng": -74.510907817
+  },
+  "marucci center staff residence": {
+    "id": "6282",
+    "name": "Marucci Center Staff Residence",
+    "category": "building",
+    "lat": 39.714608165098724,
+    "lng": -74.5108865606
+  },
+  "adelphia farms potting shed 1": {
+    "id": "6285",
+    "name": "Adelphia Farms Potting Shed 1",
+    "category": "building",
+    "lat": 40.227266148516556,
+    "lng": -74.25510967353779
+  },
+  "adelphia farms potting shed 2": {
+    "id": "6286",
+    "name": "Adelphia Farms Potting Shed 2",
+    "category": "building",
+    "lat": 40.227266148516556,
+    "lng": -74.25510967353779
+  },
+  "adelphia farms rain out shelter ros": {
+    "id": "6287",
+    "name": "Adelphia Farms Rain Out Shelter ROS",
+    "category": "building",
+    "lat": 40.227302696563775,
+    "lng": -74.25607864995185
+  },
+  "adelphia farms pavilion": {
+    "id": "6288",
+    "name": "Adelphia Farms Pavilion",
+    "category": "building",
+    "lat": 40.225567626855906,
+    "lng": -74.2553000931
+  },
+  "rutgers agricultural research metal barn": {
+    "id": "6289",
+    "name": "Rutgers Agricultural Research Metal Barn",
+    "category": "building",
+    "lat": 39.519105277805444,
+    "lng": -75.20781547022752
+  },
+  "rutgers agricultural research pesticide storage": {
+    "id": "6300",
+    "name": "Rutgers Agricultural Research Pesticide Storage",
+    "category": "building",
+    "lat": 39.519750282515396,
+    "lng": -75.20669725601694
+  },
+  "rutgers agricultural research wood pole barn": {
+    "id": "6301",
+    "name": "Rutgers Agricultural Research Wood Pole Barn",
+    "category": "building",
+    "lat": 39.51921022190654,
+    "lng": -75.20748467602691
+  },
+  "marucci center wood pole barn (1983)": {
+    "id": "6311",
+    "name": "Marucci Center Wood Pole Barn (1983)",
+    "category": "building",
+    "lat": 39.71381085384468,
+    "lng": -74.5122519474
+  },
+  "rutgers specialty crop research greenhouse 1": {
+    "id": "6312",
+    "name": "Rutgers Specialty Crop Research Greenhouse 1",
+    "category": "building",
+    "lat": 40.11824914402845,
+    "lng": -74.5252401842
+  },
+  "rutgers specialty crop research greenhouse 2": {
+    "id": "6313",
+    "name": "Rutgers Specialty Crop Research Greenhouse 2",
+    "category": "building",
+    "lat": 40.11829682861789,
+    "lng": -74.5251331112
+  },
+  "rutgers specialty crop research ext center lab": {
+    "id": "6317",
+    "name": "Rutgers Specialty Crop Research Ext Center Lab",
+    "category": "building",
+    "lat": 40.11808059981031,
+    "lng": -74.5250444635
+  },
+  "adelphia farms fertilizer storage": {
+    "id": "6320",
+    "name": "Adelphia Farms Fertilizer Storage",
+    "category": "building",
+    "lat": 40.22789420882008,
+    "lng": -74.25429864716229
+  },
+  "adelphia farms plastic greenhouse 4": {
+    "id": "6324",
+    "name": "Adelphia Farms Plastic Greenhouse 4",
+    "category": "building",
+    "lat": 40.22730404765177,
+    "lng": -74.2553068108919
+  },
+  "adelphia farms pesticide storage": {
+    "id": "6331",
+    "name": "Adelphia Farms Pesticide Storage",
+    "category": "building",
+    "lat": 40.22395249945833,
+    "lng": -74.2511521379
+  },
+  "rutgers specialty crop research pesticide storage": {
+    "id": "6332",
+    "name": "Rutgers Specialty Crop Research Pesticide Storage",
+    "category": "building",
+    "lat": 40.11687128828954,
+    "lng": -74.5247441355
+  },
+  "snyder farm office & residence": {
+    "id": "6336",
+    "name": "Snyder Farm Office & Residence",
+    "category": "building",
+    "lat": 40.55691364330084,
+    "lng": -74.960516578
+  },
+  "snyder farm office & residence storage": {
+    "id": "6337",
+    "name": "Snyder Farm Office & Residence Storage",
+    "category": "building",
+    "lat": 40.557020652528415,
+    "lng": -74.9602963083
+  },
+  "snyder farm wood pole barn 1": {
+    "id": "6340",
+    "name": "Snyder Farm Wood Pole Barn 1",
+    "category": "building",
+    "lat": 40.55800872699457,
+    "lng": -74.960276773
+  },
+  "snyder farm metal barn b & pesticide handling facility": {
+    "id": "6343",
+    "name": "Snyder Farm Metal Barn B & Pesticide Handling Facility",
+    "category": "building",
+    "lat": 40.55776235198952,
+    "lng": -74.9594560596
+  },
+  "snyder farm residence (1870)": {
+    "id": "6344",
+    "name": "Snyder Farm Residence (1870)",
+    "category": "building",
+    "lat": 40.56106287390457,
+    "lng": -74.96432767
+  },
+  "snyder farm storage building & garage (1870)": {
+    "id": "6345",
+    "name": "Snyder Farm Storage Building & Garage (1870)",
+    "category": "building",
+    "lat": 40.561106261224545,
+    "lng": -74.9641802728
+  },
+  "clifford and melda snyder farm research building": {
+    "id": "6346",
+    "name": "Clifford and Melda Snyder Farm Research Building",
+    "category": "building",
+    "lat": 40.55748065416661,
+    "lng": -74.9607265531
+  },
+  "rutgers specialty crop research wood pole barn": {
+    "id": "6348",
+    "name": "Rutgers Specialty Crop Research Wood Pole Barn",
+    "category": "building",
+    "lat": 40.11696991399841,
+    "lng": -74.5248796401
+  },
+  "snyder farm plastic greenhouse": {
+    "id": "6349",
+    "name": "Snyder Farm Plastic Greenhouse",
+    "category": "building",
+    "lat": 40.55764532675805,
+    "lng": -74.9589457876
+  },
+  "marucci center wood pole barn a": {
+    "id": "6354",
+    "name": "Marucci Center Wood Pole Barn A",
+    "category": "building",
+    "lat": 39.71380962990007,
+    "lng": -74.512607641
+  },
+  "marucci center wood pole barn b": {
+    "id": "6355",
+    "name": "Marucci Center Wood Pole Barn B",
+    "category": "building",
+    "lat": 39.71517684126061,
+    "lng": -74.5114311263
+  },
+  "marucci center greenhouse/headhouse": {
+    "id": "6356",
+    "name": "Marucci Center Greenhouse/Headhouse",
+    "category": "building",
+    "lat": 39.71598074538768,
+    "lng": -74.5124958735
+  },
+  "rutgers specialty crop research irrigation pump house": {
+    "id": "6365",
+    "name": "Rutgers Specialty Crop Research Irrigation Pump House",
+    "category": "building",
+    "lat": 40.112511152091045,
+    "lng": -74.5247302025
+  },
+  "marucci center pesticide storage": {
+    "id": "6367",
+    "name": "Marucci Center Pesticide Storage",
+    "category": "building",
+    "lat": 39.71636661367682,
+    "lng": -74.5123650806
+  },
+  "marucci center greenhouse 5": {
+    "id": "6368",
+    "name": "Marucci Center Greenhouse 5",
+    "category": "building",
+    "lat": 39.715909136507044,
+    "lng": -74.5129831857
+  },
+  "snyder farm pump-well transfer house": {
+    "id": "6371",
+    "name": "Snyder Farm Pump-Well Transfer House",
+    "category": "building",
+    "lat": 40.55915437201295,
+    "lng": -74.9633767542
+  },
+  "snyder farm pump house": {
+    "id": "6372",
+    "name": "Snyder Farm Pump House",
+    "category": "building",
+    "lat": 40.5585469683288,
+    "lng": -74.9626198675
+  },
+  "snyder farm wood pole barn 2": {
+    "id": "6373",
+    "name": "Snyder Farm Wood Pole Barn 2",
+    "category": "building",
+    "lat": 40.558045170732115,
+    "lng": -74.9599733183
+  },
+  "l. g. cook 4-h camp hassert nature center": {
+    "id": "6374",
+    "name": "L. G. Cook 4-H Camp Hassert Nature Center",
+    "category": "building",
+    "lat": 41.170659195982594,
+    "lng": -74.8458781322
+  },
+  "marucci center storage shed 3": {
+    "id": "6377",
+    "name": "Marucci Center Storage Shed 3",
+    "category": "building",
+    "lat": 39.71565599281387,
+    "lng": -74.5116918285
+  },
+  "marucci center storage shed 2": {
+    "id": "6378",
+    "name": "Marucci Center Storage Shed 2",
+    "category": "building",
+    "lat": 39.71565311833733,
+    "lng": -74.5116322858
+  },
+  "marucci center storage shed 1": {
+    "id": "6379",
+    "name": "Marucci Center Storage Shed 1",
+    "category": "building",
+    "lat": 39.71565302708151,
+    "lng": -74.5115700131
+  },
+  "marucci center pump house a": {
+    "id": "6380",
+    "name": "Marucci Center Pump House A",
+    "category": "building",
+    "lat": 39.7143210137747,
+    "lng": -74.5108895168
+  },
+  "marucci center pump house c": {
+    "id": "6382",
+    "name": "Marucci Center Pump House C",
+    "category": "building",
+    "lat": 39.71497431498755,
+    "lng": -74.5156264108
+  },
+  "marucci center greenhouse 3": {
+    "id": "6383",
+    "name": "Marucci Center Greenhouse 3",
+    "category": "building",
+    "lat": 39.71586500439956,
+    "lng": -74.5116775438
+  },
+  "marucci center insectory": {
+    "id": "6384",
+    "name": "Marucci Center Insectory",
+    "category": "building",
+    "lat": 39.71565361292103,
+    "lng": -74.5118062998
+  },
+  "marucci center greenhouse 4": {
+    "id": "6385",
+    "name": "Marucci Center Greenhouse 4",
+    "category": "building",
+    "lat": 39.71640923739287,
+    "lng": -74.5125950653
+  },
+  "snyder farm pole barn": {
+    "id": "6386",
+    "name": "Snyder Farm Pole Barn",
+    "category": "building",
+    "lat": 40.558462812963825,
+    "lng": -74.9603690801
+  },
+  "adelphia farms plastic greenhouse 1": {
+    "id": "6389",
+    "name": "Adelphia Farms Plastic Greenhouse 1",
+    "category": "building",
+    "lat": 40.22716019971374,
+    "lng": -74.25527233033328
+  },
+  "marucci center pump house d": {
+    "id": "6394",
+    "name": "Marucci Center Pump House D",
+    "category": "building",
+    "lat": 39.7137817026488,
+    "lng": -74.5106727548
+  },
+  "njaes turfgrass breeding office": {
+    "id": "6403",
+    "name": "NJAES Turfgrass Breeding Office",
+    "category": "building",
+    "lat": 40.22769916554156,
+    "lng": -74.25438357624611
+  },
+  "rutgers agricultural research storage 7": {
+    "id": "6406",
+    "name": "Rutgers Agricultural Research Storage 7",
+    "category": "building",
+    "lat": 39.51963583480771,
+    "lng": -75.20719870126034
+  },
+  "rutgers agricultural research storage 8": {
+    "id": "6407",
+    "name": "Rutgers Agricultural Research Storage 8",
+    "category": "building",
+    "lat": 39.5196624236113,
+    "lng": -75.20713742652514
+  },
+  "rutgers agricultural research storage 9": {
+    "id": "6408",
+    "name": "Rutgers Agricultural Research Storage 9",
+    "category": "building",
+    "lat": 39.519891806839546,
+    "lng": -75.20652863112585
+  },
+  "rutgers agricultural research storage 10": {
+    "id": "6409",
+    "name": "Rutgers Agricultural Research Storage 10",
+    "category": "building",
+    "lat": 39.51871375802844,
+    "lng": -75.20642982287931
+  },
+  "rutgers agricultural research storage 1": {
+    "id": "6410",
+    "name": "Rutgers Agricultural Research Storage 1",
+    "category": "building",
+    "lat": 39.519876265813465,
+    "lng": -75.20636113838968
+  },
+  "rutgers agricultural research storage 2": {
+    "id": "6411",
+    "name": "Rutgers Agricultural Research Storage 2",
+    "category": "building",
+    "lat": 39.51983438190338,
+    "lng": -75.2063299613726
+  },
+  "rutgers agricultural research storage 3": {
+    "id": "6412",
+    "name": "Rutgers Agricultural Research Storage 3",
+    "category": "building",
+    "lat": 39.51980163910039,
+    "lng": -75.20629201213295
+  },
+  "rutgers agricultural research storage 4": {
+    "id": "6413",
+    "name": "Rutgers Agricultural Research Storage 4",
+    "category": "building",
+    "lat": 39.51976212635341,
+    "lng": -75.20626543998974
+  },
+  "rutgers agricultural research storage 5": {
+    "id": "6414",
+    "name": "Rutgers Agricultural Research Storage 5",
+    "category": "building",
+    "lat": 39.519724164586535,
+    "lng": -75.20623736009132
+  },
+  "rutgers agricultural research storage 6": {
+    "id": "6415",
+    "name": "Rutgers Agricultural Research Storage 6",
+    "category": "building",
+    "lat": 39.51968191289031,
+    "lng": -75.20620624021534
+  },
+  "rutgers agricultural research pesticide storage shed": {
+    "id": "6416",
+    "name": "Rutgers Agricultural Research Pesticide Storage Shed",
+    "category": "building",
+    "lat": 39.519845020502146,
+    "lng": -75.20680843559937
+  },
+  "food innovation center fic - south": {
+    "id": "6417",
+    "name": "Food Innovation Center FIC - South",
+    "category": "building",
+    "lat": 39.42528013167129,
+    "lng": -75.2224109531
+  },
+  "snyder farm shed w/solar panels": {
+    "id": "6420",
+    "name": "Snyder Farm Shed w/Solar Panels",
+    "category": "building",
+    "lat": 40.55838902,
+    "lng": -74.96001693
+  },
+  "l. g. cook 4-h camp shed - office storage": {
+    "id": "6421",
+    "name": "L. G. Cook 4-H Camp Shed - Office Storage",
+    "category": "building",
+    "lat": 41.16987793331123,
+    "lng": -74.8472457456
+  },
+  "l. g. cook 4-h firewood shed": {
+    "id": "6422",
+    "name": "L. G. Cook 4-H Firewood Shed",
+    "category": "building",
+    "lat": 41.168604363201176,
+    "lng": -74.84416844713138
+  },
+  "l. g. cook 4-h camp boathouse": {
+    "id": "6423",
+    "name": "L. G. Cook 4-H Camp Boathouse",
+    "category": "building",
+    "lat": 41.16953000221271,
+    "lng": -74.84545482764779
+  },
+  "l. g. cook 4-h camp pump house": {
+    "id": "6424",
+    "name": "L. G. Cook 4-H Camp Pump House",
+    "category": "building",
+    "lat": 41.170694025386204,
+    "lng": -74.8471904614
+  },
+  "l. g. cook 4-h camp rifle range shelter": {
+    "id": "6425",
+    "name": "L. G. Cook 4-H Camp Rifle Range Shelter",
+    "category": "building",
+    "lat": 41.1720771697949,
+    "lng": -74.8443862138
+  },
+  "rutgers specialty crop research greenhouse 5": {
+    "id": "6426",
+    "name": "Rutgers Specialty Crop Research Greenhouse 5",
+    "category": "building",
+    "lat": 40.11846151331086,
+    "lng": -74.5247682398
+  },
+  "rutgers agricultural research upper deerfield weather station": {
+    "id": "6429",
+    "name": "Rutgers Agricultural Research Upper Deerfield Weather Station",
+    "category": "building",
+    "lat": 39.52433058271217,
+    "lng": -75.2009460825603
+  },
+  "rutgers agricultural research pump house 1": {
+    "id": "6431",
+    "name": "Rutgers Agricultural Research Pump House 1",
+    "category": "building",
+    "lat": 39.524199796749144,
+    "lng": -75.20073935565432
+  },
+  "rutgers agricultural research pump house 2": {
+    "id": "6434",
+    "name": "Rutgers Agricultural Research Pump House 2",
+    "category": "building",
+    "lat": 39.524216437208146,
+    "lng": -75.20093287333921
+  },
+  "rutgers agricultural research pavilion": {
+    "id": "6435",
+    "name": "Rutgers Agricultural Research Pavilion",
+    "category": "building",
+    "lat": 39.518373440988846,
+    "lng": -75.20704642742389
+  },
+  "rutgers specialty crop research storage shed 1": {
+    "id": "6442",
+    "name": "Rutgers Specialty Crop Research Storage Shed 1",
+    "category": "building",
+    "lat": 40.11772028,
+    "lng": -74.52570549
+  },
+  "rutgers specialty crop research storage shed 2": {
+    "id": "6443",
+    "name": "Rutgers Specialty Crop Research Storage Shed 2",
+    "category": "building",
+    "lat": 40.11773707,
+    "lng": -74.52566981
+  },
+  "rutgers specialty crop research storage shed 3": {
+    "id": "6444",
+    "name": "Rutgers Specialty Crop Research Storage Shed 3",
+    "category": "building",
+    "lat": 40.11775385,
+    "lng": -74.52563413
+  },
+  "rutgers specialty crop research storage shed 4": {
+    "id": "6445",
+    "name": "Rutgers Specialty Crop Research Storage Shed 4",
+    "category": "building",
+    "lat": 40.1180838,
+    "lng": -74.52544908
+  },
+  "rutgers specialty crop research storage shed 5": {
+    "id": "6446",
+    "name": "Rutgers Specialty Crop Research Storage Shed 5",
+    "category": "building",
+    "lat": 40.11811119,
+    "lng": -74.52547094
+  },
+  "rutgers specialty crop research storage shed 6": {
+    "id": "6447",
+    "name": "Rutgers Specialty Crop Research Storage Shed 6",
+    "category": "building",
+    "lat": 40.11813859,
+    "lng": -74.52549281
+  },
+  "rutgers specialty crop research storage shed 7": {
+    "id": "6448",
+    "name": "Rutgers Specialty Crop Research Storage Shed 7",
+    "category": "building",
+    "lat": 40.11816598,
+    "lng": -74.52551467
+  },
+  "rutgers specialty crop research storage shed 8": {
+    "id": "6449",
+    "name": "Rutgers Specialty Crop Research Storage Shed 8",
+    "category": "building",
+    "lat": 40.11819338,
+    "lng": -74.52553654
+  },
+  "rutgers specialty crop research storage shed 9": {
+    "id": "6450",
+    "name": "Rutgers Specialty Crop Research Storage Shed 9",
+    "category": "building",
+    "lat": 40.11822077,
+    "lng": -74.5255584
+  },
+  "rutgers specialty crop research storage shed 10": {
+    "id": "6451",
+    "name": "Rutgers Specialty Crop Research Storage Shed 10",
+    "category": "building",
+    "lat": 40.11824817,
+    "lng": -74.52558026
+  },
+  "rutgers specialty crop research storage shed 11": {
+    "id": "6452",
+    "name": "Rutgers Specialty Crop Research Storage Shed 11",
+    "category": "building",
+    "lat": 40.11827556,
+    "lng": -74.52560213
+  },
+  "nj aquaculture innovation center workshop": {
+    "id": "6453",
+    "name": "NJ Aquaculture Innovation Center Workshop",
+    "category": "building",
+    "lat": 38.96872511,
+    "lng": -74.94284725
+  },
+  "nj aquaculture innovation center office trailer": {
+    "id": "6454",
+    "name": "NJ Aquaculture Innovation Center Office Trailer",
+    "category": "building",
+    "lat": 38.96876906,
+    "lng": -74.94225908
+  },
+  "nj aquaculture storage a": {
+    "id": "6455",
+    "name": "NJ Aquaculture Storage A",
+    "category": "building",
+    "lat": 38.96945224,
+    "lng": -74.94300942
+  },
+  "nj aquaculture storage b": {
+    "id": "6456",
+    "name": "NJ Aquaculture Storage B",
+    "category": "building",
+    "lat": 38.9694521,
+    "lng": -74.94295215
+  },
+  "nj aquaculture storage c": {
+    "id": "6457",
+    "name": "NJ Aquaculture Storage C",
+    "category": "building",
+    "lat": 38.96945162,
+    "lng": -74.94289533
+  },
+  "l. g. cook 4-h camp staff house 2": {
+    "id": "6458",
+    "name": "L. G. Cook 4-H Camp Staff House 2",
+    "category": "building",
+    "lat": 41.1701817,
+    "lng": -74.8467448
+  },
+  "l. g. cook 4-h camp infirmary": {
+    "id": "6459",
+    "name": "L. G. Cook 4-H Camp Infirmary",
+    "category": "building",
+    "lat": 41.1699675,
+    "lng": -74.8465497
+  },
+  "marucci ip&o shed": {
+    "id": "6461",
+    "name": "Marucci IP&O Shed",
+    "category": "building",
+    "lat": 39.71557311,
+    "lng": -74.51302974
+  },
+  "marucci center coldframe": {
+    "id": "6474",
+    "name": "Marucci Center Coldframe",
+    "category": "building",
+    "lat": 39.71608773,
+    "lng": -74.51164409
+  },
+  "snyder farm shed": {
+    "id": "6492",
+    "name": "Snyder Farm Shed",
+    "category": "building",
+    "lat": 40.55786139,
+    "lng": -74.95928033
+  },
+  "snyder farm generator": {
+    "id": "6495",
+    "name": "Snyder Farm Generator",
+    "category": "building",
+    "lat": 40.55851383,
+    "lng": -74.96020937
+  },
+  "nj aquaculture hoop house storage": {
+    "id": "6497",
+    "name": "NJ Aquaculture Hoop House Storage",
+    "category": "building",
+    "lat": 38.9680168,
+    "lng": -74.9427897
+  },
+  "cape shore storage shed 7": {
+    "id": "6498",
+    "name": "Cape Shore Storage Shed 7",
+    "category": "building",
+    "lat": 39.0730613,
+    "lng": -74.9121721
+  },
+  "nj aquaculture innovation center": {
+    "id": "6970",
+    "name": "NJ Aquaculture Innovation Center",
+    "category": "building",
+    "lat": 38.968397853562145,
+    "lng": -74.9426566917
+  },
+  "nj aquaculture innovation center restrooms": {
+    "id": "6971",
+    "name": "NJ Aquaculture Innovation Center Restrooms",
+    "category": "building",
+    "lat": 38.96843803832692,
+    "lng": -74.9423488574
+  },
+  "rutgers ecocomplex": {
+    "id": "6984",
+    "name": "Rutgers EcoComplex",
+    "category": "building",
+    "lat": 40.078184577141606,
+    "lng": -74.7563197471
+  },
+  "rutgers specialty crop research greenhouse 3": {
+    "id": "6985",
+    "name": "Rutgers Specialty Crop Research Greenhouse 3",
+    "category": "building",
+    "lat": 40.11834749399186,
+    "lng": -74.5250206071
+  },
+  "rutgers specialty crop research greenhouse 4": {
+    "id": "6986",
+    "name": "Rutgers Specialty Crop Research Greenhouse 4",
+    "category": "building",
+    "lat": 40.118404715931746,
+    "lng": -74.5248925855
+  },
+  "marucci center wood pole barn": {
+    "id": "6988",
+    "name": "Marucci Center Wood Pole Barn",
+    "category": "building",
+    "lat": 39.715161,
+    "lng": -74.511133
+  },
+  "marucci center greenhouse 2": {
+    "id": "6990",
+    "name": "Marucci Center Greenhouse 2",
+    "category": "building",
+    "lat": 39.71600000336843,
+    "lng": -74.511948271
+  },
+  "haskin shellfish research storage": {
+    "id": "6992",
+    "name": "Haskin Shellfish Research Storage",
+    "category": "building",
+    "lat": 39.23395243188329,
+    "lng": -75.0314092543
+  },
+  "haskin shellfish research lab": {
+    "id": "6994",
+    "name": "Haskin Shellfish Research Lab",
+    "category": "building",
+    "lat": 39.23444791046766,
+    "lng": -75.0314891399
+  },
+  "cape shore storage shed 6": {
+    "id": "6999",
+    "name": "Cape Shore Storage Shed 6",
+    "category": "building",
+    "lat": 39.07236281127695,
+    "lng": -74.90984541464049
+  },
+  "joint health sciences center jhsc": {
+    "id": "7008",
+    "name": "Joint Health Sciences Center JHSC",
+    "category": "building",
+    "lat": 39.94205232479179,
+    "lng": -75.11973596577747
+  },
+  "hutcheson forest caretaker's house": {
+    "id": "7500",
+    "name": "Hutcheson Forest Caretaker's House",
+    "category": "building",
+    "lat": 40.50092084666074,
+    "lng": -74.5635246049
+  },
+  "adelphia farms pump house": {
+    "id": "7501",
+    "name": "Adelphia Farms Pump House",
+    "category": "building",
+    "lat": 40.227613239834945,
+    "lng": -74.2553534850008
+  },
+  "rutgers marine field station": {
+    "id": "7504",
+    "name": "Rutgers Marine Field Station",
+    "category": "building",
+    "lat": 39.50893474578414,
+    "lng": -74.3241571281
+  },
+  "rutgers marine field station laboratory": {
+    "id": "7505",
+    "name": "Rutgers Marine Field Station Laboratory",
+    "category": "building",
+    "lat": 39.5092500965102,
+    "lng": -74.3239221496
+  },
+  "rutgers marine field station weather station": {
+    "id": "7506",
+    "name": "Rutgers Marine Field Station Weather Station",
+    "category": "building",
+    "lat": 39.52140607721667,
+    "lng": -74.31903845795472
+  },
+  "adelphia farms farm supervisor's garage": {
+    "id": "7510",
+    "name": "Adelphia Farms Farm Supervisor's Garage",
+    "category": "building",
+    "lat": 40.220704230541244,
+    "lng": -74.2523435659
+  },
+  "adelphia farms garage": {
+    "id": "7513",
+    "name": "Adelphia Farms Garage",
+    "category": "building",
+    "lat": 40.22640261112291,
+    "lng": -74.2541596155
+  },
+  "rutgers cooperative extension of hudson county efnep": {
+    "id": "7548",
+    "name": "Rutgers Cooperative Extension of Hudson County EFNEP",
+    "category": "building",
+    "lat": 40.72477827,
+    "lng": -74.06078998
+  },
+  "rutgers marine field station jacques cousteau nerr": {
+    "id": "7549",
+    "name": "Rutgers Marine Field Station Jacques Cousteau NERR",
+    "category": "building",
+    "lat": 39.594852376813364,
+    "lng": -74.3466054936
+  },
+  "rutgers marine field station jacques cousteau nerr storage": {
+    "id": "7553",
+    "name": "Rutgers Marine Field Station Jacques Cousteau NERR Storage",
+    "category": "building",
+    "lat": 39.594573885737645,
+    "lng": -74.3468530011
+  },
+  "rutgers marine field station dormitory": {
+    "id": "7570",
+    "name": "Rutgers Marine Field Station Dormitory",
+    "category": "building",
+    "lat": 39.59448669399401,
+    "lng": -74.3464078123
+  },
+  "rutgers marine field station storage": {
+    "id": "7571",
+    "name": "Rutgers Marine Field Station Storage",
+    "category": "building",
+    "lat": 39.593956564261674,
+    "lng": -74.3464112941
+  },
+  "nj aquaculture office": {
+    "id": "7574",
+    "name": "NJ Aquaculture Office",
+    "category": "building",
+    "lat": 38.94529994743527,
+    "lng": -74.8980485336955
+  },
+  "trenton academic center": {
+    "id": "7575",
+    "name": "Trenton Academic Center",
+    "category": "building",
+    "lat": 40.22156654,
+    "lng": -74.77118413
+  },
+  "hutcheson forest five bay garage": {
+    "id": "7576",
+    "name": "Hutcheson Forest Five Bay Garage",
+    "category": "building",
+    "lat": 40.487872330987145,
+    "lng": -74.5567215532
+  },
+  "hutcheson forest garage": {
+    "id": "7578",
+    "name": "Hutcheson Forest Garage",
+    "category": "building",
+    "lat": 40.490311361436135,
+    "lng": -74.5522353537
+  },
+  "hutcheson forest cottage": {
+    "id": "7579",
+    "name": "Hutcheson Forest Cottage",
+    "category": "building",
+    "lat": 40.4905307234124,
+    "lng": -74.5525386211
+  },
+  "hutcheson forest residence": {
+    "id": "7580",
+    "name": "Hutcheson Forest Residence",
+    "category": "building",
+    "lat": 40.490455656383254,
+    "lng": -74.5521714087
+  },
+  "hutcheson forest duplex apartment": {
+    "id": "7581",
+    "name": "Hutcheson Forest Duplex Apartment",
+    "category": "building",
+    "lat": 40.487837426997025,
+    "lng": -74.5570453782
+  },
+  "hutcheson forest storage": {
+    "id": "7582",
+    "name": "Hutcheson Forest Storage",
+    "category": "building",
+    "lat": 40.50088372877317,
+    "lng": -74.5639475667
+  },
+  "hutcheson forest aviary laboratory": {
+    "id": "7583",
+    "name": "Hutcheson Forest Aviary Laboratory",
+    "category": "building",
+    "lat": 40.49880290920434,
+    "lng": -74.560391790174
+  },
+  "hutcheson forest aviary": {
+    "id": "7586",
+    "name": "Hutcheson Forest Aviary",
+    "category": "building",
+    "lat": 40.50074639,
+    "lng": -74.56330408
+  },
+  "adelphia farms seed dryer": {
+    "id": "7620",
+    "name": "Adelphia Farms Seed Dryer",
+    "category": "building",
+    "lat": 40.22078631453891,
+    "lng": -74.2587567723
+  },
+  "haskin shellfish research flammable storage shed": {
+    "id": "7624",
+    "name": "Haskin Shellfish Research Flammable Storage Shed",
+    "category": "building",
+    "lat": 39.234168657168546,
+    "lng": -75.0314757066
+  },
+  "ubhc adult apartments - heights of collingswood": {
+    "id": "8704",
+    "name": "UBHC Adult Apartments - Heights of Collingswood",
+    "category": "building",
+    "lat": 39.90965570329246,
+    "lng": -75.0820099808
+  },
+  "rutgers cooperative extension of passaic county efnep/snap": {
+    "id": "8708",
+    "name": "Rutgers Cooperative Extension of Passaic County EFNEP/SNAP",
+    "category": "building",
+    "lat": 40.91554706,
+    "lng": -74.17069775
+  },
+  "rutgers division of continuing studies at mccc": {
+    "id": "8709",
+    "name": "Rutgers Division of Continuing Studies at MCCC",
+    "category": "building",
+    "lat": 40.25464122580766,
+    "lng": -74.6517724171
+  },
+  "ubhc cherry hill partial hospital program": {
+    "id": "8711",
+    "name": "UBHC Cherry Hill Partial Hospital Program",
+    "category": "building",
+    "lat": 39.94782437539123,
+    "lng": -75.021379907
+  },
+  "rutgers cooperative extension of sussex county - spring st": {
+    "id": "8713",
+    "name": "Rutgers Cooperative Extension of Sussex County - Spring St",
+    "category": "building",
+    "lat": 41.05892749,
+    "lng": -74.75271132
+  },
+  "rutgers john h. cronin dental center": {
+    "id": "8714",
+    "name": "Rutgers John H. Cronin Dental Center",
+    "category": "building",
+    "lat": 39.38026627945729,
+    "lng": -74.5417705966
+  },
+  "377 jersey avenue": {
+    "id": "8736",
+    "name": "377 Jersey Avenue",
+    "category": "building",
+    "lat": 40.714923024055125,
+    "lng": -74.0506758298
+  },
+  "atrium corporate park": {
+    "id": "8739",
+    "name": "Atrium Corporate Park",
+    "category": "building",
+    "lat": 40.53496395506715,
+    "lng": -74.5212672666
+  },
+  "22 old short hills": {
+    "id": "8743",
+    "name": "22 Old Short Hills",
+    "category": "building",
+    "lat": 40.72711075323865,
+    "lng": -74.3099532364
+  },
+  "camden county college taft hall": {
+    "id": "8746",
+    "name": "Camden County College Taft Hall",
+    "category": "building",
+    "lat": 39.78441334447873,
+    "lng": -75.03769654450203
+  },
+  "brookdale college - larrison hall": {
+    "id": "8747",
+    "name": "Brookdale College - Larrison Hall",
+    "category": "building",
+    "lat": 40.32465882,
+    "lng": -74.12866448
+  },
+  "rutgers health group": {
+    "id": "8750",
+    "name": "Rutgers Health Group",
+    "category": "building",
+    "lat": 40.53126723,
+    "lng": -74.32388022
+  },
+  "barnabas health": {
+    "id": "8757",
+    "name": "Barnabas Health",
+    "category": "building",
+    "lat": 40.77298567,
+    "lng": -74.35594939
+  },
+  "camden county college gabriel danch cim center": {
+    "id": "8758",
+    "name": "Camden County College Gabriel Danch CIM Center",
+    "category": "building",
+    "lat": 39.78357067,
+    "lng": -75.03614592
+  },
+  "rutgers ccr&r agency salem": {
+    "id": "8761",
+    "name": "Rutgers CCR&R Agency Salem",
+    "category": "building",
+    "lat": 39.64024712,
+    "lng": -75.51558035
+  },
+  "rutgers ccr&r agency cape may": {
+    "id": "8762",
+    "name": "Rutgers CCR&R Agency Cape May",
+    "category": "building",
+    "lat": 39.01350512,
+    "lng": -74.87925655
+  },
+  "rutgers ccr&r agency cumberland": {
+    "id": "8764",
+    "name": "Rutgers CCR&R Agency Cumberland",
+    "category": "building",
+    "lat": 39.48695452,
+    "lng": -75.03233566
+  },
+  "1314 park": {
+    "id": "8766",
+    "name": "1314 Park",
+    "category": "building",
+    "lat": 40.60404884,
+    "lng": -74.40437916
+  },
+  "njms vascular surgery at bayonne": {
+    "id": "8768",
+    "name": "NJMS Vascular Surgery at Bayonne",
+    "category": "building",
+    "lat": 40.6645305,
+    "lng": -74.11816646
+  },
+  "233 millburn avenue": {
+    "id": "8774",
+    "name": "233 Millburn Avenue",
+    "category": "building",
+    "lat": 40.72383624,
+    "lng": -74.29934632
+  },
+  "1 corporate place": {
+    "id": "8783",
+    "name": "1 Corporate Place",
+    "category": "building",
+    "lat": 40.55046039,
+    "lng": -74.45588227
+  },
+  "rutgers cooperative extension of union county": {
+    "id": "8807",
+    "name": "Rutgers Cooperative Extension of Union County",
+    "category": "building",
+    "lat": 40.65050671,
+    "lng": -74.34234911
+  },
+  "rutgers cooperative extension of hudson county": {
+    "id": "8790",
+    "name": "Rutgers Cooperative Extension of Hudson County",
+    "category": "building",
+    "lat": 40.72768723,
+    "lng": -74.06668529
+  },
+  "rutgers cooperative extension of passaic county": {
+    "id": "8791",
+    "name": "Rutgers Cooperative Extension of Passaic County",
+    "category": "building",
+    "lat": 40.92985652,
+    "lng": -74.26627434
+  },
+  "rutgers cooperative extension of mercer county": {
+    "id": "8792",
+    "name": "Rutgers Cooperative Extension of Mercer County",
+    "category": "building",
+    "lat": 40.25068076,
+    "lng": -74.76882183
+  },
+  "rutgers cooperative extension of camden county": {
+    "id": "8900",
+    "name": "Rutgers Cooperative Extension of Camden County",
+    "category": "building",
+    "lat": 39.78565326,
+    "lng": -75.06835398
+  },
+  "rutgers cooperative extension of monmouth county": {
+    "id": "8804",
+    "name": "Rutgers Cooperative Extension of Monmouth County",
+    "category": "building",
+    "lat": 40.26549317,
+    "lng": -74.24927289
+  },
+  "rutgers cooperative extension of cumberland cty - education ctr": {
+    "id": "8805",
+    "name": "Rutgers Cooperative Extension of Cumberland Cty - Education Ctr",
+    "category": "building",
+    "lat": 39.45068832,
+    "lng": -75.12079801
+  },
+  "rutgers cooperative extension of sussex county": {
+    "id": "8806",
+    "name": "Rutgers Cooperative Extension of Sussex County",
+    "category": "building",
+    "lat": 41.12480546,
+    "lng": -74.76236984
+  },
+  "rutgers cooperative extension of somerset county": {
+    "id": "8808",
+    "name": "Rutgers Cooperative Extension of Somerset County",
+    "category": "building",
+    "lat": 40.57558931,
+    "lng": -74.67397679
+  },
+  "rutgers cooperative extension of bergen county administration": {
+    "id": "8809",
+    "name": "Rutgers Cooperative Extension of Bergen County Administration",
+    "category": "building",
+    "lat": 40.87671277,
+    "lng": -74.04298505
+  },
+  "rutgers cooperative extension of middlesex county": {
+    "id": "8810",
+    "name": "Rutgers Cooperative Extension of Middlesex County",
+    "category": "building",
+    "lat": 40.40896011,
+    "lng": -74.4990358
+  },
+  "rutgers cooperative extension of cape may county": {
+    "id": "8812",
+    "name": "Rutgers Cooperative Extension of Cape May County",
+    "category": "building",
+    "lat": 39.10399862,
+    "lng": -74.8207133
+  },
+  "rutgers cooperative extension of burlington county": {
+    "id": "8813",
+    "name": "Rutgers Cooperative Extension of Burlington County",
+    "category": "building",
+    "lat": 40.01695376,
+    "lng": -74.81623981
+  },
+  "rutgers cooperative extension of salem county": {
+    "id": "8814",
+    "name": "Rutgers Cooperative Extension of Salem County",
+    "category": "building",
+    "lat": 39.62462145,
+    "lng": -75.3608246
+  },
+  "rutgers cooperative extension of essex county": {
+    "id": "8815",
+    "name": "Rutgers Cooperative Extension of Essex County",
+    "category": "building",
+    "lat": 40.82546626,
+    "lng": -74.33175217
+  },
+  "rutgers cooperative extension of atlantic county": {
+    "id": "8816",
+    "name": "Rutgers Cooperative Extension of Atlantic County",
+    "category": "building",
+    "lat": 39.45051317,
+    "lng": -74.74733534
+  },
+  "rutgers cooperative extension of ocean county extension center": {
+    "id": "8820",
+    "name": "Rutgers Cooperative Extension of Ocean County Extension Center",
+    "category": "building",
+    "lat": 40.00565882,
+    "lng": -74.22782001
+  },
+  "rutgers cooperative extension of morris county": {
+    "id": "8821",
+    "name": "Rutgers Cooperative Extension of Morris County",
+    "category": "building",
+    "lat": 40.83177994,
+    "lng": -74.52237524
+  },
+  "western monmouth higher education center": {
+    "id": "8822",
+    "name": "Western Monmouth Higher Education Center",
+    "category": "building",
+    "lat": 40.24316641836949,
+    "lng": -74.2838674875
+  },
+  "john theurer cancer center": {
+    "id": "8828",
+    "name": "John Theurer Cancer Center",
+    "category": "building",
+    "lat": 40.88433485322159,
+    "lng": -74.0533170041
+  },
+  "center for effective school practices": {
+    "id": "8832",
+    "name": "Center for Effective School Practices",
+    "category": "building",
+    "lat": 40.550887963346945,
+    "lng": -74.5441254074
+  },
+  "marucci center storage shed 4": {
+    "id": "8836",
+    "name": "Marucci Center Storage Shed 4",
+    "category": "building",
+    "lat": 39.715789495920795,
+    "lng": -74.5120182561
+  },
+  "marucci center storage shed 5": {
+    "id": "8837",
+    "name": "Marucci Center Storage Shed 5",
+    "category": "building",
+    "lat": 39.71563215111827,
+    "lng": -74.5119693042
+  },
+  "rutgers cooperative extension of gloucester county": {
+    "id": "8838",
+    "name": "Rutgers Cooperative Extension of Gloucester County",
+    "category": "building",
+    "lat": 39.79986448,
+    "lng": -75.21348333
+  },
+  "camden county college jefferson hall": {
+    "id": "8850",
+    "name": "Camden County College Jefferson Hall",
+    "category": "building",
+    "lat": 39.78623307,
+    "lng": -75.04016924
+  },
+  "rutgers cooperative extension of warren county": {
+    "id": "8854",
+    "name": "Rutgers Cooperative Extension of Warren County",
+    "category": "building",
+    "lat": 40.80439036,
+    "lng": -75.07893843
+  },
+  "institute for families at the school of social work": {
+    "id": "8857",
+    "name": "Institute for Families at the School of Social Work",
+    "category": "building",
+    "lat": 39.93114848886933,
+    "lng": -75.0510152696
+  },
+  "rutgers cooperative extension of atlantic county efnep": {
+    "id": "8860",
+    "name": "Rutgers Cooperative Extension of Atlantic County EFNEP",
+    "category": "building",
+    "lat": 39.376931085047886,
+    "lng": -74.539374358
+  },
+  "rutgers cooperative extension of hunterdon county": {
+    "id": "8864",
+    "name": "Rutgers Cooperative Extension of Hunterdon County",
+    "category": "building",
+    "lat": 40.50283775,
+    "lng": -74.89877216
+  },
+  "rutgers at atlantic cape community college": {
+    "id": "8870",
+    "name": "Rutgers at Atlantic Cape Community College",
+    "category": "building",
+    "lat": 39.45902257186782,
+    "lng": -74.6799642996
+  },
+  "ubhc monmouth junction op & ph programs": {
+    "id": "8886",
+    "name": "UBHC Monmouth Junction OP & PH Programs",
+    "category": "building",
+    "lat": 40.36896848,
+    "lng": -74.59137896
+  },
+  "18 centre drive": {
+    "id": "8887",
+    "name": "18 Centre Drive",
+    "category": "building",
+    "lat": 40.337923897258754,
+    "lng": -74.4622607625
+  },
+  "ubhc eap - echelon plaza": {
+    "id": "8890",
+    "name": "UBHC EAP - Echelon Plaza",
+    "category": "building",
+    "lat": 39.84992360556268,
+    "lng": -74.9981106046
+  },
+  "rutgers dental center at somerdale": {
+    "id": "8891",
+    "name": "Rutgers Dental Center at Somerdale",
+    "category": "building",
+    "lat": 39.83508919718981,
+    "lng": -75.0050600209
+  },
+  "hackensack university medical center": {
+    "id": "8898",
+    "name": "Hackensack University Medical Center",
+    "category": "building",
+    "lat": 40.883884974391144,
+    "lng": -74.057411535
+  },
+  "saint barnabas medical center": {
+    "id": "8899",
+    "name": "Saint Barnabas Medical Center",
+    "category": "building",
+    "lat": 40.76347337872518,
+    "lng": -74.3048974041
+  },
+  "camden county college polk hall": {
+    "id": "8901",
+    "name": "Camden County College Polk Hall",
+    "category": "building",
+    "lat": 39.78368285,
+    "lng": -75.03799256
+  },
+  "uchc - njdoc central": {
+    "id": "9950",
+    "name": "UCHC - NJDOC Central",
+    "category": "building",
+    "lat": 40.2439348,
+    "lng": -74.792378
+  },
+  "rutgers ccr&r agency atlantic": {
+    "id": "9973",
+    "name": "Rutgers CCR&R Agency Atlantic",
+    "category": "building",
+    "lat": 39.3479311355206,
+    "lng": -74.58041626628466
+  },
+  "rutgers ccr&r agency gloucester": {
+    "id": "9976",
+    "name": "Rutgers CCR&R Agency Gloucester",
+    "category": "building",
+    "lat": 39.83811269,
+    "lng": -75.15256797
+  },
+  "monmouth medical center south": {
+    "id": "9993",
+    "name": "Monmouth Medical Center South",
+    "category": "building",
+    "lat": 40.0730345583548,
+    "lng": -74.2187853328
+  },
+  "jersey city medical center": {
+    "id": "9995",
+    "name": "Jersey City Medical Center",
+    "category": "building",
+    "lat": 40.71631652229792,
+    "lng": -74.0504287041
+  },
+  "rahway regional medical center": {
+    "id": "9996",
+    "name": "Rahway Regional Medical Center",
+    "category": "building",
+    "lat": 40.61362994866321,
+    "lng": -74.2897242414
+  },
+  "clara maass hospital": {
+    "id": "9997",
+    "name": "Clara Maass Hospital",
+    "category": "building",
+    "lat": 40.785782510489504,
+    "lng": -74.1757346437
+  },
+  "trinitas comprehensive cancer center": {
+    "id": "9998",
+    "name": "Trinitas Comprehensive Cancer Center",
+    "category": "building",
+    "lat": 40.65973044056013,
+    "lng": -74.2140333886
+  },
+  "33 knightsbridge road lot": {
+    "id": "40037",
+    "name": "33 Knightsbridge Road Lot",
+    "category": "parking",
+    "lat": 40.54852529717225,
+    "lng": -74.48083705217444
+  },
+  "45 knightsbridge road lot": {
+    "id": "40038",
+    "name": "45 Knightsbridge Road Lot",
+    "category": "parking",
+    "lat": 40.548270139537856,
+    "lng": -74.47917721302045
+  },
+  "snyder farm lot": {
+    "id": "40000",
+    "name": "Snyder Farm Lot",
+    "category": "parking",
+    "lat": 40.55795695873767,
+    "lng": -74.96017349326046
+  },
+  "hutcheson forest lot": {
+    "id": "40001",
+    "name": "Hutcheson Forest Lot",
+    "category": "parking",
+    "lat": 40.48957050702322,
+    "lng": -74.5559923105898
+  },
+  "world's fair drive lot": {
+    "id": "40002",
+    "name": "World's Fair Drive Lot",
+    "category": "parking",
+    "lat": 40.535904141664986,
+    "lng": -74.51048987351218
+  },
+  "centennial lot": {
+    "id": "40003",
+    "name": "Centennial Lot",
+    "category": "parking",
+    "lat": 40.54284804784417,
+    "lng": -74.49945268566948
+  },
+  "adelphia 01 lot": {
+    "id": "40005",
+    "name": "Adelphia 01 Lot",
+    "category": "parking",
+    "lat": 40.225411218363824,
+    "lng": -74.25363013467538
+  },
+  "cream ridge farm lot": {
+    "id": "40006",
+    "name": "Cream Ridge Farm Lot",
+    "category": "parking",
+    "lat": 40.118150927894575,
+    "lng": -74.52481645030383
+  },
+  "marine field station lot": {
+    "id": "40007",
+    "name": "Marine Field Station Lot",
+    "category": "parking",
+    "lat": 39.59463604491574,
+    "lng": -74.34636371183231
+  },
+  "south jersey research center lot": {
+    "id": "40008",
+    "name": "South Jersey Research Center Lot",
+    "category": "parking",
+    "lat": 39.51873277954973,
+    "lng": -75.20647536303544
+  },
+  "hackensack univ medical ctr lot": {
+    "id": "40012",
+    "name": "Hackensack Univ Medical Ctr Lot",
+    "category": "parking",
+    "lat": 40.883260454916595,
+    "lng": -74.05710094668869
+  },
+  "barnabas medical center lot": {
+    "id": "40013",
+    "name": "Barnabas Medical Center Lot",
+    "category": "parking",
+    "lat": 40.76226609327313,
+    "lng": -74.30521790760072
+  },
+  "clara maass hospital lot": {
+    "id": "40014",
+    "name": "Clara Maass Hospital Lot",
+    "category": "parking",
+    "lat": 40.78638069941074,
+    "lng": -74.17716308417955
+  },
+  "jersey city medical center lot": {
+    "id": "40016",
+    "name": "Jersey City Medical Center Lot",
+    "category": "parking",
+    "lat": 40.71518229804784,
+    "lng": -74.05106070267368
+  },
+  "trinitas medical center lot": {
+    "id": "40017",
+    "name": "Trinitas Medical Center Lot",
+    "category": "parking",
+    "lat": 40.65916199751454,
+    "lng": -74.21392803678542
+  },
+  "rahway medical center lot": {
+    "id": "40019",
+    "name": "Rahway Medical Center Lot",
+    "category": "parking",
+    "lat": 40.613674533359124,
+    "lng": -74.29000184957408
+  },
+  "center for effective school lot": {
+    "id": "40021",
+    "name": "Center for Effective School Lot",
+    "category": "parking",
+    "lat": 40.55093698681461,
+    "lng": -74.54395557199491
+  },
+  "monroe lot": {
+    "id": "40023",
+    "name": "Monroe Lot",
+    "category": "parking",
+    "lat": 40.33793925058681,
+    "lng": -74.46241063247672
+  },
+  "rutgers marine field station lot": {
+    "id": "40024",
+    "name": "Rutgers Marine Field Station Lot",
+    "category": "parking",
+    "lat": 39.50911544385839,
+    "lng": -74.32397918114407
+  },
+  "rutgers cronin dental center lot": {
+    "id": "40025",
+    "name": "Rutgers Cronin Dental Center Lot",
+    "category": "parking",
+    "lat": 39.38049035659155,
+    "lng": -74.54180780381692
+  },
+  "rutgers dental center lot": {
+    "id": "40030",
+    "name": "Rutgers Dental Center Lot",
+    "category": "parking",
+    "lat": 39.83495297561607,
+    "lng": -75.00506547523285
+  },
+  "haskin shellfish research lot": {
+    "id": "40027",
+    "name": "Haskin Shellfish Research Lot",
+    "category": "parking",
+    "lat": 39.23440903849468,
+    "lng": -75.03171551885048
+  },
+  "nj aquaculture innov center lot": {
+    "id": "40028",
+    "name": "NJ Aquaculture Innov Center Lot",
+    "category": "parking",
+    "lat": 38.96841946918907,
+    "lng": -74.94257924229628
+  },
+  "food innovation center lot": {
+    "id": "40029",
+    "name": "Food Innovation Center Lot",
+    "category": "parking",
+    "lat": 39.42558196018036,
+    "lng": -75.2219956497373
+  },
+  "marucci blueberry-cranberry lot": {
+    "id": "40031",
+    "name": "Marucci Blueberry-Cranberry Lot",
+    "category": "parking",
+    "lat": 39.71497369558607,
+    "lng": -74.51138763940033
+  },
+  "monmouth med center south lot": {
+    "id": "40032",
+    "name": "Monmouth Med Center South Lot",
+    "category": "parking",
+    "lat": 40.07312766285294,
+    "lng": -74.21980774482691
+  },
+  "monmouth medical center lot": {
+    "id": "40033",
+    "name": "Monmouth Medical Center Lot",
+    "category": "parking",
+    "lat": 40.29540270840811,
+    "lng": -73.98475698502297
+  },
+  "new jersey ecocomplex lot": {
+    "id": "40034",
+    "name": "New Jersey EcoComplex Lot",
+    "category": "parking",
+    "lat": 40.07809580175402,
+    "lng": -74.75629147427289
+  },
+  "cape shore lot": {
+    "id": "40035",
+    "name": "Cape Shore Lot",
+    "category": "parking",
+    "lat": 39.07297326866861,
+    "lng": -74.91190184937082
+  },
+  "l.g. cook 4-h camp lot": {
+    "id": "40004",
+    "name": "L.G. Cook 4-H Camp Lot",
+    "category": "parking",
+    "lat": 41.17058656106,
+    "lng": -74.84605922112831
+  },
+  "lot c21": {
+    "id": "20014",
+    "name": "Lot C21",
+    "category": "parking",
+    "lat": 39.95353231401974,
+    "lng": -75.12715243379796
+  },
+  "rutgers ccr&r atlantic lot": {
+    "id": "40042",
+    "name": "Rutgers CCR&R Atlantic Lot",
+    "category": "parking",
+    "lat": 39.3482340125767,
+    "lng": -74.5802651302629
+  }
+}
