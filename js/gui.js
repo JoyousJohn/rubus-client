@@ -89,7 +89,7 @@ function populateRouteSelectors(allActiveRoutes) {
             $routeElm.on('touchstart mousedown', function(event) {
                 event.preventDefault();
 
-                initialX = event.pageX || event.originalEvent.touches[0].pageX; // Store initial position
+                initialX = event.pageX || (event.originalEvent && event.originalEvent.touches && event.originalEvent.touches[0] ? event.originalEvent.touches[0].pageX : 0); // Store initial position
               
                 longPressTimer = setTimeout(() => {
 
@@ -113,7 +113,7 @@ function populateRouteSelectors(allActiveRoutes) {
 
             $routeElm.on('touchmove', function(event) {
         
-                const moved = Math.abs(initialX - event.changedTouches[0].clientX) > 10;
+                const moved = Math.abs(initialX - (event.changedTouches && event.changedTouches[0] ? event.changedTouches[0].clientX : 0)) > 10;
                 if (!moved) { return; }
 
                 clearTimeout(longPressTimer);
@@ -125,7 +125,7 @@ function populateRouteSelectors(allActiveRoutes) {
 
             $routeElm.on('click touchend', function(event) {
 
-                const moved = Math.abs(initialX - (event.originalEvent.clientX || event.changedTouches[0].clientX)) > 10;
+                const moved = Math.abs(initialX - (event.originalEvent.clientX || (event.changedTouches && event.changedTouches[0] ? event.changedTouches[0].clientX : 0))) > 10;
 
                 if (!isLongPress && !moved) {
                     // Check if we're in the Routes tab of info panels
@@ -145,7 +145,13 @@ function populateRouteSelectors(allActiveRoutes) {
             })
         }
         $routeElm.css('background-color', color);
-        $('.settings-btn').after($routeElm);
+        
+        // Check if settings button should be at the end
+        if (settings['toggle-settings-btn-end']) {
+            $('.settings-btn').before($routeElm);
+        } else {
+            $('.settings-btn').after($routeElm);
+        }
         
         // Convert icons after adding to DOM
         if (route === 'fav') {
@@ -165,7 +171,7 @@ function populateRouteSelectors(allActiveRoutes) {
     $('.route-selectors')
     .on('mousedown touchstart', function(e) {
         isDragging = true;
-        startX = e.pageX || e.originalEvent.touches[0].pageX;
+        startX = e.pageX || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].pageX : 0);
         scrollLeft = $(this).scrollLeft();
         lastX = startX;
         lastTime = Date.now();
@@ -219,7 +225,7 @@ function populateRouteSelectors(allActiveRoutes) {
     .on('mousemove touchmove', function(e) {
         if (!isDragging) return;
         
-        const x = e.pageX || e.originalEvent.touches[0].pageX;
+        const x = e.pageX || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].pageX : 0);
         const walk = x - startX; // Calculate the distance moved
         const currentTime = Date.now();
         
@@ -1434,7 +1440,8 @@ const toggleSettings = [
     'toggle-show-thinking',
     'toggle-show-road-network',
     'toggle-distances-line-on-focus',
-    'toggle-always-show-break-overdue'
+    'toggle-always-show-break-overdue',
+    'toggle-settings-btn-end'
 
 ]
 
@@ -1485,6 +1492,7 @@ let defaultSettings = {
     'toggle-always-show-second': false,
     'toggle-show-bike-racks': false,
     'toggle-disable-fireworks-on-open': false,
+    'toggle-settings-btn-end': false,
     'toggle-show-buildings': true,
     'campus': 'nb',
     

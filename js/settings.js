@@ -471,6 +471,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-always-show-break-overdue'] = isChecked;
             break;
 
+        case 'toggle-settings-btn-end':
+            console.log(`Settings Button at End is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-settings-btn-end'] = isChecked;
+            // Repopulate route selectors to apply the new position
+            populateRouteSelectors(activeRoutes);
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
