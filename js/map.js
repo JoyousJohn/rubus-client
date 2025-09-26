@@ -2030,8 +2030,17 @@ function popInfo(busId, resetCampusFontSize) {
 function updateNextStopsMaxHeight() {
     const nextStops = $('.info-next-stops');
     if (nextStops.length === 0) return;
+    
+    // Account for the overdue break element if it's visible
+    let overdueBreakHeight = 0;
+    const overdueBreak = $('.info-overdue-break');
+    if (overdueBreak.is(':visible')) {
+        const marginTop = parseFloat(overdueBreak.css('margin-top')) || 0;
+        overdueBreakHeight = overdueBreak.outerHeight() + marginTop;
+    }
+    
     // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom <-- no longer acccrate 8/19
-    const maxHeight = window.innerHeight - nextStops.offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight();
+    const maxHeight = window.innerHeight - nextStops.offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight() - overdueBreakHeight;
     // console.log(maxHeight);
     nextStops.css('max-height', maxHeight - 75);
 }
@@ -2045,6 +2054,8 @@ function populateBusBreaks(busBreakData, busId) {
         $('.past-breaks-wrapper, .bus-history').hide();
         $('.show-more-breaks, .show-all-breaks').hide();
         $('.info-overdue-break').hide();
+        // Update max height since overdue break is now hidden
+        updateNextStopsMaxHeight();
         return;
     }
 
@@ -2082,7 +2093,10 @@ function populateBusBreaks(busBreakData, busId) {
 
     if (lastBreakMin && lastBreakMin > 120) {
         // Only show if actually overdue (more than 2 hours)
-        $('.info-overdue-break').slideDown().html(`<i class="fa-solid fa-clock"></i> ${Math.floor(lastBreakMin / 60)} HOURS SINCE BREAK`);
+        $('.info-overdue-break').html(`<i class="fa-solid fa-clock"></i> ${Math.floor(lastBreakMin / 60)} HOURS SINCE BREAK`).slideDown(function() {
+            // Update max height after slideDown animation completes
+            updateNextStopsMaxHeight();
+        });
     } else if (settings['toggle-always-show-break-overdue']) {
         const hours = Math.floor(lastBreakMin / 60);
         const minutes = lastBreakMin % 60;
@@ -2094,7 +2108,10 @@ function populateBusBreaks(busBreakData, busId) {
             if (hours > 0) timeString += ' ';
             timeString += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
         }
-        $('.info-overdue-break').slideDown().html(`<i class="fa-solid fa-clock"></i> Last break ${timeString} ago!`);
+        $('.info-overdue-break').html(`<i class="fa-solid fa-clock"></i> Last break ${timeString} ago!`).slideDown(function() {
+            // Update max height after slideDown animation completes
+            updateNextStopsMaxHeight();
+        });
     } else {
         $('.info-overdue-break').hide();
     }
