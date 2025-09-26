@@ -1739,6 +1739,9 @@ function popInfo(busId, resetCampusFontSize) {
                 .concat(routeStops.slice(0, nextStopIndex));
         }
 
+        // Check if closest stop is the next stop (first in route)
+        const closestStopIsNextStop = closestStopId && closestStopId === sortedStops[0] && routesServicing(closestStopId).includes(data.route);
+
         // Special-case ordering for SAC NB (stop 3) approach legs on weekend/all-style routes
         if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'summer1') && nextStop === 3) {
             let approachPrev = busData[busId]['prevStopId'];
@@ -1792,8 +1795,14 @@ function popInfo(busId, resetCampusFontSize) {
             }));
 
             if (!firstCircle) {
-                firstCircle = $('.next-stops-grid .next-stop-circle').last().css('background-color', 'red');
-                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+                // If closest stop is the next stop, use closest stop circle as first circle
+                if (closestStopIsNextStop) {
+                    firstCircle = $('.closest-stop-circle').css('background-color', 'red').addClass('next-stop-circle');
+                    firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+                } else {
+                    firstCircle = $('.next-stops-grid .next-stop-circle').last().css('background-color', 'red');
+                    firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+                }
             }
 
         }
@@ -1905,13 +1914,18 @@ function popInfo(busId, resetCampusFontSize) {
             $(`[stop-eta="${sortedStops[i]}"]`).text(eta).show();
 
             if (!firstCircle) {
-                firstCircle = $('.next-stops-grid .next-stop-circle').last();
-                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+                // If closest stop is the next stop, use closest stop circle as first circle
+                if (closestStopIsNextStop) {
+                    firstCircle = $('.closest-stop-circle').addClass('next-stop-circle');
+                    firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+                } else {
+                    firstCircle = $('.next-stops-grid .next-stop-circle').last();
+                    firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+                }
             }
 
-            if (i === sortedStops.length - 1) {
-                lastCircle = $('.next-stop-circle').last();
-            }
+            // Always set lastCircle to the most recently added circle in the next-stops-grid
+            lastCircle = $('.next-stops-grid .next-stop-circle').last();
 
         }
 
