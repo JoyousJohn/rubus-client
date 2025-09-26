@@ -807,6 +807,7 @@ function showNavigationMessage(message) {
 }
 
 let roadNetworkLayer = null; // Global variable to store the road network layer
+let roadNetworkData = null; // Cache for road network data for address lookups
 
 // Variables to track building selections from map clicks
 let selectedFromBuilding = null; // normalized building name from map click for "from" input
@@ -1437,13 +1438,11 @@ async function loadAndDisplayRoadNetwork() {
             roadNetworkLayer = null;
         }
 
-        // Fetch the geojson data
-        const response = await fetch('lib/geojson/lines.geojson');
-        if (!response.ok) {
-            throw new Error(`Failed to load road network data: ${response.statusText}`);
+        // Load road network data (reuses existing data if already loaded)
+        const geojsonData = await _loadRoadNetworkData();
+        if (!geojsonData) {
+            throw new Error('Failed to load road network data');
         }
-
-        const geojsonData = await response.json();
 
         // Create the GeoJSON layer with custom styling
         roadNetworkLayer = L.geoJSON(geojsonData, {
@@ -1531,6 +1530,142 @@ function toggleRoadNetwork() {
         // Load and display the layer
         loadAndDisplayRoadNetwork();
     }
+}
+
+// Load road network data (internal function)
+async function _loadRoadNetworkData() {
+    if (roadNetworkData) {
+        return roadNetworkData; // Already loaded
+    }
+
+    try {
+        const response = await fetch('lib/geojson/lines.geojson');
+        if (!response.ok) {
+            throw new Error(`Failed to load road network data: ${response.statusText}`);
+        }
+
+        roadNetworkData = await response.json();
+        return roadNetworkData;
+    } catch (error) {
+        console.error('Error loading road network data:', error);
+        return null;
+    }
+}
+
+// Load road network data for address lookups (without displaying)
+async function loadRoadNetworkData() {
+    return await _loadRoadNetworkData();
+}
+
+// Find the nearest road/address to a given coordinate
+async function getNearestAddress(lat, lng) {
+    if (!roadNetworkData) {
+        await loadRoadNetworkData();
+        if (!roadNetworkData) {
+            return null;
+        }
+    }
+
+    let nearestRoad = null;
+    let minDistance = Infinity;
+
+    // Check each road segment
+    roadNetworkData.features.forEach(feature => {
+        if (!feature.geometry || feature.geometry.type !== 'LineString') {
+            return;
+        }
+
+        const coordinates = feature.geometry.coordinates;
+        if (!Array.isArray(coordinates) || coordinates.length === 0) {
+            return;
+        }
+
+        // Calculate distance to the closest point on this road segment
+        let segmentMinDistance = Infinity;
+
+        for (let i = 0; i < coordinates.length - 1; i++) {
+            const point1 = coordinates[i];
+            const point2 = coordinates[i + 1];
+
+            // Convert to [lat, lng] format if needed
+            const roadLat1 = Array.isArray(point1) ? point1[1] : point1.lat;
+            const roadLng1 = Array.isArray(point1) ? point1[0] : point1.lng;
+            const roadLat2 = Array.isArray(point2) ? point2[1] : point2.lat;
+            const roadLng2 = Array.isArray(point2) ? point2[0] : point2.lng;
+
+            // Calculate distance from user point to this line segment
+            const distance = distanceToLineSegment(lat, lng, roadLat1, roadLng1, roadLat2, roadLng2);
+            segmentMinDistance = Math.min(segmentMinDistance, distance);
+        }
+
+        if (segmentMinDistance < minDistance) {
+            minDistance = segmentMinDistance;
+            nearestRoad = feature;
+        }
+    });
+
+    if (nearestRoad && nearestRoad.properties) {
+        const properties = nearestRoad.properties;
+
+        // Try to get road name in order of preference
+        let roadName = null;
+
+        if (properties.name) {
+            roadName = properties.name;
+        } else if (properties.ref) {
+            roadName = `Route ${properties.ref}`;
+        } else if (properties.highway) {
+            roadName = `Unnamed ${properties.highway} road`;
+        }
+
+        // Only return if we're reasonably close (within ~50 meters)
+        // Exclude footways (the main culprit for "Unnamed footway road")
+        const excludedRoadTypes = ['footway', 'path', 'cycleway', 'track', 'bridleway', 'steps'];
+        // Use the same threshold as other parts of the app (~50 meters)
+        const roadDistanceThreshold = 0.00045; // ~50 meters
+        if (roadName && minDistance < roadDistanceThreshold && !excludedRoadTypes.includes(properties.highway)) {
+            return {
+                name: roadName,
+                distance: minDistance,
+                type: properties.highway || 'road'
+            };
+        }
+    }
+
+    return null;
+}
+
+// Calculate distance from a point to a line segment
+function distanceToLineSegment(px, py, x1, y1, x2, y2) {
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+
+    if (lenSq !== 0) {
+        param = dot / lenSq;
+    }
+
+    let xx, yy;
+
+    if (param < 0) {
+        xx = x1;
+        yy = y1;
+    } else if (param > 1) {
+        xx = x2;
+        yy = y2;
+    } else {
+        xx = x1 + param * C;
+        yy = y1 + param * D;
+    }
+
+    const dx = px - xx;
+    const dy = py - yy;
+    return Math.sqrt(dx * dx + dy * dy);
 }
 
 // Format a user-facing label for a route, merging WKND/ON variants

@@ -2164,11 +2164,27 @@ function populateMeClosestStops() {
 
         const building = getBuildingAtLocation(userPosition[0], userPosition[1]);
         const $currentLocationDiv = $('.current-location');
-        if (building && building.name) {
-            $currentLocationDiv.text(`You're at ${building.name}`)
-        } else {
+
+        // Try to get nearest road/address
+        getNearestAddress(userPosition[0], userPosition[1]).then(nearestAddress => {
+            if (building && building.name) {
+                // Show building info, and also mention the road if available
+                if (nearestAddress && nearestAddress.name) {
+                    $currentLocationDiv.text(`You're at ${building.name}<br><span style="font-size: 0.8em; opacity: 0.8;">(near ${nearestAddress.name})</span>`);
+                } else {
+                    $currentLocationDiv.text(`You're at ${building.name}`);
+                }
+            } else {
+                // Not in a building, show nearest road/address
+                if (nearestAddress && nearestAddress.name) {
+                    $currentLocationDiv.text(`Near ${nearestAddress.name}`);
+                } else {
+                    $currentLocationDiv.text('You');
+                }
+            }
+        }).catch(error => {
             $currentLocationDiv.text('You');
-        }
+        });
     }
     
     let count = 0;
