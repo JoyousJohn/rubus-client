@@ -1038,6 +1038,22 @@
             $('.span-i-settings-end').click(function() {$('.settings-end-explain').slideToggle();})
             </script>
 
+            <div class="flex justify-between">
+                <div class="settings-heading flex flex-1 align-center span-i-spoofing">Location Spoofing<span class="span-i pointer select-none">i</span></div>
+                <div class="settings-toggle">
+                    <input type="checkbox" id="toggle-spoofing" class="toggle-input">
+                    <label for="toggle-spoofing" class="toggle-label">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-spoofing-explain none ml-0p5rem text-1p3rem dimgray">Allows you to teleport anywhere on the map by tapping; useful for seeing the nearest stops, routes, and buildings to locations you might visit.</div>
+            <script>
+            $('.span-i-spoofing').click(function() {
+                $('.settings-spoofing-explain').slideToggle();
+            });
+            </script>
+
             <!-- <script>
                 // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
                 $(function() {
@@ -1344,16 +1360,6 @@
                             </label>
                         </div>
                     </div> -->
-
-                    <div class="flex justify-between">
-                        <div class="settings-heading">Location Spoofing</div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-spoofing" class="toggle-input">
-                            <label for="toggle-spoofing" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
 
                     <div class="flex justify-between">
                         <div class="settings-heading">Assistant</div>
