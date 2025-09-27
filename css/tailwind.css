@@ -134,6 +134,8 @@
 
 .pt-8rem { padding-top: 8rem; }
 
+.pl-1rem { padding-left: 1rem; }
+
 .pl-8rem { padding-left: 8rem; }
 
 .pl-16rem { padding-left: 16rem; }
@@ -203,6 +205,8 @@
 .mt-8rem { margin-top: 8rem; }
 
 .mt-16rem { margin-top: 16rem; }
+
+.mb-0p25rem { margin-bottom: 0.25rem; }
 
 .mb-0p5rem { margin-bottom: 0.5rem; }
 

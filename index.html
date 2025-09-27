@@ -855,152 +855,213 @@
 
     <div class="settings-panel">
         <div class="settings-main-heading center">Settings</div>
-        <div class="settings-list flex flex-col gap-y-1rem">
+        <div class="settings-list flex flex-col">
 
-            <div class="settings-font">
-                <div class="settings-heading">FONT</div>
-                <div class="settings-options grid grid-cols-3">
-                    <div class="settings-option" settings-option="font" font-option="yusei magic" style="font-family: Yusei Magic;">Yusei</div>
-                    <div class="settings-option" settings-option="font" font-option="PP Neue Montreal" style="font-family: PP Neue Montreal;">Montreal</div>
-                    <div class="settings-option" settings-option="font" font-option="bricolage grotesque" style="font-family: bricolage grotesque;">Grotesque</div>
-                    <div class="settings-option" settings-option="font" font-option="dunkin" style="font-family: dunkin; border-top: 1px solid rgb(185, 185, 185); border-left: 0;">Donut</div>
-                    <div class="settings-option" settings-option="font" font-option="comic-sans" style="font-family: comic-sans; border-top: 1px solid rgb(185, 185, 185);">Comic Sans</div>
-                    <div class="settings-option" settings-option="font" font-option="blockcraft" style="font-family: blockcraft; border-top: 1px solid rgb(185, 185, 185);">Blockcraft</div>
+            <div class="text-1p6rem mb-0p25rem bold-500">GUI</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(171, 171, 171);">
+                <div class="settings-font">
+                    <div class="settings-heading">Font</div>
+                    <div class="settings-options grid grid-cols-3">
+                        <div class="settings-option" settings-option="font" font-option="yusei magic" style="font-family: Yusei Magic;">Yusei</div>
+                        <div class="settings-option" settings-option="font" font-option="PP Neue Montreal" style="font-family: PP Neue Montreal;">Montreal</div>
+                        <div class="settings-option" settings-option="font" font-option="bricolage grotesque" style="font-family: bricolage grotesque;">Grotesque</div>
+                        <div class="settings-option" settings-option="font" font-option="dunkin" style="font-family: dunkin; border-top: 1px solid rgb(185, 185, 185); border-left: 0;">Donut</div>
+                        <div class="settings-option" settings-option="font" font-option="comic-sans" style="font-family: comic-sans; border-top: 1px solid rgb(185, 185, 185);">Comic Sans</div>
+                        <div class="settings-option" settings-option="font" font-option="blockcraft" style="font-family: blockcraft; border-top: 1px solid rgb(185, 185, 185);">Blockcraft</div>
+                    </div>
+                </div>
+
+                <div class="settings-theme">
+                    <div class="settings-heading">Theme</div>
+                    <div class="settings-options grid grid-cols-3">
+                        <div class="settings-option" settings-option="theme" theme-option="light">Light</div>
+                        <div class="settings-option" settings-option="theme" theme-option="dark">Dark</div>
+                        <div class="settings-option" settings-option="theme" theme-option="auto">Auto</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-settings-end">Move Settings to End<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-settings-btn-end" class="toggle-input">
+                        <label for="toggle-settings-btn-end" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>  
+                
+                <div class="settings-end-explain none ml-0p5rem text-1p3rem dimgray">Move the settings button to after the route buttons to clear up space in front for more routes and scroll less.</div>
+                <script>
+                $('.span-i-settings-end').click(function() {$('.settings-end-explain').slideToggle();})
+                </script>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Launch Fireworks Button</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
+                        <label for="toggle-launch-fireworks-button" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Campus Switcher</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-campus-switcher" class="toggle-input">
+                        <label for="toggle-show-campus-switcher" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
-             <div class="settings-theme">
-                <div class="settings-heading">THEME</div>
-                <div class="settings-options grid grid-cols-3">
-                    <div class="settings-option" settings-option="theme" theme-option="light">Light</div>
-                    <div class="settings-option" settings-option="theme" theme-option="dark">Dark</div>
-                    <div class="settings-option" settings-option="theme" theme-option="auto">Auto</div>
+            <div class="text-1p6rem mb-0p25rem bold-500">MAP</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(171, 171, 171);">
+
+                <div class="settings-marker-size">
+                    <div class="settings-heading">Marker Size</div>
+                    <div class="settings-options grid grid-cols-3">
+                        <div class="settings-option" settings-option="marker-size" marker-size-option="small"><div class="marker small-marker"><div></div></div></div>
+                        <div class="settings-option" settings-option="marker-size" marker-size-option="medium"><div class="marker medium-marker"><div></div></div></div>
+                        <div class="settings-option" settings-option="marker-size" marker-size-option="big"><div class="marker big-marker"><div></div></div></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-focus">Bus Focussing<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-hide-other-routes" class="toggle-input">
+                        <label for="toggle-hide-other-routes" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="focus-explain none ml-0p5rem text-1p3rem dimgray">Hide all other buses and center the route when a bus is selected. Drag with two fingers to pan the map. Pan with one finger to restore view.</div>
+                <script>
+                $('.span-i-focus').click(function() {$('.focus-explain').slideToggle();})
+                </script>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-preload">Preload Map Routes<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-polyline-padding" class="toggle-input">
+                        <label for="toggle-polyline-padding" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
+                <div class="preload-explain none ml-0p5rem text-1p3rem dimgray">Pre-render route lines on the entire map, even outside of view, to avoid having to load them when panning the map. May heavily degrade performance on some devices.</div>
+                <script>
+                $('.span-i-preload').click(function() {$('.preload-explain').slideToggle();})
+                if (/iPhone/i.test(navigator.userAgent)) {
+                    $('#toggle-polyline-padding').parent().css('pointer-events', 'none');
+                    $('.toggle-polyline-padding-unavailable').show();
+                }
+                </script>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Show Stops Above Buses</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-stops-above-buses" class="toggle-input">
+                        <label for="toggle-stops-above-buses" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Disable Fireworks on Open</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-disable-fireworks-on-open" class="toggle-input">
+                        <label for="toggle-disable-fireworks-on-open" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Show Bike Racks</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-bike-racks" class="toggle-input">
+                        <label for="toggle-show-bike-racks" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-spoofing">Location Spoofing<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-spoofing" class="toggle-input">
+                        <label for="toggle-spoofing" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-spoofing-explain none ml-0p5rem text-1p3rem dimgray">Allows you to teleport anywhere on the map by tapping; useful for seeing the nearest stops, routes, and buildings to locations you might visit.</div>
+                <script>
+                $('.span-i-spoofing').click(function() {
+                    $('.settings-spoofing-explain').slideToggle();
+                });
+                </script>
+
+                <div class="settings-campus">
+                    <div class="settings-heading">Campus</div>
+                    <div class="settings-options grid grid-cols-3">
+                        <div class="settings-option" settings-option="campus" campus-option="nb">NB</div>
+                        <div class="settings-option" settings-option="campus" campus-option="camden">Camden</div>
+                        <div class="settings-option" settings-option="campus" campus-option="newark">Newark</div>
+                    </div>
+                    <!-- <div class="ml-0p5rem text-1p3rem dimgray mt-0p5rem">* Camden/Newark campuses will be available in a future update.</div> -->
                 </div>
             </div>
 
-            <div class="settings-marker-size">
-                <div class="settings-heading">MARKER SIZE</div>
-                <div class="settings-options grid grid-cols-3">
-                    <div class="settings-option" settings-option="marker-size" marker-size-option="small"><div class="marker small-marker"><div></div></div></div>
-                    <div class="settings-option" settings-option="marker-size" marker-size-option="medium"><div class="marker medium-marker"><div></div></div></div>
-                    <div class="settings-option" settings-option="marker-size" marker-size-option="big"><div class="marker big-marker"><div></div></div></div>
+            <div class="text-1p6rem mb-0p25rem bold-500">STOPS</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(171, 171, 171);">
+                <div class="settings- flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-seconds">Show ETAs in Seconds<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
+                        <label for="toggle-show-etas-in-seconds" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
-            </div>
+                <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Use experimental ETA calculation to forecast in seconds. This may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
+                <script>
+                $('.span-i-seconds').click(function() {$('.seconds-explain').slideToggle();})
+                </script>
 
-            <div class="settings- flex justify-between">
-                <div class="settings-heading flex flex-1 align-center span-i-seconds">Show ETAs in Seconds<span class="span-i pointer select-none">i</span></div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
-                    <label for="toggle-show-etas-in-seconds" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
+                <div class="settings- flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-closest">Select Closest Stop on Open<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-select-closest-stop" class="toggle-input">
+                        <label for="toggle-select-closest-stop" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
-            </div>
-            <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Use experimental ETA calculation to forecast in seconds. This may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
-            <script>
-            $('.span-i-seconds').click(function() {$('.seconds-explain').slideToggle();})
-            </script>
+                <div class="closest-explain none ml-0p5rem text-1p3rem dimgray">Automatically select your closest stop when you open the app. Requires location permissions; share permanently to avoid the popup on each open.</div>
+                <script>
+                $('.span-i-closest').click(function() {$('.closest-explain').slideToggle();})
+                </script>
 
-            <div class="settings- flex justify-between">
-                <div class="settings-heading flex flex-1 align-center span-i-closest">Select Closest Stop on Open<span class="span-i pointer select-none">i</span></div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-select-closest-stop" class="toggle-input">
-                    <label for="toggle-select-closest-stop" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-second">Always Show 2nd Loop<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-always-show-second" class="toggle-input">
+                        <label for="toggle-always-show-second" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                 </div>
-            </div>
-            <div class="closest-explain none ml-0p5rem text-1p3rem dimgray">Automatically select your closest stop when you open the app. Requires location permissions; share permanently to avoid the popup on each open.</div>
-            <script>
-            $('.span-i-closest').click(function() {$('.closest-explain').slideToggle();})
-            </script>
-
-            <div class="flex justify-between">
-                <div class="settings-heading flex flex-1 align-center span-i-focus">Bus Focussing<span class="span-i pointer select-none">i</span></div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-hide-other-routes" class="toggle-input">
-                    <label for="toggle-hide-other-routes" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            <div class="focus-explain none ml-0p5rem text-1p3rem dimgray">Hide all other buses and center the route when a bus is selected. Drag with two fingers to pan the map. Pan with one finger to restore view.</div>
-            <script>
-            $('.span-i-focus').click(function() {$('.focus-explain').slideToggle();})
-            </script>
-
-            <div class="flex justify-between">
-                <div class="settings-heading flex flex-1 align-center span-i-preload">Preload Map Routes<span class="span-i pointer select-none">i</span></div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-polyline-padding" class="toggle-input">
-                    <label for="toggle-polyline-padding" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
-            <div class="preload-explain none ml-0p5rem text-1p3rem dimgray">Pre-render route lines on the entire map, even outside of view, to avoid having to load them when panning the map. May heavily degrade performance on some devices.</div>
-            <script>
-            $('.span-i-preload').click(function() {$('.preload-explain').slideToggle();})
-            if (/iPhone/i.test(navigator.userAgent)) {
-                $('#toggle-polyline-padding').parent().css('pointer-events', 'none');
-                $('.toggle-polyline-padding-unavailable').show();
-            }
-            </script>
-
-            <div class="flex justify-between">
-                <div class="settings-heading flex flex-1 align-center span-i-second">Always Show 2nd Loop<span class="span-i pointer select-none">i</span></div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-always-show-second" class="toggle-input">
-                    <label for="toggle-always-show-second" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
-            <div class="second-explain none ml-0p5rem text-1p3rem dimgray">Display upcoming buses with extended arrival times in stop panels.</div>
-            <script>
-            $('.span-i-second').click(function() {$('.second-explain').slideToggle();})
-            </script>
-
-            <div class="settings- flex justify-between">
-                <div class="settings-heading">Show Stops Above Buses</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-stops-above-buses" class="toggle-input">
-                    <label for="toggle-stops-above-buses" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="flex justify-between">
-                <div class="settings-heading">Disable Fireworks on Open</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-disable-fireworks-on-open" class="toggle-input">
-                    <label for="toggle-disable-fireworks-on-open" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="flex justify-between">
-                <div class="settings-heading">Launch Fireworks Button</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
-                    <label for="toggle-launch-fireworks-button" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="flex justify-between">
-                <div class="settings-heading">Campus Switcher</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-show-campus-switcher" class="toggle-input">
-                    <label for="toggle-show-campus-switcher" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
+                <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
+                <div class="second-explain none ml-0p5rem text-1p3rem dimgray">Display upcoming buses with extended arrival times in stop panels.</div>
+                <script>
+                $('.span-i-second').click(function() {$('.second-explain').slideToggle();})
+                </script>
             </div>
 
             <!-- <div class="flex justify-between">
@@ -1012,47 +1073,6 @@
                     </label>
                 </div>
             </div> -->
-
-            <div class="flex justify-between">
-                <div class="settings-heading">Show Bike Racks</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-show-bike-racks" class="toggle-input">
-                    <label for="toggle-show-bike-racks" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="flex justify-between">
-                <div class="settings-heading flex flex-1 align-center span-i-settings-end">Move Settings to End<span class="span-i pointer select-none">i</span></div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-settings-btn-end" class="toggle-input">
-                    <label for="toggle-settings-btn-end" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>  
-            
-            <div class="settings-end-explain none ml-0p5rem text-1p3rem dimgray">Move the settings button to after the route buttons to clear up space in front for more routes and scroll less.</div>
-            <script>
-            $('.span-i-settings-end').click(function() {$('.settings-end-explain').slideToggle();})
-            </script>
-
-            <div class="flex justify-between">
-                <div class="settings-heading flex flex-1 align-center span-i-spoofing">Location Spoofing<span class="span-i pointer select-none">i</span></div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-spoofing" class="toggle-input">
-                    <label for="toggle-spoofing" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            <div class="settings-spoofing-explain none ml-0p5rem text-1p3rem dimgray">Allows you to teleport anywhere on the map by tapping; useful for seeing the nearest stops, routes, and buildings to locations you might visit.</div>
-            <script>
-            $('.span-i-spoofing').click(function() {
-                $('.settings-spoofing-explain').slideToggle();
-            });
-            </script>
 
             <!-- <script>
                 // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
@@ -1078,16 +1098,6 @@
                     });
                 });
                 </script> -->
-
-            <div class="settings-campus">
-                <div class="settings-heading">CAMPUS</div>
-                <div class="settings-options grid grid-cols-3">
-                    <div class="settings-option" settings-option="campus" campus-option="nb">NB</div>
-                    <div class="settings-option" settings-option="campus" campus-option="camden">Camden</div>
-                    <div class="settings-option" settings-option="campus" campus-option="newark">Newark</div>
-                </div>
-                <!-- <div class="ml-0p5rem text-1p3rem dimgray mt-0p5rem">* Camden/Newark campuses will be available in a future update.</div> -->
-            </div>
 
             <div class="dev-options-head settings-heading mt-2rem center pointer" onclick="toggleDevOptions()">Show Developer Options ▼</div>
             <div class="dev-options-wrapper none mb-2rem">
