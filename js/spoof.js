@@ -6,26 +6,48 @@ function initSpoofing() {
     __spoofHandlerAttached = true;
 
     map.on('click', function(e) {
-        // Prevent spoofing if click is on a building or parking lot
-        let isOnBuildingOrParking = false;
-        if (window.buildingsLayer) {
-            window.buildingsLayer.eachLayer(function(layer) {
-                if (layer.getBounds && layer.getBounds().contains(e.latlng)) {
-                    const category = layer.feature?.properties?.category;
-                    if (category === 'building' || category === 'parking') {
-                        isOnBuildingOrParking = true;
-                    }
-                }
-            });
-        }
-        if (isOnBuildingOrParking) { return; }
-
         const spoofEnabled = (spoof) || (settings && settings['toggle-spoofing']);
         if (!spoofEnabled) { return; }
 
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
-        userPosition = [lat, lng];
+
+        // Check if click is on a building (even if buildings layer is disabled)
+        let buildingAtClick = null;
+        if (buildingSpatialIndex) {
+            // Use spatial index to find buildings near the click point
+            const nearbyBuildings = buildingSpatialIndex.getBuildingsNearPoint(lat, lng);
+            for (const feature of nearbyBuildings) {
+                if (feature.properties && (feature.properties.category === 'building' || feature.properties.category === 'parking')) {
+                    // Check if point is actually inside the building polygon
+                    if (isPointInPolygon(lat, lng, feature.geometry.coordinates[0])) {
+                        buildingAtClick = feature;
+                        break;
+                    }
+                }
+            }
+        } else if (spoofEnabled) {
+            // Buildings not loaded yet, load them for spoofing detection
+            loadBuildings().then(() => {
+                // Re-trigger the click handler with buildings now loaded
+                // This is a bit of a hack, but ensures building detection works
+                setTimeout(() => {
+                    const clickEvent = { latlng: e.latlng };
+                    map.fire('click', clickEvent);
+                }, 100);
+            });
+            return; // Exit early, will re-trigger after buildings load
+        }
+
+        if (buildingAtClick) {
+            // Spoof to building center coordinates instead of exact click point
+            const buildingLat = buildingAtClick.properties.lat;
+            const buildingLng = buildingAtClick.properties.lng;
+            userPosition = [buildingLat, buildingLng];
+        } else {
+            // Regular spoofing to exact click point
+            userPosition = [lat, lng];
+        }
 
         if (typeof watchPositionId !== 'undefined' && watchPositionId !== null) {
             try { navigator.geolocation.clearWatch(watchPositionId); } catch (_) {}

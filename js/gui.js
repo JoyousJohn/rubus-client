@@ -2199,17 +2199,30 @@ function populateMeClosestStops() {
 
     // Check if user is in a building and display building name
     if (userPosition && userPosition.length === 2) {
-        // Ensure buildings are loaded for location checking (data is always available)
-        if (!window.buildingsLayer) {
-            loadBuildings(); // Will show on map only if setting is enabled
-        }
-
+        const $currentLocationDiv = $('.current-location');
+        
         // Update building location cache if user moved significantly
         onUserLocationChanged(userPosition[0], userPosition[1]);
 
-        const building = getBuildingAtLocation(userPosition[0], userPosition[1]);
-        const $currentLocationDiv = $('.current-location');
-
+        // Check if buildings are already loaded
+        if (window.buildingsLayer && buildingSpatialIndex) {
+            // Buildings are loaded, check immediately
+            const building = getBuildingAtLocation(userPosition[0], userPosition[1]);
+            updateLocationDisplay(building, $currentLocationDiv);
+        } else {
+            // Buildings not loaded, load them first (data only, won't show on map unless setting enabled)
+            loadBuildings().then(() => {
+                const building = getBuildingAtLocation(userPosition[0], userPosition[1]);
+                updateLocationDisplay(building, $currentLocationDiv);
+            }).catch(error => {
+                console.error('Error loading buildings for location detection:', error);
+                updateLocationDisplay(null, $currentLocationDiv);
+            });
+        }
+    }
+    
+    // Helper function to update location display
+    function updateLocationDisplay(building, $currentLocationDiv) {
         // Try to get nearest road/address
         getNearestAddress(userPosition[0], userPosition[1]).then(nearestAddress => {
             if (building && building.name) {
