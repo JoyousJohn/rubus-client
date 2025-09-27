@@ -613,6 +613,9 @@
                 <div class="subpanels-container">
                     <div class="subpanel route-panel">
                         <div class="subpanel-inner">
+                            <div id="route-selection-prompt" class="flex h-full justify-center align-center">
+                                <div class="text-1p7rem w-half bold-500 center" style="color: var(--theme-color-lighter)">Select a route to view its stops & incoming buses.</div>
+                            </div>
                             <div class="route-panel-wrapper">
                                 <div class="route-panel none">
                                     <div class="flex flex-col">
@@ -675,7 +678,7 @@
             </div>
             
             <!-- Bottom row: Header buttons -->
-            <div class="info-panels-header-buttons grid gap-x-0p5rem text-1p6rem p-1rem center select-none" style="background-color: var(--theme-bg); border-top: 1px solid var(--theme-border); grid-template-columns: 1fr 1fr 1fr auto;">
+            <div class="info-panels-header-buttons grid gap-x-0p5rem text-1p6rem px-1rem pt-1rem pb-2rem center select-none" style="background-color: var(--theme-bg); border-top: 1px solid var(--theme-border); grid-template-columns: 1fr 1fr 1fr auto;">
                 <div class="flex justify-center">
                     <div data-panel="routes" class="flex justify-center align-center gap-x-0p5rem w-min px-1rem py-1rem br-2rem pointer" style="background-color: var(--theme-bg-closest-stop)" onclick="selectInfoPanel('routes', this)">
                         <i class="fa-solid fa-route"></i>

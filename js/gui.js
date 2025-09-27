@@ -592,6 +592,9 @@ function selectedRoute(route) {
             $('.active-buses').empty();
             $('.route-stops-grid').empty();
             
+            // Show the route selection prompt since no route is selected
+            $('#route-selection-prompt').show();
+            
             // Reset panelRoute so the route can be selected again
             panelRoute = null;
             
@@ -672,6 +675,9 @@ function selectedRoute(route) {
     
     // Make sure route panel is visible by removing the 'none' class
     $('.route-panel').show();
+    
+    // Hide the route selection prompt since a route is now selected
+    $('#route-selection-prompt').hide();
     
     $('.route-stops-grid').empty();
 

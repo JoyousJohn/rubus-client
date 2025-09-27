@@ -156,6 +156,8 @@
 
 .pb-0p5rem { padding-bottom: 0.5rem; }
 
+.pb-2rem { padding-bottom: 2rem; }
+
 .pb-8rem { padding-bottom: 8rem; }
 
 .pb-25rem { padding-bottom: 25rem; }
@@ -344,6 +346,8 @@
 .no-wrap { text-wrap: nowrap; }
 
 .width-100 { width: 100%; }
+
+.w-half { width: 50%; }
 
 .w-full { width: 100%; }
 

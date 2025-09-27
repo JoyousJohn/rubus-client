@@ -173,6 +173,11 @@ $('.info-panels').click(function() {
     // Select any previously selected route after selectors are populated
     if (shownRoute) {
         toggleRouteSelectors(shownRoute);
+        // Hide the route selection prompt since a route is selected
+        $('#route-selection-prompt').hide();
+    } else {
+        // Show the route selection prompt since no route is selected
+        $('#route-selection-prompt').show();
     }
 
     // Show and position route selectors immediately when info panels are opened
