@@ -70,6 +70,14 @@ function isServerOnline(lastResponse, pollInterval, buffer) {
 }
 
 function showStatus() {
+    // Toggle behavior: if already visible, hide and unselect
+    if ($('.status-wrapper').is(':visible')) {
+        $('.status-wrapper').hide();
+        $('.status').removeClass('footer-selected');
+        stopStatusUpdates();
+        return;
+    }
+
     // Clear any existing interval
     if (statusUpdateInterval) {
         clearInterval(statusUpdateInterval);
