@@ -860,8 +860,8 @@
         <div class="settings-main-heading center">Settings</div>
         <div class="settings-list flex flex-col">
 
-            <div class="text-1p6rem mb-0p25rem bold-500">GUI</div>
-            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(171, 171, 171);">
+            <div class="text-1p6rem mb-0p25rem bold-500">LOOK & FEEL</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(203, 203, 203);">
                 <div class="settings-font">
                     <div class="settings-heading">Font</div>
                     <div class="settings-options grid grid-cols-3">
@@ -883,6 +883,20 @@
                     </div>
                 </div>
 
+                <div class="settings- flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-seconds">Show ETAs in Seconds<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
+                        <label for="toggle-show-etas-in-seconds" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Use experimental ETA calculation to forecast in seconds. This may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
+                <script>
+                $('.span-i-seconds').click(function() {$('.seconds-explain').slideToggle();})
+                </script>
+
                 <div class="flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-settings-end">Move Settings to End<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
@@ -899,20 +913,10 @@
                 </script>
 
                 <div class="flex justify-between">
-                    <div class="settings-heading">Launch Fireworks Button</div>
+                    <div class="settings-heading">Disable Fireworks on Open</div>
                     <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
-                        <label for="toggle-launch-fireworks-button" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="flex justify-between">
-                    <div class="settings-heading">Campus Switcher</div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-show-campus-switcher" class="toggle-input">
-                        <label for="toggle-show-campus-switcher" class="toggle-label">
+                        <input type="checkbox" id="toggle-disable-fireworks-on-open" class="toggle-input">
+                        <label for="toggle-disable-fireworks-on-open" class="toggle-label">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -920,16 +924,7 @@
             </div>
 
             <div class="text-1p6rem mb-0p25rem bold-500">MAP</div>
-            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(171, 171, 171);">
-
-                <div class="settings-marker-size">
-                    <div class="settings-heading">Marker Size</div>
-                    <div class="settings-options grid grid-cols-3">
-                        <div class="settings-option" settings-option="marker-size" marker-size-option="small"><div class="marker small-marker"><div></div></div></div>
-                        <div class="settings-option" settings-option="marker-size" marker-size-option="medium"><div class="marker medium-marker"><div></div></div></div>
-                        <div class="settings-option" settings-option="marker-size" marker-size-option="big"><div class="marker big-marker"><div></div></div></div>
-                    </div>
-                </div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(203, 203, 203);">
 
                 <div class="flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-focus">Bus Focussing<span class="span-i pointer select-none">i</span></div>
@@ -974,23 +969,12 @@
                     </div>
                 </div>
 
-                <div class="flex justify-between">
-                    <div class="settings-heading">Disable Fireworks on Open</div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-disable-fireworks-on-open" class="toggle-input">
-                        <label for="toggle-disable-fireworks-on-open" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="flex justify-between">
-                    <div class="settings-heading">Show Bike Racks</div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-show-bike-racks" class="toggle-input">
-                        <label for="toggle-show-bike-racks" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
+                <div class="settings-marker-size">
+                    <div class="settings-heading">Marker Size</div>
+                    <div class="settings-options grid grid-cols-3">
+                        <div class="settings-option" settings-option="marker-size" marker-size-option="small"><div class="marker small-marker"><div></div></div></div>
+                        <div class="settings-option" settings-option="marker-size" marker-size-option="medium"><div class="marker medium-marker"><div></div></div></div>
+                        <div class="settings-option" settings-option="marker-size" marker-size-option="big"><div class="marker big-marker"><div></div></div></div>
                     </div>
                 </div>
 
@@ -1009,33 +993,10 @@
                     $('.settings-spoofing-explain').slideToggle();
                 });
                 </script>
-
-                <div class="settings-campus">
-                    <div class="settings-heading">Campus</div>
-                    <div class="settings-options grid grid-cols-3">
-                        <div class="settings-option" settings-option="campus" campus-option="nb">NB</div>
-                        <div class="settings-option" settings-option="campus" campus-option="camden">Camden</div>
-                        <div class="settings-option" settings-option="campus" campus-option="newark">Newark</div>
-                    </div>
-                    <!-- <div class="ml-0p5rem text-1p3rem dimgray mt-0p5rem">* Camden/Newark campuses will be available in a future update.</div> -->
-                </div>
             </div>
 
             <div class="text-1p6rem mb-0p25rem bold-500">STOPS</div>
-            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(171, 171, 171);">
-                <div class="settings- flex justify-between">
-                    <div class="settings-heading flex flex-1 align-center span-i-seconds">Show ETAs in Seconds<span class="span-i pointer select-none">i</span></div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
-                        <label for="toggle-show-etas-in-seconds" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Use experimental ETA calculation to forecast in seconds. This may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
-                <script>
-                $('.span-i-seconds').click(function() {$('.seconds-explain').slideToggle();})
-                </script>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(203, 203, 203);">
 
                 <div class="settings- flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-closest">Select Closest Stop on Open<span class="span-i pointer select-none">i</span></div>
@@ -1101,6 +1062,51 @@
                     });
                 });
                 </script> -->
+
+            <div class="text-1p6rem mb-0p25rem bold-500">EXTRAS</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(203, 203, 203);">
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Launch Fireworks Button</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
+                        <label for="toggle-launch-fireworks-button" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Show Bike Racks</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-bike-racks" class="toggle-input">
+                        <label for="toggle-show-bike-racks" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-campus">
+                    <div class="settings-heading">Campus</div>
+                    <div class="settings-options grid grid-cols-3">
+                        <div class="settings-option" settings-option="campus" campus-option="nb">NB</div>
+                        <div class="settings-option" settings-option="campus" campus-option="camden">Camden</div>
+                        <div class="settings-option" settings-option="campus" campus-option="newark">Newark</div>
+                    </div>
+                    <!-- <div class="ml-0p5rem text-1p3rem dimgray mt-0p5rem">* Camden/Newark campuses will be available in a future update.</div> -->
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Campus Switcher</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-campus-switcher" class="toggle-input">
+                        <label for="toggle-show-campus-switcher" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
 
             <div class="dev-options-head settings-heading mt-2rem center pointer" onclick="toggleDevOptions()">Show Developer Options ▼</div>
             <div class="dev-options-wrapper none mb-2rem">
