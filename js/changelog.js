@@ -3,8 +3,14 @@ let allCommits = new Map(); // Store all commits grouped by date
 let previousCommitCount = 0; // Track how many commits were rendered before
 let changelogInitialized = false; // Track if changelog has been loaded before
 let renderedCommits = new Map(); // Track which commits have already been rendered
+let changelogLoading = false; // Prevent spam clicking on changelog
 
 async function getChangelog() {
+    // Prevent spam clicking
+    if (changelogLoading) {
+        return;
+    }
+
     // Toggle behavior: if already visible, hide and unselect
     if ($('.changelog-wrapper').is(':visible')) {
         $('.changelog-wrapper').hide();
@@ -41,6 +47,13 @@ async function getChangelog() {
 }
 
 function loadCommitsPage(page) {
+    // Prevent spam clicking
+    if (changelogLoading) {
+        return;
+    }
+    
+    changelogLoading = true;
+    
     $.ajax({
         url: `https://api.github.com/repos/JoyousJohn/rubus-client/commits?per_page=57&page=${page}`,
         type: 'GET',
@@ -48,6 +61,7 @@ function loadCommitsPage(page) {
             // If no more commits, hide the button
             if (data.length === 0) {
                 $('.show-more-commits-btn').hide();
+                changelogLoading = false;
                 return;
             }
 
@@ -89,6 +103,11 @@ function loadCommitsPage(page) {
             } else {
                 $('.show-more-commits-btn').hide();
             }
+            
+            changelogLoading = false;
+        },
+        error: function() {
+            changelogLoading = false;
         }
     });
 }
@@ -193,6 +212,9 @@ function renderChangelog() {
     if ($('.show-more-commits-btn').length === 0) {
         const $showMoreBtn = $('<div class="show-more-commits-btn pointer text-1p4rem center mt-1rem" style="color: #1a73e8; font-weight: 500;"><i class="fa-solid fa-plus"></i> Show more commits</div>');
         $showMoreBtn.click(function() {
+            if (changelogLoading) {
+                return;
+            }
             currentPage++;
             loadCommitsPage(currentPage);
         });

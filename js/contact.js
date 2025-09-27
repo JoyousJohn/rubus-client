@@ -1,4 +1,5 @@
 let contact;
+let contactLoading = false;
 
 function showContact() {
     $('.contact').addClass('footer-selected');
@@ -39,6 +40,10 @@ function popContact() {
 
 
 function contactClicked() {
+    if (contactLoading) {
+        return;
+    }
+
     // Check if contact wrapper is currently visible
     if ($('.footer-contact-wrapper').is(':visible')) {
         $('.footer-contact-wrapper').hide();
@@ -60,6 +65,7 @@ function contactClicked() {
     $('.contact').addClass('footer-selected');
     
     if (!contact) {
+        contactLoading = true;
         fetch('https://demo.rubus.live/contact')
             .then(response => response.json())
             .then(data => {
@@ -67,10 +73,12 @@ function contactClicked() {
                 $('.footer-contact-loading').hide();
                 popContact();
                 updateRubusResponseTime();
+                contactLoading = false;
             })
             .catch(error => {
                 console.error('Error fetching contact data:', error);
                 markRubusRequestsFailing();
+                contactLoading = false;
             });
     } else {
         $('.footer-contact-loading').hide();
