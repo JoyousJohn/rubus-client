@@ -65,6 +65,12 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         routesArray.push('ftbl');
     }
 
+    // Add parking campus route selector if campus is selected
+    const parkingCampus = settings['parking-campus'];
+    if (parkingCampus && parkingCampus !== false) {
+        addParkingCampusRouteSelector(parkingCampus);
+    }
+
     routesArray.forEach(route => {
 
         let routeFormatted = route;
@@ -303,9 +309,46 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
 
 }
 
-function clearRouteSelectors() {
-    $('.route-selectors > div').not('.settings-btn, .sim-btn').remove();
+function addParkingCampusRouteSelector(parkingCampus) {
+    // Check if parking campus selector already exists
+    if ($(`.route-selector[routeName="parking-${parkingCampus}"]`).length > 0) {
+        return;
+    }
+
+    const $routeElm = $(`
+        <div class="route-selector parking-campus-selector" routeName="parking-${parkingCampus}" style="background-color: white; color: black; font-weight: bold; white-space: nowrap; padding-left: 1rem;">
+            <i class="fa-regular fa-circle-parking"></i> ${campusShortNamesMappings[parkingCampus.toLowerCase()]}
+        </div>
+    `);
+
+    // Add click handler for parking campus selector
+    $routeElm.click(function() {
+        // Toggle parking permit mode
+        if ($('body').hasClass('parking-permit-mode')) {
+            exitParkingPermitMode();
+        } else {
+            enterParkingPermitMode(parkingCampus);
+            // Apply selection styling to parking campus selector
+            $routeElm.css('box-shadow', '0 0 10px var(--theme-color)');
+        }
+    });
+
+    // Add to route selectors (at the end, after settings button)
+    $('.route-selectors').append($routeElm);
 }
+
+
+
+function clearRouteSelectors() {
+    $('.route-selectors > div').not('.settings-btn, .sim-btn').not('.parking-campus-selector').remove();
+}
+
+
+
+
+
+
+
 
 let shownRoute;  
 let shownBeforeRoute;
@@ -415,7 +458,31 @@ function showAllBuses() {
     }
 }
 
+function hideAllBusesFromMap() {
+    for (const marker in busMarkers) {
+        busMarkers[marker].getElement().style.display = 'none';
+    }
+}
+
 function showAllPolylines() {
+    for (const polyline in polylines) {
+        polylines[polyline].setStyle({ opacity: 1 });
+    }
+}
+
+function hideAllPolylinesFromMap() {
+    for (const polyline in polylines) {
+        polylines[polyline].setStyle({ opacity: 0 });
+    }
+}
+
+function showAllBusesFromMap() {
+    for (const marker in busMarkers) {
+        busMarkers[marker].getElement().style.display = '';
+    }
+}
+
+function showAllPolylinesFromMap() {
     for (const polyline in polylines) {
         polylines[polyline].setStyle({ opacity: 1 });
     }
@@ -1593,6 +1660,8 @@ let defaultSettings = {
     'toggle-settings-btn-end': false,
     'toggle-show-buildings': true,
     'campus': 'nb',
+    'parking-campus': false,
+
     
     // dev settings
     'map-renderer': 'svg',
@@ -1695,6 +1764,16 @@ function updateSettings() {
 
     if (!$('.theme-modal').is(':visible')) {
         $(`div.settings-option[theme-option="${settings['theme']}"]`).addClass('settings-selected')
+    }
+
+    // Load parking campus setting
+    const parkingCampus = settings['parking-campus'];
+    if (parkingCampus && parkingCampus !== false) {
+        // Update parking button UI to show selected campus
+        $('.parking-campus-option').removeClass('selected');
+        $(`.parking-campus-option[data-campus="${parkingCampus}"]`).addClass('selected');
+        $('.parking-add-btn .mr-0p5rem').text(parkingCampus);
+        $('.parking-add-btn .text-1p3rem').hide();
     }
 
     $('.settings-option').click(function() {

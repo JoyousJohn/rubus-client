@@ -1,0 +1,220 @@
+/* Parking dropdown styling */
+.parking-add-container {
+    position: relative;
+}
+
+.parking-add-btn {
+    transition: background-color 0.3s ease;
+}
+
+.parking-add-btn:hover {
+    background-color: rgb(74, 74, 245);
+}
+
+.parking-add-btn.selected {
+    background-color: rgb(74, 74, 245);
+}
+
+.parking-campus-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: var(--theme-bg);
+    border: 1px solid var(--theme-line-bg);
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 150px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.parking-campus-option {
+    padding: 1rem 1.5rem;
+    color: var(--theme-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: var(--font-family);
+    font-size: 1.4rem;
+    border-bottom: 1px solid var(--theme-line-bg);
+}
+
+.parking-campus-option:last-child {
+    border-bottom: none;
+}
+
+.parking-campus-option:hover {
+    background-color: var(--theme-bg-closest-stop);
+}
+
+.parking-campus-option.selected {
+    background-color: var(--theme-satellite-btn);
+    color: white;
+}
+
+.parking-day-type > div {
+    color: var(--theme-color);
+    background-color: var(--theme-bg);
+}
+
+.parking-day-type [data-day-type].selected {
+    background-color: var(--theme-satellite-btn);
+    color: white;
+}
+
+/* Hide other UI elements when in parking permit mode */
+.parking-permit-mode .route-selector:not(.parking-campus-selector) {
+    display: none !important;
+}
+
+.parking-permit-mode .settings-btn {
+    display: none !important;
+}
+
+.parking-permit-mode .buildings-btn {
+    display: none !important;
+}
+
+.parking-permit-mode .info-panels-show-hide-wrapper {
+    display: none !important;
+}
+
+.parking-permit-mode .search-btn-wrapper {
+    display: none !important;
+}
+
+.parking-permit-mode .getting-location-popup {
+    display: none !important;
+}
+
+.parking-permit-mode .updating-buses {
+    display: none !important;
+}
+
+.parking-permit-mode .slow-connection {
+    display: none !important;
+}
+
+.parking-permit-popup {
+    pointer-events: all;
+    z-index: 403;
+    font-family: var(--font-family);
+    position: relative;
+}
+
+/* Time Scroll Styling */
+.parking-time-scroll-wrapper {
+    position: relative;
+}
+
+.parking-time-scroll {
+    position: relative;
+    /* height: 2.5rem; */
+    overflow: hidden;
+    background-color: var(--theme-bg);
+}
+
+.time-scroll-container {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+.time-ticks-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* height: 100%; */
+    width: max-content;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 46vw; /* Center the content */
+    box-sizing: border-box;
+    cursor: grab;
+    user-select: none;
+}
+
+.time-ticks-container:active {
+    cursor: grabbing;
+}
+
+.time-tick {
+    width: 4rem;
+    height: 100%;
+    position: relative;
+    /* padding-bottom: 1rem; */
+    box-sizing: border-box;
+}
+
+.time-tick.hour-tick {
+    border-left-width: 2px;
+}
+
+.time-tick-line {
+    width: 100%;
+    height: 3rem;
+    border-left: 2px solid var(--theme-color-lighter);
+    /* margin: 0.5rem 0; */
+    margin-top: 0.5rem;
+}
+
+/* .time-tick.hour-tick .time-tick-line {
+    height: 80px;
+} */
+
+.time-tick-label {
+    position: absolute;
+    font-size: 1.2rem;
+    color: var(--theme-color);
+    white-space: nowrap;
+    transform: translateX(-50%);
+}
+
+.current-time-indicator {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.current-time-tick {
+    width: 3px;
+    height: 100%;
+    background-color: #dc2626; /* Red color */
+    position: relative;
+    align-self: stretch;
+}
+
+.current-time-tick::after {
+    content: '';
+    position: absolute;
+    top: 0.8rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 12px solid #dc2626;
+}
+
+.current-time-label {
+    position: absolute;
+    top: -1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #dc2626;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.parking-lot-count {
+    color: var(--theme-color);
+    background-color: var(--theme-bg);
+}

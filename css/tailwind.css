@@ -136,6 +136,8 @@
 
 .pl-1rem { padding-left: 1rem; }
 
+.pl-1p5rem { padding-left: 1.5rem; }
+
 .pl-8rem { padding-left: 8rem; }
 
 .pl-16rem { padding-left: 16rem; }
@@ -166,15 +168,21 @@
 
 .px-1rem { padding-left: 1rem; padding-right: 1rem; }
 
+.px-1p5rem { padding-left: 1.5rem; padding-right: 1.5rem; }
+
 .px-2rem { padding-left: 2rem; padding-right: 2rem; }
 
 .px-3rem { padding-left: 3rem; padding-right: 3rem; }
 
 .px-16rem { padding-left: 16rem; padding-right: 16rem; }
 
+.py-0p25rem { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+
 .py-0p5rem { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 
 .py-1rem { padding-top: 1rem; padding-bottom: 1rem; }
+
+.py-1p5rem { padding-top: 1.5rem; padding-bottom: 1.5rem; }
 
 .py-2rem { padding-top: 2rem; padding-bottom: 2rem; }
 
@@ -371,6 +379,8 @@
 
 .white { color: white; }
 
+.black { color: black; }
+
 .red { color: red; }
 
 .gray545454 { color: #545454 }
@@ -384,6 +394,10 @@
 .lime { color: lime; }
 
 .gold { color: gold; }
+
+.bg-white { background-color: white; }
+
+.bg-black { background-color: black; }
 
 .bg-lime { background-color: lime; }
 

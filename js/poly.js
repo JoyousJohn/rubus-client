@@ -754,6 +754,11 @@ function updateStopBusesMaxHeight() {
 
 async function popStopInfo(stopId) {
     // console.log('popStopInfo', stopId);
+    
+    // Don't show stop info when in parking permit mode
+    if ($('body').hasClass('parking-permit-mode')) {
+        return;
+    }
     if (popupStopId) {
         $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
         busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
@@ -945,6 +950,10 @@ async function addStopsToMap() {
             })
             .addTo(map)
             .on('click', function() {
+                // Don't process stop clicks when in parking permit mode
+                if ($('body').hasClass('parking-permit-mode')) {
+                    return;
+                }
 
                 sourceStopId = null;
                 sourceBusId = null;

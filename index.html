@@ -26,6 +26,7 @@
     <script defer src="js/riding.js"></script>
     <script defer src="js/spoof.js"></script>
     <script defer src="js/poly.js"></script>
+    <script src="js/parking.js"></script>
     <script defer src="js/gui.js"></script>
     <script defer src="js/info-panels.js"></script>
     <script defer src="js/ws.js"></script>
@@ -60,6 +61,7 @@
     <link rel="stylesheet" type="text/css" href="css/ridership.css">
     <link rel="stylesheet" type="text/css" href="css/tailwind.css">
     <link rel="stylesheet" type="text/css" href="css/mobile.css">
+    <link rel="stylesheet" type="text/css" href="css/parking.css">
     <link rel="stylesheet" type="text/css" href="css/modal.css">
     <link rel="stylesheet" type="text/css" href="css/involved.css">
     <link rel="stylesheet" type="text/css" href="css/ai.css">
@@ -598,6 +600,31 @@
             </div>
         </div>
     
+        <div class="parking-permit-popup none m-2rem">
+            <div class="flex flex-col">
+                <div class="parking-day-type flex gap-x-0p5rem text-1p5rem">
+                    <div class="px-1p5rem py-0p5rem br-2rem pointer" data-day-type="weekday">Weekdays</div>
+                    <div class="px-1p5rem py-0p5rem br-2rem pointer" data-day-type="weekend">Weekends</div>
+                </div>
+                <div class="parking-time-scroll-wrapper mt-1rem">
+                    <div class="parking-time-scroll br-1rem">
+                        <div class="time-scroll-container">
+                            <div class="time-ticks-container">
+                                <!-- Time ticks will be generated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="current-time-indicator">
+                        <div class="current-time-label"></div>
+                        <div class="current-time-tick"></div>
+                    </div>
+                </div>
+                <div class="flex justify-center mt-0p5rem">
+                    <div class="parking-lot-count text-1p3rem br-1rem py-0p25rem px-1rem bold-500"></div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div class="bus-log-wrapper none">
@@ -860,8 +887,8 @@
         <div class="settings-main-heading center">Settings</div>
         <div class="settings-list flex flex-col">
 
-            <div class="text-1p6rem mb-0p25rem bold-500">LOOK & FEEL</div>
-            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(203, 203, 203);">
+            <div class="text-1p6rem mb-0p25rem bold-500" style="color: var(--theme-extra)">LOOK & FEEL</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
                 <div class="settings-font">
                     <div class="settings-heading">Font</div>
                     <div class="settings-options grid grid-cols-3">
@@ -881,6 +908,7 @@
                         <div class="settings-option" settings-option="theme" theme-option="dark">Dark</div>
                         <div class="settings-option" settings-option="theme" theme-option="auto">Auto</div>
                     </div>
+                    <div class="text-1p3rem dimgray">*Settings menu currently only available in light.</div>
                 </div>
 
                 <div class="settings- flex justify-between">
@@ -923,8 +951,8 @@
                 </div>
             </div>
 
-            <div class="text-1p6rem mb-0p25rem bold-500">MAP</div>
-            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(203, 203, 203);">
+            <div class="text-1p6rem mb-0p25rem bold-500" style="color: var(--theme-extra)">MAP</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
 
                 <div class="flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-focus">Bus Focussing<span class="span-i pointer select-none">i</span></div>
@@ -995,8 +1023,8 @@
                 </script>
             </div>
 
-            <div class="text-1p6rem mb-0p25rem bold-500">STOPS</div>
-            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(203, 203, 203);">
+            <div class="text-1p6rem mb-0p25rem bold-500" style="color: var(--theme-extra)">STOPS</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
 
                 <div class="settings- flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-closest">Select Closest Stop on Open<span class="span-i pointer select-none">i</span></div>
@@ -1063,8 +1091,8 @@
                 });
                 </script> -->
 
-            <div class="text-1p6rem mb-0p25rem bold-500">EXTRAS</div>
-            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(203, 203, 203);">
+            <div class="text-1p6rem mb-0p25rem bold-500" style="color: var(--theme-extra)">EXTRAS</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
 
                 <div class="flex justify-between">
                     <div class="settings-heading">Launch Fireworks Button</div>
@@ -1106,9 +1134,26 @@
                     </div>
                 </div>
 
+                <div class="flex justify-between">
+                    <div class="settings-heading" style="align-self: center;">Parking Permit</div>
+                    <div class="parking-add-container">
+                        <div class="parking-add-btn br-2rem bg-black white text-1p6rem pr-1rem py-0p5rem pl-1p5rem flex align-center select-none pointer">
+                            <span class="mr-0p5rem">Add</span>
+                            <span class="text-1p3rem"><i class="fa-regular fa-plus bold-600"></i></span>
+                        </div>
+                        <div class="parking-campus-dropdown none">
+                            <div class="parking-campus-option" data-campus="Busch">Busch</div>
+                            <div class="parking-campus-option" data-campus="Livingston">Livingston</div>
+                            <div class="parking-campus-option" data-campus="College Ave">College Ave</div>
+                            <div class="parking-campus-option" data-campus="Cook">Cook</div>
+                            <div class="parking-campus-option" data-campus="Douglass">Douglass</div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="dev-options-head settings-heading mt-2rem center pointer" onclick="toggleDevOptions()">Show Developer Options ▼</div>
+            <div class="dev-options-head settings-heading mt-2rem center pointer select-none" onclick="toggleDevOptions()">Show Developer Options ▼</div>
             <div class="dev-options-wrapper none mb-2rem">
 
                 <div class="flex flex-col gap-y-1rem">

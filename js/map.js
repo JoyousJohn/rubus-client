@@ -552,10 +552,21 @@ function panout() {
     // Set up drag handler immediately - it won't interfere with fitBounds
     map.on('dragstart', panoutDragHandler);
 
+    sa_event('btn_press', {
+        'btn': 'panout'
+    });
+
     $('[stop-eta]').text('').hide();
     savedCenter = null;
     savedView = null;
     returningToSavedView = false; // not sure if I need this, this will be so hard to trigger within 88ms. drag and then panout...
+
+    // Check if parking permit mode is active
+    if ($('body').hasClass('parking-permit-mode')) {
+        // Fit map to show all currently visible parking lots
+        fitMapToParkingLots();
+        return;
+    }
 
     if (shownRoute) {
         map.fitBounds(routeBounds[shownRoute]);
@@ -573,9 +584,7 @@ function panout() {
         showAllStops();
     }
 
-    sa_event('btn_press', {
-        'btn': 'panout'
-    });
+    
 
 }
 

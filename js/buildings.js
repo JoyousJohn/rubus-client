@@ -417,6 +417,7 @@ function loadBuildings() {
             // Build spatial index for efficient lookups
             buildingSpatialIndex = new BuildingSpatialIndex();
             buildingSpatialIndex.buildIndex(buildingsLayer);
+            window.buildingSpatialIndex = buildingSpatialIndex;
 
             // Only add to map if buildings setting is enabled
             if (settings['toggle-show-buildings']) {
@@ -642,8 +643,9 @@ class BuildingSpatialIndex {
 
         this.allBuildings.push(feature);
         
-        // Store name-to-layer mapping for O(1) lookup
+        // Store name-to-layer mapping for O(1) lookup (both original and lowercase)
         this.nameToLayer.set(feature.properties.name, layer);
+        this.nameToLayer.set(feature.properties.name.toLowerCase(), layer);
 
         const bbox = this.getBoundingBox(feature.geometry.coordinates[0]);
         const gridCells = this.getGridCellsForBBox(bbox);
