@@ -117,6 +117,10 @@ $(document).ready(function() {
     $('.parking-campus-dropdown').click(function(e) {
         e.stopPropagation();
     });
+    
+    // Update parking permit route selector based on current campus setting
+    const currentCampus = settings['parking-campus'] || 'off';
+    updateParkingPermitRouteSelector(currentCampus);
 });
 
 function toggleParkingDropdown() {
@@ -198,12 +202,30 @@ function selectParkingCampus(parkingCampus) {
         'campus': parkingCampus
     });
     
-    // Here you can add the actual parking permit logic
+    updateParkingPermitRouteSelector(parkingCampus);
+
     console.log(`Selected parking campus: ${parkingCampus}`);
-    
-    // You could add a toast notification or other feedback here
-    // For now, we'll just log the selection
 }
+
+function updateParkingPermitRouteSelector(parkingCampus) {
+    const $parkingRouteSelector = $('.parking-campus-selector');
+    
+    if (parkingCampus === 'off') {
+        // Remove the parking permit route selector when campus is off
+        $parkingRouteSelector.remove();
+    } else {
+        // Check if the route selector already exists
+        if ($parkingRouteSelector.length === 0) {
+            // Create and add the parking campus route selector
+            addParkingCampusRouteSelector(parkingCampus);
+        } else {
+            // Update existing route selector
+            $parkingRouteSelector.attr('routeName', `parking-${parkingCampus}`);
+            $parkingRouteSelector.find('.route-selector-text').text(`Parking - ${parkingCampus}`);
+        }
+    }
+}
+
 
 function addOffOption() {
     // Check if "Off" option already exists
@@ -574,7 +596,8 @@ function enterParkingPermitMode(parkingCampus) {
     selectParkingDayType();
 
     // Add click handlers for day type buttons
-    $('.parking-day-type [data-day-type]').click(function() {
+    $('.parking-day-type [data-day-type]').on('click touchstart', function(e) {
+        e.preventDefault();
         const dayType = $(this).data('day-type');
         selectParkingDayType(dayType); // Manual selection
     });
