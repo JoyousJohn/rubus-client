@@ -140,8 +140,11 @@ $(document).ready(function() {
 
             if (settings['toggle-hide-other-routes'] && !shownRoute) {
                 showAllStops();
-                showAllBuses();
-                showAllPolylines();
+                // Don't show buses and polylines when in parking permit mode
+                if (!$('body').hasClass('parking-permit-mode')) {
+                    showAllBuses();
+                    showAllPolylines();
+                }
             } else if (settings['toggle-hide-other-routes'] && shownRoute) {
                 for (const marker in busMarkers) {
                     if (busData[marker].route === shownRoute) {
