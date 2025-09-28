@@ -335,6 +335,10 @@ function initializeParkingTimeScrollInteractions() {
     let isDragging = false;
     let startX = 0;
     let scrollLeft = 0;
+    let lastX = 0;
+    let lastTime = 0;
+    let velocity = 0;
+    let momentumAnimation = null;
 
     // Mouse events
     container.on('mousedown', function(e) {
@@ -342,6 +346,16 @@ function initializeParkingTimeScrollInteractions() {
         parkingTimeScrollUserInteracted = true; // User started manual interaction
         startX = e.pageX - scrollContainer.offset().left;
         scrollLeft = scrollContainer.scrollLeft();
+        lastX = startX;
+        lastTime = Date.now();
+        velocity = 0;
+        
+        // Cancel any existing momentum animation
+        if (momentumAnimation) {
+            cancelAnimationFrame(momentumAnimation);
+            momentumAnimation = null;
+        }
+        
         container.css('cursor', 'grabbing');
         e.preventDefault();
     });
@@ -352,12 +366,27 @@ function initializeParkingTimeScrollInteractions() {
         const x = e.pageX - scrollContainer.offset().left;
         const walk = x - startX; // Direct 1:1 movement
         scrollContainer.scrollLeft(scrollLeft - walk);
+        
+        // Track velocity for momentum
+        const currentTime = Date.now();
+        const deltaTime = currentTime - lastTime;
+        if (deltaTime > 0) {
+            velocity = (x - lastX) / deltaTime;
+            lastX = x;
+            lastTime = currentTime;
+        }
+        
         updateParkingTimeLabelFromScroll();
     });
 
     $(document).on('mouseup.time-scroll', function() {
         isDragging = false;
         container.css('cursor', 'grab');
+        
+        // Start momentum animation if there's velocity
+        if (Math.abs(velocity) > 0.1) {
+            startMomentumAnimation();
+        }
     });
 
     // Touch events for mobile
@@ -367,6 +396,15 @@ function initializeParkingTimeScrollInteractions() {
         const touch = e.touches[0];
         startX = touch.pageX - scrollContainer.offset().left;
         scrollLeft = scrollContainer.scrollLeft();
+        lastX = startX;
+        lastTime = Date.now();
+        velocity = 0;
+        
+        // Cancel any existing momentum animation
+        if (momentumAnimation) {
+            cancelAnimationFrame(momentumAnimation);
+            momentumAnimation = null;
+        }
     });
 
     $(document).on('touchmove.time-scroll', function(e) {
@@ -376,12 +414,55 @@ function initializeParkingTimeScrollInteractions() {
         const x = touch.pageX - scrollContainer.offset().left;
         const walk = x - startX; // Direct 1:1 movement
         scrollContainer.scrollLeft(scrollLeft - walk);
+        
+        // Track velocity for momentum
+        const currentTime = Date.now();
+        const deltaTime = currentTime - lastTime;
+        if (deltaTime > 0) {
+            velocity = (x - lastX) / deltaTime;
+            lastX = x;
+            lastTime = currentTime;
+        }
+        
         updateParkingTimeLabelFromScroll();
     });
 
     $(document).on('touchend.time-scroll', function() {
         isDragging = false;
+        
+        // Start momentum animation if there's velocity
+        if (Math.abs(velocity) > 0.1) {
+            startMomentumAnimation();
+        }
     });
+    
+    // Momentum animation function
+    function startMomentumAnimation() {
+        const friction = 0.95; // Friction coefficient (0-1, closer to 1 = less friction)
+        const minVelocity = 0.01; // Minimum velocity to continue animation
+        
+        function animate() {
+            if (Math.abs(velocity) < minVelocity) {
+                momentumAnimation = null;
+                return;
+            }
+            
+            // Apply velocity to scroll position (doubled for more distance)
+            const currentScrollLeft = scrollContainer.scrollLeft();
+            scrollContainer.scrollLeft(currentScrollLeft - (velocity * 3));
+            
+            // Update time label during momentum
+            updateParkingTimeLabelFromScroll();
+            
+            // Apply friction
+            velocity *= friction;
+            
+            // Continue animation
+            momentumAnimation = requestAnimationFrame(animate);
+        }
+        
+        momentumAnimation = requestAnimationFrame(animate);
+    }
 
     // Update current time every minute
     setInterval(updateParkingCurrentTimeLabel, 60000);
