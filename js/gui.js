@@ -321,8 +321,9 @@ function addParkingCampusRouteSelector(parkingCampus) {
         </div>
     `);
 
-    // Add click handler for parking campus selector
-    $routeElm.click(function() {
+    // Add click and touch handler for parking campus selector
+    $routeElm.on('click touchstart', function(e) {
+        e.preventDefault();
         // Toggle parking permit mode
         if ($('body').hasClass('parking-permit-mode')) {
             exitParkingPermitMode();
