@@ -35,8 +35,16 @@
         margin-right: 0; /* For settings */
     }
 
+    .route-selector:last-child {
+        margin-right: 0rem; /* For parking campus selector */
+    }
+
     .route-selector[routename="fav"] {
         padding: 1rem !important;
+        aspect-ratio: auto !important;
+    }
+
+    .route-selector.parking-campus-selector {
         aspect-ratio: auto !important;
     }
 

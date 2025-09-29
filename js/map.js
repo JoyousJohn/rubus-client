@@ -2695,7 +2695,8 @@ async function focusBus(busId) {
         }
 
         const mapSize = map.getSize();
-        const topGuiHeight = mapSize.y * topContainerHeight;
+        // Only apply top padding on mobile - on desktop the wrapper is to the side, not covering the top
+        const topGuiHeight = !isDesktop ? mapSize.y * topContainerHeight : 0;
 
         const extraPaddingY = 30;
         const extraPaddingX = 30;
