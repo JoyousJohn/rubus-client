@@ -11,8 +11,9 @@ let selectedDayType = null;
 let parkingLotData = null;
 let currentParkingFeatures = [];
 let currentSelectedTime = null;
+let currentParkingLotNames = []; // Store current lot names for count function
 
-// Pre-computed parking schedule: [dayType][hour] -> [lotNames]
+// Pre-computed parking schedule: [dayType][campus][hour] -> [lotNames]
 let parkingSchedule = {
     weekday: {},
     weekend: {}
@@ -21,7 +22,7 @@ let parkingSchedule = {
 // Pre-computed parking lot groups: [groupKey] -> [layerObjects]
 let parkingLotGroups = {};
 
-// Map from time/day to group key: [dayType][hour] -> groupKey
+// Map from time/day/campus to group key: [dayType][campus][hour] -> groupKey
 let timeToGroupMap = {
     weekday: {},
     weekend: {}
@@ -79,10 +80,94 @@ function fitMapToCampusBounds() {
 
 // Function to update the parking lot count display
 function updateParkingLotCount() {
-    const count = currentParkingFeatures.length;
+    const count = currentParkingLotNames.length;
     
     // Update the count display
-    $('.parking-lot-count').text(`${count} lot${count !== 1 ? 's' : ''}`);
+    $('.parking-lot-count')
+        .text(`${count} lot${count !== 1 ? 's' : ''}`)
+        .css('white-space', 'nowrap');
+}
+
+// Function to update the parking lot list display
+function updateParkingLotList() {
+    const listContainer = $('.parking-lot-list');
+    
+    // Set up horizontal scrolling styles
+    listContainer.css({
+        'display': 'flex',
+        'overflow-x': 'auto',
+        'overflow-y': 'hidden',
+        'white-space': 'nowrap',
+        'gap': '0.5rem',
+        'max-width': '100%',
+        'scrollbar-width': 'none', /* Firefox */
+        '-ms-overflow-style': 'none' /* IE and Edge */
+    });
+    
+    // Hide scrollbar for WebKit browsers (Chrome, Safari, Edge)
+    if (listContainer[0]) {
+        listContainer[0].style.setProperty('-webkit-scrollbar', 'none');
+        // Add a style tag to hide scrollbar completely
+        if (!document.getElementById('parking-list-scrollbar-hide')) {
+            const style = document.createElement('style');
+            style.id = 'parking-list-scrollbar-hide';
+            style.textContent = `
+                .parking-lot-list::-webkit-scrollbar {
+                    display: none;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // Clear existing list items
+    listContainer.empty();
+    
+    if (!currentParkingFeatures || currentParkingFeatures.length === 0) {
+        // No parking lots active, show empty list
+        currentParkingLotNames = [];
+        return;
+    }
+    
+    // Get the current lot names from the selected time/campus
+    let currentLotNames = [];
+    if (currentSelectedTime && selectedDayType) {
+        const timeParts = currentSelectedTime.split('-');
+        const currentHour = parseInt(timeParts[1]);
+        const currentCampus = timeParts[2] || settings['parking-campus'];
+        
+        try {
+            currentLotNames = getAllowedParkingLots(currentHour, selectedDayType, currentCampus);
+        } catch (error) {
+            console.warn('Could not get current lot names:', error);
+        }
+    }
+    
+    // Store the lot names for the count function to use
+    currentParkingLotNames = currentLotNames;
+    
+    // Sort lot names alphabetically for consistent display
+    currentLotNames.sort();
+    
+    // Create list items for each active parking lot
+    currentLotNames.forEach(lotName => {
+        const listItem = $('<div>')
+            .addClass('parking-lot-item')
+            .addClass('text-1p2rem')
+            .addClass('py-0p5rem')
+            .addClass('px-1rem')
+            .addClass('br-1rem')
+            .css({
+                'background-color': 'var(--theme-bg)',
+                'color': 'var(--theme-color)',
+                'flex-shrink': '0',
+                'white-space': 'nowrap'
+            })
+            .text(lotName.replace('lot ', '').replace(' nb', ''));
+        
+        listContainer.append(listItem);
+    });
+    
 }
 
 
@@ -185,46 +270,88 @@ function closeParkingDropdown() {
 function selectParkingCampus(parkingCampus) {
     // Remove previous selection
     $('.parking-campus-option').removeClass('selected');
-    
+
     // Add selection to clicked option
     $(`.parking-campus-option[data-campus="${parkingCampus}"]`).addClass('selected');
-    
+
     // Update button text to show selected campus
     $('.parking-add-btn .mr-0p5rem').text(parkingCampus);
-    
+
     // Save to settings
     settings['parking-campus'] = parkingCampus;
     localStorage.setItem('settings', JSON.stringify(settings));
-    
+
     // Track analytics event
     sa_event('btn_press', {
         'btn': 'parking_campus_select',
         'campus': parkingCampus
     });
-    
-    updateParkingPermitRouteSelector(parkingCampus);
+
+    // If we're in parking permit mode, update the selectors
+    if ($('body').hasClass('parking-permit-mode')) {
+        updateParkingPermitRouteSelector(parkingCampus);
+
+        // Get current time from the time scroll, not from currentSelectedTime
+        let currentHour;
+        if (parkingTimeScrollUserInteracted) {
+            // User has manually scrolled, get the time from the scroll position
+            const scrollContainer = $('.parking-time-scroll');
+            const metrics = getParkingTimeScrollMetrics();
+            const { tickWidth, paddingLeft } = metrics;
+            const scrollLeft = scrollContainer.scrollLeft();
+            const containerWidth = scrollContainer.width();
+            const centerPosition = containerWidth / 2;
+            const relativePosition = scrollLeft + centerPosition - paddingLeft;
+            const exactHourIndex = relativePosition / tickWidth;
+            currentHour = Math.floor(Math.max(0, Math.min(24, exactHourIndex)));
+        } else {
+            // Use current real time
+            currentHour = new Date().getHours();
+        }
+
+        // Update parking lots for the new campus with current time
+        updateParkingLotsForTime(currentHour, selectedDayType, parkingCampus);
+        updateParkingLotCount();
+        updateParkingLotList();
+    }
 
     console.log(`Selected parking campus: ${parkingCampus}`);
 }
 
 function updateParkingPermitRouteSelector(parkingCampus) {
-    const $parkingRouteSelector = $('.parking-campus-selector');
-    
     if (parkingCampus === 'off') {
-        // Remove the parking permit route selector when campus is off
-        $parkingRouteSelector.remove();
-    } else {
-        // Check if the route selector already exists
-        if ($parkingRouteSelector.length === 0) {
-            // Create and add the parking campus route selector
-            addParkingCampusRouteSelector(parkingCampus);
-        } else {
-            // Update existing route selector
-            $parkingRouteSelector.attr('routeName', `parking-${parkingCampus}`);
-            $parkingRouteSelector.find('.route-selector-text').text(`Parking - ${parkingCampus}`);
-        }
+        // Remove all parking campus selectors when campus is off
+        $('.parking-campus-selector').remove();
+        return;
     }
+
+    // Update the styling of all parking campus selectors - keep white background and black text
+    $('.parking-campus-selector').css({
+        'background-color': 'white',
+        'color': 'black',
+        'box-shadow': 'none'
+    });
+
+    // Highlight the selected campus with box-shadow only
+    $(`.parking-campus-selector[routeName="parking-${parkingCampus}"]`).css({
+        'box-shadow': '0 0 10px var(--theme-color)'
+    });
 }
+
+// Add all parking campus route selectors
+function addAllParkingCampusRouteSelectors(selectedCampus = null) {
+    const campuses = ['Busch', 'Livingston', 'College Ave', 'Cook', 'Douglass'];
+    const defaultCampus = selectedCampus || settings['parking-campus'];
+
+    // Clear existing parking campus selectors
+    $('.parking-campus-selector').remove();
+
+    campuses.forEach((campus, index) => {
+        const isSelected = (campus === defaultCampus);
+        addParkingCampusRouteSelector(campus, isSelected, index === 0);
+    });
+}
+
 
 
 function addOffOption() {
@@ -246,7 +373,7 @@ function resetParkingSelection() {
     $('.parking-add-btn .mr-0p5rem').text('Add');
     $('.parking-add-btn .text-1p3rem').show();
 
-    // Remove parking campus route selector
+    // Remove all parking campus route selectors
     $('.parking-campus-selector').remove();
 
     // Save to settings
@@ -438,7 +565,7 @@ function initializeParkingTimeScrollInteractions() {
     
     // Momentum animation function
     function startMomentumAnimation() {
-        const friction = 0.95; // Friction coefficient (0-1, closer to 1 = less friction)
+        const friction = 0.98; // Friction coefficient (0-1, closer to 1 = less friction)
         const minVelocity = 0.01; // Minimum velocity to continue animation
         
         function animate() {
@@ -449,7 +576,7 @@ function initializeParkingTimeScrollInteractions() {
             
             // Apply velocity to scroll position (doubled for more distance)
             const currentScrollLeft = scrollContainer.scrollLeft();
-            scrollContainer.scrollLeft(currentScrollLeft - (velocity * 3));
+            scrollContainer.scrollLeft(currentScrollLeft - (velocity * 7));
             
             // Update time label during momentum
             updateParkingTimeLabelFromScroll();
@@ -594,15 +721,17 @@ function updateParkingTimeLabelFromScroll() {
 
     // Update parking lots display for the new time (only if crossing boundaries)
     if (selectedDayType) {
+        const currentCampus = settings['parking-campus'];
         const currentGroup = getParkingBoundaryGroup(finalHour, selectedDayType);
         const previousGroup = window.lastParkingGroup || -1;
-        
+
         // Only update if we've crossed a boundary
         if (currentGroup !== previousGroup) {
             window.lastParkingGroup = currentGroup;
-            updateParkingLotsForTime(finalHour, selectedDayType);
+            updateParkingLotsForTime(finalHour, selectedDayType, currentCampus);
             updateParkingLotCount();
-            
+            updateParkingLotList();
+
             // Clear panout feedback since bounds have changed
             clearPanoutFeedback();
         }
@@ -636,6 +765,9 @@ function scrollParkingToCurrentTime() {
 
 // Parking permit mode functions
 function enterParkingPermitMode(parkingCampus) {
+    // Use the provided campus or fall back to saved campus
+    const selectedCampus = parkingCampus || settings['parking-campus'];
+
     // Add parking permit mode class to body
     $('body').addClass('parking-permit-mode');
 
@@ -651,6 +783,9 @@ function enterParkingPermitMode(parkingCampus) {
     // Reset user interaction flag for fresh start
     parkingTimeScrollUserInteracted = false;
 
+    // Add all parking campus route selectors with the selected campus highlighted
+    addAllParkingCampusRouteSelectors(selectedCampus);
+
     // Load parking data and buildings data
     Promise.all([
         loadParkingLotData(),
@@ -658,7 +793,8 @@ function enterParkingPermitMode(parkingCampus) {
     ]).then(() => {
         // Pre-compute parking lot groups now that spatial index is ready
         precomputeParkingLotGroups();
-        
+
+        // Initialize time scroll after parking groups are computed
         initializeParkingTimeScroll();
 
         // Show parking permit popup after time scroll is ready
@@ -666,10 +802,15 @@ function enterParkingPermitMode(parkingCampus) {
 
         // Show initial parking lots for current time
         const currentHour = new Date().getHours();
+        const selectedCampus = settings['parking-campus'];
 
         if (selectedDayType) {
-            updateParkingLotsForTime(currentHour, selectedDayType);
+            updateParkingLotsForTime(currentHour, selectedDayType, selectedCampus);
             updateParkingLotCount();
+            // updateParkingLotList() is called by updateParkingLotsForTime()
+        } else {
+            // Initialize empty list if no day type selected yet
+            updateParkingLotList();
         }
     });
 
@@ -694,8 +835,8 @@ function exitParkingPermitMode() {
     // Remove parking permit mode class from body
     $('body').removeClass('parking-permit-mode');
 
-    // Remove selection styling from parking campus selector
-    $('.parking-campus-selector').css('box-shadow', '');
+    // Remove all parking campus selectors
+    $('.parking-campus-selector').remove();
 
     // Clean up time scroll event handlers
     $(document).off('.time-scroll');
@@ -703,6 +844,9 @@ function exitParkingPermitMode() {
 
     // Clear parking lot features from map
     clearParkingFeatures();
+    
+    // Clear parking lot list display
+    $('.parking-lot-list').empty();
 
     // Show all buses and routes back on map
     showAllBusesFromMap();
@@ -722,82 +866,95 @@ function exitParkingPermitMode() {
     });
 }
 
-// Load parking lot data from JSON file
+// Load parking lot data from JSON files for all campuses
 async function loadParkingLotData() {
     if (parkingLotData) {
         return parkingLotData; // Already loaded
     }
 
-    try {
-        const response = await fetch('lib/parking/busch_commuter_normalized.json');
-        parkingLotData = await response.json();
+    // Load parking data for all campuses
+    const campusFiles = {
+        'Busch': 'lib/parking/busch_commuter.json',
+        'College Ave': 'lib/parking/college_ave_commuter.json',
+        'Cook': 'lib/parking/cook_commuter.json',
+        'Douglass': 'lib/parking/douglass_commuter.json',
+        'Livingston': 'lib/parking/livingston_commuter.json'
+    };
 
-        // Pre-compute parking schedule for all hours
-        precomputeParkingSchedule();
+    const allCampusData = {};
 
-        return parkingLotData;
-    } catch (error) {
-        console.error('Failed to load parking data:', error);
-        return null;
+    for (const [campus, file] of Object.entries(campusFiles)) {
+        const response = await fetch(file);
+        const campusData = await response.json();
+        allCampusData[campus] = campusData;
     }
+
+    parkingLotData = allCampusData;
+
+    // Pre-compute parking schedule for all hours and campuses
+    precomputeParkingSchedule();
+
+    return parkingLotData;
 }
 
 function precomputeParkingSchedule() {
-    if (!parkingLotData) return;
-    
     // Clear existing data
-    parkingSchedule.weekday = {};
-    parkingSchedule.weekend = {};
-    timeToGroupMap.weekday = {};
-    timeToGroupMap.weekend = {};
-    
+    parkingSchedule = { weekday: {}, weekend: {} };
+    timeToGroupMap = { weekday: {}, weekend: {} };
+
     // Collect all unique lot combinations
     const uniqueLotCombinations = new Map();
-    
-    // Pre-compute for all 24 hours and collect unique combinations
+
+    // Get all available campuses
+    const campuses = Object.keys(parkingLotData);
+
+    // Pre-compute for all 24 hours, campuses, and day types
     for (let hour = 0; hour < 24; hour++) {
-        const weekdayLots = getAllowedParkingLots(hour, 'weekday');
-        const weekendLots = getAllowedParkingLots(hour, 'weekend');
-        
-        parkingSchedule.weekday[hour] = weekdayLots;
-        parkingSchedule.weekend[hour] = weekendLots;
-        
-        // Create group keys for unique combinations
-        const weekdayKey = createGroupKey(weekdayLots);
-        const weekendKey = createGroupKey(weekendLots);
-        
-        timeToGroupMap.weekday[hour] = weekdayKey;
-        timeToGroupMap.weekend[hour] = weekendKey;
-        
-        // Store unique combinations
-        if (weekdayLots.length > 0) {
-            uniqueLotCombinations.set(weekdayKey, weekdayLots);
-        }
-        if (weekendLots.length > 0) {
-            uniqueLotCombinations.set(weekendKey, weekendLots);
+        for (const dayType of ['weekday', 'weekend']) {
+            timeToGroupMap[dayType] = timeToGroupMap[dayType] || {};
+            parkingSchedule[dayType] = parkingSchedule[dayType] || {};
+
+            campuses.forEach(campus => {
+                parkingSchedule[dayType][campus] = parkingSchedule[dayType][campus] || {};
+                timeToGroupMap[dayType][campus] = timeToGroupMap[dayType][campus] || {};
+
+                const campusLots = getAllowedParkingLots(hour, dayType, campus);
+                parkingSchedule[dayType][campus][hour] = campusLots;
+
+                const groupKey = createGroupKey(campusLots);
+                const campusGroupKey = campusLots.length > 0 ? `${campus}:${groupKey}` : '';
+                timeToGroupMap[dayType][campus][hour] = campusGroupKey;
+
+                if (campusLots.length > 0) {
+                    uniqueLotCombinations.set(campusGroupKey, campusLots);
+                }
+            });
         }
     }
-    
-    
+
     // Store unique combinations for later group creation
     window.parkingUniqueCombinations = uniqueLotCombinations;
 }
 
 function precomputeParkingLotGroups() {
-    if (!window.parkingUniqueCombinations || !window.buildingSpatialIndex) {
-        console.log('Spatial index or unique combinations not ready yet');
-        return;
+    if (!window.buildingSpatialIndex) {
+        throw new Error('Building spatial index not available');
     }
-    
+
     // Clear existing groups
     parkingLotGroups = {};
-    
+
     // Pre-compute all parking lot groups
-    for (const [groupKey, lotNames] of window.parkingUniqueCombinations) {
-        parkingLotGroups[groupKey] = findParkingLotsForGroup(lotNames);
-        console.log(`Group "${groupKey}": ${parkingLotGroups[groupKey].length} layers found`);
+    for (const [comboKey, lotNames] of window.parkingUniqueCombinations) {
+        const groupLayers = findParkingLotsForGroup(lotNames);
+        if (groupLayers.length > 0) {
+            parkingLotGroups[comboKey] = groupLayers;
+            console.log(`Group "${comboKey}": ${groupLayers.length} layers found`);
+        } else {
+            console.log(`Group "${comboKey}": 0 layers found - SKIPPED (no building layers exist)`);
+        }
     }
-    
+
     console.log('Total unique groups:', Object.keys(parkingLotGroups).length);
     console.log('Sample groups:', Object.keys(parkingLotGroups).slice(0, 3));
 }
@@ -807,13 +964,22 @@ function createGroupKey(lotNames) {
 }
 
 function findParkingLotsForGroup(lotNames) {
-    const layers = [];
-    
     if (!window.buildingSpatialIndex) {
-        return layers;
+        throw new Error('Building spatial index not available');
     }
-    
+
+    const layers = [];
+
     lotNames.forEach(lotName => {
+        // Debug: Check if this specific lot exists in spatial index
+        if (lotName === 'lot 915/yellow lot') {
+            console.log('DEBUG: Looking for lot 915/yellow lot');
+            console.log('DEBUG: Spatial index has nameToLayer?', !!window.buildingSpatialIndex?.nameToLayer);
+            console.log('DEBUG: Direct lookup (lowercase):', window.buildingSpatialIndex?.nameToLayer?.get('lot 915/yellow lot'));
+            console.log('DEBUG: Direct lookup (original):', window.buildingSpatialIndex?.nameToLayer?.get('lot 915/yellow lot'));
+            console.log('DEBUG: All keys in spatial index:', Array.from(window.buildingSpatialIndex?.nameToLayer?.keys() || []).filter(k => k.includes('915')));
+        }
+
         const layer = window.buildingSpatialIndex.getBuildingLayerByName(lotName.toLowerCase());
         if (layer) {
             // Style the layer as a red parking lot
@@ -829,25 +995,29 @@ function findParkingLotsForGroup(lotNames) {
             layers.push(layer);
         }
     });
-    
+
     return layers;
 }
 
-// Get allowed parking lots for a specific time and day type
-function getAllowedParkingLots(hour, dayType) {
+// Get allowed parking lots for a specific time, day type, and campus
+function getAllowedParkingLots(hour, dayType, campus) {
     if (!parkingLotData) {
-        return [];
+        throw new Error('Parking lot data not loaded');
     }
 
-    if (!parkingLotData[dayType]) {
-        return [];
+    if (!parkingLotData[campus]) {
+        throw new Error(`No parking data found for campus: ${campus}`);
     }
 
-    if (!parkingLotData[dayType][hour]) {
-        return [];
+    if (!parkingLotData[campus][dayType]) {
+        throw new Error(`No ${dayType} data found for campus: ${campus}`);
     }
 
-    return parkingLotData[dayType][hour];
+    if (!(hour in parkingLotData[campus][dayType])) {
+        throw new Error(`No data found for ${dayType} ${hour}h on campus: ${campus}`);
+    }
+
+    return parkingLotData[campus][dayType][hour];
 }
 
 // Show parking lots on map using pre-computed groups
@@ -860,7 +1030,8 @@ function showParkingLotsOnMap(lotNames) {
     }
 
     // Get the group key for this lot combination
-    const groupKey = createGroupKey(lotNames);
+    const campus = settings['parking-campus'];
+    const groupKey = `${campus}:${createGroupKey(lotNames)}`;
     const groupLayers = parkingLotGroups[groupKey];
 
     if (!groupLayers) {
@@ -878,16 +1049,17 @@ function showParkingLotsOnMap(lotNames) {
 
 // Helper function to find building features by name using existing spatial index
 function findBuildingFeaturesByName(targetName) {
+    if (!window.buildingSpatialIndex) {
+        throw new Error('Building spatial index not available');
+    }
+
     const matchingFeatures = [];
 
     // Use existing buildingSpatialIndex for O(1) lookup
-    if (window.buildingSpatialIndex) {
-        // Try lowercase lookup first (since parking data uses lowercase)
-        const layer = window.buildingSpatialIndex.getBuildingLayerByName(targetName.toLowerCase());
-        
-        if (layer) {
-            matchingFeatures.push(layer);
-        }
+    const layer = window.buildingSpatialIndex.getBuildingLayerByName(targetName.toLowerCase());
+
+    if (layer) {
+        matchingFeatures.push(layer);
     }
 
     return matchingFeatures;
@@ -921,10 +1093,13 @@ function getParkingBoundaryGroup(hour, dayType) {
     return 0; // Default to first group
 }
 
-// Update parking lots display based on selected time
-function updateParkingLotsForTime(hour, dayType) {
-    // Only update if the time has changed
-    const currentTimeString = `${dayType}-${hour}`;
+// Update parking lots display based on selected time and campus
+function updateParkingLotsForTime(hour, dayType, campus = null) {
+    // Use the provided campus or get from settings
+    const selectedCampus = campus || settings['parking-campus'];
+
+    // Only update if the time or campus has changed
+    const currentTimeString = `${dayType}-${hour}-${selectedCampus}`;
 
     if (currentTimeString === currentSelectedTime) {
         return; // No change needed
@@ -932,32 +1107,47 @@ function updateParkingLotsForTime(hour, dayType) {
 
     currentSelectedTime = currentTimeString;
 
-    // Get the group key for this time/day combination
-    const groupKey = timeToGroupMap[dayType] && timeToGroupMap[dayType][hour];
-    
-    if (!groupKey) {
-        // No parking lots for this time
+    // Get the group key for this time/day/campus combination
+    const selectedCampusKey = selectedCampus;
+    const groupKey = timeToGroupMap[dayType] && timeToGroupMap[dayType][selectedCampusKey]
+        ? timeToGroupMap[dayType][selectedCampusKey][hour]
+        : undefined;
+
+    // If no mapping exists at all, fail fast
+    if (groupKey === undefined) {
+        throw new Error(`No group key found for ${dayType} ${hour}`);
+    }
+
+    // Empty combination means no lots are available for this time; just clear
+    if (groupKey === '') {
         clearParkingFeatures();
+        updateParkingLotList();
         return;
     }
 
     // Get the pre-computed group layers
     const groupLayers = parkingLotGroups[groupKey];
-    
-    if (!groupLayers) {
+
+    if (!groupLayers || groupLayers.length === 0) {
+        // Group key exists but has no layers (parking lot names don't match building data)
+        console.warn(`No layers found for group: ${groupKey} - clearing parking features`);
         clearParkingFeatures();
+        updateParkingLotList();
         return;
     }
 
     // Clear existing and show new group
     clearParkingFeatures();
-    
+
     groupLayers.forEach(layer => {
         if (layer && typeof layer.addTo === 'function') {
             layer.addTo(map);
             currentParkingFeatures.push(layer);
         }
     });
+    
+    // Update the parking lot list display
+    updateParkingLotList();
 }
 
 function selectParkingDayType(dayType = null) {
@@ -982,10 +1172,13 @@ function selectParkingDayType(dayType = null) {
 
     // Update parking lots for the new day type (if we have a current time)
     if (currentSelectedTime) {
-        const currentHour = parseInt(currentSelectedTime.split('-')[1]);
-        updateParkingLotsForTime(currentHour, dayType);
+        const timeParts = currentSelectedTime.split('-');
+        const currentHour = parseInt(timeParts[1]);
+        const currentCampus = timeParts[2] || settings['parking-campus'];
+        updateParkingLotsForTime(currentHour, dayType, currentCampus);
         updateParkingLotCount();
-        
+        updateParkingLotList();
+
         // Clear panout feedback since bounds have changed
         clearPanoutFeedback();
     }

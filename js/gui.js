@@ -3,7 +3,7 @@ let longPressTimer
 let selectedCampusRoutes = [];
 
 function populateRouteSelectors(allActiveRoutes, stopId = null) {
-    $('.route-selectors > div').not('.settings-btn, .sim-btn').remove();
+    $('.route-selectors > div').not('.settings-btn, .sim-btn').not('.parking-campus-selector').remove();
 
     if (!allActiveRoutes) return;
 
@@ -309,25 +309,70 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
 
 }
 
-function addParkingCampusRouteSelector(parkingCampus) {
+// Get display name for campus
+function getCampusDisplayName(campus) {
+    // Map full campus names to display names
+    const displayNames = {
+        'Busch': 'Busch',
+        'Livingston': 'Livi',
+        'College Ave': 'CA',
+        'Cook': 'Cook',
+        'Douglass': 'Douglas'
+    };
+    return displayNames[campus] || campus;
+}
+
+function addParkingCampusRouteSelector(parkingCampus, isSelected = false, isDefaultCampus = false) {
     // Check if parking campus selector already exists
     if ($(`.route-selector[routeName="parking-${parkingCampus}"]`).length > 0) {
         return;
     }
 
+    const displayName = getCampusDisplayName(parkingCampus);
+    const isInPermitMode = $('body').hasClass('parking-permit-mode');
+    
     const $routeElm = $(`
-        <div class="route-selector parking-campus-selector" routeName="parking-${parkingCampus}" style="background-color: white; color: black; font-weight: bold; white-space: nowrap; padding-left: 1rem;">
-            <i class="fa-regular fa-circle-parking"></i> ${campusShortNamesMappings[parkingCampus.toLowerCase()]}
+        <div class="route-selector parking-campus-selector" routeName="parking-${parkingCampus}" style="background-color: white; color: black; font-weight: bold; ${isInPermitMode ? 'white-space: nowrap; padding-left: 1rem;' : 'display: flex; align-items: center; justify-content: center; padding: 0.5rem; aspect-ratio: 1;'} box-shadow: ${isSelected ? '0 0 10px var(--theme-color)' : 'none'};">
+            <i class="fa-regular fa-circle-parking"></i>${isInPermitMode ? ` ${displayName}` : ''}
         </div>
     `);
 
     // Add click and touch handler for parking campus selector
     $routeElm.on('click touchstart', function(e) {
         e.preventDefault();
-        // Toggle parking permit mode
+
         if ($('body').hasClass('parking-permit-mode')) {
-            exitParkingPermitMode();
+            // If clicking the already-selected campus, exit permit mode
+            if (settings['parking-campus'] === parkingCampus) {
+                exitParkingPermitMode();
+                return;
+            }
+            // In parking permit mode, select this campus and update the display
+            selectParkingCampus(parkingCampus);
+
+            // Update styling for all parking campus selectors - keep white background and black text
+            $('.parking-campus-selector').css({
+                'background-color': 'white',
+                'color': 'black',
+                'box-shadow': 'none'
+            });
+
+            // Highlight the selected one with box-shadow only
+            $routeElm.css({
+                'box-shadow': '0 0 10px var(--theme-color)'
+            });
+
+            // Update parking lots for the selected campus
+            if (selectedDayType) {
+                const currentHour = parseInt($('.current-time-label').text().split(':')[0]);
+                if (currentHour) {
+                    updateParkingLotsForTime(currentHour, selectedDayType, parkingCampus);
+                    updateParkingLotCount();
+                    clearPanoutFeedback();
+                }
+            }
         } else {
+            // Not in parking permit mode, enter it
             enterParkingPermitMode(parkingCampus);
             // Apply selection styling to parking campus selector
             $routeElm.css('box-shadow', '0 0 10px var(--theme-color)');
