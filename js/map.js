@@ -371,8 +371,8 @@ $('.shoot-fireworks').click(function() {
 });
 
 $(document).on('keydown', function(e) {
-    if (e.key === 'Escape') { 
-        hideInfoBoxes(); 
+    if (e.key === 'Escape') {
+        hideInfoBoxes();
         $('.settings-panel').fadeOut('fast');
         $('.bottom').fadeIn('fast'); // this is being hidden due to settings-btn click?... Why tho
         $('.settings-close').hide();
@@ -435,12 +435,25 @@ function hideInfoBoxes(instantly_hide) {
 
     if (popupBusId) {
         stopOvertimeCounter();
+        const busIdThatWasFocused = popupBusId;
         popupBusId = null;
         $('.info-shared-bus-mid').hide();
         // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
-        
+
         // Remove distance line when bus is unfocused
         removeDistanceLineOnFocus();
+
+        // If we just unfocused a bus, check if its route has no in-service buses and prune polyline if needed
+        if (busData[busIdThatWasFocused]) {
+            const route = busData[busIdThatWasFocused].route;
+            const noInService = !routeHasInServiceBuses(route);
+            if (noInService && polylines[route]) {
+                try { polylines[route].remove(); } catch (e) {}
+                delete polylines[route];
+                // Recompute global polyline bounds via shared helper
+                updatePolylineBoundsIfNeeded();
+            }
+        }
     }
 
     if (popupBuildingName) {

@@ -608,7 +608,7 @@ async function toggleRoute(route) {
 			let boundsToFit = null;
 			if (routePolyline) {
 				const rb = routePolyline.getBounds();
-				const hasInService = routeBuses.some(id => !busData[id].oos);
+				const hasInService = routeHasInServiceBuses(route);
 				boundsToFit = hasInService
 					? rb
 					: routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(rb));

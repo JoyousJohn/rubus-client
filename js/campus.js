@@ -71,14 +71,7 @@ async function makeNewMap() {
     addStopsToMap();
 
     // Set polylines for routes that have in-service buses
-    const routesWithInServiceBuses = Array.from(activeRoutes).filter(route => {
-        try {
-            const routeBuses = busesByRoutes[selectedCampus][route];
-            return routeBuses.some(busId => !busData[busId].oos);
-        } catch (e) {
-            return false;
-        }
-    });
+    const routesWithInServiceBuses = Array.from(activeRoutes).filter(route => routeHasInServiceBuses(route));
     if (routesWithInServiceBuses.length > 0) {
         setPolylines(new Set(routesWithInServiceBuses));
     }

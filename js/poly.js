@@ -7,12 +7,7 @@ async function setPolylines(activeRoutes) {
     // Only set polylines for routes on this campus that currently have at least one in-service bus
     const routesToSet = Array.from(activeRoutes).filter(route => {
         if (!routesByCampusBase[selectedCampus].includes(route)) return false;
-        try {
-            const routeBuses = busesByRoutes[selectedCampus][route];
-            return routeBuses.some(busId => !busData[busId].oos);
-        } catch (e) {
-            return false;
-        }
+        return routeHasInServiceBuses(route);
     });
 
     // console.log("Setting polylines for routesToSet: ", routesToSet)
@@ -168,6 +163,16 @@ async function addPolylineForRoute(routeName) {
     }
 }
 
+// Check if a route has any in-service buses
+function routeHasInServiceBuses(route) {
+    try {
+        const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
+        return routeBuses && routeBuses.some(busId => busData[busId] && !busData[busId].oos);
+    } catch (e) {
+        return false;
+    }
+}
+
 // Update polylineBounds efficiently - only when polylines actually change
 function updatePolylineBoundsIfNeeded() {
     try {
@@ -218,9 +223,7 @@ function prunePolylinesWithoutInService() {
     try {
         const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
         campusRoutes.forEach(routeName => {
-            const routeBuses = busesByRoutes[selectedCampus][routeName];
-            const hasInService = routeBuses.some(busId => !busData[busId].oos);
-            if (!hasInService && polylines[routeName]) {
+            if (!routeHasInServiceBuses(routeName) && polylines[routeName]) {
                 try { polylines[routeName].remove(); } catch (e) {}
                 delete polylines[routeName];
                 // Keep routeBounds cached for potential reuse (e.g., quick fit on reselect)
@@ -820,6 +823,18 @@ async function popStopInfo(stopId) {
     }
 
     popupStopId = stopId;
+
+    // If we just unfocused a bus, check if its route has no in-service buses and prune polylines if needed
+    if (popupBusId) {
+        const route = busData[popupBusId].route;
+        if (!routeHasInServiceBuses(route) && polylines[route]) {
+            try { polylines[route].remove(); } catch (e) {}
+            delete polylines[route];
+            // Keep routeBounds cached; recompute global polyline bounds via shared helper
+            updatePolylineBoundsIfNeeded();
+        }
+    }
+
     popupBusId = null;
 
     if (selectedMarkerId && busMarkers[selectedMarkerId] ) { 
