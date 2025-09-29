@@ -105,6 +105,33 @@
 /* Time Scroll Styling */
 .parking-time-scroll-wrapper {
     position: relative;
+    background-color: var(--theme-bg); /* Restore background */
+    border-radius: 1rem; /* Add border radius */
+    /* Don't use overflow: hidden to allow current time indicator to show */
+    /* Add fading effect on left and right edges using pseudo-elements */
+}
+
+.parking-time-scroll-wrapper::before,
+.parking-time-scroll-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    z-index: 2;
+    pointer-events: none; /* Allow clicks to pass through */
+}
+
+.parking-time-scroll-wrapper::before {
+    left: 0;
+    background: linear-gradient(to right, var(--theme-bg), transparent);
+    border-radius: 1rem 0 0 1rem; /* Match left side of wrapper border radius */
+}
+
+.parking-time-scroll-wrapper::after {
+    right: 0;
+    background: linear-gradient(to left, var(--theme-bg), transparent);
+    border-radius: 0 1rem 1rem 0; /* Match right side of wrapper border radius */
 }
 
 .parking-time-scroll {

@@ -312,6 +312,7 @@ function loadBuildings() {
     return fetch('lib/buildings-parking.json')
         .then(response => response.json())
         .then(data => {
+            console.log('🏗️ Loading buildings-parking.json with', data.features?.length || 0, 'features');
             buildingsLayer = L.geoJSON(data, {
                 style: function(feature) {
                     // You can customize style based on feature properties
@@ -419,8 +420,9 @@ function loadBuildings() {
             buildingSpatialIndex.buildIndex(buildingsLayer);
             window.buildingSpatialIndex = buildingSpatialIndex;
 
-            // Only add to map if buildings setting is enabled
-            if (settings['toggle-show-buildings']) {
+            // Only add to map if buildings setting is enabled AND not in parking-permit mode
+            if (settings['toggle-show-buildings'] && !$('body').hasClass('parking-permit-mode')) {
+                console.log('🏗️ Adding buildings layer to map with', buildingsLayer.getLayers().length, 'layers');
                 buildingsLayer.addTo(map);
                 $('.buildings-btn').addClass('active');
             }
