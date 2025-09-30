@@ -14,11 +14,57 @@
     <script src="https://cdn.jsdelivr.net/npm/@elfalem/leaflet-curve@0.9.2/dist/leaflet.curve.min.js"></script>
     <script type="text/javascript" src="https://unpkg.com/l-subpixel-position@1.0.0/index.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fireworks-js@2.x/dist/index.umd.js"></script>
-    <script async src="https://scripts.simpleanalyticscdn.com/latest.js" data-collect-dnt="true" onload="postLoadEvent()"></script>
+    <script>
+        // Simple Analytics fallback system
+        // Create a fallback function that prevents errors when SA is blocked
+        window.sa_event = function() {
+            // Silent fallback - does nothing but prevents "sa_event is not defined" errors
+            // This is called when Simple Analytics is blocked by ad blockers
+        };
+        
+        let postLoadEventCalled = false;
+        
+        function callPostLoadEvent() {
+            if (!postLoadEventCalled) {
+                postLoadEventCalled = true;
+                postLoadEvent();
+            }
+        }
+        
+        // Try to load Simple Analytics with proper callback handling
+        const saScript = document.createElement('script');
+        saScript.async = true;
+        saScript.src = 'https://scripts.simpleanalyticscdn.com/latest.js';
+        saScript.setAttribute('data-collect-dnt', 'true');
+        
+        saScript.onload = function() {
+            // SA script loaded - check if the function was actually replaced
+            // Use a microtask to ensure SA has had time to replace our function
+            Promise.resolve().then(function() {
+                const isFallback = window.sa_event.toString().includes('Silent fallback');
+                if (!isFallback) {
+                    console.log('Simple Analytics loaded successfully');
+                } else {
+                    console.log('Simple Analytics script loaded but function not replaced - likely blocked');
+                }
+                callPostLoadEvent();
+            });
+        };
+        
+        saScript.onerror = function() {
+            // SA failed to load (blocked by ad blocker)
+            console.log('Simple Analytics blocked or failed to load, using fallback');
+            callPostLoadEvent();
+        };
+        
+        // Add the script to the page
+        document.head.appendChild(saScript);
+    </script>
     <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/all.css"/>
 
     <link rel="manifest" href="manifest.json">
 
+    <script src="js/error.js"></script>
     <script src="js/vars.js"></script>
     <script src="js/status.js"></script>
     <script defer src="js/leaflet.edgebuffer.js"></script>
@@ -58,6 +104,7 @@
     <script src="js/changelog.js"></script>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
+    <link rel="stylesheet" type="text/css" href="css/error.css">
     <link rel="stylesheet" type="text/css" href="css/ridership.css">
     <link rel="stylesheet" type="text/css" href="css/tailwind.css">
     <link rel="stylesheet" type="text/css" href="css/mobile.css">
@@ -1541,13 +1588,17 @@
                 <div class="status pointer" onclick="showStatus();">Status</div>
             </div>
 
-            <div class="settings-rubus-attribution grid grid-cols-3 center select-none gray777777 mt-1p5rem mb-2rem">
+            <div class="settings-rubus-attribution grid grid-cols-4 center select-none gray777777 mt-1p5rem mb-2rem">
                 <div class="events-link pointer">Events</div>
                 <div class="pointer" onclick="window.open('https://joyousjohn.github.io/ruguessr/', '_blank')">RutgersGuessr</div>
                 <div class="source pointer" onclick="window.open('https://src.rubus.live', '_blank')">Source</div>
+                <div id="errors-tab" class="errors-tab pointer">
+                    <span>Errors</span>
+                    <span id="error-count" class="error-count flex justify-center align-center h-full">0</span>
+                </div>
             </div>
 
-            <div class="footer flex justify-center mb-10rem">
+            <div class="footer flex justify-center mb-10rem flex-col">
                 <div class="footer-contact-loading text-1p2rem gray818181 none">Loading contact info...</div>
                 <div class="footer-contact-wrapper none">
                     <div class="flex justify-center">
@@ -1564,6 +1615,15 @@
                 <div class="status-wrapper none flex justify-around w-full text-1p3rem">
                     <div class="passio-status"></div>
                     <div class="rubus-status"></div>
+                </div>
+
+                <div class="errors-wrapper none">
+                    <div class="error-panel-header">
+                        <div class="error-panel-title">JavaScript Errors (0)</div>
+                    </div>
+                    <div id="error-list" class="error-list">
+                        <div class="error-empty">No errors recorded</div>
+                    </div>
                 </div>
             </div>
 
