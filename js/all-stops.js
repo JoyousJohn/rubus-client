@@ -70,6 +70,11 @@ function populateAllStops() {
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();
+                        
+                        // Show parking campus selector only if user has a campus selected
+                        if (settings['parking-campus']) {
+                            $('.parking-campus-selector').show();
+                        }
                         moveRouteSelectorsToMain();
                         // Restore route selectors based on current stop selection
                         if (popupStopId) {
@@ -102,6 +107,11 @@ function populateAllStops() {
                                 $('.bottom').show();
                                 moveRouteSelectorsToMain();
                                 $('.left-btns, .right-btns, .settings-btn').show();
+                        
+                                // Show parking campus selector only if user has a campus selected
+                                if (settings['parking-campus']) {
+                                    $('.parking-campus-selector').show();
+                                }
 
                                 // Set the route filter and then fly to the stop
                                 toggleRoute(route);
@@ -184,5 +194,5 @@ $('.info-panels').click(function() {
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
     $('.route-selectors').show();
-    $('.settings-btn').hide();
+    $('.settings-btn, .parking-campus-selector').hide();
 })

@@ -233,6 +233,8 @@ function updatePanelPosition(panel, options) {
 	const $container = $('.subpanels-container');
 	$container.removeClass('panel-stops panel-routes panel-network');
 	$container.addClass(`panel-${panel}`);
+
+
 	if (opts.skipMove) {
 		return;
 	}

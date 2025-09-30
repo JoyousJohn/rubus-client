@@ -917,8 +917,7 @@ function exitParkingPermitMode() {
     $('.parking-permit-popup').addClass('none').hide();
 
     // Re-add the single parking campus selector for normal mode
-    const parkingCampus = settings['parking-campus'];
-    if (parkingCampus && parkingCampus !== false) {
+    if (settings['parking-campus']) {
         addParkingCampusRouteSelector();
     }
 

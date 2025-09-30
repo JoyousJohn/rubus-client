@@ -191,7 +191,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     // Apply selection styling to the currently selected route if it exists in the filtered routes
     if (shownRoute && routesArray.includes(shownRoute)) {
         // Use the existing toggleRouteSelectors logic to select the route
-        $('.route-selector').each(function() {
+        $('.route-selector').not('.parking-campus-selector').each(function() {
             const rn = $(this).attr('routeName');
             if (rn && rn !== shownRoute) {
                 $(this).css('background-color', 'gray');
@@ -324,7 +324,7 @@ function getCampusDisplayName(campus) {
 
 function addParkingCampusRouteSelector() {
     // Check if parking campus selector already exists
-    if ($('.route-selector[routeName="parking-permit"]').length > 0) {
+    if ($('.parking-campus-selector').length > 0) {
         return;
     }
 
@@ -399,8 +399,8 @@ function toggleRouteSelectors(route) {
 
     else {
 
-        // Gray out all route selectors (including those without polylines) except the selected one
-        $('.route-selector').each(function() {
+        // Gray out all route selectors (including those without polylines) except the selected one and parking campus selector
+        $('.route-selector').not('.parking-campus-selector').each(function() {
             const rn = $(this).attr('routeName');
             if (rn && rn !== route) {
                 $(this).css('background-color', 'gray');
@@ -757,7 +757,7 @@ function selectedRoute(route) {
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
     $('.route-selectors').show();
-    $('.settings-btn').hide();
+    $('.settings-btn, .parking-campus-selector').hide();
     
     // Make sure route panel is visible by removing the 'none' class
     $('.route-panel').show();
@@ -1493,6 +1493,11 @@ function closeRouteMenu() {
 
     // Show all other buttons
     $('.left-btns, .right-btns, .settings-btn').show();
+    
+    // Show parking campus selector only if user has a campus selected
+    if (settings['parking-campus']) {
+        $('.parking-campus-selector').show();
+    }
 
     // Show the favorite star icon again if there are favorited buses
     if ($('.favs > div').length > 0) {
