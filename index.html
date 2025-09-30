@@ -935,7 +935,7 @@
         <div class="settings-main-heading center">Settings</div>
         <div class="settings-list flex flex-col">
 
-            <div class="text-1p6rem mb-0p25rem bold-500" style="color: var(--theme-extra)">LOOK & FEEL</div>
+            <div class="text-1p6rem mb-0p25rem bold-500">LOOK & FEEL</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
                 <div class="settings-font">
                     <div class="settings-heading">Font</div>
@@ -958,7 +958,10 @@
                     </div>
                     <div class="text-1p3rem dimgray">*Settings menu currently only available in light.</div>
                 </div>
+            </div>
 
+            <div class="text-1p6rem mb-0p25rem bold-500">GUI</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
                 <div class="settings- flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-seconds">Show ETAs in Seconds<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
@@ -983,23 +986,40 @@
                     </div>
                 </div>  
                 
-                <div class="settings-end-explain none ml-0p5rem text-1p3rem dimgray">Move the settings button to after the route buttons to clear up space in front for more routes and scroll less.</div>
+                <div class="settings-end-explain none ml-0p5rem text-1p3rem dimgray">Move the settings button after the route buttons to reduce scrolling need by clearing up space in front for more routes.</div>
                 <script>
                 $('.span-i-settings-end').click(function() {$('.settings-end-explain').slideToggle();})
                 </script>
 
                 <div class="flex justify-between">
-                    <div class="settings-heading">Disable Fireworks on Open</div>
+                    <div class="settings-heading" style="align-self: center;">Parking Permit</div>
+                    <div class="parking-add-container">
+                        <div class="parking-add-btn br-2rem bg-black white text-1p6rem pr-1rem py-0p5rem pl-1p5rem flex align-center select-none pointer">
+                            <span class="mr-0p5rem">Add</span>
+                            <span class="text-1p3rem"><i class="fa-regular fa-plus bold-600"></i></span>
+                        </div>
+                        <div class="parking-campus-dropdown none">
+                            <div class="parking-campus-option" data-campus="Busch">Busch</div>
+                            <div class="parking-campus-option" data-campus="Livingston">Livingston</div>
+                            <div class="parking-campus-option" data-campus="College Ave">College Ave</div>
+                            <div class="parking-campus-option" data-campus="Cook">Cook</div>
+                            <div class="parking-campus-option" data-campus="Douglass">Douglass</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Launch Fireworks Button</div>
                     <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-disable-fireworks-on-open" class="toggle-input">
-                        <label for="toggle-disable-fireworks-on-open" class="toggle-label">
+                        <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
+                        <label for="toggle-launch-fireworks-button" class="toggle-label">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
                 </div>
             </div>
 
-            <div class="text-1p6rem mb-0p25rem bold-500" style="color: var(--theme-extra)">MAP</div>
+            <div class="text-1p6rem mb-0p25rem bold-500">MAP</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
 
                 <div class="flex justify-between">
@@ -1069,9 +1089,19 @@
                     $('.settings-spoofing-explain').slideToggle();
                 });
                 </script>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Disable Fireworks on Open</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-disable-fireworks-on-open" class="toggle-input">
+                        <label for="toggle-disable-fireworks-on-open" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
-            <div class="text-1p6rem mb-0p25rem bold-500" style="color: var(--theme-extra)">STOPS</div>
+            <div class="text-1p6rem mb-0p25rem bold-500">STOPS</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
 
                 <div class="settings- flex justify-between">
@@ -1139,18 +1169,8 @@
                 });
                 </script> -->
 
-            <div class="text-1p6rem mb-0p25rem bold-500" style="color: var(--theme-extra)">EXTRAS</div>
+            <div class="text-1p6rem mb-0p25rem bold-500">EXTRAS</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
-
-                <div class="flex justify-between">
-                    <div class="settings-heading">Launch Fireworks Button</div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-launch-fireworks-button" class="toggle-input">
-                        <label for="toggle-launch-fireworks-button" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
 
                 <div class="flex justify-between">
                     <div class="settings-heading">Show Bike Racks</div>
@@ -1179,23 +1199,6 @@
                         <label for="toggle-show-campus-switcher" class="toggle-label">
                             <span class="toggle-slider"></span>
                         </label>
-                    </div>
-                </div>
-
-                <div class="flex justify-between">
-                    <div class="settings-heading" style="align-self: center;">Parking Permit</div>
-                    <div class="parking-add-container">
-                        <div class="parking-add-btn br-2rem bg-black white text-1p6rem pr-1rem py-0p5rem pl-1p5rem flex align-center select-none pointer">
-                            <span class="mr-0p5rem">Add</span>
-                            <span class="text-1p3rem"><i class="fa-regular fa-plus bold-600"></i></span>
-                        </div>
-                        <div class="parking-campus-dropdown none">
-                            <div class="parking-campus-option" data-campus="Busch">Busch</div>
-                            <div class="parking-campus-option" data-campus="Livingston">Livingston</div>
-                            <div class="parking-campus-option" data-campus="College Ave">College Ave</div>
-                            <div class="parking-campus-option" data-campus="Cook">Cook</div>
-                            <div class="parking-campus-option" data-campus="Douglass">Douglass</div>
-                        </div>
                     </div>
                 </div>
 
