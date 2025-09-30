@@ -271,6 +271,8 @@ function selectParkingCampus(parkingCampus) {
     settings['parking-campus'] = parkingCampus;
     localStorage.setItem('settings', JSON.stringify(settings));
 
+    addParkingCampusRouteSelector();
+
     // Track analytics event
     sa_event('btn_press', {
         'btn': 'parking_campus_select',
