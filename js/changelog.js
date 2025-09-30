@@ -16,6 +16,8 @@ async function getChangelog() {
         $('.changelog-wrapper').hide();
         $('.changelog').removeClass('footer-selected');
         $('.status-wrapper').hide();
+        $('.errors-wrapper').hide();
+        $('.errors-tab').removeClass('footer-selected');
         stopStatusUpdates();
         return;
     }
@@ -25,6 +27,8 @@ async function getChangelog() {
     $('.contact').removeClass('footer-selected');
     $('.status-wrapper').hide();
     $('.status').removeClass('footer-selected');
+    $('.errors-wrapper').hide();
+    $('.errors-tab').removeClass('footer-selected');
     stopStatusUpdates();
 
     // Immediately select changelog and show wrapper
@@ -225,8 +229,10 @@ function renderChangelog() {
     previousCommitCount = totalCommits;
 
     if (isInitialLoad) {
-        // Hide status
+        // Hide status and errors
         $('.status-wrapper').hide();
+        $('.errors-wrapper').hide();
+        $('.errors-tab').removeClass('footer-selected');
         stopStatusUpdates();
         changelogInitialized = true;
     }

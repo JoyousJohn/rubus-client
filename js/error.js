@@ -176,14 +176,26 @@ class ErrorTracker {
         if (!errorsWrapper) return;
 
         this.isErrorPanelVisible = !this.isErrorPanelVisible;
-        
+
         if (this.isErrorPanelVisible) {
             this.renderErrors();
+            // Hide other panels when showing errors
+            $('.footer-contact-wrapper').hide();
+            $('.footer-contact-loading').hide();
+            $('.contact').removeClass('footer-selected');
+            $('.changelog-wrapper').hide();
+            $('.changelog').removeClass('footer-selected');
+            $('.status-wrapper').hide();
+            $('.status').removeClass('footer-selected');
+            stopStatusUpdates();
+
             errorsWrapper.classList.remove('none');
             errorsWrapper.classList.add('error-panel-visible');
+            $('.errors-tab').addClass('footer-selected');
         } else {
             errorsWrapper.classList.add('none');
             errorsWrapper.classList.remove('error-panel-visible');
+            $('.errors-tab').removeClass('footer-selected');
         }
     }
 

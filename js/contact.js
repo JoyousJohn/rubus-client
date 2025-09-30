@@ -10,6 +10,9 @@ function showContact() {
     // Hide status
     $('.status-wrapper').hide();
     $('.status').removeClass('footer-selected');
+    // Hide errors
+    $('.errors-wrapper').hide();
+    $('.errors-tab').removeClass('footer-selected');
     stopStatusUpdates();
 }
 
@@ -49,6 +52,8 @@ function contactClicked() {
         $('.footer-contact-wrapper').hide();
         $('.contact').removeClass('footer-selected');
         $('.status-wrapper').hide();
+        $('.errors-wrapper').hide();
+        $('.errors-tab').removeClass('footer-selected');
         stopStatusUpdates();
         return;
     }
@@ -59,6 +64,8 @@ function contactClicked() {
     $('.changelog').removeClass('footer-selected');
     $('.status-wrapper').hide();
     $('.status').removeClass('footer-selected');
+    $('.errors-wrapper').hide();
+    $('.errors-tab').removeClass('footer-selected');
     stopStatusUpdates();
     $('.footer-contact-loading').show();
     $('.footer-contact-wrapper').hide();
