@@ -2195,6 +2195,13 @@ function findNearestStop(fly) {
 }
 
 async function checkIfLocationShared() {
+    // Check if navigator and permissions API are available
+    if (!navigator || !navigator.permissions || !navigator.permissions.query) {
+        const error = new Error('Navigator permissions API not available');
+        console.error('Navigator permissions API not available:', error);
+        throw error;
+    }
+
     const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
 
     const lsLocationShared = localStorage.getItem('locationShared');

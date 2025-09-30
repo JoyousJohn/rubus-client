@@ -41,16 +41,29 @@ class ErrorTracker {
     interceptConsoleError() {
         const originalConsoleError = console.error;
         const self = this;
-        
+
         console.error = function(...args) {
             // Call original console.error
             originalConsoleError.apply(console, args);
-            
-            // Also track in our error system
-            const message = args.map(arg => 
-                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-            ).join(' ');
-            
+
+            // Also track in our error system with better error handling
+            const message = args.map(arg => {
+                if (arg instanceof Error) {
+                    // Handle Error objects specially
+                    return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
+                } else if (typeof arg === 'object') {
+                    // Try to get useful information from objects
+                    try {
+                        if (arg.message) return arg.message;
+                        if (arg.toString) return arg.toString();
+                        return JSON.stringify(arg, Object.getOwnPropertyNames(arg), 2);
+                    } catch {
+                        return String(arg);
+                    }
+                }
+                return String(arg);
+            }).join(' ');
+
             self.addError({
                 type: 'Console Error',
                 message: message,
