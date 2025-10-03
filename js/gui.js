@@ -191,7 +191,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     // Apply selection styling to the currently selected route if it exists in the filtered routes
     if (shownRoute && routesArray.includes(shownRoute)) {
         // Use the existing toggleRouteSelectors logic to select the route
-        $('.route-selector').not('.parking-campus-selector').each(function() {
+        $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn && rn !== shownRoute) {
                 $(this).css('background-color', 'gray');
@@ -399,8 +399,8 @@ function toggleRouteSelectors(route) {
 
     else {
 
-        // Gray out all route selectors (including those without polylines) except the selected one and parking campus selector
-        $('.route-selector').not('.parking-campus-selector').each(function() {
+        // Gray out all route selectors (including those without polylines) except the selected one, parking campus selector, and settings button
+        $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn !== route) {
                 $(this).css('background-color', 'gray');

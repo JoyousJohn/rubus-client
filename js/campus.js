@@ -168,17 +168,15 @@ $(function() {
 		return Math.max(0, target);
 	}
 
-	let currentCarouselAnimCancel = () => {}; // Initialize as no-op function
+	let currentCarouselAnimCancel = null;
 	function centerToItem($item, instant = false, allowDesktop = false) {
-		const isDesk = (typeof isDesktop !== 'undefined' && isDesktop);
-		if (isDesk && !allowDesktop) { console.log('[carousel] skip center (desktop)'); return; }
+		if (isDesktop && !allowDesktop) { console.log('[carousel] skip center (desktop)'); return; }
 		const $carousel = $('.campus-carousel');
 		const carEl = $carousel[0];
 		const itemEl = $item && $item[0];
 		if (!carEl || !itemEl) { console.log('[carousel] missing elements for centering'); return; }
 		// Cancel any prior animations (jQuery or our own)
 		$carousel.stop(true);
-		currentCarouselAnimCancel();
 		const prevBehavior = $carousel.css('scroll-behavior');
 		$carousel.css('scroll-behavior', 'auto');
 		// Pre-centering diagnostics
@@ -198,6 +196,8 @@ $(function() {
 			console.log('[carousel][verify] after', { postScroll: carEl.scrollLeft, postDelta, pass: Math.abs(postDelta) <= 0.6 });
 			return;
 		}
+		// Only cancel previous animation when starting a new one
+		currentCarouselAnimCancel();
 		// Smooth convergence using rect deltas per frame
 		const epsilon = 0.6;
 		const maxMs = 260;
