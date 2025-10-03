@@ -23,8 +23,11 @@ function updateStatusDisplay() {
     const onlineColor = '#10b981';
     const offlineColor = '#ef4444';
 
-    $('.passio-status').text(`Passio ${passioOnline ? 'Online' : 'Offline'} (-${passioTimeAgo})`).css('color', passioOnline ? onlineColor : offlineColor);
-    $('.rubus-status').text(`RUBus ${rubusOnline ? 'Online' : 'Offline'} (-${rubusTimeAgo})`).css('color', rubusOnline ? onlineColor : offlineColor);
+    const passioTimeDisplay = passioTimeAgo === 'Never' ? passioTimeAgo : `-${passioTimeAgo}`;
+    const rubusTimeDisplay = rubusTimeAgo === 'Never' ? rubusTimeAgo : `-${rubusTimeAgo}`;
+
+    $('.passio-status').text(`Passio ${passioOnline ? 'Online' : 'Offline'} (${passioTimeDisplay})`).css('color', passioOnline ? onlineColor : offlineColor);
+    $('.rubus-status').text(`RUBus ${rubusOnline ? 'Online' : 'Offline'} (${rubusTimeDisplay})`).css('color', rubusOnline ? onlineColor : offlineColor);
 }
 
 function updatePassioResponseTime() {
