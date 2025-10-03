@@ -221,7 +221,12 @@ $('.info-panels-close').click(function() {
     moveRouteSelectorsToMain();
     $('.bottom').show();
     $('.bottom').css('bottom', '0px');
-    $('.left-btns, .right-btns, .route-selectors, .settings-btn').show();
+    $('.left-btns, .right-btns, .route-selectors').show();
+    
+    // Only show settings button if no stop is currently selected
+    if (!popupStopId) {
+        $('.settings-btn').show();
+    }
     $('.info-panels-close').show();
     // Restore original route selection if needed
     closeRouteMenu();

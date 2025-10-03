@@ -1492,7 +1492,12 @@ function closeRouteMenu() {
     $('.bottom').css('bottom', '0px');
 
     // Show all other buttons
-    $('.left-btns, .right-btns, .settings-btn').show();
+    $('.left-btns, .right-btns').show();
+    
+    // Only show settings button if no stop is currently selected
+    if (!popupStopId) {
+        $('.settings-btn').show();
+    }
     
     // Show parking campus selector only if user has a campus selected
     if (settings['parking-campus']) {

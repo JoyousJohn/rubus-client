@@ -391,19 +391,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-always-show-second':
             settings['toggle-always-show-second'] = isChecked;
 
-            if (isChecked) {
-                $('.stop-info-show-next-loop').hide();
-                $('.stop-info-next-loop-wrapper').show();
-            } else {
-                $('.stop-info-show-next-loop').show();
-                $('.stop-info-next-loop-wrapper').hide();
-                $('.always-show-next-loop').hide();
-                
-                // If a stop popup is currently open and we are disabling the toggle, hide the 2nd loop buses
-                if (popupStopId) {
-                    $('.stop-info-next-loop-wrapper').hide();
-                }
-            }
+            // if (isChecked) {
+            //     $('.stop-info-show-next-loop').hide();
+            //     $('.stop-info-next-loop-wrapper').show();
+            // } else {
+            //     $('.stop-info-next-loop-wrapper').hide();
+            //     $('.always-show-next-loop').hide();
+            // }
 
             break;
 

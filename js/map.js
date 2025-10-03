@@ -429,6 +429,8 @@ function hideInfoBoxes(instantly_hide) {
 
         // Restore all route selectors when stop is deselected
         populateRouteSelectors(activeRoutes);
+        
+        $('.settings-btn').show();
 
         checkMinRoutes(); // because .knight-mover is hidden in popStopInfo()
     }
