@@ -3280,5 +3280,5 @@ function hideBikeRacks() {
         map.removeLayer(marker);
     }
     bikeRackMarkers = [];
-    console.log('Removed all bike rack markers');
+    // console.log('Removed all bike rack markers');
 }

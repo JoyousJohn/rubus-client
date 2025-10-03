@@ -385,7 +385,7 @@ function toggleRouteSelectors(route) {
         // Restore all route selectors (including those without polylines) to their colors
         $('.route-selector').each(function() {
             const rn = $(this).attr('routeName');
-            if (rn && rn !== 'fav') {
+            if (rn !== 'fav') {
                 $(this).css('background-color', colorMappings[rn]);
             }
         });
@@ -402,7 +402,7 @@ function toggleRouteSelectors(route) {
         // Gray out all route selectors (including those without polylines) except the selected one and parking campus selector
         $('.route-selector').not('.parking-campus-selector').each(function() {
             const rn = $(this).attr('routeName');
-            if (rn && rn !== route) {
+            if (rn !== route) {
                 $(this).css('background-color', 'gray');
             }
         });
@@ -2504,7 +2504,28 @@ function selectTheme(theme) {
 
 window.continueToCampusModal = function() {
     $('.theme-modal').hide();
+    
+    // First, prepare the carousel by setting its scroll position to center NB
+    // This happens while the modal is still hidden
+    const $carousel = $('.campus-carousel');
+    const $nbItem = $(`.campus-carousel-item[data-campus="nb"]`);
+    
+    if ($carousel[0] && $nbItem[0]) {
+        // Calculate the target scroll position to center NB
+        const nbRect = $nbItem[0].getBoundingClientRect();
+        const carouselRect = $carousel[0].getBoundingClientRect();
+        const itemCenter = nbRect.left + nbRect.width / 2;
+        const viewportCenter = carouselRect.left + carouselRect.width / 2;
+        const targetScroll = itemCenter - viewportCenter;
+        
+        // Set the scroll position while modal is still hidden
+        $carousel[0].scrollLeft = targetScroll;
+    }
+    
+    // Now make the modal visible - it should already be centered
     $('.campus-modal').css('display', 'flex');
+    
+    // Use RAF to ensure proper layout and fine-tune if needed
     requestAnimationFrame(() => {
         window.centerCampusCarouselToNBInstant(true);
     });
