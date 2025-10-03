@@ -168,7 +168,7 @@ $(function() {
 		return Math.max(0, target);
 	}
 
-	let currentCarouselAnimCancel = null;
+	let currentCarouselAnimCancel = () => {}; // Initialize as no-op function
 	function centerToItem($item, instant = false, allowDesktop = false) {
 		const isDesk = (typeof isDesktop !== 'undefined' && isDesktop);
 		if (isDesk && !allowDesktop) { console.log('[carousel] skip center (desktop)'); return; }
