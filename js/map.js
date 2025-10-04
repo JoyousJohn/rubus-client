@@ -2433,7 +2433,17 @@ function shouldShowCapacityChart(busId) {
     
     const values = Object.values(timeRiderships);
     const allSame = values.every(value => value === values[0]);
-    return !allSame; // Show chart only if values are different
+    if (allSame) {
+        return false; // Hide chart if all values are the same
+    }
+    
+    // Count unique values
+    const uniqueValues = new Set(values);
+    if (uniqueValues.size < 5) {
+        return false; // Hide chart if fewer than 5 unique values
+    }
+    
+    return true; // Show chart if it has 5 or more unique values
 }
 
 function updateHistoricalCapacity(busId) {
