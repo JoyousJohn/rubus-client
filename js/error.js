@@ -43,12 +43,22 @@ class ErrorTracker {
         const originalConsoleWarn = console.warn;
         const self = this;
 
+        // Store reference to original warn for use in addError
+        this.originalConsoleWarn = originalConsoleWarn;
+
         console.error = function(...args) {
+            // Check if this is from our own error tracking to prevent recursion
+            const message = args.join(' ');
+            if (message.includes('Error tracked:')) {
+                originalConsoleError.apply(console, args);
+                return;
+            }
+
             // Call original console.error
             originalConsoleError.apply(console, args);
 
             // Also track in our error system with better error handling
-            const message = args.map(arg => {
+            const processedMessage = args.map(arg => {
                 if (arg instanceof Error) {
                     // Handle Error objects specially
                     return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
@@ -67,17 +77,24 @@ class ErrorTracker {
 
             self.addError({
                 type: 'Console Error',
-                message: message,
+                message: processedMessage,
                 timestamp: new Date()
             });
         };
 
         console.warn = function(...args) {
+            // Check if this is from our own error tracking to prevent recursion
+            const message = args.join(' ');
+            if (message.includes('Error tracked:')) {
+                originalConsoleWarn.apply(console, args);
+                return;
+            }
+
             // Call original console.warn
             originalConsoleWarn.apply(console, args);
 
             // Also track in our warning system
-            const message = args.map(arg => {
+            const processedMessage = args.map(arg => {
                 if (arg instanceof Error) {
                     // Handle Error objects specially
                     return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
@@ -96,7 +113,7 @@ class ErrorTracker {
 
             self.addError({
                 type: 'Console Warning',
-                message: message,
+                message: processedMessage,
                 timestamp: new Date()
             });
         };
@@ -131,8 +148,12 @@ class ErrorTracker {
             this.renderErrors();
         }
 
-        // Also log to console for debugging
-        console.warn('Error tracked:', error);
+        // Use original console.warn to avoid recursion
+        if (this.originalConsoleWarn) {
+            this.originalConsoleWarn.call(console, 'Error tracked:', error);
+        } else {
+            console.log('Error tracked:', error);
+        }
     }
 
     updateErrorCount() {
