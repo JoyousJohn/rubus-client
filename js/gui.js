@@ -27,11 +27,26 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     }
 
     routesArray = routesArray.map(route => route || 'undefined');
-    routesArray.sort((a, b) => {
-        if (a === 'undefined') return 1;
-        if (b === 'undefined') return -1;
-        return a.localeCompare(b);
+    
+    // Separate routes with in-service buses from those without
+    const routesWithInServiceBuses = [];
+    const routesWithoutInServiceBuses = [];
+    
+    routesArray.forEach(route => {
+        if (route === 'undefined') {
+            routesWithoutInServiceBuses.push(route);
+        } else if (routeHasInServiceBuses(route)) {
+            routesWithInServiceBuses.push(route);
+        } else {
+            routesWithoutInServiceBuses.push(route);
+        }
     });
+    
+    // Sort in-service routes alphabetically
+    routesWithInServiceBuses.sort((a, b) => a.localeCompare(b));
+    
+    // Combine arrays: in-service routes first, then out-of-service routes
+    routesArray = [...routesWithInServiceBuses, ...routesWithoutInServiceBuses];
     
 	if (routesArray.includes('on2')) {
 		routesArray = routesArray.filter(route => route !== 'on2');
