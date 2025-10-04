@@ -839,8 +839,11 @@ async function popStopInfo(stopId) {
     popupBusId = null;
 
     if (selectedMarkerId && busMarkers[selectedMarkerId] ) { 
-        busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
-        busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.borderColor = 'black';
+        const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);
+        if (rotationElement) {
+            rotationElement.style.boxShadow = '';
+            rotationElement.style.borderColor = 'black';
+        }
         selectedMarkerId = null;
     }
 

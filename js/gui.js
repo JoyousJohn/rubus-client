@@ -1005,7 +1005,10 @@ function updateColorMappingsSelection(selectedColor) {
     $(`.route-selector[routename="${shownRoute}"]`).css('box-shadow', `0 0 10px ${selectedColor}`)
 
     busesByRoutes[selectedCampus][shownRoute].forEach(busId => {
-        busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = selectedColor;
+        const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+        if (iconElement) {
+            iconElement.style.backgroundColor = selectedColor;
+        }
         polylines[shownRoute].setStyle({ color: selectedColor });
     })
 
@@ -1721,6 +1724,7 @@ let defaultSettings = {
     'toggle-show-buildings': true,
     'campus': 'nb',
     'parking-campus': false,
+    'marker-type': 'rubus', // 'rubus' or 'passio'
 
     
     // dev settings
@@ -1761,7 +1765,6 @@ let defaultSettings = {
     // going to remove
     'toggle-show-arrival-times': true,
     'toggle-show-bus-speeds': true,
-
     'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
 
 };
@@ -1772,6 +1775,7 @@ function setDefaultSettings () {
     localStorage.setItem('settings', JSON.stringify(settings));
     $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
+    $(`div.settings-option[marker-type-option="rubus"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     $(`div.settings-option[campus="nb"]`).addClass('settings-selected')
@@ -1819,6 +1823,7 @@ function updateSettings() {
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker-size']}"]`).addClass('settings-selected')
+    $(`div.settings-option[marker-type-option="${settings['marker-type']}"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="${settings['map-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
@@ -1826,6 +1831,11 @@ function updateSettings() {
     if (!$('.theme-modal').is(':visible')) {
         $(`div.settings-option[theme-option="${settings['theme']}"]`).addClass('settings-selected')
     }
+
+    // Pre-generate all route-colored Passio markers for better performance
+    preGeneratePassioMarkers().catch(error => {
+        console.error('Failed to pre-generate Passio markers:', error);
+    });
 
     // Load parking campus setting
     const parkingCampus = settings['parking-campus'];
@@ -1856,13 +1866,23 @@ function updateSettings() {
         }
 
         else if (settingsOption === 'marker-size') {
-            
+
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['marker-size'] = $(this).attr('marker-size-option')
             updateMarkerSize()
 
         }
+
+        else if (settingsOption === 'marker-type') {
+
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['marker-type'] = $(this).attr('marker-type-option')
+            updateMarkerType()
+
+        }
+
 
         else if (settingsOption === 'theme') {
             
@@ -2008,8 +2028,42 @@ function updateMarkerSize() {
     const innerDimensions = innerSizeMap[settings['marker-size']]
 
     $('.bus-icon-outer').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
+    $('.passio-marker-container').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
     $('.bus-icon-inner').css('height', innerDimensions + 'px').css('width', innerDimensions + 'px');
 }
+
+function updateMarkerType() {
+    // Update existing markers to use the new marker type
+    console.log(`Marker type changed to: ${settings['marker-type']}`);
+
+    // Update existing markers if needed
+    for (const busId in busMarkers) {
+        const marker = busMarkers[busId];
+        const route = busData[busId].route;
+
+        if (settings['marker-type'] === 'passio') {
+            // Update to use Passio marker with route color
+            generateRouteColoredPassioMarker(route).then(svgUrl => {
+                const imgElement = marker.getElement().querySelector('.bus-icon-inner');
+                if (imgElement) {
+                    imgElement.style.backgroundImage = `url(${svgUrl})`;
+                    imgElement.style.backgroundSize = 'contain';
+                    imgElement.style.backgroundRepeat = 'no-repeat';
+                    imgElement.style.backgroundPosition = 'center';
+                }
+            });
+        } else if (settings['marker-type'] === 'rubus') {
+            // Update to use RUBus marker (div-based)
+            const iconElement = marker.getElement().querySelector('.bus-icon-outer');
+            const innerElement = marker.getElement().querySelector('.bus-icon-inner');
+            if (iconElement && innerElement) {
+                iconElement.style.backgroundColor = colorMappings[route] || '#0464eb';
+                innerElement.style.backgroundImage = 'none';
+            }
+        }
+    }
+}
+
 
 let locationShared;
 let userLocation;

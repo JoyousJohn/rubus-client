@@ -110,6 +110,12 @@ html, body {
     align-items: center;
 }
 
+.passio-marker-container img {
+    /* Passio marker container - always rotated 45 degrees left */
+    transform: rotate(-70deg);
+}
+
+
 .bus-icon-inner {
     width: 13px;
     height: 13px;
@@ -1346,6 +1352,25 @@ html, body {
     border: 2px solid black;
     aspect-ratio: 1;
 }
+
+.settings-marker-style .small-marker {
+    background-color: rgb(68, 151, 239);
+}
+
+.passio-marker {
+    position: relative;
+    aspect-ratio: 1;
+    display: flex;
+    /* justify-content: center;
+    align-items: center; */
+}
+
+.passio-marker img {
+    width: 100%;
+    /* height: 100%; */
+    object-fit: contain;
+}
+
 
 .small-marker > div {
     height: 8px;    

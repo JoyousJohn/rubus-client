@@ -136,7 +136,10 @@ $('.bus-star').click(function() {
             map.fitBounds(polylineBounds);
             $('.favs').show();
             $('.bus-info-popup').hide();
-            busMarkers[popupBusId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
+            const rotationElement = getMarkerRotationElement(busMarkers[popupBusId]);
+            if (rotationElement) {
+                rotationElement.style.boxShadow = '';
+            }
             popupBusId = null;
             showAllPolylines();
             $('[stop-eta]').hide();            
@@ -255,7 +258,10 @@ function toggleFavorites() {
         
         $('.bus-info-popup, .stop-info-popup').hide();
         if (selectedMarkerId) {
-            busMarkers[selectedMarkerId].getElement().querySelector('.bus-icon-outer').style.boxShadow = '';
+            const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);
+            if (rotationElement) {
+                rotationElement.style.boxShadow = '';
+            }
         }
 
     } else {

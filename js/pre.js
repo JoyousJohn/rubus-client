@@ -108,7 +108,10 @@ async function immediatelyUpdateBusDataPre() {
     for (const busId in busData) {
         if (routesByCampus[busData[busId].route] !== selectedCampus) continue; // bc marker only created if selected campus. cna also just check if marker exists like i have commented out below, but i must've previously added that check and removed it to have my code fail fast... possible race condition back then somewhere? maybe when a marker created back on visibility change?
         // if (busMarkers[busId]) {
-            busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = 'gray';
+            const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+            if (iconElement) {
+                iconElement.style.backgroundColor = 'gray';
+            }
         // }
     }
 
@@ -292,7 +295,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     updateTimeToStops([busId]);
 
                     try {
-                        busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr]; // somehow got  busMarkers[busId] is undefined... how was busId in busData but not busMarkers? don't understand...
+                        const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+                        if (iconElement) {
+                            iconElement.style.backgroundColor = colorMappings[routeStr]; // somehow got  busMarkers[busId] is undefined... how was busId in busData but not busMarkers? don't understand...
+                        }
                     } catch (error) {
                         console.log('Error accessing busMarkers:', error)
                         console.log(busData)
@@ -373,7 +379,10 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             if (routesByCampus[busData[busId].route] === selectedCampus) {
                 plotBus(busId, shouldImmediateUpdate);
                 if (shouldImmediateUpdate) {
-                    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
+                    const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+                    if (iconElement) {
+                        iconElement.style.backgroundColor = colorMappings[routeStr];
+                    }
                 }   
             }
 
@@ -872,7 +881,10 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
                 calculateSpeed(busId);
 
                 if (setColorBack) {
-                    busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[routeStr];
+                    const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+                    if (iconElement) {
+                        iconElement.style.backgroundColor = colorMappings[routeStr];
+                    }
                 }
     
             }
