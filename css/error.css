@@ -109,8 +109,15 @@
 
 .error-type {
     font-weight: bold;
-    color: #dc3545;
     font-size: 0.9rem;
+}
+
+.error-type[data-type="Console Warning"] {
+    color: #ffc107;
+}
+
+.error-type[data-type="Console Error"] {
+    color: #dc3545;
 }
 
 .error-message {

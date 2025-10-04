@@ -401,7 +401,14 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             }
             // console.log('-')
             // console.log(pollActiveRoutes)
-            const newRoutes = pollActiveRoutes.difference(activeRoutes);
+            // Try native difference method first, fallback to filter for older browsers
+            let newRoutes;
+            if (typeof pollActiveRoutes.difference === 'function') {
+                newRoutes = pollActiveRoutes.difference(activeRoutes);
+            } else {
+                // Fallback for browsers that don't support Set.prototype.difference
+                newRoutes = new Set([...pollActiveRoutes].filter(route => !activeRoutes.has(route)));
+            }
             if (newRoutes.size > 0) {
                 // console.log('newRoutes: ', newRoutes)
                 // console.log('activeRoutes: ' , activeRoutes)

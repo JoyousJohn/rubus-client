@@ -40,6 +40,7 @@ class ErrorTracker {
 
     interceptConsoleError() {
         const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
         const self = this;
 
         console.error = function(...args) {
@@ -66,6 +67,35 @@ class ErrorTracker {
 
             self.addError({
                 type: 'Console Error',
+                message: message,
+                timestamp: new Date()
+            });
+        };
+
+        console.warn = function(...args) {
+            // Call original console.warn
+            originalConsoleWarn.apply(console, args);
+
+            // Also track in our warning system
+            const message = args.map(arg => {
+                if (arg instanceof Error) {
+                    // Handle Error objects specially
+                    return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
+                } else if (typeof arg === 'object') {
+                    // Try to get useful information from objects
+                    try {
+                        if (arg.message) return arg.message;
+                        if (arg.toString) return arg.toString();
+                        return JSON.stringify(arg, Object.getOwnPropertyNames(arg), 2);
+                    } catch {
+                        return String(arg);
+                    }
+                }
+                return String(arg);
+            }).join(' ');
+
+            self.addError({
+                type: 'Console Warning',
                 message: message,
                 timestamp: new Date()
             });
@@ -136,7 +166,7 @@ class ErrorTracker {
                 <div class="error-item">
                     <div class="error-time">${timeStr}</div>
                     <div class="error-content">
-                        <div class="error-type">${error.type}</div>
+                        <div class="error-type" data-type="${error.type}">${error.type}</div>
                         <div class="error-message">${this.escapeHtml(error.message)}</div>
                         ${error.filename !== 'Unknown file' ? `<div class="error-location">${error.filename}:${error.lineno}:${error.colno}</div>` : ''}
                         ${error.stack ? `<div class="error-stack" onclick="this.classList.toggle('expanded')">Stack trace (click to expand)</div><pre class="error-stack-content">${this.escapeHtml(error.stack)}</pre>` : ''}

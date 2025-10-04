@@ -2208,7 +2208,7 @@ async function checkIfLocationShared() {
     // Check if navigator and permissions API are available
     if (!navigator || !navigator.permissions || !navigator.permissions.query) {
         const error = new Error('Navigator permissions API not available');
-        console.error('Navigator permissions API not available:', error);
+        console.warn('Navigator permissions API not available:', error);
         throw error;
     }
 
