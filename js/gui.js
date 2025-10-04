@@ -2036,31 +2036,16 @@ function updateMarkerType() {
     // Update existing markers to use the new marker type
     console.log(`Marker type changed to: ${settings['marker-type']}`);
 
-    // Update existing markers if needed
+    // Recreate all existing markers with the new marker type
     for (const busId in busMarkers) {
-        const marker = busMarkers[busId];
-        const route = busData[busId].route;
-
-        if (settings['marker-type'] === 'passio') {
-            // Update to use Passio marker with route color
-            generateRouteColoredPassioMarker(route).then(svgUrl => {
-                const imgElement = marker.getElement().querySelector('.bus-icon-inner');
-                if (imgElement) {
-                    imgElement.style.backgroundImage = `url(${svgUrl})`;
-                    imgElement.style.backgroundSize = 'contain';
-                    imgElement.style.backgroundRepeat = 'no-repeat';
-                    imgElement.style.backgroundPosition = 'center';
-                }
-            });
-        } else if (settings['marker-type'] === 'rubus') {
-            // Update to use RUBus marker (div-based)
-            const iconElement = marker.getElement().querySelector('.bus-icon-outer');
-            const innerElement = marker.getElement().querySelector('.bus-icon-inner');
-            if (iconElement && innerElement) {
-                iconElement.style.backgroundColor = colorMappings[route] || '#0464eb';
-                innerElement.style.backgroundImage = 'none';
-            }
-        }
+        // Remove the old marker from the map
+        map.removeLayer(busMarkers[busId]);
+        
+        // Clear the marker from the busMarkers object
+        delete busMarkers[busId];
+        
+        // Recreate the marker with the new type
+        plotBus(busId, true); // true for immediate update
     }
 }
 
