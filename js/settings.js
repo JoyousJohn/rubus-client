@@ -159,6 +159,12 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
+        case 'toggle-show-bus-names':
+            console.log(`Show bus names on map is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-bus-names'] = isChecked;
+            updateBusNameTooltips();
+            break;
+
         case 'toggle-show-bus-path':
             settings['toggle-show-bus-path'] = isChecked;
 

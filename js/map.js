@@ -1480,7 +1480,14 @@ function plotBus(busId, immediatelyUpdate=false) {
                 className: 'bus-icon',
                 iconSize: [30, 30],
                 iconAnchor: [15, 15],
-                html: '<div class="bus-icon-outer" style="will-change: transform;"><div class="bus-icon-inner"></div></div>'
+                html: `
+                    <div class="bus-marker-wrapper">
+                        <div class="bus-icon-outer" style="will-change: transform;">
+                            <div class="bus-icon-inner"></div>
+                        </div>
+                        <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
+                    </div>
+                `
             }),
             route: busData[busId].route,
             zIndexOffset: 500
@@ -1503,6 +1510,9 @@ function plotBus(busId, immediatelyUpdate=false) {
             sourceBusId = null;
             selectBusMarker(busId);
         });
+
+        // Update bus name tooltip visibility when a new bus is plotted
+        updateBusNameTooltips();
 
     } else if (!pauseUpdateMarkerPositions) {
         // if (document.visibilityState === 'hidden') {
@@ -1536,6 +1546,7 @@ function selectBusMarker(busId) {
 
     try { updateRidingBadgeUI(); } catch (_) {}
 }
+
 
 const campusMappings = {
     'ee': 'Cook/Doug/CA',

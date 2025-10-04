@@ -138,6 +138,28 @@ html, body {
     /* border: 1px solid black; */
 }
 
+.bus-marker-wrapper {
+    position: relative;
+    width: 30px;
+    height: 30px;
+}
+
+.bus-marker-wrapper .bus-name-label {
+    position: absolute;
+    top: -0.8rem;
+    left: 1.7rem;
+    background: white;
+    color: black;
+    font-size: 1rem;
+    padding: 1px 4px;
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+    /* border: 1px solid black; */
+}
+
 /* Distance line marker and tooltip styling - matches ETA tooltip styling */
 .custom-distance-marker .distance-marker-wrapper {
     position: relative;

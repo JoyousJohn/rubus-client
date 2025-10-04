@@ -499,6 +499,7 @@ function showAllBusesFromMap() {
     for (const marker in busMarkers) {
         busMarkers[marker].getElement().style.display = '';
     }
+    // updateBusNameTooltips();
 }
 
 function showAllPolylinesFromMap() {
@@ -540,6 +541,20 @@ function updateTooltips(route) {
         console.log(`Error updating tooltips for route ${route}: ${error}`)
     }
     
+}
+
+function updateBusNameTooltips() {
+    const showBusNames = settings['toggle-show-bus-names'];
+    
+    for (const busId in busMarkers) {
+        const $busNameLabel = $(busMarkers[busId].getElement()).find('.bus-name-label');
+        if (showBusNames) {
+            $busNameLabel.removeClass('none');
+            $busNameLabel.text(busData[busId].busName);
+        } else {
+            $busNameLabel.addClass('none');
+        }
+    }
 }
 
 async function toggleRoute(route) {
@@ -1612,6 +1627,7 @@ const toggleSettings = [
     'toggle-show-bus-id',
     'toggle-show-bus-progress',
     'toggle-show-bus-overtime-timer',
+    'toggle-show-bus-names',
     'toggle-show-bus-path',
     'toggle-launch-fireworks-button',
     'toggle-show-campus-switcher',
@@ -1703,6 +1719,7 @@ let defaultSettings = {
     'toggle-show-bus-id': false,
     'toggle-show-bus-progress': false,
     'toggle-show-bus-overtime-timer': false,
+    'toggle-show-bus-names': false,
     'toggle-show-bus-path': false,
     'toggle-launch-fireworks-button': false,
     'toggle-show-campus-switcher': false,
