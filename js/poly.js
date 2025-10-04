@@ -127,6 +127,7 @@ function getValidBusesServicingStop(stopId) {
     return validBuses;
 }
 
+
 // Force-add a polyline for a specific route regardless of bus in-service state
 async function addPolylineForRoute(routeName) {
     try {
@@ -854,11 +855,40 @@ async function popStopInfo(stopId) {
 
     $('.info-stop-name-text').text(settings['toggle-show-stop-id'] ? `${stopName} (#${stopId})` : stopName);
 
+    // Compute second loop entries to check if we should show the shw next loop button
+    const routesServicing = getRoutesServicingStop(stopId);
+    let servicingEntries = [];
+    routesServicing.forEach(route => {
+        busesByRoutes[selectedCampus][route].forEach(busId => {
+            if (isValid(busId)) {
+                const eta = getETAForStop(busId, stopId);
+                if (eta >= 0) {
+                    servicingEntries.push({
+                        busId: busId,
+                        eta: eta,
+                        route: route
+                    });
+                }
+            }
+        });
+    });
+    
+    const loopTimes = calculateLoopTimes();
+    const nextLoopEntries = servicingEntries.reduce((acc, entry) => {
+        if (!busData[entry.busId].oos && !busData[entry.busId].atDepot && !distanceFromLine(entry.busId)) {
+            acc.push({
+                ...entry,
+                eta: entry.eta + loopTimes[entry.route]
+            });
+        }
+        return acc;
+    }, []).sort((a, b) => a.eta - b.eta);
+
     if (!settings['toggle-always-show-second']) {
         $('.stop-info-next-loop-wrapper').hide();
         $('.always-show-next-loop').hide(); // Hide always show button when wrapper is closed
 
-        if (getValidBusesServicingStop(stopId).length !== 0) {
+        if (nextLoopEntries.length > 0) {
             $('.stop-info-show-next-loop').show();
         } else {
             $('.stop-info-show-next-loop').hide();
@@ -870,9 +900,8 @@ async function popStopInfo(stopId) {
     updateStopBuses(stopId, shownRoute);
 
     // Check if there are out of service buses and show hide button if not already hidden
-    const servicedRoutes = routesServicing(stopId);
     let hasOutOfServiceBuses = false;
-    servicedRoutes.forEach(route => {
+    routesServicing.forEach(route => {
         busesByRoutes[selectedCampus][route].forEach(busId => {
             if (busData[busId].oos) {
                 hasOutOfServiceBuses = true;
