@@ -152,8 +152,9 @@ html, body {
 
 .bus-marker-wrapper .bus-name-label {
     position: absolute;
-    top: -0.8rem;
-    left: 1.7rem;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background: white;
     color: black;
     font-size: 1rem;

@@ -1867,6 +1867,16 @@ function popInfo(busId, resetCampusFontSize) {
                 }
             } else if (key === 'prevStopId' || key === 'next_stop') {
                 extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
+            } else if (key === 'route_change' && typeof value === 'object') {
+                // Format route_change object to show readable information
+                const routeChangeData = value;
+                const oldRoute = routeChangeData.old_route || 'Unknown';
+                const changeTime = routeChangeData.route_change_time ? 
+                    new Date(routeChangeData.route_change_time).toLocaleString() : 'Unknown time';
+                extraDataVal = `From: ${oldRoute} at ${changeTime}`;
+            } else if (typeof value === 'object' && value !== null) {
+                // For any other objects, display as JSON
+                extraDataVal = JSON.stringify(value, null, 2);
             }
             extraDataHtml += `<div>${key}: <span style="opacity: 0.7">${extraDataVal}</span></div>`;
         }
