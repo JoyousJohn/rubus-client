@@ -1897,9 +1897,12 @@ function popInfo(busId, resetCampusFontSize) {
 
     if ('next_stop' in data && busETAs[busId] && !busData[busId].atDepot) { // Hide next stops when bus is at depot
         $('.next-stops-grid > div').empty();
-
-        if (closestStopId && routesServicing(closestStopId).includes(data.route) && 
-            (userPosition ? (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance']) : true)) {
+        
+        // Track whether we should show the closest stop section
+        const shouldShowClosestStop = closestStopId && routesServicing(closestStopId).includes(data.route) && 
+            (userPosition ? (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance']) : true);
+        
+        if (shouldShowClosestStop) {
             const $circle = $('<div class="closest-stop-circle closest-stop-bg" style="margin-right: 1rem;"></div>').css('background-color', colorMappings[data.route])
             $('.next-stops-grid > div').append($(`<div class="flex justify-center align-center closest-stop-bg h-100" style="margin-right: -2rem; margin-left: -1rem; border-radius: 0.8rem 0 0 0.8rem;"></div>`).append($circle))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;">
@@ -2090,7 +2093,7 @@ function popInfo(busId, resetCampusFontSize) {
                 }
             }
 
-            if (i === 0 && closestStopId === sortedStops[i] && !busData[busId].at_stop) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
+            if (i === 0 && shouldShowClosestStop && closestStopId === sortedStops[i] && !busData[busId].at_stop) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
 
             $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
@@ -2108,8 +2111,8 @@ function popInfo(busId, resetCampusFontSize) {
             $(`[stop-eta="${sortedStops[i]}"]`).text(eta).show();
 
             if (!firstCircle) {
-                // If closest stop is the next stop, use closest stop circle as first circle
-                if (closestStopIsNextStop) {
+                // If closest stop is the next stop and we're showing the closest stop section, use it as first circle
+                if (closestStopIsNextStop && shouldShowClosestStop) {
                     firstCircle = $('.closest-stop-circle').addClass('next-stop-circle');
                     firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
                 } else {
