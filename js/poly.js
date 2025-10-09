@@ -2,6 +2,76 @@ let polylineBounds = null;
 let routeBounds = {};
 let previousRoutesWithPolylines = new Set();
 
+// Track polyline removal for debugging race conditions
+let polylineRemovalLog = [];
+let polylineRemovalCount = {}; // Track how many times each route has been removed
+
+// Track polyline removal with stack trace - only log if double removal occurs
+function logPolylineRemoval(routeName, caller) {
+    const timestamp = new Date().toISOString();
+    const exists = !!polylines[routeName];
+    
+    // Increment removal count for this route
+    if (!polylineRemovalCount[routeName]) {
+        polylineRemovalCount[routeName] = 0;
+    }
+    polylineRemovalCount[routeName]++;
+    
+    const logEntry = {
+        route: routeName,
+        caller: caller,
+        timestamp: timestamp,
+        stack: new Error().stack,
+        exists: exists,
+        removalCount: polylineRemovalCount[routeName]
+    };
+    
+    polylineRemovalLog.push(logEntry);
+    
+    // Only log if this is a double removal (count > 1) or if polyline doesn't exist when trying to remove
+    if (polylineRemovalCount[routeName] > 1 || !exists) {
+        console.warn(`[DOUBLE REMOVAL DETECTED] Route: ${routeName}, Caller: ${caller}, Removal Count: ${polylineRemovalCount[routeName]}, Exists: ${exists}`, logEntry);
+        
+        // Show previous removals for this route
+        const previousRemovals = polylineRemovalLog.filter(entry => entry.route === routeName);
+        console.log(`Previous removals for route ${routeName}:`, previousRemovals);
+    }
+    
+    // Keep only last 50 entries to prevent memory bloat
+    if (polylineRemovalLog.length > 50) {
+        polylineRemovalLog = polylineRemovalLog.slice(-50);
+    }
+}
+
+// Function to get removal history for debugging
+function getPolylineRemovalHistory(routeName = null) {
+    if (routeName) {
+        return polylineRemovalLog.filter(entry => entry.route === routeName);
+    }
+    return polylineRemovalLog.slice(); // Return copy
+}
+
+// Global debugging functions (accessible from console)
+window.debugPolylineRemovals = function(routeName = null) {
+    const history = getPolylineRemovalHistory(routeName);
+    console.table(history);
+    return history;
+};
+
+window.debugPolylineState = function(routeName) {
+    console.log(`Polyline state for route: ${routeName}`);
+    console.log(`Exists in polylines object:`, !!polylines[routeName]);
+    console.log(`On map:`, polylines[routeName] ? map.hasLayer(polylines[routeName]) : 'N/A');
+    console.log(`Removal count:`, polylineRemovalCount[routeName] || 0);
+    console.log(`Removal history:`, getPolylineRemovalHistory(routeName));
+    return {
+        exists: !!polylines[routeName],
+        onMap: polylines[routeName] ? map.hasLayer(polylines[routeName]) : false,
+        removalCount: polylineRemovalCount[routeName] || 0,
+        history: getPolylineRemovalHistory(routeName)
+    };
+};
+
 async function setPolylines(activeRoutes) {
     // console.log("activeRoutes: ", activeRoutes)
     // Only set polylines for routes on this campus that currently have at least one in-service bus
@@ -157,6 +227,11 @@ async function addPolylineForRoute(routeName) {
         const polyline = L.polyline(coordinates, polylineOptions);
         polyline.addTo(map);
         polylines[routeName] = polyline;
+        
+        // Reset removal count when polyline is successfully created
+        if (polylineRemovalCount[routeName]) {
+            delete polylineRemovalCount[routeName];
+        }
         const bounds = polyline.getBounds();
         routeBounds[routeName] = bounds;
     } catch (e) {
@@ -225,6 +300,7 @@ function prunePolylinesWithoutInService() {
         const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
         campusRoutes.forEach(routeName => {
             if (!routeHasInServiceBuses(routeName) && polylines[routeName]) {
+                logPolylineRemoval(routeName, 'prunePolylinesWithoutInService');
                 try { polylines[routeName].remove(); } catch (e) {}
                 delete polylines[routeName];
                 // Keep routeBounds cached for potential reuse (e.g., quick fit on reselect)
@@ -829,6 +905,7 @@ async function popStopInfo(stopId) {
     if (popupBusId) {
         const route = busData[popupBusId].route;
         if (!routeHasInServiceBuses(route) && polylines[route]) {
+            logPolylineRemoval(route, 'popStopInfo');
             try { polylines[route].remove(); } catch (e) {}
             delete polylines[route];
             // Keep routeBounds cached; recompute global polyline bounds via shared helper

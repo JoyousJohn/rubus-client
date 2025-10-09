@@ -36,6 +36,7 @@ function deleteBusMarkers() {
 
 function deleteAllPolylines() {
     for (const polyline in polylines) {
+        logPolylineRemoval(polyline, 'deleteAllPolylines');
         polylines[polyline].remove();
     }
     polylines = {};

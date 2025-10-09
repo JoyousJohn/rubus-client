@@ -250,6 +250,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             if (isChecked) {
                 for (const routeName in polylines) {
                     const polyline = polylines[routeName];
+                    logPolylineRemoval(routeName, 'settings-toggle-polyline-padding-on');
                     polyline.removeFrom(map);
                     polyline.setStyle({
                         renderer: L.svg({ padding: 1.0 })
@@ -259,6 +260,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             } else {
                 for (const routeName in polylines) {
                     const polyline = polylines[routeName];
+                    logPolylineRemoval(routeName, 'settings-toggle-polyline-padding-off');
                     polyline.removeFrom(map);
                     polyline.setStyle({
                         renderer: undefined
@@ -455,6 +457,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 try {
                     const route = busData[popupBusId].route;
                     if (polylines[route] && map.hasLayer(polylines[route])) {
+                        logPolylineRemoval(route, 'settings-toggle-distances-line-on-focus');
                         polylines[route].removeFrom(map);
                     }
                 } catch (_) {}

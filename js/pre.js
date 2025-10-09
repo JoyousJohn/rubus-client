@@ -309,6 +309,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                     if (!activeRoutes.has(oldRoute)) {
                         populateRouteSelectors(activeRoutes);
                         console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
+                        logPolylineRemoval(oldRoute, 'fetchBusData-routeChange');
                         console.log('Polylines on map before remove:', map.hasLayer(polylines[oldRoute]));
                             polylines[oldRoute].remove();
                             console.log('Polylines on map after remove:', map.hasLayer(polylines[oldRoute]));
@@ -523,6 +524,7 @@ function makeOoS(busId) {
             console.log(`Removing polyline for route ${route}`);
             // Update global bounds since a route was removed
             updatePolylineBoundsIfNeeded();
+            logPolylineRemoval(route, 'makeOoS');
             console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
             polylines[route].remove();
             console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
