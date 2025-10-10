@@ -732,6 +732,7 @@ function selectedRoute(route) {
         moveRouteSelectorsToSubpanel();
         // Show all route selectors in subpanel (not filtered by stop selection)
         populateRouteSelectors(activeRoutes);
+        populateAllStops();
         // Force switch to routes subpanel (not user explicit selection)
         const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
         selectInfoPanel('routes', $routesHeaderBtn[0], false);
