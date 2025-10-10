@@ -110,10 +110,6 @@ html, body {
     align-items: center;
 }
 
-.passio-marker-container img {
-    /* Passio marker container - always rotated 45 degrees left */
-    transform: rotate(-70deg);
-}
 
 
 .bus-icon-inner {
@@ -1329,24 +1325,37 @@ html, body {
 }
 
 
-.small-marker {
+.marker.small-marker {
     height: 20px;
 }
 
-.medium-marker {
+.small-marker > .passio-marker-circle {
+    height: 18px;
+}
+
+.marker.medium-marker {
     height: 27px;
 }
 
-.big-marker {
+.medium-marker > .passio-marker-circle {
+    height: 22px;
+}
+
+.marker.big-marker {
     height: 35px;
     margin: 0.3rem;
 }
+
+.big-marker > .passio-marker-circle {
+    height: 26px;
+}
+
 
 .marker {
     border-radius: 50%;
     border-top-left-radius: 10%;
     background-color: red;
-    border: 2px solid black; /* Optional: add a border */
+    border: 2px solid black;
     aspect-ratio: 1;
     display: flex;
     justify-content: center;
@@ -1367,18 +1376,52 @@ html, body {
 
 .passio-marker {
     position: relative;
+    display: flex;
+}
+
+.passio-marker-circle {
+    border-radius: 50%;
+    background-color: rgb(246, 246, 246);
+    border: 2px solid rgb(68, 151, 239);
     aspect-ratio: 1;
     display: flex;
-    /* justify-content: center;
-    align-items: center; */
+    justify-content: center;
+    align-items: center;
+    position: relative; /* Enable positioning context for child */
+}
+
+.passio-marker-arrow-out {
+    position: absolute;
+    aspect-ratio: 1;
+    margin: 1px;
+}
+
+.passio-marker-arrow-in {
+    background-color: rgb(68, 151, 239);
+    border-radius: 1px;
+    aspect-ratio: 1;
+}
+
+.big-marker .passio-marker-arrow {
+    top: 55%;
+}
+
+.medium-marker .passio-marker-arrow {
+    top: 60%;
+}
+
+.small-marker .passio-marker-arrow {
+    top: 70%;
 }
 
 .passio-marker img {
-    width: 100%;
-    /* height: 100%; */
-    object-fit: contain;
+    width: 35%;
 }
 
+.passio-bus-icon {
+    width: 35%;
+    transform-origin: center;
+}
 
 .small-marker > div {
     height: 8px;    

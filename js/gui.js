@@ -1000,6 +1000,16 @@ function updateColorMappingsSelection(selectedColor) {
     settings['colorMappings'] = colorMappings
     localStorage.setItem('settings', JSON.stringify(settings))
 
+    // Regenerate colored SVG for this route if using Passio markers
+    if (settings['marker-type'] === 'passio') {
+        generateColoredSvgForColor(selectedColor).then(() => {
+            // Update existing markers for this route
+            updateExistingPassioMarkersForRoute(shownRoute);
+        }).catch(error => {
+            console.error(`Failed to regenerate SVG for route ${shownRoute}:`, error);
+        });
+    }
+
     // update shown element colors
     $(`.color-circle, .next-stop-circle, .route-selector[routename="${shownRoute}"]`).css('background-color', selectedColor)
     $('.route-name').css('color', selectedColor)
@@ -1624,6 +1634,12 @@ const innerSizeMap = {
     'big': '19'
 }
 
+const passioSizeMap = {
+    'small': 'small-marker',
+    'medium': 'medium-marker', 
+    'big': 'big-marker'
+}
+
 let settings = {}
 
 const toggleSettings = [
@@ -1833,9 +1849,9 @@ function updateSettings() {
         $(`div.settings-option[theme-option="${settings['theme']}"]`).addClass('settings-selected')
     }
 
-    // Pre-generate all route-colored Passio markers for better performance
-    preGeneratePassioMarkers().catch(error => {
-        console.error('Failed to pre-generate Passio markers:', error);
+    // Pre-generate all colored SVGs for better performance
+    preGenerateColoredSvgs().catch(error => {
+        console.error('Failed to pre-generate colored SVGs:', error);
     });
 
     // Load parking campus setting
@@ -2027,10 +2043,13 @@ function updateMarkerSize() {
 
     const outterDimensions = markerSizeMap[settings['marker-size']]
     const innerDimensions = innerSizeMap[settings['marker-size']]
+    const passioSizeClass = passioSizeMap[settings['marker-size']]
 
     $('.bus-icon-outer').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
-    $('.passio-marker-container').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
     $('.bus-icon-inner').css('height', innerDimensions + 'px').css('width', innerDimensions + 'px');
+    
+    // Update Passio markers with appropriate size class
+    $('.passio-marker').removeClass('small-marker medium-marker big-marker').addClass(passioSizeClass);
 }
 
 function updateMarkerType() {

@@ -1104,72 +1104,110 @@ let wholePixelPositioning = false;
 let busLines = {}
 let midpointCircle = {}
 
-// Cache for route-colored Passio marker SVGs
-let passioMarkerCache = {};
 
 // Helper function to get the rotation element for any marker type
 function getMarkerRotationElement(marker) {
-    return marker.getElement().querySelector('.bus-icon-outer') || marker.getElement().querySelector('.passio-marker-container');
+    return marker.getElement().querySelector('.bus-icon-outer') || marker.getElement().querySelector('.passio-marker');
 }
 
-// Function to generate a route-colored Passio marker SVG (cached and synchronous after pre-generation)
-function generateRouteColoredPassioMarker(route) {
-    // Return cached version synchronously if it exists
-    if (passioMarkerCache[route]) {
-        return passioMarkerCache[route];
-    }
+// Cache for colored SVG data URLs
+const svgCache = {};
 
-    // If not cached, this shouldn't happen during runtime since we pre-generate all markers
-    console.warn(`Passio marker for route ${route} not pre-generated, generating now...`);
-    return 'img/passio-marker.svg'; // fallback to original
-}
-
-// Pre-generate all route-colored Passio markers on startup (async)
-async function preGeneratePassioMarkers() {
-    const routes = Object.keys(colorMappings);
-
-    for (const route of routes) {
-        try {
-            await generatePassioMarkerForRoute(route);
-        } catch (error) {
-            console.error(`Failed to pre-generate Passio marker for route ${route}:`, error);
+// Function to update existing Passio markers for a specific route when color changes
+function updateExistingPassioMarkersForRoute(route) {
+    const newColor = colorMappings[route];
+    
+    // Find all buses for this route and update their markers
+    for (const busId in busMarkers) {
+        if (busData[busId] && busData[busId].route === route) {
+            const marker = busMarkers[busId];
+            const markerElement = marker.getElement();
+            
+            // Update the arrow-in background color
+            const arrowIn = markerElement.querySelector('.passio-marker-arrow-in');
+            if (arrowIn) {
+                arrowIn.style.backgroundColor = newColor;
+            }
+            
+            // Update the circle border color
+            const circle = markerElement.querySelector('.passio-marker-circle');
+            if (circle) {
+                circle.style.borderColor = newColor;
+            }
+            
+            // Update the SVG image with new colored version
+            const busIcon = markerElement.querySelector('.passio-bus-icon');
+            if (busIcon && svgCache[newColor]) {
+                busIcon.src = svgCache[newColor];
+            }
         }
     }
-
-    console.log(`Pre-generated ${routes.length} route-colored Passio markers`);
 }
 
-// Internal function to generate and cache a single route's Passio marker (async)
-async function generatePassioMarkerForRoute(route) {
-    const response = await fetch('img/passio-marker.svg');
-    const svgContent = await response.text();
+// Function to generate a colored SVG data URL from the passio-bus.svg file (synchronous after pre-generation)
+function generateColoredSvg(color) {
+    // Return cached version if it exists
+    if (svgCache[color]) {
+        return svgCache[color];
+    }
+    
+    // Fallback to original SVG if not cached
+    return 'img/passio-bus.svg';
+}
 
-    // Create a DOM parser to manipulate the SVG
+// Pre-generate all colored SVGs on startup
+async function preGenerateColoredSvgs() {
+    const colors = [...new Set(Object.values(colorMappings))];
+    
+    for (const color of colors) {
+        try {
+            await generateColoredSvgForColor(color);
+        } catch (error) {
+            console.error(`Failed to pre-generate SVG for color ${color}:`, error);
+        }
+    }
+}
+
+// Internal function to generate and cache a single colored SVG
+async function generateColoredSvgForColor(color) {
+    const response = await fetch('img/passio-bus.svg');
+    const svgContent = await response.text();
+    
+    // Parse the SVG
     const parser = new DOMParser();
     const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
     const svgElement = svgDoc.documentElement;
-
-    // Find all path elements and change their fill color based on route
+    
+    // Modify the SVG to use the specified color
+    // Look for fill attributes or add them to paths
     const paths = svgElement.querySelectorAll('path');
     paths.forEach(path => {
-        // Only change the main bus shape (path0), not the white background (path1)
-        if (path.id === 'path0') {
-            const routeColor = colorMappings[route] || '#0464eb'; // fallback to blue
-            path.setAttribute('fill', routeColor);
+        if (!path.getAttribute('fill') || path.getAttribute('fill') !== 'none') {
+            path.setAttribute('fill', color);
         }
     });
-
-    // Serialize the modified SVG back to string
+    
+    // Also check for other elements that might have colors
+    const elements = svgElement.querySelectorAll('*');
+    elements.forEach(element => {
+        if (element.tagName !== 'svg' && (!element.getAttribute('fill') || element.getAttribute('fill') !== 'none')) {
+            element.setAttribute('fill', color);
+        }
+    });
+    
+    // Serialize back to string
     const serializer = new XMLSerializer();
     const modifiedSvgContent = serializer.serializeToString(svgElement);
-
-    // Create a blob URL with the modified SVG content
+    
+    // Create blob URL
     const blob = new Blob([modifiedSvgContent], { type: 'image/svg+xml' });
     const svgUrl = URL.createObjectURL(blob);
-
+    
     // Cache the result
-    passioMarkerCache[route] = svgUrl;
+    svgCache[color] = svgUrl;
 }
+
+// Function to generate a route-colored Passio marker SVG (cached and synchronous after pre-generation)
 
 const updateMarkerPosition = (busId, immediatelyUpdate) => {
     const loc = {lat: busData[busId].lat, long: busData[busId].long};
@@ -1316,6 +1354,13 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
             const iconElement = getMarkerRotationElement(marker);
             if (iconElement && newRotation !== undefined) {
                 iconElement.style.transform = `rotate(${newRotation}deg)`;
+                
+                // Counter-rotate the SVG image for Passio markers only
+                if (settings['marker-type'] === 'passio') {
+                    const busIcon = marker.getElement().querySelector('.passio-bus-icon');
+                    const counterRotation = -newRotation;
+                    busIcon.style.transform = `rotate(${counterRotation}deg)`;
+                }
             }
         }
 
@@ -1508,6 +1553,13 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
             const iconElement = getMarkerRotationElement(marker);
             if (iconElement) {
                 iconElement.style.transform = `rotate(${currentRotation}deg)`;
+                
+                // Counter-rotate the SVG image for Passio markers only
+                if (settings['marker-type'] === 'passio') {
+                    const busIcon = marker.getElement().querySelector('.passio-bus-icon');
+                    const counterRotation = -currentRotation;
+                    busIcon.style.transform = `rotate(${counterRotation}deg)`;
+                }
             }
         }
 
@@ -1552,8 +1604,18 @@ function plotBus(busId, immediatelyUpdate=false) {
         const markerType = settings?.['marker-type'] || 'rubus';
 
         if (markerType === 'passio') {
-            // Create Passio SVG marker with route-based color (cached and synchronous)
-            const svgUrl = generateRouteColoredPassioMarker(route);
+            // Create Passio HTML marker with route-based color
+            const routeColor = colorMappings[route] || '#446bef';
+            const currentSize = settings['marker-size'] || 'medium';
+            const passioSizeClass = {
+                'small': 'small-marker',
+                'medium': 'medium-marker', 
+                'big': 'big-marker'
+            }[currentSize];
+            
+            // Generate colored SVG data URL
+            const coloredSvg = generateColoredSvg(routeColor);
+            
             busMarkers[busId] = L.marker([loc.lat, loc.long], {
                 icon: L.divIcon({
                     className: 'bus-icon',
@@ -1561,8 +1623,13 @@ function plotBus(busId, immediatelyUpdate=false) {
                     iconAnchor: [15, 15],
                     html: `
                         <div class="bus-marker-wrapper">
-                            <div class="passio-marker-container" style="will-change: transform; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;">
-                                <img src="${svgUrl}" alt="Bus" style="width: 100%; height: 100%; object-fit: contain;">
+                            <div class="passio-marker ${passioSizeClass}" style="will-change: transform;">
+                                <div class="passio-marker-arrow-out">
+                                    <div class="passio-marker-arrow-in" style="background-color: ${routeColor};"></div>
+                                </div>
+                                <div class="passio-marker-circle" style="border-color: ${routeColor};">
+                                    <img src="${coloredSvg}" class="passio-bus-icon" style="width: 35%; height: 35%; object-fit: contain;">
+                                </div>
                             </div>
                             <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
                         </div>
@@ -1573,6 +1640,13 @@ function plotBus(busId, immediatelyUpdate=false) {
             }).addTo(map);
 
             getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
+            
+            // Counter-rotate the SVG image to keep it at 0 degrees relative to viewport (Passio markers only)
+            if (settings['marker-type'] === 'passio') {
+                const busIcon = busMarkers[busId].getElement().querySelector('.passio-bus-icon');
+                const counterRotation = -(busData[busId].rotation + 45);
+                busIcon.style.transform = `rotate(${counterRotation}deg)`;
+            }
 
             // Setup Passio marker (now synchronous)
             try {
