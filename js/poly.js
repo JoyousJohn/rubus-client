@@ -688,7 +688,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         }
 
         if (!jQuery.isEmptyObject(busData)) {
-            $('.stop-info-avg-wait').text(`Buses stop here for an average of ${waitStr}.`).show();
+            $('.stop-info-avg-wait').text(`Buses stop here for ${waitStr} on average.`).show();
         }
     } else {
         $('.stop-info-avg-wait').hide();

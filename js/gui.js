@@ -2021,6 +2021,13 @@ $(document).ready(function() {
         localStorage.setItem('settings', JSON.stringify(settings));
     });
 
+    // Handle window resize to adjust font option sizes
+    $(window).on('resize', function() {
+        adjustFontOptionSizes();
+    });
+
+    adjustFontOptionSizes();
+
 })
 
 function toggleDevOptions() {
@@ -2626,3 +2633,38 @@ window.continueToCampusModal = function() {
         window.centerCampusCarouselToNBInstant(true);
     });
 };
+
+// Prevent text wrapping in font options by adjusting font size
+function adjustFontOptionSizes() {
+    $('.settings-option[settings-option="font"]').each(function() {
+        const $option = $(this);
+
+        // Cache the original intended font size once
+        if (!$option.data('original-font-size')) {
+            $option.data('original-font-size', $option.css('font-size'));
+        }
+        const originalFontSize = $option.data('original-font-size');
+
+        // Lock current width during measurement so the cell doesn't expand
+        const lockedWidth = $option[0].clientWidth;
+
+        // Prepare for single-line measurement
+        $option.css({
+            'white-space': 'nowrap',
+            'overflow': 'hidden',
+            'box-sizing': 'border-box',
+            'width': lockedWidth + 'px',
+            'font-size': originalFontSize
+        });
+
+        // Start from original size and shrink until it fits
+        let fontSize = parseFloat(originalFontSize);
+        while ($option[0].scrollWidth > lockedWidth && fontSize > 8) {
+            fontSize -= 0.5;
+            $option.css('font-size', fontSize + 'px');
+        }
+
+        // Release explicit width after measurement
+        $option.css('width', '');
+    });
+}

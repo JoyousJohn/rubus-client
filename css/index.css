@@ -1382,7 +1382,7 @@ html, body {
 .passio-marker-circle {
     border-radius: 50%;
     background-color: rgb(246, 246, 246);
-    border: 2px solid rgb(68, 151, 239);
+    border: 1px solid rgb(68, 151, 239);
     aspect-ratio: 1;
     display: flex;
     justify-content: center;
