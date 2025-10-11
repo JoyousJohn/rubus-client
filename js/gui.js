@@ -1841,6 +1841,10 @@ function updateSettings() {
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker-size']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-type-option="${settings['marker-type']}"]`).addClass('settings-selected')
+    
+    // Update marker size examples to match the current marker type
+    updateMarkerSizeExamples();
+    
     $(`div.settings-option[map-renderer-option="${settings['map-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
@@ -2054,14 +2058,28 @@ function updateMarkerSize() {
 
     $('.bus-icon-outer').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
     $('.bus-icon-inner').css('height', innerDimensions + 'px').css('width', innerDimensions + 'px');
+}
+
+function updateMarkerSizeExamples() {
+    const markerType = settings['marker-type'];
     
-    // Update Passio markers with appropriate size class
-    $('.passio-marker').removeClass('small-marker medium-marker big-marker').addClass(passioSizeClass);
+    if (markerType === 'passio') {
+        // Show Passio markers, hide RUBus markers
+        $('.settings-marker-size .passio-marker').show();
+        $('.settings-marker-size .marker').hide();
+    } else {
+        // Show RUBus markers, hide Passio markers
+        $('.settings-marker-size .marker').show();
+        $('.settings-marker-size .passio-marker').hide();
+    }
 }
 
 function updateMarkerType() {
     // Update existing markers to use the new marker type
     console.log(`Marker type changed to: ${settings['marker-type']}`);
+
+    // Update marker size examples to match the new marker type
+    updateMarkerSizeExamples();
 
     // Recreate all existing markers with the new marker type
     for (const busId in busMarkers) {

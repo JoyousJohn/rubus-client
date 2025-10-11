@@ -1346,10 +1346,13 @@ html, body {
     margin: 0.3rem;
 }
 
+.passio-marker.big-marker {
+    margin: 0.3rem;
+}
+
 .big-marker > .passio-marker-circle {
     height: 26px;
 }
-
 
 .marker {
     border-radius: 50%;
