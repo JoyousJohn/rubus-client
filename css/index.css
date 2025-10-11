@@ -144,6 +144,9 @@ html, body {
     position: relative;
     width: 30px;
     height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .bus-marker-wrapper .bus-name-label {
@@ -1379,7 +1382,7 @@ html, body {
 
 .passio-marker {
     position: relative;
-    display: flex;
+    display: block;
 }
 
 .passio-marker-circle {
