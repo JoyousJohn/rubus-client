@@ -254,6 +254,10 @@
             // Only show campus modal if campus is not set
             if (!JSON.parse(localStorage.getItem('settings'))['campus']) {
                 document.querySelector('.campus-modal').style.display = 'flex';
+                // Ensure proper centering when modal is shown directly
+                requestAnimationFrame(() => {
+                    centerCampusCarouselToNBInstant(true);
+                });
             }
         } else if (new URLSearchParams(window.location.search).has('bus')) {
             document.querySelector('.theme-modal').style.display = 'none';
