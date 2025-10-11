@@ -229,7 +229,7 @@
     <div class="campus-modal none flex-col justify-between h-100vh center">
         <div class="campus-header">Select Your Campus</div>
         <div class="campus-carousel-wrapper flex justify-center align-center" style="flex:1; overflow: visible;">
-            <div class="campus-carousel flex align-center" style="overflow-x: auto; scroll-behavior: smooth; width: 100vw;">
+            <div class="campus-carousel flex align-center" style="scroll-behavior: smooth; width: 100vw;">
                 <div class="campus-carousel-item" data-campus="camden">
                     <div class="campus-carousel-label">Camden</div>
                     <img class="campus-carousel-img campus-img-camden" src="img/campus-images/camden-light.png" data-light="img/campus-images/camden-light.png" data-dark="img/campus-images/camden-dark.png">
@@ -244,7 +244,7 @@
                 </div>
             </div>
         </div>
-        <div class="campus-modal-confirm campus-modal-confirm-mobile pointer" style="position: fixed; bottom: 1.5rem; right: 1.5rem;" onclick="confirmCampusSelection()">Confirm &rarr;</div>
+        <div class="campus-modal-confirm campus-modal-confirm-mobile pointer" onclick="confirmCampusSelection()">Confirm &rarr;</div>
     </div>
     <script>
         // Hide campus modal by default

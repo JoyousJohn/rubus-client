@@ -3,7 +3,6 @@
 	position: fixed;
 	inset: 0;
 	z-index: 10000;
-	background: var(--theme-bg);
 	font-family: var(--font-family);
 	color: var(--theme-color);
 	padding: 0;
@@ -12,13 +11,26 @@
 	flex-direction: column;
 	justify-content: flex-start;
 	align-items: stretch;
-	min-height: 100vh;
 	overflow: hidden;
-    min-height: 50vw;
+	height: 100vh;
 }
+
+/* Backdrop with blur effect */
+.campus-modal::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.4);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(10px);
+	z-index: -1;
+	pointer-events: none;
+}
+
 .campus-header {
 	font-size: 2.5rem;
 	margin-top: 3rem;
+	margin-bottom: 2rem;
 	text-align: center;
 	color: var(--theme-color);
 	font-family: var(--font-family);
@@ -27,12 +39,12 @@
 	width: 100vw;
 	flex: 1;
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: center;
 	overflow: hidden;
 	padding: 0;
 	box-sizing: border-box;
-	max-height: calc(100vh - 8rem);
+	min-height: 0; /* Allows flex item to shrink below content size */
 }
 .campus-carousel {
 	display: flex;
@@ -44,34 +56,40 @@
 	overflow-x: auto;
 	overflow-y: hidden;
 	scroll-behavior: smooth;
-	gap: 3rem;
+	gap: 2rem;
 	padding-left: 50vw;
 	padding-right: 50vw;
 	scrollbar-width: none;
 }
 .campus-carousel::-webkit-scrollbar { display: none; }
 .campus-carousel-item {
-	display: flex;
+	display: inline-flex;
 	flex-direction: column;
 	align-items: center;
-	justify-content: flex-start;
+	justify-content: center;
 	transition: all 0.4s cubic-bezier(.4,2,.6,1);
 	cursor: pointer;
-	max-width: 35vw;
-	margin: 0 1rem;
-	opacity: 0.75;
+	/* max-width: 35vw; */
+	/* margin: 0 1rem; */
+	height: 100%;
+	max-height: 100%;
+	flex-shrink: 0;
 }
 .campus-carousel-item.selected {
 	transform: scale(1);
 	z-index: 2;
 	opacity: 1;
-	max-width: 50vw;
+	max-width: 75vw;
 }
 .campus-carousel-img {
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
 	width: auto;
-	max-width: 50vw;
 	height: auto;
-	max-height: calc(100vh - 15rem);
+	flex-shrink: 1;
+	min-height: 0;
+	min-width: 0;
 	object-fit: contain;
 	border-radius: 1.5rem;
 	box-shadow: 0 2px 12px 0 rgba(0,0,0,0.08);
@@ -90,7 +108,9 @@
 	color: var(--theme-color);
 	line-height: 1.1;
 	overflow: visible;
+	flex-shrink: 0;
 }
+
 .campus-modal-confirm {
 	background-color: rgb(53, 101, 248);
 	padding: 0.5rem 1.5rem;
@@ -100,13 +120,14 @@
 	font-weight: 500;
 	align-self: end;
     transition: background 0.25s;
+	margin: 2rem 1.5rem;
 }
 .campus-modal-confirm:hover {
 	background: #1d2fcb;
 }
 
 @media (max-width: 600px) {
-	.campus-carousel-item { max-width: 50vw; }
-	.campus-carousel-item.selected { max-width: 55vw; }
+	/* .campus-carousel-item { max-width: 50vw; } */
+	/* .campus-carousel-item.selected { max-width: 55vw; } */
 	.campus-header { font-size: 2rem; }
 }
