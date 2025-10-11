@@ -1033,20 +1033,6 @@
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
 
                 <div class="flex justify-between">
-                    <div class="settings-heading flex flex-1 align-center span-i-focus">Bus Focussing<span class="span-i pointer select-none">i</span></div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-hide-other-routes" class="toggle-input">
-                        <label for="toggle-hide-other-routes" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="focus-explain none ml-0p5rem text-1p3rem dimgray">Hide all other buses and center the route when a bus is selected. Drag with two fingers to pan the map. Pan with one finger to restore view.</div>
-                <script>
-                $('.span-i-focus').click(function() {$('.focus-explain').slideToggle();})
-                </script>
-
-                <div class="flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-preload">Preload Map Routes<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
                         <input type="checkbox" id="toggle-polyline-padding" class="toggle-input">
@@ -1075,6 +1061,40 @@
                     </div>
                 </div>
 
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-spoofing">Location Spoofing<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-spoofing" class="toggle-input">
+                        <label for="toggle-spoofing" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-spoofing-explain none ml-0p5rem text-1p3rem dimgray">Allows you to teleport anywhere on the map by tapping; useful for seeing the nearest stops, routes, and buildings to locations you might visit.</div>
+                <script>
+                $('.span-i-spoofing').click(function() {
+                    $('.settings-spoofing-explain').slideToggle();
+                });
+                </script>
+            </div>
+
+            <div class="text-1p6rem mb-0p25rem bold-500">BUSES</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
+                
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-focus">Bus Focussing<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-hide-other-routes" class="toggle-input">
+                        <label for="toggle-hide-other-routes" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="focus-explain none ml-0p5rem text-1p3rem dimgray">Hide all other buses and center the route when a bus is selected. Drag with two fingers to pan the map. Pan with one finger to restore view.</div>
+                <script>
+                $('.span-i-focus').click(function() {$('.focus-explain').slideToggle();})
+                </script>
+                
                 <div class="settings-marker-size">
                     <div class="settings-heading">Marker Size</div>
                     <div class="settings-options grid grid-cols-3">
@@ -1127,30 +1147,20 @@
                 </div>
 
                 <div class="flex justify-between">
-                    <div class="settings-heading flex flex-1 align-center span-i-spoofing">Location Spoofing<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-heading flex flex-1 align-center span-i-break-overdue">Time Since Last Break<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-spoofing" class="toggle-input">
-                        <label for="toggle-spoofing" class="toggle-label">
+                        <input type="checkbox" id="toggle-always-show-break-overdue" class="toggle-input">
+                        <label for="toggle-always-show-break-overdue" class="toggle-label">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
                 </div>
-                <div class="settings-spoofing-explain none ml-0p5rem text-1p3rem dimgray">Allows you to teleport anywhere on the map by tapping; useful for seeing the nearest stops, routes, and buildings to locations you might visit.</div>
+                <div class="break-overdue-explain none ml-0p5rem text-1p3rem dimgray">When selecting a bus, always show the time since it last took a break. If disabled, the time since last break notice will only be shown if a bus is overdue its average break interval.</div>
                 <script>
-                $('.span-i-spoofing').click(function() {
-                    $('.settings-spoofing-explain').slideToggle();
-                });
+                $('.span-i-break-overdue').click(function() {
+                    $('.break-overdue-explain').slideToggle();
+                })
                 </script>
-
-                <div class="flex justify-between">
-                    <div class="settings-heading">Disable Fireworks on Open</div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-disable-fireworks-on-open" class="toggle-input">
-                        <label for="toggle-disable-fireworks-on-open" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
             </div>
 
             <div class="text-1p6rem mb-0p25rem bold-500">STOPS</div>
@@ -1251,8 +1261,22 @@
                     </div>
                 </div>
 
+                <div class="flex justify-between">
+                    <div class="settings-heading">Disable Fireworks on Open</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-disable-fireworks-on-open" class="toggle-input">
+                        <label for="toggle-disable-fireworks-on-open" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-1p6rem mb-0p25rem bold-500">CAMPUS</div>
+            <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem" style="border-left: 2px solid rgb(216 216 216);">
                 <div class="settings-campus">
-                    <div class="settings-heading">Campus</div>
+                    <div class="settings-heading">Rutgers Campus</div>
                     <div class="settings-options grid grid-cols-3">
                         <div class="settings-option" settings-option="campus" campus-option="nb">NB</div>
                         <div class="settings-option" settings-option="campus" campus-option="camden">Camden</div>
@@ -1270,7 +1294,6 @@
                         </label>
                     </div>
                 </div>
-
             </div>
 
             <div class="dev-options-head settings-heading mt-2rem center pointer select-none" onclick="toggleDevOptions()">Show Developer Options ▼</div>
@@ -1580,16 +1603,6 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-distances-line-on-focus" class="toggle-input">
                             <label for="toggle-distances-line-on-focus" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between">
-                        <div class="settings-heading">Exact Break Overdue</div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-always-show-break-overdue" class="toggle-input">
-                            <label for="toggle-always-show-break-overdue" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
