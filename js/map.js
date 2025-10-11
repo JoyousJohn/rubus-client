@@ -1929,7 +1929,18 @@ function popInfo(busId, resetCampusFontSize) {
         // Format all values including arrays
         if (value !== null) {
             let extraDataVal = value
-            if (key === 'stopId') {
+            if (key === 'isKnown') {
+                extraDataVal = value ? 'Yes' : 'No';
+                extraDataHtml += `<div>${key}: <span style="opacity: 0.7; color: ${value ? '#4CAF50' : '#f44336'}">${extraDataVal}</span></div>`;
+                const validityResult = getBusValidityInfo(busId);
+                const validityText = validityResult.valid ? 'Yes' : `No (${validityResult.reason})`;
+                extraDataHtml += `<div>isValid: <span style="opacity: 0.7; color: ${validityResult.valid ? '#4CAF50' : '#f44336'}">${validityText}</span></div>`;
+
+                const distanceFromLineResult = distanceFromLine(busId);
+                extraDataHtml += `<div>distanceFromLine validity: <span style="opacity: 0.7; color: ${distanceFromLineResult ? '#f44336' : '#4CAF50'}">${distanceFromLineResult}</span></div>`;
+
+                continue; // Skip processing isKnown again in the normal flow
+            } else if (key === 'stopId') {
                 if (Array.isArray(value)) {
                     const formattedStops = [];
                     for (const id of value) {
@@ -3128,7 +3139,6 @@ function distanceFromLine(busId) {
     const polyPoints = polyline.getLatLngs();
     
     let minDist = Infinity;
-    let closestPoint = null;
     
     for (let i = 0; i < polyPoints.length; i++) {
         const d = busLatLng.distanceTo(polyPoints[i]);
@@ -3154,6 +3164,30 @@ function isValid(busId) {
     }
 
     return true;
+}
+
+function getBusValidityInfo(busId) {
+    if (!busETAs[busId]) {
+        return {
+            valid: false,
+            reason: 'not in busETAs'
+        };
+    }
+
+    for (const stopId of stopLists[busData[busId].route]) {
+        const etaVal = getETAForStop(busId, stopId);
+        if (typeof etaVal === 'number' && etaVal < 0) {
+            return {
+                valid: false,
+                reason: `Negative ETA: ${etaVal}`
+            };
+        }
+    }
+
+    return {
+        valid: true,
+        reason: null
+    };
 }
 
 function expandBounds(origBounds, factor) {
