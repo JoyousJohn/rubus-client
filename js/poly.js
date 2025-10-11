@@ -385,6 +385,17 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     const servicedRoutes = routesServicing(stopId)
 
+    // Sort routes so that routes with in-service buses are at the end
+    const sortedServicedRoutes = [...servicedRoutes].sort((a, b) => {
+        const aHasInService = !routeHasInServiceBuses(a);
+        const bHasInService = !routeHasInServiceBuses(b);
+        
+        // Routes with in-service buses should come after routes without
+        if (aHasInService && !bHasInService) return 1;
+        if (!aHasInService && bHasInService) return -1;
+        return 0; // Keep original order for routes with same status
+    });
+
     // console.log('servicedRoutes:', servicedRoutes)
 
     if (!servicedRoutes.length) {
@@ -401,10 +412,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         $('.info-stop-servicing').append($noneRouteElm)
     }
 
-    servicedRoutes.forEach(servicedRoute => {
+    sortedServicedRoutes.forEach(servicedRoute => {
         
         const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`);
-        if (visibleRoute && visibleRoute !== servicedRoute) {
+        if ((visibleRoute && visibleRoute !== servicedRoute) || !routeHasInServiceBuses(servicedRoute)) {
             $serviedRouteElm.css('color', 'var(--theme-hidden-route-col)');
         } else {
             $serviedRouteElm.css('color', colorMappings[servicedRoute]);
@@ -594,7 +605,11 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
             $('.stop-info-buses-grid').children().slice(-4).removeClass('pointer');
         } else {
-            $('.stop-bus-route').last().css('color', colorMappings[data.route]);
+            if (routeHasInServiceBuses(data.route)) {
+                $('.stop-bus-route').last().css('color', colorMappings[data.route]);
+            } else {
+                $('.stop-bus-route').last().css('color', 'gray');
+            }
             $('.stop-info-buses-grid').children().slice(-4).click(function() {
                 sourceStopId = stopId;
                 flyToBus(data.busId);
