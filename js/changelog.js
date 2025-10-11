@@ -4,6 +4,8 @@ let previousCommitCount = 0; // Track how many commits were rendered before
 let changelogInitialized = false; // Track if changelog has been loaded before
 let renderedCommits = new Map(); // Track which commits have already been rendered
 let changelogLoading = false; // Prevent spam clicking on changelog
+let preloadingNextPage = false; // Track if we're preloading the next page
+let loadedPages = new Set(); // Track which pages have been loaded
 
 async function getChangelog() {
     // Prevent spam clicking
@@ -45,18 +47,23 @@ async function getChangelog() {
     currentPage = 1;
     allCommits.clear();
     renderedCommits.clear();
+    loadedPages.clear();
     previousCommitCount = 0;
     
     loadCommitsPage(currentPage);
 }
 
-function loadCommitsPage(page) {
-    // Prevent spam clicking
-    if (changelogLoading) {
+function loadCommitsPage(page, isPreload = false) {
+    // Prevent spam clicking (but allow preloading)
+    if (changelogLoading && !isPreload) {
         return;
     }
-    
-    changelogLoading = true;
+
+    if (isPreload) {
+        preloadingNextPage = true;
+    } else {
+        changelogLoading = true;
+    }
     
     $.ajax({
         url: `https://api.github.com/repos/JoyousJohn/rubus-client/commits?per_page=57&page=${page}`,
@@ -64,8 +71,13 @@ function loadCommitsPage(page) {
         success: function(data, textStatus, jqXHR) {
             // If no more commits, hide the button
             if (data.length === 0) {
-                $('.show-more-commits-btn').hide();
-                changelogLoading = false;
+                if (!isPreload) {
+                    $('.show-more-commits-btn').hide();
+                }
+                if (!isPreload) {
+                    changelogLoading = false;
+                }
+                preloadingNextPage = false;
                 return;
             }
 
@@ -99,19 +111,35 @@ function loadCommitsPage(page) {
             const dateInfo = sortedDates.map(([date, count]) => `${date}(${count})`).join(', ');
             console.log(`Request ${page} dates: ${dateInfo}`);
 
+            // Track that this page has been loaded
+            loadedPages.add(page);
+
+            // For preloaded pages, don't render or update UI, just store the data
+            if (isPreload) {
+                preloadingNextPage = false;
+                return;
+            }
+
             renderChangelog();
-            
+
             // Show the button if we got a full page of commits
             if (data.length === 57) {
                 $('.show-more-commits-btn').show();
+                // Pre-load the next page for instant loading
+                if (!preloadingNextPage) {
+                    loadCommitsPage(page + 1, true);
+                }
             } else {
                 $('.show-more-commits-btn').hide();
             }
-            
+
             changelogLoading = false;
         },
         error: function() {
-            changelogLoading = false;
+            if (!isPreload) {
+                changelogLoading = false;
+            }
+            preloadingNextPage = false;
         }
     });
 }
@@ -216,11 +244,22 @@ function renderChangelog() {
     if ($('.show-more-commits-btn').length === 0) {
         const $showMoreBtn = $('<div class="show-more-commits-btn pointer text-1p4rem center mt-1rem" style="color: #1a73e8; font-weight: 500;"><i class="fa-solid fa-plus"></i> Show more commits</div>');
         $showMoreBtn.click(function() {
-            if (changelogLoading) {
+            if (changelogLoading || preloadingNextPage) {
                 return;
             }
-            currentPage++;
-            loadCommitsPage(currentPage);
+
+            // Check if next page is already preloaded
+            const nextPage = currentPage + 1;
+
+            if (loadedPages.has(nextPage)) {
+                // Next page is already loaded, just render
+                currentPage = nextPage;
+                renderChangelog();
+            } else {
+                // Load the next page normally
+                currentPage++;
+                loadCommitsPage(currentPage);
+            }
         });
         $list.after($showMoreBtn);
     }
