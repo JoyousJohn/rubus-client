@@ -309,10 +309,18 @@ function loadBuildings() {
     // Disable button and show loading state
     $('.buildings-btn').prop('disabled', true).addClass('loading');
 
-    return fetch('lib/buildings-parking.json')
+    // Load campus-specific buildings GeoJSON
+    const campusToFile = {
+        'nb': 'lib/buildings-parking_nb.json',
+        'newark': 'lib/buildings-parking_newark.json',
+        'camden': 'lib/buildings-parking_camden.json'
+    };
+    const buildingsJsonPath = campusToFile[selectedCampus];
+    
+    return fetch(buildingsJsonPath)
         .then(response => response.json())
         .then(data => {
-            console.log('🏗️ Loading buildings-parking.json with', data.features?.length || 0, 'features');
+            console.log('🏗️ Loading campus-specific buildings GeoJSON with', data.features?.length || 0, 'features');
             buildingsLayer = L.geoJSON(data, {
                 style: function(feature) {
                     // You can customize style based on feature properties
