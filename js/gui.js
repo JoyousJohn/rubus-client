@@ -1646,7 +1646,13 @@ const innerSizeMap = {
 
 const passioSizeMap = {
     'small': 'small-marker',
-    'medium': 'medium-marker', 
+    'medium': 'medium-marker',
+    'big': 'big-marker'
+}
+
+const riderSizeMap = {
+    'small': 'small-marker',
+    'medium': 'medium-marker',
     'big': 'big-marker'
 }
 
@@ -2065,22 +2071,36 @@ function updateMarkerSize() {
     const outterDimensions = markerSizeMap[settings['marker-size']]
     const innerDimensions = innerSizeMap[settings['marker-size']]
     const passioSizeClass = passioSizeMap[settings['marker-size']]
+    const riderSizeClass = riderSizeMap[settings['marker-size']]
 
     $('.bus-icon-outer').css('height', outterDimensions + 'px').css('width', outterDimensions + 'px');
     $('.bus-icon-inner').css('height', innerDimensions + 'px').css('width', innerDimensions + 'px');
+
+    // Update Passio marker sizes by changing CSS classes (only map markers, not settings examples)
+    $('.bus-marker-wrapper .passio-marker').removeClass('small-marker medium-marker big-marker').addClass(passioSizeClass);
+
+    // Update rider marker sizes by changing CSS classes (only map markers, not settings examples)
+    $('.bus-marker-wrapper .rider-marker').removeClass('small-marker medium-marker big-marker').addClass(riderSizeClass);
 }
 
 function updateMarkerSizeExamples() {
     const markerType = settings['marker-type'];
-    
+
     if (markerType === 'passio') {
-        // Show Passio markers, hide RUBus markers
+        // Show Passio markers, hide RUBus and Rider markers
         $('.settings-marker-size .passio-marker').show();
         $('.settings-marker-size .marker').hide();
+        $('.settings-marker-size .rider-marker').hide();
+    } else if (markerType === 'rider') {
+        // Show Rider markers, hide RUBus and Passio markers
+        $('.settings-marker-size .rider-marker').show();
+        $('.settings-marker-size .marker').hide();
+        $('.settings-marker-size .passio-marker').hide();
     } else {
-        // Show RUBus markers, hide Passio markers
+        // Show RUBus markers, hide Passio and Rider markers (default case)
         $('.settings-marker-size .marker').show();
         $('.settings-marker-size .passio-marker').hide();
+        $('.settings-marker-size .rider-marker').hide();
     }
 }
 

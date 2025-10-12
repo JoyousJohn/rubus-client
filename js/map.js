@@ -1107,7 +1107,7 @@ let midpointCircle = {}
 
 // Helper function to get the rotation element for any marker type
 function getMarkerRotationElement(marker) {
-    return marker.getElement().querySelector('.bus-icon-outer') || marker.getElement().querySelector('.passio-marker');
+    return marker.getElement().querySelector('.bus-icon-outer') || marker.getElement().querySelector('.passio-marker') || marker.getElement().querySelector('.rider-marker');
 }
 
 // Cache for colored SVG data URLs
@@ -1609,13 +1609,13 @@ function plotBus(busId, immediatelyUpdate=false) {
             const currentSize = settings['marker-size'] || 'medium';
             const passioSizeClass = {
                 'small': 'small-marker',
-                'medium': 'medium-marker', 
+                'medium': 'medium-marker',
                 'big': 'big-marker'
             }[currentSize];
-            
+
             // Generate colored SVG data URL
             const coloredSvg = generateColoredSvg(routeColor);
-            
+
             busMarkers[busId] = L.marker([loc.lat, loc.long], {
                 icon: L.divIcon({
                     className: 'bus-icon',
@@ -1640,35 +1640,42 @@ function plotBus(busId, immediatelyUpdate=false) {
             }).addTo(map);
 
             getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
-            
+
             // Counter-rotate the SVG image to keep it at 0 degrees relative to viewport (Passio markers only)
             if (settings['marker-type'] === 'passio') {
                 const busIcon = busMarkers[busId].getElement().querySelector('.passio-bus-icon');
                 const counterRotation = -(busData[busId].rotation + 45);
                 busIcon.style.transform = `rotate(${counterRotation}deg)`;
             }
+        } else if (markerType === 'rider') {
+            // Create Rider HTML marker with route-based color
+            const routeColor = colorMappings[route] || '#446bef';
+            const currentSize = settings['marker-size'] || 'medium';
+            const riderSizeClass = {
+                'small': 'small-marker',
+                'medium': 'medium-marker',
+                'big': 'big-marker'
+            }[currentSize];
 
-            // Setup Passio marker (now synchronous)
-            try {
-                if ((shownRoute && shownRoute !== busData[busId].route) || (settings['toggle-hide-other-routes'] && popupBusId && busData[popupBusId].route !== busData[busId].route) || popupBusId) {
-                    busMarkers[busId].getElement().style.display = '';
-                }
-            } catch (error) {
-                console.error('Error updating bus marker visibility:', error);
-            }
+            busMarkers[busId] = L.marker([loc.lat, loc.long], {
+                icon: L.divIcon({
+                    className: 'bus-icon',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    html: `
+                        <div class="bus-marker-wrapper">
+                            <div class="rider-marker ${riderSizeClass}" style="will-change: transform; background-color: ${routeColor};">
+                                <i class="fa-solid fa-location-arrow-up" style="color: white;"></i>
+                            </div>
+                            <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
+                        </div>
+                    `
+                }),
+                route: route,
+                zIndexOffset: 500
+            }).addTo(map);
 
-            busMarkers[busId].on('click', function() {
-                sourceStopId = null;
-                sourceBusId = null;
-                selectBusMarker(busId);
-            });
-
-            updateBusNameTooltips();
-
-            // Update marker position after Passio marker is created
-            if (!pauseUpdateMarkerPositions) {
-                updateMarkerPosition(busId, immediatelyUpdate || forceImmediateUpdate);
-            }
+            getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
         } else {
             // Create RUBus div-based marker
             busMarkers[busId] = L.marker([loc.lat, loc.long], {
@@ -1691,8 +1698,9 @@ function plotBus(busId, immediatelyUpdate=false) {
 
             getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
             busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[route];
+        }
 
-            // Setup RUBus marker (now synchronous)
+            // Setup marker (now synchronous for all marker types)
             try {
                 if ((shownRoute && shownRoute !== busData[busId].route) || (settings['toggle-hide-other-routes'] && popupBusId && busData[popupBusId].route !== busData[busId].route) || popupBusId) {
                     busMarkers[busId].getElement().style.display = '';
@@ -1709,12 +1717,10 @@ function plotBus(busId, immediatelyUpdate=false) {
 
             updateBusNameTooltips();
 
-            // Update marker position after RUBus marker is created
+            // Update marker position after marker is created
             if (!pauseUpdateMarkerPositions) {
                 updateMarkerPosition(busId, immediatelyUpdate || forceImmediateUpdate);
             }
-        }
-
     } else if (!pauseUpdateMarkerPositions) {
         // if (document.visibilityState === 'hidden') {
         //     immediatelyUpdate = true;

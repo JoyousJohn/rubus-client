@@ -1429,6 +1429,36 @@ html, body {
     transform-origin: center;
 }
 
+.rider-marker {
+    border-radius: 50%;
+    background-color: rgb(68, 151, 239);
+    border: 3px solid white;
+    color: white;
+    transform: rotate(-45deg);
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+}
+
+.rider-marker > i {
+    text-shadow: 0 0px 2px rgba(0, 0, 0, 0.8);
+}
+
+.rider-marker.small-marker {
+    font-size: 0.7rem;
+}
+
+.rider-marker.medium-marker {
+    font-size: 1.2rem;
+}
+
+.rider-marker.big-marker {
+    font-size: 1.8rem;
+}
+
 .small-marker > div {
     height: 8px;    
 }

@@ -966,13 +966,15 @@
                 <div class="settings-marker-style">
                     <div class="settings-heading">Marker Style</div>
                     <div class="settings-options grid grid-cols-2">
-                        <div class="settings-option gap-x-1rem" settings-option="marker-type" marker-type-option="rubus">
+                        
+                        <div class="settings-option gap-x-1rem" settings-option="marker-type" marker-type-option="rubus" style="border-bottom: 1px solid rgb(185, 185, 185);">
                             <div class="marker small-marker rubus-marker">
                                 <div></div>
                             </div>
                             <div class="bold-500 text-1p5rem">RUBus</div>
                         </div>
-                        <div class="settings-option gap-x-1rem" settings-option="marker-type" marker-type-option="passio">
+                        
+                        <div class="settings-option gap-x-1rem" settings-option="marker-type" marker-type-option="passio" style="border-bottom: 1px solid rgb(185, 185, 185);">
                             <div class="passio-marker medium-marker">
                                 <div class="passio-marker-arrow-out">
                                     <div class="passio-marker-arrow-in"></div>
@@ -982,6 +984,15 @@
                                 </div>
                             </div>
                             <div class="bold-500 text-1p5rem">Passio</div>
+                        </div>
+
+                        <div class="settings-option gap-x-1rem" style="border-left: 0; grid-column: span 2;" settings-option="marker-type" marker-type-option="rider">
+                            <div class="rider-marker medium-marker">
+                                <!-- <div> -->
+                                    <i class="fa-solid fa-location-arrow-up"></i>
+                                <!-- </div> -->
+                            </div>
+                            <div class="bold-500 text-1p5rem">Rider</div>
                         </div>
                     </div>
                 </div>
@@ -1112,6 +1123,10 @@
                                     <img src="img/passio-bus.svg" class="passio-bus-icon" style="filter: invert(43%) sepia(67%) saturate(1577%) hue-rotate(181deg) brightness(100%) contrast(91%);">
                                 </div>
                             </div>
+                            <!-- Rider marker -->
+                            <div class="rider-marker small-marker" style="display: none;">
+                                <i class="fa-solid fa-location-arrow-up"></i>
+                            </div>
                         </div>
                         <div class="settings-option" settings-option="marker-size" marker-size-option="medium">
                             <!-- RUBus marker -->
@@ -1127,6 +1142,10 @@
                                     <img src="img/passio-bus.svg" class="passio-bus-icon" style="filter: invert(43%) sepia(67%) saturate(1577%) hue-rotate(181deg) brightness(100%) contrast(91%);">
                                 </div>
                             </div>
+                            <!-- Rider marker -->
+                            <div class="rider-marker medium-marker" style="display: none;">
+                                <i class="fa-solid fa-location-arrow-up"></i>
+                            </div>
                         </div>
                         <div class="settings-option" settings-option="marker-size" marker-size-option="big">
                             <!-- RUBus marker -->
@@ -1141,6 +1160,10 @@
                                 <div class="passio-marker-circle">
                                     <img src="img/passio-bus.svg" class="passio-bus-icon" style="filter: invert(43%) sepia(67%) saturate(1577%) hue-rotate(181deg) brightness(100%) contrast(91%);">
                                 </div>
+                            </div>
+                            <!-- Rider marker -->
+                            <div class="rider-marker big-marker" style="display: none;">
+                                <i class="fa-solid fa-location-arrow-up"></i>
                             </div>
                         </div>
                     </div>
