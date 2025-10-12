@@ -801,38 +801,38 @@
     </div>
 
     <div class="navigate-wrapper none">
-            <div class="navigate-inner flex flex-col" style="pointer-events: none; z-index: 403; font-family: var(--font-family); position: relative;">
-                <div class="navigate-to-from flex flex-col br-1rem" style="background-color: var(--theme-bg); pointer-events: all;">
-                    <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
-                        <div class="from-circle center">◯</div>
-                        <div class="nav-from">
-                            <div class="nav-input-wrapper">
-                                <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
-                                <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
-                            </div>
-                            <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
+        <div class="navigate-inner flex flex-col" style="pointer-events: none; z-index: 403; font-family: var(--font-family); position: relative;">
+            <div class="navigate-to-from flex flex-col br-1rem" style="background-color: var(--theme-bg); pointer-events: all;">
+                <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
+                    <div class="from-circle center">◯</div>
+                    <div class="nav-from">
+                        <div class="nav-input-wrapper">
+                            <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
+                            <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
                         </div>
-                        <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
-                            <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
-                        </div>
-                        <div class="center">⋮</div>
-                        <div style="height: 1px; background-color: var(--theme-color-lighter);"></div>
-                        <div class="center"><i class="fa-solid fa-location-pin"></i></div>
-                        <div class="nav-to">
-                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off">
-                            <button class="nav-clear-btn" id="nav-to-clear-btn" type="button">×</button>
-                        </div>
-                        <div class="nav-to-search-results none" style="grid-column: span 3;"></div>
+                        <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
                     </div>
+                    <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
+                        <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
+                    </div>
+                    <div class="center">⋮</div>
+                    <div style="height: 1px; background-color: var(--theme-color-lighter);"></div>
+                    <div class="center"><i class="fa-solid fa-location-pin"></i></div>
+                    <div class="nav-to">
+                        <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off">
+                        <button class="nav-clear-btn" id="nav-to-clear-btn" type="button">×</button>
+                    </div>
+                    <div class="nav-to-search-results none" style="grid-column: span 3;"></div>
                 </div>
+            </div>
 
-                <div class="nav-directions-wrapper none br-1rem">
-                    <div class="nav-directions-inner flex flex-col">
+            <div class="nav-directions-wrapper none br-1rem">
+                <div class="nav-directions-inner flex flex-col">
 
-                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
     <div class="install-pwa-wrapper none">
         <div class="flex justify-center align-center h-full">
@@ -1648,10 +1648,31 @@
                         </div>
                     </div>
 
-                    <div class="settings-reset-location">
+                    <!-- <div class="settings-reset-location">
                         <div class="settings-heading">REMOVE localStorage.locationShared</div>
                         <div class="settings-options grid">
                             <div class="settings-option" onclick="localStorage.removeItem('locationShared'); $('div.settings-reset-location div.settings-option').text('Restart for changes to take effect.').css('background-color', 'lightgray')">Reset</div>
+                        </div>
+                    </div> -->
+
+                    <div class="settings-reset-location">
+                        <div class="settings-heading">Hide Nav Wrapper</div>
+                        <div class="settings-options grid dev-settings-option">
+                            <div class="settings-option" onclick="$('.navigate-wrapper').hide();">Hide</div>
+                        </div>
+                    </div>
+
+                    <div class="settings-reset-location">
+                        <div class="settings-heading">Show Nav Wrapper</div>
+                        <div class="settings-options grid dev-settings-option">
+                            <div class="settings-option" onclick="$('.navigate-wrapper').show();">Show</div>
+                        </div>
+                    </div>
+
+                    <div class="settings-reset-location">
+                        <div class="settings-heading">Toggle Nav Wrapper</div>
+                        <div class="settings-options grid dev-settings-option">
+                            <div class="settings-option" onclick="$('.navigate-wrapper').toggle();">Toggle</div>
                         </div>
                     </div>
 

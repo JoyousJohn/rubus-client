@@ -24,6 +24,7 @@ $(document).ready(function() {
     let isPressAndHold = false;
 
     $('.search-btn').on('mousedown touchstart', function(e) {
+        e.preventDefault(); // Prevent default touch behavior
         isPressAndHold = false;
         pressAndHoldTimer = setTimeout(() => {
             isPressAndHold = true;
@@ -31,18 +32,19 @@ $(document).ready(function() {
             hideInfoBoxes(true);
             $('.knight-mover').hide();
             $('.search-wrapper').hide();
-            
+
             // Open navigation wrapper
             $('.navigate-wrapper').show();
             $('#nav-from-input').focus();
-            
+
             sa_event('btn_press', {
                 'btn': 'search_press_hold_nav'
             });
-        }, 200); // 800ms hold time
+        }, 500);
     });
 
     $('.search-btn').on('mouseup touchend', function(e) {
+        e.preventDefault(); // Prevent default touch behavior
         if (pressAndHoldTimer) {
             clearTimeout(pressAndHoldTimer);
             pressAndHoldTimer = null;

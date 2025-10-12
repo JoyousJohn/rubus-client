@@ -1280,6 +1280,14 @@ html, body {
     cursor: pointer;
 }
 
+.dev-settings-option {
+    transition: background-color 0.15s ease;
+}
+
+.dev-settings-option:active {
+    background-color: rgb(210, 210, 255);
+}
+
 .settings-selected {
     background-color: rgb(210, 210, 255);
     /* color: white; */
