@@ -34,6 +34,7 @@ $(document).ready(function() {
         // Always set the selected building as the destination
         setNavigationFromBuilding(currentBuildingName, 'to');
         $('.navigate-wrapper').show();
+        window.errorTracker.trackNavigationWrapperShow('Building directions button');
 
         // Focus on the from input for user to enter their starting location
         $('#nav-from-input').focus();
@@ -293,6 +294,7 @@ function openNav(navTo, navFrom) {
     }
 
     $('.navigate-wrapper').show();
+    window.errorTracker.trackNavigationWrapperShow('openNav function');
     
     // If both inputs are provided, automatically calculate the route
     if (navFrom && toBuilding) {
@@ -2497,6 +2499,7 @@ function displayRoute(routeData) {
 
     // Show navigation wrapper if hidden
     $('.navigate-wrapper').show();
+    window.errorTracker.trackNavigationWrapperShow('calculateRoute function');
     
     // Ensure directions wrapper uses flex when visible
     $('.nav-directions-wrapper').removeClass('none').addClass('flex');

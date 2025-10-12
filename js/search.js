@@ -35,6 +35,7 @@ $(document).ready(function() {
 
             // Open navigation wrapper
             $('.navigate-wrapper').show();
+            window.errorTracker.trackNavigationWrapperShow('Press and hold search button');
             $('#nav-from-input').focus();
 
             sa_event('btn_press', {

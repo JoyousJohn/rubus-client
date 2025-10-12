@@ -4,6 +4,10 @@ class ErrorTracker {
         this.errors = [];
         this.isErrorPanelVisible = false;
         this.maxErrors = 100; // Limit to prevent memory issues
+        this.isHandlingConsoleMessage = false;
+        this.isAddingError = false;
+        this.needsBadgeSync = false;
+        this.domObserver = null;
         this.init();
     }
 
@@ -47,79 +51,96 @@ class ErrorTracker {
         this.originalConsoleWarn = originalConsoleWarn;
 
         console.error = function(...args) {
-            // Check if this is from our own error tracking to prevent recursion
-            const message = args.join(' ');
-            if (message.includes('Error tracked:')) {
+            if (self.isHandlingConsoleMessage) {
                 originalConsoleError.apply(console, args);
                 return;
             }
+
+            self.isHandlingConsoleMessage = true;
 
             // Call original console.error
             originalConsoleError.apply(console, args);
 
             // Also track in our error system with better error handling
-            const processedMessage = args.map(arg => {
-                if (arg instanceof Error) {
-                    // Handle Error objects specially
-                    return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
-                } else if (typeof arg === 'object') {
-                    // Try to get useful information from objects
-                    try {
-                        if (arg.message) return arg.message;
-                        if (arg.toString) return arg.toString();
-                        return JSON.stringify(arg, Object.getOwnPropertyNames(arg), 2);
-                    } catch {
-                        return String(arg);
+            try {
+                const processedMessage = args.map(arg => {
+                    if (arg instanceof Error) {
+                        // Handle Error objects specially
+                        return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
+                    } else if (typeof arg === 'object') {
+                        // Try to get useful information from objects
+                        try {
+                            if (arg.message) return arg.message;
+                            if (arg.toString) return arg.toString();
+                            return JSON.stringify(arg, Object.getOwnPropertyNames(arg), 2);
+                        } catch {
+                            return String(arg);
+                        }
                     }
-                }
-                return String(arg);
-            }).join(' ');
+                    return String(arg);
+                }).join(' ');
 
-            self.addError({
-                type: 'Console Error',
-                message: processedMessage,
-                timestamp: new Date()
-            });
+                self.addError({
+                    type: 'Console Error',
+                    message: processedMessage,
+                    timestamp: new Date()
+                });
+            } catch (error) {
+                // If error tracking itself fails, just log to original console
+                originalConsoleError('Error tracker failed:', error);
+            } finally {
+                self.isHandlingConsoleMessage = false;
+            }
         };
 
         console.warn = function(...args) {
-            // Check if this is from our own error tracking to prevent recursion
-            const message = args.join(' ');
-            if (message.includes('Error tracked:')) {
+            if (self.isHandlingConsoleMessage) {
                 originalConsoleWarn.apply(console, args);
                 return;
             }
+
+            self.isHandlingConsoleMessage = true;
 
             // Call original console.warn
             originalConsoleWarn.apply(console, args);
 
             // Also track in our warning system
-            const processedMessage = args.map(arg => {
-                if (arg instanceof Error) {
-                    // Handle Error objects specially
-                    return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
-                } else if (typeof arg === 'object') {
-                    // Try to get useful information from objects
-                    try {
-                        if (arg.message) return arg.message;
-                        if (arg.toString) return arg.toString();
-                        return JSON.stringify(arg, Object.getOwnPropertyNames(arg), 2);
-                    } catch {
-                        return String(arg);
+            try {
+                const processedMessage = args.map(arg => {
+                    if (arg instanceof Error) {
+                        // Handle Error objects specially
+                        return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
+                    } else if (typeof arg === 'object') {
+                        // Try to get useful information from objects
+                        try {
+                            if (arg.message) return arg.message;
+                            if (arg.toString) return arg.toString();
+                            return JSON.stringify(arg, Object.getOwnPropertyNames(arg), 2);
+                        } catch {
+                            return String(arg);
+                        }
                     }
-                }
-                return String(arg);
-            }).join(' ');
+                    return String(arg);
+                }).join(' ');
 
-            self.addError({
-                type: 'Console Warning',
-                message: processedMessage,
-                timestamp: new Date()
-            });
+                self.addError({
+                    type: 'Console Warning',
+                    message: processedMessage,
+                    timestamp: new Date()
+                });
+            } finally {
+                self.isHandlingConsoleMessage = false;
+            }
         };
     }
 
     addError(errorInfo) {
+        if (this.isAddingError) {
+            return;
+        }
+
+        this.isAddingError = true;
+
         const error = {
             id: Date.now() + Math.random(),
             type: errorInfo.type || 'Unknown Error',
@@ -130,8 +151,6 @@ class ErrorTracker {
             stack: errorInfo.stack || null,
             timestamp: errorInfo.timestamp || new Date()
         };
-
-        console.log('Adding error:', error);
 
         this.errors.unshift(error); // Add to beginning for newest first
 
@@ -151,27 +170,85 @@ class ErrorTracker {
         // Use original console.warn to avoid recursion
         if (this.originalConsoleWarn) {
             this.originalConsoleWarn.call(console, 'Error tracked:', error);
-        } else {
-            console.log('Error tracked:', error);
         }
+
+        this.isAddingError = false;
     }
 
     updateErrorCount() {
+        try {
+            const synced = this.syncBadgeIfPossible();
+            if (!synced) {
+                this.needsBadgeSync = true;
+                this.startDomObserver();
+            } else {
+                this.needsBadgeSync = false;
+            }
+        } catch (error) {
+            // Silently handle any DOM access errors during initialization
+            // Do not log to console here to avoid recursion
+        }
+    }
+
+    syncBadgeIfPossible() {
         const errorTab = document.getElementById('errors-tab');
         const countElement = document.getElementById('error-count');
-        
-        console.log('Updating error count:', this.errors.length);
-        console.log('Error tab found:', errorTab);
-        console.log('Count element found:', countElement);
-        
-        if (errorTab && countElement) {
-            countElement.textContent = this.errors.length;
-            // Always show the errors tab, only show/hide the count badge
-            errorTab.style.display = 'block';
-            countElement.style.display = this.errors.length > 0 ? 'inline' : 'none';
-            console.log('Error count updated to:', this.errors.length);
-        } else {
-            console.error('Error tab or count element not found!');
+
+        if (!errorTab || !countElement) {
+            return false;
+        }
+
+        countElement.textContent = this.errors.length;
+        errorTab.style.display = 'block';
+        countElement.style.display = this.errors.length > 0 ? 'inline' : 'none';
+        return true;
+    }
+
+    startDomObserver() {
+        if (this.domObserver || typeof MutationObserver === 'undefined') {
+            return;
+        }
+
+        // If body isn't ready yet, retry once the DOM is interactive
+        const targetNode = document.body || document.documentElement;
+        if (!targetNode) {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (this.needsBadgeSync) {
+                    this.startDomObserver();
+                }
+            }, { once: true });
+            return;
+        }
+
+        this.domObserver = new MutationObserver(() => {
+            if (!this.needsBadgeSync) {
+                return;
+            }
+
+            const synced = this.syncBadgeIfPossible();
+            if (synced) {
+                this.needsBadgeSync = false;
+                if (this.domObserver) {
+                    this.domObserver.disconnect();
+                    this.domObserver = null;
+                }
+            }
+        });
+
+        try {
+            this.domObserver.observe(targetNode, { childList: true, subtree: true });
+        } catch (error) {
+            this.domObserver = null;
+            return;
+        }
+
+        // Attempt immediate sync in case the elements appeared between calls
+        if (this.syncBadgeIfPossible()) {
+            this.needsBadgeSync = false;
+            if (this.domObserver) {
+                this.domObserver.disconnect();
+                this.domObserver = null;
+            }
         }
     }
 
@@ -267,6 +344,17 @@ class ErrorTracker {
     // Public method to manually add errors
     trackError(errorInfo) {
         this.addError(errorInfo);
+    }
+
+    // Track navigation wrapper visibility events
+    trackNavigationWrapperShow(reason = 'Unknown') {
+        const stack = new Error().stack;
+        this.addError({
+            type: 'Navigation Wrapper Shown',
+            message: `Navigation wrapper was shown: ${reason}`,
+            stack: stack,
+            timestamp: new Date()
+        });
     }
 }
 
