@@ -480,7 +480,6 @@ function hideInfoBoxes(instantly_hide) {
         const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);
         if (rotationElement) {
             rotationElement.style.boxShadow = '';
-            rotationElement.style.borderColor = 'black';
         }
     }
     selectedMarkerId = null;
