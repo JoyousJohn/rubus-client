@@ -61,7 +61,7 @@ function cleanupOldMap() {
 
 async function makeNewMap() {
     const newBounds = expandBounds(bounds[selectedCampus], 2)
-    map.setMaxBounds(newBounds).setView(views[selectedCampus], 14) 
+    map.setMaxBounds(newBounds).fitBounds(polylineBounds)
 
     activeRoutes.clear(); // only used to avoid having to call populateRouteSelectors below to trigger const newRoutes = pollActiveRoutes.difference(activeRoutes); in pre.js. doesn't affect addstopstoMap bc we're padding isInitial true to fetchBusData
     await fetchETAs();
@@ -75,6 +75,9 @@ async function makeNewMap() {
     const routesWithInServiceBuses = Array.from(activeRoutes).filter(route => routeHasInServiceBuses(route));
     if (routesWithInServiceBuses.length > 0) {
         setPolylines(new Set(routesWithInServiceBuses));
+		map.fitBounds(polylineBounds, { padding: [10, 10] });
+    } else {
+        map.fitBounds(bounds[selectedCampus]);
     }
 }
 
@@ -90,9 +93,6 @@ function campusChanged() {
 
     // Clear building location cache when switching campuses since coordinates are campus-specific
     clearBuildingLocationCache();
-
-    // Set default polyline bounds to campus bounds (no active routes initially)
-    polylineBounds = bounds[selectedCampus];
 
     // if (sim) {
     //     endSim();

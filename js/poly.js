@@ -312,22 +312,33 @@ function prunePolylinesWithoutInService() {
     }
 }
 
-// Precompute and cache bounds for all campus routes without adding layers
+// Precompute and cache bounds for campus routes that have in-service buses without adding layers
 async function precomputeAllRouteBounds() {
     try {
         const campusRoutes = routesByCampusBase[selectedCampus] || [];
-        const fetches = campusRoutes.map(async (routeName) => {
+
+        // Only precompute bounds for routes that have in-service buses
+        const routesToPrecompute = campusRoutes.filter(routeName => {
+            return routeHasInServiceBuses(routeName);
+        });
+
+        const fetches = routesToPrecompute.map(async (routeName) => {
             if (routeBounds[routeName]) return;
-            const coords = await getPolylineData(routeName);
-            if (!coords || !coords.length) return;
-            let coordinates;
-            if (Object.keys(coords[0])[0] === 'lat') {
-                coordinates = coords.map(point => [point.lat, point.lng]);
-            } else {
-                coordinates = coords.map(point => [point[1], point[0]]);
+            try {
+                const coords = await getPolylineData(routeName);
+                if (!coords || !coords.length) return;
+
+                let coordinates;
+                if (Object.keys(coords[0])[0] === 'lat') {
+                    coordinates = coords.map(point => [point.lat, point.lng]);
+                } else {
+                    coordinates = coords.map(point => [point[1], point[0]]);
+                }
+                const tmp = L.polyline(coordinates, { opacity: 0 });
+                routeBounds[routeName] = tmp.getBounds();
+            } catch (error) {
+                console.warn(`Skipping polyline bounds for route ${routeName} due to error:`, error.message);
             }
-            const tmp = L.polyline(coordinates, { opacity: 0 });
-            routeBounds[routeName] = tmp.getBounds();
         });
         await Promise.all(fetches);
     } catch (e) {
