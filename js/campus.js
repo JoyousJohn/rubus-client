@@ -198,7 +198,9 @@ $(function() {
 			return;
 		}
 		// Only cancel previous animation when starting a new one
-		currentCarouselAnimCancel();
+		if (typeof currentCarouselAnimCancel === 'function') {
+			currentCarouselAnimCancel();
+		}
 		// Smooth convergence using rect deltas per frame
 		const epsilon = 0.6;
 		const maxMs = 260;
@@ -278,7 +280,9 @@ $(function() {
 			const pt = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
 			dragStartX = pt.clientX; dragStartY = pt.clientY; dragMoved = false;
 			$(this).stop(true); // cancel ongoing jQuery animations
-			currentCarouselAnimCancel();
+			if (typeof currentCarouselAnimCancel === 'function') {
+				currentCarouselAnimCancel();
+			}
 			console.log('[carousel] interaction start, stop animations');
 		})
 		.on('mousemove touchmove', function(e){
