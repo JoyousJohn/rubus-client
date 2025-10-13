@@ -218,7 +218,20 @@ function openRUBusSocket() {
     });
 
     socket.addEventListener("error", (event) => {
-        console.error("RUBus WebSocket error:", event);
+        // Extract meaningful error information from the Event object
+        let errorMessage = "Unknown RUBus WebSocket error";
+        
+        if (event && event.message) {
+            errorMessage = event.message;
+        } else if (event && event.type) {
+            errorMessage = `RUBus WebSocket error type: ${event.type}`;
+        } else if (event && event.code) {
+            errorMessage = `RUBus WebSocket error code: ${event.code}`;
+        } else if (typeof event === 'string') {
+            errorMessage = event;
+        }
+        
+        console.error("RUBus WebSocket error:", errorMessage, event);
         // Don't mark RUBus as failing on WebSocket errors - only HTTP request failures matter
     });
 

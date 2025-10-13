@@ -201,7 +201,18 @@ class BusWebSocketClient {
         };
 
         this.ws.onerror = (error) => {
-            console.error("WebSocket error:", error);
+            // Extract meaningful error information from the Event object
+            let errorMessage = "Unknown WebSocket error";
+            
+            if (error && error.message) {
+                errorMessage = error.message;
+            } else if (error && error.type) {
+                errorMessage = `WebSocket error type: ${error.type}`;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            }
+            
+            console.error("WebSocket error:", errorMessage, error);
             this.ws.close();
         };
     }
