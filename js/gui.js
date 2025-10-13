@@ -2393,8 +2393,6 @@ function flyToStop(stopId, fromUserInteraction = false) {
         }
     );
 
-    popStopInfo(Number(stopId));
-
     // Only send analytics event if this was from explicit user interaction
     if (fromUserInteraction) {
         const stopName = stopsData[stopId]?.name;
@@ -2402,6 +2400,13 @@ function flyToStop(stopId, fromUserInteraction = false) {
             'btn': 'fly_closest_stop',
             'stop_name': stopName
         });
+    }
+
+    if (appStyle === 'rider') {
+        popRiderStopInfo(stopId);
+        return;
+    } else {
+        popStopInfo(Number(stopId));
     }
 }
 

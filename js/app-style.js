@@ -36,10 +36,16 @@ function setAppStyle(style) {
 
 function setStopMarkersToRider() {
     Object.keys(busStopMarkers).forEach(stopId => {
-        const img = document.querySelector(`img[stop-marker-id="${stopId}"]`);
-        img.src = 'img/rider/rider-stop-marker-white.png';
-        img.width = '15';
-        img.height = '15';
+        const icon = busStopMarkers[stopId].getIcon();
+        icon.options.iconSize = [30, 30];
+        icon.options.iconAnchor = [15, 15];
+        icon.options.html = `
+            <div class="marker-wrapper" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                <img src="img/rider/rider-stop-marker-white.png" width="15" height="15" stop-marker-id="${stopId}"/>
+                <div class="corner-label none" stop-eta="${stopId}">xm</div>
+            </div>
+        `;
+        busStopMarkers[stopId].setIcon(icon);
     });
 }
 
@@ -250,18 +256,32 @@ function popRiderStopInfo(stopId) {
 
     if (popupStopId) {
         // Change previously selected stop icon back to rider-stop-marker-white
-        $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/rider/rider-stop-marker-white.png');
-        $(`img[stop-marker-id="${popupStopId}"]`).attr('width', '15');
-        $(`img[stop-marker-id="${popupStopId}"]`).attr('height', '15');
+        const prevIcon = busStopMarkers[popupStopId].getIcon();
+        prevIcon.options.iconSize = [30, 30];
+        prevIcon.options.iconAnchor = [15, 15];
+        prevIcon.options.html = `
+            <div class="marker-wrapper" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                <img src="img/rider/rider-stop-marker-white.png" width="15" height="15" stop-marker-id="${popupStopId}"/>
+                <div class="corner-label none" stop-eta="${popupStopId}">xm</div>
+            </div>
+        `;
+        busStopMarkers[popupStopId].setIcon(prevIcon);
         busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
     }
 
     popupStopId = stopId;
     
     // Change newly selected stop icon to rider-stops-icon and increase size
-    $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/rider/rider-stops-icon-white.png');
-    $(`img[stop-marker-id="${stopId}"]`).attr('width', '30');
-    $(`img[stop-marker-id="${stopId}"]`).attr('height', '30');
+    const icon = busStopMarkers[stopId].getIcon();
+    icon.options.iconSize = [30, 30];
+    icon.options.iconAnchor = [15, 15];
+    icon.options.html = `
+        <div class="marker-wrapper" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+            <img src="img/rider/rider-stops-icon-white.png" width="30" height="30" stop-marker-id="${stopId}"/>
+            <div class="corner-label none" stop-eta="${stopId}">xm</div>
+        </div>
+    `;
+    busStopMarkers[stopId].setIcon(icon);
     busStopMarkers[stopId].setZIndexOffset(2000);
     
     $('.rider-bus-info-wrapper, .rider-top-wrapper').hide();
@@ -298,6 +318,12 @@ document.addEventListener('rubus-map-created', function() {
         }
     });
 
+    $('.rider-top-stops').click(function() {
+        populateRiderStops();
+        $('.rider-stops-wrapper').show();
+        $('.rider-bus-info-wrapper, .rider-stop-info-wrapper').hide();
+    });
+
     $('.rider-top-routes').click(function() {
         // Only populate if not already initialized
         if (Object.keys(riderRouteToggles).length === 0) {
@@ -311,7 +337,44 @@ document.addEventListener('rubus-map-created', function() {
         $('.rider-routes-wrapper').hide();
     });
 
+    $('.rider-stops-header-done').click(function() {
+        $('.rider-stops-wrapper').hide();
+    });
+
 });
+
+function generateStopHTML(stopId) {
+    // Calculate distance from user to stop if location is available
+    let distanceFromStop = '';
+    if (userPosition) {
+        const distance = haversine(
+            userPosition[0], 
+            userPosition[1], 
+            stopsData[stopId].latitude, 
+            stopsData[stopId].longitude
+        );
+        
+        // Convert miles to feet (1 mile = 5280 feet)
+        const distanceInFeet = distance * 5280;
+        
+        // Display in feet if <= 1000 ft, otherwise in miles
+        if (distanceInFeet <= 1000) {
+            distanceFromStop = `${Math.round(distanceInFeet)} ft`;
+        } else {
+            // Format distance to 2 decimal places if less than 1 mile, otherwise to 1 decimal place
+            distanceFromStop = distance < 1 ? `${distance.toFixed(2)} mi` : `${distance.toFixed(1)} mi`;
+        }
+    }
+    
+    return `
+        <div class="text-1p2rem px-1rem" style="align-self: center; color: #ff9c4b">${distanceFromStop}</div>
+        <div class="flex flex-col pt-1rem pb-0p5rem" style="border-bottom: 1px solid rgb(187, 187, 187);">
+            <div class="rider-stops-name text-1p8rem">${stopsData[stopId].name}</div>
+            <div class="text-1p4rem" style="color: gray;">${routesServicing(parseInt(stopId)).length} ${routesServicing(parseInt(stopId)).length === 1 ? 'route' : 'routes'}</div>
+        </div>
+        <div class="rider-route-chevron pr-1rem pl-1rem text-1p4rem" style="height: auto;"><i class="fas fa-chevron-right" style="color: #bebebe;"></i></div>
+    `;
+}
 
 // Generate HTML for a route in the rider routes grid
 function generateRouteHTML(route) {
@@ -343,6 +406,53 @@ function initializeRouteVisibility(route) {
         if (busData[busId] && busData[busId].route === route) {
             busMarkers[busId].setOpacity(isVisible ? 1 : 0);
         }
+    });
+}
+
+function populateRiderStops() {
+    $('.rider-stops-grid').empty();
+    
+    // Sort activeStops based on user location availability
+    let sortedStops = [...activeStops];
+    
+    if (userPosition && userPosition.length === 2) {
+        // Sort by distance from user location
+        sortedStops.sort((a, b) => {
+            const stopA = stopsData[a];
+            const stopB = stopsData[b];
+            
+            if (!stopA || !stopB) return 0;
+            
+            const distanceA = haversine(
+                userPosition[0], 
+                userPosition[1], 
+                stopA.latitude, 
+                stopA.longitude
+            );
+            
+            const distanceB = haversine(
+                userPosition[0], 
+                userPosition[1], 
+                stopB.latitude, 
+                stopB.longitude
+            );
+            
+            return distanceA - distanceB;
+        });
+    } else {
+        // Sort alphabetically by stop name
+        sortedStops.sort((a, b) => {
+            const nameA = stopsData[a] ? stopsData[a].name : '';
+            const nameB = stopsData[b] ? stopsData[b].name : '';
+            return nameA.localeCompare(nameB);
+        });
+    }
+    
+    sortedStops.forEach(stopId => {
+        $('.rider-stops-grid').append($(generateStopHTML(stopId)).click(function() {
+            flyToStop(stopId);
+            $('.rider-stops-wrapper').hide();
+        }));
     });
 }
 

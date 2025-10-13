@@ -76,11 +76,11 @@
     border-top: 2px solid rgb(214, 214, 214);
 }
 
-.rider-bus-info-top-map, .rider-bus-info-top-stops, .rider-routes-header-done, .rider-routes-header-reset, .rider-route-info-top-map, .rider-route-info-top-stops {
+.rider-bus-info-top-map, .rider-bus-info-top-stops, .rider-routes-header-done, .rider-routes-header-reset, .rider-route-info-top-map, .rider-route-info-top-stops, .rider-stops-header-done {
     color: #4489eb;
 }
 
-.rider-bus-info-name, .rider-routes-header {
+.rider-bus-info-name, .rider-routes-header, .rider-stops-header {
     border-bottom: 1px solid rgb(214, 214, 214);
 }
 
@@ -186,12 +186,12 @@
 
 
 
-.rider-routes-wrapper, .rider-bus-info-wrapper, .rider-stop-info-wrapper, .rider-route-info-wrapper {
+.rider-routes-wrapper, .rider-bus-info-wrapper, .rider-stop-info-wrapper, .rider-route-info-wrapper, .rider-stops-wrapper {
     font-family: 'SF Pro Display', sans-serif;
     z-index: 400;
 }
 
-.rider-routes-header {
+.rider-routes-header, .rider-stops-header {
     background-color: rgb(238, 238, 238);
 }
 
@@ -210,4 +210,11 @@
 
 .rider-route-name, .rider-route-info {
     border-bottom: 1px solid rgb(187, 187, 187);
+}
+
+
+
+.rider-stops-grid {
+    grid-template-columns: minmax(10%, auto) 1fr auto;
+    overflow-y: scroll;
 }
