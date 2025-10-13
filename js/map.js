@@ -621,6 +621,8 @@ function panout() {
 
 function changeMapStyle(newStyle) {
 
+    console.log('changeMapStyle', newStyle);
+
     document.documentElement.setAttribute('theme', newStyle);
     
     // Early return if satellite mode is enabled - don't change map tiles

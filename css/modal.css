@@ -54,7 +54,7 @@
     justify-content: space-between;
     height: 100%;
     width: 100vw;
-    background-color: var(--theme-bg);
+    /* background-color: var(--theme-bg); */
     color: var(--theme-color);
     font-family: var(--font-family);
     padding: 3vh 0 1.5rem;
@@ -62,6 +62,23 @@
     z-index: 403;
     overflow: hidden;
     transition: 120ms;
+}
+
+/* Backdrop with blur effect for theme modal */
+.theme-modal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Theme-aware backdrop for light mode */
+[theme="light"] .theme-modal::before {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .theme-header {

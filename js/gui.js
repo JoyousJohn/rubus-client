@@ -1803,7 +1803,6 @@ let defaultSettings = {
 };
 
 function setDefaultSettings () {
-    delete defaultSettings['theme'];
     settings = defaultSettings;
     localStorage.setItem('settings', JSON.stringify(settings));
     $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
@@ -1813,7 +1812,7 @@ function setDefaultSettings () {
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     $(`div.settings-option[campus="nb"]`).addClass('settings-selected')
     
-    // $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
+    $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
     colorMappings = settings['colorMappings']
 }
 
@@ -1825,7 +1824,7 @@ function updateSettings() {
 
         settings = JSON.parse(settings);
         for (let key in defaultSettings) {
-            if (!settings.hasOwnProperty(key) && key !== 'theme') {
+            if (!settings.hasOwnProperty(key)) {
                 settings[key] = defaultSettings[key];
             }
         }
@@ -1848,7 +1847,14 @@ function updateSettings() {
 
     } else {
         console.log('does this run?')
-        setDefaultSettings();
+        // Create a temporary settings object with theme set to 'auto' for display purposes
+        // but don't save it to localStorage until user confirms
+        // settings = setDefaultSettings();
+        settings = {...defaultSettings};
+        settings['theme'] = 'auto';
+        settings['campus'] = 'nb';
+        
+        // Don't save to localStorage here - wait for user confirmation
     }
 
     selectedCampus = settings['campus'];
@@ -2608,6 +2614,8 @@ async function getBuildNumber() {
 let selectedTheme = 'auto';
 
 function selectTheme(theme) {
+
+    console.log('selectTheme', theme);
 
     if (theme !== 'confirm' && theme === selectedTheme) {
         return;
