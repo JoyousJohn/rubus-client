@@ -278,7 +278,7 @@ document.addEventListener('rubus-map-created', function() {
         }
 
         $('.rider-bus-info-wrapper, .rider-stop-info-wrapper').fadeOut();
-        if (!currentViewedRoute) $('.rider-top-wrapper').show();
+        if (appStyle === 'rider' && !currentViewedRoute) $('.rider-top-wrapper').show();
     });
     
     // Handle click on Map text to unselect bus
