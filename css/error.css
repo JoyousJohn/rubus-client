@@ -6,12 +6,8 @@
 }
 
 .errors-tab {
-    position: relative;
     display: flex;
-    align-items: center;
     gap: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
     transition: background-color 0.2s ease;
     cursor: pointer;
     user-select: none;
