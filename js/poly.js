@@ -163,18 +163,13 @@ async function getPolylineData(routeName) {
 
         let polylineData = null;
 
-        if (localStorage.getItem(`polylineData.${routeName}`) !== null) {
-            // console.log(`Using cached polyline data for route ${routeName}`);
-            polylineData = JSON.parse(localStorage.getItem(`polylineData.${routeName}`));
+        // Load route data from local JSON file instead of server request
+        const response = await fetch(`lib/routes/${routeName}_route.json`);
+        if (response.status === 200) {
+            const data = await response.json();
+            polylineData = data;
         } else {
-            const response = await fetch('https://demo.rubus.live/r/' + routeName);
-            if (response.status === 200) {
-                const data = await response.json();
-                localStorage.setItem(`polylineData.${routeName}`, JSON.stringify(data));
-                polylineData = data;
-            } else {
-                console.error(`Error fetching polyline data for route ${routeName}:`, response.statusText);
-            }
+            console.error(`Error fetching polyline data for route ${routeName}:`, response.statusText);
         }
         return polylineData;
     } catch (error) {

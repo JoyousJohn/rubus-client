@@ -43,18 +43,10 @@ async function generateSimBusData() {
     for (const routeName of routesToGenerate) {
         const count = targetCounts[routeName];
 
-        // Ensure polyline data exists in localStorage; fetch if missing
+        // Ensure polyline data exists; fetch if needed
         let polylinePoints = null;
         try {
-            const cached = localStorage.getItem(`polylineData.${routeName}`);
-            if (cached) {
-                polylinePoints = JSON.parse(cached);
-            } else if (typeof getPolylineData === 'function') {
-                polylinePoints = await getPolylineData(routeName);
-                if (polylinePoints) {
-                    localStorage.setItem(`polylineData.${routeName}`, JSON.stringify(polylinePoints));
-                }
-            }
+            polylinePoints = await getPolylineData(routeName);
         } catch (e) {
             console.error('Error retrieving polyline data for route', routeName, e);
         }
@@ -403,17 +395,7 @@ async function generateSimBusData() {
                     for (const stopId of routeStops2) {
                         const stopInfo = allStopsData[campusKey2][String(stopId)] || allStopsData[campusKey2][stopId];
                         if (!stopInfo) continue;
-                        const dMiles = typeof haversine === 'function'
-                            ? haversine(lat, lng, stopInfo.latitude, stopInfo.longitude)
-                            : (function(){
-                                const toRad = (deg) => deg * Math.PI / 180;
-                                const R = 3958.8;
-                                const dLat = toRad(stopInfo.latitude - lat);
-                                const dLon = toRad(stopInfo.longitude - lng);
-                                const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat)) * Math.cos(toRad(stopInfo.latitude)) * Math.sin(dLon/2)**2;
-                                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                                return R * c;
-                            })();
+                        const dMiles = haversine(lat, lng, stopInfo.latitude, stopInfo.longitude)
                         if (dMiles <= thresholdMiles) {
                             busData[busId].at_stop = true;
                             const isStudentCenter = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(stopId));
@@ -439,17 +421,7 @@ async function generateSimBusData() {
                     for (const sid of routeStops3) {
                         const si = allStopsData[campusKey3][String(sid)] || allStopsData[campusKey3][sid];
                         if (!si) continue;
-                        const dMiles = typeof haversine === 'function'
-                            ? haversine(lat, lng, si.latitude, si.longitude)
-                            : (function(){
-                                const toRad = (deg) => deg * Math.PI / 180;
-                                const R = 3958.8;
-                                const dLat = toRad(si.latitude - lat);
-                                const dLon = toRad(si.longitude - lng);
-                                const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat)) * Math.cos(toRad(si.latitude)) * Math.sin(dLon/2)**2;
-                                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                                return R * c;
-                            })();
+                        const dMiles = haversine(lat, lng, si.latitude, si.longitude)
                         if (dMiles < bestDMiles) { bestDMiles = dMiles; nearestStopId = sid; }
                     }
                     const isStudentCenter2 = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(nearestStopId));
@@ -461,7 +433,7 @@ async function generateSimBusData() {
             } catch {}
 
             // Initialize movement state
-            initSimMovementForBus(busId);
+            await initSimMovementForBus(busId);
 
             // Plot immediately if on current campus
             try {
@@ -475,7 +447,7 @@ async function generateSimBusData() {
     }
 }
 
-function buildSegmentForBus(busId) {
+async function buildSegmentForBus(busId) {
     const route = busData[busId].route;
     const campusKey = routesByCampus[route] || selectedCampus || 'nb';
     const currStop = busData[busId].stopId;
@@ -494,9 +466,8 @@ function buildSegmentForBus(busId) {
     } else {
         // Fallback: use full route polyline
         try {
-            const cached = localStorage.getItem(`polylineData.${route}`);
-            if (cached) {
-                const polyPoints = JSON.parse(cached);
+            const polyPoints = await getPolylineData(route); // will need to await this
+            if (polyPoints) {
                 coords = polyPoints.map(p => ('lat' in p) ? { lat: p.lat, lng: p.lng } : { lat: p[1], lng: p[0] });
                 percentages = coords.map((_, idx) => coords.length > 1 ? idx / (coords.length - 1) : 0);
             }
@@ -507,7 +478,7 @@ function buildSegmentForBus(busId) {
     const segDistances = [];
     let totalMiles = 0;
     for (let i = 1; i < coords.length; i++) {
-        const d = typeof haversine === 'function' ? haversine(coords[i - 1].lat, coords[i - 1].lng, coords[i].lat, coords[i].lng) : 0;
+        const d = haversine(coords[i - 1].lat, coords[i - 1].lng, coords[i].lat, coords[i].lng);
         segDistances.push(d);
         totalMiles += d;
     }
@@ -515,7 +486,7 @@ function buildSegmentForBus(busId) {
     return { coords, percentages, segDistances, totalMiles };
 }
 
-function initSimMovementForBus(busId) {
+async function initSimMovementForBus(busId) {
     if (!busData[busId]) return;
 
     const route = busData[busId].route;
@@ -543,7 +514,7 @@ function initSimMovementForBus(busId) {
         }
     }
 
-    const seg = buildSegmentForBus(busId);
+    const seg = await buildSegmentForBus(busId);
     const simState = {
         coords: seg.coords,
         percentages: seg.percentages,
@@ -628,7 +599,7 @@ function progressPercentFor(busId) {
     return ratio;
 }
 
-function updateSimBus(busId) {
+async function updateSimBus(busId) {
     const bus = busData[busId];
     if (!bus || !bus.sim) return;
     const simState = bus.sim;
@@ -721,7 +692,7 @@ function updateSimBus(busId) {
                 }
                 // Fallback proximity (<= 35m) if polygon not present or point not inside
                 if (stopInfo) {
-                    const dMiles = typeof haversine === 'function' ? haversine(pt.lat, pt.lng, stopInfo.latitude, stopInfo.longitude) : 0;
+                    const dMiles = haversine(pt.lat, pt.lng, stopInfo.latitude, stopInfo.longitude);
                     if (dMiles <= 35 / 1609.34) {
                         candidates.push({ idx: i, pt });
                     }
@@ -772,7 +743,7 @@ function updateSimBus(busId) {
         simState.targetSpeedMph = SIM_MIN_SPEED_MPH + Math.random() * 5;
 
         // Build next segment for when we depart
-        const nextSeg = buildSegmentForBus(busId);
+        const nextSeg = await buildSegmentForBus(busId);
         simState.coords = nextSeg.coords;
         simState.percentages = nextSeg.percentages;
         simState.segDistances = nextSeg.segDistances;
@@ -840,11 +811,11 @@ function updateSimBus(busId) {
 
 function startSimMovementLoop() {
     if (simMoveTimer) return;
-    simMoveTimer = setInterval(() => {
+    simMoveTimer = setInterval(async () => {
         for (const busId in busData) {
             const bus = busData[busId];
             if (bus && bus.type === 'sim') {
-                updateSimBus(Number(busId));
+                await updateSimBus(Number(busId));
             }
         }
 
@@ -856,9 +827,7 @@ function startSimMovementLoop() {
                 const ids = Array.from(simEtaPending);
                 simEtaPending.clear();
                 simEtaUpdateLast = now;
-                if (typeof updateTimeToStops === 'function') {
-                    updateTimeToStops(ids);
-                }
+                updateTimeToStops(ids);
             } catch (e) {
                 // ignore ETA update errors
             }
@@ -945,10 +914,10 @@ function setSimTimeMultiplier(newMultiplier) {
     }
 
     // Retune UI countdown cadence if available
-    try { if (typeof window.resetEtaCountdownInterval === 'function') { window.resetEtaCountdownInterval(); } } catch (e) {}
+    try { window.resetEtaCountdownInterval(); } catch (e) {}
 
     // Retune active marker animations for sim buses
-    try { if (typeof window.retimeSimAnimations === 'function') { window.retimeSimAnimations(); } } catch (e) {}
+    try { window.retimeSimAnimations(); } catch (e) {}
 }
 
 
