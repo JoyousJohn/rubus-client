@@ -87,13 +87,13 @@
 .rider-bus-info-stops {
     grid-template-columns: auto 1fr auto;
     overflow-y: scroll;
-    height: 20vh;
+    height: 30vh;
 }
 
 .rider-stop-name {
     border-bottom: 1px solid rgb(187, 187, 187);
     color: #505050;
-    padding: 0.15rem 1rem 0.15rem 0;
+    padding: 0.4rem 1rem 0.4rem 0;
 }
 
 .rider-stop-eta {
@@ -113,13 +113,13 @@
     background-color: #3b82f6;
     border-radius: 50%;
     aspect-ratio: 1;
-    height: 50%;
+    height: 40%;
 }
 
 .rider-stop-circle-line {
     width: 50%;
-    border-top: 1px solid #3b82f6;   
-    border-bottom: 1px solid #3b82f6;   
+    border-top: 3px solid #3b82f6;   
+    border-bottom: 3px solid #3b82f6;   
 }
 
 

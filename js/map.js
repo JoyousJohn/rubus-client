@@ -2064,8 +2064,9 @@ function popInfo(busId, resetCampusFontSize) {
         const closestStopIsNextStop = closestStopId && closestStopId === sortedStops[0] && routesServicing(closestStopId).includes(data.route);
 
         // Special-case ordering for SAC NB (stop 3) approach legs on weekend/all-style routes
+        let approachPrev = null;
         if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'summer1') && nextStop === 3) {
-            let approachPrev = busData[busId]['prevStopId'];
+            approachPrev = busData[busId]['prevStopId'];
             if (!approachPrev) {
                 const viaMap = busETAs && busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
                 const via22 = viaMap && (viaMap['22'] ?? viaMap[22]);
@@ -2135,13 +2136,20 @@ function popInfo(busId, resetCampusFontSize) {
             let eta;
 
             if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'summer1') && sortedStops[i] === 3) { // special case
-                if (busData[busId]['stopId'] && !busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
+                if (busData[busId]['stopId'] && !approachPrev) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
                     delete busETAs[busId];
                     console.log("I'm amazed this actually happened, wow"); // encountered this 4/19/2025 six:38 pm at livi dining
                     return;
                 }
-                // Use actual approach prev stop for ETA calculation only, not for stop ordering
-                const etaPrevStopId = (i === 0 && busData[busId]['prevStopId']) ? busData[busId]['prevStopId'] : (i === 0 ? sortedStops[sortedStops.length - 1] : sortedStops[i-1]);
+                // Use correct approach prev stop for ETA calculation for each SAC NB visit
+                let etaPrevStopId;
+                if (i === 0) {
+                    // First SAC NB - use the actual approach previous stop
+                    etaPrevStopId = approachPrev;
+                } else {
+                    // Second SAC NB - use the previous stop in the current sorted sequence
+                    etaPrevStopId = sortedStops[i-1];
+                }
                 const etaSecs = getETAForStop(busId, 3, etaPrevStopId);
                 eta = Math.round(((etaSecs || 0) + 10)/secondsDivisor);
             } else {

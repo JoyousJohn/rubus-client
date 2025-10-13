@@ -464,7 +464,8 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                                 viaPrevStopId: prevId
                             })
                         })
-                        return; // Skip the default entry since we added VIA entries above
+                        // Skip the default entry since we added VIA entries above
+                        return;
                     }
                 } else {
                     const etaSecs = getETAForStop(busId, stopId)
@@ -522,9 +523,6 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
         const $routeCell = $('<div class="stop-bus-route"></div>');
         $routeCell.append(`<div>${data.route.toUpperCase()}</div>`);
-        if (data.nextStopName) {
-            $routeCell.append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1;">To ${data.nextStopName}</div>`);
-        }
         $('.stop-info-buses-grid').append($routeCell);
 
         let stopOctaconVisibilityClass = 'none'
@@ -622,6 +620,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 $('.stop-info-popup').hide(); // this was def being handled somewhere else before... need to check what happened sometime. Hard finding changes in recent commits that might've affected this.
             });
         }
+
+        if (data.nextStopName) {
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
+        }
              
     })
     
@@ -654,9 +656,6 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
             const $routeCellNext = $('<div class="stop-bus-route"></div>');
             $routeCellNext.append(`<div>${data.route.toUpperCase()}</div>`);
-            if (data.nextStopName) {
-                $routeCellNext.append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1;">To ${data.nextStopName}</div>`);
-            }
             $('.stop-info-buses-grid-next').append($routeCellNext);
 
             const $stopBusElm = $(`<div class="flex justify-between align-center pointer">
@@ -689,6 +688,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                     flyToBus(data.busId);
                     $('.stop-info-popup').hide();
                 });
+            }
+
+            if (data.nextStopName) {
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
             }
         }    
     })
