@@ -941,7 +941,10 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
 function checkMinRoutes() {
     
     if (selectedCampus !== 'nb') return;
+    if (appStyle === 'rider') return;
     if ($('.search-wrapper').is(':visible')) return;
+
+
     // console.log(activeRoutes)
     if (activeRoutes.has('on1') || activeRoutes.has('on2')) {
         $('.knight-mover').hide();

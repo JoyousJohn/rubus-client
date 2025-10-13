@@ -19,6 +19,7 @@ function setAppStyle(style) {
 
         $('.bottom').hide();
         $('.settings-panel, .settings-close').hide();
+        $('.knight-mover').hide();
 
         $('.rider-top-wrapper').show();
 
@@ -122,18 +123,23 @@ function popRiderInfo(busId) {
                 etaText = 'Here';
             } else {
                 const eta = getETAForStop(busId, originalStopId);
-                const etaMinutes = Math.round(eta / 60);
-                etaText = etaMinutes <= 0 ? '<1 min' : etaMinutes + ' min';
+                if (eta) {
+                    const etaMinutes = Math.round(eta / 60);
+                    etaText = etaMinutes <= 0 ? '<1 min' : etaMinutes + ' min';
+                } else {
+                    etaText = ''
+                }
+                
             }
 
             $('.rider-bus-info-stops').append(`
-                <div class="rider-stop-circle-wrapper flex flex-col">
+                <div class="rider-stop-circle-wrapper flex flex-col" data-stop-id="${stopId}">
                     <div class="rider-stop-circle-line"></div>
                     <div class="rider-stop-circle"></div>
                     <div class="rider-stop-circle-line"></div>
                 </div>
-                <div class="rider-stop-name">${stopName}</div>
-                <div class="rider-stop-eta right">${etaText}</div>
+                <div class="rider-stop-name" data-stop-id="${stopId}">${stopName}</div>
+                <div class="rider-stop-eta right" data-stop-id="${stopId}">${etaText}</div>
             `);
         });
     }
@@ -339,6 +345,16 @@ document.addEventListener('rubus-map-created', function() {
 
     $('.rider-stops-header-done').click(function() {
         $('.rider-stops-wrapper').hide();
+    });
+
+    // Handle click on rider bus stop rows to fly to stop
+    $(document).on('click', '.rider-bus-info-stops', function(e) {
+        // Find the closest element with data-stop-id
+        const $target = $(e.target).closest('[data-stop-id]');
+        const stopId = $target.data('stop-id');
+        if (stopId) {
+            flyToStop(stopId, true);
+        }
     });
 
 });
