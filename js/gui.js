@@ -1852,7 +1852,9 @@ function updateSettings() {
         // settings = setDefaultSettings();
         settings = {...defaultSettings};
         settings['theme'] = 'auto';
-        settings['campus'] = 'nb';
+        
+        // Initialize colorMappings to avoid errors
+        colorMappings = settings['colorMappings'] = {...defaultColorMappings};
         
         // Don't save to localStorage here - wait for user confirmation
     }
