@@ -1368,7 +1368,7 @@ html, body {
 .marker {
     border-radius: 50%;
     border-top-left-radius: 10%;
-    background-color: red;
+    background-color: rgb(68, 151, 239);
     border: 2px solid black;
     aspect-ratio: 1;
     display: flex;
