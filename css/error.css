@@ -14,10 +14,15 @@
 }
 
 
+/* Override the general .footer-selected class for errors tab */
 .errors-tab.footer-selected {
+    text-decoration: none; /* Explicitly set no decoration on parent */
+}
+
+/* Apply underline and bold only to the first span (Errors text) */
+.errors-tab.footer-selected span:first-child {
     font-weight: bold;
     text-decoration: underline;
-    color: black;
 }
 
 .error-count {
