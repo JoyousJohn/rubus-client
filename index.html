@@ -102,6 +102,7 @@
     <script src="js/pathfinding.js"></script>
     <script src="js/icon-helper.js"></script>
     <script src="js/changelog.js"></script>
+    <script src="js/app-style.js"></script>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
     <link rel="stylesheet" type="text/css" href="css/error.css">
@@ -123,6 +124,7 @@
     <link rel="stylesheet" type="text/css" href="css/campus-modal.css">
     <link rel="stylesheet" type="text/css" href="css/nav.css">
     <link rel="stylesheet" type="text/css" href="css/icons.css">
+    <link rel="stylesheet" type="text/css" href="css/rider.css">
 
     <link rel="icon" type="image/x-icon" href="img/rubus-favicon-autumn.png">
     <link rel="preload" as="image" href="img/stop_marker_selected.png">
@@ -133,6 +135,9 @@
     <link href="https://fonts.cdnfonts.com/css/firegrant-stinklez" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/sidecar" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/br-cobane" rel="stylesheet">
+    <!-- <link href="https://fonts.cdnfonts.com/css/helvetica-neue-55" rel="stylesheet"> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/helvatica-neue-lt@1.0.1/index.min.css">
+    <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js"></script>
         
@@ -1676,6 +1681,13 @@
                         </div>
                     </div>
 
+                    <div class="settings-reset-location">
+                        <div class="settings-heading">Set App Style to TransLoc Rider</div>
+                        <div class="settings-options grid dev-settings-option">
+                            <div class="settings-option" onclick="setAppStyle('rider');">Update Style (Temporarily)</div>
+                        </div>
+                    </div>
+
                     <!-- <div>
                         <div class="settings-heading">fetchWhere() (+updateTimeToStops(validBusIds))</div>
                         <div class="settings-options grid">
@@ -1908,6 +1920,69 @@
 
     <div id="map">        
         <div id="fireworks"></div>
+    </div>
+
+    <div class="rider-top-wrapper none">
+        <div class="rider-top fixed grid grid-cols-5 w-full py-1p5rem">
+            <div><div class="rider-top-stops"></div></div>
+            <div><div class="rider-top-routes"></div></div>
+            <div><div class="rider-top-favorites"></div></div>
+            <div><div class="rider-top-alerts"></div></div>
+            <div><div class="rider-top-settings"></div></div>
+        </div>
+    </div>
+
+    <div class="rider-routes-wrapper none fixed inset-0 w-full">
+        <div class="flex flex-col bg-white h-full">
+            <div class="rider-routes-header grid grid-cols-3 text-1p7rem py-1p5rem">
+                <div class="rider-routes-header-done ml-1p5rem">Done</div>
+                <div class="bold-500 center">Routes</div>
+                <div class="rider-routes-header-reset right mr-1p5rem">Reset</div>
+            </div>
+            <div class="rider-routes-selected-count text-1p7rem center py-1p5rem bold-500">x routes selected</div>
+            <div class="text-1p7rem bold-500 pl-2rem py-0p5rem" style="background-color: #e7e7e7">Rutgers University</div>
+            <div class="rider-routes-grid grid"></div>
+        </div>>
+    </div>
+
+    <div class="rider-bus-info-wrapper none fixed w-full">
+        <div class="rider-bus-info-top absolute top-0 grid grid-cols-3 text-1p7rem py-1rem">
+            <div class="rider-bus-info-top-map ml-1p5rem flex align-center">
+                <i class="fas fa-chevron-left"></i>
+                <div>Map</div>
+            </div>
+            <div class="rider-bus-info-top-route bold-700 center"></div>
+            <div class="rider-bus-info-top-stops right mr-1p5rem">Stops</div>
+        </div>
+
+        <div class="rider-bus-info-bottom absolute bottom-0">
+            <div class="flex flex-col">
+                <div class="rider-bus-info-name bold-500 text-1p7rem center py-0p5rem"></div>
+                <div class="rider-bus-info-stops grid text-1p5rem"></div>
+            </div>
+        </div> 
+    </div>
+
+    <div class="rider-route-info-wrapper none fixed top-0 w-full bg-white">
+        <div class="rider-route-info-top grid grid-cols-3 text-1p7rem py-1rem">
+            <div class="rider-route-info-top-map ml-1p5rem flex align-center">
+                <i class="fas fa-chevron-left"></i>
+                <div class="rider-route-info-top-map">Map</div>
+            </div>
+            <div class="rider-route-info-top-route bold-700 center"></div>
+            <div class="rider-route-info-top-stops right mr-1p5rem">Stops</div>
+        </div>
+    </div>
+
+    <div class="rider-stop-info-wrapper none fixed w-full">
+        <div class="flex flex-col absolute bottom-0">
+            <div class="rider-stop-info-header grid bg-white py-3rem gap-x-1rem" style="border-bottom: 1px solid rgb(214, 214, 214);">
+                <div class="rider-stop-info-icon"></div>
+                <div class="rider-stop-info-name bold-700 text-1p7rem py-0p5rem ml-1rem"></div>
+                <div class="rider-stop-info-distance bold-500 text-1p6rem"></div>
+            </div>
+            <div class="rider-stop-info-routes grid text-1p5rem align-center"></div>
+        </div>
     </div>
 
     <noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif?collect-dnt=true" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>

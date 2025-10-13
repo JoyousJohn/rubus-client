@@ -425,6 +425,11 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                 setPolylines(newRoutes);
                 newRoutes.forEach(item => activeRoutes.add(item))
                 populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and setting all <-- not sure this is still true
+                
+                // Update rider routes if in rider mode
+                if (appStyle === 'rider') {
+                    updateRiderRoutes();
+                }
             }
  
             if (busId === popupBusId) {
@@ -520,6 +525,12 @@ function makeOoS(busId) {
     if (route && (!busesByRoutes[selectedCampus] || !busesByRoutes[selectedCampus][route])) { // for some reason route can be undefined, investigate. // if no more buses, buses by routes will no longer have a campus key. checking if no longer has this key, but can also update the make function to include the campus anyway.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
+        
+        // Update rider routes if in rider mode
+        if (appStyle === 'rider') {
+            updateRiderRoutes();
+        }
+        
         if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polylines, have to ensure code works flawlessly!
             console.log(`Removing polyline for route ${route}`);
             // Update global bounds since a route was removed

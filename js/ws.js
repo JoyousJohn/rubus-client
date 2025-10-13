@@ -171,6 +171,11 @@ class BusWebSocketClient {
             activeRoutes.add(route)
             setPolylines(activeRoutes)
             populateRouteSelectors(activeRoutes)
+            
+            // Update rider routes if in rider mode
+            if (appStyle === 'rider') {
+                updateRiderRoutes();
+            }
         }
 
     }

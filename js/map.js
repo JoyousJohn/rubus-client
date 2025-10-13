@@ -95,7 +95,6 @@ $(document).ready(function() {
     let returningToSavedView = false;
 
     map.on('drag', function() {
-
         mapDragged = true;
 
         if (isDesktop) {
@@ -139,12 +138,14 @@ $(document).ready(function() {
             }
 
             if (settings['toggle-hide-other-routes'] && !shownRoute) {
+                
                 showAllStops();
                 // Don't show buses and polylines when in parking permit mode
                 if (!$('body').hasClass('parking-permit-mode')) {
                     showAllBuses();
-                    showAllPolylines();
-                }
+                    if (appStyle !== 'rider') {
+                        showAllPolylines();
+                    }                }
             } else if (settings['toggle-hide-other-routes'] && shownRoute) {
                 for (const marker in busMarkers) {
                     if (busData[marker].route === shownRoute) {
@@ -421,8 +422,17 @@ function hideInfoBoxes(instantly_hide) {
     $('.search-results').empty().hide();
 
     if (popupStopId) {
-
-        $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
+        // Handle icon changes for rider app style mode
+        if (appStyle === 'rider') {
+            // Change selected stop icon back to rider-stop-marker and restore original size
+            $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/rider/rider-stop-marker.png');
+            $(`img[stop-marker-id="${popupStopId}"]`).attr('width', '15');
+            $(`img[stop-marker-id="${popupStopId}"]`).attr('height', '15');
+        } else {
+            $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
+        }
+        
+        busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
 
         popupStopId = null;
         thisClosestStopId = null;
@@ -1743,7 +1753,6 @@ function selectBusMarker(busId) {
         const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);
         if (rotationElement) {
             rotationElement.style.boxShadow = '';
-            rotationElement.style.borderColor = 'black';
         }
     }
     
@@ -1809,6 +1818,32 @@ let savedZoom;
 
 function popInfo(busId, resetCampusFontSize) {
 
+    const data = busData[busId]
+    let dataRoute = data.route
+
+    if (!sim) {
+        sa_event('bus_view_test', {
+            'bus_id': busId,
+            'route': data.route,
+        });
+        sa_event('view_bus', {
+            'bus_id': busId,
+            'route': data.route,
+        });
+    } else {
+        sa_event('bus_view_test', {
+            'route': 'sim-' + data.route,
+        });
+        sa_event('view_bus', {
+            'route': 'sim-' + data.route,
+        });
+    }
+
+    if (appStyle === 'rider') {
+        popRiderInfo(busId);
+        return;
+    }
+
     $('.bus-ridership-wrapper').show();
     // Only destroy charts if showing a different bus
     if (currentRidershipChartBusId !== busId) {
@@ -1836,10 +1871,7 @@ function popInfo(busId, resetCampusFontSize) {
         $('.bus-stopped-for').hide();
         $('.stop-octagon, .overtime-time').hide();
     }
-    
-    const data = busData[busId]
 
-    let dataRoute = data.route
     let displayRoute;
     if (dataRoute === 'wknd1' || dataRoute === 'wknd2') {
         dataRoute = 'Weekend ' + dataRoute.slice(-1);
@@ -2291,24 +2323,6 @@ function popInfo(busId, resetCampusFontSize) {
 
     if (!popupBusId && settings['toggle-hide-other-routes']) {
         focusBus(busId);
-    }
-
-    if (!sim) {
-        sa_event('bus_view_test', {
-            'bus_id': busId,
-            'route': data.route,
-        });
-        sa_event('view_bus', {
-            'bus_id': busId,
-            'route': data.route,
-        });
-    } else {
-        sa_event('bus_view_test', {
-            'route': 'sim-' + data.route,
-        });
-        sa_event('view_bus', {
-            'route': 'sim-' + data.route,
-        });
     }
 
     try { updateRidingBadgeUI(); } catch (_) {}

@@ -24,6 +24,8 @@
 
 .bold-600 { font-weight: 600; }
 
+.bold-700 { font-weight: 700; }
+
 .bold { font-weight: bold; }
 
 .underline { text-decoration: underline; }
@@ -138,6 +140,8 @@
 
 .pl-1p5rem { padding-left: 1.5rem; }
 
+.pl-2rem { padding-left: 2rem; }
+
 .pl-8rem { padding-left: 8rem; }
 
 .pl-16rem { padding-left: 16rem; }
@@ -147,6 +151,8 @@
 .pr-0p5rem { padding-right: 0.5rem; }
 
 .pr-1rem { padding-right: 1rem; }
+
+.pr-2rem { padding-right: 2rem; }
 
 .pr-8rem { padding-right: 8rem; }
 
@@ -244,6 +250,12 @@
 
 .mr-0p5rem { margin-right: 0.5rem; }
 
+.mr-1rem { margin-right: 1rem; }
+
+.mr-1p5rem { margin-right: 1.5rem; }
+
+.mr-2rem { margin-right: 2rem; }
+
 .mr-16rem { margin-right: 16rem; }
 
 .ml-0 { margin-left: 0; }
@@ -253,6 +265,8 @@
 .ml-0p5rem { margin-left: 0.5rem; }
 
 .ml-1rem { margin-left: 1rem; }
+
+.ml-1p5rem { margin-left: 1.5rem; }
 
 .ml-2rem { margin-left: 2rem; }
 
@@ -284,6 +298,8 @@
 
 .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
 
+.grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
+
 .grid-cols-2-auto { grid-template-columns: repeat(2, auto);}
 
 .grid-cols-3-auto { grid-template-columns: repeat(3, auto);}
@@ -293,6 +309,12 @@
 .fixed { position: fixed; }
 
 .absolute { position: absolute;}
+
+.bottom-0 { bottom: 0; }
+
+.top-0 { top: 0; }
+
+.inset-0 { inset: 0; }
 
 .relative { position: relative; }
 

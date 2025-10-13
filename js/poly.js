@@ -861,6 +861,31 @@ function updateStopBusesMaxHeight() {
 async function popStopInfo(stopId) {
     // console.log('popStopInfo', stopId);
     
+    if (!sim) {
+        sa_event('stop_view_test', {
+            'stop_id': stopId,
+            'stop_name': stopsData[stopId].name
+        });
+        sa_event('view_stop', {
+            'stop_id': stopId,
+            'stop_name': stopsData[stopId].name
+        });
+    } else {
+        sa_event('stop_view_test', {
+            'stop_id': 'sim-' + stopId,
+            'stop_name': 'sim-' + stopsData[stopId].name
+        });
+        sa_event('view_stop', {
+            'stop_id': 'sim-' + stopId,
+            'stop_name': 'sim-' + stopsData[stopId].name
+        });
+    }
+
+    if (appStyle === 'rider') {
+        popRiderStopInfo(stopId);
+        return;
+    }
+
     // Don't show stop info when in parking permit mode
     if ($('body').hasClass('parking-permit-mode')) {
         return;
@@ -937,15 +962,14 @@ async function popStopInfo(stopId) {
             // Keep routeBounds cached; recompute global polyline bounds via shared helper
             updatePolylineBoundsIfNeeded();
         }
-    }
 
-    popupBusId = null;
+        popupBusId = null;
+    }
 
     if (selectedMarkerId && busMarkers[selectedMarkerId] ) { 
         const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);
         if (rotationElement) {
             rotationElement.style.boxShadow = '';
-            rotationElement.style.borderColor = 'black';
         }
         selectedMarkerId = null;
     }
@@ -1039,26 +1063,6 @@ async function popStopInfo(stopId) {
 
     $('.building-info-popup').hide();
     unhighlightBuilding();
-
-    if (!sim) {
-        sa_event('stop_view_test', {
-            'stop_id': stopId,
-            'stop_name': stopsData[stopId].name
-        });
-        sa_event('view_stop', {
-            'stop_id': stopId,
-            'stop_name': stopsData[stopId].name
-        });
-    } else {
-        sa_event('stop_view_test', {
-            'stop_id': 'sim-' + stopId,
-            'stop_name': 'sim-' + stopsData[stopId].name
-        });
-        sa_event('view_stop', {
-            'stop_id': 'sim-' + stopId,
-            'stop_name': 'sim-' + stopsData[stopId].name
-        });
-    }
 }
 
 async function addStopsToMap() {
