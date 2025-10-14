@@ -201,18 +201,42 @@ class BusWebSocketClient {
         };
 
         this.ws.onerror = (error) => {
-            // Extract meaningful error information from the Event object
+            // Extract meaningful error information from the Event object and WebSocket
             let errorMessage = "Unknown WebSocket error";
-            
+            let errorDetails = {};
+
             if (error && error.message) {
                 errorMessage = error.message;
             } else if (error && error.type) {
                 errorMessage = `WebSocket error type: ${error.type}`;
-            } else if (typeof error === 'string') {
-                errorMessage = error;
             }
-            
-            console.error("WebSocket error:", errorMessage, error);
+
+            // Try to get additional error information from the WebSocket object
+            if (this.ws) {
+                // Dynamically extract all available properties from the WebSocket object
+                errorDetails = {};
+                for (let key in this.ws) {
+                    if (this.ws.hasOwnProperty(key)) {
+                        try {
+                            errorDetails[key] = this.ws[key];
+                        } catch (e) {
+                            errorDetails[key] = '[Unable to read property]';
+                        }
+                    }
+                }
+
+                // Check if we can get more specific error information based on readyState
+                const readyState = this.ws.readyState;
+                if (readyState === WebSocket.CLOSED) {
+                    errorMessage = `WebSocket connection closed unexpectedly (${this.ws.url || 'unknown URL'})`;
+                } else if (readyState === WebSocket.CLOSING) {
+                    errorMessage = `WebSocket connection closing (${this.ws.url || 'unknown URL'})`;
+                } else if (readyState === WebSocket.CONNECTING) {
+                    errorMessage = `WebSocket connection failed during connection attempt (${this.ws.url || 'unknown URL'})`;
+                }
+            }
+
+            console.error("WebSocket error:", errorMessage, errorDetails, error);
             this.ws.close();
         };
     }

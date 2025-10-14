@@ -218,20 +218,44 @@ function openRUBusSocket() {
     });
 
     socket.addEventListener("error", (event) => {
-        // Extract meaningful error information from the Event object
+        // Extract meaningful error information from the Event object and WebSocket
         let errorMessage = "Unknown RUBus WebSocket error";
-        
+        let errorDetails = {};
+
         if (event && event.message) {
             errorMessage = event.message;
         } else if (event && event.type) {
             errorMessage = `RUBus WebSocket error type: ${event.type}`;
         } else if (event && event.code) {
             errorMessage = `RUBus WebSocket error code: ${event.code}`;
-        } else if (typeof event === 'string') {
-            errorMessage = event;
         }
-        
-        console.error("RUBus WebSocket error:", errorMessage, event);
+
+        // Try to get additional error information from the WebSocket object
+        if (socket) {
+            // Dynamically extract all available properties from the WebSocket object
+            errorDetails = {};
+            for (let key in socket) {
+                if (socket.hasOwnProperty(key)) {
+                    try {
+                        errorDetails[key] = socket[key];
+                    } catch (e) {
+                        errorDetails[key] = '[Unable to read property]';
+                    }
+                }
+            }
+
+            // Check if we can get more specific error information based on readyState
+            const readyState = socket.readyState;
+            if (readyState === WebSocket.CLOSED) {
+                errorMessage = `RUBus WebSocket connection closed unexpectedly (${socket.url || 'unknown URL'})`;
+            } else if (readyState === WebSocket.CLOSING) {
+                errorMessage = `RUBus WebSocket connection closing (${socket.url || 'unknown URL'})`;
+            } else if (readyState === WebSocket.CONNECTING) {
+                errorMessage = `RUBus WebSocket connection failed during connection attempt (${socket.url || 'unknown URL'})`;
+            }
+        }
+
+        console.error("RUBus WebSocket error:", errorMessage, errorDetails, event);
         // Don't mark RUBus as failing on WebSocket errors - only HTTP request failures matter
     });
 
