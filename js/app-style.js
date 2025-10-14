@@ -232,7 +232,7 @@ function popRiderStopInfo(stopId) {
     // Add a row for each route
     routes.forEach(route => {
         // Get the route mapping value
-        const routeMappingValue = routeMapping[route] || riderRouteMapping[route];
+        const routeMappingValue = riderRouteMapping[route] || route;
         
         // Sort ETAs and take up to 3 soonest
         routeEtas[route].sort((a, b) => a - b);
