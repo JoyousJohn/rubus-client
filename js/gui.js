@@ -1587,7 +1587,7 @@ function updateBusServiceTime() {
             timeInService = `${diffMins}m`;
         }
         
-        const $busName = $(`<div class="bus-service-name"><span class="bold bus-service-route" style="color: ${colorMappings[bus.route]}">${bus.route.toUpperCase()}</span> <span class="bus-service-busname" style="color: ${colorMappings[bus.route]}">#${bus.busName}</span></div>`);
+        const $busName = $(`<div class="bus-service-name"><span class="bold bus-service-route text-1p3rem" style="color: ${colorMappings[bus.route]}">${bus.route.toUpperCase()} <span class="bold-500 text-1p5rem">#</span></span><span class="bus-service-busname text-2rem" style="color: ${colorMappings[bus.route]}">${bus.busName}</span></div>`);
         const $timeValue = $(`<div class="bus-service-value">${timeInService}</div>`);
         
         $grid.append($busName);
