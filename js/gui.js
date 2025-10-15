@@ -215,7 +215,8 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
             }
         });
 
-        const selectedRouteColor = routeHasInServiceBuses(shownRoute) ? colorMappings[shownRoute] : 'gray';
+        // Always use the route color when selected, regardless of in-service status
+        const selectedRouteColor = colorMappings[shownRoute];
         $(`.route-selector[routeName="${shownRoute}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`)
 
         const container = $('.route-selectors');
@@ -426,7 +427,8 @@ function toggleRouteSelectors(route) {
             }
         });
 
-        const selectedRouteColor = routeHasInServiceBuses(route) ? colorMappings[route] : 'gray';
+        // Always use the route color when selected, regardless of in-service status
+        const selectedRouteColor = colorMappings[route];
         $(`.route-selector[routeName="${route}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`)
         $(`.route-selector[routeName="${shownRoute}"]`).css('box-shadow', '');
         shownRoute = route;
@@ -1018,12 +1020,8 @@ function updateColorMappingsSelection(selectedColor) {
     // update shown element colors
     $(`.color-circle, .next-stop-circle`).css('background-color', selectedColor)
     $('.route-name').css('color', selectedColor)
-    // Only update route selector if it has in-service buses
-    if (routeHasInServiceBuses(shownRoute)) {
-        $(`.route-selector[routename="${shownRoute}"]`).css('background-color', selectedColor).css('box-shadow', `0 0 10px ${selectedColor}`)
-    } else {
-        $(`.route-selector[routename="${shownRoute}"]`).css('background-color', 'gray').css('box-shadow', `0 0 10px gray`)
-    }
+    // Always update route selector with the selected color when it's the currently shown route
+    $(`.route-selector[routename="${shownRoute}"]`).css('background-color', selectedColor).css('box-shadow', `0 0 10px ${selectedColor}`)
 
     busesByRoutes[selectedCampus][shownRoute].forEach(busId => {
         const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
