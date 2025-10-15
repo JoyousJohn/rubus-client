@@ -1176,6 +1176,7 @@ function updateBusOverview(routes) {
     });
 
     updateAverageWaitByRoute();
+    updateBusServiceTime();
 }
 
 
@@ -1203,6 +1204,7 @@ function busesOverview() {
     updateRidershipChart();
     updateWaitTimes();
     updateAverageWaitByRoute();
+    updateBusServiceTime();
 }
 
 let ridershipChart;
@@ -1527,6 +1529,71 @@ function updateAverageWaitByRoute() {
     });
 }
 
+function updateBusServiceTime() {
+    const $grid = $('.bus-service-grid');
+
+    // Clear previous (keep headings)
+    $grid.children().not('.bus-service-heading').remove();
+
+    // Ensure data available
+    if (Object.keys(busData).length === 0) {
+        $('.bus-service-wrapper').hide();
+        return;
+    }
+
+    // Create array of all buses with their service times
+    const busesWithServiceTime = [];
+    
+    for (const busId in busData) {
+        if (busData[busId].route && busData[busId].busName) {
+            const joinedServiceTime = busData[busId].joined_service;
+            if (joinedServiceTime) {
+                busesWithServiceTime.push({
+                    busId: busId,
+                    busName: busData[busId].busName,
+                    route: busData[busId].route,
+                    joinedServiceTime: joinedServiceTime
+                });
+            }
+        }
+    }
+
+    $('.bus-service-wrapper').show();
+
+    // Sort buses by time in service (most recent first)
+    busesWithServiceTime.sort((a, b) => {
+        // Convert to timestamps for proper sorting
+        const timeA = new Date(a.joinedServiceTime).getTime();
+        const timeB = new Date(b.joinedServiceTime).getTime();
+        return timeB - timeA; // Most recent first (descending)
+    });
+
+    // Calculate current time
+    const now = new Date();
+
+    // Add each bus to the grid
+    busesWithServiceTime.forEach(bus => {
+        const serviceTime = new Date(bus.joinedServiceTime);
+        const diffMs = now - serviceTime;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const remainingMins = diffMins % 60;
+        
+        // Format as "Xh Ym" or "Xm" if less than an hour
+        let timeInService;
+        if (diffHours > 0) {
+            timeInService = `${diffHours}h ${remainingMins}m`;
+        } else {
+            timeInService = `${diffMins}m`;
+        }
+        
+        const $busName = $(`<div class="bus-service-name"><span class="bold bus-service-route" style="color: ${colorMappings[bus.route]}">${bus.route.toUpperCase()}</span> <span class="bus-service-busname" style="color: ${colorMappings[bus.route]}">#${bus.busName}</span></div>`);
+        const $timeValue = $(`<div class="bus-service-value">${timeInService}</div>`);
+        
+        $grid.append($busName);
+        $grid.append($timeValue);
+    });
+}
 
 function closeRouteMenu() {
     console.log('closeRouteMenu called');

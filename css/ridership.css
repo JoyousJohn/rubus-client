@@ -95,8 +95,51 @@
     font-weight: 500;
 }
 
-.avg-wait-value { 
-    text-align: right; 
+.avg-wait-value {
+    text-align: right;
     color: var(--theme-color-lighter);
     /* font-weight: 500; */
+}
+
+/* Bus Service Time Panel */
+.bus-service-wrapper {
+    margin-top: 2rem;
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    padding: 2rem;
+}
+
+.bus-service-title {
+    text-align: center;
+}
+
+.bus-service-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 1rem;
+    font-size: 2rem;
+}
+
+.bus-service-heading {
+    color: var(--theme-extra);
+    font-weight: 500;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.bus-service-name {
+    font-weight: 500;
+}
+
+.bus-service-route {
+    font-size: 1.5rem;
+}
+
+.bus-service-busname {
+    font-size: 1.3rem;
+}
+
+.bus-service-value {
+    text-align: right;
+    color: var(--theme-color-lighter);
 }

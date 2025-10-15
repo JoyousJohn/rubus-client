@@ -489,7 +489,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
         } else {
             // Only hide all-stops button if there are truly no buses at all (including overnight buses)
             if (Object.keys(busData).length === 0) {
-                $('.info-panels-btn-wrapper').hide();
+                // $('.info-panels-btn-wrapper').hide();
             }
         }
 
@@ -578,7 +578,7 @@ function makeOoS(busId) {
 
     // Hide all-stops button if no buses remain
     if (Object.keys(busData).length === 0) {
-        $('.info-panels-btn-wrapper').hide();
+        // $('.info-panels-btn-wrapper').hide();
     }
 
 }
@@ -977,10 +977,7 @@ function checkMinRoutes() {
         $('.knight-mover').show();
         $('.knight-mover-mini').hide();
 
-
-
         populateRouteSelectors(); // to remove favs
-        $('.info-panels-btn-wrapper').hide();
         return;
     }
 
