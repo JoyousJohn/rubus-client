@@ -1,3 +1,71 @@
+// Utility function to deeply extract all values from nested objects/arrays
+function extractAllValues(obj, maxDepth = 5, currentDepth = 0) {
+    if (currentDepth >= maxDepth) {
+        return '[Max depth reached]';
+    }
+
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
+
+    if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
+        return obj;
+    }
+
+    if (typeof obj === 'function') {
+        return '[Function: ' + (obj.name || 'anonymous') + ']';
+    }
+
+    if (obj instanceof Error) {
+        return obj.message + (obj.stack ? '\n' + obj.stack : '');
+    }
+
+    if (obj instanceof Event) {
+        const eventDetails = {
+            type: obj.type,
+            target: obj.target ? extractAllValues(obj.target, maxDepth, currentDepth + 1) : null,
+            currentTarget: obj.currentTarget ? extractAllValues(obj.currentTarget, maxDepth, currentDepth + 1) : null,
+            bubbles: obj.bubbles,
+            cancelable: obj.cancelable,
+            defaultPrevented: obj.defaultPrevented,
+            timeStamp: obj.timeStamp
+        };
+
+        // Add any additional properties that might be specific to this event type
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key) && !(key in eventDetails)) {
+                try {
+                    eventDetails[key] = extractAllValues(obj[key], maxDepth, currentDepth + 1);
+                } catch (e) {
+                    eventDetails[key] = '[Unable to read property]';
+                }
+            }
+        }
+
+        return eventDetails;
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map(item => extractAllValues(item, maxDepth, currentDepth + 1));
+    }
+
+    if (typeof obj === 'object') {
+        const result = {};
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                try {
+                    result[key] = extractAllValues(obj[key], maxDepth, currentDepth + 1);
+                } catch (e) {
+                    result[key] = '[Unable to read property]';
+                }
+            }
+        }
+        return result;
+    }
+
+    return String(obj);
+}
+
 let etas = {}
 let waits = {}
 let busLocations = {}
@@ -232,17 +300,8 @@ function openRUBusSocket() {
 
         // Try to get additional error information from the WebSocket object
         if (socket) {
-            // Dynamically extract all available properties from the WebSocket object
-            errorDetails = {};
-            for (let key in socket) {
-                if (socket.hasOwnProperty(key)) {
-                    try {
-                        errorDetails[key] = socket[key];
-                    } catch (e) {
-                        errorDetails[key] = '[Unable to read property]';
-                    }
-                }
-            }
+            // Use the utility function to extract all values from the WebSocket object
+            errorDetails = extractAllValues(socket, 3, 0);
 
             // Check if we can get more specific error information based on readyState
             const readyState = socket.readyState;
@@ -255,7 +314,13 @@ function openRUBusSocket() {
             }
         }
 
-        console.error("RUBus WebSocket error:", errorMessage, errorDetails, event);
+        // Use the utility function to extract all values from the error event and WebSocket details
+        const processedEvent = extractAllValues(event, 3, 0);
+        const processedErrorDetails = extractAllValues(errorDetails, 3, 0);
+
+        console.error("RUBus WebSocket error:", errorMessage);
+        console.error("Error details:", processedErrorDetails);
+        console.error("Original event:", processedEvent);
         // Don't mark RUBus as failing on WebSocket errors - only HTTP request failures matter
     });
 
