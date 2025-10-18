@@ -296,12 +296,14 @@ class BusWebSocketClient {
             }
 
             // Use the utility function to extract all values from the error event and WebSocket details
-            const processedError = extractAllValues(error, 3, 0);
             const processedErrorDetails = extractAllValues(errorDetails, 3, 0);
 
             console.error("WebSocket error:", errorMessage);
             console.error("Error details:", processedErrorDetails);
-            console.error("Original error:", processedError);
+
+            // Extract and log the original error object with all its nested values
+            const originalErrorExtracted = extractAllValues(error, 3, 0);
+            console.error("Original error:", originalErrorExtracted);
             this.ws.close();
         };
     }

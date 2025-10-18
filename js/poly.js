@@ -449,21 +449,26 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && stopId === 3) { // special case: show both VIA paths
                     const viaMap = busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
                     if (viaMap && Object.keys(viaMap).length) {
+                        const approachPrev = busData[busId] && busData[busId]['prevStopId'];
                         Object.entries(viaMap).forEach(([prevIdStr, etaSecs]) => {
                             const prevId = Number(prevIdStr);
                             const etaMins = Math.ceil(etaSecs / 60);
                             const nextStopId = getNextStopAfterCurrentGivenPrev(servicedRoute, prevId, 3);
                             const nextStop = stopsData[nextStopId];
                             const nextStopName = nextStop ? (nextStop.shorterName || nextStop.shortName || nextStop.mainName || nextStop.name) : '';
-                            servicingEntries.push({
-                                busId: busId,
-                                route: servicedRoute,
-                                eta: etaMins,
-                                nextStopId: nextStopId,
-                                nextStopName: nextStopName,
-                                viaPrevStopId: prevId
-                            })
-                        })
+
+                            // Only show the current approach leg when the bus is still approaching SAC NB.
+                            if (!busData[busId] || busData[busId]['next_stop'] !== 3 || !approachPrev || approachPrev === prevId) {
+                                servicingEntries.push({
+                                    busId: busId,
+                                    route: servicedRoute,
+                                    eta: etaMins,
+                                    nextStopId: nextStopId,
+                                    nextStopName: nextStopName,
+                                    viaPrevStopId: prevId
+                                });
+                            }
+                        });
                         // Skip the default entry since we added VIA entries above
                         return;
                     }
