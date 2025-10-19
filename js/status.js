@@ -119,6 +119,9 @@ function isServerOnline(lastResponse, pollInterval, buffer) {
 }
 
 function showStatus() {
+    // Stop any existing status updates to ensure clean state
+    stopStatusUpdates();
+
     // Check if status wrapper is currently displayed (not hidden)
     const statusWrapper = $('.status-wrapper');
     const isCurrentlyVisible = statusWrapper.css('display') !== 'none' && !statusWrapper.hasClass('none');
@@ -129,13 +132,7 @@ function showStatus() {
         $('.status').removeClass('footer-selected');
         $('.errors-wrapper').hide();
         $('.errors-tab').removeClass('footer-selected');
-        stopStatusUpdates();
         return;
-    }
-
-    // Clear any existing interval
-    if (statusUpdateInterval) {
-        clearInterval(statusUpdateInterval);
     }
 
     // Remove footer tab selection from other tabs

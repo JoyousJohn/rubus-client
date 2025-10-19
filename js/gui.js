@@ -1694,6 +1694,7 @@ $('.settings-close').click(function() {
     $('.settings-panel').hide();
     $('.bottom').show();
     $(this).hide();
+    stopStatusUpdates();
 })
 
 
