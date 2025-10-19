@@ -66,11 +66,6 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         routesArray.unshift('wknd1');
     }
 
-    // This settings toggle reverses the routes somewhere else
-	if (!settings['toggle-settings-btn-end']) {
-		routesArray.reverse();
-	}
-
     if ($('.favs > div').length) {
         routesArray.unshift('fav');
     }
@@ -79,6 +74,11 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         routesArray = routesArray.filter(route => route !== 'ftbl');
         routesArray.push('ftbl');
     }
+
+    // This settings toggle reverses the routes somewhere else
+	if (!settings['toggle-settings-btn-end']) {
+		routesArray.reverse();
+	}
 
     // Add parking campus route selector if campus is selected
     const parkingCampus = settings['parking-campus'];
