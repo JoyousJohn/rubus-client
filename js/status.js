@@ -119,9 +119,13 @@ function isServerOnline(lastResponse, pollInterval, buffer) {
 }
 
 function showStatus() {
-    // Toggle behavior: if already visible, hide and unselect
-    if ($('.status-wrapper').is(':visible')) {
-        $('.status-wrapper').hide();
+    // Check if status wrapper is currently displayed (not hidden)
+    const statusWrapper = $('.status-wrapper');
+    const isCurrentlyVisible = statusWrapper.css('display') !== 'none' && !statusWrapper.hasClass('none');
+
+    if (isCurrentlyVisible) {
+        // Toggle behavior: if already visible, hide and unselect
+        statusWrapper.hide();
         $('.status').removeClass('footer-selected');
         $('.errors-wrapper').hide();
         $('.errors-tab').removeClass('footer-selected');
@@ -151,7 +155,8 @@ function showStatus() {
     // Start real-time updates every second
     statusUpdateInterval = setInterval(updateStatusDisplay, 1000);
 
-    $('.status-wrapper').show();
+    // Show status wrapper and add selection class
+    statusWrapper.show();
     $('.status').addClass('footer-selected');
 }
 
