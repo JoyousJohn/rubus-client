@@ -102,6 +102,9 @@ function openRUBusSocket() {
         socket = new WebSocket('wss://demo.rubus.live/ws');
     // }
 
+    // Make it globally accessible for status checking
+    window.socket = socket;
+
     socket.addEventListener("open", (event) => {
         // console.log("RUBus WebSocket connection opened");
         // Update response time to indicate WebSocket is active
@@ -314,13 +317,12 @@ function openRUBusSocket() {
             }
         }
 
-        // Use the utility function to extract all values from the error event and WebSocket details
-        const processedEvent = extractAllValues(event, 3, 0);
-        const processedErrorDetails = extractAllValues(errorDetails, 3, 0);
-
         console.error("RUBus WebSocket error:", errorMessage);
-        console.error("Error details:", processedErrorDetails);
-        console.error("Original event:", processedEvent);
+        console.error("Error details:", errorDetails);
+
+        // Extract and log the original event object with all its nested values
+        const originalEventExtracted = extractAllValues(event, 3, 0);
+        console.error("Original event:", originalEventExtracted);
         // Don't mark RUBus as failing on WebSocket errors - only HTTP request failures matter
     });
 

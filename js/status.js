@@ -6,8 +6,21 @@ let lastRubusResponseTime = 0;
 let statusUpdateInterval = null;
 let rubusRequestsFailing = false;
 
-function isWebSocketConnected(ws) {
-    return ws && ws.readyState === WebSocket.OPEN;
+function getWebSocketStatusText(ws) {
+    if (!ws) return "Not Available";
+
+    switch (ws.readyState) {
+        case WebSocket.CONNECTING:
+            return "Connecting";
+        case WebSocket.OPEN:
+            return "Connected";
+        case WebSocket.CLOSING:
+            return "Closing";
+        case WebSocket.CLOSED:
+            return "Disconnected";
+        default:
+            return "Unknown";
+    }
 }
 
 function updateStatusDisplay() {
@@ -22,25 +35,29 @@ function updateStatusDisplay() {
     const rubusOnline = rubusRequestsFailing ? false : (lastRubusResponse > 0);
 
     // Check WebSocket connection states (these may be undefined if not loaded yet)
+    let passioWsText = "Loading...";
+    let rubusWsText = "Loading...";
     let passioWsConnected = false;
     let rubusWsConnected = false;
 
+    // Check Passio WebSocket
     try {
-        if (typeof wsClient !== 'undefined') {
-            passioWsConnected = isWebSocketConnected(wsClient);
-        }
+        passioWsText = getWebSocketStatusText(window.wsClient.ws);
+        passioWsConnected = window.wsClient.ws.readyState === WebSocket.OPEN;
+        console.log('Passio WebSocket state:', window.wsClient.ws.readyState, 'Status:', passioWsText);
     } catch (e) {
-        // WebSocket not available yet
-        passioWsConnected = false;
+        console.log('Error checking Passio WebSocket:', e);
+        passioWsText = "Loading...";
     }
 
+    // Check RUBus WebSocket
     try {
-        if (typeof socket !== 'undefined') {
-            rubusWsConnected = isWebSocketConnected(socket);
-        }
+        rubusWsText = getWebSocketStatusText(window.socket);
+        rubusWsConnected = window.socket.readyState === WebSocket.OPEN;
+        console.log('RUBus WebSocket state:', window.socket.readyState, 'Status:', rubusWsText);
     } catch (e) {
-        // WebSocket not available yet
-        rubusWsConnected = false;
+        console.log('Error checking RUBus WebSocket:', e);
+        rubusWsText = "Loading...";
     }
 
     const passioTimeAgo = getTimeAgoString(lastPassioResponseTime);

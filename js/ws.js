@@ -295,11 +295,8 @@ class BusWebSocketClient {
                 }
             }
 
-            // Use the utility function to extract all values from the error event and WebSocket details
-            const processedErrorDetails = extractAllValues(errorDetails, 3, 0);
-
             console.error("WebSocket error:", errorMessage);
-            console.error("Error details:", processedErrorDetails);
+            console.error("Error details:", errorDetails);
 
             // Extract and log the original error object with all its nested values
             const originalErrorExtracted = extractAllValues(error, 3, 0);
@@ -320,4 +317,6 @@ class BusWebSocketClient {
 
 // Instantiate the WebSocket client
 const wsClient = new BusWebSocketClient("wss://passio3.com/");
+// Make it globally accessible for status checking
+window.wsClient = wsClient;
 // wsClient.connect();
