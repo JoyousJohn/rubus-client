@@ -1365,6 +1365,11 @@ html, body {
     height: 26px;
 }
 
+/* Make duck marker preview icons blue in settings */
+.duck-marker {
+    color: rgb(68, 151, 239);
+}
+
 .marker {
     border-radius: 50%;
     border-top-left-radius: 10%;
@@ -1386,6 +1391,10 @@ html, body {
 
 .settings-marker-style .small-marker {
     background-color: rgb(68, 151, 239);
+}
+
+.settings-marker-style .duck-marker {
+    color: rgb(68, 151, 239);
 }
 
 .passio-marker {
@@ -1465,6 +1474,46 @@ html, body {
 
 .rider-marker.big-marker {
     font-size: 1.8rem;
+}
+
+.duck-marker {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.duck-marker i {
+    font-size: 16px;
+    text-shadow:
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff,
+        -1px 0 0 #fff,
+        1px 0 0 #fff,
+        0 -1px 0 #fff,
+        0 1px 0 #fff;
+    transform: scaleX(-1);
+}
+
+
+.duck-marker.small-marker i {
+    font-size: 12px;
+}
+
+.duck-marker.medium-marker i {
+    font-size: 16px;
+}
+
+.duck-marker.big-marker i {
+    font-size: 20px;
+}
+
+/* Make duck marker preview icons blue in settings */
+.marker .duck-marker {
+    color: rgb(68, 151, 239);
 }
 
 .small-marker > div {

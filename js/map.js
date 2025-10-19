@@ -377,6 +377,7 @@ $(document).on('keydown', function(e) {
         $('.settings-panel').fadeOut('fast');
         $('.bottom').fadeIn('fast'); // this is being hidden due to settings-btn click?... Why tho
         $('.settings-close').hide();
+        stopStatusUpdates();
 
         if (settings['toggle-hide-other-routes'] && !shownRoute) {
             showAllStops();
@@ -1118,7 +1119,10 @@ let midpointCircle = {}
 
 // Helper function to get the rotation element for any marker type
 function getMarkerRotationElement(marker) {
-    return marker.getElement().querySelector('.bus-icon-outer') || marker.getElement().querySelector('.passio-marker') || marker.getElement().querySelector('.rider-marker');
+    return marker.getElement().querySelector('.bus-icon-outer') ||
+           marker.getElement().querySelector('.passio-marker') ||
+           marker.getElement().querySelector('.rider-marker') ||
+           marker.getElement().querySelector('.duck-marker');
 }
 
 // Cache for colored SVG data URLs
@@ -1677,6 +1681,35 @@ function plotBus(busId, immediatelyUpdate=false) {
                         <div class="bus-marker-wrapper">
                             <div class="rider-marker ${riderSizeClass}" style="will-change: transform; background-color: ${routeColor};">
                                 <i class="fa-solid fa-location-arrow-up" style="color: white;"></i>
+                            </div>
+                            <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
+                        </div>
+                    `
+                }),
+                route: route,
+                zIndexOffset: 500
+            }).addTo(map);
+
+            getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
+        } else if (markerType === 'duck') {
+            // Create Duck HTML marker with route-based color
+            const routeColor = colorMappings[route] || '#446bef';
+            const currentSize = settings['marker-size'] || 'medium';
+            const duckSizeClass = {
+                'small': 'small-marker',
+                'medium': 'medium-marker',
+                'big': 'big-marker'
+            }[currentSize];
+
+            busMarkers[busId] = L.marker([loc.lat, loc.long], {
+                icon: L.divIcon({
+                    className: 'bus-icon',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    html: `
+                        <div class="bus-marker-wrapper">
+                            <div class="duck-marker ${duckSizeClass}" style="will-change: transform;">
+                                <i class="fa-solid fa-duck" style="color: ${routeColor};"></i>
                             </div>
                             <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
                         </div>

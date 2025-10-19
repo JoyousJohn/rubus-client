@@ -1722,6 +1722,12 @@ const riderSizeMap = {
     'big': 'big-marker'
 }
 
+const duckSizeMap = {
+    'small': 'small-marker',
+    'medium': 'medium-marker',
+    'big': 'big-marker'
+}
+
 let settings = {}
 
 const toggleSettings = [
@@ -2155,26 +2161,39 @@ function updateMarkerSize() {
 
     // Update rider marker sizes by changing CSS classes (only map markers, not settings examples)
     $('.bus-marker-wrapper .rider-marker').removeClass('small-marker medium-marker big-marker').addClass(riderSizeClass);
+    
+    // Update duck marker sizes by changing CSS classes (only map markers, not settings examples)
+    const duckSizeClass = duckSizeMap[settings['marker-size']];
+    $('.bus-marker-wrapper .duck-marker').removeClass('small-marker medium-marker big-marker').addClass(duckSizeClass);
 }
 
 function updateMarkerSizeExamples() {
     const markerType = settings['marker-type'];
 
     if (markerType === 'passio') {
-        // Show Passio markers, hide RUBus and Rider markers
+        // Show Passio markers, hide RUBus, Rider, and Duck markers
         $('.settings-marker-size .passio-marker').show();
         $('.settings-marker-size .marker').hide();
         $('.settings-marker-size .rider-marker').hide();
+        $('.settings-marker-size .duck-marker').hide();
     } else if (markerType === 'rider') {
-        // Show Rider markers, hide RUBus and Passio markers
+        // Show Rider markers, hide RUBus, Passio, and Duck markers
         $('.settings-marker-size .rider-marker').show();
         $('.settings-marker-size .marker').hide();
         $('.settings-marker-size .passio-marker').hide();
+        $('.settings-marker-size .duck-marker').hide();
+    } else if (markerType === 'duck') {
+        // Show Duck markers, hide RUBus, Passio, and Rider markers
+        $('.settings-marker-size .duck-marker').show();
+        $('.settings-marker-size .marker').hide();
+        $('.settings-marker-size .passio-marker').hide();
+        $('.settings-marker-size .rider-marker').hide();
     } else {
-        // Show RUBus markers, hide Passio and Rider markers (default case)
+        // Show RUBus markers, hide Passio, Rider, and Duck markers (default case)
         $('.settings-marker-size .marker').show();
         $('.settings-marker-size .passio-marker').hide();
         $('.settings-marker-size .rider-marker').hide();
+        $('.settings-marker-size .duck-marker').hide();
     }
 }
 
