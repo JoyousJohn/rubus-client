@@ -1994,8 +1994,9 @@ function updateSettings() {
         else if (settingsOption === 'marker-type') {
 
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
-            $(this).addClass('settings-selected')
-            settings['marker-type'] = $(this).attr('marker-type-option')
+            const markerType = $(this).attr('marker-type-option')
+            $(`div.settings-option[settings-option="${settingsOption}"][marker-type-option="${markerType}"]`).addClass('settings-selected')
+            settings['marker-type'] = markerType
             updateMarkerType()
 
         }
