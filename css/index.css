@@ -105,6 +105,7 @@ html, body {
     border: 2px solid black; /* Optional: add a border */
     height: 27px;
     width: 27px;
+    aspect-ratio: 1;
     display: flex;
     justify-content: center;
     align-items: center;
