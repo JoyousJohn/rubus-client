@@ -1,4 +1,5 @@
 let buildingIndex;
+let enableSearchButtonGradientFlash = false;
 
 // Function to update search placeholder with building count
 function updateSearchPlaceholder(buildingCount) {
@@ -378,6 +379,10 @@ $(document).ready(function() {
 
     // Handle search button gradient flash after initial bus data fetch completes
     document.addEventListener('rubus-bus-data-loaded', function() {
+        if (!enableSearchButtonGradientFlash) {
+            return;
+        }
+        
         setTimeout(function() {
             const $searchBtn = $('.search-btn');
 
