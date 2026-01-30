@@ -67,7 +67,7 @@ async function makeNewMap() {
     await fetchETAs();
     // Precompute route bounds for all campus routes to enable immediate fits even when OOS
 	try { await precomputeAllRouteBounds(); } catch (e) {}
-    await fetchBusData(false, true);
+    await fetchBusData(false, true, true);
     fetchWhere();
     addStopsToMap();
 

@@ -133,7 +133,7 @@ async function immediatelyUpdateBusDataPost() {
     $('.updating-buses').slideUp();
 }
 
-async function fetchBusData(immediatelyUpdate, isInitial) {
+async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFromFetch) {
 
     if (sim) return;
     if (busFetchInProgress) return;
@@ -322,7 +322,7 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
                         }
                     }
 
-                    if (!polylines[routeStr]) {
+                    if (!skipPolylineUpdateFromFetch && !polylines[routeStr]) {
                         setPolylines([routeStr]);
                     }
                     populateFavs();
@@ -422,7 +422,9 @@ async function fetchBusData(immediatelyUpdate, isInitial) {
             if (newRoutes.size > 0) {
                 // console.log('newRoutes: ', newRoutes)
                 // console.log('activeRoutes: ' , activeRoutes)
-                setPolylines(newRoutes);
+                if (!skipPolylineUpdateFromFetch) {
+                    setPolylines(newRoutes);
+                }
                 newRoutes.forEach(item => activeRoutes.add(item))
                 populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and setting all <-- not sure this is still true
                 
