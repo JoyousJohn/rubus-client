@@ -1739,6 +1739,7 @@ const toggleSettings = [
     'toggle-show-bike-racks',
     'toggle-disable-fireworks-on-open',
     'toggle-show-buildings',
+    'toggle-show-alerts-other-campuses',
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
@@ -1774,8 +1775,7 @@ const toggleSettings = [
     'toggle-show-road-network',
     'toggle-distances-line-on-focus',
     'toggle-always-show-break-overdue',
-    'toggle-settings-btn-end'
-
+    'toggle-settings-btn-end',
 ]
 
 let colorMappings;
@@ -1827,6 +1827,7 @@ let defaultSettings = {
     'toggle-disable-fireworks-on-open': false,
     'toggle-settings-btn-end': false,
     'toggle-show-buildings': true,
+    'toggle-show-alerts-other-campuses': false,
     'campus': 'nb',
     'parking-campus': false,
     'marker-type': 'rubus', // 'rubus' or 'passio'

@@ -481,6 +481,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
             populateRouteSelectors(activeRoutes);
             break;
 
+        case 'toggle-show-alerts-other-campuses':
+            settings['toggle-show-alerts-other-campuses'] = isChecked;
+            refreshAlertsDisplay();
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;

@@ -1022,6 +1022,19 @@ function makeActiveRoutes() {
 }
 
 
+let cachedAlertMessages = null;
+
+function clearAlertsDisplay() {
+    $('.passio-messages-list').empty();
+    $('.passio-mini').empty();
+}
+
+function refreshAlertsDisplay() {
+    if (!cachedAlertMessages) return;
+    clearAlertsDisplay();
+    populateMessages(cachedAlertMessages);
+}
+
 function populateMessages(messages) {
     messages.forEach(message => {
         console.log(message)
@@ -1049,6 +1062,20 @@ function populateMessages(messages) {
 
         let desc = message['gtfsAlertDescriptionText'];
         desc = desc.replace(/^[A-Za-z]+\s\d{1,2}\/\d{1,2}\/\d{2,4}:\s*/, '');        
+
+        // Skip alerts that mention a campus other than the selected one (unless setting overrides)
+        if (!settings['toggle-show-alerts-other-campuses']) {
+            const titleLower = title.toLowerCase();
+            const otherCampusPatterns = {
+                nb: [/camden/, /newark/],
+                camden: [/\bnb\b/, /newark/],
+                newark: [/\bnb\b/, /camden/]
+            };
+            const patterns = otherCampusPatterns[selectedCampus];
+            if (patterns && patterns.some(re => re.test(titleLower))) {
+                return; // Don't show this alert
+            }
+        }
 
         // console.log(message)
 
@@ -1111,6 +1138,8 @@ function getMessages() {
     .then(data => {
         const messages = data.msgs;
         if (messages) {
+            cachedAlertMessages = messages;
+            clearAlertsDisplay();
             populateMessages(messages);
         }
     })
