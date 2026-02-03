@@ -534,31 +534,19 @@ function updateTooltips(route) {
 
     if (route === 'fav') return;
 
-    const routeBuses = busesByRoutes[selectedCampus][route]
-
     try {
         stopLists[route].forEach(stopId => {
-            let lowestETA = Infinity;
-            let lowestBusId;
-    
-            routeBuses.forEach(busId => {
-                if (busETAs[busId]) {
-                    const eta = getETAForStop(busId, stopId)
-                    if (eta < lowestETA) {
-                        lowestETA = eta;
-                        lowestBusId = busId;
-                    }
-                }
-            })
-    
+            const [lowestBusId, lowestETA] = getSoonestBus(stopId, route);
+
             if (lowestBusId) {
-                const lowestETAMin = Math.ceil(lowestETA/60)
+                const lowestETAMin = Math.ceil(lowestETA / 60);
                 $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
+            } else {
+                $(`[stop-eta="${stopId}"]`).text('').hide();
             }
         })
     } catch (error) {
         console.log(busesByRoutes);
-        console.log(routeBuses);
         console.log(stopLists);
         console.log(`Error updating tooltips for route ${route}: ${error}`)
     }
