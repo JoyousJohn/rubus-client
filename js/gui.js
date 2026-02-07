@@ -544,13 +544,12 @@ function updateTooltips(route) {
             } else {
                 $(`[stop-eta="${stopId}"]`).text('').hide();
             }
-        })
+        });
     } catch (error) {
         console.log(busesByRoutes);
         console.log(stopLists);
-        console.log(`Error updating tooltips for route ${route}: ${error}`)
+        console.log(`Error updating tooltips for route ${route}: ${error}`);
     }
-    
 }
 
 function updateBusNameTooltips() {
@@ -2635,7 +2634,14 @@ function populateMeClosestStops() {
         const busesHere = routesServicing(parseInt(stopId))
         // console.log(busesHere)
         busesHere.forEach(route => {
-            $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()} ${Math.ceil(getSoonestBus(parseInt(stopId), route)[1] % 60)}m</div>`)
+            const soonestBus = getSoonestBus(parseInt(stopId), route);
+            const eta = soonestBus[1];
+
+            if (eta === null || eta === Infinity) {
+                return;
+            }
+
+            $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()} ${Math.ceil(eta % 60)}m</div>`)
             .css('background-color', colorMappings[route])
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
