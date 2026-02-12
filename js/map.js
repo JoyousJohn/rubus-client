@@ -1392,6 +1392,13 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
             delete busLines[busId]['prev'];
         }
 
+        // Clear any stored animation durations so they don't carry over to the
+        // next non-immediate update. This path returns early and never reaches the
+        // duration-consumption code below, so stale values would otherwise persist.
+        delete busData[busId].apiAnimationDuration;
+        delete busData[busId].websocketAnimationDuration;
+        delete busData[busId].overnightAnimationDuration;
+
         return; // Exit early - no animation needed
     }
 

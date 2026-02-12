@@ -195,11 +195,12 @@ class BusWebSocketClient {
         const currentTime = new Date().getTime();
         const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
 
-                // For WebSocket updates, ensure animation duration accounts for remaining API polling interval
+        // For WebSocket updates, ensure animation duration accounts for remaining API polling interval
         // This prevents animations from being too short when WebSocket updates come mid-polling-cycle
         const pollDelay = 5000; // Should match the API polling interval
-        const remainingPollTime = Math.max(0, pollDelay - timeSinceLastUpdate);
-        const animationDuration = timeSinceLastUpdate + remainingPollTime + 2500; // Base duration calculation
+        const cappedTimeSinceLastUpdate = Math.min(timeSinceLastUpdate, 30000); // Cap to 30s to prevent long animations after resume
+        const remainingPollTime = Math.max(0, pollDelay - cappedTimeSinceLastUpdate);
+        const animationDuration = cappedTimeSinceLastUpdate + remainingPollTime + 2500; // Base duration calculation
 
         // Store the calculated duration for use in updateMarkerPosition
         busData[busId].websocketAnimationDuration = animationDuration;

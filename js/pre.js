@@ -349,7 +349,8 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
                 const currentTime = new Date().getTime();
                 const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
-                const animationDuration = timeSinceLastUpdate + 2500; // Base duration calculation
+                // Cap to 30s to prevent extremely long animations after app resume
+                const animationDuration = Math.min(timeSinceLastUpdate, 30000) + 2500;
 
                 // Store the calculated duration for consistent animation timing
                 busData[busId].apiAnimationDuration = animationDuration;
@@ -874,7 +875,8 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
                 // Update previousTime for overnight API updates to ensure proper animation timing
                 const currentTime = new Date().getTime();
                 const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
-                const animationDuration = timeSinceLastUpdate + 2500; // Base duration calculation
+                // Cap to 30s to prevent extremely long animations after app resume
+                const animationDuration = Math.min(timeSinceLastUpdate, 30000) + 2500;
 
                 // Store the calculated duration for consistent animation timing
                 busData[busId].overnightAnimationDuration = animationDuration;
@@ -1324,6 +1326,12 @@ $(document).ready(async function() {
         console.log('App resumed - triggering immediate bus update');
         forceImmediateUpdate = true;
 
+        // Cancel all in-progress animations immediately so stale rAF callbacks
+        // don't visually run when the browser unpauses requestAnimationFrame.
+        // This must happen here (not only inside fetchBusData→immediatelyUpdateBusDataPre)
+        // because fetchBusData(true) can be silently dropped by the busFetchInProgress guard.
+        cancelAllAnimations();
+
         // Reset stale timing data for all buses to prevent incorrect animation durations
         const currentTime = new Date().getTime();
         for (const busId in busData) {
@@ -1335,6 +1343,13 @@ $(document).ready(async function() {
                 if (busData[busId].lat !== undefined && busData[busId].long !== undefined) {
                     busData[busId].previousPositions = [[busData[busId].lat, busData[busId].long]];
                 }
+
+                // Clear any stale stored animation durations so they don't carry over
+                // to the next non-immediate update. The teleport (immediate) path in
+                // updateMarkerPosition returns early and never consumes these values.
+                delete busData[busId].apiAnimationDuration;
+                delete busData[busId].websocketAnimationDuration;
+                delete busData[busId].overnightAnimationDuration;
             }
         }
 
