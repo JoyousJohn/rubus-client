@@ -1160,6 +1160,19 @@ function updateBusOverview(routes) {
         }
     });
 
+    // Reorder routes in DOM based on sorted ridership
+    const $grid = $(`.buses-overview-grid`).first();
+    const $firstTotalElement = $grid.find('.bus-overview-name:contains("Total")').first();
+
+    routeData.forEach(({route}) => {
+        const $busName = $(`.bus-overview-name:contains(${route.toUpperCase()})`).not('.total-row').first();
+        const $busRidership = $(`.bus-overview-ridership[route="${route}"]`);
+        const $loopTime = $(`.bus-overview-loop-time[route="${route}"]`);
+        $busName.insertBefore($firstTotalElement);
+        $busRidership.insertBefore($firstTotalElement);
+        $loopTime.insertBefore($firstTotalElement);
+    });
+
     updateAverageWaitByRoute();
     updateBusServiceTime();
 }
