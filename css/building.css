@@ -53,10 +53,10 @@
 }
 
 /* Force white content above gradient */
-.building-directions.building-directions,
+/* .building-directions.building-directions,
 .building-directions.building-directions > * {
     color: #fff;
-}
+} */
 
 /* --- Building Directions Gradient Animation --- */
 
@@ -67,7 +67,7 @@
     /* left: -100%; */
     width: 500%;
     height: 500%;
-    background: conic-gradient(
+    /* background: conic-gradient(
         from 0deg,
         hsla(0, 100%, 70%, 1),
         hsla(30, 100%, 70%, 1),
@@ -77,7 +77,7 @@
         hsla(240, 100%, 70%, 1),
         hsla(300, 100%, 70%, 1),
         hsla(360, 100%, 70%, 1)
-    );
+    ); */
     filter: blur(40px) saturate(1.5);
     transform-origin: 50% 50%;
     animation: simGradientSwirl 10s cubic-bezier(.4, 0, .2, 1) infinite alternate;
@@ -107,10 +107,10 @@
 }
 
 /* Force white content above gradient */
-.stop-directions.stop-directions,
+/* .stop-directions.stop-directions,
 .stop-directions.stop-directions > * {
     color: #fff;
-}
+} */
 
 /* --- Stop Directions Gradient Animation --- */
 
@@ -121,7 +121,7 @@
     /* left: -100%; */
     width: 500%;
     height: 500%;
-    background: conic-gradient(
+    /* background: conic-gradient(
         from 0deg,
         hsla(0, 100%, 70%, 1),
         hsla(30, 100%, 70%, 1),
@@ -131,7 +131,7 @@
         hsla(240, 100%, 70%, 1),
         hsla(300, 100%, 70%, 1),
         hsla(360, 100%, 70%, 1)
-    );
+    ); */
     filter: blur(40px) saturate(1.5);
     transform-origin: 50% 50%;
     animation: simGradientSwirl 10s cubic-bezier(.4, 0, .2, 1) infinite alternate;
