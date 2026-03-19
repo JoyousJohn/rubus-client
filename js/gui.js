@@ -1679,12 +1679,12 @@ $('.settings-btn').on('touchstart click', function() { // why do i need touchsta
         'btn': 'settings'
     });
     
-    $('.leaflet-control-attribution').hide();
     $('.settings-panel').show();
     // if (!isDesktop) {
     $('.bottom').hide();
     // }
     $('.settings-close').show();
+    setTimeout(adjustFontOptionSizes, 0);
     if (isDesktop && $('.buses-panel-wrapper').is(':visible')) {
         $('.buses-panel-wrapper').slideUp();
     }

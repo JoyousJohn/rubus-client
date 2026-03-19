@@ -63,6 +63,11 @@
     src: url('../lib/Comic Sans MS.ttf') format('truetype');
 }
 
+@font-face {
+    font-family: 'Papyrus';
+    src: url('../lib/papyrus.ttf') format('truetype');
+}
+
 body {
     margin: 0;
     height: 100dvh; /* cool unit */
