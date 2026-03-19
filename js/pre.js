@@ -945,6 +945,52 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
 function checkMinRoutes() {
 
     console.log("Checking min routes")
+
+    const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+    const hour = new Date().getHours();
+    
+    // Check if it's currently spring break period (March 14-23 for 2026, March 11-19 for 2027, March 10-23 for other years)
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth(); // 0-11 (Jan=0, Feb=1, etc.)
+    const currentDay = currentDate.getDate();
+    
+    // Check if within spring break period
+    let isSpringBreak = false;
+    if (currentYear === 2026) {
+        isSpringBreak = (currentMonth === 2 && currentDay >= 14 && currentDay <= 23);
+    } else if (currentYear === 2027) {
+        isSpringBreak = (currentMonth === 2 && currentDay >= 11 && currentDay <= 19);
+    } else {
+        isSpringBreak = (currentMonth === 2 && currentDay >= 10 && currentDay <= 23);
+    }
+    
+    // Early return conditions only apply when NOT in spring break
+    if (!isSpringBreak) {
+        if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
+        if (hour < 3 || hour >= 6) return;
+    } else {
+        $('.knight-mover').show();
+        console.log("Spring break detected!")
+    }
+    
+    // Determine knight mover hours based on spring break setting and period
+    let knightMoverStartHour, knightMoverEndHour;
+    if (isSpringBreak) {
+        knightMoverStartHour = 12; // 12 PM - 7 AM (next day) during spring break
+        knightMoverEndHour = 10;   // 10 AM
+        const knightMoverHoursText = 'Knight Mover accepts calls until 10:00AM<br><span style="color: #4babd7ff">(Spring recess special hours)</span>';
+        $('#knight-mover-hours').html(knightMoverHoursText);
+    } else {
+        knightMoverStartHour = 8;  // 8 AM - 11 PM (normal hours)
+        knightMoverEndHour = 23;   // 11 PM
+    }
+    
+    if (hour < knightMoverStartHour || hour >= knightMoverEndHour) {
+        return;
+    } else {
+        $('.knight-mover').show();
+    };
     
     if (selectedCampus !== 'nb') return;
     if (appStyle === 'rider') return;    
@@ -1010,43 +1056,6 @@ function checkMinRoutes() {
     } else if (settings['toggle-show-knight-mover']) {
         $('.knight-mover-mini').hide();
     }
-
-    const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-    const hour = new Date().getHours();
-    
-    // Check if it's currently spring break period (March 14-23 for 2026, March 11-19 for 2027, March 10-23 for other years)
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth(); // 0-11 (Jan=0, Feb=1, etc.)
-    const currentDay = currentDate.getDate();
-    
-    // Check if within spring break period
-    let isSpringBreak = false;
-    if (currentYear === 2026) {
-        isSpringBreak = (currentMonth === 2 && currentDay >= 14 && currentDay <= 23);
-    } else if (currentYear === 2027) {
-        isSpringBreak = (currentMonth === 2 && currentDay >= 11 && currentDay <= 19);
-    } else {
-        isSpringBreak = (currentMonth === 2 && currentDay >= 10 && currentDay <= 23);
-    }
-    
-    // Early return conditions only apply when NOT in spring break
-    if (!isSpringBreak) {
-        if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
-        if (hour < 3 || hour >= 6) return;
-    }
-    
-    // Determine knight mover hours based on spring break setting and period
-    let knightMoverStartHour, knightMoverEndHour;
-    if (settings['toggle-spring-break-hours'] && isSpringBreak) {
-        knightMoverStartHour = 12; // 12 PM - 7 AM (next day) during spring break
-        knightMoverEndHour = 10;   // 10 AM
-    } else {
-        knightMoverStartHour = 8;  // 8 AM - 11 PM (normal hours)
-        knightMoverEndHour = 23;   // 11 PM
-    }
-    
-    if (hour < knightMoverStartHour || hour >= knightMoverEndHour) return;
 }
 
 function makeActiveRoutes() {
