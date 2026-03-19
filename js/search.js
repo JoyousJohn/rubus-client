@@ -25,7 +25,10 @@ $(document).ready(function() {
     let isPressAndHold = false;
 
     $('.search-btn').on('mousedown touchstart', function(e) {
-        e.preventDefault(); // Prevent default touch behavior
+        // Only prevent default for mouse events, not touch events
+        if (e.type === 'mousedown') {
+            e.preventDefault();
+        }
         isPressAndHold = false;
         pressAndHoldTimer = setTimeout(() => {
             isPressAndHold = true;
@@ -46,7 +49,10 @@ $(document).ready(function() {
     });
 
     $('.search-btn').on('mouseup touchend', function(e) {
-        e.preventDefault(); // Prevent default touch behavior
+        // Only prevent default for mouse events, not touch events
+        if (e.type === 'mouseup') {
+            e.preventDefault();
+        }
         if (pressAndHoldTimer) {
             clearTimeout(pressAndHoldTimer);
             pressAndHoldTimer = null;
