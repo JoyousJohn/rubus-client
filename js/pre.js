@@ -979,7 +979,7 @@ function checkMinRoutes() {
     if (isSpringBreak) {
         knightMoverStartHour = 12; // 12 PM - 7 AM (next day) during spring break
         knightMoverEndHour = 10;   // 10 AM
-        const knightMoverHoursText = 'Knight Mover accepts calls until 10:00AM<br><span style="color: #4babd7ff">(Spring recess special hours)</span>';
+        const knightMoverHoursText = `Knight Mover accepts calls until 10:00AM<br><span style="color: #4babd7ff">(${currentYear} spring recess special hours)</span>`;
         $('#knight-mover-hours').html(knightMoverHoursText);
     } else {
         knightMoverStartHour = 8;  // 8 AM - 11 PM (normal hours)
