@@ -943,22 +943,21 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
 }
 
 function checkMinRoutes() {
+
+    console.log("Checking min routes")
     
     if (selectedCampus !== 'nb') return;
-    if (appStyle === 'rider') return;
-    if ($('.search-wrapper').is(':visible')) return;
-
-
+    if (appStyle === 'rider') return;    
+    // Check if search wrapper is fully faded out (opacity 0) before showing knight mover
+    if ($('.search-wrapper').css('opacity') === 0) {
+        console.log("Search wrapper fully faded out, showing knight mover");
+    }
+    
     // console.log(activeRoutes)
     if (activeRoutes.has('on1') || activeRoutes.has('on2')) {
         $('.knight-mover').hide();
         return;
     };
-
-    const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-    if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
-    const hour = new Date().getHours();
-    if (hour < 3 || hour >= 6) return;
 
     const minRoutes = ["ee", "lx", "h", "bl"];
 
@@ -975,7 +974,6 @@ function checkMinRoutes() {
         }
         
     })
-
 
     if (!activeRoutes.size) {
         $('.knight-mover').show();
@@ -1012,6 +1010,11 @@ function checkMinRoutes() {
     } else if (settings['toggle-show-knight-mover']) {
         $('.knight-mover-mini').hide();
     }
+
+    const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+    if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
+    const hour = new Date().getHours();
+    if (hour < 3 || hour >= 6) return;
 }
 
 function makeActiveRoutes() {

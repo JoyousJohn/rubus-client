@@ -501,7 +501,7 @@ function hideInfoBoxes(instantly_hide) {
 
     try { updateRidingBadgeUI(); } catch (_) {}
 
-    // checkMinRoutes(); // to reshow knight mover if hidden; so far only hidden by search wrapper opening
+    checkMinRoutes(); // to reshow knight mover if hidden; so far only hidden by search wrapper opening
 
 }
 
