@@ -2623,7 +2623,7 @@ function populateMeClosestStops() {
             flyToStop(stopId);
         })
         const stopDistDiv = $(`<div class="center" style="grid-row: span 2; color: var(--theme-color-lighter)">
-            <div class="dist bold pointer">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>
+            <div class="dist bold pointer justify-center">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>
             <div class="text-1p3rem flex align-center justify-center">
                 <i class="fa-solid fa-person-walking text-1rem"></i>
                 <div>${Math.round((distance * 1000 * 3.28084) / 220)}m</div>
