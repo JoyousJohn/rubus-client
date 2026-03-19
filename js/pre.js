@@ -1012,9 +1012,41 @@ function checkMinRoutes() {
     }
 
     const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-    if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
     const hour = new Date().getHours();
-    if (hour < 3 || hour >= 6) return;
+    
+    // Check if it's currently spring break period (March 14-23 for 2026, March 11-19 for 2027, March 10-23 for other years)
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth(); // 0-11 (Jan=0, Feb=1, etc.)
+    const currentDay = currentDate.getDate();
+    
+    // Check if within spring break period
+    let isSpringBreak = false;
+    if (currentYear === 2026) {
+        isSpringBreak = (currentMonth === 2 && currentDay >= 14 && currentDay <= 23);
+    } else if (currentYear === 2027) {
+        isSpringBreak = (currentMonth === 2 && currentDay >= 11 && currentDay <= 19);
+    } else {
+        isSpringBreak = (currentMonth === 2 && currentDay >= 10 && currentDay <= 23);
+    }
+    
+    // Early return conditions only apply when NOT in spring break
+    if (!isSpringBreak) {
+        if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
+        if (hour < 3 || hour >= 6) return;
+    }
+    
+    // Determine knight mover hours based on spring break setting and period
+    let knightMoverStartHour, knightMoverEndHour;
+    if (settings['toggle-spring-break-hours'] && isSpringBreak) {
+        knightMoverStartHour = 12; // 12 PM - 7 AM (next day) during spring break
+        knightMoverEndHour = 10;   // 10 AM
+    } else {
+        knightMoverStartHour = 8;  // 8 AM - 11 PM (normal hours)
+        knightMoverEndHour = 23;   // 11 PM
+    }
+    
+    if (hour < knightMoverStartHour || hour >= knightMoverEndHour) return;
 }
 
 function makeActiveRoutes() {
@@ -1180,7 +1212,6 @@ async function fetchETAs() {
         markRubusRequestsFailing();
 
         $('.notif-popup').text('RUBus/Passio servers are experiencing issues and ETAs could not be fetched. Accurate, live bus positioning is still available.').fadeIn();
-
     }
 
     try {
