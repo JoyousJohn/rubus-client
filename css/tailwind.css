@@ -373,6 +373,8 @@
 
 .gap-y-0p5rem { row-gap: 0.5rem; }
 
+.gap-y-0p75rem { row-gap: 0.75rem; }
+
 .gap-y-1rem { row-gap: 1rem; }
 
 .no-wrap { text-wrap: nowrap; }

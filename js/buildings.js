@@ -351,6 +351,11 @@ function loadBuildings() {
                         // Prevent event from bubbling to map click handler
                         L.DomEvent.stopPropagation(e);
 
+                        // Hide popups when any building/lot is selected
+                        setTimeout(() => {
+                            $('.knight-mover, .knight-mover-mini').hide();
+                        }, 0);
+
                         if (feature.properties && feature.properties.name) {
                             // Check if this is the same building that's already selected
                             const isSameBuilding = highlightedBuildingLayer &&

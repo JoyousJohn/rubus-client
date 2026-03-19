@@ -414,7 +414,7 @@
         </div>
 
         <div class="top-fixed fixed w-full" style="top: 0;">
-            <div class="flex flex-col" style="margin: 1rem 2rem;">
+            <div class="flex flex-col gap-y-0p75rem" style="margin: 1rem 2rem 0 2rem;">
 
                 <div class="flex align-center flex-col gap-y-1rem mb-1rem">
                     <div class="dev-build-popup arial none w-fit">ⓘ Developer build</div>
@@ -427,7 +427,7 @@
                     </div>
                 </div>
                 
-                <div class="knight-mover mb-1rem">
+                <div class="knight-mover">
                     <div class="center">ⓘ No buses in service</div>
                     <div class="flex justify-center mt-0p5rem mb-0p5rem">
                         <div class="flex gap-x-0p5rem align-center justify-center bg-ckm max-content px-1rem py-0p5rem br-0p5rem" onclick="window.location.href='tel:7329327433'">
@@ -440,7 +440,7 @@
 
                 <div class="notif-popup"></div>
 
-                <div class="passio-messages mb-1rem">
+                <div class="passio-messages">
                     <div class="passio-messages-list flex flex-col gap-y-1rem">
                     </div>
                 </div>
@@ -452,8 +452,8 @@
                         <div class="favs flex flex-col gap-y-0p5rem w-max"></div>
                     </div>
 
-                    <div class="info-top-right flex flex-col gap-y-1rem align-end">
-                        <div class="install-pwa pointer none" onclick="$('.install-pwa-wrapper').show();">Install App ➜</div>
+                    <div class="info-top-right flex flex-col align-end">
+                        <div class="install-pwa pointer none mb-1rem" onclick="$('.install-pwa-wrapper').show();">Install App ➜</div>
                         <script> 
                         $(document).ready(function(){ if (!isDesktop && 'matchMedia' in window && !new URLSearchParams(window.location.search).has('bus')) {
                             if (!window.matchMedia('(display-mode: standalone)').matches) {
@@ -502,7 +502,7 @@
                         }}) 
                         </script>
                         <div class="passio-mini flex flex-col gap-y-1rem"></div>
-                        <div class="campus-switcher none">
+                        <div class="campus-switcher none my-1rem">
                             <div class="campus-toggle br-1rem">
                                 <div class="campus-toggle-btn pointer" data-campus="nb">NB</div>
                                 <div class="campus-toggle-btn pointer" data-campus="camden">CAM</div>
@@ -510,8 +510,8 @@
                             </div>
                         </div>
                         
-                        <div class="getting-location-popup none">LOCATING...</div>
-                        <div class="updating-buses none">UPDATING</div>
+                        <div class="getting-location-popup none mb-1rem">LOCATING...</div>
+                        <div class="updating-buses none mb-1rem">UPDATING</div>
                         <div class="slow-connection none">SLOW CONNECTION</div>
                     </div>
                 </div>
