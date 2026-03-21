@@ -942,12 +942,24 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
     checkMinRoutes();
 }
 
+/** Hour (0–23) and weekday (0=Sun … 6=Sat) in America/New_York — Knight Mover is Rutgers NB. */
+function getEasternHourAndDayOfWeek() {
+    const d = new Date();
+    const ny = { timeZone: 'America/New_York' };
+    const hour = parseInt(
+        new Intl.DateTimeFormat('en-US', { ...ny, hour: 'numeric', hour12: false }).format(d),
+        10
+    );
+    const weekdayShort = new Intl.DateTimeFormat('en-US', { ...ny, weekday: 'short' }).format(d);
+    const weekdayToNum = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    return { hour, dayOfWeek: weekdayToNum[weekdayShort] };
+}
+
 function checkMinRoutes() {
 
     console.log("Checking min routes")
 
-    const today = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-    const hour = new Date().getHours();
+    const { hour, dayOfWeek } = getEasternHourAndDayOfWeek();
     
     // Check if it's currently spring break period (March 14-23 for 2026, March 11-19 for 2027, March 10-23 for other years)
     const currentDate = new Date();
@@ -967,31 +979,36 @@ function checkMinRoutes() {
     
     // Early return conditions only apply when NOT in spring break
     if (!isSpringBreak) {
-        if (today === 5 || today === 6 || today === 0) return; // fri, sat, sun, no knight mover, don't check
-        if (hour < 3 || hour >= 6) return;
+        // Fri–Sun: no Knight Mover
+        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) {
+            $('.knight-mover, .knight-mover-mini').hide();
+            return;
+        }
+        // Mon–Thu overnight window only (3:00–5:59 AM ET); outside that, hide and skip
+        if (hour < 3 || hour >= 6) {
+            $('.knight-mover, .knight-mover-mini').hide();
+            return;
+        }
     } else {
-        $('.knight-mover').show();
         console.log("Spring break detected!")
     }
     
     // Determine knight mover hours based on spring break setting and period
-    let knightMoverStartHour, knightMoverEndHour;
     if (isSpringBreak) {
-        knightMoverStartHour = 12; // 12 PM - 7 AM (next day) during spring break
-        knightMoverEndHour = 10;   // 10 AM
         const knightMoverHoursText = `Knight Mover accepts calls until 10:00AM<br><span style="color: #4babd7ff">(${currentYear} spring recess special hours)</span>`;
         $('#knight-mover-hours').html(knightMoverHoursText);
-    } else {
-        knightMoverStartHour = 8;  // 8 AM - 11 PM (normal hours)
-        knightMoverEndHour = 23;   // 11 PM
-    }
-    
-    if (hour < knightMoverStartHour || hour >= knightMoverEndHour) {
-        return;
-    } else {
+        const knightMoverStartHour = 12;
+        const knightMoverEndHour = 10;
+        if (hour < knightMoverStartHour || hour >= knightMoverEndHour) {
+            $('.knight-mover, .knight-mover-mini').hide();
+            return;
+        }
         $('.knight-mover').show();
-    };
-    
+    } else {
+        $('#knight-mover-hours').html('Knight Mover accepts calls until 5:45AM');
+        // Mon–Thu 3–6 AM ET already enforced above; do not use the old 8 AM–11 PM gate — it made min-route logic unreachable at 3–5 AM
+    }
+
     if (selectedCampus !== 'nb') return;
     if (appStyle === 'rider') return;    
     // Check if search wrapper is fully faded out (opacity 0) before showing knight mover
@@ -1030,7 +1047,7 @@ function checkMinRoutes() {
     }
 
     const excludeRoutes = ['on1', 'on2'];
-    const isWeekend = new Date(today).getDay() === 0 || new Date(today).getDay() === 6;
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     if (isWeekend) {
         excludeRoutes.push('wknd1', 'wknd2');
     }
