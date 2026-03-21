@@ -1244,7 +1244,8 @@ html, body {
 
 .settings-panel {
     /* height: 100vh; */
-    background-color: #f4f4f4;
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
     display: none;
     font-family: var(--font-family);
     padding: 2rem;
@@ -1254,26 +1255,40 @@ html, body {
     overflow-y: scroll;
 }
 
+html[theme="light"] .settings-panel {
+    background-color: #f4f4f4;
+}
+
+.settings-section-accent {
+    border-left: 2px solid var(--theme-line-bg);
+}
+
+.settings-font-grid-spacer {
+    background-color: var(--theme-line-bg);
+}
+
 .settings-main-heading {
-    /* color: black; */
     font-size: 1.8rem;
-    /* font-weight: bold; */
 }
 
 .settings-heading {
     font-size: 1.5rem;
     margin-left: 0.5rem;
     margin-bottom: 0.2rem;
-    color: gray;
-    /* user-select: none; */
+    color: var(--theme-extra);
+}
+
+[theme="dark"] .settings-panel .settings-heading {
+    color: rgb(169 169 169);
 }
 
 .settings-options {
     border-radius: 0.5rem;
-    border: 1px solid rgb(185, 185, 185);
+    /* Clip option cell backgrounds (e.g. .settings-selected) to the rounded rect */
+    overflow: hidden;
+    border: 1px solid var(--theme-line-bg);
     font-size: 1.8rem;
-    background-color: white;
-    /* text-align: center; */
+    background-color: var(--theme-bg-closest-stop);
     user-select: none;
 }
 
@@ -1285,7 +1300,7 @@ html, body {
 }
 
 .marker-option-cell {
-    border-bottom: 1px solid rgb(185, 185, 185);
+    border-bottom: 1px solid var(--theme-line-bg);
 }
 
 .marker-option-cell:nth-child(n+3) {
@@ -1293,7 +1308,7 @@ html, body {
 }
 
 .marker-option-cell:nth-child(even) {
-    border-left: 1px solid rgb(185, 185, 185);
+    border-left: 1px solid var(--theme-line-bg);
 }
 
 .settings-option {
@@ -1301,12 +1316,21 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    color: rgb(54, 54, 54);
+    color: var(--theme-color);
     cursor: pointer;
 }
 
+/* Light: explicit white on option cells (parent .settings-options stays --theme-bg-closest-stop) */
+html[theme="light"] .settings-panel .settings-option:not(.settings-font-grid-spacer) {
+    background-color: #fff;
+}
+
+html[theme="light"] .settings-panel .settings-option.settings-selected:not(.settings-font-grid-spacer) {
+    background-color: rgb(210, 210, 255);
+}
+
 .marker-style-grid .settings-option {
-    border-bottom: 1px solid rgb(185, 185, 185);
+    border-bottom: 1px solid var(--theme-line-bg);
 }
 
 .marker-style-grid .settings-option:nth-child(odd) {
@@ -1326,28 +1350,40 @@ html, body {
 }
 
 .dev-settings-option:active {
-    background-color: rgb(210, 210, 255);
+    background-color: color-mix(in srgb, var(--theme-satellite-btn) 42%, var(--theme-bg-closest-stop));
 }
 
 .settings-selected {
-    background-color: rgb(210, 210, 255);
-    /* color: white; */
+    background-color: color-mix(in srgb, var(--theme-satellite-btn) 32%, var(--theme-bg-closest-stop));
 }
 
 .settings-option:not(:first-child) {
-    border-left: 1px solid rgb(185, 185, 185);
+    border-left: 1px solid var(--theme-line-bg);
 }
 
 .marker-style-grid .settings-option:not(:first-child) {
-    border-left: 1px solid rgb(185, 185, 185);
+    border-left: 1px solid var(--theme-line-bg);
+}
+
+/* Inline border colors on some font cells — align to theme */
+.settings-panel .settings-options .settings-option,
+.settings-panel .marker-style-grid .settings-option,
+.settings-panel .marker-option-cell {
+    border-color: var(--theme-line-bg) !important;
+}
+
+html[theme="light"] .settings-panel .settings-options .settings-option,
+html[theme="light"] .settings-panel .marker-style-grid .settings-option,
+html[theme="light"] .settings-panel .marker-option-cell {
+    border-color: rgb(185, 185, 185) !important;
+}
+
+html[theme="light"] .settings-panel .settings-options {
+    border: 1px solid rgb(185, 185, 185);
 }
 
 .marker-option-cell .settings-option:not(:first-child) {
     border-left: none;
-}
-
-.marker-option-cell:nth-child(even) {
-    border-left: 1px solid rgb(185, 185, 185);
 }
 
 .marker-style-inner-grid .settings-option:nth-child(2) {
@@ -1395,6 +1431,16 @@ html, body {
     font-style: italic;
     min-height: max-content;
     margin-left: 0.7rem;
+}
+
+.settings-panel .span-i {
+    background: var(--theme-line-bg);
+    color: var(--theme-color);
+}
+
+html[theme="light"] .settings-panel .span-i {
+    background: rgb(200, 200, 200);
+    color: white;
 }
 
 
@@ -1445,7 +1491,7 @@ html, body {
 }
 
 .marker > div {
-    background-color: white;
+    background-color: var(--theme-bus-icon-inner);
     border-radius: 50%;
     border: 2px solid black;
     aspect-ratio: 1;
@@ -1621,6 +1667,10 @@ html, body {
     transition: transform 0.3s;
 }
 
+[theme="dark"] .toggle-slider {
+    background-color: var(--theme-color-lighter);
+}
+
 .toggle-input:checked + .toggle-label {
     background-color: #4caf50;
 }
@@ -1629,12 +1679,22 @@ html, body {
     transform: translateX(26px); /* Move the slider when checked */
 }
 
+.settings-panel .toggle-label {
+    background-color: var(--theme-hidden-route-col);
+}
+
+.settings-panel .dimgray,
+.settings-panel .gray777777,
+.settings-panel .gray818181 {
+    color: var(--theme-extra) !important;
+}
+
 .settings-rubus {
     display: grid;
     grid-template-columns: 1fr 3fr;
     margin-top: 1rem;
     padding-top: 2rem;
-    border-top: 2px solid rgb(214, 214, 214);
+    border-top: 2px solid var(--theme-line-bg);
     column-gap: 0.5rem;
 }
 
@@ -1652,7 +1712,7 @@ html, body {
 .footer-selected {
     font-weight: bold;
     text-decoration: underline;
-    color: black;
+    color: var(--theme-color);
 }
 
 .rubus-ai {
