@@ -87,8 +87,10 @@ const observer = new MutationObserver(function(mutations) {
     });
 });
 
-// Start observing
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
+// Start observing once DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 });
