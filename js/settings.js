@@ -133,17 +133,6 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
-        case 'toggle-show-bus-name':
-            console.log(`Show Bus IDs is now ${isChecked ? 'ON' : 'OFF'}`);
-            settings['toggle-show-bus-name'] = isChecked;
-            showBusName = isChecked;
-            
-            if (showBusName && popupBusName) {
-                $('.info-name-mid').text(`${$('.info-name-mid').text()} (${popupBusName}) | `)
-            }
-
-            break;
-
         case 'toggle-show-bus-progress':
             settings['toggle-show-bus-progress'] = isChecked;
             break;
@@ -569,10 +558,6 @@ $(document).ready(function() {
         if (!showETAsInSeconds) {
             clearInterval(countdownInterval);
         }
-    }
-
-    if (settings['toggle-show-bus-name']) {
-        showBusName = settings['toggle-show-bus-name'];
     }
 
     if (settings['toggle-launch-fireworks-button']) {

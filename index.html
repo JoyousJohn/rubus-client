@@ -22,37 +22,39 @@
             // This is called when Simple Analytics is blocked by ad blockers
         };
         
+        let postLoadEventReady = false;
+        let saScriptReady = false;
         let postLoadEventCalled = false;
-        
+
         function callPostLoadEvent() {
-            if (!postLoadEventCalled) {
+            if (typeof postLoadEvent === 'function') {
+                postLoadEventReady = true;
+            }
+            if (postLoadEventReady && saScriptReady && !postLoadEventCalled) {
                 postLoadEventCalled = true;
                 postLoadEvent();
             }
         }
-        
+
         // Try to load Simple Analytics with proper callback handling
         const saScript = document.createElement('script');
         saScript.async = true;
         saScript.src = 'https://scripts.simpleanalyticscdn.com/latest.js';
         saScript.setAttribute('data-collect-dnt', 'true');
-        
+
         saScript.onload = function() {
-            // SA script loaded - check if the function was actually replaced
-            // Use a microtask to ensure SA has had time to replace our function
-            Promise.resolve().then(function() {
-                const isFallback = window.sa_event.toString().includes('Silent fallback');
-                if (!isFallback) {
-                    console.log('Simple Analytics loaded successfully');
-                } else {
-                    console.log('Simple Analytics script loaded but function not replaced - likely blocked');
-                }
-                callPostLoadEvent();
-            });
+            saScriptReady = true;
+            const isFallback = window.sa_event.toString().includes('Silent fallback');
+            if (!isFallback) {
+                console.log('Simple Analytics loaded successfully');
+            } else {
+                console.log('Simple Analytics script loaded but function not replaced - likely blocked');
+            }
+            callPostLoadEvent();
         };
-        
+
         saScript.onerror = function() {
-            // SA failed to load (blocked by ad blocker)
+            saScriptReady = true;
             console.log('Simple Analytics blocked or failed to load, using fallback');
             callPostLoadEvent();
         };
@@ -1491,16 +1493,7 @@
                         </div>
                     </div>
 
-                    <div class="settings- flex justify-between">
-                        <div class="settings-heading">Show bus IDs</div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-show-bus-name" class="toggle-input">
-                            <label for="toggle-show-bus-name" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
+                    
                     <div class="settings- flex justify-between">
                         <div class="settings-heading">Show bus progress to next stop</div>
                         <div class="settings-toggle">

@@ -16,7 +16,6 @@ let shouldSetMaxBoundsAfterDrag = false;
 
 // settings vars
 let showETAsInSeconds = false;
-let showBusName = false;
 
 let isDesktop;
 let tileLayer;
@@ -288,6 +287,8 @@ function postLoadEvent() {
         'date': new Date()
     });
 }
+
+callPostLoadEvent();
 
 function flyToWithCallback(center, zoom, callback) {
     const onMoveEnd = () => {
@@ -1937,9 +1938,6 @@ function popInfo(busName, resetCampusFontSize) {
     }
     
     let busNameElmText = data.busName
-    if (showBusName) {
-        busNameElmText += ' (' + busName + ')'
-    }
     
     if (resetCampusFontSize === true) {
         $('.info-campuses-mid').css('font-size', '2.5rem');

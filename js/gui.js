@@ -1748,7 +1748,6 @@ const toggleSettings = [
     'toggle-show-stop-polygons',
     'toggle-show-dev-options',
     'toggle-show-etas-in-seconds',
-    'toggle-show-bus-name',
     'toggle-show-bus-progress',
     'toggle-show-bus-overtime-timer',
     'toggle-show-bus-names',
@@ -1841,7 +1840,6 @@ let defaultSettings = {
     'toggle-pause-passio-polling': false,
     'toggle-show-stop-polygons': false,
     'toggle-show-dev-options': false,
-    'toggle-show-bus-name': false,
     'toggle-show-bus-progress': false,
     'toggle-show-bus-overtime-timer': false,
     'toggle-show-bus-names': false,
@@ -1890,7 +1888,6 @@ function setDefaultSettings () {
 }
 
 function updateSettings() {
-    console.log('updating settings')
     settings = localStorage.getItem('settings');
     // console.log(settings)
     if (settings) {
