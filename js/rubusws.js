@@ -73,7 +73,7 @@ let busETAs = {}
 let socket = null;
 
 function updateETAs(etasData) {
-    etas = etasData[selectedCampus];
+    etas = etasData[selectedCampus] || {};
     // console.log(etas)
 }
 
