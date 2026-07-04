@@ -1,27 +1,27 @@
 let favBuses = JSON.parse(localStorage.getItem('favs')) || [];
 
 $('.bus-star').click(function() {
-    const currentBusId = parseInt(popupBusId); // don't know why I need to parse sometimes
+    const currentBusName = popupBusName; // don't know why I need to parse sometimes
 
-    if (!favBuses.includes(currentBusId)) {
+    if (!favBuses.includes(currentBusName)) {
 
         console.log('hmm')
 
-        favBuses.push(parseInt(currentBusId)); 
+        favBuses.push(currentBusName); 
         $(this).find('i').css('color', 'gold').removeClass('icon-star').addClass('icon-star-solid')
-        const $thisFav = $(`<div class="br-1rem" data-fav-id="${currentBusId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[currentBusId].route]}">${busData[currentBusId].route.toUpperCase()}</span>${busData[currentBusId].busName}</div>`)
+        const $thisFav = $(`<div class="br-1rem" data-fav-name="${currentBusName}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[currentBusName].route]}">${busData[currentBusName].route.toUpperCase()}</span>${busData[currentBusName].busName}</div>`)
         $thisFav.click(function() {
-            if (busData[currentBusId]) {
-                const favRoute = busData[currentBusId].route;
+            if (busData[currentBusName]) {
+                const favRoute = busData[currentBusName].route;
                 if (shownRoute && shownRoute !== favRoute) {
                     toggleRoute(favRoute);
                 }
-                flyToBus(currentBusId);
+                flyToBus(currentBusName);
             }
         })
         $('.favs').append($thisFav)
 
-        busMarkers[currentBusId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+        busMarkers[currentBusName].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
 
         if (shownRoute) {
             const previousShownRoute = JSON.parse(JSON.stringify(shownRoute));
@@ -37,10 +37,10 @@ $('.bus-star').click(function() {
 
         console.log('hmm2')
 
-        favBuses = favBuses.filter(busId => busId !== currentBusId);
+        favBuses = favBuses.filter(busName => busName !== currentBusName);
         $(this).find('i').css('color', 'var(--theme-color)').removeClass('icon-star-solid').addClass('icon-star')
-        $(`div[data-fav-id="${currentBusId}"]`).remove();
-        busMarkers[currentBusId].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'var(--theme-bus-icon-inner)';
+        $(`div[data-fav-name="${currentBusName}"]`).remove();
+        busMarkers[currentBusName].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'var(--theme-bus-icon-inner)';
     
         if ($('.favs > div').length === 0) {
             if (shownRoute) {
@@ -58,10 +58,10 @@ $('.bus-star').click(function() {
         }
 
         let favRoutes = new Set([]);
-        favBuses.forEach(favId => {
-            if (busData[favId]) {
+        favBuses.forEach(favName => {
+            if (busData[favName]) {
                 // Only include favorites from the current campus
-                const favRoute = busData[favId].route;
+                const favRoute = busData[favName].route;
                 const favCampus = routesByCampus[favRoute];
                 if (favCampus === selectedCampus) {
                     favRoutes.add(favRoute);
@@ -73,7 +73,7 @@ $('.bus-star').click(function() {
         console.log(favRoutes)
 
         if (shownRoute && shownRoute === 'fav') {
-            busMarkers[currentBusId].getElement().style.display = 'none';
+            busMarkers[currentBusName].getElement().style.display = 'none';
             
             hideInfoBoxes();
             
@@ -92,9 +92,9 @@ $('.bus-star').click(function() {
                 }
             }
             for (const marker in busMarkers) {
-                const busId = parseInt(marker);
-                const isFav = favBuses.includes(busId);
-                const isCurrentCampus = routesByCampus[busData[busId].route] === selectedCampus;
+                const busName = marker;
+                const isFav = favBuses.includes(busName);
+                const isCurrentCampus = routesByCampus[busData[busName].route] === selectedCampus;
                 
                 if (!isFav || !isCurrentCampus) {
                     busMarkers[marker].getElement().style.display = 'none';
@@ -136,11 +136,11 @@ $('.bus-star').click(function() {
             map.fitBounds(polylineBounds);
             $('.favs').show();
             $('.bus-info-popup').hide();
-            const rotationElement = getMarkerRotationElement(busMarkers[popupBusId]);
+            const rotationElement = getMarkerRotationElement(busMarkers[popupBusName]);
             if (rotationElement) {
                 rotationElement.style.boxShadow = '';
             }
-            popupBusId = null;
+            popupBusName = null;
             showAllPolylines();
             $('[stop-eta]').hide();            
         }
@@ -153,28 +153,28 @@ async function populateFavs(popSelectors = true) {
 
     $('.favs').empty();
 
-    favBuses.forEach(favId => {
-        if (busData[favId]) { // RACE CONDITION SOMEWHERE!!!
+    favBuses.forEach(favName => {
+        if (busData[favName]) { // RACE CONDITION SOMEWHERE!!!
             
             // Only show favorites that belong to the current campus
-            const favRoute = busData[favId].route;
+            const favRoute = busData[favName].route;
             const favCampus = routesByCampus[favRoute];
             if (favCampus !== selectedCampus) {
                 return; // Skip this favorite as it doesn't belong to current campus
             }
 
-            // console.log(`${favId} in `)
-            // console.log(busData[favId])
-            // console.log(busMarkers[favId])
+            // console.log(`${favName} in `)
+            // console.log(busData[favName])
+            // console.log(busMarkers[favName])
 
-            const $thisFav = $(`<div class="br-1rem" data-fav-id="${favId}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[favId].route]}">${busData[favId].route.toUpperCase()}</span>${busData[favId].busName}</div>`)
+            const $thisFav = $(`<div class="br-1rem" data-fav-name="${favName}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[favName].route]}">${busData[favName].route.toUpperCase()}</span>${busData[favName].busName}</div>`)
             $thisFav.click(function() {
-                if (busData[favId]) {
-                    const favRoute = busData[favId].route;
+                if (busData[favName]) {
+                    const favRoute = busData[favName].route;
                     if (shownRoute && shownRoute !== favRoute) {
                         toggleRoute(favRoute);
                     }
-                    flyToBus(favId);
+                    flyToBus(favName);
                 }
             })
             $('.favs').append($thisFav)
@@ -182,9 +182,9 @@ async function populateFavs(popSelectors = true) {
             setTimeout(() => {
 
                 // console.log(Object.keys(busMarkers))
-                // console.log(favId.toString())
+                // console.log(favName.toString())
 
-                busMarkers[favId.toString()].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+                busMarkers[favName.toString()].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
             }, 0);
 
         }
@@ -204,13 +204,13 @@ function toggleFavorites() {
 
     if (shownRoute === 'fav') {
 
-        hideInfoBoxes(); // or just hide the bus info box and set popupBusId to undefined
+        hideInfoBoxes(); // or just hide the bus info box and set popupBusName to undefined
 
         let favRoutes = new Set([]);
-        favBuses.forEach(busId => {
-            if (busData[busId]) {
+        favBuses.forEach(busName => {
+            if (busData[busName]) {
                 // Only include favorites from the current campus
-                const favRoute = busData[busId].route;
+                const favRoute = busData[busName].route;
                 const favCampus = routesByCampus[favRoute];
                 if (favCampus === selectedCampus) {
                     favRoutes.add(favRoute);
@@ -233,9 +233,9 @@ function toggleFavorites() {
             }
         }
         for (const marker in busMarkers) {
-            const busId = parseInt(marker);
-            const isFav = favBuses.includes(busId);
-            const isCurrentCampus = routesByCampus[busData[busId].route] === selectedCampus; // don't think we need busData[busId] && 
+            const busName = marker;
+            const isFav = favBuses.includes(busName);
+            const isCurrentCampus = routesByCampus[busData[busName].route] === selectedCampus; // don't think we need busData[busName] && 
             
             if (!isFav || !isCurrentCampus) {
                 busMarkers[marker].getElement().style.display = 'none';

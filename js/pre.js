@@ -1,102 +1,4 @@
-const routeMapping = {
-    '26280': 'on1',
-    '26281': 'on2',
-    '26435': 'wknd1',
-    '26436': 'wknd2',
-    '43397': 'bhe',
-    '43398': 'lx',
-    '43430': 'a',
-    '43431': 'ee',
-    '43440': 'h',
-    '43441': 'rexl',
-    '43711': 'rexb',
-    '43973': 'b',
-    '45773': 'f', // used to be 43974
-    '43990': 'ftbl', // 'Football Before Kickoff'
-    'Football Service Transition': 'ftbl',
-    '43991': 'ftbl',
-    '4067': 'c',
-    '37199': 'all',
-    'ONWK1T': 'on1',
-    'ONWK2T': 'on2',
-
-    '46583': 'winter1',
-    '46584': 'winter2',
-
-    // new route Ids
-    '36875': 'rexb',
-    '36874': 'lx',
-    '36873': 'h',
-    '31970': 'ee',
-    '31961': 'b',
-    '31651': 'f',
-    '31650': 'bhe',
-    '36877': 'rexl',
-    '31678': 'a',
-    '41540': 'c',
-
-    // new v2
-    '54550': 'rexb',
-    '54544': 'f',
-    '54545': 'lx',
-    '54541': 'b',
-    '54540': 'a',
-    '55368': 'h',
-    '59451': 'bl',
-    '54551': 'rexl',
-    '54543': 'ee',
-    '55366': 'c',
-
-    // exams (5/six+)
-    '55283': 'rexl',
-    '55277': 'b',
-    '55276': 'a',
-    '55281': 'lx',
-    '55282': 'rexb',
-    '55280': 'f',
-    '55369': 'h',
-    '55279': 'ee',
-    '55367': 'c',
-    '61741': 'bl',
-    
-    // summer (5/15)
-    '41752': 'summer1',
-    '44051': 'summer2',
-
-    // commencement (5/18)
-    '62409': 'commencement',
-
-    '4056': 'ps',
-    '4063': 'cc',
-    '4088': 'ccx',
-    '4098': 'psx',
-    '41231': 'cam',
-}
-
-
-// maybe filter by selected route instead
-const excludedRouteMappings = {
-    // '4056': 'Penn Station Local',
-    // '4063': 'Campus Connect',
-    // '4088': 'Campus Connect Express',
-    // '41231': 'Camden',
-    // '4098': 'Penn Station Express'
-};
-
-function getRouteStr(route) {
-    // console.log(route)
-    if (route in routeMapping) {
-        return [routeMapping[route], true];
-    } else {
-        let alphaRouteId = route.replace(/[^a-zA-Z]/g, '').toLowerCase();
-        // console.log(alphaRouteId)
-        if (knownRoutes.includes(alphaRouteId)) {
-            return [alphaRouteId, true];
-        } else {
-            return [route, false]; // unknown route
-        }
-    }     
-}
+const excludedRouteMappings = {};
 
 let passioDown = false;
 
@@ -105,10 +7,10 @@ async function immediatelyUpdateBusDataPre() {
 
     $('.updating-buses').fadeIn();
 
-    for (const busId in busData) {
-        if (routesByCampus[busData[busId].route] !== selectedCampus) continue; // bc marker only created if selected campus. cna also just check if marker exists like i have commented out below, but i must've previously added that check and removed it to have my code fail fast... possible race condition back then somewhere? maybe when a marker created back on visibility change?
-        // if (busMarkers[busId]) {
-            const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+    for (const busName in busData) {
+        if (routesByCampus[busData[busName].route] !== selectedCampus) continue; // bc marker only created if selected campus. cna also just check if marker exists like i have commented out below, but i must've previously added that check and removed it to have my code fail fast... possible race condition back then somewhere? maybe when a marker created back on visibility change?
+        // if (busMarkers[busName]) {
+            const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
             if (iconElement) {
                 iconElement.style.backgroundColor = 'gray';
             }
@@ -139,13 +41,10 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     if (busFetchInProgress) return;
     busFetchInProgress = true;
 
-    // const formData = '{"s0":"1268","sA":1,"rA":15,"r0":"41231","r1":"4067","r2":"43711","r3":"43431","r4":"43440","r5":"43441","r6":"43398","r7":"43991","r8":"43990","r9":"43973","r10":"43397","r11":"4088","r12":"4063","r13":"4056","r14":"4098", "r15": "-1"}'
-    const formData = '{"s0":"1268","sA":1}';
-    const url = `https://passiogo.com/mapGetData.php?getBuses=1&wTransloc=1&hideExcluded=0&showBusInOos=1&showBusesExcluded=1&json=${encodeURIComponent(formData)}`;
+    const url = 'https://demo.rubus.live/buses';
 
     const currentTime = new Date().getTime();
     const timeSinceLastPoll = currentTime - lastPollTime;
-    // console.log(timeSinceLastPoll)
 
     // Determine if we should force immediate update
     // Priority: explicit caller flag > forced resume flag > long gap since last update > setting toggle
@@ -173,15 +72,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             $('.slow-connection').slideDown();
         }, 3000);
         const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Origin': 'https://rutgers.passiogo.com',
-                'Referer': 'https://rutgers.passiogo.com/',
-                'Connection': 'keep-alive'
-            }
+            method: 'GET'
         });
         clearTimeout(slowConnectionTimeout);
         $('.slow-connection').slideUp();
@@ -194,13 +85,11 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
         const data = await response.json();
 
-        if (sim) return; // don't allow race cconditions of simming before fetch completed
-        // console.log('Response data:', data);
-
+        if (sim) return; // don't allow race conditions of simming before fetch completed
 
         if (!data || data.error) {
             $('.notif-popup').html(
-                `Passio servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Passio is reporting: ${data.error}` +
+                `RUBus servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Error: ${data.error}` +
                 `<br><br><span class="notif-close-btn" style="color:rgb(138, 193, 248); cursor: pointer; display: inline-block; pointer-events: all;">Close</span>`
             ).fadeIn();
             $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
@@ -219,85 +108,76 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         let activeBuses = [];
         let pollActiveRoutes = new Set();
 
-        for (const someId in data.buses) {
+        for (const busName in data) {
 
-            if (someId === '-1') continue;
+            const bus = data[busName];
 
-            const bus = data.buses[someId][0];
-
-            if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
+            if (Object.keys(excludedRouteMappings).includes(bus.route)) {
                 continue;
             }
 
-            const [routeStr, isKnown] = getRouteStr(bus.routeId);
-
-            // console.log(routeStr)
+            const routeStr = bus.route;
+            const isKnown = knownRoutes.includes(routeStr);
 
             if (routesByCampus[routeStr] !== selectedCampus) {
-                // console.log(`Bus ${bus.busName} (${routeStr}) is not in ${selectedCampus}`)
                 continue;
-
             }
-
-            const busId = bus.busId;
-            activeBuses.push(busId);
+            activeBuses.push(busName);
 
             let isNew = false;
 
-            if (!busData[busId]) {
-                console.log(`New bus in API: ${bus.busName} (${busId}) (${routeStr})`)
-                busData[busId] = {};
-                busData[busId].previousTime = new Date().getTime() - 5000;
-                busData[busId].previousPositions = [[parseFloat(bus.latitude), parseFloat(bus.longitude)]];
+            if (!busData[busName]) {
+                console.log(`New bus in API: ${busName} (${routeStr})`)
+                busData[busName] = {};
+                busData[busName].previousTime = new Date().getTime() - 5000;
+                busData[busName].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]];
                 populateMeClosestStops();
-                busData[busId].route = routeStr;
-                busData[busId]['type'] = 'api';
-                busData[busId]['campus'] = routesByCampus[routeStr];
+                busData[busName].route = routeStr;
+                busData[busName]['type'] = 'api';
+                busData[busName]['campus'] = routesByCampus[routeStr];
 
-                if (joined_service[busId]) {
-                    busData[busId].joined_service = joined_service[busId];
+                if (joined_service[busName]) {
+                    busData[busName].joined_service = joined_service[busName];
                 } else {
-                    busData[busId].joined_service = new Date();
+                    busData[busName].joined_service = new Date();
                 }
 
                 // All stops are shown so no buses, and if this is the first bus, we need to hide all stops first before showing stops for this route
                 if (Object.keys(busData).length === 1) {
                     console.log("Is first bus, deleting all stops")
-                    makeBusesByRoutes(); // need to make this before adddStopsToMap triggers below. ik this works for going from no buses to one bus, need to test more complex situations... no sure which
+                    makeBusesByRoutes();
                     deleteAllStops();
                     console.log(busStopMarkers)
                 }
 
-
                 if (!isInitial) {
                     addStopsToMap();
-                    updateTimeToStops([busId]); // otherwise can briefly get undefined when reading ETA for this bus. Found this when selecting route selector and I think the tooltip code failed to read (gui line 295 at the time)
+                    updateTimeToStops([busName]);
                 }
 
-                busData[busId].busName = bus.busName;
+                busData[busName].busName = busName;
                 await populateFavs();
 
                 isNew = true;
 
             } else {
-                if (busData[busId].route !== routeStr) { // Route changed for existing bus...
-                    const oldRoute = busData[busId].route;
-                    console.log(`[ROUTE CHANGE] Bus ${busData[busId].busName} (${busId}) changed routes: ${oldRoute} → ${routeStr}`);
-                    busData[busId]['route_change'] = {
+                if (busData[busName].route !== routeStr) { // Route changed for existing bus...
+                    const oldRoute = busData[busName].route;
+                    console.log(`[ROUTE CHANGE] Bus ${busName} changed routes: ${oldRoute} → ${routeStr}`);
+                    busData[busName]['route_change'] = {
                         'old_route': oldRoute,
                         'route_change_time': new Date(),
                     };
 
-                    // Clear stale ETAs when route changes to prevent type mismatches - only affects non special buses switching to special route (on/wknd #1) routes. pre.js:782 Error fetching bus locations: TypeError: Cannot set properties of undefined (setting '16') at pre.js:702:73 at Array.forEach (<anonymous>) at updateTimeToStops (pre.js:546:12) at fetchWhere (pre.js:766:9) at async immediatelyUpdateBusDataPre (pre.js:121:5)
-                    delete busETAs[busId];
-                    busData[busId].route = routeStr;
+                    delete busETAs[busName];
+                    busData[busName].route = routeStr;
                     
-                    updateTimeToStops([busId]);
+                    updateTimeToStops([busName]);
 
                     try {
-                        const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+                        const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
                         if (iconElement) {
-                            iconElement.style.backgroundColor = colorMappings[routeStr]; // somehow got  busMarkers[busId] is undefined... how was busId in busData but not busMarkers? don't understand...
+                            iconElement.style.backgroundColor = colorMappings[routeStr];
                         }
                     } catch (error) {
                         console.log('Error accessing busMarkers:', error)
@@ -311,10 +191,8 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                         console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
                         logPolylineRemoval(oldRoute, 'fetchBusData-routeChange');
                         console.log('Polylines on map before remove:', map.hasLayer(polylines[oldRoute]));
-                            polylines[oldRoute].remove();
-                            console.log('Polylines on map after remove:', map.hasLayer(polylines[oldRoute]));
-                        // $(`.route-selector[routename="${route}"]`).remove(); // not sure if i need this or if it's triggered elsewhere
-                        // checkMinRoutes(); // also unsure if i need this
+                        polylines[oldRoute].remove();
+                        console.log('Polylines on map after remove:', map.hasLayer(polylines[oldRoute]));
                         updatePolylineBoundsIfNeeded();
 
                         if (shownRoute && shownRoute === oldRoute) {
@@ -329,149 +207,120 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 }
             }
 
-            busData[busId].lat = bus.latitude;
-            busData[busId].long = bus.longitude;
+            busData[busName].lat = bus.lat;
+            busData[busName].long = bus.lng;
 
-            // Log position update source
-            // console.log(`[API Polling] Bus ${busId} position update: ${bus.latitude}, ${bus.longitude}`);
-
-            // getting undefined on previousPositions, but it should be set from both above in pre where new bus and in ws where new bus, so I added a type key to debug this.
-            // maybe limit ws to on/none? maybe getting long lat when setting it there is failing? don't think I've ever seen it without coords
-            
             let lastPosition;
             try {
-                lastPosition = busData[busId].previousPositions[busData[busId].previousPositions.length - 1]; // gett
+                lastPosition = busData[busName].previousPositions[busData[busName].previousPositions.length - 1];
             } catch (error) {
                 console.log('Error accessing previous positions array:', error)
-                console.log(busData[busId])
+                console.log(busData[busName])
             }
 
-            if (lastPosition && lastPosition[0] !== parseFloat(bus.latitude) && lastPosition[1] !== parseFloat(bus.longitude)) {
+            if (lastPosition && lastPosition[0] !== parseFloat(bus.lat) && lastPosition[1] !== parseFloat(bus.lng)) {
                 const currentTime = new Date().getTime();
-                const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
-                // Cap to 30s to prevent extremely long animations after app resume
+                const timeSinceLastUpdate = currentTime - (busData[busName].previousTime || currentTime);
                 const animationDuration = Math.min(timeSinceLastUpdate, 30000) + 2500;
 
-                // Store the calculated duration for consistent animation timing
-                busData[busId].apiAnimationDuration = animationDuration;
-
-                // console.log(`[API Polling] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+                busData[busName].apiAnimationDuration = animationDuration;
                 
-                busData[busId].previousPositions.push([parseFloat(bus.latitude), parseFloat(bus.longitude)]);
-                // Update previousTime when position changes from API polling
-                // This ensures consistent animation timing based on regular polling intervals
-                busData[busId].previousTime = currentTime;
+                busData[busName].previousPositions.push([parseFloat(bus.lat), parseFloat(bus.lng)]);
+                busData[busName].previousTime = currentTime;
                 
-                // Update distance line position marker if this bus is focused
-                if (popupBusId === busId && settings['toggle-distances-line-on-focus']) {
-                    updateDistanceLinePositionMarker(busId);
+                if (popupBusName === busName && settings['toggle-distances-line-on-focus']) {
+                    updateDistanceLinePositionMarker(busName);
                 }
             }
 
-            busData[busId].rotation = parseFloat(bus.calculatedCourse); //+ 45
+            busData[busName].rotation = parseFloat(bus.rotation);
 
-            busData[busId].isKnown = isKnown;
+            busData[busName].isKnown = isKnown;
 
-            busData[busId].capacity = bus.paxLoad;
+            busData[busName].capacity = bus.capacity;
 
-            busData[busId].oos = bus.outOfService === 1; 
+            busData[busName].oos = false;
 
-            busData[busId].atDepot = isAtDepot(bus.longitude, bus.latitude);
+            busData[busName].atDepot = isAtDepot(bus.lng, bus.lat);
 
-            if (routesByCampus[busData[busId].route] === selectedCampus) {
-                plotBus(busId, shouldImmediateUpdate);
+
+            if (routesByCampus[busData[busName].route] === selectedCampus) {
+
+                plotBus(busName, shouldImmediateUpdate);
                 if (shouldImmediateUpdate) {
-                    const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+                    const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
                     if (iconElement) {
                         iconElement.style.backgroundColor = colorMappings[routeStr];
                     }
                 }   
             }
 
-            calculateSpeed(busId);
+            calculateSpeed(busName);
 
-            // does the below need to go in the selected campus check above?
-            if (isNew && shownRoute && shownRoute !== routeStr) { // may have to timeout 0s this
-                busMarkers[busId].getElement().style.display = 'none';
+            if (isNew && shownRoute && shownRoute !== routeStr) {
+                busMarkers[busName].getElement().style.display = 'none';
             }
 
             if (isNew) {
                 $('.info-panels-btn-wrapper').show();
             }
 
-            makeBusesByRoutes(); // this has to go before updateTimeToStops since that calls populateAllStops which uses this. Not sure if moving this back up here broke something else though. Should find a better way to do the thing below.
+            makeBusesByRoutes();
 
-            // since fetchBusData is called once before etas and waits are fetched. Maybe find a better way to do this later.
             if (etas && Object.keys(etas).length > 0) {
-                updateTimeToStops([busId]);
+                updateTimeToStops([busName]);
             }
 
-            // Only consider routes that have at least one in-service bus
-            if (!busData[busId].oos) {
-                pollActiveRoutes.add(busData[busId].route);
+            if (!busData[busName].oos) {
+                pollActiveRoutes.add(busData[busName].route);
             }
-            // console.log('-')
-            // console.log(pollActiveRoutes)
-            // Try native difference method first, fallback to filter for older browsers
+
             let newRoutes;
             if (typeof pollActiveRoutes.difference === 'function') {
                 newRoutes = pollActiveRoutes.difference(activeRoutes);
             } else {
-                // Fallback for browsers that don't support Set.prototype.difference
                 newRoutes = new Set([...pollActiveRoutes].filter(route => !activeRoutes.has(route)));
             }
             if (newRoutes.size > 0) {
-                // console.log('newRoutes: ', newRoutes)
-                // console.log('activeRoutes: ' , activeRoutes)
                 if (!skipPolylineUpdateFromFetch) {
                     setPolylines(newRoutes);
                 }
                 newRoutes.forEach(item => activeRoutes.add(item))
-                populateRouteSelectors(activeRoutes); // this adds selectors for each route multiple times, maybe later improve by only adding the new routes instead of emptying and setting all <-- not sure this is still true
+                populateRouteSelectors(activeRoutes);
                 
-                // Update rider routes if in rider mode
                 if (appStyle === 'rider') {
                     updateRiderRoutes();
                 }
             }
  
-            if (busId === popupBusId) {
-                $('.info-capacity-mid').text(bus.paxLoad + '% capacity');
+            if (busName === popupBusName) {
+                $('.info-capacity-mid').text(bus.capacity + '% capacity');
             }
-
         }
 
         if (shouldImmediateUpdate) {
             immediatelyUpdateBusDataPost();
         }
 
-        // Mark the time of the last successful update and clear force flag
         lastUpdateTime = currentTime;
         localStorage.setItem('lastUpdateTime', lastUpdateTime.toString());
         forceImmediateUpdate = false;
 
-        updatePassioResponseTime();
+        updateRubusResponseTime();
 
-        // Server is responding successfully, hide notification popup and reset passioDown flag
         if (passioDown) {
             $('.notif-popup').slideUp();
             passioDown = false;
         }
 
-        // console.log('activeBuses', activeBuses)
-
-        // activeBuses = activeBuses.filter(num => num !== 13209);
-
-        for (const busId in busData) { 
-
-            // console.log(busData)
-            if (busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'on2') {
+        for (const busName in busData) { 
+            if (busData[busName]['route'] === 'on1' || busData[busName]['route'] === 'on2') {
                 continue;
             }
 
-            if (!activeBuses.includes(parseInt(busId))) {
-                console.log(`[Out of Service][${busData[busId].route}] Bus ${busData[busId].busName} is out of service`);
-                makeOoS(busId);
+            if (!activeBuses.includes(busName)) {
+                console.log(`[Out of Service][${busData[busName].route}] Bus ${busData[busName].busName} is out of service`);
+                makeOoS(busName);
             }
         }
 
@@ -489,11 +338,6 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 $('.knight-mover, .knight-mover-mini').hide();
             }
             checkMinRoutes();
-        } else {
-            // Only hide all-stops button if there are truly no buses at all (including overnight buses)
-            if (Object.keys(busData).length === 0) {
-                // $('.info-panels-btn-wrapper').hide();
-            }
         }
 
     } catch (error) {
@@ -503,22 +347,21 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     }
 }
 
-
-function makeOoS(busId) {
+function makeOoS(busName) {
     
-    console.log(`[Out of Service][${new Date().toLocaleString('en-US', {timeZone: 'America/New_York', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(',','')}] busId: ${busId}`)
+    console.log(`[Out of Service][${new Date().toLocaleString('en-US', {timeZone: 'America/New_York', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(',','')}] busName: ${busName}`)
 
-    if (busMarkers[busId]) { // investigate why this would occur
-        busMarkers[busId].remove();
+    if (busMarkers[busName]) { // investigate why this would occur
+        busMarkers[busName].remove();
     }
-    delete busMarkers[busId];
-    delete busETAs[busId];   
+    delete busMarkers[busName];
+    delete busETAs[busName];   
 
-    const route = busData[busId].route;
+    const route = busData[busName].route;
 
-    const busDataCopy = JSON.parse(JSON.stringify(busData[busId]));
+    const busDataCopy = JSON.parse(JSON.stringify(busData[busName]));
 
-    delete busData[busId];   
+    delete busData[busName];   
     console.log("makeOos() busesByRoutes before: ", busesByRoutes)
     console.log("busData before: ", busData)
     makeBusesByRoutes(); // need to delete from busData first since the func pops busesByRoutes from busData
@@ -561,19 +404,19 @@ function makeOoS(busId) {
 
     removePreviouslyActiveStops();
 
-    if (popupBusId === busId) {
+    if (popupBusName === busName) {
         console.log("Selected bus went OOS");
-        console.log(popupBusId);
-        console.log(busId);
-        console.log(sourceBusId);
+        console.log(popupBusName);
+        console.log(busName);
+        console.log(sourceBusName);
         hideInfoBoxes();
-        sourceBusId = null;
+        sourceBusName = null;
         // Distance line will be removed by hideInfoBoxes -> removeDistanceLineOnFocus
     }
 
-    if (sharedBus && sharedBus == busId) {
+    if (sharedBusName && sharedBusName == busName) {
         $('.shared, .info-shared').hide();
-        sharedBus = null;
+        sharedBusName = null;
     }
 
     populateMeClosestStops();
@@ -587,11 +430,11 @@ function makeOoS(busId) {
 }
 
 
-function updateTimeToStops(busIds) {
+function updateTimeToStops(busNames) {
     
-    busIds.forEach(busId => {
+    busNames.forEach(busName => {
         
-        const data = busData[busId]
+        const data = busData[busName]
         let stopId = data.stopId
 
         if (Array.isArray(stopId)) {
@@ -602,11 +445,11 @@ function updateTimeToStops(busIds) {
             return;
         }
 
-        const busRoute = busData[busId].route
+        const busRoute = busData[busName].route
         const isSpecialRoute = (busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1')
         const nextStop = getNextStopId(busRoute, stopId)
-        busData[busId].next_stop = nextStop
-        // console.log(`next stop for bus ${busId} is ${nextStop}`)
+        busData[busName].next_stop = nextStop
+        // console.log(`next stop for bus ${busName} is ${nextStop}`)
 
         let routeStops = stopLists[busRoute]
         // console.log(routeStops.length)
@@ -621,12 +464,12 @@ function updateTimeToStops(busIds) {
 
         if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1') && nextStop === 3) { // special case
 
-            if (!busData[busId]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
-                delete busETAs[busId]
+            if (!busData[busName]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
+                delete busETAs[busName]
                 return
             }
 
-            const prevStopId = busData[busId]['prevStopId']
+            const prevStopId = busData[busName]['prevStopId']
             via = prevStopId
             // console.log('special case')
             if (prevStopId === 2) {
@@ -649,7 +492,7 @@ function updateTimeToStops(busIds) {
         let currentETA = 0
 
         // console.log(' ')
-        // console.log(busId)
+        // console.log(busName)
         // console.log('sortedStops: ',sortedStops)
 
         for (let i = 0; i < sortedStops.length; i++) {
@@ -662,9 +505,9 @@ function updateTimeToStops(busIds) {
                 if (i === 0 && !data['at_stop']) {
                     prevStopId = sortedStops[sortedStops.length-1]
 
-                    progress = progressToNextStop(busId) // why does this trigger for arrived buses if at_stop is immediately set to true and progress reset to 0?
-                    busData[busId]['progress'] = progress
-                    // console.log(`Progress for busId ${busId} (name: ${busData[busId].busName}): ${Math.round(progress*100)}%`)
+                    progress = progressToNextStop(busName) // why does this trigger for arrived buses if at_stop is immediately set to true and progress reset to 0?
+                    busData[busName]['progress'] = progress
+                    // console.log(`Progress for busName ${busName} (name: ${busData[busName].busName}): ${Math.round(progress*100)}%`)
 
                 } else if (i === 0 && data['at_stop']) {
 
@@ -682,13 +525,13 @@ function updateTimeToStops(busIds) {
                             const expectedWaitAtStop = avgWaitAtStop - arrivedAgoSeconds
     
                             currentETA += expectedWaitAtStop;
-                            busData[busId]['overtime'] = false;
+                            busData[busName]['overtime'] = false;
                         } else {
-                            busData[busId]['overtime'] = true;
+                            busData[busName]['overtime'] = true;
     
-                            if (popupBusId === busId && !overtimeInterval && settings['toggle-show-bus-overtime-timer']) {
+                            if (popupBusName === busName && !overtimeInterval && settings['toggle-show-bus-overtime-timer']) {
                                 $('.bus-stopped-for .stop-octagon').show();
-                                startOvertimeCounter(busId);
+                                startOvertimeCounter(busName);
                             }
                         }
                     }  
@@ -702,10 +545,10 @@ function updateTimeToStops(busIds) {
                 // If the bus is at this stop, set ETA to 0
                 // if (data['at_stop'] && ((Array.isArray(data['stopId']) && thisStopId === data['stopId'][0]) || thisStopId === data['stopId'])) {
                 //     if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1') && thisStopId === 3) {
-                //         if (!busETAs[busId][thisStopId]) busETAs[busId][thisStopId] = {'via': {}}
-                //         busETAs[busId][thisStopId]['via'][prevStopId] = 0;
+                //         if (!busETAs[busName][thisStopId]) busETAs[busName][thisStopId] = {'via': {}}
+                //         busETAs[busName][thisStopId]['via'][prevStopId] = 0;
                 //     } else {
-                //         busETAs[busId][thisStopId] = 0;
+                //         busETAs[busName][thisStopId] = 0;
                 //     }
                 //     continue;
                 // }
@@ -734,34 +577,34 @@ function updateTimeToStops(busIds) {
                     currentETA += 30
                 }
 
-                if (!busETAs[busId]) {
-                    busETAs[busId] = {};
+                if (!busETAs[busName]) {
+                    busETAs[busName] = {};
                 }
 
                 // console.log(thisStopId)
 
                 if (isSpecialRoute && thisStopId === 3) { // special handling for SAC North
                     // Determine the approach leg for this occurrence of 3
-                    const approachPrev = (i === 0 && busData[busId] && busData[busId]['prevStopId']) ? busData[busId]['prevStopId'] : prevStopId;
+                    const approachPrev = (i === 0 && busData[busName] && busData[busName]['prevStopId']) ? busData[busName]['prevStopId'] : prevStopId;
                     if (approachPrev !== undefined) {
-                        if (!busETAs[busId][thisStopId]) busETAs[busId][thisStopId] = {'via': {}}
-                        busETAs[busId][thisStopId]['via'][approachPrev] = Math.round(currentETA)
+                        if (!busETAs[busName][thisStopId]) busETAs[busName][thisStopId] = {'via': {}}
+                        busETAs[busName][thisStopId]['via'][approachPrev] = Math.round(currentETA)
                     }
                     // Do not overwrite stop 3 with a numeric ETA on special routes
                 } else {
-                    busETAs[busId][thisStopId] = Math.round(currentETA)
+                    busETAs[busName][thisStopId] = Math.round(currentETA)
                 }
 
             }
         }
 
-        if (popupBusId === busId) {
-            popInfo(busId)
+        if (popupBusName === busName) {
+            popInfo(busName)
         }
 
     });
 
-    if (shownRoute && !popupBusId && !popupStopId) {
+    if (shownRoute && !popupBusName && !popupStopId) {
         updateTooltips(shownRoute);
     }
 }
@@ -779,46 +622,46 @@ async function fetchWhere() {
 
         updateRubusResponseTime();
 
-        const validBusIds = []
-        for (const busId in busLocations) {
+        const validBusNames = []
+        for (const busName in busLocations) {
 
-            // if (!(busId in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
+            // if (!(busName in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
             
-            if (!busData[busId]) {
+            if (!busData[busName]) {
                 continue;
-                // busData[busId] = {
-                //     'route': busLocations[busId]['route'],
+                // busData[busName] = {
+                //     'route': busLocations[busName]['route'],
                 //     'src_test': 'fetchWhere',
                 //     'previousPositions': [] // hope this is enough?
                 // } // may need to set previousPosition keys here
             }
             
-            if (!busLocations[busId]['where']) { continue; } // joined service and didn't get to a stop polygon yet        
+            if (!busLocations[busName]['where']) { continue; } // joined service and didn't get to a stop polygon yet        
             
-            busData[busId]['stopId'] = parseInt(busLocations[busId]['where'][0])
-            if (busLocations[busId]['where'].length === 2) {
-                busData[busId]['prevStopId'] = parseInt(busLocations[busId]['where'][1])  
+            busData[busName]['stopId'] = parseInt(busLocations[busName]['where'][0])
+            if (busLocations[busName]['where'].length === 2) {
+                busData[busName]['prevStopId'] = parseInt(busLocations[busName]['where'][1])  
             }
 
-            validBusIds.push(busId)
-            activeRoutes.add(busData[busId].route)
+            validBusNames.push(busName)
+            activeRoutes.add(busData[busName].route)
         }
 
-        // console.log(validBusIds)
-        Object.keys(busData).forEach(busId => {
-            if (!validBusIds.includes(busId) && busData[busId].route.includes('on')) { // this should only affect returning to the app which had overnight buses previously (from ws), otherwise it would briefly cause buses not yet reaching a stop to pop out before respawning from fetch data
-                makeOoS(busId)
+        // console.log(validBusNames)
+        Object.keys(busData).forEach(busName => {
+            if (!validBusNames.includes(busName) && busData[busName].route.includes('on')) { // this should only affect returning to the app which had overnight buses previously (from ws), otherwise it would briefly cause buses not yet reaching a stop to pop out before respawning from fetch data
+                makeOoS(busName)
             }
         })
 
-        updateTimeToStops(validBusIds)
+        updateTimeToStops(validBusNames)
         if (popupStopId) {
             // Preserve any active route filter in the stop info
             updateStopBuses(popupStopId)
         }
 
-        if (popupBusId) {
-            popInfo(popupBusId)
+        if (popupBusName) {
+            popInfo(popupBusName)
         }
 
         // Update all stops menu if info panels are open (after activeStops is created)
@@ -848,57 +691,49 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
             
             const previousActiveRoutes = new Set(activeRoutes);
             
-            for (const someId in data) {
+            for (const busName in data) {
     
-                const bus = data[someId];
+                const bus = data[busName];
     
-                if (Object.keys(excludedRouteMappings).includes(bus.routeId)) { // if passio changes ids and a new non-nb bus route id is added then getNextStop will fail bc route is not in stopLists. Implement better system later.
+                if (Object.keys(excludedRouteMappings).includes(bus.route)) {
                     continue;
                 }
     
-                const busId = bus.busId;
-    
-                if (!busData[busId]) {
-                    busData[busId] = {};
-                    busData[busId].previousTime = new Date().getTime() - 5000;
-                    busData[busId].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]];
-                    busData[busId]['type'] = 'over';
+                if (!busData[busName]) {
+                    busData[busName] = {};
+                    busData[busName].previousTime = new Date().getTime() - 5000;
+                    busData[busName].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]];
+                    busData[busName]['type'] = 'over';
                 }
     
-                busData[busId].busName = bus.name;
-                busData[busId].lat = bus.lat;
-                busData[busId].long = bus.long;
+                busData[busName].busName = busName;
+                busData[busName].lat = bus.lat;
+                busData[busName].long = bus.lng;
 
-                // Log position update source
-                // console.log(`[Overnight API] Bus ${busId} position update: ${bus.lat}, ${bus.lng}`);
-
-                // Update previousTime for overnight API updates to ensure proper animation timing
                 const currentTime = new Date().getTime();
-                const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
-                // Cap to 30s to prevent extremely long animations after app resume
+                const timeSinceLastUpdate = currentTime - (busData[busName].previousTime || currentTime);
                 const animationDuration = Math.min(timeSinceLastUpdate, 30000) + 2500;
 
-                // Store the calculated duration for consistent animation timing
-                busData[busId].overnightAnimationDuration = animationDuration;
+                busData[busName].overnightAnimationDuration = animationDuration;
 
-                console.log(`[Overnight API] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+                console.log(`[Overnight API] Bus ${busName}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
                 
-                busData[busId].previousTime = currentTime;
+                busData[busName].previousTime = currentTime;
     
-                busData[busId].rotation = parseFloat(bus.rotation);
+                busData[busName].rotation = parseFloat(bus.rotation);
     
-                const [routeStr, isKnown] = getRouteStr(bus.route);
-                busData[busId].route = routeStr;
-                busData[busId].isKnown = isKnown;
-                activeRoutes.add(busData[busId].route);
+                const routeStr = bus.route;
+                busData[busName].route = routeStr;
+                busData[busName].isKnown = knownRoutes.includes(routeStr);
+                activeRoutes.add(busData[busName].route);
 
-                busData[busId].capacity = bus.capacity;
+                busData[busName].capacity = bus.capacity;
     
-                plotBus(busId, immediatelyUpdate);
-                calculateSpeed(busId);
+                plotBus(busName, immediatelyUpdate);
+                calculateSpeed(busName);
 
                 if (setColorBack) {
-                    const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+                    const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
                     if (iconElement) {
                         iconElement.style.backgroundColor = colorMappings[routeStr];
                     }
@@ -906,10 +741,10 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
     
             }
 
-            for (const busId in busData) {
-                if (busData[busId].type === 'over' && !(busId in data)) { // I think all objects should have the type key set...
-                    console.log(`[startOvernight()][Out of Service][${busData[busId].route} Bus ${busData[busId].busName} is out of service?`);
-                    makeOoS(busId);
+            for (const busName in busData) {
+                if (busData[busName].type === 'over' && !(busName in data)) {
+                    console.log(`[startOvernight()][Out of Service][${busData[busName].route} Bus ${busData[busName].busName} is out of service?`);
+                    makeOoS(busName);
                 }
             }
 
@@ -919,40 +754,23 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
             const newActiveRoutes = new Set([...activeRoutes].filter(route => !previousActiveRoutes.has(route)));
             if (newActiveRoutes.size > 0) {
                 setPolylines(newActiveRoutes);
+                newActiveRoutes.forEach(item => activeRoutes.add(item));
+                updatePolylineBoundsIfNeeded();
             }
-
-            addStopsToMap();
-
-            // Show all-stops button if buses exist
-            if (Object.keys(busData).length > 0) {
-                $('.info-panels-btn-wrapper').show();
-            }
-
-            // console.log(activeRoutes)
-            // console.log(polylines)
-            // setPolylines(activeRoutes);
-            // console.log(polylines)
-            // populateRouteSelectors(activeRoutes); 
         }
     } catch (error) {
         console.error('Error fetching overnight data:', error);
-        markRubusRequestsFailing();
     }
-
-    checkMinRoutes();
 }
 
-/** Hour (0–23) and weekday (0=Sun … 6=Sat) in America/New_York — Knight Mover is Rutgers NB. */
 function getEasternHourAndDayOfWeek() {
-    const d = new Date();
-    const ny = { timeZone: 'America/New_York' };
-    const hour = parseInt(
-        new Intl.DateTimeFormat('en-US', { ...ny, hour: 'numeric', hour12: false }).format(d),
-        10
-    );
-    const weekdayShort = new Intl.DateTimeFormat('en-US', { ...ny, weekday: 'short' }).format(d);
-    const weekdayToNum = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-    return { hour, dayOfWeek: weekdayToNum[weekdayShort] };
+    const now = new Date();
+    const eastern = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const easternDate = new Date(eastern);
+    return {
+        hour: easternDate.getHours(),
+        dayOfWeek: easternDate.getDay()
+    };
 }
 
 function checkMinRoutes() {
@@ -1028,8 +846,8 @@ function checkMinRoutes() {
     minRoutes.forEach(route => {
         // remove busesByRoutes[selectedCampus] && later. we need to investigate whyitsnotgetting itscampuskeysettoan empty obj when no buses later.
         if (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) {
-            busesByRoutes[selectedCampus][route].forEach(busId => {
-                const valid = isValid(busId);
+            busesByRoutes[selectedCampus][route].forEach(busName => {
+                const valid = isValid(busName);
                 if (valid) {
                     isAnyBusActuallyInService = true;
                 }
@@ -1077,8 +895,8 @@ function checkMinRoutes() {
 
 function makeActiveRoutes() {
     activeRoutes.clear();
-    for (const busId in busData) {
-        const route = busData[busId].route;
+    for (const busName in busData) {
+        const route = busData[busName].route;
         if (route) activeRoutes.add(route);
     }
     populateRouteSelectors(activeRoutes); 
@@ -1212,9 +1030,9 @@ function getMessages() {
 
 
 function cancelAllAnimations() {
-    Object.keys(animationFrames).forEach(busId => {
-        cancelAnimationFrame(animationFrames[busId]);
-        delete animationFrames[busId];
+    Object.keys(animationFrames).forEach(busName => {
+        cancelAnimationFrame(animationFrames[busName]);
+        delete animationFrames[busName];
     });
   }
 
@@ -1246,7 +1064,7 @@ async function fetchETAs() {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        waits = data[selectedCampus];
+        waits = data[selectedCampus] || {};
         updateWaitTimes();
         // console.log('Waits fetched:', waits);
 
@@ -1356,8 +1174,8 @@ $(document).ready(async function() {
     
 
     function populateJoinedService() {
-        if (popupBusId) {
-            const serviceDate = new Date(joined_service[popupBusId]);
+        if (popupBusName) {
+            const serviceDate = new Date(joined_service[popupBusName]);
             const today = new Date();
             const isToday = serviceDate.getDate() === today.getDate() && 
                             serviceDate.getMonth() === today.getMonth() &&
@@ -1394,22 +1212,22 @@ $(document).ready(async function() {
 
         // Reset stale timing data for all buses to prevent incorrect animation durations
         const currentTime = new Date().getTime();
-        for (const busId in busData) {
-            if (busData[busId]) {
+        for (const busName in busData) {
+            if (busData[busName]) {
                 // Reset previousTime to current time to prevent long animation durations
-                busData[busId].previousTime = currentTime;
+                busData[busName].previousTime = currentTime;
 
                 // Reset previousPositions to current position to prevent stale Bézier curve calculations
-                if (busData[busId].lat !== undefined && busData[busId].long !== undefined) {
-                    busData[busId].previousPositions = [[busData[busId].lat, busData[busId].long]];
+                if (busData[busName].lat !== undefined && busData[busName].long !== undefined) {
+                    busData[busName].previousPositions = [[busData[busName].lat, busData[busName].long]];
                 }
 
                 // Clear any stale stored animation durations so they don't carry over
                 // to the next non-immediate update. The teleport (immediate) path in
                 // updateMarkerPosition returns early and never consumes these values.
-                delete busData[busId].apiAnimationDuration;
-                delete busData[busId].websocketAnimationDuration;
-                delete busData[busId].overnightAnimationDuration;
+                delete busData[busName].apiAnimationDuration;
+                delete busData[busName].websocketAnimationDuration;
+                delete busData[busName].overnightAnimationDuration;
             }
         }
 
@@ -1441,7 +1259,7 @@ $(document).ready(async function() {
 
     window.addEventListener('beforeunload', cancelAllAnimations);
 
-    getMessages();
+    // getMessages();
 
 })
 
@@ -1457,18 +1275,18 @@ function startBusPolling() {
 
 async function randomStepBusSpeeds() {
 
-    for (const busId in busData) {
-        if (!('visualSpeed' in busData[busId]) || busData[busId].visualSpeed < 5) continue
+    for (const busName in busData) {
+        if (!('visualSpeed' in busData[busName]) || busData[busName].visualSpeed < 5) continue
 
         const randChange = Math.random() < 0.5 ? -1 : 1;
-        busData[busId].visualSpeed += randChange;
-        if (popupBusId == busId && showBusSpeeds) {
-            $('.info-speed-mid').text(Math.round(busData[busId].visualSpeed));
+        busData[busName].visualSpeed += randChange;
+        if (popupBusName == busName && showBusSpeeds) {
+            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
             $('.info-mph-mid').text('MPH');
         }
 
-        if (panelRoute === busData[busId].route) {
-            $(`.route-bus-speed[bus-id="${busId}"]`).text(parseInt(busData[busId].visualSpeed) + 'mph | ' + busData[busId].capacity + '% full');
+        if (panelRoute === busData[busName].route) {
+            $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph | ' + busData[busName].capacity + '% full');
         }
     }
 }

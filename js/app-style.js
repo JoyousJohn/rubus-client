@@ -50,7 +50,7 @@ function setStopMarkersToRider() {
     });
 }
 
-function popRiderInfo(busId) {
+function popRiderInfo(busName) {
     
     // Handle concentric circle animation for selected bus marker
     if (selectedMarkerId && busMarkers[selectedMarkerId]) {
@@ -59,12 +59,12 @@ function popRiderInfo(busId) {
     }
     
     // Add animation to newly selected marker
-    const riderMarker = $(busMarkers[busId].getElement()).find('.rider-marker');
+    const riderMarker = $(busMarkers[busName].getElement()).find('.rider-marker');
     riderMarker.addClass('rider-marker-selected');
     
-    $('.rider-bus-info-top-route').text(busData[busId].route.toUpperCase()).css('color', colorMappings[busData[busId].route]);
+    $('.rider-bus-info-top-route').text(busData[busName].route.toUpperCase()).css('color', colorMappings[busData[busName].route]);
 
-    $('.rider-bus-info-name').text('Bus ' + busData[busId].busName + '(' + busId + ') (' + busData[busId].capacity + '% full)');
+    $('.rider-bus-info-name').text('Bus ' + busData[busName].busName + '(' + busName + ') (' + busData[busName].capacity + '% full)');
 
     // Clear existing stops
     $('.rider-bus-info-stops').empty();
@@ -73,17 +73,17 @@ function popRiderInfo(busId) {
     }, 0);
 
     // Get bus route and next stop
-    const route = busData[busId].route;
-    const nextStop = busData[busId].next_stop;
+    const route = busData[busName].route;
+    const nextStop = busData[busName].next_stop;
 
     const routeStops = stopLists[route];
     const nextStopIndex = routeStops.indexOf(nextStop);
 
     if (nextStopIndex !== -1) {
-        const currentStopId = busData[busId]?.stopId;
+        const currentStopId = busData[busName]?.stopId;
 
         let stopsToShow;
-        if (busData[busId].at_stop) {
+        if (busData[busName].at_stop) {
             // Handle array stopIds
             let actualStopId = currentStopId;
             if (Array.isArray(currentStopId)) {
@@ -111,18 +111,18 @@ function popRiderInfo(busId) {
                 stopId = stopId[1];
             }
             // Handle array stopIds (like [20, 19] for special routes)
-            let busStopId = busData[busId].stopId;
+            let busStopId = busData[busName].stopId;
             if (Array.isArray(busStopId)) {
                 busStopId = busStopId[1]; // Use the second element for comparison
             }
-            const isAtStop = busData[busId].at_stop && Number(busStopId) === Number(stopId);
+            const isAtStop = busData[busName].at_stop && Number(busStopId) === Number(stopId);
 
             let etaText;
 
             if (isAtStop) {
                 etaText = 'Here';
             } else {
-                const eta = getETAForStop(busId, originalStopId);
+                const eta = getETAForStop(busName, originalStopId);
                 if (eta) {
                     const etaMinutes = Math.round(eta / 60);
                     etaText = etaMinutes <= 0 ? '<1 min' : etaMinutes + ' min';
@@ -144,7 +144,7 @@ function popRiderInfo(busId) {
         });
     }
 
-    popupBusId = busId;
+    popupBusName = busName;
 
     $('.rider-stop-info-wrapper, .rider-top-wrapper').hide();
     $('.rider-bus-info-wrapper').show();
@@ -205,12 +205,12 @@ function popRiderStopInfo(stopId) {
     // Get ETAs for all buses of all routes to this stop
     routes.forEach(route => {
         if (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) {
-            busesByRoutes[selectedCampus][route].forEach(busId => {
-                if (isValid(busId)) {
+            busesByRoutes[selectedCampus][route].forEach(busName => {
+                if (isValid(busName)) {
                     // Handle special case for stop #3 on certain routes
                     if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3) {
                         // For stop #3 on these routes, we need to handle the special case
-                        const viaMap = busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
+                        const viaMap = busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
                         if (viaMap && Object.keys(viaMap).length) {
                             Object.entries(viaMap).forEach(([prevIdStr, etaSecs]) => {
                                 routeEtas[route].push(etaSecs);
@@ -220,7 +220,7 @@ function popRiderStopInfo(stopId) {
                     }
                     
                     // Get ETA for this bus to this stop
-                    const etaSecs = getETAForStop(busId, stopId);
+                    const etaSecs = getETAForStop(busName, stopId);
                     if (etaSecs !== undefined && etaSecs > 0) {
                         routeEtas[route].push(etaSecs);
                     }
@@ -298,8 +298,8 @@ document.addEventListener('rubus-map-created', function() {
 
     map.on('drag', function() {
         
-        if (popupBusId) {
-            const riderMarker = $(busMarkers[popupBusId].getElement()).find('.rider-marker');
+        if (popupBusName) {
+            const riderMarker = $(busMarkers[popupBusName].getElement()).find('.rider-marker');
             riderMarker.removeClass('rider-marker-selected');
         }
 
@@ -316,7 +316,7 @@ document.addEventListener('rubus-map-created', function() {
             
             // Reset selected marker
             selectedMarkerId = null;
-            popupBusId = null;
+            popupBusName = null;
             
             // Hide bus info and show top wrapper
             $('.rider-bus-info-wrapper').fadeOut();
@@ -418,9 +418,9 @@ function initializeRouteVisibility(route) {
     }
     
     // Set visibility for buses of this route
-    Object.keys(busMarkers).forEach(busId => {
-        if (busData[busId] && busData[busId].route === route) {
-            busMarkers[busId].setOpacity(isVisible ? 1 : 0);
+    Object.keys(busMarkers).forEach(busName => {
+        if (busData[busName] && busData[busName].route === route) {
+            busMarkers[busName].setOpacity(isVisible ? 1 : 0);
         }
     });
 }
@@ -547,9 +547,9 @@ $(document).on('click', '.rider-route-circle-cell', function() {
         }
         
         // Hide buses for this route
-        Object.keys(busMarkers).forEach(busId => {
-            if (busData[busId] && busData[busId].route === route) {
-                busMarkers[busId].setOpacity(0);
+        Object.keys(busMarkers).forEach(busName => {
+            if (busData[busName] && busData[busName].route === route) {
+                busMarkers[busName].setOpacity(0);
             }
         });
     } else {
@@ -565,9 +565,9 @@ $(document).on('click', '.rider-route-circle-cell', function() {
         }
         
         // Show buses for this route
-        Object.keys(busMarkers).forEach(busId => {
-            if (busData[busId] && busData[busId].route === route) {
-                busMarkers[busId].setOpacity(1);
+        Object.keys(busMarkers).forEach(busName => {
+            if (busData[busName] && busData[busName].route === route) {
+                busMarkers[busName].setOpacity(1);
             }
         });
     }
@@ -595,9 +595,9 @@ $(document).on('click', '.rider-routes-header-reset', function() {
         }
         
         // Show buses for this route
-        Object.keys(busMarkers).forEach(busId => {
-            if (busData[busId] && busData[busId].route === route) {
-                busMarkers[busId].setOpacity(1);
+        Object.keys(busMarkers).forEach(busName => {
+            if (busData[busName] && busData[busName].route === route) {
+                busMarkers[busName].setOpacity(1);
             }
         });
     });
@@ -630,9 +630,9 @@ $(document).on('click', '.rider-route-info', function() {
         }
         
         // Hide buses for this route
-        Object.keys(busMarkers).forEach(busId => {
-            if (busData[busId] && busData[busId].route === r) {
-                busMarkers[busId].setOpacity(0);
+        Object.keys(busMarkers).forEach(busName => {
+            if (busData[busName] && busData[busName].route === r) {
+                busMarkers[busName].setOpacity(0);
             }
         });
     });
@@ -647,9 +647,9 @@ $(document).on('click', '.rider-route-info', function() {
         }
     }
     
-    Object.keys(busMarkers).forEach(busId => {
-        if (busData[busId] && busData[busId].route === route) {
-            busMarkers[busId].setOpacity(1);
+    Object.keys(busMarkers).forEach(busName => {
+        if (busData[busName] && busData[busName].route === route) {
+            busMarkers[busName].setOpacity(1);
         }
     });
     
@@ -680,9 +680,9 @@ $(document).on('click', '.rider-route-info-top-map', function() {
                 polylines[route].setStyle({ opacity: 1 });
             }
             
-            Object.keys(busMarkers).forEach(busId => {
-                if (busData[busId] && busData[busId].route === route) {
-                    busMarkers[busId].setOpacity(1);
+            Object.keys(busMarkers).forEach(busName => {
+                if (busData[busName] && busData[busName].route === route) {
+                    busMarkers[busName].setOpacity(1);
                 }
             });
         }

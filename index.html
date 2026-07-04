@@ -410,8 +410,8 @@
                             $('.bus-share').click(function() {
                                 navigator.share({
                                     title: 'Share This Bus',
-                                    text: `${busData[popupBusId].route.toUpperCase()} #${busData[popupBusId].busName}`,
-                                    url: 'https://rubus.live/?bus=' + popupBusId,
+                                    text: `${busData[popupBusName].route.toUpperCase()} #${busData[popupBusName].busName}`,
+                                    url: 'https://rubus.live/?bus=' + popupBusName,
                                 });
                             })
                         </script>
@@ -1494,8 +1494,8 @@
                     <div class="settings- flex justify-between">
                         <div class="settings-heading">Show bus IDs</div>
                         <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-show-bus-id" class="toggle-input">
-                            <label for="toggle-show-bus-id" class="toggle-label">
+                            <input type="checkbox" id="toggle-show-bus-name" class="toggle-input">
+                            <label for="toggle-show-bus-name" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -1744,7 +1744,7 @@
                     </div>
 
                     <!-- <div>
-                        <div class="settings-heading">fetchWhere() (+updateTimeToStops(validBusIds))</div>
+                        <div class="settings-heading">fetchWhere() (+updateTimeToStops(validBusNames))</div>
                         <div class="settings-options grid">
                             <div class="settings-option" onclick="fetchWhere()">Execute function</div>
                         </div>

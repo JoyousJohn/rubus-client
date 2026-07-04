@@ -11,7 +11,7 @@ function getRoutesServicingStop(stopId) {
 
 function getSoonestBus(stopId, route) {
     let lowestETA = Infinity;
-    let lowestBusId;
+    let lowestBusName;
 
     if (!busesByRoutes) {
         console.log ('busesByRoutes not defined');
@@ -21,14 +21,14 @@ function getSoonestBus(stopId, route) {
 
     try { // busesByRoutes[selectedCampus][route] disapears when negative/invalid ETA? have to check if this is why/when it is so
 
-        busesByRoutes[selectedCampus][route].forEach(busId => {
+        busesByRoutes[selectedCampus][route].forEach(busName => {
 
-            if (busETAs[busId] && isValid(busId)) {
+            if (busETAs[busName] && isValid(busName)) {
 
-                const eta = getETAForStop(busId, stopId);
+                const eta = getETAForStop(busName, stopId);
                 if (eta < lowestETA) {
                     lowestETA = eta;
-                    lowestBusId = busId;
+                    lowestBusName = busName;
                 }
             }
         })
@@ -39,7 +39,7 @@ function getSoonestBus(stopId, route) {
         console.log(stopId);
         console.log(busesByRoutes);
     }
-    return [lowestBusId, lowestETA];
+    return [lowestBusName, lowestETA];
 }
 
 function populateAllStops() {
@@ -86,16 +86,16 @@ function populateAllStops() {
                     });
                 $allStopsGridElm.append($stopsElm);
                 servicingRoutes.forEach(route => {
-                    let [busId, eta] = getSoonestBus(stopId, route);
+                    let [busName, eta] = getSoonestBus(stopId, route);
                     
-                    if (busData[busId]) {
+                    if (busData[busName]) {
                         if (eta >= 60) {
                             const minutes = Math.floor(eta / 60);
                             eta = `${minutes}m`;
                         } else {
                             eta = `${eta}s`;
                         }
-                        const $routeChip = $(`<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busId].route]}; padding: 0.2rem 1rem;">${busData[busId].route.toUpperCase()}</div>`)
+                        const $routeChip = $(`<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busName].route]}; padding: 0.2rem 1rem;">${busData[busName].route.toUpperCase()}</div>`)
                             .on('click', function(e) {
                                 // Prevent the parent stop click from firing
                                 e.stopPropagation();

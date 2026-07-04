@@ -3,7 +3,7 @@ let busMarkers = {};
 let busData = {}
 let polylines = {};
 let activeRoutes = new Set();
-let popupBusId;
+var popupBusName;
 let popupStopId;
 let busesDoneInit; // don't check for moves until map is done plotting
 let selectedCampus;
@@ -16,7 +16,7 @@ let shouldSetMaxBoundsAfterDrag = false;
 
 // settings vars
 let showETAsInSeconds = false;
-let showBusId = false;
+let showBusName = false;
 
 let isDesktop;
 let tileLayer;
@@ -107,7 +107,7 @@ $(document).ready(function() {
         } else {
             isTransitioning = true;
 
-            if (popupBusId && !isDesktop) {
+            if (popupBusName && !isDesktop) {
                 const minZoomLevel = 12;
                 map.setMinZoom(minZoomLevel);
                 if (map.getZoom() < minZoomLevel) {
@@ -446,10 +446,10 @@ function hideInfoBoxes(instantly_hide) {
         checkMinRoutes(); // because .knight-mover is hidden in popStopInfo()
     }
 
-    if (popupBusId) {
+    if (popupBusName) {
         stopOvertimeCounter();
-        const busIdThatWasFocused = popupBusId;
-        popupBusId = null;
+        const busIdThatWasFocused = popupBusName;
+        popupBusName = null;
         $('.info-shared-bus-mid').hide();
         // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
 
@@ -477,9 +477,9 @@ function hideInfoBoxes(instantly_hide) {
 		checkMinRoutes(); // reshow knight mover if needed after closing building info
     }
 
-    if (sourceBusId) {
+    if (sourceBusName) {
         $('.stop-info-back').fadeOut(); 
-        sourceBusId = null;
+        sourceBusName = null;
     }
 
     if (sourceStopId) {
@@ -761,7 +761,7 @@ function centerme() {
                 $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
                 $('.my-location-popup').show();
                 sourceStopId = null;
-                sourceBusId = null;
+                sourceBusName = null;
             })
 
             // Check distance before flying and showing nearest stop button
@@ -853,33 +853,33 @@ let speedTimeout = {};
 let showBusSpeeds = true;
 
 // Method to calculate speed in mph for a specific bus
-async function calculateSpeed(busId) {
+async function calculateSpeed(busName) {
 
-    const currentLatitude = busData[busId].lat;
-    const currentLongitude = busData[busId].long;
+    const currentLatitude = busData[busName].lat;
+    const currentLongitude = busData[busName].long;
     const currentTime = new Date().getTime() / 1000;  // Time in seconds
 
     // Check if we have previous data for this bus
-    if (!busData[busId].previousLatitude) {
+    if (!busData[busName].previousLatitude) {
         // Initialize previous data for this bus
-        busData[busId].previousLatitude = currentLatitude;
-        busData[busId].previousLongitude = currentLongitude;
-        busData[busId].previousSpeedTime = currentTime
+        busData[busName].previousLatitude = currentLatitude;
+        busData[busName].previousLongitude = currentLongitude;
+        busData[busName].previousSpeedTime = currentTime
         return null;
     }
 
-    const previousData = busData[busId];
+    const previousData = busData[busName];
     const distance = haversine(previousData.previousLatitude, previousData.previousLongitude, currentLatitude, currentLongitude);
 
     // Calculate time diff and guard against background-resume gaps or clock anomalies
     const timeDiffSeconds = (currentTime - previousData.previousSpeedTime);
     if (timeDiffSeconds <= 0 || timeDiffSeconds > 30) {
         // Reset baseline on invalid/large gaps to avoid unrealistic speeds when resuming
-        busData[busId].previousLatitude = currentLatitude;
-        busData[busId].previousLongitude = currentLongitude;
-        busData[busId].previousSpeedTime = currentTime;
-        delete busData[busId].lastRawSpeed;
-        delete busData[busId].recentRawSpeeds;
+        busData[busName].previousLatitude = currentLatitude;
+        busData[busName].previousLongitude = currentLongitude;
+        busData[busName].previousSpeedTime = currentTime;
+        delete busData[busName].lastRawSpeed;
+        delete busData[busName].recentRawSpeeds;
         return null;
     }
     const timeDiffHours = timeDiffSeconds / 3600;
@@ -896,24 +896,24 @@ async function calculateSpeed(busId) {
 
     // Reject obvious GPS jumps
     if (rawSpeed > 100) {
-        busData[busId].previousLatitude = currentLatitude;
-        busData[busId].previousLongitude = currentLongitude;
-        busData[busId].previousSpeedTime = currentTime;
-        delete busData[busId].lastRawSpeed;
-        delete busData[busId].recentRawSpeeds;
-        if (busData[busId].visualSpeed !== undefined && busData[busId].visualSpeed > MAX_REASONABLE_SPEED) {
-            busData[busId].visualSpeed = MAX_REASONABLE_SPEED;
+        busData[busName].previousLatitude = currentLatitude;
+        busData[busName].previousLongitude = currentLongitude;
+        busData[busName].previousSpeedTime = currentTime;
+        delete busData[busName].lastRawSpeed;
+        delete busData[busName].recentRawSpeeds;
+        if (busData[busName].visualSpeed !== undefined && busData[busName].visualSpeed > MAX_REASONABLE_SPEED) {
+            busData[busName].visualSpeed = MAX_REASONABLE_SPEED;
         }
         return null;
     }
 
     // Maintain a short rolling window of recent raw speeds for robust smoothing
-    if (!Array.isArray(busData[busId].recentRawSpeeds)) {
-        busData[busId].recentRawSpeeds = [];
+    if (!Array.isArray(busData[busName].recentRawSpeeds)) {
+        busData[busName].recentRawSpeeds = [];
     }
-    busData[busId].recentRawSpeeds.push(rawSpeed);
-    if (busData[busId].recentRawSpeeds.length > 5) {
-        busData[busId].recentRawSpeeds.shift();
+    busData[busName].recentRawSpeeds.push(rawSpeed);
+    if (busData[busName].recentRawSpeeds.length > 5) {
+        busData[busName].recentRawSpeeds.shift();
     }
 
     // Rolling median to reduce effect of outliers
@@ -922,10 +922,10 @@ async function calculateSpeed(busId) {
         const mid = Math.floor(sorted.length/2);
         return sorted.length % 2 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
     };
-    const smoothedSpeed = medianOf(busData[busId].recentRawSpeeds);
+    const smoothedSpeed = medianOf(busData[busName].recentRawSpeeds);
 
     // Enforce post-smoothing cap and step-rate limit
-    let baselineSpeed = ('speed' in busData[busId]) ? (busData[busId].speed || 0) : 0;
+    let baselineSpeed = ('speed' in busData[busName]) ? (busData[busName].speed || 0) : 0;
     let proposedSpeed = Math.min(smoothedSpeed, MAX_REASONABLE_SPEED);
     if (baselineSpeed > 0) {
         const maxUp = baselineSpeed + MAX_STEP_DELTA;
@@ -938,27 +938,27 @@ async function calculateSpeed(busId) {
 
     // // Discard outlier speeds (e.g., resume or GPS jump) and reset baseline
     // if (realSpeed > 60) { // mph; higher is unrealistic for campus buses
-    //     busData[busId].previousLatitude = currentLatitude;
-    //     busData[busId].previousLongitude = currentLongitude;
-    //     busData[busId].previousSpeedTime = currentTime;
+    //     busData[busName].previousLatitude = currentLatitude;
+    //     busData[busName].previousLongitude = currentLongitude;
+    //     busData[busName].previousSpeedTime = currentTime;
     //     return null;
     // }
 
-    if (!('visualSpeed' in busData[busId])) {
-        busData[busId].speed = acceptedSpeed;
-        busData[busId].visualSpeed = acceptedSpeed;
-        if (popupBusId === busId && showBusSpeeds) {
-            console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
-            $('.info-speed-mid').text(Math.round(busData[busId].visualSpeed));
+    if (!('visualSpeed' in busData[busName])) {
+        busData[busName].speed = acceptedSpeed;
+        busData[busName].visualSpeed = acceptedSpeed;
+        if (popupBusName === busName && showBusSpeeds) {
+            console.log(busName + ' New Speed: ' + busData[busName].visualSpeed.toFixed(2))
+            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
             $('.info-mph-mid').text('MPH');
         }
-        busData[busId].previousLatitude = currentLatitude;
-        busData[busId].previousLongitude = currentLongitude;
-        busData[busId].previousSpeedTime = currentTime;
+        busData[busName].previousLatitude = currentLatitude;
+        busData[busName].previousLongitude = currentLongitude;
+        busData[busName].previousSpeedTime = currentTime;
         return
     }
 
-    const currentVisualSpeed = busData[busId].visualSpeed;  // Use 0 if speed is not set
+    const currentVisualSpeed = busData[busName].visualSpeed;  // Use 0 if speed is not set
     const speedDiff = acceptedSpeed - currentVisualSpeed;
     // if (speedDiff < 1) return
     
@@ -970,7 +970,7 @@ async function calculateSpeed(busId) {
     const denom = Math.max(Math.abs(speedDiff), 0.01);
     const updateIntervalMs = Math.min(2000, Math.max(50, (totalUpdateSeconds*1000) / denom));
 
-    // if (popupBusId === busId) {
+    // if (popupBusName === busName) {
     //     console.log("speedDiff: ", speedDiff);
     //     console.log("updateIntervalMs: ", updateIntervalMs)
     // }
@@ -979,62 +979,62 @@ async function calculateSpeed(busId) {
 
     const speedChangeDir = speedDiff > 0 ? 1 : -1;
 
-    clearInterval(speedTimeout[busId]);
+    clearInterval(speedTimeout[busName]);
 
     // Set initial speed before starting the interval
-    busData[busId].speed = acceptedSpeed;
-    busData[busId].visualSpeed = currentVisualSpeed
+    busData[busName].speed = acceptedSpeed;
+    busData[busName].visualSpeed = currentVisualSpeed
 
     let elapsedMs = 0;
-    speedTimeout[busId] = setInterval(() => {
+    speedTimeout[busName] = setInterval(() => {
 
-        if (!busData[busId]) { // handle out of service
-            clearInterval(speedTimeout[busId]);
+        if (!busData[busName]) { // handle out of service
+            clearInterval(speedTimeout[busName]);
             return;
         }
 
-        busData[busId].visualSpeed += speedChangeDir;
-        if (busData[busId].visualSpeed < 0) {
-            busData[busId].visualSpeed = 0;
+        busData[busName].visualSpeed += speedChangeDir;
+        if (busData[busName].visualSpeed < 0) {
+            busData[busName].visualSpeed = 0;
         }
 
         elapsedMs += updateIntervalMs;
         
-        if (popupBusId === busId && showBusSpeeds) {
-            // console.log(busId + ' New Speed: ' + busData[busId].visualSpeed.toFixed(2))
-            $('.info-speed-mid').text(Math.round(busData[busId].visualSpeed))
+        if (popupBusName === busName && showBusSpeeds) {
+            // console.log(busName + ' New Speed: ' + busData[busName].visualSpeed.toFixed(2))
+            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed))
             $('.info-mph-mid').text('MPH');
         }
 
-        if (panelRoute === busData[busId].route) {
-            $(`.route-bus-speed[bus-id="${busId}"]`).text(parseInt(busData[busId].visualSpeed) + 'mph | ' + busData[busId].capacity + '% full')
+        if (panelRoute === busData[busName].route) {
+            $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph | ' + busData[busName].capacity + '% full')
         }
         
         if (elapsedMs >= totalUpdateSeconds*1000) {
-            clearInterval(speedTimeout[busId]);
+            clearInterval(speedTimeout[busName]);
         }
     }, updateIntervalMs); // Convert seconds to milliseconds
 
 
     // Update the previous data for this bus
-    busData[busId].previousLatitude = currentLatitude;
-    busData[busId].previousLongitude = currentLongitude;
+    busData[busName].previousLatitude = currentLatitude;
+    busData[busName].previousLongitude = currentLongitude;
     if (distance > 0.002) {
-        busData[busId].previousSpeedTime = currentTime;
+        busData[busName].previousSpeedTime = currentTime;
     }
-    // busData[busId].secondsDiff = currentTime - previousData.previousTime;
+    // busData[busName].secondsDiff = currentTime - previousData.previousTime;
 
 }
 
 let busRotationPoints = {}
 
-const calculateRotation = (busId, loc) => {
+const calculateRotation = (busName, loc) => {
     let newRotation;
     if (!pauseRotationUpdating) {
-        const currentStopId = busData[busId].stopId;
+        const currentStopId = busData[busName].stopId;
 
         if (!stopLines[currentStopId]) {
-            return busData[busId].rotation + 45;
+            return busData[busName].rotation + 45;
         }
         // console.log('at yard')
 
@@ -1059,16 +1059,16 @@ const calculateRotation = (busId, loc) => {
         const pt1 = polyPoints[closestIdx];
         const pt2 = polyPoints[nextIdx];
     
-        if (busRotationPoints[busId]) {
+        if (busRotationPoints[busName]) {
             ['pt1', 'pt2', 'line'].forEach(val => {
-                busRotationPoints[busId][val].remove();
+                busRotationPoints[busName][val].remove();
             })
         }
         
-            busRotationPoints[busId] = {}
+            busRotationPoints[busName] = {}
             
             // Add markers for the points
-            busRotationPoints[busId]['pt1'] = L.circleMarker(pt1, {
+            busRotationPoints[busName]['pt1'] = L.circleMarker(pt1, {
                 radius: 6,
                 fillColor: "red",
                 color: "#000",
@@ -1077,7 +1077,7 @@ const calculateRotation = (busId, loc) => {
                 fillOpacity: settings['toggle-show-rotation-points'] ? 1 : 0
             }).addTo(map);
             
-            busRotationPoints[busId]['pt2'] = L.circleMarker(pt2, {
+            busRotationPoints[busName]['pt2'] = L.circleMarker(pt2, {
                 radius: 6,
                 fillColor: "blue",
                 color: "#000",
@@ -1087,7 +1087,7 @@ const calculateRotation = (busId, loc) => {
             }).addTo(map);
 
             // Add green line between the points
-            busRotationPoints[busId]['line'] = L.polyline([pt1, pt2], {
+            busRotationPoints[busName]['line'] = L.polyline([pt1, pt2], {
                 color: 'green',
                 weight: 3,
                 opacity: settings['toggle-show-rotation-points'] ? 1 : 0
@@ -1101,9 +1101,9 @@ const calculateRotation = (busId, loc) => {
             let bearing = Math.atan2(y, x);
             bearing = (toDeg(bearing) + 360) % 360;
             newRotation = bearing + 45;
-            // console.log(`New rotation for bus: ${busData[busId].busName}: ${newRotation}`)
+            // console.log(`New rotation for bus: ${busData[busName].busName}: ${newRotation}`)
         } else {
-            newRotation = busData[busId].rotation + 45;
+            newRotation = busData[busName].rotation + 45;
         }
     return newRotation;
 };
@@ -1133,9 +1133,9 @@ function updateExistingPassioMarkersForRoute(route) {
     const newColor = colorMappings[route];
     
     // Find all buses for this route and update their markers
-    for (const busId in busMarkers) {
-        if (busData[busId] && busData[busId].route === route) {
-            const marker = busMarkers[busId];
+    for (const busName in busMarkers) {
+        if (busData[busName] && busData[busName].route === route) {
+            const marker = busMarkers[busName];
             const markerElement = marker.getElement();
             
             // Update the arrow-in background color
@@ -1224,14 +1224,14 @@ async function generateColoredSvgForColor(color) {
 
 // Function to generate a route-colored Passio marker SVG (cached and synchronous after pre-generation)
 
-const updateMarkerPosition = (busId, immediatelyUpdate) => {
-    const loc = {lat: busData[busId].lat, long: busData[busId].long};
-    const marker = busMarkers[busId];
+const updateMarkerPosition = (busName, immediatelyUpdate) => {
+    const loc = {lat: busData[busName].lat, long: busData[busName].long};
+    const marker = busMarkers[busName];
 
     // Cancel any existing animations for this bus
-    if (animationFrames[busId]) {
-        cancelAnimationFrame(animationFrames[busId]);
-        delete animationFrames[busId];
+    if (animationFrames[busName]) {
+        cancelAnimationFrame(animationFrames[busName]);
+        delete animationFrames[busName];
     }
 
     // Get current position
@@ -1240,50 +1240,50 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
     
     let prevLatLng;
     try {
-        if (busData[busId].previousPositions.length >= 3) {
+        if (busData[busName].previousPositions.length >= 3) {
             prevLatLng = {
-                lat: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][0], 
-                lng: busData[busId].previousPositions[busData[busId].previousPositions.length - 3][1]
+                lat: busData[busName].previousPositions[busData[busName].previousPositions.length - 3][0], 
+                lng: busData[busName].previousPositions[busData[busName].previousPositions.length - 3][1]
             };
         }
     } catch (error) {
         console.log(error);
-        console.log(busData[busId].previousPositions);
-        console.log(busData[busId]);
+        console.log(busData[busName].previousPositions);
+        console.log(busData[busName]);
     }
 
     const positioningOption = settings['bus-positioning'];
     const showPath = settings['toggle-show-bus-path'];
 
     // Always maintain the data structure regardless of display setting
-    if (busLines[busId]) {
-        if (busLines[busId]['prev'] && busLines[busId]['prev'].removeFrom) {
-            busLines[busId]['prev'].removeFrom(map);
+    if (busLines[busName]) {
+        if (busLines[busName]['prev'] && busLines[busName]['prev'].removeFrom) {
+            busLines[busName]['prev'].removeFrom(map);
         }
-        if (busLines[busId]['curve'] && busLines[busId]['curve'].removeFrom) {
-            busLines[busId]['curve'].removeFrom(map);
+        if (busLines[busName]['curve'] && busLines[busName]['curve'].removeFrom) {
+            busLines[busName]['curve'].removeFrom(map);
         }
-        if (busLines[busId]['join'] && busLines[busId]['join'].removeFrom) {
-            busLines[busId]['join'].removeFrom(map);
-            delete busLines[busId]['join'];
+        if (busLines[busName]['join'] && busLines[busName]['join'].removeFrom) {
+            busLines[busName]['join'].removeFrom(map);
+            delete busLines[busName]['join'];
         }
     } else {
-        busLines[busId] = {};
+        busLines[busName] = {};
     }
 
     // Handle current path line
-    const prevPathEndpoint = busLines[busId]['curr'] ? busLines[busId]['curr']._latlngs[1] : startLatLng;
-    if (busLines[busId]['curr'] && busLines[busId]['curr'].removeFrom) {
-        busLines[busId]['curr'].removeFrom(map);
+    const prevPathEndpoint = busLines[busName]['curr'] ? busLines[busName]['curr']._latlngs[1] : startLatLng;
+    if (busLines[busName]['curr'] && busLines[busName]['curr'].removeFrom) {
+        busLines[busName]['curr'].removeFrom(map);
     }
     
     // Store previous path data
-    if (busLines[busId]['curr'] && busLines[busId]['curr']._latlngs) {
-        busLines[busId]['prev'] = busLines[busId]['curr']._latlngs;
+    if (busLines[busName]['curr'] && busLines[busName]['curr']._latlngs) {
+        busLines[busName]['prev'] = busLines[busName]['curr']._latlngs;
     }
 
     // Always update the current line data
-    busLines[busId]['curr'] = {
+    busLines[busName]['curr'] = {
         _latlngs: [prevPathEndpoint, endLatLng]
     };
 
@@ -1306,28 +1306,28 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
                 const needJoin = startLatLng.distanceTo(L.latLng(prevPathEndpoint.lat, prevPathEndpoint.lng)) > 0.5;
                 if (needJoin) {
                     const joinLine = L.polyline([startLatLng, prevPathEndpoint], {color: '#888', weight: 3, dashArray: '4,6'}).addTo(map);
-                    busLines[busId]['join'] = joinLine;
+                    busLines[busName]['join'] = joinLine;
                 }
             }
         } catch (e) {}
 
         // Display previous line (red)
-        if (busLines[busId]['prev']) {
-            const prevLine = L.polyline(busLines[busId]['prev'], {color: 'red', weight: 4}).addTo(map);
-            busLines[busId]['prev'] = prevLine;
+        if (busLines[busName]['prev']) {
+            const prevLine = L.polyline(busLines[busName]['prev'], {color: 'red', weight: 4}).addTo(map);
+            busLines[busName]['prev'] = prevLine;
         }
         
         // Display current line (blue)
-        const currLine = L.polyline(busLines[busId]['curr']._latlngs, {color: 'blue', weight: 4}).addTo(map);
-        busLines[busId]['curr'] = currLine;
+        const currLine = L.polyline(busLines[busName]['curr']._latlngs, {color: 'blue', weight: 4}).addTo(map);
+        busLines[busName]['curr'] = currLine;
     }
 
     // Add Bézier curve only if positioning option is 'bezier'
     if (prevLatLng && positioningOption === 'bezier') {
         // Define the mid-arc join waypoint (where red/blue connect)
         const joinWaypointLatLng = {
-            lat: busLines[busId]['curr']._latlngs[0].lat,
-            lng: busLines[busId]['curr']._latlngs[0].lng
+            lat: busLines[busName]['curr']._latlngs[0].lat,
+            lng: busLines[busName]['curr']._latlngs[0].lng
         };
         
         // Quadratic control point chosen so the curve passes through joinWaypoint at t=0.5
@@ -1342,11 +1342,11 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
                                 'Q', [bezierControlLatLng.lat, bezierControlLatLng.lng],
                                     [endLatLng.lat, endLatLng.lng]],
                                {color: 'purple', weight: 5, opacity: 1}).addTo(map);
-            busLines[busId]['curve'] = path;
+            busLines[busName]['curve'] = path;
             
             // Add a dot at the join waypoint
-            if (midpointCircle[busId]) midpointCircle[busId].removeFrom(map);
-            midpointCircle[busId] = L.circleMarker([busLines[busId]['curr']._latlngs[0].lat, busLines[busId]['curr']._latlngs[0].lng], {
+            if (midpointCircle[busName]) midpointCircle[busName].removeFrom(map);
+            midpointCircle[busName] = L.circleMarker([busLines[busName]['curr']._latlngs[0].lat, busLines[busName]['curr']._latlngs[0].lng], {
                 radius: 4,
                 color: 'lime',
                 fillColor: 'lime',
@@ -1365,7 +1365,7 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 
         // Update rotation immediately as well
         if (!pauseRotationUpdating) {
-            const newRotation = calculateRotation(busId, loc);
+            const newRotation = calculateRotation(busName, loc);
             const iconElement = getMarkerRotationElement(marker);
             if (iconElement && newRotation !== undefined) {
                 iconElement.style.transform = `rotate(${newRotation}deg)`;
@@ -1381,56 +1381,56 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 
         // Clear two-segment path data to prevent stale path information from affecting future animations
         // After teleporting, we don't want to use old path endpoints for the next animation
-        if (busLines[busId]) {
+        if (busLines[busName]) {
             // Get the marker's position after teleporting to ensure we use the correct current position
             const currentPosition = marker.getLatLng();
             // Reset current path to start fresh on next animation
-            busLines[busId]['curr'] = {
+            busLines[busName]['curr'] = {
                 _latlngs: [currentPosition, currentPosition] // Set both points to current position after teleport
             };
             // Clear previous path data since we've teleported and old path is irrelevant
-            delete busLines[busId]['prev'];
+            delete busLines[busName]['prev'];
         }
 
         // Clear any stored animation durations so they don't carry over to the
         // next non-immediate update. This path returns early and never reaches the
         // duration-consumption code below, so stale values would otherwise persist.
-        delete busData[busId].apiAnimationDuration;
-        delete busData[busId].websocketAnimationDuration;
-        delete busData[busId].overnightAnimationDuration;
+        delete busData[busName].apiAnimationDuration;
+        delete busData[busName].websocketAnimationDuration;
+        delete busData[busName].overnightAnimationDuration;
 
         return; // Exit early - no animation needed
     }
 
     // Calculate animation duration (scaled for sim buses)
-    const timeSinceLastUpdate = new Date().getTime() - busData[busId].previousTime;
+    const timeSinceLastUpdate = new Date().getTime() - busData[busName].previousTime;
     // Cap the maximum animation duration to prevent extremely long animations after app resume
     // uynsure if thi s does anything or is needed
     const cappedTimeSinceLastUpdate = Math.min(timeSinceLastUpdate, 30000); // Max 30 seconds
 
     // Use stored animation duration if available (for consistent timing across update sources)
     let duration;
-    if (busData[busId].websocketAnimationDuration) {
-        duration = busData[busId].websocketAnimationDuration;
+    if (busData[busName].websocketAnimationDuration) {
+        duration = busData[busName].websocketAnimationDuration;
         // Clear the stored duration after use
-        delete busData[busId].websocketAnimationDuration;
-        // console.log(`[Animation] Using WebSocket-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
-    } else if (busData[busId].apiAnimationDuration) {
-        duration = busData[busId].apiAnimationDuration;
+        delete busData[busName].websocketAnimationDuration;
+        // console.log(`[Animation] Using WebSocket-calculated duration: ${Math.round(duration/1000)}s for bus ${busName}`);
+    } else if (busData[busName].apiAnimationDuration) {
+        duration = busData[busName].apiAnimationDuration;
         // Clear the stored duration after use
-        delete busData[busId].apiAnimationDuration;
-        // console.log(`[Animation] Using API-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
-    } else if (busData[busId].overnightAnimationDuration) {
-        duration = busData[busId].overnightAnimationDuration;
+        delete busData[busName].apiAnimationDuration;
+        // console.log(`[Animation] Using API-calculated duration: ${Math.round(duration/1000)}s for bus ${busName}`);
+    } else if (busData[busName].overnightAnimationDuration) {
+        duration = busData[busName].overnightAnimationDuration;
         // Clear the stored duration after use
-        delete busData[busId].overnightAnimationDuration;
-        // console.log(`[Animation] Using Overnight API-calculated duration: ${Math.round(duration/1000)}s for bus ${busId}`);
+        delete busData[busName].overnightAnimationDuration;
+        // console.log(`[Animation] Using Overnight API-calculated duration: ${Math.round(duration/1000)}s for bus ${busName}`);
     } else {
         const baseDuration = cappedTimeSinceLastUpdate + 2500;
         duration = baseDuration;
     }
     try {
-        if (window.sim === true && busData[busId] && busData[busId].type === 'sim') {
+        if (window.sim === true && busData[busName] && busData[busName].type === 'sim') {
             const mult = Math.max(1, (window.SIM_TIME_MULTIPLIER || 1));
             duration = duration / mult;
         }
@@ -1439,15 +1439,15 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 
     const rotationElement = getMarkerRotationElement(marker);
     const startRotation = parseFloat(rotationElement.style.transform.replace('rotate(', '').replace('deg)', '') || '0');
-    const endRotation = calculateRotation(busId, loc);
+    const endRotation = calculateRotation(busName, loc);
 
     const calculateBezierPoint = (t) => {
         if (!prevLatLng || positioningOption !== 'bezier') return null;
         
         // The join waypoint is the mid-curve constraint at t=0.5
         const joinWaypointLatLng = {
-            lat: busLines[busId]['curr']._latlngs[0].lat,
-            lng: busLines[busId]['curr']._latlngs[0].lng
+            lat: busLines[busName]['curr']._latlngs[0].lat,
+            lng: busLines[busName]['curr']._latlngs[0].lng
         };
         
         const bezierControlLatLng = {
@@ -1483,17 +1483,17 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
     };
 
     const animateMarker = (currentTime) => {
-        // Skip this animation frame if busId has been removed from animationFrames
+        // Skip this animation frame if busName has been removed from animationFrames
         // This happens when a new animation starts or cancellation occurs
-        if (!animationFrames[busId]) return;
+        if (!animationFrames[busName]) return;
         
         const elapsedTime = currentTime - startTime;
         const progress = Math.min(elapsedTime / duration, 1);
 
         // Check if the bus marker still exists
-        if (!busMarkers[busId]) {
+        if (!busMarkers[busName]) {
             // Bus went out of service, clean up the animation
-            delete animationFrames[busId];
+            delete animationFrames[busName];
             return;
         }
 
@@ -1503,9 +1503,9 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 		if (useTwoSegment) {
 			const distanceTraveled = totalPathDistance * progress;
 			// Remove the temporary join line once we pass the connection point
-			if (distanceTraveled > distanceToPreviousTarget && busLines[busId] && busLines[busId]['join'] && busLines[busId]['join'].removeFrom) {
-				busLines[busId]['join'].removeFrom(map);
-				delete busLines[busId]['join'];
+			if (distanceTraveled > distanceToPreviousTarget && busLines[busName] && busLines[busName]['join'] && busLines[busName]['join'].removeFrom) {
+				busLines[busName]['join'].removeFrom(map);
+				delete busLines[busName]['join'];
 			}
 			if (distanceTraveled <= distanceToPreviousTarget) {
 				// Segment 1: move from start to previous target (linear)
@@ -1587,15 +1587,15 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 
         if (progress < 1) {
             // Only schedule next frame if we're still animating and this ID hasn't been replaced
-            animationFrames[busId] = requestAnimationFrame(animateMarker);
+            animationFrames[busName] = requestAnimationFrame(animateMarker);
         } else {
             // Animation complete, clean up
-            delete animationFrames[busId];
+            delete animationFrames[busName];
         }
     };
     
     // Start the animation
-    animationFrames[busId] = requestAnimationFrame(animateMarker);
+    animationFrames[busName] = requestAnimationFrame(animateMarker);
 };
 
 
@@ -1603,12 +1603,12 @@ const updateMarkerPosition = (busId, immediatelyUpdate) => {
 window.retimeSimAnimations = function() {
     try {
         if (window.sim !== true) return;
-        for (const busId in busData) {
-            const bus = busData[busId];
+        for (const busName in busData) {
+            const bus = busData[busName];
             if (!bus || bus.type !== 'sim') continue;
-            if (!busMarkers[busId]) continue;
+            if (!busMarkers[busName]) continue;
             // Restart animation from current position to current target with new duration scaling
-            updateMarkerPosition(Number(busId), false);
+            updateMarkerPosition(busName, false);
         }
     } catch (e) {}
 };
@@ -1616,13 +1616,15 @@ window.retimeSimAnimations = function() {
 let selectedMarkerId;
 let pauseUpdateMarkerPositions = false;
 
-function plotBus(busId, immediatelyUpdate=false) {
+function plotBus(busName, immediatelyUpdate=false) {
     
-    const loc = {lat: busData[busId].lat, long: busData[busId].long};
+    const loc = {lat: busData[busName].lat, long: busData[busName].long};
 
-    if (!busMarkers[busId]) {
+    console.log(loc)
+
+    if (!busMarkers[busName]) {
         // Create a new bus marker if it doesn't exist
-        const route = busData[busId].route;
+        const route = busData[busName].route;
         const markerType = settings?.['marker-type'] || 'rubus';
 
         if (markerType === 'passio') {
@@ -1638,7 +1640,7 @@ function plotBus(busId, immediatelyUpdate=false) {
             // Generate colored SVG data URL
             const coloredSvg = generateColoredSvg(routeColor);
 
-            busMarkers[busId] = L.marker([loc.lat, loc.long], {
+            busMarkers[busName] = L.marker([loc.lat, loc.long], {
                 icon: L.divIcon({
                     className: 'bus-icon',
                     iconSize: [30, 30],
@@ -1653,7 +1655,7 @@ function plotBus(busId, immediatelyUpdate=false) {
                                     <img src="${coloredSvg}" class="passio-bus-icon" style="width: 35%; height: 35%; object-fit: contain;">
                                 </div>
                             </div>
-                            <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
+                            <div class="bus-name-label none" bus-name="${busName}">${busData[busName].busName}</div>
                         </div>
                     `
                 }),
@@ -1661,12 +1663,12 @@ function plotBus(busId, immediatelyUpdate=false) {
                 zIndexOffset: 500
             }).addTo(map);
 
-            getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
+            getMarkerRotationElement(busMarkers[busName]).style.transform = `rotate(${busData[busName].rotation + 45}deg)`;
 
             // Counter-rotate the SVG image to keep it at 0 degrees relative to viewport (Passio markers only)
             if (settings['marker-type'] === 'passio') {
-                const busIcon = busMarkers[busId].getElement().querySelector('.passio-bus-icon');
-                const counterRotation = -(busData[busId].rotation + 45);
+                const busIcon = busMarkers[busName].getElement().querySelector('.passio-bus-icon');
+                const counterRotation = -(busData[busName].rotation + 45);
                 busIcon.style.transform = `rotate(${counterRotation}deg)`;
             }
         } else if (markerType === 'rider') {
@@ -1679,7 +1681,7 @@ function plotBus(busId, immediatelyUpdate=false) {
                 'big': 'big-marker'
             }[currentSize];
 
-            busMarkers[busId] = L.marker([loc.lat, loc.long], {
+            busMarkers[busName] = L.marker([loc.lat, loc.long], {
                 icon: L.divIcon({
                     className: 'bus-icon',
                     iconSize: [30, 30],
@@ -1689,7 +1691,7 @@ function plotBus(busId, immediatelyUpdate=false) {
                             <div class="rider-marker ${riderSizeClass}" style="will-change: transform; background-color: ${routeColor};">
                                 <i class="fa-solid fa-location-arrow-up" style="color: white;"></i>
                             </div>
-                            <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
+                            <div class="bus-name-label none" bus-name="${busName}">${busData[busName].busName}</div>
                         </div>
                     `
                 }),
@@ -1697,7 +1699,7 @@ function plotBus(busId, immediatelyUpdate=false) {
                 zIndexOffset: 500
             }).addTo(map);
 
-            getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
+            getMarkerRotationElement(busMarkers[busName]).style.transform = `rotate(${busData[busName].rotation + 45}deg)`;
         } else if (markerType === 'duck') {
             // Create Duck HTML marker with route-based color
             const routeColor = colorMappings[route] || '#446bef';
@@ -1708,7 +1710,7 @@ function plotBus(busId, immediatelyUpdate=false) {
                 'big': 'big-marker'
             }[currentSize];
 
-            busMarkers[busId] = L.marker([loc.lat, loc.long], {
+            busMarkers[busName] = L.marker([loc.lat, loc.long], {
                 icon: L.divIcon({
                     className: 'bus-icon',
                     iconSize: [30, 30],
@@ -1718,7 +1720,7 @@ function plotBus(busId, immediatelyUpdate=false) {
                             <div class="duck-marker ${duckSizeClass}" style="will-change: transform;">
                                 <i class="fa-solid fa-duck" style="color: ${routeColor};"></i>
                             </div>
-                            <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
+                            <div class="bus-name-label none" bus-name="${busName}">${busData[busName].busName}</div>
                         </div>
                     `
                 }),
@@ -1726,10 +1728,10 @@ function plotBus(busId, immediatelyUpdate=false) {
                 zIndexOffset: 500
             }).addTo(map);
 
-            getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
+            getMarkerRotationElement(busMarkers[busName]).style.transform = `rotate(${busData[busName].rotation + 45}deg)`;
         } else {
             // Create RUBus div-based marker
-            busMarkers[busId] = L.marker([loc.lat, loc.long], {
+            busMarkers[busName] = L.marker([loc.lat, loc.long], {
                 icon: L.divIcon({
                     className: 'bus-icon',
                     iconSize: [30, 30],
@@ -1739,7 +1741,7 @@ function plotBus(busId, immediatelyUpdate=false) {
                             <div class="bus-icon-outer" style="will-change: transform;">
                                 <div class="bus-icon-inner"></div>
                             </div>
-                            <div class="bus-name-label none" bus-name="${busId}">${busData[busId].busName}</div>
+                            <div class="bus-name-label none" bus-name="${busName}">${busData[busName].busName}</div>
                         </div>
                     `
                 }),
@@ -1747,49 +1749,49 @@ function plotBus(busId, immediatelyUpdate=false) {
                 zIndexOffset: 500
             }).addTo(map);
 
-            getMarkerRotationElement(busMarkers[busId]).style.transform = `rotate(${busData[busId].rotation + 45}deg)`;
-            busMarkers[busId].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[route];
+            getMarkerRotationElement(busMarkers[busName]).style.transform = `rotate(${busData[busName].rotation + 45}deg)`;
+            busMarkers[busName].getElement().querySelector('.bus-icon-outer').style.backgroundColor = colorMappings[route];
         }
 
             // Setup marker (now synchronous for all marker types)
             try {
-                if ((shownRoute && shownRoute !== busData[busId].route) || (settings['toggle-hide-other-routes'] && popupBusId && busData[popupBusId].route !== busData[busId].route) || popupBusId) {
-                    busMarkers[busId].getElement().style.display = '';
+                if ((shownRoute && shownRoute !== busData[busName].route) || (settings['toggle-hide-other-routes'] && popupBusName && busData[popupBusName].route !== busData[busName].route) || popupBusName) {
+                    busMarkers[busName].getElement().style.display = '';
                 }
             } catch (error) {
                 console.error('Error updating bus marker visibility:', error);
             }
 
-            busMarkers[busId].on('click', function() {
+            busMarkers[busName].on('click', function() {
                 sourceStopId = null;
-                sourceBusId = null;
-                selectBusMarker(busId);
+                sourceBusName = null;
+                selectBusMarker(busName);
             });
 
             updateBusNameTooltips();
 
             // Update marker position after marker is created
             if (!pauseUpdateMarkerPositions) {
-                updateMarkerPosition(busId, immediatelyUpdate || forceImmediateUpdate);
+                updateMarkerPosition(busName, immediatelyUpdate || forceImmediateUpdate);
             }
     } else if (!pauseUpdateMarkerPositions) {
         // if (document.visibilityState === 'hidden') {
         //     immediatelyUpdate = true;
         //     // console.log('page hidden, updating immediately')
         // }
-        updateMarkerPosition(busId, immediatelyUpdate || forceImmediateUpdate);
+        updateMarkerPosition(busName, immediatelyUpdate || forceImmediateUpdate);
     }
 
     // Record last time a marker was updated/rendered
     try { lastUpdateTime = Date.now(); } catch (e) {}
 }
 
-function selectBusMarker(busId) {
+function selectBusMarker(busName) {
 
-    popInfo(busId, true);
-    // console.log(busId + ': ')
-    // console.table(busData[busId])
-    popupBusId = busId
+    popInfo(busName, true);
+    // console.log(busName + ': ')
+    // console.table(busData[busName])
+    popupBusName = busName
 
     if (selectedMarkerId) {
         const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);
@@ -1798,12 +1800,12 @@ function selectBusMarker(busId) {
         }
     }
     
-    const rotationElement = getMarkerRotationElement(busMarkers[busId]);
+    const rotationElement = getMarkerRotationElement(busMarkers[busName]);
     if (rotationElement) {
-        rotationElement.style.boxShadow = '0 0 10px ' + colorMappings[busData[busId].route];
+        rotationElement.style.boxShadow = '0 0 10px ' + colorMappings[busData[busName].route];
     }
 
-    selectedMarkerId = busId;
+    selectedMarkerId = busName;
 
     $('.bus-log-wrapper').hide();
 
@@ -1858,18 +1860,18 @@ let stoppedForInterval;
 let savedCenter;
 let savedZoom;
 
-function popInfo(busId, resetCampusFontSize) {
+function popInfo(busName, resetCampusFontSize) {
 
-    const data = busData[busId]
+    const data = busData[busName]
     let dataRoute = data.route
 
     if (!sim) {
         sa_event('bus_view_test', {
-            'bus_id': busId,
+            'bus_id': busName,
             'route': data.route,
         });
         sa_event('view_bus', {
-            'bus_id': busId,
+            'bus_id': busName,
             'route': data.route,
         });
     } else {
@@ -1882,13 +1884,13 @@ function popInfo(busId, resetCampusFontSize) {
     }
 
     if (appStyle === 'rider') {
-        popRiderInfo(busId);
+        popRiderInfo(busName);
         return;
     }
 
     $('.bus-ridership-wrapper').show();
     // Only destroy charts if showing a different bus
-    if (currentRidershipChartBusId !== busId) {
+    if (currentRidershipChartBusId !== busName) {
         for (const existingBusId in busRidershipCharts) {
             busRidershipCharts[existingBusId].destroy();
             delete busRidershipCharts[existingBusId];
@@ -1903,10 +1905,10 @@ function popInfo(busId, resetCampusFontSize) {
     
     $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
 
-    if (busData[busId]['overtime']) {
+    if (busData[busName]['overtime']) {
         $('.bus-stopped-for .stop-octagon').show();
         if (settings['toggle-show-bus-overtime-timer']) {
-            startOvertimeCounter(busId);
+            startOvertimeCounter(busName);
         }
     } else {
         stopOvertimeCounter();
@@ -1935,8 +1937,8 @@ function popInfo(busId, resetCampusFontSize) {
     }
     
     let busNameElmText = data.busName
-    if (showBusId) {
-        busNameElmText += ' (' + busId + ')'
+    if (showBusName) {
+        busNameElmText += ' (' + busName + ')'
     }
     
     if (resetCampusFontSize === true) {
@@ -1958,24 +1960,24 @@ function popInfo(busId, resetCampusFontSize) {
     $('.info-name-mid').text(busNameElmText + ' | ');
     $('.info-capacity-mid').text(data.capacity + '% capacity');
 
-    if (busData[busId].oos) {
+    if (busData[busName].oos) {
         $('.bus-oos-mid').show();
     } else {
         $('.bus-oos-mid').hide();
     }
 
-    if (busData[busId].atDepot) {
+    if (busData[busName].atDepot) {
         $('.bus-depot-mid').show();
     } else {
         $('.bus-depot-mid').hide();
     }
 
-    if (sharedBus && sharedBus === busId) {
+    if (sharedBusName && sharedBusName === busName) {
         $('.info-shared-bus-mid').show();
     }
 
-    if (joined_service[busId]) {
-        const serviceDate = new Date(joined_service[busId]);
+    if (joined_service[busName]) {
+        const serviceDate = new Date(joined_service[busName]);
         const today = new Date();
         const isToday = serviceDate.getDate() === today.getDate() && 
                         serviceDate.getMonth() === today.getMonth() &&
@@ -2003,19 +2005,19 @@ function popInfo(busId, resetCampusFontSize) {
     $('.info-next-stops').show();
         
     $('.bus-data-extra').empty();
-    let extraDataHtml = `<div class="center mb-0p5rem">Bus ID: ${busId}</div>`;
-    for (const [key, value] of Object.entries(busData[busId])) {
+    let extraDataHtml = `<div class="center mb-0p5rem">Bus ID: ${busName}</div>`;
+    for (const [key, value] of Object.entries(busData[busName])) {
         // Format all values including arrays
         if (value !== null) {
             let extraDataVal = value
             if (key === 'isKnown') {
                 extraDataVal = value ? 'Yes' : 'No';
                 extraDataHtml += `<div>${key}: <span style="opacity: 0.7; color: ${value ? '#4CAF50' : '#f44336'}">${extraDataVal}</span></div>`;
-                const validityResult = getBusValidityInfo(busId);
+                const validityResult = getBusValidityInfo(busName);
                 const validityText = validityResult.valid ? 'Yes' : `No (${validityResult.reason})`;
                 extraDataHtml += `<div>isValid: <span style="opacity: 0.7; color: ${validityResult.valid ? '#4CAF50' : '#f44336'}">${validityText}</span></div>`;
 
-                const distanceFromLineResult = distanceFromLine(busId);
+                const distanceFromLineResult = distanceFromLine(busName);
                 extraDataHtml += `<div>distanceFromLine validity: <span style="opacity: 0.7; color: ${distanceFromLineResult ? '#f44336' : '#4CAF50'}">${distanceFromLineResult}</span></div>`;
 
                 continue; // Skip processing isKnown again in the normal flow
@@ -2048,8 +2050,8 @@ function popInfo(busId, resetCampusFontSize) {
     }
     $('.bus-data-extra').html(extraDataHtml);
 
-    if ('at_stop' in busData[busId] && busData[busId].at_stop === true) {
-        startStoppedForTimer(busId)
+    if ('at_stop' in busData[busName] && busData[busName].at_stop === true) {
+        startStoppedForTimer(busName)
     } else {
         $('.bus-stopped-for').hide();
     }
@@ -2059,7 +2061,7 @@ function popInfo(busId, resetCampusFontSize) {
 
     $('.next-stop-circle').remove(); // remaining .next-stop-circles rom rote menu messes this up
 
-    if ('next_stop' in data && busETAs[busId] && !busData[busId].atDepot) { // Hide next stops when bus is at depot
+    if ('next_stop' in data && busETAs[busName] && !busData[busName].atDepot) { // Hide next stops when bus is at depot
         $('.next-stops-grid > div').empty();
         
         // Track whether we should show the closest stop section
@@ -2105,10 +2107,10 @@ function popInfo(busId, resetCampusFontSize) {
 
         // Special-case ordering for SAC NB (stop 3) approach legs on weekend/all-style routes
         let approachPrev = null;
-        if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'summer1') && nextStop === 3) {
-            approachPrev = busData[busId]['prevStopId'];
+        if ((busData[busName]['route'] === 'wknd1' || busData[busName]['route'] === 'all' || busData[busName]['route'] === 'winter1' || busData[busName]['route'] === 'on1' || busData[busName]['route'] === 'summer1') && nextStop === 3) {
+            approachPrev = busData[busName]['prevStopId'];
             if (!approachPrev) {
-                const viaMap = busETAs && busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
+                const viaMap = busETAs && busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
                 const via22 = viaMap && (viaMap['22'] ?? viaMap[22]);
                 const via2 = viaMap && (viaMap['2'] ?? viaMap[2]);
                 if (typeof via22 === 'number' && typeof via2 === 'number') {
@@ -2130,9 +2132,9 @@ function popInfo(busId, resetCampusFontSize) {
             }
         }
 
-        if (busData[busId].at_stop && !(closestStopId && closestStopId === busData[busId].stopId)) {
+        if (busData[busName].at_stop && !(closestStopId && closestStopId === busData[busName].stopId)) {
 
-            let stopId = busData[busId].stopId
+            let stopId = busData[busName].stopId
             if (Array.isArray(stopId)) {
                 stopId = stopId[0];
             }
@@ -2175,9 +2177,9 @@ function popInfo(busId, resetCampusFontSize) {
 
             let eta;
 
-            if ((busData[busId]['route'] === 'wknd1' || busData[busId]['route'] === 'all' || busData[busId]['route'] === 'winter1' || busData[busId]['route'] === 'on1' || busData[busId]['route'] === 'summer1') && sortedStops[i] === 3) { // special case
-                if (nextStop === 3 && busData[busId]['stopId'] && !approachPrev) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
-                    delete busETAs[busId];
+            if ((busData[busName]['route'] === 'wknd1' || busData[busName]['route'] === 'all' || busData[busName]['route'] === 'winter1' || busData[busName]['route'] === 'on1' || busData[busName]['route'] === 'summer1') && sortedStops[i] === 3) { // special case
+                if (nextStop === 3 && busData[busName]['stopId'] && !approachPrev) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
+                    delete busETAs[busName];
                     console.log("I'm amazed this actually happened, wow"); // encountered this 4/19/2025 six:38 pm at livi dining
                     return;
                 }
@@ -2190,10 +2192,10 @@ function popInfo(busId, resetCampusFontSize) {
                     // Second SAC NB - use the previous stop in the current sorted sequence
                     etaPrevStopId = sortedStops[i-1];
                 }
-                const etaSecs = getETAForStop(busId, 3, etaPrevStopId);
+                const etaSecs = getETAForStop(busName, 3, etaPrevStopId);
                 eta = Math.round(((etaSecs || 0) + 10)/secondsDivisor);
             } else {
-                const etaSecs = getETAForStop(busId, sortedStops[i]);
+                const etaSecs = getETAForStop(busName, sortedStops[i]);
                 eta = Math.round(((etaSecs || 0) + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
             }
 
@@ -2251,11 +2253,11 @@ function popInfo(busId, resetCampusFontSize) {
             }
 
             if (i === 0 && settings['toggle-show-bus-progress']) {
-                stopName += `<div class="ml-0p5rem" style="color: #00abff;">(${Math.round(busData[busId].progress*100)}%)</div>`
+                stopName += `<div class="ml-0p5rem" style="color: #00abff;">(${Math.round(busData[busName].progress*100)}%)</div>`
             }
 
             if (closestStopId && closestStopId === sortedStops[i] && routesServicing(closestStopId).includes(data.route)) {
-                if (busData[busId].at_stop && closestStopId === busData[busId].stopId) {
+                if (busData[busName].at_stop && closestStopId === busData[busName].stopId) {
                     $('.closest-stop-eta').text('Here')
                     $('.closest-stop-time').hide();
                 } else {
@@ -2265,7 +2267,7 @@ function popInfo(busId, resetCampusFontSize) {
                 }
             }
 
-            if (i === 0 && shouldShowClosestStop && closestStopId === sortedStops[i] && !busData[busId].at_stop) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
+            if (i === 0 && shouldShowClosestStop && closestStopId === sortedStops[i] && !busData[busName].at_stop) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
 
             $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
             $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
@@ -2298,15 +2300,15 @@ function popInfo(busId, resetCampusFontSize) {
 
         }
 
-        if (busData[busId].oos) {
-            distanceFromLine(busId);
+        if (busData[busName].oos) {
+            distanceFromLine(busName);
         }
 
         if (!negativeETA) {
 
             $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
 
-            if (popupBusId !== busId) {
+            if (popupBusName !== busName) {
                 setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
                     $('.info-next-stops').scrollTop(0)
                 }, 0);
@@ -2333,12 +2335,12 @@ function popInfo(busId, resetCampusFontSize) {
         $('.next-stops-grid > div').empty();
     }
 
-    updateHistoricalCapacity(busId);
+    updateHistoricalCapacity(busName);
 
-    if (sourceBusId !== busId) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
+    if (sourceBusName !== busName) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
         $('.bus-history').show();
         $('.info-quickness-mid').hide();
-        getBusBreaks(busId);
+        getBusBreaks(busName);
         $('.show-more-breaks, .show-all-breaks').show();
     }
     
@@ -2347,9 +2349,9 @@ function popInfo(busId, resetCampusFontSize) {
     } else {
         $('.bus-info-back-wrapper').hide();
     }
-    sourceBusId = busId;
+    sourceBusName = busName;
 
-    if (favBuses.includes(parseInt(busId))) {
+    if (favBuses.includes(busName)) {
         $('.bus-star > i').css('color', 'gold').removeClass('icon-star').addClass('icon-star-solid')
     } else {
         $('.bus-star > i').css('color', 'var(--theme-color)').removeClass('icon-star-solid').addClass('icon-star')
@@ -2371,8 +2373,8 @@ function popInfo(busId, resetCampusFontSize) {
 
     updateNextStopsMaxHeight();
 
-    if (!popupBusId && settings['toggle-hide-other-routes']) {
-        focusBus(busId);
+    if (!popupBusName && settings['toggle-hide-other-routes']) {
+        focusBus(busName);
     }
 
     try { updateRidingBadgeUI(); } catch (_) {}
@@ -2396,7 +2398,7 @@ function updateNextStopsMaxHeight() {
     nextStops.css('max-height', maxHeight - 75);
 }
 
-function populateBusBreaks(busBreakData, busId) {
+function populateBusBreaks(busBreakData, busName) {
     const MAX_INITIAL_BREAKS = 7; // Maximum number of breaks shown initially
 
     if (!busBreakData || busBreakData.error) {
@@ -2411,7 +2413,7 @@ function populateBusBreaks(busBreakData, busId) {
     }
 
     // Get bus route and expected stops for comparison
-    const busRoute = busData[busId]?.route;
+    const busRoute = busData[busName]?.route;
     let expectedStops = [];
     if (busRoute && stopLists[busRoute] && stopLists[busRoute].length > 0) {
         expectedStops = stopLists[busRoute];
@@ -2517,7 +2519,7 @@ function populateBusBreaks(busBreakData, busId) {
         
         // Log if bus missed stops
         if (missedStops.length > 0) {
-            console.log(`Bus ${busId} (${busData[busId]?.busName}) missed ${missedStops.length} stops:`, missedStops.map(stopId => stopsData[stopId]?.name || stopId));
+            console.log(`Bus ${busName} (${busData[busName]?.busName}) missed ${missedStops.length} stops:`, missedStops.map(stopId => stopsData[stopId]?.name || stopId));
         }
         
         // Add missed stops to the list (these will be hidden initially and shown when "Show All Stops" is clicked)
@@ -2660,11 +2662,11 @@ function checkAllBusesForMissedStops() {
     for (const route in busesByRoutes[selectedCampus]) {
         const routeBuses = busesByRoutes[selectedCampus][route];
         
-        for (const busId of routeBuses) {
+        for (const busName of routeBuses) {
             totalBuses++;
             
             // Get the bus's route and expected stops
-            const busRoute = busData[busId]?.route;
+            const busRoute = busData[busName]?.route;
             if (!busRoute || !stopLists[busRoute] || stopLists[busRoute].length === 0) {
                 continue;
             }
@@ -2672,8 +2674,8 @@ function checkAllBusesForMissedStops() {
             const expectedStops = stopLists[busRoute];
             
             // Get actual stops from bus break data
-            if (busBreaksCache[busId] && busBreaksCache[busId].data && !busBreaksCache[busId].data.error) {
-                const busBreakData = busBreaksCache[busId].data;
+            if (busBreaksCache[busName] && busBreaksCache[busName].data && !busBreaksCache[busName].data.error) {
+                const busBreakData = busBreaksCache[busName].data;
                 const actualStops = new Set(busBreakData.map(breakItem => breakItem.stop_id));
                 
                 // Find missed stops using the same logic as populateBusBreaks
@@ -2695,7 +2697,7 @@ function checkAllBusesForMissedStops() {
                 
                 if (missedStops.length > 0) {
                     busesWithMissedStops++;
-                    console.log(`🚌 Bus ${busId} (${busData[busId]?.busName}) on route ${route.toUpperCase()} missed ${missedStops.length} stops:`, 
+                    console.log(`🚌 Bus ${busName} (${busData[busName]?.busName}) on route ${route.toUpperCase()} missed ${missedStops.length} stops:`, 
                         missedStops.map(stopId => stopsData[stopId]?.name || stopId));
                 }
             }
@@ -2705,24 +2707,24 @@ function checkAllBusesForMissedStops() {
     console.log(`📊 Summary: ${busesWithMissedStops} out of ${totalBuses} buses have missed stops`);
 }
 
-function getBusBreaks(busId) {
+function getBusBreaks(busName) {
     const currentTime = new Date().getTime();
     const THREE_MINUTES = 3 * 60 * 1000;
 
-    if (busBreaksCache[busId] &&
-        (currentTime - busBreaksCache[busId].timestamp) < THREE_MINUTES) {
-        populateBusBreaks(busBreaksCache[busId].data, busId);
+    if (busBreaksCache[busName] &&
+        (currentTime - busBreaksCache[busName].timestamp) < THREE_MINUTES) {
+        populateBusBreaks(busBreaksCache[busName].data, busName);
         return;
     }
 
-    fetch(`https://demo.rubus.live/get_breaks?bus_id=${busId}`)
+    fetch(`https://demo.rubus.live/get_breaks?bus_id=${busName}`)
         .then(response => response.json())
         .then(data => {
-            busBreaksCache[busId] = {
+            busBreaksCache[busName] = {
                 data: data,
                 timestamp: currentTime
             };
-            populateBusBreaks(data, busId);
+            populateBusBreaks(data, busName);
             updateRubusResponseTime();
         })
         .catch(error => {
@@ -2736,8 +2738,8 @@ let busRiderships = {};
 let busRidershipCharts = {};
 let currentRidershipChartBusId = null;
 
-function shouldShowCapacityChart(busId) {
-    const timeRiderships = busRiderships[busId];
+function shouldShowCapacityChart(busName) {
+    const timeRiderships = busRiderships[busName];
     if (!timeRiderships || Object.keys(timeRiderships).length === 0) {
         return false;
     }
@@ -2757,17 +2759,17 @@ function shouldShowCapacityChart(busId) {
     return true; // Show chart if it has 5 or more unique values
 }
 
-function updateHistoricalCapacity(busId) {
+function updateHistoricalCapacity(busName) {
     // Only proceed if this is a new bus selection or data needs refresh
     const currentMinute = new Date().getMinutes();
     const shouldRefresh = currentMinute % 5 === 1 && !busRiderships.lastUpdate || 
                          (currentMinute % 5 === 1 && new Date().getTime() - busRiderships.lastUpdate > 60000);
     
     const handleChartUpdate = () => {
-        const shouldShow = shouldShowCapacityChart(busId);
+        const shouldShow = shouldShowCapacityChart(busName);
         if (shouldShow) {
-            createBusRidershipChart(busId);
-            currentRidershipChartBusId = busId;
+            createBusRidershipChart(busName);
+            currentRidershipChartBusId = busName;
         } else {
             $('.bus-ridership-wrapper, .bus-history').hide();
         }
@@ -2780,7 +2782,7 @@ function updateHistoricalCapacity(busId) {
                 const dataChanged = JSON.stringify(busRiderships) !== JSON.stringify(data);
                 busRiderships = data;
                 busRiderships.lastUpdate = new Date().getTime();
-                if (!busRidershipCharts[busId] || dataChanged) {
+                if (!busRidershipCharts[busName] || dataChanged) {
                     handleChartUpdate();
                 }
                 updateRubusResponseTime();
@@ -2789,16 +2791,16 @@ function updateHistoricalCapacity(busId) {
                 console.error('Error fetching bus ridership data:', error);
                 markRubusRequestsFailing();
             });
-    } else if (!busRidershipCharts[busId]) {
+    } else if (!busRidershipCharts[busName]) {
         handleChartUpdate();
     }
 }
 
-function createBusRidershipChart(busId) {
+function createBusRidershipChart(busName) {
     
     // If chart already exists, just update its data if needed
-    if (busRidershipCharts[busId]) {
-        const timeRiderships = busRiderships[busId];
+    if (busRidershipCharts[busName]) {
+        const timeRiderships = busRiderships[busName];
         if (!timeRiderships || !Object.keys(timeRiderships).length) {
             $('.bus-historical-capacity').hide();
             return;
@@ -2828,26 +2830,26 @@ function createBusRidershipChart(busId) {
         const newValues = Object.values(sortedData);
 
         // Only update if data has changed
-        const currentLabels = busRidershipCharts[busId].data.labels;
-        const currentValues = busRidershipCharts[busId].data.datasets[0].data;
+        const currentLabels = busRidershipCharts[busName].data.labels;
+        const currentValues = busRidershipCharts[busName].data.datasets[0].data;
         
         if (JSON.stringify(currentLabels) !== JSON.stringify(newLabels) || 
             JSON.stringify(currentValues) !== JSON.stringify(newValues)) {
-            busRidershipCharts[busId].data.labels = newLabels;
-            busRidershipCharts[busId].data.datasets[0].data = newValues;
-            busRidershipCharts[busId].update();
+            busRidershipCharts[busName].data.labels = newLabels;
+            busRidershipCharts[busName].data.datasets[0].data = newValues;
+            busRidershipCharts[busName].update();
         }
         
         $('.bus-historical-capacity').show();
         return;
     }
 
-    if (!busRiderships[busId]) {
+    if (!busRiderships[busName]) {
         $('.bus-historical-capacity').hide();
         return;
     }
 
-    const timeRiderships = busRiderships[busId];
+    const timeRiderships = busRiderships[busName];
     if (!Object.keys(timeRiderships).length) {
         $('.bus-historical-capacity').hide();
         return;
@@ -2885,16 +2887,16 @@ function createBusRidershipChart(busId) {
     const ctx = document.createElement('canvas');
     $('.bus-historical-capacity').empty().css('height', '90px').append(ctx).show();
     
-    busRidershipCharts[busId] = new Chart(ctx, {
+    busRidershipCharts[busName] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
                 // label: 'Passengers',
                 data: values,
-                borderColor: colorMappings[busData[busId].route],
+                borderColor: colorMappings[busData[busName].route],
                 backgroundColor: function() {
-                    const color = colorMappings[busData[busId].route];
+                    const color = colorMappings[busData[busName].route];
                     if (color.startsWith('rgb')) {
                         return color.replace(')', ', 0.2)').replace('rgb', 'rgba');
                     } else {
@@ -2981,11 +2983,11 @@ function createBusRidershipChart(busId) {
     });
 }
 
-async function focusBus(busId) {
+async function focusBus(busName) {
     // Clear panout feedback when focusing on a bus
     clearPanoutFeedback();
 
-    const route = busData[busId].route;
+    const route = busData[busName].route;
 
     hideStopsExcept(route)
     hidePolylinesExcept(route)
@@ -2997,7 +2999,7 @@ async function focusBus(busId) {
 
     // Show distance line on focus if the setting is enabled
     if (settings['toggle-distances-line-on-focus']) {
-        showDistanceLineOnFocus(busId);
+        showDistanceLineOnFocus(busName);
         // Hide the route polyline when showing distance line
         if (polylines[route]) {
             polylines[route].setStyle({ opacity: 0 });
@@ -3012,12 +3014,12 @@ async function focusBus(busId) {
     // }
 
     for (const marker in busMarkers) {
-        if (marker !== busId.toString()) {
+        if (marker !== busName.toString()) {
             busMarkers[marker].getElement().style.display = 'none';
         }
     }
 
-    // if (!popupBusId) {
+    // if (!popupBusName) {
         const topContainerHeight = 1 - ($(window).height() - $('.bus-btns').offset().top)/$(window).height()
 
         let focusBounds = null;
@@ -3025,8 +3027,8 @@ async function focusBus(busId) {
             focusBounds = polylines[route].getBounds();
         }
 
-        if (busData[busId].atDepot) {
-            const busLocBounds = L.latLngBounds([L.latLng(busData[busId].lat, busData[busId].long)]);
+        if (busData[busName].atDepot) {
+            const busLocBounds = L.latLngBounds([L.latLng(busData[busName].lat, busData[busName].long)]);
             focusBounds.extend(busLocBounds);
         }
 
@@ -3055,22 +3057,22 @@ let distanceLineLayer = null;
 // Global variable to store the red dot marker showing bus position on distance line
 let distanceLinePositionMarker = null;
 
-function showDistanceLineOnFocus(busId) {
+function showDistanceLineOnFocus(busName) {
     // Remove any existing distance line
     removeDistanceLineOnFocus();
     
-    const route = busData[busId].route;
+    const route = busData[busName].route;
     const campusKey = routesByCampus[route] || selectedCampus || 'nb';
     
     // Don't show distance line if bus is at depot or out of service
-    if (busData[busId].atDepot || busData[busId].oos) {
-        console.log('Bus', busId, 'is at depot or out of service, not showing distance line');
+    if (busData[busName].atDepot || busData[busName].oos) {
+        console.log('Bus', busName, 'is at depot or out of service, not showing distance line');
         return;
     }
     
-    const currentStopId = busData[busId].stopId;
-    const prevStopId = busData[busId].prevStopId;
-    const nextStopId = busData[busId].next_stop;
+    const currentStopId = busData[busName].stopId;
+    const prevStopId = busData[busName].prevStopId;
+    const nextStopId = busData[busName].next_stop;
     
     // Determine the correct segment to show
     let fromStopId, toStopId;
@@ -3084,7 +3086,7 @@ function showDistanceLineOnFocus(busId) {
         fromStopId = prevStopId;
         toStopId = currentStopId;
     } else {
-        console.log('Cannot determine route segment for bus', busId, '- missing stop information');
+        console.log('Cannot determine route segment for bus', busName, '- missing stop information');
         console.log('Current stop:', currentStopId, 'Next stop:', nextStopId, 'Previous stop:', prevStopId);
         return;
     }
@@ -3128,9 +3130,9 @@ function showDistanceLineOnFocus(busId) {
     distanceLineLayer.addTo(map);
     
     // Update the red dot position marker
-    updateDistanceLinePositionMarker(busId);
+    updateDistanceLinePositionMarker(busName);
     
-    console.log('Showing distance line from stop', fromStopId, 'to stop', toStopId, 'for bus', busId);
+    console.log('Showing distance line from stop', fromStopId, 'to stop', toStopId, 'for bus', busName);
 }
 
 function removeDistanceLineOnFocus() {
@@ -3144,8 +3146,8 @@ function removeDistanceLineOnFocus() {
     }
 }
 
-function findClosestPointOnDistanceLine(busId) {
-    const busLatLng = L.latLng(busData[busId].lat, busData[busId].long);
+function findClosestPointOnDistanceLine(busName) {
+    const busLatLng = L.latLng(busData[busName].lat, busData[busName].long);
     const lineCoordinates = distanceLineLayer.getLatLngs();
     
     let minDist = Infinity;
@@ -3165,11 +3167,11 @@ function findClosestPointOnDistanceLine(busId) {
     return closestPoint;
 }
 
-function updateDistanceLinePositionMarker(busId) {
-    const closestPoint = findClosestPointOnDistanceLine(busId);
+function updateDistanceLinePositionMarker(busName) {
+    const closestPoint = findClosestPointOnDistanceLine(busName);
     
     // Calculate distance from bus to closest point
-    const busLatLng = L.latLng(busData[busId].lat, busData[busId].long);
+    const busLatLng = L.latLng(busData[busName].lat, busData[busName].long);
     const distanceMeters = busLatLng.distanceTo(closestPoint);
     const distanceFeet = Math.round(distanceMeters * 3.28084); // Convert meters to feet
     
@@ -3197,9 +3199,9 @@ function updateDistanceLinePositionMarker(busId) {
     console.log('Created distance line position marker with tooltip:', distanceFeet, 'ft');
 }
 
-function distanceFromLine(busId) {
-    const busLatLng = L.latLng(busData[busId].lat, busData[busId].long);
-    const route = busData[busId].route;
+function distanceFromLine(busName) {
+    const busLatLng = L.latLng(busData[busName].lat, busData[busName].long);
+    const route = busData[busName].route;
     const polyline = route ? polylines[route] : null;
     if (!polyline) {
         // No polyline available for this route; treat as on-line for UI purposes
@@ -3218,15 +3220,15 @@ function distanceFromLine(busId) {
     }
     
     const distanceMiles = minDist * 0.000621371 * 5280;
-    // console.log(`Bus ${busId} is ${distanceMiles.toFixed(3)} ft from its route`);
+    // console.log(`Bus ${busName} is ${distanceMiles.toFixed(3)} ft from its route`);
     return (distanceMiles > 500)
 }
 
-function isValid(busId) {
-    if (!busETAs[busId]) return false;
+function isValid(busName) {
+    if (!busETAs[busName]) return false;
 
-    for (const stopId of stopLists[busData[busId].route]) {
-        const etaVal = getETAForStop(busId, stopId);
+    for (const stopId of stopLists[busData[busName].route]) {
+        const etaVal = getETAForStop(busName, stopId);
         if (typeof etaVal === 'number' && etaVal < 0) {
             return false;
         }
@@ -3235,16 +3237,16 @@ function isValid(busId) {
     return true;
 }
 
-function getBusValidityInfo(busId) {
-    if (!busETAs[busId]) {
+function getBusValidityInfo(busName) {
+    if (!busETAs[busName]) {
         return {
             valid: false,
             reason: 'not in busETAs'
         };
     }
 
-    for (const stopId of stopLists[busData[busId].route]) {
-        const etaVal = getETAForStop(busId, stopId);
+    for (const stopId of stopLists[busData[busName].route]) {
+        const etaVal = getETAForStop(busName, stopId);
         if (typeof etaVal === 'number' && etaVal < 0) {
             return {
                 valid: false,
@@ -3273,11 +3275,11 @@ function expandBounds(origBounds, factor) {
     return L.latLngBounds(newSouthWest, newNorthEast);
 }
 
-function startStoppedForTimer(busId) {
+function startStoppedForTimer(busName) {
 
     clearInterval(stoppedForInterval); // not sure what could be causing the double timer that requires me to add this
 
-    const arrivedDatetime = new Date(busData[busId].timeArrived);
+    const arrivedDatetime = new Date(busData[busName].timeArrived);
     const now = new Date()//.toISOString();
     // console.log(now)
     const secondsDifference = Math.floor((now - arrivedDatetime) / 1000);
@@ -3299,7 +3301,7 @@ function startStoppedForTimer(busId) {
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {
-        if (popupBusId === busId) {
+        if (popupBusName === busName) {
             const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
             seconds += step;
             if (seconds > 59) {
@@ -3315,22 +3317,22 @@ function startStoppedForTimer(busId) {
     }, 1000);
 }
 
-function flyToBus(busId) {
-    if (!busId) {
-        console.error(`Invalid bus ID: busId is undefined or null. Input bus ID: ${busId}`);
+function flyToBus(busName) {
+    if (!busName) {
+        console.error(`Invalid bus ID: busName is undefined or null. Input bus ID: ${busName}`);
         return;
     }
     if (!busData) {
         console.error('Missing bus data: busData is undefined or null');
         return;
     }
-    if (!busData[busId]) {
-        console.error(`Invalid bus data for bus ID ${busId}: busData[${busId}] is undefined or null`);
+    if (!busData[busName]) {
+        console.error(`Invalid bus data for bus ID ${busName}: busData[${busName}] is undefined or null`);
         return;
     }
 
-    const lat = Number(busData[busId].lat);
-    const long = Number(busData[busId].long);
+    const lat = Number(busData[busName].lat);
+    const long = Number(busData[busName].long);
     const loc = { lat, long };
     const targetZoom = 18;
     
@@ -3344,7 +3346,7 @@ function flyToBus(busId) {
         }
     );
    
-    selectBusMarker(busId);
+    selectBusMarker(busName);
    
     // Wait for popup to appear and then adjust the map
     const checkForPopupAndAdjust = () => {
@@ -3401,13 +3403,13 @@ function flyToBus(busId) {
 let overtimeInterval;
 let overtimeBusId;
 
-function startOvertimeCounter(busId) {
+function startOvertimeCounter(busName) {
 
-    if (busId === overtimeBusId) {
+    if (busName === overtimeBusId) {
         return;
     }
 
-    overtimeBusId = busId;
+    overtimeBusId = busName;
 
     if (overtimeInterval) {
         clearInterval(overtimeInterval);
@@ -3415,8 +3417,8 @@ function startOvertimeCounter(busId) {
 
     $('.overtime-time').show();
     
-    const timeArrived = new Date(busData[busId].timeArrived);
-    const avgWaitAtStop = waits[busData[busId].stopId[0]];
+    const timeArrived = new Date(busData[busName].timeArrived);
+    const avgWaitAtStop = waits[busData[busName].stopId[0]];
     const arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000);
     const overtimeSeconds = arrivedAgoSeconds - avgWaitAtStop;
     // console.log(arrivedAgoSeconds)
@@ -3427,7 +3429,7 @@ function startOvertimeCounter(busId) {
     $('.overtime-time').text((minutes > 0 ? minutes + 'm ' : '') + seconds + 's overtime');
 
     overtimeInterval = setInterval(() => {
-        if (busData[busId] && busData[busId]['overtime']) {
+        if (busData[busName] && busData[busName]['overtime']) {
             const arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000);
             const overtimeSeconds = arrivedAgoSeconds - avgWaitAtStop;
             const minutes = Math.floor(overtimeSeconds / 60);

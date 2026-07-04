@@ -536,9 +536,9 @@ function updateTooltips(route) {
 
     try {
         stopLists[route].forEach(stopId => {
-            const [lowestBusId, lowestETA] = getSoonestBus(stopId, route);
+            const [lowestBusName, lowestETA] = getSoonestBus(stopId, route);
 
-            if (lowestBusId) {
+            if (lowestBusName) {
                 const lowestETAMin = Math.ceil(lowestETA / 60);
                 $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
             } else {
@@ -555,11 +555,11 @@ function updateTooltips(route) {
 function updateBusNameTooltips() {
     const showBusNames = settings['toggle-show-bus-names'];
     
-    for (const busId in busMarkers) {
-        const $busNameLabel = $(busMarkers[busId].getElement()).find('.bus-name-label');
+    for (const busName in busMarkers) {
+        const $busNameLabel = $(busMarkers[busName].getElement()).find('.bus-name-label');
         if (showBusNames) {
             $busNameLabel.removeClass('none');
-            $busNameLabel.text(busData[busId].busName);
+            $busNameLabel.text(busData[busName].busName);
         } else {
             $busNameLabel.addClass('none');
         }
@@ -755,24 +755,24 @@ function selectedRoute(route) {
     $('.route-active-buses').text(busesByRoutes[selectedCampus][route].length === 1 ? '1 bus running' : busesByRoutes[selectedCampus][route].length + ' buses running')
 
     $('.active-buses').empty();
-    busesByRoutes[selectedCampus][route].forEach(busId => {
+    busesByRoutes[selectedCampus][route].forEach(busName => {
 
         let speed = ''
-        if ('visualSpeed' in busData[busId]) {
-            speed = parseInt(busData[busId].visualSpeed) + 'mph'
+        if ('visualSpeed' in busData[busName]) {
+            speed = parseInt(busData[busName].visualSpeed) + 'mph'
         }
-        speed += ' | ' + busData[busId].capacity + '% full'
+        speed += ' | ' + busData[busName].capacity + '% full'
 
         const $busElm = $(`<div class="flex justify-between">
-            <div class="route-bus-name flex align-center gap-x-0p5rem">${busData[busId].busName}</div>
-            <div class="route-bus-speed" bus-id="${busId}">${speed}</div>
+            <div class="route-bus-name flex align-center gap-x-0p5rem">${busData[busName].busName}</div>
+            <div class="route-bus-speed" bus-name="${busName}">${speed}</div>
         </div>`)
 
-        if (busData[busId].oos) {
+        if (busData[busName].oos) {
             $busElm.find('.route-bus-name').append(`<div class="bus-oos white br-0p5rem text-1p4rem">OOS</div>`)
         }
 
-        if (busData[busId].atDepot) {
+        if (busData[busName].atDepot) {
             $busElm.find('.route-bus-name').append(`<div class="bus-depot white br-0p5rem text-1p4rem">Depot</div>`)
         }
         
@@ -812,59 +812,59 @@ function selectedRoute(route) {
         let i = 0;
 
         let positiveBuses = [];
-        busesByRoutes[selectedCampus][route].forEach(busId => {
-            if (progressToNextStop(busId) < 1) { // have to debug why some stops are missed - prob a passio location issue, right?
-                positiveBuses.push(busId);
+        busesByRoutes[selectedCampus][route].forEach(busName => {
+            if (progressToNextStop(busName) < 1) { // have to debug why some stops are missed - prob a passio location issue, right?
+                positiveBuses.push(busName);
             }
         })
 
         // Sort bus IDs based on their ETA
         positiveBuses
             .sort((a, b) => {
-                const getETA = (busId) => {
+                const getETA = (busName) => {
                     if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId) {
-                        if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) {
+                        if (busData[busName].at_stop && stopId == busData[busName].stopId[0] && previousStopId == busData[busName].stopId[1]) {
                             return 0;
                         }
-                        const val = getETAForStop(busId, stopId, previousStopId);
+                        const val = getETAForStop(busName, stopId, previousStopId);
                         return (val === undefined) ? Infinity : val;
-                    } else if (busData[busId].at_stop && (Array.isArray(busData[busId].stopId) ? stopId === busData[busId].stopId[0] : stopId === busData[busId].stopId)) {
+                    } else if (busData[busName].at_stop && (Array.isArray(busData[busName].stopId) ? stopId === busData[busName].stopId[0] : stopId === busData[busName].stopId)) {
                         return 0;
                     }
-                    const val = getETAForStop(busId, stopId);
+                    const val = getETAForStop(busName, stopId);
                     return (val === undefined) ? Infinity : val;
                 };
                 return Math.round(getETA(a) / 60) - Math.round(getETA(b) / 60);
             })
-            .forEach(busId => {
+            .forEach(busName => {
 
                 let thisStopIndex = index;
                 // console.log(index);
                 let busIndex = -1;
                 
-                if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && busData[busId].stopId == 3) {
+                if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && busData[busName].stopId == 3) {
                     
                     for (let j = 1; j < stopLists[route].length; j++) {
 
                         // console.log('stopLists[route][i]: ', stopLists[route][j]);
-                        // console.log('busData[busId].stopId: ', busData[busId].stopId);
-                        // console.log('busData[busId].prevStopId: ', busData[busId].prevStopId);
+                        // console.log('busData[busName].stopId: ', busData[busName].stopId);
+                        // console.log('busData[busName].prevStopId: ', busData[busName].prevStopId);
                         // console.log('previousStopId: ', previousStopId);
                         
                         if (
-                            stopLists[route][j] === busData[busId].stopId &&
-                            stopLists[route][j-1] === busData[busId].prevStopId) {
+                            stopLists[route][j] === busData[busName].stopId &&
+                            stopLists[route][j-1] === busData[busName].prevStopId) {
                             busIndex = j;
                             alert('what is this')
                             break;
                         }
                     }
                     if (busIndex === -1) {
-                        busIndex = stopLists[route].indexOf(busData[busId].stopId);
+                        busIndex = stopLists[route].indexOf(busData[busName].stopId);
                     }
 
                 } else {
-                    busIndex = stopLists[route].indexOf(busData[busId].stopId);
+                    busIndex = stopLists[route].indexOf(busData[busName].stopId);
                 }
 
                 let stopsAway = thisStopIndex > busIndex 
@@ -873,30 +873,30 @@ function selectedRoute(route) {
 
                 // console.log(stopsAway)
 
-                if (busETAs[busId]) {
+                if (busETAs[busName]) {
 
                     let eta;
 
                     const $gridElm = $stopElm.find('.route-buses-for-stop');
 
-                    if (busData[busId].at_stop && (Array.isArray(busData[busId].stopId) ? stopId === busData[busId].stopId[0] : stopId === busData[busId].stopId)) {
+                    if (busData[busName].at_stop && (Array.isArray(busData[busName].stopId) ? stopId === busData[busName].stopId[0] : stopId === busData[busName].stopId)) {
                         eta = 0;
-                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus('${busName}'); closeRouteMenu(); })();">${busData[busName].busName}</div>`);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                         return;
-                    } else if (busData[busId].at_stop && stopId == busData[busId].stopId[0] && previousStopId == busData[busId].stopId[1]) { // wknd & all special case at sac nb
+                    } else if (busData[busName].at_stop && stopId == busData[busName].stopId[0] && previousStopId == busData[busName].stopId[1]) { // wknd & all special case at sac nb
                         eta = 0;
-                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus('${busName}'); closeRouteMenu(); })();">${busData[busName].busName}</div>`);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                         return;
                     } else {
-                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus(${busId}); closeRouteMenu(); })();">${busData[busId].busName}</div>`);
+                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus('${busName}'); closeRouteMenu(); })();">${busData[busName].busName}</div>`);
                         if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId) {
-                            eta = getETAForStop(busId, stopId, previousStopId);
+                            eta = getETAForStop(busName, stopId, previousStopId);
                         } else {
-                            eta = getETAForStop(busId, stopId);
+                            eta = getETAForStop(busName, stopId);
                         }
                     }
 
@@ -1010,8 +1010,8 @@ function updateColorMappingsSelection(selectedColor) {
     // Always update route selector with the selected color when it's the currently shown route
     $(`.route-selector[routename="${shownRoute}"]`).css('background-color', selectedColor).css('box-shadow', `0 0 10px ${selectedColor}`)
 
-    busesByRoutes[selectedCampus][shownRoute].forEach(busId => {
-        const iconElement = busMarkers[busId].getElement().querySelector('.bus-icon-outer');
+    busesByRoutes[selectedCampus][shownRoute].forEach(busName => {
+        const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
         if (iconElement) {
             iconElement.style.backgroundColor = selectedColor;
         }
@@ -1024,7 +1024,7 @@ function updateColorMappingsSelection(selectedColor) {
 
     populateFavs();
 
-    if (sharedBus && busData[sharedBus].route === shownRoute) {
+    if (sharedBusName && busData[sharedBusName].route === shownRoute) {
         $('.shared > span').css('color', selectedColor)
     }
 
@@ -1078,8 +1078,8 @@ function updateBusOverview(routes) {
 
     const routeData = routes.map(route => {
         routeRiderships[route] = 0;
-        busesByRoutes[selectedCampus][route].forEach(busId => {
-            const riders = Math.ceil(busData[busId].capacity/100 * 57)
+        busesByRoutes[selectedCampus][route].forEach(busName => {
+            const riders = Math.ceil(busData[busName].capacity/100 * 57)
             routeRiderships[route] += riders;
             totalRidership += riders;
         });
@@ -1542,14 +1542,14 @@ function updateBusServiceTime() {
     // Create array of all buses with their service times
     const busesWithServiceTime = [];
     
-    for (const busId in busData) {
-        if (busData[busId].route && busData[busId].busName) {
-            const joinedServiceTime = busData[busId].joined_service;
+    for (const busName in busData) {
+        if (busData[busName].route && busData[busName].busName) {
+            const joinedServiceTime = busData[busName].joined_service;
             if (joinedServiceTime) {
                 busesWithServiceTime.push({
-                    busId: busId,
-                    busName: busData[busId].busName,
-                    route: busData[busId].route,
+                    busName: busName,
+                    busName: busData[busName].busName,
+                    route: busData[busName].route,
                     joinedServiceTime: joinedServiceTime
                 });
             }
@@ -1748,7 +1748,7 @@ const toggleSettings = [
     'toggle-show-stop-polygons',
     'toggle-show-dev-options',
     'toggle-show-etas-in-seconds',
-    'toggle-show-bus-id',
+    'toggle-show-bus-name',
     'toggle-show-bus-progress',
     'toggle-show-bus-overtime-timer',
     'toggle-show-bus-names',
@@ -1841,7 +1841,7 @@ let defaultSettings = {
     'toggle-pause-passio-polling': false,
     'toggle-show-stop-polygons': false,
     'toggle-show-dev-options': false,
-    'toggle-show-bus-id': false,
+    'toggle-show-bus-name': false,
     'toggle-show-bus-progress': false,
     'toggle-show-bus-overtime-timer': false,
     'toggle-show-bus-names': false,
@@ -2101,10 +2101,10 @@ $(document).ready(function() {
     // updateSettings();
 
     $('.stop-info-back').click(function() {
-        flyToBus(sourceBusId);
+        flyToBus(sourceBusName);
         $('.stop-info-popup').hide();
         $('.stop-info-hide-oos').hide();
-        // setting sourceBusId to null breaks stuff
+        // setting sourceBusName to null breaks stuff
     });
 
     $('.bus-info-back').click(function() {
@@ -2207,15 +2207,15 @@ function updateMarkerType() {
     updateMarkerSizeExamples();
 
     // Recreate all existing markers with the new marker type
-    for (const busId in busMarkers) {
+    for (const busName in busMarkers) {
         // Remove the old marker from the map
-        map.removeLayer(busMarkers[busId]);
+        map.removeLayer(busMarkers[busName]);
         
         // Clear the marker from the busMarkers object
-        delete busMarkers[busId];
+        delete busMarkers[busName];
         
         // Recreate the marker with the new type
-        plotBus(busId, true); // true for immediate update
+        plotBus(busName, true); // true for immediate update
     }
 }
 
@@ -2382,10 +2382,10 @@ function handleNearestStop(fly) {
         })
 
         $('.fly-closest-stop-wrapper').fadeIn();
-        if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3 && !popupBusId && !popupStopId && !shownRoute) {
+        if (settings['toggle-select-closest-stop'] && fly && !panelRoute && !$('.settings-panel').is(':visible') && !mapDragged && closestDistance < 3 && !popupBusName && !popupStopId && !shownRoute) {
             sourceStopId = null;
-            sourceBusId = null;
-            if (!sharedBus) {
+            sourceBusName = null;
+            if (!sharedBusName) {
                 flyToStop(thisClosestStopId, false); // false indicates automatic navigation, no analytics event
                 console.log("Flying to closest stop");
             }    

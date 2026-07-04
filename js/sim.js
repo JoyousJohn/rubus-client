@@ -273,14 +273,14 @@ async function generateSimBusData() {
                 if (angleDeg < 0) angleDeg += 360;
             }
 
-            // Unique 4 or 5 digit busId
-            let busId;
+            // Unique 4 or 5 digit busName
+            let busName;
             do {
                 const fourOrFive = Math.random() < 0.5;
-                busId = fourOrFive
+                busName = fourOrFive
                     ? Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
                     : Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;
-            } while (busData[busId]);
+            } while (busData[busName]);
 
             if (!window.activeRoutes) {
                 window.activeRoutes = new Set();
@@ -292,20 +292,20 @@ async function generateSimBusData() {
             }
             const hoursAgo = Math.floor(Math.random() * (8 - 1 + 1)) + 1; // 1-8 hours ago
             const joinedTime = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
-            joined_service[busId] = joinedTime;
+            joined_service[busName] = joinedTime;
 
-            busData[busId] = {};
-            busData[busId].previousTime = Date.now() - 5000;
-            busData[busId].previousPositions = [[lat, lng]];
-            busData[busId].lat = lat;
-            busData[busId].long = lng;
-            busData[busId].route = routeName;
-            busData[busId].type = 'sim';
-            busData[busId].campus = routesByCampus[routeName];
-            busData[busId].busName = String(Math.floor(Math.random() * 9000) + 1000);
-            busData[busId].rotation = angleDeg;
-            busData[busId].capacity = Math.floor(Math.random() * 101); // 0-100
-            busData[busId].joined_service = joinedTime;
+            busData[busName] = {};
+            busData[busName].previousTime = Date.now() - 5000;
+            busData[busName].previousPositions = [[lat, lng]];
+            busData[busName].lat = lat;
+            busData[busName].long = lng;
+            busData[busName].route = routeName;
+            busData[busName].type = 'sim';
+            busData[busName].campus = routesByCampus[routeName];
+            busData[busName].busName = String(Math.floor(Math.random() * 9000) + 1000);
+            busData[busName].rotation = angleDeg;
+            busData[busName].capacity = Math.floor(Math.random() * 101); // 0-100
+            busData[busName].joined_service = joinedTime;
 
             // Determine nearest segment (prev -> next) along this route using percentageDistances
             if (!seededAtStop) {
@@ -336,15 +336,15 @@ async function generateSimBusData() {
                         }
                         if (best.prev !== null && best.next !== null) {
                             if (!window.busLocations) window.busLocations = {};
-                            busLocations[busId] = { where: [best.next, best.prev] };
-                            busData[busId].stopId = best.prev; // this is correct
-                            busData[busId].prevStopId = best.prev; // this is correct
-                            busData[busId].next_stop = getNextStopId(routeName, best.prev); // this is correct
-                            busData[busId].at_stop = false;
+                            busLocations[busName] = { where: [best.next, best.prev] };
+                            busData[busName].stopId = best.prev; // this is correct
+                            busData[busName].prevStopId = best.prev; // this is correct
+                            busData[busName].next_stop = getNextStopId(routeName, best.prev); // this is correct
+                            busData[busName].at_stop = false;
                         }
                     }
                 } catch (e) {
-                    console.error('Error determining nearest segment for sim bus', busId, e);
+                    console.error('Error determining nearest segment for sim bus', busName, e);
                 }
             } else {
                 // Seeded at stop: set stop context directly
@@ -367,18 +367,18 @@ async function generateSimBusData() {
                         const prevId = routeStopsS[prevIdx];
                         const nextId = getNextStopId(routeName, currId);
                         if (!window.busLocations) window.busLocations = {};
-                        busLocations[busId] = { where: [currId] };
-                        busData[busId].stopId = currId;
-                        busData[busId].prevStopId = prevId;
-                        busData[busId].next_stop = nextId;
-                        busData[busId].at_stop = true;
+                        busLocations[busName] = { where: [currId] };
+                        busData[busName].stopId = currId;
+                        busData[busName].prevStopId = prevId;
+                        busData[busName].next_stop = nextId;
+                        busData[busName].at_stop = true;
                         // Set timeArrived now for seeded-at-stop placement
                         try {
                             const isStudentCenter = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(currId));
                             const minSec = isStudentCenter ? 60 : SIM_MIN_STOP_SECS;   // 1 min vs configured min
                             const maxSec = isStudentCenter ? 600 : SIM_MAX_STOP_SECS; // 10 min vs configured max
                             const secsAgo = Math.floor(Math.random() * (maxSec - minSec + 1)) + minSec;
-                            busData[busId].timeArrived = new Date(Date.now() - secsAgo * 1000);
+                            busData[busName].timeArrived = new Date(Date.now() - secsAgo * 1000);
                         } catch {}
                     }
                 } catch (e) {
@@ -397,23 +397,23 @@ async function generateSimBusData() {
                         if (!stopInfo) continue;
                         const dMiles = haversine(lat, lng, stopInfo.latitude, stopInfo.longitude)
                         if (dMiles <= thresholdMiles) {
-                            busData[busId].at_stop = true;
+                            busData[busName].at_stop = true;
                             const isStudentCenter = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(stopId));
                             const minSec = isStudentCenter ? 60 : SIM_MIN_STOP_SECS;   // 1 min vs configured min
                             const maxSec = isStudentCenter ? 600 : SIM_MAX_STOP_SECS; // 10 min vs configured max
                             const secsAgo = Math.floor(Math.random() * (maxSec - minSec + 1)) + minSec;
-                            busData[busId].timeArrived = new Date(Date.now() - secsAgo * 1000);
+                            busData[busName].timeArrived = new Date(Date.now() - secsAgo * 1000);
                             break;
                         }
                     }
                 }
             } catch (e) {
-                console.error('Error checking proximity to stops for sim bus', busId, e);
+                console.error('Error checking proximity to stops for sim bus', busName, e);
             }
 
             // Fallback: ensure any bus marked at_stop has a timeArrived
             try {
-                if (busData[busId].at_stop && !busData[busId].timeArrived) {
+                if (busData[busName].at_stop && !busData[busName].timeArrived) {
                     const campusKey3 = routesByCampus[routeName] || selectedCampus || 'nb';
                     const routeStops3 = stopLists[routeName] || [];
                     let nearestStopId = null;
@@ -428,30 +428,30 @@ async function generateSimBusData() {
                     const minSec2 = isStudentCenter2 ? 60 : SIM_MIN_STOP_SECS;
                     const maxSec2 = isStudentCenter2 ? 600 : SIM_MAX_STOP_SECS;
                     const secsAgo2 = Math.floor(Math.random() * (maxSec2 - minSec2 + 1)) + minSec2;
-                    busData[busId].timeArrived = new Date(Date.now() - secsAgo2 * 1000);
+                    busData[busName].timeArrived = new Date(Date.now() - secsAgo2 * 1000);
                 }
             } catch {}
 
             // Initialize movement state
-            await initSimMovementForBus(busId);
+            await initSimMovementForBus(busName);
 
             // Plot immediately if on current campus
             try {
                 if (routesByCampus[routeName] === selectedCampus) {
-                    plotBus(busId, true);
+                    plotBus(busName, true);
                 }
             } catch (e) {
-                console.error('Error plotting simulated bus', busId, e);
+                console.error('Error plotting simulated bus', busName, e);
             }
         }
     }
 }
 
-async function buildSegmentForBus(busId) {
-    const route = busData[busId].route;
+async function buildSegmentForBus(busName) {
+    const route = busData[busName].route;
     const campusKey = routesByCampus[route] || selectedCampus || 'nb';
-    const currStop = busData[busId].stopId;
-    const nextStop = busData[busId].next_stop || getNextStopId(route, currStop);
+    const currStop = busData[busName].stopId;
+    const nextStop = busData[busName].next_stop || getNextStopId(route, currStop);
     const seg = percentageDistances[campusKey]
         && percentageDistances[campusKey][String(nextStop)]
         && percentageDistances[campusKey][String(nextStop)].from
@@ -486,14 +486,14 @@ async function buildSegmentForBus(busId) {
     return { coords, percentages, segDistances, totalMiles };
 }
 
-async function initSimMovementForBus(busId) {
-    if (!busData[busId]) return;
+async function initSimMovementForBus(busName) {
+    if (!busData[busName]) return;
 
-    const route = busData[busId].route;
+    const route = busData[busName].route;
     const campusKey = routesByCampus[route] || selectedCampus || 'nb';
 
     // Ensure stop context
-    if (!busData[busId].stopId) {
+    if (!busData[busName].stopId) {
         // Choose nearest route stop as current
         const routeStops = stopLists[route] || [];
         if (routeStops.length) {
@@ -502,28 +502,28 @@ async function initSimMovementForBus(busId) {
             for (const sid of routeStops) {
                 const si = allStopsData[campusKey][String(sid)] || allStopsData[campusKey][sid];
                 if (!si) continue;
-                const dx = (si.longitude - busData[busId].long);
-                const dy = (si.latitude - busData[busId].lat);
+                const dx = (si.longitude - busData[busName].long);
+                const dy = (si.latitude - busData[busName].lat);
                 const d2 = dx*dx + dy*dy;
                 if (d2 < bestD) { bestD = d2; bestId = sid; }
             }
-            busData[busId].stopId = bestId;
-            busData[busId].next_stop = getNextStopId(route, bestId);
+            busData[busName].stopId = bestId;
+            busData[busName].next_stop = getNextStopId(route, bestId);
             const prevIdx = (routeStops.indexOf(bestId) - 1 + routeStops.length) % routeStops.length;
-            busData[busId].prevStopId = routeStops[prevIdx];
+            busData[busName].prevStopId = routeStops[prevIdx];
         }
     }
 
-    const seg = await buildSegmentForBus(busId);
+    const seg = await buildSegmentForBus(busName);
     const simState = {
         coords: seg.coords,
         percentages: seg.percentages,
         segDistances: seg.segDistances,
         totalMiles: seg.totalMiles,
         progressMiles: 0,
-        moving: !busData[busId].at_stop,
-        waitUntil: busData[busId].at_stop ? (Date.now() + (randomDwellMs(busId) / Math.max(1, window.SIM_TIME_MULTIPLIER))) : null,
-        speedMph: busData[busId].at_stop ? 0 : (SIM_MIN_SPEED_MPH + Math.random() * 3),
+        moving: !busData[busName].at_stop,
+        waitUntil: busData[busName].at_stop ? (Date.now() + (randomDwellMs(busName) / Math.max(1, window.SIM_TIME_MULTIPLIER))) : null,
+        speedMph: busData[busName].at_stop ? 0 : (SIM_MIN_SPEED_MPH + Math.random() * 3),
         targetSpeedMph: SIM_MIN_SPEED_MPH + Math.random() * 5,
         lastTick: Date.now(),
 		lastReportedProgress: 0,
@@ -531,7 +531,7 @@ async function initSimMovementForBus(busId) {
     };
 
     // If starting somewhere mid-segment, snap to closest point on the segment path
-    if (!busData[busId].at_stop && simState.coords.length > 1) {
+    if (!busData[busName].at_stop && simState.coords.length > 1) {
         let bestSegIdx = 0;
         let bestT = 0;
         let bestD2 = Infinity;
@@ -542,7 +542,7 @@ async function initSimMovementForBus(busId) {
             const p2 = simState.coords[i + 1];
             const ax = p1.lng, ay = p1.lat;
             const bx = p2.lng, by = p2.lat;
-            const px = busData[busId].long, py = busData[busId].lat;
+            const px = busData[busName].long, py = busData[busName].lat;
             const abx = bx - ax, aby = by - ay;
             const apx = px - ax, apy = py - ay;
             const ab2 = abx*abx + aby*aby;
@@ -566,25 +566,25 @@ async function initSimMovementForBus(busId) {
         const projP2 = simState.coords[bestSegIdx + 1];
         const projLat = projP1.lat + (projP2.lat - projP1.lat) * bestT;
         const projLng = projP1.lng + (projP2.lng - projP1.lng) * bestT;
-        busData[busId].lat = projLat;
-        busData[busId].long = projLng;
+        busData[busName].lat = projLat;
+        busData[busName].long = projLng;
         // Set initial rotation along the segment direction
         let angleDeg = Math.atan2((projP2.lng - projP1.lng), (projP2.lat - projP1.lat)) * (180 / Math.PI);
         if (angleDeg < 0) angleDeg += 360;
-        busData[busId].rotation = angleDeg;
+        busData[busName].rotation = angleDeg;
     }
 
-    busData[busId].sim = simState;
+    busData[busName].sim = simState;
 
     // Initialize progress and queue ETA update
-    const initProgress = progressPercentFor(busId);
-    busData[busId].progress = initProgress;
-    busData[busId].sim.lastReportedProgress = initProgress;
-    simEtaPending.add(busId);
+    const initProgress = progressPercentFor(busName);
+    busData[busName].progress = initProgress;
+    busData[busName].sim.lastReportedProgress = initProgress;
+    simEtaPending.add(busName);
 }
 
-function randomDwellMs(busId) {
-    const stopId = busData[busId].stopId;
+function randomDwellMs(busName) {
+    const stopId = busData[busName].stopId;
     const isSC = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(stopId));
     const min = isSC ? 60 : SIM_MIN_STOP_SECS;
     const max = isSC ? 600 : SIM_MAX_STOP_SECS;
@@ -592,15 +592,15 @@ function randomDwellMs(busId) {
     return secs * 1000;
 }
 
-function progressPercentFor(busId) {
-    const simState = busData[busId].sim;
+function progressPercentFor(busName) {
+    const simState = busData[busName].sim;
     if (!simState || simState.totalMiles <= 0) return 0;
     const ratio = Math.max(0, Math.min(1, simState.progressMiles / simState.totalMiles));
     return ratio;
 }
 
-async function updateSimBus(busId) {
-    const bus = busData[busId];
+async function updateSimBus(busName) {
+    const bus = busData[busName];
     if (!bus || !bus.sim) return;
     const simState = bus.sim;
 
@@ -626,14 +626,14 @@ async function updateSimBus(busId) {
             // Progress reset and ETA refresh on departure
             bus.progress = 0;
             simState.lastReportedProgress = 0;
-            simEtaPending.add(busId);
+            simEtaPending.add(busName);
         } else {
             return;
         }
     }
 
     // Adjust target speed based on mid-segment allowance
-    const progressPct = progressPercentFor(busId);
+    const progressPct = progressPercentFor(busName);
     const isMid = progressPct >= 0.25 && progressPct <= 0.75;
     const approachingEnd = progressPct >= 0.90;
     const allowedMax = isMid ? SIM_MAX_SPEED_MPH : Math.max(SIM_MIN_SPEED_MPH + 2, Math.floor(SIM_MAX_SPEED_MPH * 0.6));
@@ -716,19 +716,19 @@ async function updateSimBus(busId) {
         bus.stopId = currStop;
         bus.next_stop = getNextStopId(route, currStop);
         if (!window.busLocations) window.busLocations = {};
-        busLocations[busId] = { where: [currStop] };
+        busLocations[busName] = { where: [currStop] };
         bus.at_stop = true;
         bus.timeArrived = new Date();
         bus.progress = 0;
         simState.lastReportedProgress = 0;
-        simEtaPending.add(busId);
+        simEtaPending.add(busName);
 
 		// Immediately refresh GUI if shown (at poll cadence)
 		if (doPollNow) {
 			try {
-				updateTimeToStops([busId]);
-				if (popupBusId === busId) {
-					popInfo(busId);
+				updateTimeToStops([busName]);
+				if (popupBusName === busName) {
+					popInfo(busName);
 				}
 				if (popupStopId) {
 					updateStopBuses(popupStopId);
@@ -738,12 +738,12 @@ async function updateSimBus(busId) {
 
         // Reset sim state for dwell
         simState.moving = false;
-        simState.waitUntil = now + (randomDwellMs(busId) / Math.max(1, window.SIM_TIME_MULTIPLIER));
+        simState.waitUntil = now + (randomDwellMs(busName) / Math.max(1, window.SIM_TIME_MULTIPLIER));
         simState.speedMph = 0;
         simState.targetSpeedMph = SIM_MIN_SPEED_MPH + Math.random() * 5;
 
         // Build next segment for when we depart
-        const nextSeg = await buildSegmentForBus(busId);
+        const nextSeg = await buildSegmentForBus(busName);
         simState.coords = nextSeg.coords;
         simState.percentages = nextSeg.percentages;
         simState.segDistances = nextSeg.segDistances;
@@ -752,7 +752,7 @@ async function updateSimBus(busId) {
 
 		// Plot/update at poll cadence
 		if (doPollNow) {
-			try { plotBus(busId); } catch {}
+			try { plotBus(busName); } catch {}
 			simState.nextReportAt = now + pollInterval;
 		}
         return;
@@ -795,16 +795,16 @@ async function updateSimBus(busId) {
 	}
 
     // Update progress and queue ETA update if changed significantly
-    const newProgress = progressPercentFor(busId);
+    const newProgress = progressPercentFor(busName);
     bus.progress = newProgress;
     if (Math.abs(newProgress - simState.lastReportedProgress) >= SIM_PROGRESS_DELTA_FOR_UPDATE) {
         simState.lastReportedProgress = newProgress;
-        simEtaPending.add(busId);
+        simEtaPending.add(busName);
     }
 
 	// Plot at poll cadence
 	if (doPollNow) {
-		try { plotBus(busId); } catch {}
+		try { plotBus(busName); } catch {}
 		simState.nextReportAt = now + pollInterval;
 	}
 }
@@ -812,10 +812,10 @@ async function updateSimBus(busId) {
 function startSimMovementLoop() {
     if (simMoveTimer) return;
     simMoveTimer = setInterval(async () => {
-        for (const busId in busData) {
-            const bus = busData[busId];
+        for (const busName in busData) {
+            const bus = busData[busName];
             if (bus && bus.type === 'sim') {
-                await updateSimBus(Number(busId));
+                await updateSimBus(busName);
             }
         }
 
@@ -852,8 +852,8 @@ async function startSim() {
     $('.sim-popup').slideDown();
 
     sim = true;
-    for (const busId in busData) {
-        makeOoS(busId);
+    for (const busName in busData) {
+        makeOoS(busName);
     }
     await generateSimBusData();
     makeBusesByRoutes();
@@ -871,8 +871,8 @@ async function endSim() {
     // Ensure real-time mode runs at normal speed
     try { setSimTimeMultiplier(1); } catch (e) { window.SIM_TIME_MULTIPLIER = 1; try { $('.sim-speed').text('1x'); } catch (_) {} }
     $('.sim-popup').fadeOut();
-    for (const busId in busData) {
-        makeOoS(busId);
+    for (const busName in busData) {
+        makeOoS(busName);
     }
     addStopsToMap();
     deleteAllPolylines();
@@ -902,8 +902,8 @@ function setSimTimeMultiplier(newMultiplier) {
     try { $('.sim-speed').text(`${newMultiplier}x`); } catch (e) {}
 
     // Re-scale pending dwell timers so remaining wait respects the new speed
-    for (const busId in busData) {
-        const bus = busData[busId];
+    for (const busName in busData) {
+        const bus = busData[busName];
         if (!bus || bus.type !== 'sim' || !bus.sim) continue;
         const s = bus.sim;
         if (!s.moving && typeof s.waitUntil === 'number' && s.waitUntil > Date.now()) {

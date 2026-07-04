@@ -56,12 +56,12 @@ function isSpecialRoute(route) {
 }
 
 // Unified ETA accessor that hides schema differences
-function getETAForStop(busId, stopId, previousStopId) {
-    if (!busETAs || !busETAs[busId]) return undefined;
-    const route = busData && busData[busId] ? busData[busId].route : undefined;
+function getETAForStop(busName, stopId, previousStopId) {
+    if (!busETAs || !busETAs[busName]) return undefined;
+    const route = busData && busData[busName] ? busData[busName].route : undefined;
     const special = isSpecialRoute(route);
     if (special && stopId === 3) {
-        const viaMap = busETAs[busId][3] && busETAs[busId][3]['via'];
+        const viaMap = busETAs[busName][3] && busETAs[busName][3]['via'];
         if (!viaMap) return undefined;
         if (previousStopId !== undefined && previousStopId !== null) {
             return viaMap[previousStopId];
@@ -70,5 +70,5 @@ function getETAForStop(busId, stopId, previousStopId) {
         if (!values.length) return undefined;
         return Math.min.apply(null, values);
     }
-    return busETAs[busId][stopId];
+    return busETAs[busName][stopId];
 }

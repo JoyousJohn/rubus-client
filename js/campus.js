@@ -28,8 +28,8 @@ function deleteAllStops() {
 }
 
 function deleteBusMarkers() {
-    for (const busId in busMarkers) {
-        busMarkers[busId].remove();
+    for (const busName in busMarkers) {
+        busMarkers[busName].remove();
     }
     busMarkers = {};
 }

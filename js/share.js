@@ -1,32 +1,32 @@
-let sharedBus;
+let sharedBusName;
 
 function checkShared() {
 
     const urlParams = new URLSearchParams(window.location.search);
-    const busId = urlParams.get('bus');
+    const busName = urlParams.get('bus');
 
-    if (busId && busData[busId]) {
+    if (busName && busData[busName]) {
 
-        sharedBus = parseInt(busId);
+        sharedBusName = busName;
 
         setTimeout(() => { // otherwise Failed to find popup or reach target zoom after multiple attempts
-            flyToBus(sharedBus);
+            flyToBus(sharedBusName);
 
-            $('.shared').html(`Shared<span class="bold-500">${busData[sharedBus].route.toUpperCase()}</span>`)
+            $('.shared').html(`Shared<span class="bold-500">${busData[sharedBusName].route.toUpperCase()}</span>`)
             .click(function() {
-                if (shownRoute && shownRoute !== busData[sharedBus].route) {
-                    toggleRoute(busData[sharedBus].route);
+                if (shownRoute && shownRoute !== busData[sharedBusName].route) {
+                    toggleRoute(busData[sharedBusName].route);
                 }
-                if (!popupBusId || popupBusId !== sharedBus) { // kind of pointless because popup wrapper should be covering this button anyway... might ot if I change GUIs later, also have o see what this looks like on desktop/finalize it
-                    flyToBus(sharedBus);
+                if (!popupBusName || popupBusName !== sharedBusName) { // kind of pointless because popup wrapper should be covering this button anyway... might ot if I change GUIs later, also have o see what this looks like on desktop/finalize it
+                    flyToBus(sharedBusName);
                 }
             })
             .css('display', 'flex')
-            .find('span').css('color', colorMappings[busData[sharedBus].route]);
+            .find('span').css('color', colorMappings[busData[sharedBusName].route]);
 
         }, 0);
 
-    } else if (busId && !busData[busId]) {
+    } else if (busName && !busData[busName]) {
         $('.shared').html(`Shared bus no longer in service!`).css('display', 'flex')
         setTimeout(() => {
             $('.shared').html(`Shared bus no longer in service!`).slideUp();

@@ -1,9 +1,9 @@
 // Riding detection module
-// Depends on: jQuery ($), haversine (from map.js), busData, popupBusId
+// Depends on: jQuery ($), haversine (from map.js), busData, popupBusName
 
 (function(){
 	// State
-	window.ridingState = window.ridingState || { currentBusId: null, confidence: 0, lastUpdateTs: 0 };
+	window.ridingState = window.ridingState || { currentBusName: null, confidence: 0, lastUpdateTs: 0 };
 	window.busMatchStreak = window.busMatchStreak || {};
 
 	let geoWatchId;
@@ -30,7 +30,7 @@
 
 	window.updateRidingBadgeUI = function updateRidingBadgeUI() {
 		try {
-			if (window.popupBusId && window.ridingState.currentBusId && Number(window.popupBusId) === Number(window.ridingState.currentBusId)) {
+			if (window.popupBusName && window.ridingState.currentBusName && Number(window.popupBusName) === Number(window.ridingState.currentBusName)) {
 				$('.info-riding').show();
 			} else {
 				$('.info-riding').hide();
@@ -171,17 +171,17 @@
 			}
 		}
 
-		const prevBusId = window.ridingState.currentBusId;
+		const prevBusId = window.ridingState.currentBusName;
 		const prevConf = window.ridingState.confidence;
 
 		const promote = () => {
-			window.ridingState.currentBusId = bestBusId;
+			window.ridingState.currentBusName = bestBusId;
 			window.ridingState.confidence = bestScore;
 			window.ridingState.lastUpdateTs = now;
 		};
 
 		const demote = () => {
-			window.ridingState.currentBusId = null;
+			window.ridingState.currentBusName = null;
 			window.ridingState.confidence = 0;
 			window.ridingState.lastUpdateTs = now;
 		};
@@ -196,7 +196,7 @@
 			}
 		}
 
-		if (prevBusId !== window.ridingState.currentBusId || prevConf !== window.ridingState.confidence) {
+		if (prevBusId !== window.ridingState.currentBusName || prevConf !== window.ridingState.confidence) {
 			window.updateRidingBadgeUI();
 		}
 	}

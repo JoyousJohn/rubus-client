@@ -9,8 +9,8 @@ function sendFeedback() {
 
         const payload = {
             feedback: feedback,
-            busId: popupBusId,
-            route: busData[popupBusId].route,
+            busName: popupBusName,
+            route: busData[popupBusName].route,
             timeSent: new Date().toISOString() 
         };
     

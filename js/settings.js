@@ -45,9 +45,9 @@ $('.settings-toggle .toggle-input').on('change', function () {
             console.log(`Pause update marker positions now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-pause-update-marker'] = isChecked;
             if (isChecked) {
-                for (const busId in animationFrames) {
-                    cancelAnimationFrame(animationFrames[busId]);
-                    delete animationFrames[busId];
+                for (const busName in animationFrames) {
+                    cancelAnimationFrame(animationFrames[busName]);
+                    delete animationFrames[busName];
                 }
                 pauseUpdateMarkerPositions = true;
             } else {
@@ -99,7 +99,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             if (isChecked) {
                 countdownInterval = setInterval(() => {
 
-                    if (popupBusId && !busData[popupBusId].overtime) {
+                    if (popupBusName && !busData[popupBusName].overtime) {
                         const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
                         $('.next-stop-eta').each(function() {
                             let text = $(this).text();
@@ -133,13 +133,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             break;
 
-        case 'toggle-show-bus-id':
+        case 'toggle-show-bus-name':
             console.log(`Show Bus IDs is now ${isChecked ? 'ON' : 'OFF'}`);
-            settings['toggle-show-bus-id'] = isChecked;
-            showBusId = isChecked;
+            settings['toggle-show-bus-name'] = isChecked;
+            showBusName = isChecked;
             
-            if (showBusId && popupBusId) {
-                $('.info-name-mid').text(`${$('.info-name-mid').text()} (${popupBusId}) | `)
+            if (showBusName && popupBusName) {
+                $('.info-name-mid').text(`${$('.info-name-mid').text()} (${popupBusName}) | `)
             }
 
             break;
@@ -153,8 +153,8 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             if (!isChecked) {
                 stopOvertimeCounter();
-            } else if (popupBusId && busData[popupBusId]['overtime']) {
-                startOvertimeCounter(popupBusId);
+            } else if (popupBusName && busData[popupBusName]['overtime']) {
+                startOvertimeCounter(popupBusName);
             }
 
             break;
@@ -169,8 +169,8 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-bus-path'] = isChecked;
 
             if (!isChecked) {
-                for (const busId in midpointCircle) {
-                    midpointCircle[busId].removeFrom(map)
+                for (const busName in midpointCircle) {
+                    midpointCircle[busName].removeFrom(map)
                 }
             }
 
@@ -198,7 +198,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-hide-other-routes':
             settings['toggle-hide-other-routes'] = isChecked;
 
-            if (!isChecked && popupBusId) {
+            if (!isChecked && popupBusName) {
                 // Remove distance line if it was showing
                 removeDistanceLineOnFocus();
                 showAllPolylines();
@@ -206,8 +206,8 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 map.flyTo(savedCenter, savedZoom, {animate: false});
                 savedCenter = null;
                 savedZoom = null;
-            } else if (isChecked && popupBusId) {
-                focusBus(popupBusId);
+            } else if (isChecked && popupBusName) {
+                focusBus(popupBusName);
             }
 
             break;
@@ -272,16 +272,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-show-invalid-etas':
             settings['toggle-show-invalid-etas'] = isChecked;
-            if (isChecked && popupBusId) { // doesn't work for some reason
+            if (isChecked && popupBusName) { // doesn't work for some reason
                 $('.info-next-stops, .next-stops-grid').show(); // if a negative eta is already selected (thus hidden) when this setting is being enabled
             }
             break;
 
         case 'toggle-show-rotation-points':
             settings['toggle-show-rotation-points'] = isChecked;
-            for (const busId in busRotationPoints) {
+            for (const busName in busRotationPoints) {
                 ['pt1', 'pt2', 'line'].forEach(val => {
-                    busRotationPoints[busId][val].setStyle({'opacity': isChecked ? 1 : 0})
+                    busRotationPoints[busName][val].setStyle({'opacity': isChecked ? 1 : 0})
                 })
             }
             break;
@@ -438,10 +438,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             
             // If the setting is being turned off and a bus is currently focused,
             // remove the distance line and restore the route polyline layer.
-            if (!isChecked && popupBusId) {
+            if (!isChecked && popupBusName) {
                 removeDistanceLineOnFocus();
                 try {
-                    const route = busData[popupBusId].route;
+                    const route = busData[popupBusName].route;
                     if (polylines[route] && !map.hasLayer(polylines[route])) {
                         polylines[route].addTo(map);
                     }
@@ -452,10 +452,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             // If the setting is being turned on and a bus is currently focused,
             // show the distance line and remove the route polyline layer.
-            else if (isChecked && popupBusId) {
-                showDistanceLineOnFocus(popupBusId);
+            else if (isChecked && popupBusName) {
+                showDistanceLineOnFocus(popupBusName);
                 try {
-                    const route = busData[popupBusId].route;
+                    const route = busData[popupBusName].route;
                     if (polylines[route] && map.hasLayer(polylines[route])) {
                         logPolylineRemoval(route, 'settings-toggle-distances-line-on-focus');
                         polylines[route].removeFrom(map);
@@ -526,7 +526,7 @@ $(document).ready(function() {
         // Start countdown timer for ETAs
         countdownInterval = setInterval(() => {
 
-            if (popupBusId && !busData[popupBusId].overtime) { // && !busData[popupBusId].at_stop
+            if (popupBusName && !busData[popupBusName].overtime) { // && !busData[popupBusName].at_stop
                 const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
                 $('.next-stop-eta').each(function() {
                     let text = $(this).text();
@@ -571,8 +571,8 @@ $(document).ready(function() {
         }
     }
 
-    if (settings['toggle-show-bus-id']) {
-        showBusId = settings['toggle-show-bus-id'];
+    if (settings['toggle-show-bus-name']) {
+        showBusName = settings['toggle-show-bus-name'];
     }
 
     if (settings['toggle-launch-fireworks-button']) {

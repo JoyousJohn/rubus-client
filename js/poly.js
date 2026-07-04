@@ -183,9 +183,9 @@ function getValidBusesServicingStop(stopId) {
     let validBuses = [];
     const routesServicing = getRoutesServicingStop(stopId)
     routesServicing.forEach(route => {
-        busesByRoutes[selectedCampus][route].forEach(busId => {
-            if (isValid(busId)) {
-                validBuses.push(busId);
+        busesByRoutes[selectedCampus][route].forEach(busName => {
+            if (isValid(busName)) {
+                validBuses.push(busName);
             }
         })
     })
@@ -238,7 +238,7 @@ async function addPolylineForRoute(routeName) {
 function routeHasInServiceBuses(route) {
     try {
         const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
-        return routeBuses && routeBuses.some(busId => busData[busId] && !busData[busId].oos);
+        return routeBuses && routeBuses.some(busName => busData[busName] && !busData[busName].oos);
     } catch (e) {
         return false;
     }
@@ -429,27 +429,27 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         
         $('.info-stop-servicing').append($serviedRouteElm)
         // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);
-        busesByRoutes[selectedCampus][servicedRoute].forEach(busId => {
+        busesByRoutes[selectedCampus][servicedRoute].forEach(busName => {
 
-            let busStopId = busData[busId]['stopId']
+            let busStopId = busData[busName]['stopId']
             if (Array.isArray(busStopId)) {
                 busStopId = busStopId[0];
             }
 
             // Add all buses on routes that service this stop
             let entry = {
-                busId: busId,
+                busName: busName,
                 route: servicedRoute,
                 eta: undefined // Will be set to 0 or actual ETA below
             };
 
-            if (busData[busId]['at_stop'] && busStopId === stopId) {
+            if (busData[busName]['at_stop'] && busStopId === stopId) {
                 entry.eta = 0;
-            } else if (busETAs[busId]) {
+            } else if (busETAs[busName]) {
                 if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && stopId === 3) { // special case: show both VIA paths
-                    const viaMap = busETAs[busId] && busETAs[busId][3] && busETAs[busId][3]['via'];
+                    const viaMap = busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
                     if (viaMap && Object.keys(viaMap).length) {
-                        const approachPrev = busData[busId] && busData[busId]['prevStopId'];
+                        const approachPrev = busData[busName] && busData[busName]['prevStopId'];
                         Object.entries(viaMap).forEach(([prevIdStr, etaSecs]) => {
                             const prevId = Number(prevIdStr);
                             const etaMins = Math.ceil(etaSecs / 60);
@@ -458,9 +458,9 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                             const nextStopName = nextStop ? (nextStop.shorterName || nextStop.shortName || nextStop.mainName || nextStop.name) : '';
 
                             // Only show the current approach leg when the bus is still approaching SAC NB.
-                            if (!busData[busId] || busData[busId]['next_stop'] !== 3 || !approachPrev || approachPrev === prevId) {
+                            if (!busData[busName] || busData[busName]['next_stop'] !== 3 || !approachPrev || approachPrev === prevId) {
                                 servicingEntries.push({
-                                    busId: busId,
+                                    busName: busName,
                                     route: servicedRoute,
                                     eta: etaMins,
                                     nextStopId: nextStopId,
@@ -473,7 +473,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                         return;
                     }
                 } else {
-                    const etaSecs = getETAForStop(busId, stopId)
+                    const etaSecs = getETAForStop(busName, stopId)
                     if (etaSecs !== undefined) {
                         entry.eta = Math.ceil(etaSecs/60);
                     }
@@ -487,18 +487,18 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     const sortedEntries = servicingEntries
         .sort((a, b) => {
-            const aDepot = busData[a.busId]?.atDepot;
-            const bDepot = busData[b.busId]?.atDepot;
+            const aDepot = busData[a.busName]?.atDepot;
+            const bDepot = busData[b.busName]?.atDepot;
             if (aDepot && !bDepot) return 1;
             if (!aDepot && bDepot) return -1;
 
-            const aInvalid = !isValid(a.busId);
-            const bInvalid = !isValid(b.busId);
+            const aInvalid = !isValid(a.busName);
+            const bInvalid = !isValid(b.busName);
             if (aInvalid && !bInvalid) return 1;
             if (!aInvalid && bInvalid) return -1;
 
-            const aDistanceFromLine = distanceFromLine(a.busId);
-            const bDistanceFromLine = distanceFromLine(b.busId);
+            const aDistanceFromLine = distanceFromLine(a.busName);
+            const bDistanceFromLine = distanceFromLine(b.busName);
             if (aDistanceFromLine && !bDistanceFromLine) return 1;
             if (!aDistanceFromLine && bDistanceFromLine) return -1;
 
@@ -514,7 +514,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
     sortedEntries.forEach(data => {
 
         // Skip out of service buses if hide setting is enabled
-        if (hideOutOfServiceBuses && busData[data.busId].oos) {
+        if (hideOutOfServiceBuses && busData[data.busName].oos) {
             return;
         }
 
@@ -531,28 +531,28 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         $('.stop-info-buses-grid').append($routeCell);
 
         let stopOctaconVisibilityClass = 'none'
-        if (busData[data.busId].overtime) {
+        if (busData[data.busName].overtime) {
             stopOctaconVisibilityClass = ''
         }
 
         let stopOoSVisibilityClass = 'none';
-        if (busData[data.busId].oos) {
+        if (busData[data.busName].oos) {
             stopOoSVisibilityClass = '';
         }
 
         let stopDepotVisibilityClass = 'none';
-        if (busData[data.busId].atDepot) {
+        if (busData[data.busName].atDepot) {
             stopDepotVisibilityClass = '';
         }
 
         let busContainerStyle = '';
-        if (data.eta === undefined || busData[data.busId].atDepot || distanceFromLine(data.busId) || !isValid(data.busId)) {
+        if (data.eta === undefined || busData[data.busName].atDepot || distanceFromLine(data.busName) || !isValid(data.busName)) {
             busContainerStyle = ' style="grid-column: span 3;"';
         }
 
         const $stopBusElm = $(`<div class="flex justify-between align-center pointer"${busContainerStyle}>
             <div class="flex gap-x-0p5rem">
-                <div class="stop-bus-id">${busData[data.busId].busName}</div>
+                <div class="stop-bus-name">${busData[data.busName].busName}</div>
                 <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
                 <div class="stop-depot ${stopDepotVisibilityClass}">Depot</div>
             </div>
@@ -570,30 +570,30 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         } else if (Object.is(data.eta, 0)) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">Here</div>`);
             $('.stop-info-buses-grid').append(`<div class="pointer"></div>`);
-        } else if (data.eta === undefined || busData[data.busId].atDepot || distanceFromLine(data.busId) || !isValid(data.busId)) {
+        } else if (data.eta === undefined || busData[data.busName].atDepot || distanceFromLine(data.busName) || !isValid(data.busName)) {
             // For invalid buses, the bus container already spans the remaining columns
             // Print the condition that led to
             let reason = '';
             if (data.eta === undefined) {
                 reason += '[no ETA data] ';
             }
-            if (busData[data.busId].atDepot) {
+            if (busData[data.busName].atDepot) {
                 reason += '[atDepot] ';
             }
-            if (distanceFromLine(data.busId)) {
+            if (distanceFromLine(data.busName)) {
                 reason += '[distanceFromLine] ';
             }
-            if (!isValid(data.busId)) {
+            if (!isValid(data.busName)) {
                 reason += '[!isValid] ';
                 // Add detailed reason why validation failed
-                if (!busETAs[data.busId]) {
+                if (!busETAs[data.busName]) {
                     reason += '(no busETAs) ';
                 } else {
                     // Check for negative ETA values
-                    const route = busData[data.busId].route;
+                    const route = busData[data.busName].route;
                     const invalidStops = [];
                     for (const stopId of stopLists[route]) {
-                        const etaVal = getETAForStop(data.busId, stopId);
+                        const etaVal = getETAForStop(data.busName, stopId);
                         if (typeof etaVal === 'number' && etaVal < 0) {
                             invalidStops.push(`stop${stopId}:${etaVal}`);
                         }
@@ -603,7 +603,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                     }
                 }
             }
-            // console.log(`[${data.busId}] xx:xx due to: ${reason.trim()}`);
+            // console.log(`[${data.busName}] xx:xx due to: ${reason.trim()}`);
         } else {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-eta pointer">${data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm'}</div>`);
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
@@ -621,7 +621,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             }
             $('.stop-info-buses-grid').children().slice(-4).click(function() {
                 sourceStopId = stopId;
-                flyToBus(data.busId);
+                flyToBus(data.busName);
                 $('.stop-info-popup').hide(); // this was def being handled somewhere else before... need to check what happened sometime. Hard finding changes in recent commits that might've affected this.
             });
         }
@@ -635,7 +635,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     const loopTimes = calculateLoopTimes();
     const nextLoopEntries = servicingEntries.reduce((acc, entry) => {
-        if (!busData[entry.busId].oos && !busData[entry.busId].atDepot && !distanceFromLine(entry.busId)) {
+        if (!busData[entry.busName].oos && !busData[entry.busName].atDepot && !distanceFromLine(entry.busName)) {
             acc.push({
                 ...entry,
                 eta: entry.eta + loopTimes[entry.route]
@@ -657,7 +657,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         });
 
 
-        if (!busData[data.busId].overtime && !busData[data.busId].oos && !busData[data.busId].atDepot && isValid(data.busId)) {
+        if (!busData[data.busName].overtime && !busData[data.busName].oos && !busData[data.busName].atDepot && isValid(data.busName)) {
 
             const $routeCellNext = $('<div class="stop-bus-route"></div>');
             $routeCellNext.append(`<div>${data.route.toUpperCase()}</div>`);
@@ -665,7 +665,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
             const $stopBusElm = $(`<div class="flex justify-between align-center pointer">
                 <div class="flex gap-x-0p5rem">
-                    <div class="stop-bus-id">${busData[data.busId].busName}</div>
+                    <div class="stop-bus-name">${busData[data.busName].busName}</div>
                 </div>
             </div>`)
             $('.stop-info-buses-grid-next').append($stopBusElm);
@@ -674,10 +674,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 // $('.stop-info-buses-grid').append(`<div></div>`)
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Here</div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="pointer"></div>`);
-            } else if (!busData[data.busId].atDepot) {
+            } else if (!busData[data.busName].atDepot) {
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer right">${data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm'}</div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
-            } else if (busData[data.busId].atDepot || distanceFromLine(data.busId)) {
+            } else if (busData[data.busName].atDepot || distanceFromLine(data.busName)) {
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer"></div>`);
                 $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer"></div>`);
             }
@@ -690,7 +690,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 $('.stop-bus-route').last().css('color', colorMappings[data.route]);
                 $('.stop-info-buses-grid-next').children().slice(-4).click(function() {
                     sourceStopId = stopId;
-                    flyToBus(data.busId);
+                    flyToBus(data.busName);
                     $('.stop-info-popup').hide();
                 });
             }
@@ -725,7 +725,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
     
 }
 
-let sourceBusId = null;
+let sourceBusName = null;
 let sourceStopId = null;
 
 // Config object mapping stopId to its switch pair and direction info
@@ -944,9 +944,9 @@ async function popStopInfo(stopId) {
         $('.stop-name-wrapper').parent().off('click');
     }
 
-    if (shownRoute && popupBusId) {
-        busesByRoutes[selectedCampus][shownRoute].forEach(busId => {
-            busMarkers[busId].getElement().style.display = '';
+    if (shownRoute && popupBusName) {
+        busesByRoutes[selectedCampus][shownRoute].forEach(busName => {
+            busMarkers[busName].getElement().style.display = '';
         })
         updateTooltips(shownRoute);
     } else {
@@ -956,8 +956,8 @@ async function popStopInfo(stopId) {
     popupStopId = stopId;
 
     // If we just unfocused a bus, check if its route has no in-service buses and prune polylines if needed
-    if (popupBusId) {
-        const route = busData[popupBusId].route;
+    if (popupBusName) {
+        const route = busData[popupBusName].route;
         if (!routeHasInServiceBuses(route) && polylines[route]) {
             logPolylineRemoval(route, 'popStopInfo');
             try { polylines[route].remove(); } catch (e) {}
@@ -966,7 +966,7 @@ async function popStopInfo(stopId) {
             updatePolylineBoundsIfNeeded();
         }
 
-        popupBusId = null;
+        popupBusName = null;
     }
 
     if (selectedMarkerId && busMarkers[selectedMarkerId] ) { 
@@ -992,12 +992,12 @@ async function popStopInfo(stopId) {
     const routesServicing = getRoutesServicingStop(stopId);
     let servicingEntries = [];
     routesServicing.forEach(route => {
-        busesByRoutes[selectedCampus][route].forEach(busId => {
-            if (isValid(busId)) {
-                const eta = getETAForStop(busId, stopId);
+        busesByRoutes[selectedCampus][route].forEach(busName => {
+            if (isValid(busName)) {
+                const eta = getETAForStop(busName, stopId);
                 if (eta >= 0) {
                     servicingEntries.push({
-                        busId: busId,
+                        busName: busName,
                         eta: eta,
                         route: route
                     });
@@ -1008,7 +1008,7 @@ async function popStopInfo(stopId) {
     
     const loopTimes = calculateLoopTimes();
     const nextLoopEntries = servicingEntries.reduce((acc, entry) => {
-        if (!busData[entry.busId].oos && !busData[entry.busId].atDepot && !distanceFromLine(entry.busId)) {
+        if (!busData[entry.busName].oos && !busData[entry.busName].atDepot && !distanceFromLine(entry.busName)) {
             acc.push({
                 ...entry,
                 eta: entry.eta + loopTimes[entry.route]
@@ -1035,8 +1035,8 @@ async function popStopInfo(stopId) {
     // Check if there are out of service buses and show hide button if not already hidden
     let hasOutOfServiceBuses = false;
     routesServicing.forEach(route => {
-        busesByRoutes[selectedCampus][route].forEach(busId => {
-            if (busData[busId].oos) {
+        busesByRoutes[selectedCampus][route].forEach(busName => {
+            if (busData[busName].oos) {
                 hasOutOfServiceBuses = true;
             }
         });
@@ -1048,7 +1048,7 @@ async function popStopInfo(stopId) {
         $('.stop-info-hide-oos').hide();
     }
 
-    if (sourceBusId && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
+    if (sourceBusName && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
         $('.stop-info-back-wrapper').css('display', 'flex');
     } else {
         $('.stop-info-back-wrapper').hide();
@@ -1115,7 +1115,7 @@ async function addStopsToMap() {
                 }
 
                 sourceStopId = null;
-                sourceBusId = null;
+                sourceBusName = null;
                 clearPanoutFeedback();
                 popStopInfo(stopId);
                 if (!shownRoute) {
@@ -1179,19 +1179,19 @@ function routesServicing(stopId) {
 }
 
 
-function progressToNextStop(busId) {
-    if (!busData[busId]['next_stop']) {
+function progressToNextStop(busName) {
+    if (!busData[busName]['next_stop']) {
         return 0;
     }
 
     const campusPercentages = percentageDistances[selectedCampus];
 
-    const nextStopId = String(busData[busId]['next_stop']);
+    const nextStopId = String(busData[busName]['next_stop']);
     if (!campusPercentages[nextStopId]) {
         return 0;
     }
 
-    const prevStopId = String(busData[busId]['stopId']);
+    const prevStopId = String(busData[busName]['stopId']);
     if (!campusPercentages[nextStopId]['from'][prevStopId]) {
         return 0;
     }
@@ -1199,8 +1199,8 @@ function progressToNextStop(busId) {
     const nextStopDistances = campusPercentages[nextStopId]['from'][prevStopId]['geometry']['coordinates'];
     const percentages = campusPercentages[nextStopId]['from'][prevStopId]['properties']['percentages'];
 
-    const busLat = busData[busId]['lat'];
-    const busLng = busData[busId]['long'];
+    const busLat = busData[busName]['lat'];
+    const busLng = busData[busName]['long'];
 
     // Step 1: Find the closest point
     let closestIndex = -1;

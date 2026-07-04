@@ -127,53 +127,52 @@ function openRUBusSocket() {
 
             // if(eventData['event'] === 'out_of_service') {
                 
-            //     eventData['oos_buses'].forEach(busId => {
-            //         if (busId in busData) {
-            //             console.log(`[Out of Service] Bus ${busData[busId].busName} is out of service`)
-            //             busMarkers[busId].remove();
-            //             delete busMarkers[busId];
-            //             delete busData[busId];
-            //             delete busETAs[busId];
+            //     eventData['oos_buses'].forEach(busName => {
+            //         if (busName in busData) {
+            //             console.log(`[Out of Service] Bus ${busData[busName].busName} is out of service`)
+            //             busMarkers[busName].remove();
+            //             delete busMarkers[busName];
+            //             delete busData[busName];
+            //             delete busETAs[busName];
             //         }
             //     })
             //     return;    
 
             // }
 
-            const busId = parseInt(eventData.busId);
+            const busName = eventData.busName;
 
-            if (!(busId in busData)) {// shouldn't happen
+            if (!(busName in busData)) {// shouldn't happen
                 console.log('this finally should happen bc we are excluding buses from other campuses');
-                // busData[busId] = {}
+                // busData[busName] = {}
                 return
             }
 
-            const busRoute = busData[busId].route;
+            const busRoute = busData[busName].route;
             const stopId = eventData.stopId;
 
-            if (busData[busId]['stopId']) {
-                busData[busId]['prevStopId'] = busData[busId]['stopId'];
+            if (busData[busName]['stopId']) {
+                busData[busName]['prevStopId'] = busData[busName]['stopId'];
             }
-            busData[busId]['stopId'] = stopId;
-            busData[busId]['next_stop'] = getNextStopId(busRoute, stopId);
+            busData[busName]['stopId'] = stopId;
+            busData[busName]['next_stop'] = getNextStopId(busRoute, stopId);
 
             const stopName = stopsData[stopId].name;
-            const busName = busData[busId].busName;
 
             if (eventData['event'] === 'arrival') {
-                busData[busId]['at_stop'] = true;
-                busData[busId]['timeArrived'] = eventData['time_arrived'];
-                // console.log(`[l] Bus ${busName} (${busId}) arrived at ${stopName}`)
+                busData[busName]['at_stop'] = true;
+                busData[busName]['timeArrived'] = eventData['time_arrived'];
+                // console.log(`[l] Bus ${busName} (${busName}) arrived at ${stopName}`)
 
-                if (popupBusId === busId) {
-                    startStoppedForTimer(busId);
+                if (popupBusName === busName) {
+                    startStoppedForTimer(busName);
                     
                     if (settings['toggle-distances-line-on-focus']) {
-                        showDistanceLineOnFocus(busId);
+                        showDistanceLineOnFocus(busName);
                     }
                 }
 
-                busData[busId].progress = 0;
+                busData[busName].progress = 0;
 
                 const $busLogElm = $(`
                     <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
@@ -183,9 +182,9 @@ function openRUBusSocket() {
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
 
             } else if (eventData['event'] === 'departure') {
-                busData[busId]['at_stop'] = false
+                busData[busName]['at_stop'] = false
 
-                let stoppedFor = Math.floor((new Date() - new Date(busData[busId]['timeArrived'])) / 1000);
+                let stoppedFor = Math.floor((new Date() - new Date(busData[busName]['timeArrived'])) / 1000);
 
                 let stoppedDiff = Math.floor((stoppedFor - waits[stopId])/waits[stopId]*100)
                 if (stoppedDiff > 0) {
@@ -200,14 +199,14 @@ function openRUBusSocket() {
                     stoppedFor = `${minutes}m${seconds}s`;
                 }
 
-                delete busData[busId]['timeArrived'];
+                delete busData[busName]['timeArrived'];
                 // console.log(`[Departure] Bus ${busName} departed from ${stopName}`)
 
-                if ($('.bus-stopped-for').is(':visible') && popupBusId === busId) {
+                if ($('.bus-stopped-for').is(':visible') && popupBusName === busName) {
                     clearInterval(stoppedForInterval)
                     $('.bus-stopped-for').slideUp();
                 }
-                delete busData[busId].overtime
+                delete busData[busName].overtime
 
                 const $busLogElm = $(`
                     <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
@@ -216,52 +215,52 @@ function openRUBusSocket() {
                 $('.bus-log').append($busLogElm);
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
 
-                if (busRotationPoints[busId]) {
+                if (busRotationPoints[busName]) {
                     ['px1', 'px2', 'line'].forEach(val => {
-                        if (busRotationPoints[busId][val]) { // not sure why this check is necessary... something with buses going in/out of service removing the point but not the var reference? how is this possible?
-                            busRotationPoints[busId][val].remove();
+                        if (busRotationPoints[busName][val]) { // not sure why this check is necessary... something with buses going in/out of service removing the point but not the var reference? how is this possible?
+                            busRotationPoints[busName][val].remove();
                         }
                     })
-                    delete busRotationPoints[busId];
+                    delete busRotationPoints[busName];
                 }
                 
             }
 
-            updateTimeToStops([busId]) // updates bus's etas to all stops
+            updateTimeToStops([busName]) // updates bus's etas to all stops
 
-            if (popupStopId && busLocations[busId]) { // also check if in busLocations to not show stops if no info. I think updateStopBuses already prevents this but it was still showing 'bus in service since Invalid Date'
+            if (popupStopId && busLocations[busName]) { // also check if in busLocations to not show stops if no info. I think updateStopBuses already prevents this but it was still showing 'bus in service since Invalid Date'
                 // Preserve any active route filter in the stop info
                 updateStopBuses(popupStopId)
             }
 
-            if (popupBusId === busId) {
-                popInfo(busId) // this is on the bus wrapper 
+            if (popupBusName === busName) {
+                popInfo(busName) // this is on the bus wrapper 
             }
 
         }
 
         // Initial connection, recall from visibilityChange
         else {
-            for (let busId in eventData) {
+            for (let busName in eventData) {
                 
                 // console.log(parseInt('13209') in busData.keys())
 
-                if (!(busId in busData)) {// shouldn't happen
-                    // console.log(busId)
+                if (!(busName in busData)) {// shouldn't happen
+                    // console.log(busName)
                     // console.log('this shouldnt happen 2')
-                    // busData[busId] = {}
+                    // busData[busName] = {}
                     // console.log(eventData)
                     // this could now happen, except maybe i should confirm the bus actually isn't supposed to be in busdata bc diff campus before continuing. otherwise fail fast if it's, i.e., a nb bus not in bus data when selected campus is nb
                     continue
 
                 }
 
-                const busInfo = eventData[busId]
+                const busInfo = eventData[busName]
 
-                busData[busId].at_stop = busInfo.stopped
-                busData[busId].stopId = busInfo.stopId
-                busData[busId].next_stop = getNextStopId(busData[busId].route, parseInt(busInfo.stopId)) // might throw error if busId not yet in busData (if rubus ws broadcasts data before new bus added from passio getData)
-                busData[busId].timeArrived = busInfo.time_arrived;
+                busData[busName].at_stop = busInfo.stopped
+                busData[busName].stopId = busInfo.stopId
+                busData[busName].next_stop = getNextStopId(busData[busName].route, parseInt(busInfo.stopId)) // might throw error if busName not yet in busData (if rubus ws broadcasts data before new bus added from passio getData)
+                busData[busName].timeArrived = busInfo.time_arrived;
 
             }
 

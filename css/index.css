@@ -773,7 +773,7 @@ html, body {
     font-weight: bold;
 }
 
-.stop-bus-id {
+.stop-bus-name {
     font-size: 1.5rem;
     color: var(--theme-stop-bus-name)
 }

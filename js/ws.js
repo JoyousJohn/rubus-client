@@ -71,7 +71,7 @@ class BusWebSocketClient {
         this.wsUrl = wsUrl;
         this.ws = null;
         this.wsUserIds = [];
-        this.buses = {};  // Store previous data for each bus by busId
+        this.buses = {};  // Store previous data for each bus by busName
         this.manualDisconnect = false;
     }
 
@@ -82,10 +82,10 @@ class BusWebSocketClient {
             "userId": [1268],
             "filter": {
                 "outOfService": 0,
-                // "busId": [4853, 4893]  // Replace with actual bus IDs
+                // "busName": [4853, 4893]  // Replace with actual bus IDs
             },
             "field": [
-                "busId",
+                "busName",
                 "bus", // only used to make bus obj when num was in excluded buses
                 "latitude",
                 "longitude",
@@ -113,10 +113,10 @@ class BusWebSocketClient {
             return;
         }
 
-        const busId = data.busId;
+        const busName = data.busName;
 
-        // alert(busId)
-        // console.log(`Received bus data for bus ${busId}:`, data);
+        // alert(busName)
+        // console.log(`Received bus data for bus ${busName}:`, data);
         
         // if (data.route && !data.route.includes('ONWK')) {
         //     console.log('Passio reported a non-overnight bus, returning to polling');
@@ -125,12 +125,12 @@ class BusWebSocketClient {
         //     startBusPolling();
         // }
 
-        if (!busData[busId]) {
+        if (!busData[busName]) {
             // console.log(data)
 
 
             if (!data.route) {
-                console.log("[WHAT] " + busId + " " + JSON.stringify(data) + " doesn't have a route...");
+                console.log("[WHAT] " + busName + " " + JSON.stringify(data) + " doesn't have a route...");
                 // return;
                 data.route = 'undefined'
             }
@@ -140,30 +140,30 @@ class BusWebSocketClient {
             // Don't add overnight buses to map when simulator is active
             if (sim) return;
 
-            console.log(`New bus in WS: ${data.bus} (${busId}) (${data.route})`);
-            busData[busId] = {};
-            busData[busId].busName = data.bus;
-            busData[busId].previousTime = new Date().getTime() - 5000;
-            busData[busId].previousPositions = [[parseFloat(data.latitude), parseFloat(data.longitude)]];
-            busData[busId].type = 'ws';
-            busData[busId]['campus'] = routesByCampus[data.route];
+            console.log(`New bus in WS: ${data.bus} (${busName}) (${data.route})`);
+            busData[busName] = {};
+            busData[busName].busName = data.bus;
+            busData[busName].previousTime = new Date().getTime() - 5000;
+            busData[busName].previousPositions = [[parseFloat(data.latitude), parseFloat(data.longitude)]];
+            busData[busName].type = 'ws';
+            busData[busName]['campus'] = routesByCampus[data.route];
 
             if (!('route' in data)) { // sometimes none...
-                busData[busId].route = 'none';
+                busData[busName].route = 'none';
             } else {
 
                 if (data.route === 'ONWK1FS') {
-                    busData[busId].route = 'on1';
+                    busData[busName].route = 'on1';
                 } else if (data.route === 'ONWK2FS') {
-                    busData[busId].route = 'on2';
+                    busData[busName].route = 'on2';
                 } else {
                     return; // just don't deal with normal buses since these should show up inapi, hope this fixes everything
                     // let alphaRouteId = data.routeId.replace(/[^a-zA-Z]/g, '')
 
                     // if (alphaRouteId in routeMapping) {
-                    //     busData[busId].route = routeMapping[alphaRouteId]
+                    //     busData[busName].route = routeMapping[alphaRouteId]
                     // }  else {
-                    //     busData[busId].route = data.route
+                    //     busData[busName].route = data.route
                     // }
                 } 
             }
@@ -177,23 +177,23 @@ class BusWebSocketClient {
 
         }
 
-        busData[busId].lat = data.latitude
-        busData[busId].long = data.longitude
+        busData[busName].lat = data.latitude
+        busData[busName].long = data.longitude
 
         // Log position update source
-        // console.log(`[WebSocket] Bus ${busId} position update: ${data.latitude}, ${data.longitude}`);
-        busData[busId].rotation = data.course
-        busData[busId].capacity = data.paxLoad
+        // console.log(`[WebSocket] Bus ${busName} position update: ${data.latitude}, ${data.longitude}`);
+        busData[busName].rotation = data.course
+        busData[busName].capacity = data.paxLoad
         
         // Update distance line position marker if this bus is focused
-        if (popupBusId === busId && settings['toggle-distances-line-on-focus']) {
-            updateDistanceLinePositionMarker(busId);
+        if (popupBusName === busName && settings['toggle-distances-line-on-focus']) {
+            updateDistanceLinePositionMarker(busName);
         }
 
         // Update position history for Bézier curves, but don't reset timing data
         // WebSocket updates are irregular and shouldn't affect animation duration calculations
         const currentTime = new Date().getTime();
-        const timeSinceLastUpdate = currentTime - (busData[busId].previousTime || currentTime);
+        const timeSinceLastUpdate = currentTime - (busData[busName].previousTime || currentTime);
 
         // For WebSocket updates, ensure animation duration accounts for remaining API polling interval
         // This prevents animations from being too short when WebSocket updates come mid-polling-cycle
@@ -203,36 +203,36 @@ class BusWebSocketClient {
         const animationDuration = cappedTimeSinceLastUpdate + remainingPollTime + 2500; // Base duration calculation
 
         // Store the calculated duration for use in updateMarkerPosition
-        busData[busId].websocketAnimationDuration = animationDuration;
+        busData[busName].websocketAnimationDuration = animationDuration;
 
-        // console.log(`[WebSocket] Bus ${busId}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Remaining poll time: ${Math.round(remainingPollTime/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
+        // console.log(`[WebSocket] Bus ${busName}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Remaining poll time: ${Math.round(remainingPollTime/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
 
-        busData[busId].previousPositions.push([parseFloat(data.latitude), parseFloat(data.longitude)]);
+        busData[busName].previousPositions.push([parseFloat(data.latitude), parseFloat(data.longitude)]);
 
         // Keep only the last 10 positions to prevent memory bloat
-        if (busData[busId].previousPositions.length > 10) {
-            busData[busId].previousPositions = busData[busId].previousPositions.slice(-10);
+        if (busData[busName].previousPositions.length > 10) {
+            busData[busName].previousPositions = busData[busName].previousPositions.slice(-10);
         }
 
-        if (!('speed' in busData[busId])) {
-            busData[busId].speed = data.speed
-            busData[busId].visualSpeed = data.speed
+        if (!('speed' in busData[busName])) {
+            busData[busName].speed = data.speed
+            busData[busName].visualSpeed = data.speed
         }
 
         // Calculate speed for this bus
         // const speed = 
 
         // if (speed !== null) {
-        //     console.log(`Bus ${busId} current speed: ${speed.toFixed(2)} mph`);
+        //     console.log(`Bus ${busName} current speed: ${speed.toFixed(2)} mph`);
         // } else {
-        //     console.log(`Not enough data to calculate speed for bus ${busId} yet.`);
+        //     console.log(`Not enough data to calculate speed for bus ${busName} yet.`);
         // }
 
-        calculateSpeed(busId);
+        calculateSpeed(busName);
 
-        plotBus(busId);
+        plotBus(busName);
 
-        let route = busData[busId].route
+        let route = busData[busName].route
         if (!activeRoutes.has(route)) {
             console.log("Does this ever run?") // yes it does, after something like "New bus in WS: 4035 (13211) (ONWK2FS)"
             if (!route) route = 'undefined'
