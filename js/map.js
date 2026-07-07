@@ -214,7 +214,7 @@ $(document).ready(function() {
     map.on('dragend', function() {
         map.scrollWheelZoom.enable();
         
-        // Set max bounds after user finishes dragging after unfocussing on a bus
+        // Set max bounds after user finishes dragging after unfocusing on a bus
         if (shouldSetMaxBoundsAfterDrag) {
             map.setMaxBounds(expandBounds(bounds[selectedCampus], 2));
             shouldSetMaxBoundsAfterDrag = false; // Reset flag after use
@@ -1620,8 +1620,6 @@ let pauseUpdateMarkerPositions = false;
 function plotBus(busName, immediatelyUpdate=false) {
     
     const loc = {lat: busData[busName].lat, long: busData[busName].long};
-
-    console.log(loc)
 
     if (!busMarkers[busName]) {
         // Create a new bus marker if it doesn't exist
