@@ -73,6 +73,14 @@
         height: 100%;
     }
 
+    .bus-info-main-wrapper {
+        margin: 0 !important;
+    }
+
+    .bus-info-main {
+        border-radius: 1rem !important;
+    }
+
     .fa-gear {
         padding: 0.15rem;
     }
