@@ -896,6 +896,19 @@ async function popStopInfo(stopId) {
     if (popupStopId) {
         $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
         busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+        
+        // If we have an active route filter, and it doesn't service the previous stop, hide it
+        if (shownRoute && shownRoute !== 'fav' && stopLists[shownRoute]) {
+            const isServiced = stopLists[shownRoute].some(id => Number(id) === Number(popupStopId));
+            if (!isServiced) {
+                busStopMarkers[popupStopId].remove();
+            }
+        }
+    }
+
+    // Ensure the newly selected stop marker is added to the map in case it was hidden by the route filter
+    if (busStopMarkers[stopId]) {
+        busStopMarkers[stopId].addTo(map);
     }
 
     $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/stop_marker_selected.png');

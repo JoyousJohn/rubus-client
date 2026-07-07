@@ -206,7 +206,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     });
 
     // Apply selection styling to the currently selected route if it exists in the filtered routes
-    if (shownRoute && routesArray.includes(shownRoute)) {
+    if (shownRoute) {
         // Use the existing toggleRouteSelectors logic to select the route
         $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
             const rn = $(this).attr('routeName');
@@ -215,22 +215,24 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
             }
         });
 
-        // Always use the route color when selected, regardless of in-service status
-        const selectedRouteColor = colorMappings[shownRoute];
-        $(`.route-selector[routeName="${shownRoute}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`)
+        if (routesArray.includes(shownRoute)) {
+            // Always use the route color when selected, regardless of in-service status
+            const selectedRouteColor = colorMappings[shownRoute];
+            $(`.route-selector[routeName="${shownRoute}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`)
 
-        const container = $('.route-selectors');
+            const container = $('.route-selectors');
 
-        if (container[0].scrollWidth > $(document).width()) {
-            const element = $(`.route-selector[routeName="${shownRoute}"]`);
-            const containerWidth = container.width();
-            const elementWidth = element.outerWidth();
+            if (container[0].scrollWidth > $(document).width()) {
+                const element = $(`.route-selector[routeName="${shownRoute}"]`);
+                const containerWidth = container.width();
+                const elementWidth = element.outerWidth();
 
-            const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
-            
-            container.animate({
-                scrollLeft: scrollTo
-            }, 180);
+                const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
+                
+                container.animate({
+                    scrollLeft: scrollTo
+                }, 180);
+            }
         }
     }
 
