@@ -969,6 +969,10 @@ async function popStopInfo(stopId) {
         popupBusName = null;
     }
 
+    if (!shownRoute) { // if we had a bus focused, stops not in its route would be hidden, e.g. tapping ARC from a wknd1 bus selected would have science building still hidden, and tapping the "Sci" mapping on top would fly to an invisible stop marker. Must show all.
+        showAllStops();
+    }
+
     if (selectedMarkerId && busMarkers[selectedMarkerId] ) { 
         const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);
         if (rotationElement) {
@@ -1085,7 +1089,7 @@ async function addStopsToMap() {
 
     checkIfLocationShared();
 
-    console.log(activeStops)
+    // console.log(activeStops)
     activeStops.forEach(stopId => {
 
         if (!busStopMarkers[stopId]) { // Adding stops from new buses, need to exclude existing stops

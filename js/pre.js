@@ -147,7 +147,6 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                     console.log("Is first bus, deleting all stops")
                     makeBusesByRoutes();
                     deleteAllStops();
-                    console.log(busStopMarkers)
                 }
 
                 if (!isInitial) {
@@ -1196,7 +1195,7 @@ $(document).ready(async function() {
     }
     populateJoinedService();
 
-    wsClient.connect()
+    // wsClient.connect()
     openRUBusSocket();
 
     // On app resume/return, force the next update to be immediate and fetch promptly

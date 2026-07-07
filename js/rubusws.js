@@ -144,11 +144,7 @@ function openRUBusSocket() {
 
             const busName = eventData.busName;
 
-            if (!(busName in busData)) {// shouldn't happen
-                console.log('this finally should happen bc we are excluding buses from other campuses');
-                // busData[busName] = {}
-                return
-            }
+            if (!(busName in busData)) return; // ignore buses from other campuses - will need to rework later to allow new buses coming into service after init load from rubus api
 
             const busRoute = busData[busName].route;
             const stopId = eventData.stopId;

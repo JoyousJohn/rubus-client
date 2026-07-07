@@ -27,7 +27,7 @@ function updateStatusDisplay() {
     const pollDelay = 5000; // 5 seconds
     const pollDelayBuffer = 1000; // 1 second buffer
 
-    const passioOnline = isServerOnline(lastPassioResponse, pollDelay, pollDelayBuffer);
+    // const passioOnline = isServerOnline(lastPassioResponse, pollDelay, pollDelayBuffer);
 
     // For RUBus, we don't poll regularly like Passio
     // Instead, we rely on request failure tracking - if requests fail, it's offline
@@ -35,20 +35,20 @@ function updateStatusDisplay() {
     const rubusOnline = rubusRequestsFailing ? false : (lastRubusResponse > 0);
 
     // Check WebSocket connection states (these may be undefined if not loaded yet)
-    let passioWsText = "Loading...";
+    // let passioWsText = "Loading...";
     let rubusWsText = "Loading...";
-    let passioWsConnected = false;
+    // let passioWsConnected = false;
     let rubusWsConnected = false;
 
     // Check Passio WebSocket
-    try {
-        passioWsText = getWebSocketStatusText(window.wsClient.ws);
-        passioWsConnected = window.wsClient.ws.readyState === WebSocket.OPEN;
-        console.log('Passio WebSocket state:', window.wsClient.ws.readyState, 'Status:', passioWsText);
-    } catch (e) {
-        console.log('Error checking Passio WebSocket:', e);
-        passioWsText = "Loading...";
-    }
+    // try {
+    //     passioWsText = getWebSocketStatusText(window.wsClient.ws);
+    //     passioWsConnected = window.wsClient.ws.readyState === WebSocket.OPEN;
+    //     console.log('Passio WebSocket state:', window.wsClient.ws.readyState, 'Status:', passioWsText);
+    // } catch (e) {
+    //     console.log('Error checking Passio WebSocket:', e);
+    //     passioWsText = "Loading...";
+    // }
 
     // Check RUBus WebSocket
     try {
@@ -60,7 +60,7 @@ function updateStatusDisplay() {
         rubusWsText = "Loading...";
     }
 
-    const passioTimeAgo = getTimeAgoString(lastPassioResponseTime);
+    // const passioTimeAgo = getTimeAgoString(lastPassioResponseTime);
     const rubusTimeAgo = getTimeAgoString(lastRubusResponseTime);
 
     const onlineColor = '#10b981';
@@ -68,11 +68,11 @@ function updateStatusDisplay() {
     const wsColor = '#6366f1'; // Blue for WebSocket status
 
     // Display polling status (top row)
-    $('.passio-status').text(`Passio ${passioOnline ? 'Online' : 'Offline'} (-${passioTimeAgo})`).css('color', passioOnline ? onlineColor : offlineColor);
-    $('.rubus-status').text(`RUBus ${rubusOnline ? 'Online' : 'Offline'} (-${rubusTimeAgo})`).css('color', rubusOnline ? onlineColor : offlineColor);
+    // $('.passio-status').text(`Passio ${passioOnline ? 'Online' : 'Offline'} (-${passioTimeAgo})`).css('color', passioOnline ? onlineColor : offlineColor);
+    // $('.rubus-status').text(`RUBus ${rubusOnline ? 'Online' : 'Offline'} (-${rubusTimeAgo})`).css('color', rubusOnline ? onlineColor : offlineColor);
 
     // Display WebSocket status (bottom row)
-    $('.passio-ws-status').text(`Passio WS ${passioWsConnected ? 'Connected' : 'Disconnected'}`).css('color', passioWsConnected ? wsColor : offlineColor);
+    // $('.passio-ws-status').text(`Passio WS ${passioWsConnected ? 'Connected' : 'Disconnected'}`).css('color', passioWsConnected ? wsColor : offlineColor);
     $('.rubus-ws-status').text(`RUBus WS ${rubusWsConnected ? 'Connected' : 'Disconnected'}`).css('color', rubusWsConnected ? wsColor : offlineColor);
 }
 
