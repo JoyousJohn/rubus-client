@@ -950,8 +950,8 @@ async function calculateSpeed(busName) {
         busData[busName].visualSpeed = acceptedSpeed;
         if (popupBusName === busName && showBusSpeeds) {
             console.log(busName + ' New Speed: ' + busData[busName].visualSpeed.toFixed(2))
-            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
-            $('.info-mph-mid').text('MPH');
+            $('.info-speed-mid').text(' | ' +  Math.round(busData[busName].visualSpeed) + ' ');
+            $('.info-mph-mid').text('mph');
         }
         busData[busName].previousLatitude = currentLatitude;
         busData[busName].previousLongitude = currentLongitude;
@@ -1003,8 +1003,8 @@ async function calculateSpeed(busName) {
         
         if (popupBusName === busName && showBusSpeeds) {
             // console.log(busName + ' New Speed: ' + busData[busName].visualSpeed.toFixed(2))
-            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed))
-            $('.info-mph-mid').text('MPH');
+            $('.info-speed-mid').text(' | ' +  Math.round(busData[busName].visualSpeed) + ' ');
+            $('.info-mph-mid').text('mph');
         }
 
         if (panelRoute === busData[busName].route) {
@@ -1925,8 +1925,8 @@ function popInfo(busName, resetCampusFontSize) {
         dataRoute = 'Overnight ' + dataRoute.slice(-1);
         displayRoute = dataRoute;
     } else if (dataRoute === 'summer1' || dataRoute === 'summer2') {
-        dataRoute = dataRoute.slice(0, -1) + ' ' + dataRoute.slice(-1);
-        displayRoute = dataRoute.toUpperCase();
+        dataRoute = dataRoute.charAt(0).toUpperCase() + dataRoute.slice(1, -1) + ' ' + dataRoute.slice(-1);
+        displayRoute = dataRoute;
     } else {
         displayRoute = dataRoute.toUpperCase();
     }
@@ -1952,8 +1952,8 @@ function popInfo(busName, resetCampusFontSize) {
     }, 0);    
 
     if (showBusSpeeds && !Number.isNaN(parseInt(data.visualSpeed))) {
-        $('.info-speed-mid').text(parseInt(data.visualSpeed));
-        $('.info-mph-mid').text('MPH');
+        $('.info-speed-mid').text(' | ' +  parseInt(data.visualSpeed) + ' ');
+        $('.info-mph-mid').text('mph');
     }
     $('.info-name-mid').text(busNameElmText + ' | ');
     $('.info-capacity-mid').text(data.capacity + '% capacity');
@@ -2599,11 +2599,12 @@ function populateBusBreaks(busBreakData, busName) {
 
     $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
 
-    if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
-        $('.info-quickness-mid').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Lengthy stops</span>").show();
-    } else if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime < -0.2) {
-        $('.info-quickness-mid').html(" | <span class='text-1p2rem' style='color: var(--theme-short-stops-color);'>Short stops</span>").show();
-    }
+    // Temp disable quickness
+    // if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
+    //     $('.info-quickness-mid').html(" | <span class='text-1p2rem' style='color: #fa3c3c;'>Lengthy stops</span>").show();
+    // } else if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime < -0.2) {
+    //     $('.info-quickness-mid').html(" | <span class='text-1p2rem' style='color: var(--theme-short-stops-color);'>Short stops</span>").show();
+    // }
 
     if (settings['toggle-show-bus-quickness-breakdown']) {
         $('.bus-quickness-breakdown-wrapper').html(`<div class="flex flex-col text-1p3rem mt-0p5rem">

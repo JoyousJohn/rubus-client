@@ -121,7 +121,9 @@ function openRUBusSocket() {
             }
 
             if (eventData['event'] === 'wait_update') {
-                updateWaits(eventData['wait_update']);
+                if (eventData['campus'] === selectedCampus) {
+                    updateWaits(eventData['wait_update']);
+                }
                 return;
             }
 

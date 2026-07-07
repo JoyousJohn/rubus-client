@@ -1046,7 +1046,7 @@ async function fetchETAs() {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        etas = data[selectedCampus] || {};
+        etas = data[selectedCampus] || {}; // can prob remove || {} if server defaults eta obj empty campus mappings
         // console.log('ETAs fetched:', etas);
         // updateTimeToStops('all')
 
@@ -1064,7 +1064,7 @@ async function fetchETAs() {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        waits = data[selectedCampus] || {};
+        waits = data[selectedCampus];
         updateWaitTimes();
         // console.log('Waits fetched:', waits);
 
@@ -1281,8 +1281,8 @@ async function randomStepBusSpeeds() {
         const randChange = Math.random() < 0.5 ? -1 : 1;
         busData[busName].visualSpeed += randChange;
         if (popupBusName == busName && showBusSpeeds) {
-            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
-            $('.info-mph-mid').text('MPH');
+            $('.info-speed-mid').text(' | ' +  Math.round(busData[busName].visualSpeed) + ' ');
+            $('.info-mph-mid').text('mph');
         }
 
         if (panelRoute === busData[busName].route) {

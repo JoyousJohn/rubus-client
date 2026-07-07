@@ -413,9 +413,11 @@ html, body {
 } 
 
 .info-main {
-    display: grid;
+    display: flex;
+    justify-content: center;
+    /* display: grid;
     grid-template-columns: auto 1fr auto;
-    align-items: center;
+    align-items: center; */
 }
 
 .info-route {
@@ -500,6 +502,10 @@ html, body {
     border-radius: 1rem;
     padding: 1.3rem 2rem;
     color: var(--theme-color);
+}
+
+.bus-info-main {
+    border-radius: 0 0 1rem 1rem !important;
 }
 
 .bus-info-main-left {
@@ -1227,17 +1233,18 @@ html, body {
 }
 
 .info-speed-wrapper {
-    line-height: 1;
+    display: flex;
+    /* line-height: 1; */
     text-align: center;
 }
 
 .info-speed {
-    font-size: 2rem;
+    /* font-size: 2rem; */
 }
 
 .info-mph {
     font-size: 1.5rem;
-    font-weight: bold;
+    /* font-weight: bold; */
     color: var(--theme-color-lighter);
 }
 
