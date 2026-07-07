@@ -12,7 +12,7 @@ function replaceFontAwesomeIcons() {
         'fa-solid fa-bus-simple': 'icon icon-bus-simple',
         'fa-solid fa-route': 'icon icon-route',
         'fa-solid fa-bolt': 'icon icon-bolt',
-        'fa-solid fa-arrow-left': 'icon icon-arrow-left',
+        // 'fa-solid fa-arrow-left': 'icon icon-arrow-left',
         'fa-solid fa-map-pin': 'icon icon-map-pin',
         'fa-regular fa-message': 'icon icon-message',
         'fa-solid fa-clock': 'icon icon-clock',

@@ -316,8 +316,8 @@ class BusWebSocketClient {
     
 }
 
-// Instantiate the WebSocket client
-const wsClient = new BusWebSocketClient("wss://passio3.com/");
-// Make it globally accessible for status checking
-window.wsClient = wsClient;
-// wsClient.connect();
+// // Instantiate the WebSocket client
+// const wsClient = new BusWebSocketClient("wss://passio3.com/");
+// // Make it globally accessible for status checking
+// window.wsClient = wsClient;
+// // wsClient.connect();

@@ -2097,14 +2097,14 @@ $(document).ready(function() {
 
     // updateSettings();
 
-    $('.stop-info-back').click(function() {
+    $('.stop-info-back-wrapper').click(function() {
         flyToBus(sourceBusName);
         $('.stop-info-popup').hide();
         $('.stop-info-hide-oos').hide();
         // setting sourceBusName to null breaks stuff
     });
 
-    $('.bus-info-back').click(function() {
+    $('.bus-info-back-wrapper').click(function() {
         flyToStop(sourceStopId);
         if (!shownRoute) {
             showAllBuses();
