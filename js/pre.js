@@ -67,14 +67,21 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     lastPollTime = currentTime;
     
     let slowConnectionTimeout;
+    let fetchTimeout;
+    const controller = new AbortController();
     try {
         slowConnectionTimeout = setTimeout(() => {
             $('.slow-connection').slideDown();
         }, 3000);
+        fetchTimeout = setTimeout(() => {
+            controller.abort();
+        }, 8000);
         const response = await fetch(url, {
-            method: 'GET'
+            method: 'GET',
+            signal: controller.signal
         });
         clearTimeout(slowConnectionTimeout);
+        clearTimeout(fetchTimeout);
         $('.slow-connection').slideUp();
 
         if (!response.ok) {
@@ -1231,6 +1238,7 @@ $(document).ready(async function() {
         }
 
         // Kick a fetch right away to avoid waiting for the interval
+        busFetchInProgress = false;
         if (!settings['toggle-pause-passio-polling']) { fetchBusData(true); }
     };
 
