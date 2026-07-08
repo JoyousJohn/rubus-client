@@ -208,7 +208,7 @@ function openRUBusSocket() {
 
                 const $busLogElm = $(`
                     <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-                    <div><strong>${busName}</strong> <span style="color: #ec5050;">deparated</span> ${stopName} after ${stoppedFor} (${stoppedDiff}%)</div>
+                    <div><strong>${busName}</strong> <span style="color: #ec5050;">departed</span> ${stopName} after ${stoppedFor} (${stoppedDiff}%)</div>
                 `)
                 $('.bus-log').append($busLogElm);
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);

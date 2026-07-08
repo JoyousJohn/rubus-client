@@ -38,6 +38,112 @@ const exampleChats = [
     }
 ]
 
+const readableRouteNames = {
+    'weekend 1': 'wknd1',
+    'weekend 2': 'wknd2',
+    'winter 1': 'winter1',
+    'winter 2': 'winter2',
+    'summer 1': 'summer1',
+    'summer 2': 'summer2',
+    'all campus': 'all',
+    'overnight 1': 'on1',
+    'overnight 2': 'on2',
+};
+
+function parseMarkdown(text) {
+    let processed = text;
+    processed = processed.replace(/^### (.*$)/gim, '<h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.6rem; font-weight: 500;">$1</h3>');
+    processed = processed.replace(/^## (.*$)/gim, '<h2 style="margin: 0.8rem 0 0.4rem 0; font-size: 1.8rem; font-weight: normal;">$1</h2>');
+    processed = processed.replace(/^# (.*$)/gim, '<h1 style="margin: 1.0rem 0 0.5rem 0; font-size: 2.0rem; font-weight: normal;">$1</h1>');
+    processed = processed.replace(/^---$/gim, '<hr style="border: 0; margin: 0.4rem 0; opacity: 0;">');
+    
+    // Strip newlines directly adjacent to block elements to prevent double line breaks
+    processed = processed.replace(/\n?<(h[1-3]|hr)([^>]*)>\n?/gi, '<$1$2>');
+    processed = processed.replace(/\n?<\/(h[1-3])>\n?/gi, '</$1>');
+    
+    processed = processed.replace(/\n\n+/g, '<div style="height: 0.6rem;"></div>');
+    processed = processed.replace(/\*\*(.*?)\*\*/g, '$1');
+    processed = processed.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    processed = processed.replace(/_(.*?)_/g, '<em>$1</em>');
+    return processed;
+}
+
+function getAllStopNames() {
+    const stopNames = [];
+    if (typeof allStopsData !== 'undefined') {
+        for (const campus in allStopsData) {
+            for (const stopId in allStopsData[campus]) {
+                const stop = allStopsData[campus][stopId];
+                if (stop.name) stopNames.push(stop.name);
+                if (stop.shortName) stopNames.push(stop.shortName);
+                if (stop.shorterName) stopNames.push(stop.shorterName);
+                if (stop.mainName) stopNames.push(stop.mainName);
+            }
+        }
+    }
+    return [...new Set(stopNames)].sort((a, b) => b.length - a.length);
+}
+
+function colorRouteNames(text) {
+    if (typeof colorMappings === 'undefined') return text;
+    
+    const stopNames = getAllStopNames();
+    const escapedStops = stopNames.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const stopRegex = new RegExp(`(?<!\\w)(${escapedStops.join('|')})(?!\\w)`, 'gi');
+    
+    const readableKeys = Object.keys(readableRouteNames).sort((a, b) => b.length - a.length);
+    const readableRegex = new RegExp(`\\b(${readableKeys.join('|')})\\b(?:\\s+(route\\b))?`, 'gi');
+    
+    const sorted = [...knownRoutes].sort((a, b) => b.length - a.length);
+    const escaped = sorted.map(r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const routeRegex = new RegExp(`\\b(${escaped.join('|')})\\b(?:\\s+(route\\b))?`, 'gi');
+    
+    const colorLine = (line) => {
+        return line.replace(/(^|>)([^<]*?)(?=<|$)/g, (match, before, content) => {
+            if (!content) return match;
+            
+            let processed = content.replace(stopRegex, (name) => {
+                return `<span style="color: #65acf2;">${name}</span>`;
+            });
+            
+            processed = processed.replace(readableRegex, (matchStr, name) => {
+                if (name === name.toLowerCase()) return matchStr;
+                const key = readableRouteNames[name.toLowerCase()];
+                const color = colorMappings[key];
+                if (color) return `<strong style="color: ${color}">${matchStr}</strong>`;
+                return matchStr;
+            });
+            
+            processed = processed.replace(routeRegex, (matchStr, name, routeWord) => {
+                if (name === name.toLowerCase()) return matchStr;
+                if (name.toLowerCase() === 'all' && !routeWord) {
+                    return matchStr;
+                }
+                const key = name.toLowerCase();
+                const color = colorMappings[key];
+                if (color) {
+                    const uppercasedName = name.toUpperCase();
+                    const newMatchStr = matchStr.replace(name, uppercasedName);
+                    return `<strong style="color: ${color}">${newMatchStr}</strong>`;
+                }
+                return matchStr;
+            });
+            
+            return before + processed;
+        });
+    };
+
+    const lines = text.split('\n');
+    const processedLines = lines.map(line => {
+        if (/^\s*#+\s+/.test(line)) {
+            return line;
+        }
+        return colorLine(line);
+    });
+    
+    return processedLines.join('\n');
+}
+
 // Visual Viewport-aware sizing
 let chatViewportListenersAttached = false;
 let chatVvpHandler = null;
@@ -95,10 +201,10 @@ $(document).on('click', '.chat-btn', function() {
             const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
             $messages.append($botMsg);
             setTimeout(() => {
-                const processedExample = example.a.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                const processedExample = colorRouteNames(parseMarkdown(example.a));
                 $botMsg.html(processedExample).removeClass('loading');
                 $messages.append($botMsg);
-                window.chatHistory.push({ role: 'assistant', content: processedExample });  // Add bot response to history
+                window.chatHistory.push({ role: 'assistant', content: example.a });  // Add bot response to history
             }, 1333);
         }))
     })
@@ -161,6 +267,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     window.currentEventSource = evtSource;
 
     let finalAnswer = null;
+    let toolCalls = [];
 
     evtSource.onmessage = function(event) {
         try {
@@ -168,6 +275,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
             if (data.progress && !data.done) {
                 // Show tool progress/description
                 console.log(data);
+                toolCalls.push(data.progress);
                 const $thinkingDiv = $(`<div class="chat-message bot loading thinking">${data.progress}</div>`);
                 $thinkingDiv.insertBefore($messages.children().last());
             } else if (data.done) {
@@ -176,33 +284,45 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 finalAnswer = data.answer;
                 if (settings['toggle-show-thinking']) {
                     // console.log(data.answer);
-                    const $showEntireResponse = $('<div class="text-1p3rem pointer" style="color: #8181f1">Show entire response</div>').click(function() {
+                    const $showEntireResponse = $('<div class="text-1p3rem pointer" style="color: #8181f1; margin-left: 1.3rem;">Show raw response & tools</div>').click(function() {
+                        const $expandedInfo = $('<div class="expanded-raw-info" style="margin-left: 1.3rem;"></div>');
+                        $expandedInfo.append(`<div class="text-1p3rem" style="white-space: pre-wrap; margin-top: 0.5rem; color: #aaa;">Response content: ${data.answer}</div>`);
+                        if (toolCalls.length > 0) {
+                            const $toolsList = $('<div class="text-1p3rem" style="color: #8181f1; margin-top: 0.5rem;">Tools called:</div>');
+                            const $ul = $('<ul style="margin: 0.25rem 0 0 0; padding-left: 1.5rem;"></ul>');
+                            toolCalls.forEach(tool => {
+                                $ul.append(`<li style="color: #aaa;">${tool}</li>`);
+                            });
+                            $toolsList.append($ul);
+                            $expandedInfo.append($toolsList);
+                        }
+                        $expandedInfo.insertAfter($(this));
                         $(this).remove();
-                        $messages.append(`<div class="text-1p3rem">Response content: ${data.answer}</div>`)
+                        $messages.scrollTop($messages[0].scrollHeight);
                     });
                     $messages.append($showEntireResponse);
                 } 
 
                 // Extract text after assistantFinal
-                let match = data.answer.match(/assistantfinal(.*)/);
+                let match = data.answer.match(/assistantfinal([\s\S]*)/i);
                 if (!match) {
-                    // If "assistantfinal" is not found, look for the last occurrence of "final"
-                    const lastFinalIndex = data.answer.lastIndexOf("final");
-                    if (lastFinalIndex !== -1) {
-                        match = [null, data.answer.slice(lastFinalIndex + "final".length)];
+                    // Look for tag format: "final:" or "<final>" or "/final" at the start, or preceded by a newline/whitespace
+                    const tagMatch = data.answer.match(/(?:^|[\r\n])(?:<final>|final[:\s\-\]\|])([\s\S]*)$/i);
+                    if (tagMatch) {
+                        match = [null, tagMatch[1]];
                     }
                 }
                 if (match) {
                     finalAnswer = match[1].trim();
                 } else {
-                    finalAnswer = 'There was an issue formatting the response.';       
+                    finalAnswer = data.answer;       
                 }
                     
                 
                 console.log(finalAnswer);
-                const processedAnswer = finalAnswer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                const processedAnswer = colorRouteNames(parseMarkdown(finalAnswer));
                 $botMsg.html(processedAnswer).removeClass('loading');
-                window.chatHistory.push({ role: 'assistant', content: processedAnswer });
+                window.chatHistory.push({ role: 'assistant', content: finalAnswer });
                 evtSource.close();
             }
             $messages.scrollTop($messages[0].scrollHeight);
