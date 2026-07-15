@@ -1953,8 +1953,8 @@ function popInfo(busName, resetCampusFontSize) {
         $('.info-speed-mid').text(' | ' +  parseInt(data.visualSpeed) + ' ');
         $('.info-mph-mid').text('mph');
     }
-    $('.info-name-mid').text(busNameElmText + ' | ');
-    $('.info-capacity-mid').text(data.capacity + '% capacity');
+    $('.info-name-mid').text(busNameElmText);
+    $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + data.capacity + '%</span> capacity');
 
     if (busData[busName].oos) {
         $('.bus-oos-mid').show();

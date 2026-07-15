@@ -1775,6 +1775,7 @@ const toggleSettings = [
     'toggle-show-thinking',
     'toggle-show-road-network',
     'toggle-distances-line-on-focus',
+    'toggle-show-capacity',
     'toggle-always-show-break-overdue',
     'toggle-settings-btn-end',
 ]
@@ -1866,6 +1867,7 @@ let defaultSettings = {
     'toggle-show-thinking': false,
     'toggle-show-road-network': false,
     'toggle-distances-line-on-focus': false,
+    'toggle-show-capacity': false,
     'toggle-always-show-break-overdue': false,
     
     // going to remove

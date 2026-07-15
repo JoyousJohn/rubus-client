@@ -458,6 +458,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-disable-fireworks-on-open'] = isChecked;
             break;
 
+        case 'toggle-show-capacity':
+            console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-capacity'] = isChecked;
+            if (isChecked) {
+                $('.info-capacity-mid').removeClass('none').show();
+            } else {
+                $('.info-capacity-mid').hide();
+            }
+            break;
+
         case 'toggle-always-show-break-overdue':
             console.log(`Always Show Break Overdue is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-always-show-break-overdue'] = isChecked;
@@ -498,6 +508,12 @@ $(document).ready(function() {
 
     if (!settings['toggle-show-bus-speeds']) {
         $('.info-speed-wrapper').hide();
+    }
+
+    if (!settings['toggle-show-capacity']) {
+        $('.info-capacity-mid').hide();
+    } else {
+        $('.info-capacity-mid').removeClass('none').show();
     }
 
     if (settings['toggle-show-stop-polygons']) {

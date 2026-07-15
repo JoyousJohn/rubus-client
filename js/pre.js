@@ -300,7 +300,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             }
  
             if (busName === popupBusName) {
-                $('.info-capacity-mid').text(bus.capacity + '% capacity');
+                $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + bus.capacity + '%</span> capacity');
             }
         }
 

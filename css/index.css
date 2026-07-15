@@ -481,7 +481,11 @@ html, body {
 }
 
 .info-capacity {
-    color: var(--theme-color);
+    color: var(--theme-extra);
+}
+
+.info-capacity-val {
+    color: var(--theme-color-lighter);
 }
 
 .bus-oos {
@@ -1240,13 +1244,13 @@ html, body {
 }
 
 .info-speed {
-    /* font-size: 2rem; */
+    color: var(--theme-color-lighter);
 }
 
 .info-mph {
     font-size: 1.5rem;
     /* font-weight: bold; */
-    color: var(--theme-color-lighter);
+    color: var(--theme-extra);
 }
 
 
