@@ -235,28 +235,9 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-polyline-padding':
             settings['toggle-polyline-padding'] = isChecked;
-
-            if (isChecked) {
-                for (const routeName in polylines) {
-                    const polyline = polylines[routeName];
-                    logPolylineRemoval(routeName, 'settings-toggle-polyline-padding-on');
-                    polyline.removeFrom(map);
-                    polyline.setStyle({
-                        renderer: L.svg({ padding: 1.0 })
-                    });
-                    polyline.addTo(map);
-                }
-            } else {
-                for (const routeName in polylines) {
-                    const polyline = polylines[routeName];
-                    logPolylineRemoval(routeName, 'settings-toggle-polyline-padding-off');
-                    polyline.removeFrom(map);
-                    polyline.setStyle({
-                        renderer: undefined
-                    });
-                    polyline.addTo(map);
-                }
-            }
+            reapplyPolylineRenderers(isChecked
+                ? 'settings-toggle-polyline-padding-on'
+                : 'settings-toggle-polyline-padding-off');
             break;
 
         case 'toggle-show-invalid-etas':

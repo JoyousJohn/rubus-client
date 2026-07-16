@@ -59,6 +59,9 @@ $(document).ready(function() {
     // If none of the above, Leaflet defaults to L.svg() without explicit padding.
 
     map = L.map('map', mapOptions).setView(views[selectedCampus], 14); // Rutgers Student Center
+    // Route polylines above buildings/parking (overlayPane 400); below markers (600)
+    map.createPane('polylinesPane');
+    map.getPane('polylinesPane').style.zIndex = 450;
     try { document.dispatchEvent(new Event('rubus-map-created')); } catch (_) {}
     try { if (typeof initSpoofing === 'function') { initSpoofing(); } } catch (_) {}
 

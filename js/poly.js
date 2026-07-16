@@ -2,6 +2,43 @@ let polylineBounds = null;
 let routeBounds = {};
 let previousRoutesWithPolylines = new Set();
 
+// Canvas/SVG renderer for route polylines; respects polyline-renderer + padding settings
+// Uses polylinesPane so routes stay above buildings (overlayPane) for both SVG and Canvas
+function ensurePolylinesPane() {
+    if (!map || map.getPane('polylinesPane')) return;
+    map.createPane('polylinesPane');
+    map.getPane('polylinesPane').style.zIndex = 450;
+}
+
+function createPolylineRenderer() {
+    ensurePolylinesPane();
+    const useCanvas = settings && settings['polyline-renderer'] === 'canvas';
+    const usePadding = settings && settings['toggle-polyline-padding'];
+    const options = { pane: 'polylinesPane' };
+    if (usePadding) options.padding = 1.0;
+    return useCanvas ? L.canvas(options) : L.svg(options);
+}
+
+function getPolylineLayerOptions(extra) {
+    return Object.assign({
+        pane: 'polylinesPane',
+        renderer: createPolylineRenderer()
+    }, extra || {});
+}
+
+function reapplyPolylineRenderers(reason) {
+    for (const routeName in polylines) {
+        const polyline = polylines[routeName];
+        logPolylineRemoval(routeName, reason);
+        polyline.removeFrom(map);
+        polyline.options.pane = 'polylinesPane';
+        polyline.setStyle({
+            renderer: createPolylineRenderer()
+        });
+        polyline.addTo(map);
+    }
+}
+
 // Track polyline removal for debugging race conditions
 let polylineRemovalLog = [];
 let polylineRemovalCount = {}; // Track how many times each route has been removed
@@ -122,17 +159,13 @@ async function setPolylines(activeRoutes) {
         //     smoothFactor: 1 
         // }).addTo(map);
 
-        const polylineOptions = {
+        const polylineOptions = getPolylineLayerOptions({
             color: colorMappings[routeName],
             weight: 4,
             opacity: 1,
             smoothFactor: 1,
             // noClip: true
-        };
-
-        if (settings['toggle-polyline-padding']) {
-            polylineOptions.renderer = L.svg({ padding: 1.0 });
-        }
+        });
 
         const polyline = L.polyline(coordinates, polylineOptions);
 
@@ -208,16 +241,12 @@ async function addPolylineForRoute(routeName) {
             coordinates = coordinates.map(point => [point[1], point[0]]);
         }
 
-        const polylineOptions = {
+        const polylineOptions = getPolylineLayerOptions({
             color: colorMappings[routeName],
             weight: 4,
             opacity: 1,
             smoothFactor: 1,
-        };
-
-        if (settings['toggle-polyline-padding']) {
-            polylineOptions.renderer = L.svg({ padding: 1.0 });
-        }
+        });
 
         const polyline = L.polyline(coordinates, polylineOptions);
         polyline.addTo(map);

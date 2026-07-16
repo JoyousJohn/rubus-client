@@ -1837,6 +1837,7 @@ let defaultSettings = {
     
     // dev settings
     'map-renderer': 'svg',
+    'polyline-renderer': 'svg',
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
     'toggle-whole-pixel-positioning': false, /* this might not be needed? */
@@ -1884,6 +1885,7 @@ function setDefaultSettings () {
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
     $(`div.settings-option[marker-type-option="rubus"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
+    $(`div.settings-option[polyline-renderer-option="svg"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     $(`div.settings-option[campus="nb"]`).addClass('settings-selected')
     
@@ -1944,6 +1946,7 @@ function updateSettings() {
     updateMarkerSizeExamples();
     
     $(`div.settings-option[map-renderer-option="${settings['map-renderer']}"]`).addClass('settings-selected')
+    $(`div.settings-option[polyline-renderer-option="${settings['polyline-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 
@@ -2031,6 +2034,12 @@ function updateSettings() {
             const zoom = map.getZoom();
             map.setView(center, zoom);
             
+        } else if (settingsOption === 'polyline-renderer') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['polyline-renderer'] = $(this).attr('polyline-renderer-option')
+            reapplyPolylineRenderers('settings-polyline-renderer');
+
         } else if (settingsOption === 'bus-positioning') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
