@@ -33,7 +33,9 @@ $(document).ready(function() {
         inertiaDeceleration: 1000, // higher means faster deceleration
         zoomSnap: 0, // can be 0 for continuous zoom, normally 1
         edgeBufferTiles: 10, // number of invisible tiles to load on edges
-        scrollWheelZoom: false, // Disable default scroll zoom
+        scrollWheelZoom: true, // Leaflet's built-in handler (prevents browser page zoom, manages tiles)
+        wheelPxPerZoomLevel: 20, // stronger default feel (lower = faster)
+        wheelDebounceTime: 16,   // ~1 frame — zoom fires during gesture, not just after
     };
 
     // Set maxBounds based on bypass setting
@@ -87,8 +89,11 @@ $(document).ready(function() {
         pauseUpdateMarkerPositions = settings['toggle-pause-update-marker'];
     }
 
-    tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${mapTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`, {
+        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${mapTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`, {
         maxZoom: 20,
+        updateWhenIdle: true,   // load tiles after zoom settles (less mid-gesture thrash)
+        updateWhenZooming: false,
+        keepBuffer: 2,
     }).addTo(map);
     currentTileLayerType = 'streets';
 
@@ -200,23 +205,254 @@ $(document).ready(function() {
         $('.dev-build-popup').fadeIn().delay(7000).slideUp();
     }
 
-    map.getContainer().addEventListener('wheel', function(e) {
-        if (e.deltaMode === 0) {
-            e.preventDefault();
-            const zoomAmount = e.deltaY < 0 ? 1 : -1;
-            const newZoom = map.getZoom() + zoomAmount * 1;
-            const mousePoint = map.mouseEventToContainerPoint(e);
-            const latLng = map.containerPointToLatLng(mousePoint);
-            map.setView(latLng, newZoom);
+    // Trackpad vs mouse sensitivity on Leaflet ScrollWheelZoom.
+    // DomEvent binds the function at enable-time → disable → patch → enable.
+    // Trackpad: CSS scale preview while pinching; ONE real setZoomAround when gesture ends
+    //           (tiles/vectors rebuild once — not every wheel tick).
+    // Mouse: stock sigmoid + short debounce (notch-friendly).
+    // Touch-screen pinch stays on Leaflet TouchZoom (untouched).
+    (function patchScrollWheelZoomSensitivity() {
+        const TRACKPAD_MAX_ABS_DELTA = 50;
+        // Leaflet getWheelDelta units per full zoom level (lower = stronger)
+        const TRACKPAD_DELTA_PER_ZOOM = 12;
+        const MOUSE_PX_PER_ZOOM = 60;
+        const MOUSE_DEBOUNCE_MS = 40;
+        const TRACKPAD_GESTURE_END_MS = 140; // idle after last wheel event → commit real zoom
+        const DEBUG_WHEEL = false;
+
+        const handler = map.scrollWheelZoom;
+        if (!handler) {
+            console.warn('[wheel-zoom] map.scrollWheelZoom missing');
+            return;
         }
-    });
-    map.on('dragstart', function() {
-        map.scrollWheelZoom.disable();
-    });
+
+        handler.disable();
+
+        handler._isTrackpadGesture = false;
+        handler._trackpadGesture = null; // { startZoom, targetZoom, origin, panePos }
+        handler._gestureEndTimer = null;
+
+        function zoomDeltaFromInput(deltaIn, isTrackpad) {
+            if (!deltaIn) return 0;
+            if (isTrackpad) {
+                return deltaIn / TRACKPAD_DELTA_PER_ZOOM;
+            }
+            const d2 = deltaIn / (MOUSE_PX_PER_ZOOM * 4);
+            const d3 = 4 * Math.log(2 / (1 + Math.exp(-Math.abs(d2)))) / Math.LN2;
+            return (deltaIn > 0 ? d3 : -d3);
+        }
+
+        function applyRealZoom(deltaIn, isTrackpad, mousePos) {
+            const map = handler._map;
+            if (!map || !deltaIn) return false;
+
+            const zoom = map.getZoom();
+            const zoomDelta = zoomDeltaFromInput(deltaIn, isTrackpad);
+            const limited = map._limitZoom(zoom + zoomDelta) - zoom;
+            if (!limited) return false;
+
+            if (map.options.scrollWheelZoom === 'center' || !mousePos) {
+                map.setZoom(zoom + limited, { animate: false });
+            } else {
+                map.setZoomAround(mousePos, zoom + limited, { animate: false });
+            }
+            return true;
+        }
+
+        // Cheap visual zoom: scale mapPane around cursor (no tile reload)
+        function applyTrackpadPreview(g) {
+            const map = handler._map;
+            const pane = map.getPane('mapPane');
+            const scale = map.getZoomScale(g.targetZoom, g.startZoom);
+            // transform-origin 0,0 (Leaflet setTransform): keep origin fixed under cursor
+            const newPos = g.origin.multiplyBy(1 - scale).add(g.panePos.multiplyBy(scale));
+            L.DomUtil.setTransform(pane, newPos, scale);
+        }
+
+        // JS can't rebuild DOM layers in true parallel; stage work so the UI stays responsive:
+        // 1) detach heavy vectors  2) setZoom (tiles load async)  3) re-attach on idle
+        function commitTrackpadGesture() {
+            handler._gestureEndTimer = null;
+            const g = handler._trackpadGesture;
+            handler._trackpadGesture = null;
+            handler._delta = 0;
+            if (!g) return;
+
+            const map = handler._map;
+            const finalZoom = map._limitZoom(g.targetZoom);
+            const origin = g.origin;
+            const startZoom = g.startZoom;
+
+            // Yield so the last preview frame paints and input isn't stuck behind a 1–2s sync rebuild
+            requestAnimationFrame(function() {
+                if (Math.abs(finalZoom - startZoom) < 1e-6) {
+                    map.setZoom(startZoom, { animate: false });
+                    return;
+                }
+
+                const hadBuildings = typeof buildingsLayer !== 'undefined'
+                    && buildingsLayer
+                    && map.hasLayer(buildingsLayer);
+                const hadPolylines = [];
+                if (typeof polylines !== 'undefined' && polylines) {
+                    for (const routeName in polylines) {
+                        const pl = polylines[routeName];
+                        if (pl && map.hasLayer(pl)) {
+                            hadPolylines.push(pl);
+                            map.removeLayer(pl);
+                        }
+                    }
+                }
+                if (hadBuildings) {
+                    map.removeLayer(buildingsLayer);
+                }
+
+                const prevPauseMarkers = typeof pauseUpdateMarkerPositions !== 'undefined'
+                    ? pauseUpdateMarkerPositions
+                    : false;
+                if (typeof pauseUpdateMarkerPositions !== 'undefined') {
+                    pauseUpdateMarkerPositions = true;
+                }
+                if (typeof cancelAllAnimations === 'function') {
+                    cancelAllAnimations();
+                }
+
+                // Core zoom: markers + tiles only (tiles fetch in parallel over network)
+                map.setZoomAround(origin, finalZoom, { animate: false });
+
+                function restoreHeavyLayers() {
+                    for (let i = 0; i < hadPolylines.length; i++) {
+                        try { hadPolylines[i].addTo(map); } catch (_) {}
+                    }
+                    if (hadBuildings && buildingsLayer && !map.hasLayer(buildingsLayer)) {
+                        try { buildingsLayer.addTo(map); } catch (_) {}
+                    }
+                    if (typeof pauseUpdateMarkerPositions !== 'undefined') {
+                        pauseUpdateMarkerPositions = prevPauseMarkers;
+                    }
+                }
+
+                // Let the browser paint the zoomed map, then restore heavy layers when idle
+                requestAnimationFrame(function() {
+                    if (typeof requestIdleCallback === 'function') {
+                        requestIdleCallback(restoreHeavyLayers, { timeout: 400 });
+                    } else {
+                        setTimeout(restoreHeavyLayers, 0);
+                    }
+                });
+
+                if (DEBUG_WHEEL) {
+                    console.log('[wheel-zoom] commit trackpad (staged)', {
+                        startZoom: startZoom,
+                        finalZoom: finalZoom,
+                        restoredPolylines: hadPolylines.length,
+                        restoredBuildings: hadBuildings
+                    });
+                }
+            });
+        }
+
+        function scheduleTrackpadCommit() {
+            if (handler._gestureEndTimer != null) {
+                clearTimeout(handler._gestureEndTimer);
+            }
+            handler._gestureEndTimer = setTimeout(commitTrackpadGesture, TRACKPAD_GESTURE_END_MS);
+        }
+
+        handler._onWheelScroll = function(e) {
+            const rawAbs = Math.abs(e.deltaY);
+            const isTrackpad = e.deltaMode === 0 && (e.ctrlKey || rawAbs < TRACKPAD_MAX_ABS_DELTA);
+            this._isTrackpadGesture = isTrackpad;
+
+            const leafletDelta = L.DomEvent.getWheelDelta(e);
+            this._lastMousePos = this._map.mouseEventToContainerPoint(e);
+
+            L.DomEvent.stop(e);
+
+            if (isTrackpad) {
+                clearTimeout(this._timer);
+                this._timer = null;
+                this._startTime = null;
+
+                const map = this._map;
+                if (!this._trackpadGesture) {
+                    this._trackpadGesture = {
+                        startZoom: map.getZoom(),
+                        targetZoom: map.getZoom(),
+                        origin: this._lastMousePos,
+                        panePos: map._getMapPanePos()
+                    };
+                } else {
+                    // Keep zoom focal point updating with cursor during pinch
+                    this._trackpadGesture.origin = this._lastMousePos;
+                }
+
+                const g = this._trackpadGesture;
+                g.targetZoom = map._limitZoom(
+                    g.targetZoom + zoomDeltaFromInput(leafletDelta, true)
+                );
+                applyTrackpadPreview(g);
+                scheduleTrackpadCommit();
+
+                if (DEBUG_WHEEL) {
+                    console.log('[wheel-zoom] preview', {
+                        startZoom: g.startZoom,
+                        targetZoom: g.targetZoom,
+                        scale: map.getZoomScale(g.targetZoom, g.startZoom)
+                    });
+                }
+            } else {
+                // Mouse: end any in-progress trackpad preview first
+                if (this._gestureEndTimer != null) {
+                    clearTimeout(this._gestureEndTimer);
+                    this._gestureEndTimer = null;
+                }
+                if (this._trackpadGesture) {
+                    commitTrackpadGesture();
+                }
+
+                this._delta += leafletDelta;
+                if (!this._startTime) {
+                    this._startTime = +new Date();
+                }
+                const left = Math.max(MOUSE_DEBOUNCE_MS - (+new Date() - this._startTime), 0);
+                clearTimeout(this._timer);
+                this._timer = setTimeout(() => {
+                    const deltaIn = this._delta;
+                    this._delta = 0;
+                    this._startTime = null;
+                    this._timer = null;
+                    applyRealZoom(deltaIn, false, this._lastMousePos);
+                }, left);
+            }
+        };
+
+        handler._performZoom = function() {
+            if (this._trackpadGesture) {
+                commitTrackpadGesture();
+                return;
+            }
+            const deltaIn = this._delta;
+            this._delta = 0;
+            this._startTime = null;
+            applyRealZoom(deltaIn, this._isTrackpadGesture, this._lastMousePos);
+        };
+
+        // If user starts dragging mid-preview, commit real zoom first
+        map.on('dragstart', function() {
+            if (handler._trackpadGesture) {
+                if (handler._gestureEndTimer != null) {
+                    clearTimeout(handler._gestureEndTimer);
+                    handler._gestureEndTimer = null;
+                }
+                commitTrackpadGesture();
+            }
+        });
+
+        handler.enable();
+    })();
 
     map.on('dragend', function() {
-        map.scrollWheelZoom.enable();
-        
         // Set max bounds after user finishes dragging after unfocusing on a bus
         if (shouldSetMaxBoundsAfterDrag) {
             map.setMaxBounds(expandBounds(bounds[selectedCampus], 2));
