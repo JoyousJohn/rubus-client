@@ -2065,7 +2065,7 @@ const campusMappings = {
     'ftbl': 'Football',
     'wknd1': '',
     'wknd2': '',
-    'all': 'All Campus',
+    'all': '',
     'none': 'Unknown',
     'c': 'Busch Commuter',
     'rexl': 'Cook/Doug/Livi',
@@ -2164,6 +2164,8 @@ function popInfo(busName, resetCampusFontSize) {
     } else if (dataRoute === 'summer1' || dataRoute === 'summer2') {
         dataRoute = dataRoute.charAt(0).toUpperCase() + dataRoute.slice(1, -1) + ' ' + dataRoute.slice(-1);
         displayRoute = dataRoute;
+    } else if (dataRoute === 'all') {
+        displayRoute = 'All Campus';
     } else {
         displayRoute = dataRoute.toUpperCase();
     }
