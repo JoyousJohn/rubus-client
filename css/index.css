@@ -420,9 +420,14 @@ html, body {
     align-items: center; */
 }
 
+.route-title-wrapper {
+    position: relative;
+}
+
 .info-route {
     font-weight: 800;
     font-size: 2.5rem;
+    line-height: 1;
 }
 
 .info-stop-name {
@@ -1241,18 +1246,27 @@ html, body {
 }
 
 .info-speed-wrapper {
+    position: absolute;
+    left: 100%;
+    margin-left: 0.6rem;
+    top: 0;
+    height: 100%;
     display: flex;
-    /* line-height: 1; */
-    text-align: center;
+    align-items: center;
+    justify-content: center;
+    visibility: hidden;
 }
 
-.info-speed {
-    color: var(--theme-color-lighter);
-}
-
-.info-mph {
-    font-size: 1.5rem;
-    /* font-weight: bold; */
+.info-speed-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    border: 2px solid var(--theme-extra);
+    font-weight: 700;
+    font-size: 1.1rem;
     color: var(--theme-extra);
 }
 

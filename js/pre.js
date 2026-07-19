@@ -1288,8 +1288,9 @@ async function randomStepBusSpeeds() {
         const randChange = Math.random() < 0.5 ? -1 : 1;
         busData[busName].visualSpeed += randChange;
         if (popupBusName == busName && showBusSpeeds) {
-            $('.info-speed-mid').text(' | ' +  Math.round(busData[busName].visualSpeed) + ' ');
+            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
             $('.info-mph-mid').text('mph');
+            $('.info-speed-wrapper').css('visibility', 'visible');
         }
 
         if (panelRoute === busData[busName].route) {

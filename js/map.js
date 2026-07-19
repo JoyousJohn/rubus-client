@@ -1189,8 +1189,9 @@ async function calculateSpeed(busName) {
         busData[busName].visualSpeed = acceptedSpeed;
         if (popupBusName === busName && showBusSpeeds) {
             console.log(busName + ' New Speed: ' + busData[busName].visualSpeed.toFixed(2))
-            $('.info-speed-mid').text(' | ' +  Math.round(busData[busName].visualSpeed) + ' ');
+            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
             $('.info-mph-mid').text('mph');
+            $('.info-speed-wrapper').css('visibility', 'visible');
         }
         busData[busName].previousLatitude = currentLatitude;
         busData[busName].previousLongitude = currentLongitude;
@@ -1242,8 +1243,9 @@ async function calculateSpeed(busName) {
         
         if (popupBusName === busName && showBusSpeeds) {
             // console.log(busName + ' New Speed: ' + busData[busName].visualSpeed.toFixed(2))
-            $('.info-speed-mid').text(' | ' +  Math.round(busData[busName].visualSpeed) + ' ');
+            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
             $('.info-mph-mid').text('mph');
+            $('.info-speed-wrapper').css('visibility', 'visible');
         }
 
         if (panelRoute === busData[busName].route) {
@@ -2191,8 +2193,11 @@ function popInfo(busName, resetCampusFontSize) {
     }, 0);    
 
     if (showBusSpeeds && !Number.isNaN(parseInt(data.visualSpeed))) {
-        $('.info-speed-mid').text(' | ' +  parseInt(data.visualSpeed) + ' ');
+        $('.info-speed-mid').text(parseInt(data.visualSpeed));
         $('.info-mph-mid').text('mph');
+        $('.info-speed-wrapper').css('visibility', 'visible');
+    } else {
+        $('.info-speed-wrapper').css('visibility', 'hidden');
     }
     $('.info-name-mid').text(busNameElmText);
     $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + data.capacity + '%</span> capacity');
@@ -2683,7 +2688,7 @@ function populateBusBreaks(busBreakData, busName) {
 
     if (lastBreakMin && lastBreakMin > 120) {
         // Only show if actually overdue (more than 2 hours)
-        $('.info-overdue-break').html(`<i class="fa-solid fa-clock"></i> ${Math.floor(lastBreakMin / 60)} HOURS SINCE BREAK`).slideDown(function() {
+        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>${Math.floor(lastBreakMin / 60)} HOURS SINCE BREAK</span></div>`).slideDown(function() {
             // Update max height after slideDown animation completes
             updateNextStopsMaxHeight();
         });
@@ -2698,7 +2703,7 @@ function populateBusBreaks(busBreakData, busName) {
             if (hours > 0) timeString += ' ';
             timeString += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
         }
-        $('.info-overdue-break').html(`<i class="fa-solid fa-clock"></i> Last break ${timeString} ago!`).slideDown(function() {
+        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>Last break ${timeString} ago!</span></div>`).slideDown(function() {
             // Update max height after slideDown animation completes
             updateNextStopsMaxHeight();
         });
@@ -3513,6 +3518,23 @@ function expandBounds(origBounds, factor) {
     return L.latLngBounds(newSouthWest, newNorthEast);
 }
 
+function formatStoppedTime(totalSeconds) {
+    if (totalSeconds >= 3600) {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `Stopped for ${hours}h ${minutes}m ${seconds}s`;
+    } else if (totalSeconds >= 60) {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `Stopped for ${minutes}m ${seconds}s`;
+    } else if (totalSeconds > 0) {
+        return `Stopped for ${totalSeconds}s`;
+    } else {
+        return "Stopped for 0s";
+    }
+}
+
 function startStoppedForTimer(busName) {
 
     clearInterval(stoppedForInterval); // not sure what could be causing the double timer that requires me to add this
@@ -3523,16 +3545,7 @@ function startStoppedForTimer(busName) {
     const secondsDifference = Math.floor((now - arrivedDatetime) / 1000);
     // console.log('secondsDifference: ', secondsDifference)
 
-    if (secondsDifference > 59) {
-        const minutes = Math.floor(secondsDifference / 60);
-        const remainingSeconds = secondsDifference % 60;
-        $('.bus-stopped-for').show().find('.time').text(`Stopped for ${minutes}m ${remainingSeconds}s`);
-    } else if (secondsDifference > 0) {
-        $('.bus-stopped-for').show().find('.time').text("Stopped for " + secondsDifference + "s");
-    } else {
-        // Show immediately even if just arrived (0s) - should only affect sim buses
-        $('.bus-stopped-for').show().find('.time').text("Stopped for 0s");
-    }
+    $('.bus-stopped-for').show().find('.time').text(formatStoppedTime(secondsDifference));
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
     $('.info-next-stops').css('max-height', maxHeight - 135)
@@ -3542,13 +3555,7 @@ function startStoppedForTimer(busName) {
         if (popupBusName === busName) {
             const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
             seconds += step;
-            if (seconds > 59) {
-                const minutes = Math.floor(seconds / 60);
-                const remainingSeconds = seconds % 60;
-                $('.bus-stopped-for').show().find('.time').text(`Stopped for ${minutes}m ${remainingSeconds}s`);
-            } else if (seconds > 0) {
-                $('.bus-stopped-for').show().find('.time').text("Stopped for " + seconds + "s");
-            }
+            $('.bus-stopped-for').show().find('.time').text(formatStoppedTime(seconds));
         } else {
             clearInterval(stoppedForInterval);
         }
