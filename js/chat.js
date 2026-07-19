@@ -209,7 +209,7 @@ $(document).on('click', '.chat-btn', function() {
         }))
     })
     $('.chat-recs').scrollLeft(0);
-
+    $('.chat-ui-input').focus();
 });
 
 // Nudge layout when input gains focus (keyboard opening)
@@ -304,18 +304,28 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 } 
 
                 // Extract text after assistantFinal
-                let match = data.answer.match(/assistantfinal([\s\S]*)/i);
-                if (!match) {
-                    // Look for tag format: "final:" or "<final>" or "/final" at the start, or preceded by a newline/whitespace
-                    const tagMatch = data.answer.match(/(?:^|[\r\n])(?:<final>|final[:\s\-\]\|])([\s\S]*)$/i);
-                    if (tagMatch) {
-                        match = [null, tagMatch[1]];
+                let match = null;
+                if (data.answer) {
+                    match = data.answer.match(/assistantfinal([\s\S]*)/i);
+                    if (!match) {
+                        // Look for tag format: "final:" or "<final>" or "/final" at the start, or preceded by a newline/whitespace
+                        const tagMatch = data.answer.match(/(?:^|[\r\n])(?:<final>|final[:\s\-\]\|])([\s\S]*)$/i);
+                        if (tagMatch) {
+                            match = [null, tagMatch[1]];
+                        }
                     }
+                }
+                if (!data.answer) {
+                    console.error("Backend returned null answer. Progress/Error status:", data.progress);
                 }
                 if (match) {
                     finalAnswer = match[1].trim();
                 } else {
-                    finalAnswer = data.answer;       
+                    if (!data.answer && data.progress && data.progress.startsWith('Error:')) {
+                        finalAnswer = data.progress;
+                    } else {
+                        finalAnswer = data.answer || 'There was an issue formatting the response.';
+                    }
                 }
                     
                 

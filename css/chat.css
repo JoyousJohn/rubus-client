@@ -79,7 +79,7 @@
 .chat-message.bot {
   align-self: flex-start;
   /*background: linear-gradient(135deg, #f8f5ff, #e0e0ff);*/
-  color: #dadada;
+  color: var(--theme-color);
   border-radius: 1.2rem 1.2rem 1.2rem 0.3rem;
   opacity: 1;
 }
