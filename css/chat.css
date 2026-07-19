@@ -96,6 +96,7 @@
 .chat-ui-panel {
   background: var(--theme-bg);
   color: var(--theme-color);
+  overscroll-behavior: contain;
 }
 
 .chat-ui-header {
@@ -114,6 +115,7 @@
 
 .chat-ui-messages {
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Input bar */
