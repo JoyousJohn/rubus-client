@@ -510,6 +510,9 @@ html, body {
 
 .bus-info-main {
     border-radius: 0 0 1rem 1rem !important;
+    background-color: color-mix(in srgb, var(--theme-bg) 77%, transparent);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
 .bus-info-main-left {
