@@ -61,7 +61,6 @@
 
 .chat-message {
   max-width: 65%;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   padding: 0.9rem 1.3rem;
   font-size: 1.5rem;
   word-break: break-word;
@@ -121,6 +120,27 @@
 /* Input bar */
 .chat-ui-input-bar {
   background: var(--theme-bg);
+}
+
+.chat-recs > div {
+  flex: 0 0 33vw;
+}
+
+@media (min-width: 992px) {
+  .chat-ui-input-bar {
+    width: 33%;
+    margin-inline: auto;
+  }
+  .chat-ui-header {
+    justify-content: space-between;
+  }
+  .chat-ui-messages {
+    align-self: center;
+    width: 42%;
+  }
+  .chat-recs > div {
+    flex: none;
+  }
 }
 
 .chat-ui-input {

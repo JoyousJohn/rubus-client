@@ -258,7 +258,7 @@ $(document).on('click', '.chat-btn', function() {
 
     const shuffled = [...exampleChats].sort(() => 0.5 - Math.random());
     shuffled.forEach(example => {
-        $('.chat-recs').append($(`<div class="p-1rem br-1rem pointer" style="flex: 0 0 33vw; background-color: var(--theme-chat-recs-bg); color: var(--theme-chat-recs-text);">${example.q}</div>`).click(function() {
+        $('.chat-recs').append($(`<div class="p-1rem br-1rem pointer" style="background-color: var(--theme-chat-recs-bg); color: var(--theme-chat-recs-text);">${example.q}</div>`).click(function() {
             $('.chat-recs').hide();
             const $messages = $('.chat-ui-messages');
             $messages.append(`<div class="chat-message user">${$('<div>').text(example.q).html()}</div>`);
@@ -451,4 +451,15 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         $messages.scrollTop($messages[0].scrollHeight);
         evtSource.close();
     };
+});
+
+$(document).ready(function() {
+    const path = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
+    const urlParams = new URLSearchParams(window.location.search);
+    if (path === '/chat' || path.endsWith('/chat') || window.location.hash === '#chat' || urlParams.has('chat')) {
+        // Wait slightly to ensure everything is initialized, then open the chat UI
+        setTimeout(() => {
+            $('.chat-btn').trigger('click');
+        }, 100);
+    }
 });
