@@ -1216,8 +1216,9 @@ html, body {
 
 /* iOS Safari */
 @supports (-webkit-touch-callout: none) {
-    .route-selector {
+    .route-selectors {
         margin-bottom: 1rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     }
 }
 

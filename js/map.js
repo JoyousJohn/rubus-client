@@ -2083,7 +2083,7 @@ const campusMappings = {
     'ccx': 'Campus Connect Express',
     'psx': 'Penn Station Express',
     'cam': 'Camden',
-    'helix': 'Helix',
+    'helix': '',
 } 
 
 
@@ -2239,7 +2239,7 @@ function popInfo(busName, resetCampusFontSize) {
         const timeInService = Math.floor((today - serviceDate) / 1000);
         const hours = Math.floor(timeInService / 3600);
         const minutes = Math.floor((timeInService % 3600) / 60);
-        const timeInServiceText = `${hours}h ${minutes}m`;
+        const timeInServiceText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
         $('.bus-joined-service').text('Joined service at ' + displayTime + ' (' + timeInServiceText + ' ago)');
     

@@ -185,7 +185,7 @@ function popRiderStopInfo(stopId) {
             stopsData[stopId].latitude, 
             stopsData[stopId].longitude
         );
-        distance = distanceInMiles.toFixed(1) + ' miles';
+        distance = parseFloat(distanceInMiles.toFixed(1)) + ' miles';
     }
     $('.rider-stop-info-distance').text(distance);
 
@@ -379,7 +379,7 @@ function generateStopHTML(stopId) {
             distanceFromStop = `${Math.round(distanceInFeet)} ft`;
         } else {
             // Format distance to 2 decimal places if less than 1 mile, otherwise to 1 decimal place
-            distanceFromStop = distance < 1 ? `${distance.toFixed(2)} mi` : `${distance.toFixed(1)} mi`;
+            distanceFromStop = distance < 1 ? `${parseFloat(distance.toFixed(2))} mi` : `${parseFloat(distance.toFixed(1))} mi`;
         }
     }
     

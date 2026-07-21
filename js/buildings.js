@@ -179,7 +179,7 @@ async function populateBuildingClosestStopsList(feature) {
         if (stop.distance < 0.189) { // 1,000ft = 0.189 miles
             distStr = `${Math.round(stop.distance * 5280)} ft`;
         } else {
-            distStr = `${stop.distance.toFixed(2)} mi`;
+            distStr = `${parseFloat(stop.distance.toFixed(2))} mi`;
         }
 
         const extraClass = idx === 0 ? '' : 'building-stop-extra';
