@@ -67,7 +67,7 @@ $(document).ready(function() {
     try { document.dispatchEvent(new Event('rubus-map-created')); } catch (_) {}
     try { if (typeof initSpoofing === 'function') { initSpoofing(); } } catch (_) {}
 
-    map.setMinZoom(12).doubleClickZoom.disable();
+    map.setMinZoom(12);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
 
     let mapTheme;
