@@ -102,6 +102,48 @@ html, body {
     pointer-events: none;
 }
 
+#offscreen-bus-indicators-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 650;
+    overflow: hidden;
+}
+
+.offscreen-bus-marker {
+    position: absolute;
+    pointer-events: auto;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    transition: left 0.1s linear, top 0.1s linear, transform 0.15s ease-out;
+    user-select: none;
+    backdrop-filter: blur(4px);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.offscreen-bus-marker:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.offscreen-bus-marker-arrow {
+    display: inline-block;
+    font-size: 1.2rem;
+    transition: transform 0.1s linear;
+}
+
 .bus-icon-outer {
     /* This class can be used to style the marker */
     background-color: red; /* Example color */
