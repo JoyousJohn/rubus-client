@@ -4082,7 +4082,7 @@ function renderOffScreenIndicators(container, indicators) {
                 if (map) {
                     map.flyTo(ind.latLng, Math.max(map.getZoom(), 15), {
                         animate: true,
-                        duration: 1.2
+                        duration: 0.3
                     });
                 }
             };
