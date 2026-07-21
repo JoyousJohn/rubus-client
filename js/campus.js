@@ -113,6 +113,8 @@ function campusChanged() {
         makeNewMap();
     }
 
+    renderForceShowCheckboxes();
+
     // Update bike racks if the setting is enabled
     if (settings['toggle-show-bike-racks']) {
         // Small delay to ensure map is ready

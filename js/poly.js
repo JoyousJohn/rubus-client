@@ -2,6 +2,208 @@ let polylineBounds = null;
 let routeBounds = {};
 let previousRoutesWithPolylines = new Set();
 
+const FORCE_SHOW_SETTING = 'force-show-polylines';
+const FORCE_SHOW_TOGGLE = 'toggle-force-show-polylines';
+
+function isForceShowEnabled() {
+    return settings && settings[FORCE_SHOW_TOGGLE] === true;
+}
+
+function isForceShowStopsEnabled() {
+    return isForceShowEnabled() && settings['toggle-force-show-stops'] === true;
+}
+
+function getForceShowRoutes() {
+    const raw = settings[FORCE_SHOW_SETTING] || '';
+    return raw ? raw.split(',').filter(Boolean) : [];
+}
+
+function setForceShowRoutes(routes) {
+    settings[FORCE_SHOW_SETTING] = routes.join(',');
+    localStorage.setItem('settings', JSON.stringify(settings));
+}
+
+async function addForceShowPolyline(routeName) {
+    if (polylines[routeName]) return;
+    if (!routesByCampusBase[selectedCampus].includes(routeName)) return;
+    let coordinates = await getPolylineData(routeName);
+    if (!coordinates || !coordinates.length) return;
+    if (Object.keys(coordinates[0])[0] === 'lat') {
+        coordinates = coordinates.map(point => [point.lat, point.lng]);
+    } else {
+        coordinates = coordinates.map(point => [point[1], point[0]]);
+    }
+    const polylineOptions = getPolylineLayerOptions({
+        color: colorMappings[routeName] || '#888',
+        weight: 4,
+        opacity: 1,
+        smoothFactor: 1,
+    });
+    const polyline = L.polyline(coordinates, polylineOptions);
+    polyline.addTo(map);
+    polylines[routeName] = polyline;
+    routeBounds[routeName] = polyline.getBounds();
+}
+
+function removeForceShowPolyline(routeName) {
+    if (!polylines[routeName]) return;
+    polylines[routeName].remove();
+    delete polylines[routeName];
+    delete routeBounds[routeName];
+}
+
+function applyForceShowState() {
+    const forceRoutes = getForceShowRoutes();
+    for (const route of Object.keys(polylines)) {
+        if (!forceRoutes.includes(route)) {
+            try { polylines[route].remove(); } catch (e) {}
+            delete polylines[route];
+        }
+    }
+    for (const route of forceRoutes) {
+        addForceShowPolyline(route);
+    }
+}
+
+function revertForceShowState() {
+    for (const route of Object.keys(polylines)) {
+        if (!routeHasInServiceBuses(route)) {
+            try { polylines[route].remove(); } catch (e) {}
+            delete polylines[route];
+        }
+    }
+    const forceRoutes = getForceShowRoutes();
+    for (const campus in busesByRoutes) {
+        if (!busesByRoutes[campus]) continue;
+        for (const route of Object.keys(busesByRoutes[campus])) {
+            if (routeHasInServiceBuses(route) && !polylines[route] && !forceRoutes.includes(route)) {
+                addForceShowPolyline(route);
+            }
+        }
+    }
+    removePreviouslyActiveStops();
+    addStopsToMap();
+}
+
+function applyForceShowStops() {
+    const forceRoutes = getForceShowRoutes();
+    const allowedStopIds = new Set();
+    for (const route of forceRoutes) {
+        if (stopLists[route]) stopLists[route].forEach(s => allowedStopIds.add(Number(s)));
+    }
+    for (const stopId in busStopMarkers) {
+        if (!allowedStopIds.has(Number(stopId))) {
+            busStopMarkers[stopId].remove();
+            delete busStopMarkers[stopId];
+        }
+    }
+    for (const stopId of allowedStopIds) {
+        const id = String(stopId);
+        if (!busStopMarkers[id] && stopsData[id]) {
+            const s = stopsData[id];
+            const marker = L.marker([s.latitude, s.longitude], {
+                icon: L.divIcon({
+                    className: 'custom-stop-icon',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    html: `<div class="marker-wrapper"><img src="img/stop_marker.png" width="18" height="18" stop-marker-id="${id}"/><div class="corner-label none" stop-eta="${id}">xm</div></div>`
+                }),
+                zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
+            }).addTo(map).on('click', function() {
+                if ($('body').hasClass('parking-permit-mode')) return;
+                sourceStopId = null;
+                sourceBusName = null;
+                clearPanoutFeedback();
+                popStopInfo(id);
+                if (!shownRoute) {
+                    showAllBuses();
+                    showAllPolylines();
+                }
+            });
+            busStopMarkers[id] = marker;
+        }
+    }
+}
+
+function revertForceShowStops() {
+    addStopsToMap();
+}
+
+function renderForceShowCheckboxes() {
+    const $container = $('.force-show-polylines-container');
+    if (!$container.length) return;
+    $container.empty();
+    const forceRoutes = getForceShowRoutes();
+    const campusRoutes = routesByCampusBase[selectedCampus] || [];
+    const allOn = campusRoutes.every(r => forceRoutes.includes(r));
+
+    const $allToggle = $(`
+        <label class="force-show-option flex align-center pointer" style="gap:4px;padding:2px 6px;border-radius:4px;">
+            <input type="checkbox" class="force-show-all-cb" ${allOn ? 'checked' : ''}>
+            <span style="font-size:0.9rem;font-weight:600;">ALL</span>
+        </label>
+    `);
+    $container.append($allToggle);
+
+    for (const route of knownRoutes) {
+        if (!campusRoutes.includes(route)) continue;
+        const checked = forceRoutes.includes(route);
+        const color = colorMappings[route] || '#888';
+        $container.append(`
+            <label class="force-show-option flex align-center pointer" style="gap:4px;padding:2px 6px;border-radius:4px;">
+                <input type="checkbox" class="force-show-cb" data-route="${route}" ${checked ? 'checked' : ''}>
+                <span style="color:${color};font-size:0.9rem">● ${route.toUpperCase()}</span>
+            </label>
+        `);
+    }
+}
+
+$(document).on('change', '.force-show-cb', function() {
+    const route = $(this).data('route');
+    const show = $(this).prop('checked');
+    let forceRoutes = getForceShowRoutes();
+    if (show) {
+        if (!forceRoutes.includes(route)) forceRoutes.push(route);
+        if (isForceShowEnabled()) {
+            addForceShowPolyline(route);
+        }
+    } else {
+        forceRoutes = forceRoutes.filter(r => r !== route);
+        if (isForceShowEnabled() || !routeHasInServiceBuses(route)) {
+            removeForceShowPolyline(route);
+        }
+    }
+    setForceShowRoutes(forceRoutes);
+    const campusRoutes = routesByCampusBase[selectedCampus] || [];
+    const allOn = campusRoutes.every(r => forceRoutes.includes(r));
+    $('.force-show-all-cb').prop('checked', allOn);
+    if (isForceShowStopsEnabled()) applyForceShowStops();
+});
+
+$(document).on('change', '.force-show-all-cb', function() {
+    const selectAll = $(this).prop('checked');
+    const campusRoutes = routesByCampusBase[selectedCampus] || [];
+    let forceRoutes = getForceShowRoutes();
+    if (selectAll) {
+        for (const route of campusRoutes) {
+            if (!forceRoutes.includes(route)) {
+                forceRoutes.push(route);
+                if (isForceShowEnabled()) addForceShowPolyline(route);
+            }
+        }
+    } else {
+        for (const route of campusRoutes) {
+            if (isForceShowEnabled() || !routeHasInServiceBuses(route)) {
+                removeForceShowPolyline(route);
+            }
+        }
+        forceRoutes = forceRoutes.filter(r => !campusRoutes.includes(r));
+    }
+    setForceShowRoutes(forceRoutes);
+    renderForceShowCheckboxes();
+    if (isForceShowStopsEnabled()) applyForceShowStops();
+});
+
 // Canvas/SVG renderer for route polylines; respects polyline-renderer + padding settings
 // Uses polylinesPane so routes stay above buildings (overlayPane) for both SVG and Canvas
 function ensurePolylinesPane() {
@@ -110,12 +312,19 @@ window.debugPolylineState = function(routeName) {
 };
 
 async function setPolylines(activeRoutes) {
-    // console.log("activeRoutes: ", activeRoutes)
-    // Only set polylines for routes on this campus that currently have at least one in-service bus
-    const routesToSet = Array.from(activeRoutes).filter(route => {
-        if (!routesByCampusBase[selectedCampus].includes(route)) return false;
-        return routeHasInServiceBuses(route);
-    });
+    const forceRoutes = getForceShowRoutes();
+    let routesToSet;
+    if (isForceShowEnabled()) {
+        routesToSet = forceRoutes.filter(r => routesByCampusBase[selectedCampus].includes(r));
+    } else {
+        routesToSet = Array.from(new Set([
+            ...Array.from(activeRoutes).filter(route => {
+                if (!routesByCampusBase[selectedCampus].includes(route)) return false;
+                return routeHasInServiceBuses(route);
+            }),
+            ...forceRoutes.filter(r => routesByCampusBase[selectedCampus].includes(r))
+        ]));
+    }
 
     // console.log("Setting polylines for routesToSet: ", routesToSet)
     
@@ -321,8 +530,18 @@ function updatePolylineBoundsIfNeeded() {
 // Remove polylines for routes that currently have no in-service buses
 function prunePolylinesWithoutInService() {
     try {
+        const forceRoutes = getForceShowRoutes();
         const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
         campusRoutes.forEach(routeName => {
+            if (isForceShowEnabled() && !forceRoutes.includes(routeName)) {
+                if (polylines[routeName]) {
+                    logPolylineRemoval(routeName, 'prunePolylinesWithoutInService');
+                    try { polylines[routeName].remove(); } catch (e) {}
+                    delete polylines[routeName];
+                }
+                return;
+            }
+            if (forceRoutes.includes(routeName)) return;
             if (!routeHasInServiceBuses(routeName) && polylines[routeName]) {
                 logPolylineRemoval(routeName, 'prunePolylinesWithoutInService');
                 try { polylines[routeName].remove(); } catch (e) {}
@@ -1121,13 +1340,23 @@ async function addStopsToMap() {
 
     activeStops = []
 
-    for (const activeRoute in busesByRoutes[selectedCampus]) {
-        if (!(activeRoute in stopLists)) { console.log('does this actually happen?'); continue; } // why would this trigger?
-        activeStops = [...activeStops, ...stopLists[activeRoute]];
+    if (isForceShowStopsEnabled()) {
+        const forceRoutes = getForceShowRoutes();
+        for (const route of forceRoutes) {
+            if (stopLists[route]) {
+                activeStops = [...activeStops, ...stopLists[route]];
+            }
+        }
         activeStops = [...new Set(activeStops)];
+    } else {
+        for (const activeRoute in busesByRoutes[selectedCampus]) {
+            if (!(activeRoute in stopLists)) { console.log('does this actually happen?'); continue; }
+            activeStops = [...activeStops, ...stopLists[activeRoute]];
+            activeStops = [...new Set(activeStops)];
+        }
     }
 
-    if (!activeStops.length) { // no buses running, show all stops
+    if (!activeStops.length && !isForceShowStopsEnabled()) {
         console.log('no buses running, showing all stops')
         activeStops = Array.from({length: Object.keys(stopsData).length}, (_, i) => i + 1);
     }
@@ -1183,7 +1412,14 @@ async function addStopsToMap() {
 function removePreviouslyActiveStops() {
     let newActiveStops = [];
 
-    if (busesByRoutes && busesByRoutes[selectedCampus]) {
+    if (isForceShowStopsEnabled()) {
+        const forceRoutes = getForceShowRoutes();
+        for (const route of forceRoutes) {
+            if (stopLists[route]) {
+                newActiveStops = [...newActiveStops, ...stopLists[route]];
+            }
+        }
+    } else if (busesByRoutes && busesByRoutes[selectedCampus]) {
         for (const route in busesByRoutes[selectedCampus]) {
             if (route in stopLists) {
                 newActiveStops = [...newActiveStops, ...stopLists[route]];
@@ -1193,8 +1429,7 @@ function removePreviouslyActiveStops() {
 
     newActiveStops = [...new Set(newActiveStops)];
 
-    // If there are no active routes/stops, default to all stops instead of removing everything
-    if (newActiveStops.length === 0) {
+    if (newActiveStops.length === 0 && !isForceShowStopsEnabled()) {
         newActiveStops = Array.from({ length: Object.keys(stopsData).length }, (_, i) => i + 1);
     }
 

@@ -1778,6 +1778,8 @@ const toggleSettings = [
     'toggle-show-capacity',
     'toggle-always-show-break-overdue',
     'toggle-settings-btn-end',
+    'toggle-force-show-polylines',
+    'toggle-force-show-stops',
 ]
 
 let colorMappings;
@@ -1814,6 +1816,7 @@ const defaultColorMappings = {
     'cc': 'PaleTurquoise',
 
     'cam': 'navy',
+    'helix': '#DF073D',
 }
 
 let defaultSettings = {
@@ -1870,6 +1873,9 @@ let defaultSettings = {
     'toggle-distances-line-on-focus': false,
     'toggle-show-capacity': false,
     'toggle-always-show-break-overdue': false,
+    'toggle-force-show-polylines': false,
+    'toggle-force-show-stops': true,
+    'force-show-polylines': '',
     
     // going to remove
     'toggle-show-arrival-times': true,

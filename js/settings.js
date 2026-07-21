@@ -466,6 +466,26 @@ $('.settings-toggle .toggle-input').on('change', function () {
             refreshAlertsDisplay();
             break;
 
+        case 'toggle-force-show-polylines':
+            settings['toggle-force-show-polylines'] = isChecked;
+            if (isChecked) {
+                $('.force-show-dependent').removeClass('disabled');
+                applyForceShowState();
+            } else {
+                $('.force-show-dependent').addClass('disabled');
+                revertForceShowState();
+            }
+            break;
+
+        case 'toggle-force-show-stops':
+            settings['toggle-force-show-stops'] = isChecked;
+            if (isChecked) {
+                applyForceShowStops();
+            } else {
+                revertForceShowStops();
+            }
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
@@ -482,7 +502,7 @@ $(document).ready(function() {
     // Untoggle if the switch is not one that gets saved in settings (like some of the dev ones)
     $('.dev-options-wrapper .toggle-input').each(function() {
         const toggleId = $(this).attr('id');
-        if (!(toggleId in defaultSettings)) {
+        if (!(toggleId in defaultSettings) && !toggleId.startsWith('force-show-')) {
             $(this).prop('checked', false);
         }
     });
@@ -504,6 +524,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-dev-options']) {
         toggleDevOptions();
+    }
+
+    if (settings['toggle-force-show-polylines']) {
+        $('.force-show-dependent').removeClass('disabled');
     }
 
     if (settings['toggle-show-etas-in-seconds']) {

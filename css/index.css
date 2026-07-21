@@ -1313,12 +1313,25 @@ html[theme="light"] .settings-panel {
 
 .settings-options {
     border-radius: 0.5rem;
-    /* Clip option cell backgrounds (e.g. .settings-selected) to the rounded rect */
     overflow: hidden;
     border: 1px solid var(--theme-line-bg);
     font-size: 1.8rem;
     background-color: var(--theme-bg-closest-stop);
     user-select: none;
+}
+
+.force-show-dependent.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.force-show-stops-row {
+    margin-bottom: 0.5rem;
+}
+
+.force-show-stops-label {
+    padding-left: 10px;
+    border-left: 1px solid var(--theme-color);
 }
 
 .marker-style-inner-grid {
