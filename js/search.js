@@ -230,46 +230,75 @@ $(document).ready(function() {
         'livingston': ['livi']
     };
 
-    // Load campus-specific building index and initialize Fuse.js
-    const campusKey = (window.settings && settings['campus']);
-    const campusToFile = {
-        'nb': 'lib/building_index_nb.json',
-        'newark': 'lib/building_index_newark.json',
-        'camden': 'lib/building_index_camden.json'
-    };
-    const buildingsJsonPath = campusToFile[campusKey];
-    fetch(buildingsJsonPath)
-        .then(response => response.json())
-        .then(data => {
-            buildingIndex = data;
-            // Convert object to array with name property and inject aliases
-            buildingList = Object.keys(data).map(name => {
-                const obj = { name: name, ...data[name] };
-                obj.aliases = obj.aliases || [];
-                obj.abbreviations = obj.abbreviations || [];
-                // Inject aliases based on aliasMap
-                for (const mainWord in aliasMap) {
-                    if (obj.name.toLowerCase().includes(mainWord)) {
-                        obj.aliases = obj.aliases.concat(aliasMap[mainWord]);
+    // Load campus-specific building and stop index and initialize Fuse.js
+    function initSearchIndex() {
+        const campusKey = (window.settings && settings['campus']) || 'nb';
+        const campusToFile = {
+            'nb': 'lib/building_index_nb.json',
+            'newark': 'lib/building_index_newark.json',
+            'camden': 'lib/building_index_camden.json'
+        };
+        const buildingsJsonPath = campusToFile[campusKey] || campusToFile['nb'];
+        fetch(buildingsJsonPath)
+            .then(response => response.json())
+            .then(data => {
+                buildingIndex = data;
+                // Convert object to array with name property and inject aliases
+                buildingList = Object.keys(data).map(name => {
+                    const obj = { name: name, category: data[name].category || 'building', ...data[name] };
+                    obj.aliases = obj.aliases || [];
+                    obj.abbreviations = obj.abbreviations || [];
+                    // Inject aliases based on aliasMap
+                    for (const mainWord in aliasMap) {
+                        if (obj.name.toLowerCase().includes(mainWord)) {
+                            obj.aliases = obj.aliases.concat(aliasMap[mainWord]);
+                        }
+                    }
+                    return obj;
+                });
+
+                // Add bus stops for the selected campus
+                const campusStops = (typeof allStopsData !== 'undefined' && allStopsData[campusKey]) ? allStopsData[campusKey] : (window.stopsData || {});
+                if (campusStops) {
+                    for (const [stopId, stop] of Object.entries(campusStops)) {
+                        if (!stop || !stop.name) continue;
+                        const stopObj = {
+                            id: stopId,
+                            name: stop.name,
+                            lat: stop.latitude,
+                            lng: stop.longitude,
+                            category: 'stop',
+                            type: 'stop',
+                            aliases: [stop.shortName, stop.shorterName, stop.mainName].filter(Boolean),
+                            abbreviations: [stop.shorterName, stop.shortName].filter(Boolean)
+                        };
+                        for (const mainWord in aliasMap) {
+                            if (stopObj.name.toLowerCase().includes(mainWord)) {
+                                stopObj.aliases = stopObj.aliases.concat(aliasMap[mainWord]);
+                            }
+                        }
+                        buildingList.push(stopObj);
                     }
                 }
-                return obj;
-            });
-            fuse = new Fuse(buildingList, {
-                keys: ['name', 'aliases', 'abbreviations'],
-                threshold: 0.3,
-                includeScore: true,
-            });
-            fuseReady = true;
 
-            // Update global variables
-            window.fuse = fuse;
-            window.fuseReady = fuseReady;
-            window.buildingList = buildingList;
-            
-            // Update search placeholder with actual building count
-            updateSearchPlaceholder(buildingList.length);
-        });
+                fuse = new Fuse(buildingList, {
+                    keys: ['name', 'aliases', 'abbreviations'],
+                    threshold: 0.3,
+                    includeScore: true,
+                });
+                fuseReady = true;
+
+                // Update global variables
+                window.fuse = fuse;
+                window.fuseReady = fuseReady;
+                window.buildingList = buildingList;
+                
+                // Update search placeholder with actual count
+                updateSearchPlaceholder(buildingList.length);
+            });
+    }
+    window.initSearchIndex = initSearchIndex;
+    initSearchIndex();
 
     $('.search-wrapper input').on('input', function() {
         const query = $(this).val().trim();
@@ -345,7 +374,7 @@ $(document).ready(function() {
         }
 
         if (results.length === 0) {
-            $results.html('<div class="dimgray">No buildings found.</div>');
+            $results.html('<div class="dimgray">No results found.</div>');
             return;
         }
         results.forEach(result => {

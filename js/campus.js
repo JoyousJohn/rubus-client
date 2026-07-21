@@ -94,6 +94,9 @@ function campusChanged() {
     // Clear building location cache when switching campuses since coordinates are campus-specific
     clearBuildingLocationCache();
 
+    // Re-initialize search index for the selected campus
+    window.initSearchIndex();
+
     // if (sim) {
     //     endSim();
     // } else if (settings['toggle-show-sim'] && selectedCampus === 'nb') {
