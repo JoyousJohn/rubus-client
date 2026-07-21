@@ -51,7 +51,53 @@ const readableRouteNames = {
 };
 
 function parseMarkdown(text) {
+    if (!text) return '';
     let processed = text;
+    
+    // Parse Markdown tables
+    const lines = processed.split('\n');
+    let inTable = false;
+    let tableHtml = '';
+    const newLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith('|') && line.endsWith('|')) {
+            const cells = line.split('|').map(c => c.trim()).slice(1, -1);
+            if (!inTable) {
+                inTable = true;
+                tableHtml = '<div style="overflow-x: auto; width: 100%; margin: 1rem 0;"><table class="chat-ui-table"><thead><tr>';
+                cells.forEach(cell => {
+                    tableHtml += `<th>${cell}</th>`;
+                });
+                tableHtml += '</tr></thead><tbody>';
+            } else {
+                // Check if separator row
+                if (cells.every(c => /^-+$/.test(c.replace(/:/g, '')))) {
+                    continue;
+                }
+                tableHtml += '<tr>';
+                cells.forEach(cell => {
+                    tableHtml += `<td>${cell}</td>`;
+                });
+                tableHtml += '</tr>';
+            }
+        } else {
+            if (inTable) {
+                tableHtml += '</tbody></table></div>';
+                newLines.push(tableHtml);
+                inTable = false;
+                tableHtml = '';
+            }
+            newLines.push(lines[i]);
+        }
+    }
+    if (inTable) {
+        tableHtml += '</tbody></table></div>';
+        newLines.push(tableHtml);
+    }
+    processed = newLines.join('\n');
+
     processed = processed.replace(/^### (.*$)/gim, '<h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.6rem; font-weight: 500;">$1</h3>');
     processed = processed.replace(/^## (.*$)/gim, '<h2 style="margin: 0.8rem 0 0.4rem 0; font-size: 1.8rem; font-weight: normal;">$1</h2>');
     processed = processed.replace(/^# (.*$)/gim, '<h1 style="margin: 1.0rem 0 0.5rem 0; font-size: 2.0rem; font-weight: normal;">$1</h1>');
@@ -234,6 +280,12 @@ $(document).on('click', '.chat-btn', function() {
 // Nudge layout when input gains focus (keyboard opening)
 $(document).on('focus', '.chat-ui-input', function() {
   setTimeout(adjustChatHeights, 50);
+  setTimeout(() => {
+    const $messages = $('.chat-ui-messages');
+    if ($messages.length > 0) {
+      $messages.scrollTop($messages[0].scrollHeight);
+    }
+  }, 150);
 });
 $(document).on('blur', '.chat-ui-input', function() {
   setTimeout(adjustChatHeights, 50);
@@ -355,9 +407,35 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 }
                     
                 
+                // Extract suggestions from finalAnswer
+                let suggestions = [];
+                const suggestionsMatch = finalAnswer.match(/<suggestions>([\s\S]*?)<\/suggestions>/i);
+                if (suggestionsMatch) {
+                    suggestions = suggestionsMatch[1].split('\n')
+                        .map(line => line.replace(/^[•\-\*\s]+/, '').trim())
+                        .filter(text => text.length > 0);
+                    // Strip the suggestions section from the final output
+                    finalAnswer = finalAnswer.replace(/<suggestions>[\s\S]*?<\/suggestions>/i, '').trim();
+                }
+
                 console.log(finalAnswer);
                 const processedAnswer = colorRouteNames(parseMarkdown(finalAnswer));
                 $botMsg.html(processedAnswer).removeClass('loading');
+
+                if (suggestions.length > 0) {
+                    const $chipsContainer = $('<div class="chat-suggestions-container flex flex-wrap gap-0p5rem mt-1rem"></div>');
+                    suggestions.forEach(question => {
+                        const $chip = $(`<button class="chat-suggestion-chip" type="button">${question}</button>`);
+                        $chip.on('click', function() {
+                            $('.chat-ui-input').val(question);
+                            $('.chat-ui-input-bar').trigger('submit');
+                            $chipsContainer.fadeOut(200, function() { $(this).remove(); });
+                        });
+                        $chipsContainer.append($chip);
+                    });
+                    $chipsContainer.insertAfter($botMsg);
+                }
+
                 window.chatHistory.push({ role: 'assistant', content: finalAnswer });
                 evtSource.close();
             }
