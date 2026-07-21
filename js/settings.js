@@ -240,6 +240,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 : 'settings-toggle-polyline-padding-off');
             break;
 
+        case 'toggle-offscreen-bus-indicators':
+            settings['toggle-offscreen-bus-indicators'] = isChecked;
+            if (typeof requestOffScreenUpdate === 'function') {
+                requestOffScreenUpdate();
+            }
+            break;
+
         case 'toggle-show-invalid-etas':
             settings['toggle-show-invalid-etas'] = isChecked;
             if (isChecked && popupBusName) { // doesn't work for some reason

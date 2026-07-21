@@ -3932,6 +3932,12 @@ function getVisibleActiveBuses() {
 function updateOffScreenBusIndicators() {
     if (!map || typeof busMarkers === 'undefined') return;
 
+    if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators'] === false) {
+        let container = document.getElementById('offscreen-bus-indicators-container');
+        if (container) container.innerHTML = '';
+        return;
+    }
+
     let container = document.getElementById('offscreen-bus-indicators-container');
     if (!container) {
         const mapEl = document.getElementById('map');
