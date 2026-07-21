@@ -2144,7 +2144,23 @@ function popInfo(busName, resetCampusFontSize) {
         secondsDivisor = 1;
     }
     
-    $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
+    if (popupStopId) {
+        if (appStyle === 'rider') {
+            $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/rider/rider-stop-marker.png');
+            $(`img[stop-marker-id="${popupStopId}"]`).attr('width', '15');
+            $(`img[stop-marker-id="${popupStopId}"]`).attr('height', '15');
+        } else {
+            $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
+        }
+        if (busStopMarkers[popupStopId]) {
+            busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+        }
+        popupStopId = null;
+        thisClosestStopId = null;
+        $('.stop-info-popup').hide();
+        $('.settings-btn').show();
+        populateRouteSelectors(activeRoutes);
+    }
 
     if (busData[busName]['overtime']) {
         $('.bus-stopped-for .stop-octagon').show();
