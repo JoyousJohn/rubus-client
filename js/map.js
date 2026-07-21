@@ -4047,6 +4047,16 @@ function updateOffScreenBusIndicators() {
     renderOffScreenIndicators(container, indicatorsData);
 }
 
+function getShortestRotation(currentDeg, targetDeg) {
+    let diff = (targetDeg - currentDeg) % 360;
+    if (diff < -180) {
+        diff += 360;
+    } else if (diff > 180) {
+        diff -= 360;
+    }
+    return currentDeg + diff;
+}
+
 function renderOffScreenIndicators(container, indicators) {
     const existingElements = Array.from(container.children);
     const updatedIds = new Set();
@@ -4085,7 +4095,13 @@ function renderOffScreenIndicators(container, indicators) {
 
         const arrowEl = el.querySelector('.offscreen-bus-marker-arrow');
         if (arrowEl) {
-            arrowEl.style.transform = `rotate(${ind.arrowRotation}deg)`;
+            let currentRot = parseFloat(arrowEl.dataset.currentRotation);
+            let nextRot = ind.arrowRotation;
+            if (!isNaN(currentRot)) {
+                nextRot = getShortestRotation(currentRot, ind.arrowRotation);
+            }
+            arrowEl.dataset.currentRotation = nextRot;
+            arrowEl.style.transform = `rotate(${nextRot}deg)`;
         }
     });
 
