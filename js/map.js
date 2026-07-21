@@ -3951,20 +3951,32 @@ function updateOffScreenBusIndicators() {
     }
 
     const bounds = map.getBounds();
-    const busesInView = [];
-    const busesOffScreen = [];
 
+    // Group active buses by route
+    const busesByRouteMap = {};
     for (const bus of activeBuses) {
-        if (bounds.contains(bus.latLng)) {
-            busesInView.push(bus);
-        } else {
-            busesOffScreen.push(bus);
+        if (!busesByRouteMap[bus.route]) {
+            busesByRouteMap[bus.route] = [];
+        }
+        busesByRouteMap[bus.route].push(bus);
+    }
+
+    const busesToIndicate = [];
+
+    // For each route, check if any of its buses are visible on screen
+    for (const route in busesByRouteMap) {
+        const routeBuses = busesByRouteMap[route];
+        const routeHasBusInView = routeBuses.some(bus => bounds.contains(bus.latLng));
+        
+        // Show indicator badges for off-screen buses of routes that have 0 buses in view
+        if (!routeHasBusInView) {
+            for (const bus of routeBuses) {
+                busesToIndicate.push(bus);
+            }
         }
     }
 
-    // Edge markers remain ONLY when NO bus markers are visible in the view,
-    // and disappear once any bus comes back into view.
-    if (busesInView.length > 0 || busesOffScreen.length === 0) {
+    if (busesToIndicate.length === 0) {
         container.innerHTML = '';
         return;
     }
@@ -3990,7 +4002,7 @@ function updateOffScreenBusIndicators() {
 
     const indicatorsData = [];
 
-    for (const bus of busesOffScreen) {
+    for (const bus of busesToIndicate) {
         const targetPx = map.latLngToContainerPoint(bus.latLng);
         const dx = targetPx.x - cx;
         const dy = targetPx.y - cy;
