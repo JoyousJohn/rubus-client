@@ -317,13 +317,10 @@ async function setPolylines(activeRoutes) {
     if (isForceShowEnabled()) {
         routesToSet = forceRoutes.filter(r => routesByCampusBase[selectedCampus].includes(r));
     } else {
-        routesToSet = Array.from(new Set([
-            ...Array.from(activeRoutes).filter(route => {
-                if (!routesByCampusBase[selectedCampus].includes(route)) return false;
-                return routeHasInServiceBuses(route);
-            }),
-            ...forceRoutes.filter(r => routesByCampusBase[selectedCampus].includes(r))
-        ]));
+        routesToSet = Array.from(activeRoutes).filter(route => {
+            if (!routesByCampusBase[selectedCampus].includes(route)) return false;
+            return routeHasInServiceBuses(route);
+        });
     }
 
     // console.log("Setting polylines for routesToSet: ", routesToSet)
@@ -533,15 +530,16 @@ function prunePolylinesWithoutInService() {
         const forceRoutes = getForceShowRoutes();
         const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
         campusRoutes.forEach(routeName => {
-            if (isForceShowEnabled() && !forceRoutes.includes(routeName)) {
-                if (polylines[routeName]) {
-                    logPolylineRemoval(routeName, 'prunePolylinesWithoutInService');
-                    try { polylines[routeName].remove(); } catch (e) {}
-                    delete polylines[routeName];
+            if (isForceShowEnabled()) {
+                if (!forceRoutes.includes(routeName)) {
+                    if (polylines[routeName]) {
+                        logPolylineRemoval(routeName, 'prunePolylinesWithoutInService');
+                        try { polylines[routeName].remove(); } catch (e) {}
+                        delete polylines[routeName];
+                    }
                 }
                 return;
             }
-            if (forceRoutes.includes(routeName)) return;
             if (!routeHasInServiceBuses(routeName) && polylines[routeName]) {
                 logPolylineRemoval(routeName, 'prunePolylinesWithoutInService');
                 try { polylines[routeName].remove(); } catch (e) {}
