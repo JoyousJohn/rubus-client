@@ -376,22 +376,22 @@ async function setPolylines(activeRoutes) {
 }
 
 async function getPolylineData(routeName) {
-
     try {
+        if (!knownRoutes.includes(routeName)) return;
 
-        if (!knownRoutes.includes(routeName)) return // I don't think it should even be able to get this far to need this final check?
+        const url = `https://demo.rubus.live/r/${routeName}`;
+        const cache = await caches.open('route-polylines');
 
-        let polylineData = null;
+        const cached = await cache.match(url);
+        if (cached) return cached.json();
 
-        // Load route data from local JSON file instead of server request
-        const response = await fetch(`lib/routes/${routeName}_route.json`);
+        const response = await fetch(url);
         if (response.status === 200) {
-            const data = await response.json();
-            polylineData = data;
-        } else {
-            console.error(`Error fetching polyline data for route ${routeName}:`, response.statusText);
+            cache.put(url, response.clone());
+            return response.json();
         }
-        return polylineData;
+
+        console.error(`Error fetching polyline data for route ${routeName}:`, response.statusText);
     } catch (error) {
         console.error(`Error fetching polyline data for route ${routeName}:`, error);
         markRubusRequestsFailing();
@@ -535,8 +535,27 @@ function prunePolylinesWithoutInService() {
     }
 }
 
+async function preloadRoutePolylines(campus) {
+    const versionResp = await fetch('https://demo.rubus.live/r/version');
+    const { hash } = await versionResp.json();
+
+    const prevHash = localStorage.getItem('route-polylines-version');
+    if (prevHash === hash) return;
+
+    const cache = await caches.open('route-polylines');
+    const keys = await cache.keys();
+    await Promise.all(keys.map(key => cache.delete(key)));
+
+    localStorage.setItem('route-polylines-version', hash);
+
+    const campusRoutes = routesByCampusBase[campus || selectedCampus] || [];
+    await Promise.all(campusRoutes.map(routeName => getPolylineData(routeName)));
+}
+
 // Precompute and cache bounds and points for all campus routes without adding layers
 async function initRoutePointsCache(campus) {
+    await preloadRoutePolylines(campus);
+
     const campusRoutes = routesByCampusBase[campus || selectedCampus] || [];
     const fetches = campusRoutes.map(async (routeName) => {
         if (routeBounds[routeName] && routePointsCache[routeName]) return;
