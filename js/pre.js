@@ -288,6 +288,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 newRoutes = new Set([...pollActiveRoutes].filter(route => !activeRoutes.has(route)));
             }
             if (newRoutes.size > 0) {
+                await initRoutePointsCache(selectedCampus);
                 if (!skipPolylineUpdateFromFetch) {
                     setPolylines(newRoutes);
                 }

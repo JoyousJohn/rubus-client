@@ -207,7 +207,7 @@ async function populateBuildingClosestStopsList(feature) {
         // Populate bus routes badges
         const $routesDiv = $item.find('.building-stop-bus-routes');
         stop.routes.forEach(route => {
-            const color = colorMappings[route];
+            const color = routeHasInServiceBuses(route) ? colorMappings[route] : 'gray';
             const $badge = $(`<div class="building-route-badge pointer" style="background:${color};color:white;padding:0.2rem 0.8rem;border-radius:0.5rem;font-size:1.2rem;">${route.toUpperCase()}</div>`).click(async function(e) {
                 e.stopPropagation();
                 // if (buildingClosestStopsMode === 'all') {

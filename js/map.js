@@ -3468,25 +3468,30 @@ function updateDistanceLinePositionMarker(busName) {
 function distanceFromLine(busName, returnDetails = false) {
     const busLatLng = L.latLng(busData[busName].lat, busData[busName].long);
     const route = busData[busName].route;
-    const polyline = route ? polylines[route] : null;
-    if (!polyline) {
-        // No polyline available for this route; treat as on-line for UI purposes
-        return returnDetails ? { isOffLine: false, feet: 0 } : false;
+    let polyPoints = null;
+    if (route && polylines[route]) {
+        polyPoints = polylines[route].getLatLngs();
+    } else if (route && routePointsCache[route]) {
+        polyPoints = routePointsCache[route];
     }
-    const polyPoints = polyline.getLatLngs();
+    
+    let flatPoints = polyPoints;
+    if (Array.isArray(polyPoints[0])) {
+        flatPoints = polyPoints.flat(2);
+    }
     
     let minDist = Infinity;
-    
-    for (let i = 0; i < polyPoints.length; i++) {
-        const d = busLatLng.distanceTo(polyPoints[i]);
+    for (let i = 0; i < flatPoints.length; i++) {
+        const d = busLatLng.distanceTo(flatPoints[i]);
         if (d < minDist) {
             minDist = d;
-            closestPoint = polyPoints[i];
+            closestPoint = flatPoints[i];
         }
     }
     
     const distanceFeet = minDist * 0.000621371 * 5280;
     const isOffLine = distanceFeet > 500;
+
     if (returnDetails) {
         return { isOffLine: isOffLine, feet: Math.round(distanceFeet) };
     }
@@ -3495,6 +3500,7 @@ function distanceFromLine(busName, returnDetails = false) {
 
 function isValid(busName) {
     if (!busETAs[busName]) return false;
+    if (distanceFromLine(busName)) return false;
 
     for (const stopId of stopLists[busData[busName].route]) {
         const etaVal = getETAForStop(busName, stopId);
@@ -3511,6 +3517,13 @@ function getBusValidityInfo(busName) {
         return {
             valid: false,
             reason: 'not in busETAs'
+        };
+    }
+
+    if (distanceFromLine(busName)) {
+        return {
+            valid: false,
+            reason: 'Off route line (>500 ft)'
         };
     }
 

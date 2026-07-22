@@ -2685,8 +2685,9 @@ function populateMeClosestStops() {
                 return;
             }
 
+            const bgCol = routeHasInServiceBuses(route) ? colorMappings[route] : 'gray';
             $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()} ${Math.ceil(eta % 60)}m</div>`)
-            .css('background-color', colorMappings[route])
+            .css('background-color', bgCol)
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
                 clearPanoutFeedback();

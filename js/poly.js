@@ -1,5 +1,6 @@
 let polylineBounds = null;
 let routeBounds = {};
+let routePointsCache = {};
 let previousRoutesWithPolylines = new Set();
 
 const FORCE_SHOW_SETTING = 'force-show-polylines';
@@ -43,6 +44,7 @@ async function addForceShowPolyline(routeName) {
     polyline.addTo(map);
     polylines[routeName] = polyline;
     routeBounds[routeName] = polyline.getBounds();
+    routePointsCache[routeName] = polyline.getLatLngs();
 }
 
 function removeForceShowPolyline(routeName) {
@@ -312,15 +314,13 @@ window.debugPolylineState = function(routeName) {
 };
 
 async function setPolylines(activeRoutes) {
+    await initRoutePointsCache(selectedCampus);
     const forceRoutes = getForceShowRoutes();
     let routesToSet;
     if (isForceShowEnabled()) {
         routesToSet = forceRoutes.filter(r => routesByCampusBase[selectedCampus].includes(r));
     } else {
-        routesToSet = Array.from(activeRoutes).filter(route => {
-            if (!routesByCampusBase[selectedCampus].includes(route)) return false;
-            return routeHasInServiceBuses(route);
-        });
+        routesToSet = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
     }
 
     // console.log("Setting polylines for routesToSet: ", routesToSet)
@@ -328,49 +328,29 @@ async function setPolylines(activeRoutes) {
     const fetchPromises = [];
 
     for (const routeName of routesToSet) {
+        const hasInService = routeHasInServiceBuses(routeName);
+        const polyColor = (hasInService || isForceShowEnabled()) ? (colorMappings[routeName] || '#888') : 'gray';
+
+        if (polylines[routeName]) {
+            polylines[routeName].setStyle({ color: polyColor });
+            continue;
+        }
 
         let coordinates = await getPolylineData(routeName);
 
         if (!coordinates) continue // if undefined
 
-        // console.log(typeof coordinates[0])
-
         if (Object.keys(coordinates[0])[0] === 'lat') {
             coordinates = coordinates.map(point => [point.lat, point.lng]); // Note: Leaflet uses [lat, lng]
         } else {
             coordinates = coordinates.map(point => [point[1], point[0]]); // Note: Leaflet uses [lat, lng]
-
         }
 
-        // const pathData = ['M', coordinates[0]];  // Move to the first point
-
-        // for (let i = 1; i < coordinates.length - 1; i += 2) {
-        //     const controlPoint = coordinates[i];
-        //     const nextPoint = coordinates[i + 1];
-
-        //     if (controlPoint && nextPoint) {
-        //         pathData.push('Q', controlPoint, nextPoint);
-        //     }
-        // }
-
-        // if (coordinates.length % 2 === 0) {
-        //     pathData.push('L', coordinates[coordinates.length - 1]);
-        // }
-
-        // // Create the curve
-        // const polyline = L.curve(pathData, {
-        //     color: colorMappings[routeName],   
-        //     weight: 4,      
-        //     opacity: 1,     
-        //     smoothFactor: 1 
-        // }).addTo(map);
-
         const polylineOptions = getPolylineLayerOptions({
-            color: colorMappings[routeName],
+            color: polyColor,
             weight: 4,
             opacity: 1,
             smoothFactor: 1,
-            // noClip: true
         });
 
         const polyline = L.polyline(coordinates, polylineOptions);
@@ -379,9 +359,10 @@ async function setPolylines(activeRoutes) {
 
         polylines[routeName] = polyline;
 
-        // Cache route bounds even if layer later gets pruned
+        // Cache route bounds and points even if layer later gets pruned
         const bounds = polyline.getBounds();
         routeBounds[routeName] = bounds;
+        routePointsCache[routeName] = polyline.getLatLngs();
 
         fetchPromises.push(coordinates);
     }
@@ -447,8 +428,11 @@ async function addPolylineForRoute(routeName) {
             coordinates = coordinates.map(point => [point[1], point[0]]);
         }
 
+        const hasInService = routeHasInServiceBuses(routeName);
+        const polyColor = (hasInService || isForceShowEnabled()) ? (colorMappings[routeName] || '#888') : 'gray';
+
         const polylineOptions = getPolylineLayerOptions({
-            color: colorMappings[routeName],
+            color: polyColor,
             weight: 4,
             opacity: 1,
             smoothFactor: 1,
@@ -473,7 +457,7 @@ async function addPolylineForRoute(routeName) {
 function routeHasInServiceBuses(route) {
     try {
         const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
-        return routeBuses && routeBuses.some(busName => busData[busName] && !busData[busName].oos);
+        return routeBuses && routeBuses.some(busName => busData[busName] && !busData[busName].oos && !distanceFromLine(busName));
     } catch (e) {
         return false;
     }
@@ -524,67 +508,56 @@ function updatePolylineBoundsIfNeeded() {
     }
 }
 
-// Remove polylines for routes that currently have no in-service buses
+// Update polyline colors and route selector buttons based on in-service status
 function prunePolylinesWithoutInService() {
     try {
         const forceRoutes = getForceShowRoutes();
-        const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
+        const campusRoutes = Object.keys(busesByRoutes[selectedCampus] || {});
         campusRoutes.forEach(routeName => {
-            if (isForceShowEnabled()) {
-                if (!forceRoutes.includes(routeName)) {
-                    if (polylines[routeName]) {
-                        logPolylineRemoval(routeName, 'prunePolylinesWithoutInService');
-                        try { polylines[routeName].remove(); } catch (e) {}
-                        delete polylines[routeName];
-                    }
-                }
-                return;
+            const hasInService = routeHasInServiceBuses(routeName);
+            const targetColor = (hasInService || isForceShowEnabled() || (forceRoutes && forceRoutes.includes(routeName))) ? (colorMappings[routeName] || '#888') : 'gray';
+
+            if (polylines[routeName]) {
+                polylines[routeName].setStyle({ color: targetColor });
+            } else if (routesByCampusBase[selectedCampus]?.includes(routeName)) {
+                addPolylineForRoute(routeName);
             }
-            if (!routeHasInServiceBuses(routeName) && polylines[routeName]) {
-                logPolylineRemoval(routeName, 'prunePolylinesWithoutInService');
-                try { polylines[routeName].remove(); } catch (e) {}
-                delete polylines[routeName];
-                // Keep routeBounds cached for potential reuse (e.g., quick fit on reselect)
+
+            // Update route selector button color on UI
+            const $btn = $(`.route-selector[routeName="${routeName}"]`);
+            if ($btn.length && typeof shownRoute !== 'undefined' && shownRoute !== routeName) {
+                $btn.css('background-color', targetColor);
             }
         });
         updatePolylineBoundsIfNeeded();
     } catch (e) {
-        console.log('Error pruning polylines without in-service buses', e);
+        console.log('Error updating polylines without in-service buses', e);
     }
 }
 
-// Precompute and cache bounds for campus routes that have in-service buses without adding layers
+// Precompute and cache bounds and points for all campus routes without adding layers
+async function initRoutePointsCache(campus) {
+    const campusRoutes = routesByCampusBase[campus || selectedCampus] || [];
+    const fetches = campusRoutes.map(async (routeName) => {
+        if (routeBounds[routeName] && routePointsCache[routeName]) return;
+        const coords = await getPolylineData(routeName);
+        if (!coords || !coords.length) return;
+
+        let coordinates;
+        if (Object.keys(coords[0])[0] === 'lat') {
+            coordinates = coords.map(point => [point.lat, point.lng]);
+        } else {
+            coordinates = coords.map(point => [point[1], point[0]]);
+        }
+        const tmp = L.polyline(coordinates, { opacity: 0 });
+        routeBounds[routeName] = tmp.getBounds();
+        routePointsCache[routeName] = tmp.getLatLngs();
+    });
+    await Promise.all(fetches);
+}
+
 async function precomputeAllRouteBounds() {
-    try {
-        const campusRoutes = routesByCampusBase[selectedCampus] || [];
-
-        // Only precompute bounds for routes that have in-service buses
-        const routesToPrecompute = campusRoutes.filter(routeName => {
-            return routeHasInServiceBuses(routeName);
-        });
-
-        const fetches = routesToPrecompute.map(async (routeName) => {
-            if (routeBounds[routeName]) return;
-            try {
-                const coords = await getPolylineData(routeName);
-                if (!coords || !coords.length) return;
-
-                let coordinates;
-                if (Object.keys(coords[0])[0] === 'lat') {
-                    coordinates = coords.map(point => [point.lat, point.lng]);
-                } else {
-                    coordinates = coords.map(point => [point[1], point[0]]);
-                }
-                const tmp = L.polyline(coordinates, { opacity: 0 });
-                routeBounds[routeName] = tmp.getBounds();
-            } catch (error) {
-                console.warn(`Skipping polyline bounds for route ${routeName} due to error:`, error.message);
-            }
-        });
-        await Promise.all(fetches);
-    } catch (e) {
-        console.log('Error precomputing all route bounds', e);
-    }
+    await initRoutePointsCache(selectedCampus);
 }
 
 
