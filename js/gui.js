@@ -2680,13 +2680,15 @@ function populateMeClosestStops() {
         busesHere.forEach(route => {
             const soonestBus = getSoonestBus(parseInt(stopId), route);
             const eta = soonestBus[1];
+            const hasInService = routeHasInServiceBuses(route);
+            const bgCol = hasInService ? colorMappings[route] : 'gray';
 
-            if (eta === null || eta === Infinity) {
-                return;
+            let etaText = '';
+            if (eta !== null && eta !== Infinity && typeof eta === 'number') {
+                etaText = ` ${Math.ceil(eta % 60)}m`;
             }
 
-            const bgCol = routeHasInServiceBuses(route) ? colorMappings[route] : 'gray';
-            $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()} ${Math.ceil(eta % 60)}m</div>`)
+            $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()}${etaText}</div>`)
             .css('background-color', bgCol)
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
