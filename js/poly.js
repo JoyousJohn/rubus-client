@@ -487,7 +487,7 @@ function updatePolylineBoundsIfNeeded() {
         for (const route of currentRoutesWithPolylines) {
             if (routeBounds[route]) {
                 if (combinedBounds === null) {
-                    combinedBounds = routeBounds[route];
+                    combinedBounds = L.latLngBounds(routeBounds[route].getSouthWest(), routeBounds[route].getNorthEast());
                 } else {
                     combinedBounds = combinedBounds.extend(routeBounds[route]);
                 }
@@ -495,8 +495,8 @@ function updatePolylineBoundsIfNeeded() {
         }
 
         // If no active routes, use campus bounds as default
-        if (!combinedBounds) {
-            combinedBounds = bounds[selectedCampus];
+        if (!combinedBounds && bounds[selectedCampus]) {
+            combinedBounds = L.latLngBounds(bounds[selectedCampus].getSouthWest(), bounds[selectedCampus].getNorthEast());
         }
 
         polylineBounds = combinedBounds;

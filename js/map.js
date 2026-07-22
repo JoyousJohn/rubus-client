@@ -3288,12 +3288,17 @@ async function focusBus(busName) {
 
         let focusBounds = null;
         if (polylines[route]) {
-            focusBounds = polylines[route].getBounds();
+            const rb = polylines[route].getBounds();
+            focusBounds = L.latLngBounds(rb.getSouthWest(), rb.getNorthEast());
         }
 
         if (busData[busName].atDepot) {
             const busLocBounds = L.latLngBounds([L.latLng(busData[busName].lat, busData[busName].long)]);
-            focusBounds.extend(busLocBounds);
+            if (focusBounds) {
+                focusBounds.extend(busLocBounds);
+            } else {
+                focusBounds = busLocBounds;
+            }
         }
 
         const mapSize = map.getSize();

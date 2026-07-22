@@ -644,7 +644,7 @@ async function toggleRoute(route) {
 			if (routePolyline) {
 				const rb = routePolyline.getBounds();
 				boundsToFit = routeBuses.length
-					? routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(rb))
+					? routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(rb.getSouthWest(), rb.getNorthEast()))
 					: rb;
 			} else if (routeBuses.length) {
 				// No polyline exists yet, fit to buses of this route
