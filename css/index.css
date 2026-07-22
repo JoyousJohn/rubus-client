@@ -1307,7 +1307,7 @@ html, body {
     width: 2.2rem;
     height: 2.2rem;
     border-radius: 50%;
-    border: 2px solid var(--theme-extra);
+    border: 1px solid var(--theme-extra);
     font-weight: 700;
     font-size: 1.1rem;
     color: var(--theme-extra);

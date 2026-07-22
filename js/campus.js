@@ -60,8 +60,13 @@ function cleanupOldMap() {
 }
 
 async function makeNewMap() {
-    const newBounds = expandBounds(bounds[selectedCampus], 2)
-    map.setMaxBounds(newBounds).fitBounds(polylineBounds)
+    if (!settings['toggle-bypass-max-distance']) {
+        const newBounds = expandBounds(bounds[selectedCampus], 2);
+        map.setMaxBounds(newBounds);
+    } else {
+        map.setMaxBounds(null);
+    }
+    map.fitBounds(polylineBounds);
 
     activeRoutes.clear(); // only used to avoid having to call populateRouteSelectors below to trigger const newRoutes = pollActiveRoutes.difference(activeRoutes); in pre.js. doesn't affect addstopstoMap bc we're padding isInitial true to fetchBusData
     await fetchETAs();

@@ -455,7 +455,9 @@ $(document).ready(function() {
     map.on('dragend', function() {
         // Set max bounds after user finishes dragging after unfocusing on a bus
         if (shouldSetMaxBoundsAfterDrag) {
-            map.setMaxBounds(expandBounds(bounds[selectedCampus], 2));
+            if (!settings['toggle-bypass-max-distance']) {
+                map.setMaxBounds(expandBounds(bounds[selectedCampus], 2));
+            }
             shouldSetMaxBoundsAfterDrag = false; // Reset flag after use
         }
     });
@@ -2618,8 +2620,10 @@ function popInfo(busName, resetCampusFontSize) {
     }
 
     if (!isDesktop) {
-        const expandedBounds = expandBounds(bounds[selectedCampus], 2.8);
-        map.setMaxBounds(expandedBounds);
+        if (!settings['toggle-bypass-max-distance']) {
+            const expandedBounds = expandBounds(bounds[selectedCampus], 2.8);
+            map.setMaxBounds(expandedBounds);
+        }
         map.setMinZoom(9);
     }
 
