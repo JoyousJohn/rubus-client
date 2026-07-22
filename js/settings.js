@@ -95,6 +95,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             console.log(`Show ETAs in seconds is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-etas-in-seconds'] = isChecked;
             showETAsInSeconds = isChecked;
+            if (popupBusName && !busData[popupBusName].overtime) popInfo(popupBusName);
 
             if (isChecked) {
                 countdownInterval = setInterval(() => {
@@ -186,6 +187,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-hide-other-routes':
             settings['toggle-hide-other-routes'] = isChecked;
+            updateSegFocusNotice();
 
             if (!isChecked && popupBusName) {
                 // Remove distance line if it was showing
@@ -431,6 +433,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-distances-line-on-focus':
             console.log(`Distances Line on Focus is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-distances-line-on-focus'] = isChecked;
+            updateSegFocusNotice();
             
             // If the setting is being turned off and a bus is currently focused,
             // remove the distance line and restore the route polyline layer.
@@ -688,6 +691,14 @@ function makePolygons() {
         // });
     }
 }
+
+function updateSegFocusNotice() {
+    const focusEnabled = settings['toggle-hide-other-routes'];
+    const notice = document.getElementById('segFocusNotice');
+    if (notice) notice.style.display = focusEnabled ? 'none' : '';
+}
+
+updateSegFocusNotice();
 
 function togglePolygons(show) {
 

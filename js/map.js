@@ -3340,25 +3340,42 @@ function showDistanceLineOnFocus(busName) {
     const prevStopId = busData[busName].prevStopId;
     const nextStopId = busData[busName].next_stop;
     
+    let currentStop = currentStopId;
+    if (Array.isArray(currentStopId)) {
+        currentStop = currentStopId[0];
+    }
+    
     // Determine the correct segment to show
     let fromStopId, toStopId;
     
-    if (currentStopId && nextStopId) {
+    // On special routes where stop 3 is visited twice, use prevStopId to resolve
+    if (isSpecialRoute(route) && Number(currentStop) === 3) {
+        const stopList = stopLists[route];
+        if (stopList && prevStopId) {
+            const idx = stopList.lastIndexOf(Number(prevStopId));
+            if (idx !== -1 && idx + 1 < stopList.length) {
+                fromStopId = 3;
+                toStopId = stopList[idx + 1];
+            }
+        }
+    }
+    
+    if (!fromStopId && currentStop && nextStopId) {
         // Normal case: show segment from current stop to next stop
-        fromStopId = currentStopId;
+        fromStopId = currentStop;
         toStopId = nextStopId;
-    } else if (prevStopId && currentStopId) {
+    } else if (!fromStopId && prevStopId && currentStop) {
         // Fallback: show segment from previous stop to current stop
         fromStopId = prevStopId;
-        toStopId = currentStopId;
-    } else {
+        toStopId = currentStop;
+    } else if (!fromStopId) {
         console.log('Cannot determine route segment for bus', busName, '- missing stop information');
         console.log('Current stop:', currentStopId, 'Next stop:', nextStopId, 'Previous stop:', prevStopId);
         return;
     }
     
-    // Handle special case buses that visit stop #3 twice
-    if (isSpecialRoute(route) && toStopId === 3) {
+    // Handle special case buses that visit stop #3 twice (when heading to stop 3)
+    if (isSpecialRoute(route) && toStopId === 3 && !(Number(currentStop) === 3)) {
         // Use previous stop ID to determine which approach to stop 3
         if (prevStopId) {
             fromStopId = prevStopId;
