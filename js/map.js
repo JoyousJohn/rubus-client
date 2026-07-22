@@ -21,8 +21,6 @@ let isDesktop;
 let tileLayer;
 let currentTileLayerType = 'streets'; // Track the current tile layer type
 
-const tileToken = 'pk.eyJ1Ijoiam9obi1oYXBweSIsImEiOiJjbWFrMzR2cnYwNDJ1MnFvaGh4dGd5YnlmIn0.cMHFVjIXIo_IaSI-Q6RtfQ';
-
 $(document).ready(function() {
 
     updateSettings();
@@ -89,7 +87,7 @@ $(document).ready(function() {
         pauseUpdateMarkerPositions = settings['toggle-pause-update-marker'];
     }
 
-        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${mapTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`, {
+        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${mapTheme}/tiles/{z}/{x}/{y}.png`, {
         maxZoom: 20,
         updateWhenIdle: true,   // load tiles after zoom settles (less mid-gesture thrash)
         updateWhenZooming: false,
@@ -880,7 +878,7 @@ function changeMapStyle(newStyle) {
     }
 
     // console.log("Setting map style to " + newStyle);
-    let newUrl = `https://tiles.rubus.live/styles/v1/${newStyle}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`;
+    let newUrl = `https://tiles.rubus.live/styles/v1/${newStyle}/tiles/{z}/{x}/{y}.png`;
     tileLayer.setUrl(newUrl);
     // Note: changeMapStyle only changes between light/dark variants of streets, so currentTileLayerType remains 'streets'
     
@@ -3762,13 +3760,13 @@ $('.satellite-btn').click(function() {
         const newTheme = theme === 'dark' ? 'dark-v11' : 'streets-v11';
         map.removeLayer(tileLayer);
 
-        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${newTheme}/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
+        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${newTheme}/tiles/{z}/{x}/{y}.png`).addTo(map);
         currentTileLayerType = 'streets';
 
         $(this).removeClass('active');
     } else {
         map.removeLayer(tileLayer);
-        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/satellite-streets-v11/tiles/{z}/{x}/{y}.png?access_token=${tileToken}`).addTo(map);
+        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/satellite-streets-v11/tiles/{z}/{x}/{y}.png`).addTo(map);
         currentTileLayerType = 'satellite';
 
         let theme = settings['theme']
