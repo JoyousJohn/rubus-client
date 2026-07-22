@@ -1321,7 +1321,7 @@ html, body {
     display: none;
     font-family: var(--font-family);
     padding: 2rem;
-    z-index: 402;
+    z-index: 1000;
     position: fixed;
     inset: 0;
     overflow-y: scroll;
@@ -1363,9 +1363,19 @@ html[theme="light"] .settings-panel {
     user-select: none;
 }
 
-.force-show-dependent.disabled {
+.force-show-dependent.disabled, .offscreen-indicators-dependent.disabled {
     opacity: 0.4;
+}
+
+.force-show-dependent.disabled .settings-toggle,
+.offscreen-indicators-dependent.disabled .settings-toggle {
     pointer-events: none;
+}
+
+.force-show-dependent.disabled .span-i,
+.offscreen-indicators-dependent.disabled .span-i {
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .force-show-stops-row {
@@ -1375,6 +1385,19 @@ html[theme="light"] .settings-panel {
 .force-show-stops-label {
     padding-left: 10px;
     border-left: 1px solid var(--theme-color);
+}
+
+.offscreen-indicators-dependent {
+    border-left: 1px solid var(--theme-line-bg);
+    padding-left: 10px;
+}
+
+.offscreen-indicators-chevron {
+    color: var(--theme-link);
+}
+
+.offscreen-indicators-chevron.rotated {
+    transform: rotate(180deg);
 }
 
 .marker-style-inner-grid {
@@ -1403,6 +1426,15 @@ html[theme="light"] .settings-panel {
     align-items: center;
     color: var(--theme-color);
     cursor: pointer;
+}
+
+.mc-grass-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.4rem;
+    margin-bottom: 2px;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 /* Light: explicit white on option cells (parent .settings-options stays --theme-bg-closest-stop) */

@@ -242,9 +242,28 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-offscreen-bus-indicators':
             settings['toggle-offscreen-bus-indicators'] = isChecked;
+            if (isChecked) {
+                $('.offscreen-indicators-dependent').removeClass('disabled');
+            } else {
+                $('.offscreen-indicators-dependent').addClass('disabled');
+            }
             if (typeof requestOffScreenUpdate === 'function') {
                 requestOffScreenUpdate();
             }
+            break;
+
+        case 'toggle-offscreen-bus-indicators-above-gui':
+            settings['toggle-offscreen-bus-indicators-above-gui'] = isChecked;
+            if (typeof updateOffScreenContainerZIndex === 'function') {
+                updateOffScreenContainerZIndex();
+            }
+            if (typeof requestOffScreenUpdate === 'function') {
+                requestOffScreenUpdate();
+            }
+            break;
+
+        case 'toggle-offscreen-bus-indicators-select-on-tap':
+            settings['toggle-offscreen-bus-indicators-select-on-tap'] = isChecked;
             break;
 
         case 'toggle-show-invalid-etas':
@@ -535,6 +554,12 @@ $(document).ready(function() {
 
     if (settings['toggle-force-show-polylines']) {
         $('.force-show-dependent').removeClass('disabled');
+    }
+
+    if (settings['toggle-offscreen-bus-indicators']) {
+        $('.offscreen-indicators-dependent').removeClass('disabled');
+    } else {
+        $('.offscreen-indicators-dependent').addClass('disabled');
     }
 
     if (settings['toggle-show-etas-in-seconds']) {

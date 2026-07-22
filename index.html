@@ -982,7 +982,7 @@
                         <div class="settings-option" settings-option="font" font-option="bricolage grotesque" style="font-family: bricolage grotesque;">Grotesque</div>
                         <div class="settings-option" settings-option="font" font-option="dunkin" style="font-family: dunkin; border-top: 1px solid rgb(185, 185, 185); border-left: 0;">Donut</div>
                         <div class="settings-option" settings-option="font" font-option="comic-sans" style="font-family: comic-sans; border-top: 1px solid rgb(185, 185, 185);">Comic Sans</div>
-                        <div class="settings-option" settings-option="font" font-option="blockcraft" style="font-family: blockcraft; border-top: 1px solid rgb(185, 185, 185);">Blockcraft</div>
+                        <div class="settings-option" settings-option="font" font-option="blockcraft" style="font-family: blockcraft; border-top: 1px solid rgb(185, 185, 185);"><svg class="mc-grass-icon" viewBox="0 0 32 32" shape-rendering="crispEdges"><polygon points="16,2 30,9 16,16 2,9" fill="currentColor" opacity="0.9"/><polygon points="12,6 16,8 20,6 16,4" fill="currentColor" opacity="0.75"/><polygon points="2,9 16,16 16,30 2,23" fill="currentColor" opacity="0.6"/><polygon points="2,9 16,16 16,19 12,17 10,18.5 6,15.5 2,13" fill="currentColor" opacity="0.85"/><polygon points="5,17 8,18.5 8,20.5 5,19" fill="currentColor" opacity="0.4"/><polygon points="10,22 13,23.5 13,25.5 10,24" fill="currentColor" opacity="0.4"/><polygon points="16,16 30,9 30,23 16,30" fill="currentColor" opacity="0.4"/><polygon points="16,16 30,9 30,13 26,15 22,13 18,17 16,16" fill="currentColor" opacity="0.7"/><polygon points="19,19 22,17.5 22,19.5 19,21" fill="currentColor" opacity="0.25"/><polygon points="24,23 27,21.5 27,23.5 24,25" fill="currentColor" opacity="0.25"/></svg><div>Blockcraft</div></div>
                         <div class="settings-option" settings-option="font" font-option="aurebesh" style="font-family: Aurebesh; border-top: 1px solid rgb(185, 185, 185); border-left: 0;">Aurebesh</div>
                         <div class="settings-option" settings-option="font" font-option="papyrus" style="font-family: Papyrus; border-top: 1px solid rgb(185, 185, 185);">Papyrus</div>
                         <div class="settings-option settings-font-grid-spacer" style="border-top: 1px solid rgb(185, 185, 185);"></div>
@@ -1010,9 +1010,13 @@
                         </label>
                     </div>
                 </div>
-                <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Use experimental ETA calculation to forecast in seconds. This may be inaccurate in some edge cases. <br><br>Benchmarks show predictions are within a 20s margin of error 92% of the time.</div>
+                <div class="seconds-explain none ml-0p5rem text-1p3rem dimgray">Use experimental ETA calculation to forecast in seconds. This may be inaccurate in some edge cases. <br><br>Predictions are within a small margin of error nearly all of the time.</div>
                 <script>
-                $('.span-i-seconds').click(function() {$('.seconds-explain').slideToggle();})
+                $('.span-i-seconds').click(function() {
+                    const $el = $('.seconds-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
                 </script>
 
                 <div class="flex justify-between">
@@ -1027,7 +1031,11 @@
                 
                 <div class="settings-end-explain none ml-0p5rem text-1p3rem dimgray">Move the settings button after the route buttons to reduce scrolling need by clearing up space in front for more routes.</div>
                 <script>
-                $('.span-i-settings-end').click(function() {$('.settings-end-explain').slideToggle();})
+                $('.span-i-settings-end').click(function() {
+                    const $el = $('.settings-end-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
                 </script>
             </div>
 
@@ -1046,7 +1054,11 @@
                 <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
                 <div class="preload-explain none ml-0p5rem text-1p3rem dimgray">Pre-render route lines on the entire map, even outside of view, to avoid having to load them when panning the map. May heavily degrade performance on some devices.</div>
                 <script>
-                $('.span-i-preload').click(function() {$('.preload-explain').slideToggle();})
+                $('.span-i-preload').click(function() {
+                    const $el = $('.preload-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
                 if (/iPhone/i.test(navigator.userAgent)) {
                     $('#toggle-polyline-padding').parent().css('pointer-events', 'none');
                     $('.toggle-polyline-padding-unavailable').show();
@@ -1054,7 +1066,11 @@
                 </script>
 
                 <div class="flex justify-between">
-                    <div class="settings-heading flex flex-1 align-center span-i-offscreen-indicators">Offscreen Bus Indicators<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-heading flex flex-1 align-center">
+                        <span class="span-i-offscreen-indicators pointer">Offscreen Bus Indicators</span>
+                        <span class="span-i pointer select-none span-i-offscreen-indicators">i</span>
+                        <i class="fa-solid fa-chevron-down offscreen-indicators-chevron pointer select-none ml-0p5rem text-1p3rem" style="transition: transform 0.2s;"></i>
+                    </div>
                     <div class="settings-toggle">
                         <input type="checkbox" id="toggle-offscreen-bus-indicators" class="toggle-input" checked>
                         <label for="toggle-offscreen-bus-indicators" class="toggle-label">
@@ -1064,8 +1080,55 @@
                 </div>
                 <div class="offscreen-indicators-explain none ml-0p5rem text-1p3rem dimgray">Show directional edge indicator badges pointing toward off-screen buses when routes are not visible.</div>
                 <script>
-                $('.span-i-offscreen-indicators').click(function() {$('.offscreen-indicators-explain').slideToggle();})
+                $('.span-i-offscreen-indicators').click(function() {
+                    const $el = $('.offscreen-indicators-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                $('.offscreen-indicators-chevron').click(function() {
+                    const $el = $('.offscreen-indicators-dependent');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle(200);
+                    $(this).toggleClass('rotated');
+                });
                 </script>
+                <div class="offscreen-indicators-dependent none">
+                    <div class="flex justify-between">
+                        <div class="settings-heading flex flex-1 align-center span-i-offscreen-indicators-above-gui">Indicator Badges Above GUI<span class="span-i pointer select-none">i</span></div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-offscreen-bus-indicators-above-gui" class="toggle-input">
+                            <label for="toggle-offscreen-bus-indicators-above-gui" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="offscreen-indicators-above-gui-explain none ml-0p5rem text-1p3rem dimgray">Render indicator badges above map interface buttons and route selectors instead of underneath them.</div>
+                    <script>
+                    $('.span-i-offscreen-indicators-above-gui').click(function() {
+                        const $el = $('.offscreen-indicators-above-gui-explain');
+                        if ($el.is(':animated')) return;
+                        $el.slideToggle();
+                    })
+                    </script>
+
+                    <div class="flex justify-between mt-0p5rem">
+                        <div class="settings-heading flex flex-1 align-center span-i-offscreen-indicators-select-on-tap">Select Bus on Badge Tap<span class="span-i pointer select-none">i</span></div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-offscreen-bus-indicators-select-on-tap" class="toggle-input">
+                            <label for="toggle-offscreen-bus-indicators-select-on-tap" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="offscreen-indicators-select-on-tap-explain none ml-0p5rem text-1p3rem dimgray">Automatically select and open the bus info panel when tapping an indicator badge.</div>
+                    <script>
+                    $('.span-i-offscreen-indicators-select-on-tap').click(function() {
+                        const $el = $('.offscreen-indicators-select-on-tap-explain');
+                        if ($el.is(':animated')) return;
+                        $el.slideToggle();
+                    })
+                    </script>
+                </div>
 
                 <div class="flex justify-between">
                     <div class="settings-heading">Show Stops Above Buses</div>
@@ -1089,7 +1152,9 @@
                 <div class="settings-spoofing-explain none ml-0p5rem text-1p3rem dimgray">Allows you to teleport anywhere on the map by tapping; useful for seeing the nearest stops, routes, and buildings to locations you might visit.</div>
                 <script>
                 $('.span-i-spoofing').click(function() {
-                    $('.settings-spoofing-explain').slideToggle();
+                    const $el = $('.settings-spoofing-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
                 });
                 </script>
             </div>
@@ -1108,7 +1173,11 @@
                 </div>
                 <div class="focus-explain none ml-0p5rem text-1p3rem dimgray">Hide all other buses and center the route when a bus is selected. Drag with two fingers to pan the map. Pan with one finger to restore view.</div>
                 <script>
-                $('.span-i-focus').click(function() {$('.focus-explain').slideToggle();})
+                $('.span-i-focus').click(function() {
+                    const $el = $('.focus-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
                 </script>
 
                 <div class="settings-marker-style">
@@ -1263,7 +1332,9 @@
                 <div class="break-overdue-explain none ml-0p5rem text-1p3rem dimgray">When selecting a bus, always show the time since it last took a break. If disabled, the time since last break notice will only be shown if a bus is overdue its expected break interval.</div>
                 <script>
                 $('.span-i-break-overdue').click(function() {
-                    $('.break-overdue-explain').slideToggle();
+                    const $el = $('.break-overdue-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
                 })
                 </script>
 
@@ -1292,7 +1363,11 @@
                 </div>
                 <div class="closest-explain none ml-0p5rem text-1p3rem dimgray">Automatically select your closest stop when you open the app. Requires location permissions; share permanently to avoid the popup on each open.</div>
                 <script>
-                $('.span-i-closest').click(function() {$('.closest-explain').slideToggle();})
+                $('.span-i-closest').click(function() {
+                    const $el = $('.closest-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
                 </script>
 
                 <div class="flex justify-between">
@@ -1307,7 +1382,11 @@
                 <div class="text-1p3rem ml-0p5rem none toggle-polyline-padding-unavailable" style="margin-top: -1.5rem; color: #e78080">Option unavailable on iPhone</div>
                 <div class="second-explain none ml-0p5rem text-1p3rem dimgray">Display upcoming buses with extended arrival times in stop panels.</div>
                 <script>
-                $('.span-i-second').click(function() {$('.second-explain').slideToggle();})
+                $('.span-i-second').click(function() {
+                    const $el = $('.second-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
                 </script>
             </div>
 

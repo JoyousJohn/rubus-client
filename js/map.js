@@ -2279,8 +2279,9 @@ function popInfo(busName, resetCampusFontSize) {
                 const validityText = validityResult.valid ? 'Yes' : `No (${validityResult.reason})`;
                 extraDataHtml += `<div>isValid: <span style="opacity: 0.7; color: ${validityResult.valid ? '#4CAF50' : '#f44336'}">${validityText}</span></div>`;
 
-                const distanceFromLineResult = distanceFromLine(busName);
-                extraDataHtml += `<div>distanceFromLine validity: <span style="opacity: 0.7; color: ${distanceFromLineResult ? '#f44336' : '#4CAF50'}">${distanceFromLineResult}</span></div>`;
+                const distInfo = distanceFromLine(busName, true);
+                const distText = distInfo.isOffLine ? `true (${distInfo.feet.toLocaleString()} ft away)` : 'false';
+                extraDataHtml += `<div>distanceFromLine validity: <span style="opacity: 0.7; color: ${distInfo.isOffLine ? '#f44336' : '#4CAF50'}">${distText}</span></div>`;
 
                 continue; // Skip processing isKnown again in the normal flow
             } else if (key === 'stopId') {
@@ -3464,13 +3465,13 @@ function updateDistanceLinePositionMarker(busName) {
     console.log('Created distance line position marker with tooltip:', distanceFeet, 'ft');
 }
 
-function distanceFromLine(busName) {
+function distanceFromLine(busName, returnDetails = false) {
     const busLatLng = L.latLng(busData[busName].lat, busData[busName].long);
     const route = busData[busName].route;
     const polyline = route ? polylines[route] : null;
     if (!polyline) {
         // No polyline available for this route; treat as on-line for UI purposes
-        return false;
+        return returnDetails ? { isOffLine: false, feet: 0 } : false;
     }
     const polyPoints = polyline.getLatLngs();
     
@@ -3484,9 +3485,12 @@ function distanceFromLine(busName) {
         }
     }
     
-    const distanceMiles = minDist * 0.000621371 * 5280;
-    // console.log(`Bus ${busName} is ${distanceMiles.toFixed(3)} ft from its route`);
-    return (distanceMiles > 500)
+    const distanceFeet = minDist * 0.000621371 * 5280;
+    const isOffLine = distanceFeet > 500;
+    if (returnDetails) {
+        return { isOffLine: isOffLine, feet: Math.round(distanceFeet) };
+    }
+    return isOffLine;
 }
 
 function isValid(busName) {
@@ -3933,6 +3937,13 @@ function getVisibleActiveBuses() {
     return activeBuses;
 }
 
+function updateOffScreenContainerZIndex() {
+    let container = document.getElementById('offscreen-bus-indicators-container');
+    if (!container) return;
+    const isAboveGui = typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-above-gui'] === true;
+    container.style.zIndex = isAboveGui ? '650' : '400';
+}
+
 function updateOffScreenBusIndicators() {
     if (!map || typeof busMarkers === 'undefined') return;
 
@@ -3953,6 +3964,8 @@ function updateOffScreenBusIndicators() {
             return;
         }
     }
+
+    updateOffScreenContainerZIndex();
 
     const activeBuses = getVisibleActiveBuses();
     if (activeBuses.length === 0) {
@@ -4094,6 +4107,11 @@ function renderOffScreenIndicators(container, indicators) {
                         animate: true,
                         duration: 0.3
                     });
+                }
+                if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-select-on-tap']) {
+                    if (typeof popInfo === 'function') {
+                        popInfo(ind.busName);
+                    }
                 }
             };
             container.appendChild(el);

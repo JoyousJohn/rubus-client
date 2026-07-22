@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" shape-rendering="crispEdges">
+  <!-- Top Face (Grass) -->
+  <polygon points="16,2 30,9 16,16 2,9" fill="currentColor" opacity="0.9"/>
+  <!-- Top Grass detail cutout -->
+  <polygon points="12,6 16,8 20,6 16,4" fill="currentColor" opacity="0.75"/>
+
+  <!-- Left Face (Dirt + Grass Fringe) -->
+  <polygon points="2,9 16,16 16,30 2,23" fill="currentColor" opacity="0.6"/>
+  <!-- Left Grass Trim -->
+  <polygon points="2,9 16,16 16,19 12,17 10,18.5 6,15.5 2,13" fill="currentColor" opacity="0.85"/>
+  <!-- Left Dirt Spots -->
+  <polygon points="5,17 8,18.5 8,20.5 5,19" fill="currentColor" opacity="0.4"/>
+  <polygon points="10,22 13,23.5 13,25.5 10,24" fill="currentColor" opacity="0.4"/>
+
+  <!-- Right Face (Darker Dirt + Grass Fringe) -->
+  <polygon points="16,16 30,9 30,23 16,30" fill="currentColor" opacity="0.4"/>
+  <!-- Right Grass Trim -->
+  <polygon points="16,16 30,9 30,13 26,15 22,13 18,17 16,16" fill="currentColor" opacity="0.7"/>
+  <!-- Right Dirt Spots -->
+  <polygon points="19,19 22,17.5 22,19.5 19,21" fill="currentColor" opacity="0.25"/>
+  <polygon points="24,23 27,21.5 27,23.5 24,25" fill="currentColor" opacity="0.25"/>
+</svg>
