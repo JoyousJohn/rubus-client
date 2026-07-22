@@ -1389,7 +1389,11 @@ html[theme="light"] .settings-panel {
 
 .offscreen-indicators-dependent {
     border-left: 1px solid var(--theme-line-bg);
+    border-right: 1px solid var(--theme-line-bg);
+    border-bottom: 1px solid var(--theme-line-bg);
     padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 0.8rem;
 }
 
 .offscreen-indicators-chevron {
