@@ -57,6 +57,15 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
 		routesArray.unshift('on1');
 	}
 
+    if (routesArray.includes('summer2')) {
+        routesArray = routesArray.filter(route => route !== 'summer2');
+        routesArray.unshift('summer2');
+    }
+    if (routesArray.includes('summer1')) {
+        routesArray = routesArray.filter(route => route !== 'summer1');
+        routesArray.unshift('summer1');
+    }
+
     if (routesArray.includes('wknd2')) {
         routesArray = routesArray.filter(route => route !== 'wknd2');
         routesArray.unshift('wknd2');
@@ -1810,6 +1819,7 @@ const defaultColorMappings = {
     'summer1': 'Plum',
     'summer2': '#2bd6ec',
     'commencement': 'LightSalmon',
+    'helix': '#db6464',
 
     'psx': 'LightSalmon',
     'ps': 'LightGreen',
@@ -1817,7 +1827,6 @@ const defaultColorMappings = {
     'cc': 'PaleTurquoise',
 
     'cam': 'navy',
-    'helix': '#DF073D',
 }
 
 let defaultSettings = {
