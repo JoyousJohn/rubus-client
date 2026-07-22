@@ -643,10 +643,9 @@ async function toggleRoute(route) {
 			let boundsToFit = null;
 			if (routePolyline) {
 				const rb = routePolyline.getBounds();
-				const hasInService = routeHasInServiceBuses(route);
-				boundsToFit = hasInService
-					? rb
-					: routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(rb));
+				boundsToFit = routeBuses.length
+					? routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(rb))
+					: rb;
 			} else if (routeBuses.length) {
 				// No polyline exists yet, fit to buses of this route
 				const first = routeBuses[0];
@@ -1788,6 +1787,7 @@ const toggleSettings = [
     'toggle-show-road-network',
     'toggle-distances-line-on-focus',
     'toggle-show-capacity',
+    'toggle-show-depot-poly',
     'toggle-always-show-break-overdue',
     'toggle-settings-btn-end',
     'toggle-force-show-polylines',
@@ -1887,6 +1887,7 @@ let defaultSettings = {
     'toggle-show-road-network': false,
     'toggle-distances-line-on-focus': false,
     'toggle-show-capacity': false,
+    'toggle-show-depot-poly': false,
     'toggle-always-show-break-overdue': false,
     'toggle-force-show-polylines': false,
     'toggle-force-show-stops': true,

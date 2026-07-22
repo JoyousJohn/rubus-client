@@ -468,6 +468,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-disable-fireworks-on-open'] = isChecked;
             break;
 
+        case 'toggle-show-depot-poly':
+            console.log(`Show Depot Poly is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-depot-poly'] = isChecked;
+            if (isChecked) {
+                map.addLayer(depotLayer);
+            } else {
+                map.removeLayer(depotLayer);
+            }
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;
@@ -544,6 +554,10 @@ $(document).ready(function() {
         $('.info-capacity-mid').hide();
     } else {
         $('.info-capacity-mid').removeClass('none').show();
+    }
+
+    if (settings['toggle-show-depot-poly']) {
+        map.addLayer(depotLayer);
     }
 
     if (settings['toggle-show-stop-polygons']) {
