@@ -1280,7 +1280,7 @@ async function popStopInfo(stopId) {
         return acc;
     }, []).sort((a, b) => a.eta - b.eta);
 
-    const onlySpecialActive = activeRoutes.size > 0 && Array.from(activeRoutes).every(route => route === 'all' || route.endsWith('1') || route.endsWith('2'));
+    const onlySpecialActive = activeRoutes.size > 0 && Array.from(activeRoutes).every(route => route === 'all' || route === 'helix' || route.endsWith('1') || route.endsWith('2'));
     const showSecondLoop = settings['toggle-always-show-second'] || onlySpecialActive;
 
     if (!showSecondLoop) {
