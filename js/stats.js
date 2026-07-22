@@ -101,17 +101,89 @@ function showStats() {
     });
 }
 
+const selectedSlices = {};
+
+function selectSlice(canvasId, index) {
+    if (selectedSlices[canvasId] === index) {
+        selectedSlices[canvasId] = -1;
+    } else {
+        selectedSlices[canvasId] = index;
+    }
+
+    if (canvasId === 'stats-canvas' && busStatsData) {
+        renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
+    } else if (canvasId === 'stop-stats-canvas' && stopStatsData) {
+        renderPieChart(stopStatsData, 'stop-stats-canvas', 'stop-stats-legend', { useShortName: true });
+    } else if (canvasId === 'user-stats-canvas' && userStatsData) {
+        renderPieChart(userStatsData, 'user-stats-canvas', 'user-stats-legend');
+    }
+}
+
+function setupCanvasClickListener(canvasId, options) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || canvas.dataset.clickBound) return;
+    canvas.dataset.clickBound = 'true';
+    canvas.style.cursor = 'pointer';
+
+    canvas.addEventListener('click', (event) => {
+        const data = (canvasId === 'stats-canvas') ? busStatsData :
+                     (canvasId === 'stop-stats-canvas') ? stopStatsData : userStatsData;
+        if (!data || !data.segments || !data.segments.length) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const clientX = event.clientX - rect.left;
+        const clientY = event.clientY - rect.top;
+
+        const w = canvas.clientWidth || 220;
+        const h = canvas.clientHeight || w || 220;
+        const cx = w / 2;
+        const cy = h / 2;
+        const r = Math.min(cx, cy) - 16;
+
+        const dx = clientX - cx;
+        const dy = clientY - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > r + 8) {
+            selectSlice(canvasId, -1);
+            return;
+        }
+
+        let angle = Math.atan2(dy, dx);
+        if (angle < -Math.PI / 2) {
+            angle += Math.PI * 2;
+        }
+
+        let startAngle = -Math.PI / 2;
+        for (let i = 0; i < data.segments.length; i++) {
+            const seg = data.segments[i];
+            const slice = (seg.percentage / 100) * Math.PI * 2;
+            const endAngle = startAngle + slice;
+
+            if (angle >= startAngle && angle < endAngle) {
+                selectSlice(canvasId, i);
+                break;
+            }
+            startAngle = endAngle;
+        }
+    });
+}
+
 function renderPieChart(statsData, canvasId, legendId, options = {}) {
     if (!statsData || !statsData.segments || !statsData.segments.length) return;
+
+    setupCanvasClickListener(canvasId, options);
 
     const segments = statsData.segments;
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
+    const selectedIndex = (selectedSlices[canvasId] !== undefined) ? selectedSlices[canvasId] : -1;
+
     const ctx = canvas.getContext('2d');
     const dpr = Math.max(window.devicePixelRatio || 1, 2);
     const w = canvas.clientWidth || 220;
-    const h = canvas.clientHeight || 220;
+    const h = canvas.clientHeight || w || 220;
 
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
@@ -125,30 +197,99 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
 
     const cx = w / 2;
     const cy = h / 2;
-    const r = Math.min(cx, cy) - 12;
+    const r = Math.min(cx, cy) - 16;
+
+    let selectedOverlayInfo = null;
 
     let startAngle = -Math.PI / 2;
     segments.forEach((seg, i) => {
         const slice = (seg.percentage / 100) * Math.PI * 2;
         const endAngle = startAngle + slice;
         const color = COLORS[i % COLORS.length];
+        const isSelected = (i === selectedIndex);
+
+        const midAngle = startAngle + slice / 2;
+        const shiftRadius = isSelected ? 8 : 0;
+        const ox = Math.cos(midAngle) * shiftRadius;
+        const oy = Math.sin(midAngle) * shiftRadius;
 
         ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, startAngle, endAngle);
+        ctx.moveTo(cx + ox, cy + oy);
+        ctx.arc(cx + ox, cy + oy, r, startAngle, endAngle);
         ctx.closePath();
 
         ctx.fillStyle = color;
         ctx.fill();
 
-        // Stroke slice outline in same color to eliminate subpixel seam aliasing
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = isSelected ? '#ffffff' : color;
+        ctx.lineWidth = isSelected ? 2 : 1;
         ctx.lineJoin = 'round';
         ctx.stroke();
 
+        if (isSelected) {
+            const rounded = Math.round(seg.percentage);
+            let pctStr = `${rounded}%`;
+            if (rounded === 0 && seg.percentage > 0) {
+                pctStr = '<1%';
+            }
+            let labelText = seg.label || '';
+            if (options.useShortName) {
+                labelText = getStopShortName(labelText);
+            }
+            if (options.uppercase) {
+                labelText = labelText.toUpperCase();
+            }
+
+            selectedOverlayInfo = {
+                labelText,
+                pctStr,
+                color,
+                tx: cx + ox + Math.cos(midAngle) * (r * 0.55),
+                ty: cy + oy + Math.sin(midAngle) * (r * 0.55)
+            };
+        }
+
         startAngle = endAngle;
     });
+
+    if (selectedOverlayInfo) {
+        const { labelText, pctStr, color, tx, ty } = selectedOverlayInfo;
+        const fullText = `${labelText} ${pctStr}`;
+
+        ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const textMetrics = ctx.measureText(fullText);
+        const textWidth = textMetrics.width;
+        const badgeW = textWidth + 14;
+        const badgeH = 22;
+
+        let bx = tx - badgeW / 2;
+        let by = ty - badgeH / 2;
+
+        bx = Math.max(4, Math.min(w - badgeW - 4, bx));
+        by = Math.max(4, Math.min(h - badgeH - 4, by));
+
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = 6;
+
+        ctx.fillStyle = 'rgba(20, 20, 20, 0.9)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(bx, by, badgeW, badgeH, 6);
+        } else {
+            ctx.rect(bx, by, badgeW, badgeH);
+        }
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(fullText, bx + badgeW / 2, by + badgeH / 2 + 1);
+    }
 
     let legendHtml = '';
     segments.forEach((seg, i) => {
@@ -164,8 +305,15 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
         if (options.uppercase) {
             labelText = labelText.toUpperCase();
         }
-        legendHtml += `<div class="stats-legend-item">
-            <span class="stats-legend-dot" style="background:${COLORS[i % COLORS.length]}"></span>
+
+        const isSelected = (i === selectedIndex);
+        const color = COLORS[i % COLORS.length];
+
+        const activeStyle = '';
+        const activeClass = isSelected ? 'stats-legend-selected' : '';
+
+        legendHtml += `<div class="stats-legend-item ${activeClass}" ${activeStyle} onclick="selectSlice('${canvasId}', ${i})">
+            <span class="stats-legend-dot" style="background:${color}"></span>
             <span class="stats-legend-label">${labelText}</span>
             <span class="stats-legend-pct">${pctStr}</span>
         </div>`;

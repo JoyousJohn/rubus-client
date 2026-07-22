@@ -1898,22 +1898,40 @@ html[theme="light"] .settings-panel .span-i {
 .stats-chart-area {
     display: flex;
     align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.stats-col-60 {
+    width: 60%;
+    display: flex;
     justify-content: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
+    align-items: center;
+    box-sizing: border-box;
+    padding-right: 0.5rem;
+}
+
+.stats-col-40 {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+    padding-left: 0.5rem;
 }
 
 .stats-canvas {
-    width: 220px;
-    height: 220px;
-    flex-shrink: 0;
+    width: 100%;
+    max-width: 220px;
+    aspect-ratio: 1 / 1;
+    height: auto;
 }
 
 .stats-legend {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    min-width: 120px;
+    width: 100%;
 }
 
 .stats-legend-item {
@@ -1921,6 +1939,22 @@ html[theme="light"] .settings-panel .span-i {
     align-items: center;
     gap: 0.4rem;
     font-size: 0.95rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.stats-legend-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[theme="dark"] .stats-legend-item.stats-legend-selected {
+    color: #ffffff;
+}
+
+[theme="light"] .stats-legend-item.stats-legend-selected {
+    color: #000000;
 }
 
 .stats-legend-dot {
