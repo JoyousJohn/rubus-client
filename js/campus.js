@@ -44,6 +44,7 @@ function deleteAllPolylines() {
 
 
 function cleanupOldMap() {
+    hideInfoBoxes(true);
     deleteAllStops();
     clearRouteSelectors();
     deleteBusMarkers();
@@ -51,7 +52,6 @@ function cleanupOldMap() {
     console.log(busData)
     // need to delete busData before polylines, otherwise new fetch bus data call would think last bus went OoS and would throw error trying to remove polyline
     deleteAllPolylines();
-    hideInfoBoxes();
     hideBikeRacks(); // Clean up bike rack markers when switching campuses
 
     returningToSavedView = false;
