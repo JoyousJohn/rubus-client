@@ -138,12 +138,14 @@ function showStatus() {
     // Remove footer tab selection from other tabs
     $('.contact').removeClass('footer-selected');
     $('.changelog').removeClass('footer-selected');
+    $('.stats').removeClass('footer-selected');
     $('.errors-tab').removeClass('footer-selected');
 
     // Hide other wrappers
     $('.footer-contact-wrapper').hide();
     $('.footer-contact-loading').hide();
     $('.changelog-wrapper').hide();
+    $('.stats-wrapper').hide();
     $('.errors-wrapper').hide();
 
     // Update display immediately

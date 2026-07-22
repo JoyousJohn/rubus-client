@@ -98,6 +98,7 @@
     <script defer src="js/all-stops.js"></script>
     <script src="js/feedback.js"></script>
     <script src="js/contact.js"></script>
+    <script src="js/stats.js"></script>
     <script src="js/campus.js"></script>
     <script src="js/sim.js"></script>
     <script src="js/chat.js"></script>
@@ -1935,11 +1936,12 @@
 
             </div>
 
-            <div class="settings-rubus-attribution grid grid-cols-3 center select-none gray777777 mt-1p5rem mb-2rem">
+            <div class="settings-rubus-attribution grid grid-cols-4 center select-none gray777777 mt-1p5rem mb-2rem">
                 <!-- <div>About</div> -->
                 <div class="contact pointer" onclick="contactClicked();">Contact</div>
                 <div class="changelog pointer" onclick="getChangelog();">Changelog</div>
                 <div class="status pointer" onclick="showStatus();">Status</div>
+                <div class="stats pointer" onclick="showStats();">Stats</div>
             </div>
 
             <div class="settings-rubus-attribution grid grid-cols-4 center select-none gray777777 mt-1p5rem mb-2rem">
@@ -1974,6 +1976,24 @@
                     <div class="flex justify-around">
                         <!-- <div class="passio-ws-status"></div> -->
                         <div class="rubus-ws-status"></div>
+                    </div>
+                </div>
+
+                <div class="stats-wrapper none text-1p3rem">
+                    <div class="stats-title text-1p5rem center mb-1rem">Viewed Buses</div>
+                    <div class="stats-chart-area">
+                        <canvas id="stats-canvas" class="stats-canvas" width="300" height="300"></canvas>
+                        <div id="stats-legend" class="stats-legend"></div>
+                    </div>
+                    <div class="stats-title text-1p5rem center mt-2rem mb-1rem">Viewed Stops</div>
+                    <div class="stats-chart-area">
+                        <canvas id="stop-stats-canvas" class="stats-canvas" width="300" height="300"></canvas>
+                        <div id="stop-stats-legend" class="stats-legend"></div>
+                    </div>
+                    <div class="stats-title text-1p5rem center mt-2rem mb-1rem">Users</div>
+                    <div class="stats-chart-area">
+                        <canvas id="user-stats-canvas" class="stats-canvas" width="300" height="300"></canvas>
+                        <div id="user-stats-legend" class="stats-legend"></div>
                     </div>
                 </div>
 

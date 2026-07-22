@@ -328,6 +328,8 @@ class ErrorTracker {
             $('.changelog').removeClass('footer-selected');
             $('.status-wrapper').hide();
             $('.status').removeClass('footer-selected');
+            $('.stats-wrapper').hide();
+            $('.stats').removeClass('footer-selected');
             stopStatusUpdates();
 
             errorsWrapper.classList.remove('none');

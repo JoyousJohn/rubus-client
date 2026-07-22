@@ -64,6 +64,8 @@ function contactClicked() {
     $('.changelog').removeClass('footer-selected');
     $('.status-wrapper').hide();
     $('.status').removeClass('footer-selected');
+    $('.stats-wrapper').hide();
+    $('.stats').removeClass('footer-selected');
     $('.errors-wrapper').hide();
     $('.errors-tab').removeClass('footer-selected');
     stopStatusUpdates();
