@@ -200,7 +200,11 @@ class ErrorTracker {
 
         countElement.textContent = this.errors.length;
         errorTab.style.display = 'block';
-        countElement.style.display = this.errors.length > 0 ? 'inline' : 'none';
+        if (this.errors.length > 0) {
+            countElement.classList.add('error-count-has-errors');
+        } else {
+            countElement.classList.remove('error-count-has-errors');
+        }
         return true;
     }
 

@@ -26,12 +26,17 @@
 }
 
 .error-count {
-    background-color: #dc3545;
+    background-color: #28a745;
     color: white;
     font-size: 0.75rem;
     border-radius: 50%;
     font-weight: bold;
     aspect-ratio: 1;
+    transition: background-color 0.2s ease;
+}
+
+.error-count-has-errors {
+    background-color: #dc3545;
 }
 
 .errors-wrapper {
