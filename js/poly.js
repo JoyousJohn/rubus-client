@@ -315,7 +315,7 @@ window.debugPolylineState = function(routeName) {
 
 function getRouteStyle(routeName) {
     const forceRoutes = getForceShowRoutes();
-    const isForce = isForceShowEnabled() || forceRoutes.includes(routeName);
+    const isForce = forceRoutes.includes(routeName);
     const active = routeHasInServiceBuses(routeName) || isForce;
     return {
         color: active ? (colorMappings[routeName] || '#888') : 'rgba(128,128,128,0.7)',
@@ -343,6 +343,14 @@ async function setPolylines(activeRoutes) {
     let routesToSet;
     if (isForceShowEnabled()) {
         routesToSet = forceRoutes.filter(r => routesByCampusBase[selectedCampus].includes(r));
+        for (const routeName in polylines) {
+            if (!routesToSet.includes(routeName)) {
+                if (polylines[routeName]) {
+                    polylines[routeName].remove();
+                    delete polylines[routeName];
+                }
+            }
+        }
     } else {
         routesToSet = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
     }
@@ -541,13 +549,27 @@ function updatePolylineBoundsIfNeeded() {
 // Update polyline colors and route selector buttons based on in-service status
 function prunePolylinesWithoutInService() {
     try {
+        const forceMode = isForceShowEnabled();
+        const forceRoutes = getForceShowRoutes();
         const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
+
+        // In force mode, the checked routes are the complete polyline set. Do
+        // not recreate polylines for routes merely because they have a bus.
+        if (forceMode) {
+            for (const routeName of Object.keys(polylines)) {
+                if (!forceRoutes.includes(routeName)) {
+                    try { polylines[routeName].remove(); } catch (e) {}
+                    delete polylines[routeName];
+                }
+            }
+        }
+
         campusRoutes.forEach(routeName => {
             const style = getRouteStyle(routeName);
 
             if (polylines[routeName]) {
                 updatePolylineStyle(routeName);
-            } else if (routesByCampusBase[selectedCampus].includes(routeName)) {
+            } else if ((!forceMode || forceRoutes.includes(routeName)) && routesByCampusBase[selectedCampus].includes(routeName)) {
                 addPolylineForRoute(routeName);
             }
 
