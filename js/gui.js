@@ -2745,7 +2745,7 @@ async function getBuildNumber() {
 
             const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
             const lastPage = parseInt(linkHeader.match(/page=(\d+)>; rel="last"/)[1]);
-            $('.build-number').text(`- Version a${lastPage - 473} (${commitDate}) - b${lastPage}`);
+            $('.build-number').text(`Alpha ${lastPage - 473} | b${lastPage} (${commitDate})`);
             // $('.build-number').text('- V' + (lastPage - 473) + ' | Build' + lastPage + ' (' + commitDate + ')');
         }
     });
