@@ -2985,6 +2985,66 @@ function checkAllBusesForMissedStops() {
     console.log(`📊 Summary: ${busesWithMissedStops} out of ${totalBuses} buses have missed stops`);
 }
 
+function generateSimBusBreaks(busName) {
+    const route = busData[busName]?.route;
+    if (!route) return null;
+
+    const routeStops = stopLists[route] || [];
+    if (routeStops.length === 0) return [];
+
+    const joinedTime = busData[busName]?.joined_service
+        ? new Date(busData[busName].joined_service).getTime()
+        : Date.now() - 6 * 60 * 60 * 1000;
+
+    const elapsedMs = Date.now() - joinedTime;
+    const campusKey = routesByCampus[route] || selectedCampus || 'nb';
+
+    const avgTimePerStop = 4 * 60 * 1000;
+    const totalPossibleStops = Math.max(1, Math.floor(elapsedMs / avgTimePerStop));
+    const stopsPerLoop = routeStops.length;
+    const totalLoops = Math.ceil(totalPossibleStops / stopsPerLoop);
+    const loopsToShow = Math.min(totalLoops, Math.floor(Math.random() * 2) + 1);
+    const stopsToShow = Math.min(totalPossibleStops, loopsToShow * stopsPerLoop);
+
+    const breaks = [];
+    let cursorTime = Date.now();
+    let stopIdx = routeStops.length - 1;
+
+    for (let i = 0; i < stopsToShow; i++) {
+        const stopId = routeStops[stopIdx];
+        const prevStopId = routeStops[(stopIdx - 1 + routeStops.length) % routeStops.length];
+
+        let travelSecs = 180;
+        try {
+            const seg = percentageDistances?.[campusKey]?.[String(stopId)]?.from?.[String(prevStopId)];
+            if (seg?.properties?.totalMiles) {
+                travelSecs = Math.round(seg.properties.totalMiles / 20 * 3600);
+            }
+        } catch (e) {}
+        travelSecs = Math.max(30, Math.min(600, travelSecs + (Math.random() * 60 - 30)));
+
+        const avgWait = waits?.[stopId];
+        const dwellSecs = avgWait
+            ? Math.max(10, Math.round(avgWait * (0.5 + Math.random() * 1.5)))
+            : Math.floor(Math.random() < 0.6 ? Math.random() * 140 + 15 : Math.random() * 420 + 180);
+
+        const timeArrived = new Date(cursorTime - (travelSecs + dwellSecs) * 1000);
+        const timeDeparted = new Date(cursorTime - travelSecs * 1000);
+
+        breaks.unshift({
+            stop_id: stopId,
+            time_arrived: timeArrived.toISOString().replace('Z', ''),
+            time_departed: timeDeparted.toISOString().replace('Z', ''),
+            break_duration: dwellSecs
+        });
+
+        cursorTime = timeArrived.getTime();
+        stopIdx = (stopIdx - 1 + routeStops.length) % routeStops.length;
+    }
+
+    return breaks;
+}
+
 function getBusBreaks(busName) {
     const currentTime = new Date().getTime();
     const THREE_MINUTES = 3 * 60 * 1000;
@@ -2992,6 +3052,16 @@ function getBusBreaks(busName) {
     if (busBreaksCache[busName] &&
         (currentTime - busBreaksCache[busName].timestamp) < THREE_MINUTES) {
         populateBusBreaks(busBreaksCache[busName].data, busName);
+        return;
+    }
+
+    if (busData[busName]?.type === 'sim') {
+        const fakeBreaks = generateSimBusBreaks(busName);
+        busBreaksCache[busName] = {
+            data: fakeBreaks,
+            timestamp: currentTime
+        };
+        populateBusBreaks(fakeBreaks, busName);
         return;
     }
 
