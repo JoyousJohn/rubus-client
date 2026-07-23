@@ -74,6 +74,13 @@ function showStats() {
     $('.stats').addClass('footer-selected');
     $('.stats-wrapper').show();
 
+    const $lineCount = $('.stats-js-lines');
+    const $cssCount = $('.stats-css-lines');
+    const $htmlCount = $('.stats-html-lines');
+    $lineCount.text(typeof TOTAL_JS_LINES !== 'undefined' ? `${TOTAL_JS_LINES.toLocaleString()} lines of JS` : 'X lines of JS').show();
+    $cssCount.text(typeof TOTAL_CSS_LINES !== 'undefined' ? `${TOTAL_CSS_LINES.toLocaleString()} lines of CSS` : 'X lines of CSS').show();
+    $htmlCount.text(typeof TOTAL_HTML_LINES !== 'undefined' ? `${TOTAL_HTML_LINES.toLocaleString()} lines of HTML` : 'X lines of HTML').show();
+
     if (busStatsData) {
         renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
     } else {
