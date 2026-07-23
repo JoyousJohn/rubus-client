@@ -963,6 +963,10 @@ $(function() {
                 });
             }, 500);
         }
+    }).on('keydown', function(e) {
+        if (e.key === 'Enter') {
+            $(this).blur();
+        }
     });
 
     $clearBtn.on('click', function() {
@@ -982,10 +986,18 @@ $(function() {
         const isMobile = $(window).width() <= 992;
         if (isMobile && window.visualViewport && $('.settings-panel').is(':visible')) {
             const vvp = window.visualViewport;
-            const bottomOffset = window.innerHeight - vvp.height - vvp.offsetTop;
-            $('.settings-floating-bar').css('transform', `translateY(-${Math.max(0, bottomOffset)}px)`);
+            const targetTop = vvp.offsetTop + vvp.height - 80; // 80px (approx 5rem) above visual viewport bottom
+            $('.settings-floating-bar').css({
+                'position': 'absolute',
+                'top': targetTop + 'px',
+                'bottom': 'auto'
+            });
         } else {
-            $('.settings-floating-bar').css('transform', '');
+            $('.settings-floating-bar').css({
+                'position': '',
+                'top': '',
+                'bottom': ''
+            });
         }
     }
 
@@ -1011,7 +1023,11 @@ $(function() {
             window.removeEventListener('resize', settingsVvpHandler);
         }
         settingsVvpHandler = null;
-        $('.settings-floating-bar').css('transform', '');
+        $('.settings-floating-bar').css({
+            'position': '',
+            'top': '',
+            'bottom': ''
+        });
     };
 
     $searchInput.on('focus', function() {
