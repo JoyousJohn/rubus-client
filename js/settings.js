@@ -949,11 +949,26 @@ $(function() {
         $searchInput.attr('placeholder', 'Search settings... (Ctrl + K)');
     }
 
+    let settingsSearchDebounce = null;
     $searchInput.on('input', function() {
-        filterSettings($(this).val());
+        const query = $(this).val();
+        filterSettings(query);
+
+        clearTimeout(settingsSearchDebounce);
+        const trimmed = query.trim();
+        if (trimmed.length > 0) {
+            settingsSearchDebounce = setTimeout(function() {
+                sa_event('settings_search', {
+                    'query': trimmed
+                });
+            }, 500);
+        }
     });
 
     $clearBtn.on('click', function() {
+        sa_event('btn_press', {
+            'btn': 'settings_search_clear'
+        });
         $searchInput.val('');
         filterSettings('');
         $searchInput.focus();
