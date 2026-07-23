@@ -71,14 +71,16 @@ $(document).ready(function() {
     let mapTheme;
     if (settings && settings['theme']) {
 
-        if (settings['theme'] === 'light') {
+        if (settings['theme'] === 'light' || settings['theme'] === 'beige-coffee' || settings['theme'] === 'coffee') {
             mapTheme = 'streets-v11';
-        } else if (settings['theme'] === 'dark') {
+        } else if (settings['theme'] === 'dark' || settings['theme'] === 'y2k-glamour' || settings['theme'] === 'glamour') {
             mapTheme = 'dark-v11';
         } else if (settings['theme'] === 'auto') {
             const currentHour = new Date().getHours();
             mapTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
-        } 
+        } else {
+            mapTheme = 'streets-v11';
+        }
     } else {
         mapTheme = 'streets-v11';
     }
@@ -895,7 +897,7 @@ function changeMapStyle(newStyle) {
         return;
     }
 
-    if (newStyle === 'light') {
+    if (newStyle === 'light' || newStyle === 'beige-coffee' || newStyle === 'coffee') {
         newStyle = 'streets-v11';
     } else {
         newStyle = 'dark-v11';
@@ -3865,7 +3867,7 @@ $('.satellite-btn').click(function() {
             theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
 
-        const newTheme = theme === 'dark' ? 'dark-v11' : 'streets-v11';
+        const newTheme = (theme === 'light' || theme === 'beige-coffee' || theme === 'coffee') ? 'streets-v11' : 'dark-v11';
         map.removeLayer(tileLayer);
 
         tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${newTheme}/tiles/{z}/{x}/{y}.png`).addTo(map);

@@ -1369,6 +1369,11 @@ async function popStopInfo(stopId) {
         }
     }
 
+    console.log('[DEBUG popStopInfo]', { stopId, hasStopData: !!(stopsData && stopsData[stopId]), hasMarker: !!(busStopMarkers && busStopMarkers[stopId]), popupStopId, shownRoute });
+    if (!busStopMarkers[stopId]) {
+        console.error('[DEBUG popStopInfo] Missing busStopMarkers entry for stopId:', stopId, 'existing markers:', Object.keys(busStopMarkers));
+    }
+
     // Ensure the newly selected stop marker is added to the map in case it was hidden by the route filter
     if (busStopMarkers[stopId]) {
         busStopMarkers[stopId].addTo(map);
@@ -1576,6 +1581,8 @@ async function addStopsToMap() {
         activeStops = Array.from({length: Object.keys(stopsData).length}, (_, i) => i + 1);
     }
 
+    console.log('[DEBUG addStopsToMap]', { selectedCampus, activeStopsCount: activeStops.length, activeStops, busesByRoutes: busesByRoutes[selectedCampus], stopsDataKeysCount: Object.keys(stopsData || {}).length });
+
     checkIfLocationShared();
 
     // console.log(activeStops)
@@ -1583,6 +1590,9 @@ async function addStopsToMap() {
 
         if (!busStopMarkers[stopId]) { // Adding stops from new buses, need to exclude existing stops
             const thisStop = stopsData[stopId];
+            if (!thisStop) {
+                console.error('[DEBUG addStopsToMap] Attempted to load undefined stop in stopsData:', { stopId, type: typeof stopId, stopsDataKeys: Object.keys(stopsData) });
+            }
             const lat = thisStop['latitude'];
             const long = thisStop['longitude'];
 

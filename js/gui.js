@@ -478,18 +478,24 @@ function hideAllStops() {
 }
 
 function hideStopsExcept(excludedRoute) {
-    console.log('hideStopsExcept', excludedRoute)
-    const stopIdsForSelectedRoute = stopLists[excludedRoute]
+    console.log('hideStopsExcept', excludedRoute);
+    const stopIdsForSelectedRoute = stopLists[excludedRoute];
     // Hide stops for all routes except the selected one, even if a route has no polyline
-    const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
+    const campusRoutes = Object.keys(busesByRoutes[selectedCampus] || {});
+    console.log('[DEBUG hideStopsExcept]', { excludedRoute, stopIdsForSelectedRoute, campusRoutes, existingMarkers: Object.keys(busStopMarkers) });
     campusRoutes.forEach(routeName => {
-        const stopIdsForRoute = stopLists[routeName]
-        stopIdsForRoute.forEach(stopId => {
-            if (!stopIdsForSelectedRoute.includes(stopId) ) {
-                busStopMarkers[stopId].remove();
-            }
-        })
-    })
+        const stopIdsForRoute = stopLists[routeName];
+        if (stopIdsForRoute) {
+            stopIdsForRoute.forEach(stopId => {
+                if (!stopIdsForSelectedRoute.includes(stopId)) {
+                    if (!busStopMarkers[stopId]) {
+                        console.error('[DEBUG hideStopsExcept] Cannot remove missing marker for stopId:', stopId, 'in route:', routeName);
+                    }
+                    busStopMarkers[stopId].remove();
+                }
+            });
+        }
+    });
 }
 
 function hidePolylinesExcept(route) {
@@ -2511,7 +2517,11 @@ async function checkIfLocationShared() {
 }
 
 function flyToStop(stopId, fromUserInteraction = false) {
+    console.log('[DEBUG flyToStop]', { stopId, fromUserInteraction, hasStopData: !!(stopsData && stopsData[stopId]), hasMarker: !!(busStopMarkers && busStopMarkers[stopId]), busStopMarkersKeys: Object.keys(busStopMarkers || {}) });
     const stopData = stopsData[stopId];
+    if (!stopData) {
+        console.error('[DEBUG flyToStop] Missing stopData for stopId:', stopId);
+    }
     const lat = Number(stopData.latitude);
     const long = Number(stopData.longitude);
     const loc = { lat, long };

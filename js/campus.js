@@ -166,7 +166,8 @@ $(function() {
 		const theme = document.documentElement.getAttribute('theme');
 		$('.campus-carousel-img').each(function() {
 			const $img = $(this);
-			$img.attr('src', $img.data(theme));
+			const imgSrc = $img.data(theme) || (theme === 'light' || theme === 'beige-coffee' || theme === 'coffee' ? $img.data('light') : $img.data('dark'));
+			$img.attr('src', imgSrc);
 		});
 	}
 
