@@ -50,22 +50,22 @@
 
 @font-face {
     font-family: 'dunkin';
-    src: url('../lib/Dunkin.otf') format('opentype');
+    src: url('../lib/fonts/Dunkin.otf') format('opentype');
 }
 
 @font-face {
     font-family: 'blockcraft';
-    src: url('../lib/blockcraft.otf') format('opentype');
+    src: url('../lib/fonts/blockcraft.otf') format('opentype');
 }
 
 @font-face {
     font-family: 'comic-sans';
-    src: url('../lib/Comic Sans MS.ttf') format('truetype');
+    src: url('../lib/fonts/Comic Sans MS.ttf') format('truetype');
 }
 
 @font-face {
     font-family: 'Papyrus';
-    src: url('../lib/papyrus.ttf') format('truetype');
+    src: url('../lib/fonts/papyrus.ttf') format('truetype');
 }
 
 body {
