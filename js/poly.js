@@ -1033,7 +1033,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             }
 
             if (data.nextStopName) {
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
             }
         }    
     })
