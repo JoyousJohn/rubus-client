@@ -3944,7 +3944,7 @@ function getVisibleActiveBuses() {
         const marker = busMarkers[busName];
         if (!marker || !map.hasLayer(marker)) continue;
         const data = busData[busName];
-        if (!data || !data.route) continue;
+        if (!data || !data.route || data.atDepot) continue;
         
         // Skip hidden elements
         const el = marker.getElement();
