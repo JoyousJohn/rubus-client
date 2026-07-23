@@ -714,7 +714,16 @@ function makePolygons() {
 function updateSegFocusNotice() {
     const focusEnabled = settings['toggle-hide-other-routes'];
     const notice = document.getElementById('segFocusNotice');
-    if (notice) notice.style.display = focusEnabled ? 'none' : '';
+    if (!notice) return;
+
+    // Check if the parent setting row ("Traveling Seg on Focus") is hidden by search filter
+    const $parentRow = $('#toggle-distances-line-on-focus').closest('.flex');
+    if ($parentRow.length && !$parentRow.is(':visible')) {
+        notice.style.display = 'none';
+        return;
+    }
+
+    notice.style.display = focusEnabled ? 'none' : '';
 }
 
 updateSegFocusNotice();
@@ -731,3 +740,269 @@ function togglePolygons(show) {
         }
     }
 }
+
+// Settings search filter logic
+$(function() {
+    const $searchInput = $('#settings-search-input');
+    const $clearBtn = $('.settings-search-clear');
+
+    window.filterSettings = function(query, isExpanding) {
+        query = query.trim().toLowerCase();
+
+        if (query.length > 0) {
+            $clearBtn.show();
+        } else {
+            $clearBtn.hide();
+        }
+
+        // Filter sections within settings-list
+        $('.settings-list .settings-section-accent').each(function() {
+            const $section = $(this);
+            const $header = $section.prev('.bold-500');
+            let sectionHasMatch = false;
+
+            const children = $section.children().toArray();
+            for (let i = 0; i < children.length; i++) {
+                const $item = $(children[i]);
+                if (!$item.is('div')) continue;
+
+                // Handle nested dependent/explanation containers
+                if ($item.hasClass('offscreen-indicators-dependent')) {
+                    let depHasMatch = false;
+                    const depChildren = $item.children('div').toArray();
+                    for (let j = 0; j < depChildren.length; j++) {
+                        const $depItem = $(depChildren[j]);
+                        const isExplain = $depItem.attr('class') && $depItem.attr('class').includes('explain');
+                        const itemText = $depItem.text().toLowerCase();
+                        const selfMatches = query !== '' && itemText.includes(query);
+
+                        if (query === '') {
+                            if (!isExplain) {
+                                $depItem.show();
+                            }
+                        } else {
+                            let nextExplainMatches = false;
+                            if (j + 1 < depChildren.length && $(depChildren[j + 1]).is('div')) {
+                                const $next = $(depChildren[j + 1]);
+                                if ($next.attr('class') && $next.attr('class').includes('explain')) {
+                                    if ($next.text().toLowerCase().includes(query)) {
+                                        nextExplainMatches = true;
+                                    }
+                                }
+                            }
+
+                            if (isExplain) {
+                                if (selfMatches) {
+                                    depHasMatch = true;
+                                }
+                            } else {
+                                if (selfMatches || nextExplainMatches) {
+                                    $depItem.show();
+                                    depHasMatch = true;
+                                } else {
+                                    $depItem.hide();
+                                }
+                            }
+                        }
+                    }
+
+                    if (query === '') {
+                        $item.hide();
+                    } else if (depHasMatch) {
+                        $item.show();
+                        sectionHasMatch = true;
+                        // Find preceding toggle row (skipping explanation boxes and notice elements)
+                        for (let p = i - 1; p >= 0; p--) {
+                            const $pElem = $(children[p]);
+                            if ($pElem.is('div')) {
+                                const pClass = $pElem.attr('class') || '';
+                                if (!pClass.includes('explain') && !pClass.includes('unavailable') && !pClass.includes('settings-notice')) {
+                                    $pElem.show();
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        $item.hide();
+                    }
+                    continue;
+                }
+
+                const className = $item.attr('class') || '';
+                // Skip notices such as "Option unavailable on iPhone" or "settings-notice"
+                if (className.includes('unavailable') || className.includes('settings-notice')) {
+                    if (query !== '') {
+                        $item.hide();
+                    }
+                    continue;
+                }
+
+                // Check if this item is an explanation box (contains 'explain')
+                const isExplain = className.includes('explain');
+                const itemText = $item.text().toLowerCase();
+                const selfMatches = query !== '' && itemText.includes(query);
+
+                if (query === '') {
+                    // Reset to default layout visibility (toggles shown, explanations retain CSS/slide state or default hidden if unused)
+                    if (!isExplain) {
+                        $item.show();
+                    }
+                } else {
+                    let nextExplainMatches = false;
+
+                    // If next element is an explanation box that matches (skipping notice elements)
+                    for (let n = i + 1; n < children.length; n++) {
+                        const $next = $(children[n]);
+                        if (!$next.is('div')) continue;
+                        const nClass = $next.attr('class') || '';
+                        if (nClass.includes('unavailable') || nClass.includes('settings-notice')) continue;
+
+                        if (nClass.includes('explain')) {
+                            if ($next.text().toLowerCase().includes(query)) {
+                                nextExplainMatches = true;
+                            }
+                        }
+                        break; // Stop looking after the first non-notice div
+                    }
+
+                    if (isExplain) {
+                        if (selfMatches) {
+                            sectionHasMatch = true;
+                        }
+                    } else {
+                        if (selfMatches || nextExplainMatches) {
+                            $item.show();
+                            sectionHasMatch = true;
+                        } else {
+                            $item.hide();
+                        }
+                    }
+                }
+            }
+
+            if (query === '' || sectionHasMatch) {
+                $section.show();
+                if ($header.length) $header.show();
+            } else {
+                $section.hide();
+                if ($header.length) $header.hide();
+            }
+        });
+
+        // Filter Developer options section
+        const $devHead = $('.dev-options-head');
+        const $devWrapper = $('.dev-options-wrapper');
+        if ($devWrapper.length) {
+            $devHead.show();
+            const shouldFilterDev = $devWrapper.is(':visible') || isExpanding;
+            if (shouldFilterDev) {
+                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .force-show-dependent').each(function() {
+                    const $item = $(this);
+                    if ($item.hasClass('force-show-dependent')) return; // handled separately below
+
+                    const text = $item.text().toLowerCase();
+                    if (query === '' || text.includes(query)) {
+                        $item.show();
+                    } else {
+                        $item.hide();
+                    }
+                });
+
+                // Special handling for force-show-polylines section
+                const $forceShowMainRow = $('#toggle-force-show-polylines').closest('.flex');
+                const $forceShowDep = $('.force-show-dependent');
+                const $routeOptions = $('.force-show-option');
+                let forceRouteMatch = false;
+
+                if (query !== '') {
+                    $routeOptions.each(function() {
+                        const routeText = $(this).text().toLowerCase();
+                        if (routeText.includes(query)) {
+                            forceRouteMatch = true;
+                        }
+                    });
+                }
+
+                if (query === '' || forceRouteMatch) {
+                    $routeOptions.show();
+                    if (forceRouteMatch) {
+                        $forceShowMainRow.show();
+                        $forceShowDep.show();
+                        $forceShowDep.find('.force-show-stops-row').show();
+                        $forceShowDep.find('.force-show-polylines-container').show();
+                    }
+                } else {
+                    $routeOptions.show();
+                }
+
+                // Update segFocusNotice visibility based on parent toggle row visibility
+                updateSegFocusNotice();
+            } else {
+                // If collapsed and not expanding, restore internal item visibility so they are ready
+                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .force-show-dependent, .force-show-option').show();
+            }
+        }
+    }
+
+    const isDesktopDevice = typeof isDesktop !== 'undefined' ? isDesktop : $(window).width() > 992;
+    if (isDesktopDevice) {
+        $searchInput.attr('placeholder', 'Search settings... (Ctrl + K)');
+    }
+
+    $searchInput.on('input', function() {
+        filterSettings($(this).val());
+    });
+
+    $clearBtn.on('click', function() {
+        $searchInput.val('');
+        filterSettings('');
+        $searchInput.focus();
+    });
+
+    // Mobile keyboard visualViewport handling for floating search bar
+    let settingsVvpHandler = null;
+    let settingsViewportAttached = false;
+
+    function adjustSettingsFloatingBar() {
+        const isMobile = $(window).width() <= 992;
+        if (isMobile && window.visualViewport && $('.settings-panel').is(':visible')) {
+            const vvp = window.visualViewport;
+            const bottomOffset = window.innerHeight - vvp.height - vvp.offsetTop;
+            $('.settings-floating-bar').css('transform', `translateY(-${Math.max(0, bottomOffset)}px)`);
+        } else {
+            $('.settings-floating-bar').css('transform', '');
+        }
+    }
+
+    window.attachSettingsViewportListeners = function() {
+        if (settingsViewportAttached) return;
+        settingsViewportAttached = true;
+        settingsVvpHandler = () => requestAnimationFrame(adjustSettingsFloatingBar);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', settingsVvpHandler);
+            window.visualViewport.addEventListener('scroll', settingsVvpHandler);
+        }
+        window.addEventListener('resize', settingsVvpHandler);
+    };
+
+    window.detachSettingsViewportListeners = function() {
+        if (!settingsViewportAttached) return;
+        settingsViewportAttached = false;
+        if (window.visualViewport && settingsVvpHandler) {
+            window.visualViewport.removeEventListener('resize', settingsVvpHandler);
+            window.visualViewport.removeEventListener('scroll', settingsVvpHandler);
+        }
+        if (settingsVvpHandler) {
+            window.removeEventListener('resize', settingsVvpHandler);
+        }
+        settingsVvpHandler = null;
+        $('.settings-floating-bar').css('transform', '');
+    };
+
+    $searchInput.on('focus', function() {
+        attachSettingsViewportListeners();
+        adjustSettingsFloatingBar();
+    }).on('blur', function() {
+        detachSettingsViewportListeners();
+    });
+});

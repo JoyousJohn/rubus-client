@@ -18,7 +18,7 @@ function setAppStyle(style) {
         setStopMarkersToRider();
 
         $('.bottom').hide();
-        $('.settings-panel, .settings-close').hide();
+        $('.settings-panel, .settings-floating-bar').hide();
         $('.knight-mover').hide();
 
         $('.rider-top-wrapper').show();

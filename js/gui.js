@@ -411,8 +411,6 @@ let lastMapShownRoute = null; // Tracks current map selection when panels are cl
 let isLongPress = false; // Flag to track if a long press occurred
 
 function toggleRouteSelectors(route, wasSelected = false) {
-    console.log("[toggleRouteSelectors] called with route:", route, "| wasSelected:", wasSelected);
-
     if (wasSelected) {
 
         // Restore all route selectors (excluding settings button, sim button, and parking selector) to their colors
@@ -467,7 +465,6 @@ function toggleRouteSelectors(route, wasSelected = false) {
     }
 
     $('.stop-info-use-route-selectors-notice').slideUp('fast');
-    console.log("[toggleRouteSelectors] shownRoute after update:", shownRoute);
 
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
@@ -592,17 +589,13 @@ function updateBusNameTooltips() {
 }
 
 async function toggleRoute(route) {
-    console.log('[toggleRoute] called with route:', route, '| current shownRoute:', shownRoute);
-
     if (route === 'fav') { toggleFavorites(); return; }
 
     const isUnselecting = (shownRoute === route);
     shownRoute = isUnselecting ? null : route;
-    console.log('[toggleRoute] New shownRoute state set to:', shownRoute);
 
     // Show all polylines and buses
     if (isUnselecting) {
-        console.log('[toggleRoute] Toggling off route:', route);
         showAllPolylines();  
         showAllBuses();
         showAllStops();
@@ -621,8 +614,6 @@ async function toggleRoute(route) {
 
     // Hide other polylines and buses
     } else {
-        console.log('[toggleRoute] Selecting route:', route);
-
         showAllStops();
 
         hidePolylinesExcept(route);
@@ -685,12 +676,9 @@ async function toggleRoute(route) {
     // Update last known map selection state (panels closed scenario)
     if (!$('.info-panels-show-hide-wrapper').is(':visible')) {
         lastMapShownRoute = shownRoute;
-        console.log('[toggleRoute] Updated lastMapShownRoute:', lastMapShownRoute);
     }
 
-    console.log('[toggleRoute] Calling toggleRouteSelectors with route:', route, '| isUnselecting:', isUnselecting);
     toggleRouteSelectors(route, isUnselecting);
-    console.log('[toggleRoute] Final shownRoute state:', shownRoute);
 
 }
 
@@ -1708,7 +1696,7 @@ $('.settings-btn').on('touchstart click', function() { // why do i need touchsta
     // if (!isDesktop) {
     $('.bottom').hide();
     // }
-    $('.settings-close').show();
+    $('.settings-floating-bar').show();
     requestAnimationFrame(() => {
         adjustFontOptionSizes();
     });
@@ -1718,9 +1706,12 @@ $('.settings-btn').on('touchstart click', function() { // why do i need touchsta
 })
 
 $('.settings-close').click(function() {
+    if (typeof detachSettingsViewportListeners === 'function') {
+        detachSettingsViewportListeners();
+    }
     $('.settings-panel').hide();
     $('.bottom').show();
-    $(this).hide();
+    $('.settings-floating-bar').hide();
     stopStatusUpdates();
 })
 
@@ -2190,6 +2181,9 @@ function toggleDevOptions() {
     const optionsShown = $devWrapper.is(':visible');
 
     if(!optionsShown) {
+        if (typeof filterSettings === 'function') {
+            filterSettings($('#settings-search-input').val() || '', true);
+        }
         $devWrapper.slideDown();
         $devTitle.text('Hide Developer Options ▲');
     } else {

@@ -1338,6 +1338,7 @@ html, body {
     position: fixed;
     inset: 0;
     overflow-y: scroll;
+    overscroll-behavior: contain;
 }
 
 html[theme="light"] .settings-panel {
@@ -1526,7 +1527,75 @@ html[theme="light"] .settings-panel .settings-options {
     padding-right: 1rem;
 }
 
-.settings-close > div, .events-close, .feedback-x, .chat-ui-close {
+.settings-floating-bar {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    z-index: 1001;
+    gap: 0.8rem;
+}
+
+.settings-search-wrapper {
+    background-color: var(--theme-bg);
+    border: 1px solid var(--theme-line-bg);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 2.5rem;
+    padding: 0.5rem 1rem;
+    height: 4rem;
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 0;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.settings-search-wrapper:focus-within {
+    border-color: #6969bf;
+    box-shadow: 0 4px 20px rgba(105, 105, 191, 0.3);
+}
+
+.settings-search-icon {
+    font-size: 1.4rem;
+    color: var(--theme-extra);
+    margin-right: 0.6rem;
+    margin-left: 0.4rem;
+}
+
+#settings-search-input {
+    border: none;
+    background: transparent;
+    color: var(--theme-color);
+    font-family: var(--font-family);
+    font-size: 1.4rem;
+    width: 100%;
+    outline: none;
+}
+
+.settings-search-clear {
+    font-size: 1.4rem;
+    color: var(--theme-extra);
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+}
+
+.settings-search-clear:hover {
+    color: var(--theme-color);
+}
+
+.settings-close > div {
+    background-color: rgb(208, 77, 77);
+    height: 4rem;
+    width: 4rem;
+    color: white;
+    font-family: Arial;
+    font-size: 2rem;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.events-close, .feedback-x, .chat-ui-close {
     background-color: rgb(208, 77, 77);
     position: fixed;
     bottom: 1rem;

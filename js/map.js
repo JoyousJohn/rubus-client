@@ -615,11 +615,30 @@ $('.shoot-fireworks').click(function() {
 });
 
 $(document).on('keydown', function(e) {
+    const isSettingsOpen = $('.settings-panel').is(':visible');
+    const $settingsInput = $('#settings-search-input');
+
+    if (isSettingsOpen) {
+        const isControlK = (e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K');
+        const isSlash = e.key === '/';
+        const isInputFocused = $settingsInput.is(':focus');
+        const isOtherInputFocused = $(e.target).is('input, textarea');
+
+        if ((isControlK || isSlash) && !isInputFocused && !isOtherInputFocused) {
+            e.preventDefault();
+            $settingsInput.focus().select();
+            return;
+        }
+    }
+
     if (e.key === 'Escape') {
         hideInfoBoxes();
         $('.settings-panel').fadeOut('fast');
         $('.bottom').fadeIn('fast'); // this is being hidden due to settings-btn click?... Why tho
-        $('.settings-close').hide();
+        if (typeof detachSettingsViewportListeners === 'function') {
+            detachSettingsViewportListeners();
+        }
+        $('.settings-floating-bar').hide();
         stopStatusUpdates();
 
         if (settings['toggle-hide-other-routes'] && !shownRoute) {

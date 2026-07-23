@@ -335,7 +335,6 @@ function updatePolylineStyle(routeName) {
         pathEl.style.opacity = String(targetOpacity);
         pathEl.style.display = targetOpacity === 0 ? 'none' : '';
     }
-    console.log(`[updatePolylineStyle] Route: ${routeName} | targetOpacity: ${targetOpacity} | shownRoute: ${shownRoute}`);
 }
 
 async function setPolylines(activeRoutes) {

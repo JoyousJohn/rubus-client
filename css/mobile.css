@@ -101,9 +101,25 @@
         border-radius: 1rem;
     }
 
-    .settings-close > div {
+    .settings-floating-bar {
         left: 2rem;
+        right: auto;
         bottom: 2rem;
+        width: calc(25% + 4rem);
+        max-width: calc(25% + 4rem);
+        box-sizing: border-box;
+        padding-left: 2rem;
+        padding-right: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .settings-close > div {
+        position: fixed;
+        top: 3rem;
+        left: 25%;
+        bottom: auto;
+        right: auto;
+        z-index: 1002;
     }
 
     .settings-heading {

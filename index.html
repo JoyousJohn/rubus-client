@@ -2066,8 +2066,15 @@
 
         </div>
 
-        <div class="settings-close none">
-            <div class="flex justify-center align-center select-none">X</div>
+        <div class="settings-floating-bar flex align-center none">
+            <div class="settings-search-wrapper flex align-center">
+                <i class="fa-solid fa-search settings-search-icon"></i>
+                <input type="text" id="settings-search-input" placeholder="Search settings..." autocomplete="off" spellcheck="false">
+                <i class="fa-solid fa-xmark settings-search-clear none"></i>
+            </div>
+            <div class="settings-close">
+                <div class="flex justify-center align-center select-none">X</div>
+            </div>
         </div>
 
     </div>
