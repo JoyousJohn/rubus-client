@@ -1692,7 +1692,9 @@ $('.settings-btn').on('touchstart click', function() { // why do i need touchsta
     $('.bottom').hide();
     // }
     $('.settings-close').show();
+    adjustFontOptionSizes();
     setTimeout(adjustFontOptionSizes, 0);
+    setTimeout(adjustFontOptionSizes, 100);
     if (isDesktop && $('.buses-panel-wrapper').is(':visible')) {
         $('.buses-panel-wrapper').slideUp();
     }
@@ -2839,6 +2841,7 @@ function adjustFontOptionSizes() {
 
         // Lock current width during measurement so the cell doesn't expand
         const lockedWidth = $option[0].clientWidth;
+        if (lockedWidth <= 0) return; // Not visible yet
 
         // Prepare for single-line measurement
         $option.css({
@@ -2859,4 +2862,16 @@ function adjustFontOptionSizes() {
         // Release explicit width after measurement
         $option.css('width', '');
     });
+}
+
+// Re-adjust sizes when custom fonts finish loading in the browser
+if (document.fonts) {
+    document.fonts.ready.then(function() {
+        adjustFontOptionSizes();
+    });
+    if ('onloadingdone' in document.fonts) {
+        document.fonts.onloadingdone = function() {
+            adjustFontOptionSizes();
+        };
+    }
 }
