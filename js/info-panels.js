@@ -61,7 +61,7 @@ function moveRouteSelectorsToSubpanel() {
 // Function to move route selectors back to the main page
 function moveRouteSelectorsToMain() {
     const bottomElement = $('.bottom');
-    bottomElement.insertAfter('.settings-panel');
+    bottomElement.insertAfter($('.settings-panel').parent());
     if (window._detachedSimBtn && window._detachedSimBtn.length) {
         $('.route-selectors').append(window._detachedSimBtn);
         window._detachedSimBtn = null;
