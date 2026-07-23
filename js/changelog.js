@@ -106,7 +106,8 @@ function loadCommitsPage(page, isPreload = false) {
                 if (!allCommits.has(formatted)) {
                     allCommits.set(formatted, []);
                 }
-                allCommits.get(formatted).push({ message });
+                const url = item.html_url;
+                allCommits.get(formatted).push({ message, url });
             });
 
             // Log dates and commit counts from this request
@@ -188,7 +189,8 @@ function renderChangelog() {
             const $existingUl = $existingDateContainer.find('.changelog-items');
 
             newCommits.forEach(c => {
-                const $li = $(`<li class="changelog-message">${c.message}</li>`);
+                const commitLink = c.url ? `<a href="${c.url}" target="_blank" rel="noopener noreferrer" class="changelog-link">${c.message}</a>` : c.message;
+                const $li = $(`<li class="changelog-message">${commitLink}</li>`);
                 $li.hide();
                 $existingUl.append($li);
                 $li.slideDown(200);
@@ -221,7 +223,8 @@ function renderChangelog() {
             });
 
             newCommits.forEach(c => {
-                const $li = $(`<li class="changelog-message">${c.message}</li>`);
+                const commitLink = c.url ? `<a href="${c.url}" target="_blank" rel="noopener noreferrer" class="changelog-link">${c.message}</a>` : c.message;
+                const $li = $(`<li class="changelog-message">${commitLink}</li>`);
                 $ul.append($li);
             });
 

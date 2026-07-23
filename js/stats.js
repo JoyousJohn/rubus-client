@@ -74,10 +74,25 @@ function showStats() {
     $('.stats').addClass('footer-selected');
     $('.stats-wrapper').show();
 
-    if (busStatsData || stopStatsData || userStatsData) {
-        if (busStatsData) renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
-        if (stopStatsData) renderPieChart(stopStatsData, 'stop-stats-canvas', 'stop-stats-legend', { useShortName: true });
-        if (userStatsData) renderPieChart(userStatsData, 'user-stats-canvas', 'user-stats-legend');
+    if (busStatsData) {
+        renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
+    } else {
+        $('#stats-loading-bus').show();
+    }
+
+    if (stopStatsData) {
+        renderPieChart(stopStatsData, 'stop-stats-canvas', 'stop-stats-legend', { useShortName: true });
+    } else {
+        $('#stats-loading-stop').show();
+    }
+
+    if (userStatsData) {
+        renderPieChart(userStatsData, 'user-stats-canvas', 'user-stats-legend');
+    } else {
+        $('#stats-loading-user').show();
+    }
+
+    if (busStatsData && stopStatsData && userStatsData) {
         return;
     }
 
@@ -177,6 +192,10 @@ function setupCanvasClickListener(canvasId, options) {
 
 function renderPieChart(statsData, canvasId, legendId, options = {}) {
     if (!statsData || !statsData.segments || !statsData.segments.length) return;
+
+    if (canvasId === 'stats-canvas') $('#stats-loading-bus').hide();
+    else if (canvasId === 'stop-stats-canvas') $('#stats-loading-stop').hide();
+    else if (canvasId === 'user-stats-canvas') $('#stats-loading-user').hide();
 
     setupCanvasClickListener(canvasId, options);
 

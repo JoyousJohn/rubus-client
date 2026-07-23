@@ -1917,6 +1917,20 @@ html[theme="light"] .settings-panel .span-i {
     align-items: center;
     width: 100%;
     box-sizing: border-box;
+    position: relative;
+    min-height: 180px;
+}
+
+.stats-loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4rem;
+    color: var(--theme-color-lighter);
+    font-weight: 500;
+    pointer-events: none;
 }
 
 .stats-col-60 {
@@ -1988,4 +2002,14 @@ html[theme="light"] .settings-panel .span-i {
 .stats-legend-pct {
     font-weight: 600;
     text-align: right;
+}
+
+.changelog-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.changelog-link:hover {
+    text-decoration: underline;
+    color: var(--theme-link);
 }
