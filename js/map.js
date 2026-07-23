@@ -3989,19 +3989,8 @@ function updateOffScreenContainerZIndex() {
     container.style.zIndex = isAboveGui ? '650' : '400';
 }
 
-let lastOffscreenUpdateDuringDrag = 0;
-
 function updateOffScreenBusIndicators() {
     if (!map || typeof busMarkers === 'undefined') return;
-
-    // During active map dragging, throttle indicator updates to once per 1000ms (1 FPS)
-    if (window.isMapDragging) {
-        const now = Date.now();
-        if (now - lastOffscreenUpdateDuringDrag < 1000) {
-            return;
-        }
-        lastOffscreenUpdateDuringDrag = now;
-    }
 
     if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators'] === false) {
         let container = document.getElementById('offscreen-bus-indicators-container');
@@ -4208,14 +4197,7 @@ function requestOffScreenUpdate() {
 
 function initOffscreenBusListeners() {
     if (map) {
-        map.on('movestart dragstart zoomstart touchstart', function() {
-            window.isMapDragging = true;
-        });
-        map.on('moveend dragend zoomend touchend', function() {
-            window.isMapDragging = false;
-            requestOffScreenUpdate();
-        });
-        map.on('move drag zoom viewreset resize', requestOffScreenUpdate);
+        map.on('move drag zoom viewreset moveend resize', requestOffScreenUpdate);
     }
 }
 
