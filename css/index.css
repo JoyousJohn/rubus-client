@@ -809,9 +809,15 @@ html, body {
 }
 
 .stop-info-use-route-selectors-notice {
-    border: 1px solid green;
-    background-color: rgb(128 249 128);
-    color: green;
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+}
+
+[theme="light"] .stop-info-use-route-selectors-notice {
+    border: 1px solid #a7f3d0;
+    background-color: #ecfdf5;
+    color: #047857;
 }
 
 .no-buses, .closest-stop {
@@ -821,12 +827,21 @@ html, body {
     border-radius: 0.5rem;
 }
 
-.stop-info-buses-grid, .stop-info-buses-grid-next {
+.stop-info-buses-grid, .stop-info-buses-grid-next, .stop-info-buses-grid-post-cutoff, .stop-info-buses-grid-deferred {
     display: grid;
     grid-template-columns: auto 1fr auto auto;
     column-gap: 0.5rem;
     margin: 1rem;
     margin-top: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+
+.user-no-select, .select-none {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
 }
 
 .stop-bus-route {
@@ -884,13 +899,15 @@ html, body {
 .stop-bus-eta {
     font-size: 1.8rem;
     font-weight: bold;
-    color: var(--theme-color)
+    color: var(--theme-color);
+    align-self: end;
     /* text-align: right; */
 }
 
 .stop-bus-time {
     font-size: 1.5rem;
-    color: var(--theme-stop-bus-time) /* #616161; */
+    color: var(--theme-stop-bus-time); /* #616161 */
+    padding-top: 2px;
 }
 
 .stop-info-avg-wait, .stop-info-show-next-loop, .always-show-next-loop {

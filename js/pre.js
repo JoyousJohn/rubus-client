@@ -259,6 +259,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                         iconElement.style.backgroundColor = colorMappings[routeStr];
                     }
                 }   
+                prunePolylinesWithoutInService();
             }
 
             calculateSpeed(busName);

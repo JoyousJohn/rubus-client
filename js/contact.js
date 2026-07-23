@@ -43,6 +43,7 @@ function popContact() {
 
 
 function contactClicked() {
+    sa_event('btn_press', { btn: 'footer_contact' });
     if (contactLoading) {
         return;
     }

@@ -52,6 +52,7 @@ function fetchStatsJson(url) {
 }
 
 function showStats() {
+    sa_event('btn_press', { btn: 'footer_stats' });
     if (statsLoading) return;
 
     if ($('.stats-wrapper').is(':visible')) {
@@ -81,24 +82,29 @@ function showStats() {
     }
 
     statsLoading = true;
-    Promise.all([
-        fetchStatsJson('https://demo.rubus.live/stats/view_bus?field=route&start=today-7d'),
-        fetchStatsJson('https://demo.rubus.live/stats/view_stop?field=stop_name&start=today-7d'),
-        fetchStatsJson('https://demo.rubus.live/stats/load?field=users&start=today-7d')
-    ])
-    .then(([busData, stopData, userData]) => {
-        busStatsData = busData;
-        stopStatsData = stopData;
-        userStatsData = userData;
-        if (busStatsData) renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
-        if (stopStatsData) renderPieChart(stopStatsData, 'stop-stats-canvas', 'stop-stats-legend', { useShortName: true });
-        if (userStatsData) renderPieChart(userStatsData, 'user-stats-canvas', 'user-stats-legend');
-        statsLoading = false;
-    })
-    .catch(error => {
-        console.error('Error fetching stats:', error);
-        statsLoading = false;
-    });
+    let remaining = 3;
+    function onDone() {
+        remaining--;
+        if (remaining <= 0) statsLoading = false;
+    }
+
+    fetchStatsJson('https://demo.rubus.live/stats/view_bus?field=route&start=today-7d').then(data => {
+        busStatsData = data;
+        if (data) renderPieChart(data, 'stats-canvas', 'stats-legend', { uppercase: true });
+        onDone();
+    }).catch(e => { console.error('Error fetching bus stats:', e); onDone(); });
+
+    fetchStatsJson('https://demo.rubus.live/stats/view_stop?field=stop_name&start=today-7d').then(data => {
+        stopStatsData = data;
+        if (data) renderPieChart(data, 'stop-stats-canvas', 'stop-stats-legend', { useShortName: true });
+        onDone();
+    }).catch(e => { console.error('Error fetching stop stats:', e); onDone(); });
+
+    fetchStatsJson('https://demo.rubus.live/stats/load?field=users&start=today-7d').then(data => {
+        userStatsData = data;
+        if (data) renderPieChart(data, 'user-stats-canvas', 'user-stats-legend');
+        onDone();
+    }).catch(e => { console.error('Error fetching user stats:', e); onDone(); });
 }
 
 const selectedSlices = {};
@@ -205,7 +211,7 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
     segments.forEach((seg, i) => {
         const slice = (seg.percentage / 100) * Math.PI * 2;
         const endAngle = startAngle + slice;
-        const color = COLORS[i % COLORS.length];
+        const color = (typeof colorMappings !== 'undefined' && colorMappings[seg.label]) ? colorMappings[seg.label] : COLORS[i % COLORS.length];
         const isSelected = (i === selectedIndex);
 
         const midAngle = startAngle + slice / 2;
@@ -307,7 +313,7 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
         }
 
         const isSelected = (i === selectedIndex);
-        const color = COLORS[i % COLORS.length];
+        const color = (typeof colorMappings !== 'undefined' && colorMappings[seg.label]) ? colorMappings[seg.label] : COLORS[i % COLORS.length];
 
         const activeStyle = '';
         const activeClass = isSelected ? 'stats-legend-selected' : '';

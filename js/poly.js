@@ -313,6 +313,26 @@ window.debugPolylineState = function(routeName) {
     };
 };
 
+function getRouteStyle(routeName) {
+    const forceRoutes = getForceShowRoutes();
+    const isForce = isForceShowEnabled() || forceRoutes.includes(routeName);
+    const active = routeHasInServiceBuses(routeName) || isForce;
+    return {
+        color: active ? (colorMappings[routeName] || '#888') : 'rgba(128,128,128,0.7)',
+        opacity: active ? 1 : 0.5,
+        buttonColor: active ? (colorMappings[routeName] || '#888') : 'gray',
+        buttonOpacity: active ? 1 : 0.7
+    };
+}
+
+function updatePolylineStyle(routeName) {
+    if (!polylines[routeName]) return;
+    const style = getRouteStyle(routeName);
+    polylines[routeName].setStyle({ color: style.color, opacity: style.opacity });
+    const pathEl = polylines[routeName].getElement();
+    if (pathEl) pathEl.style.opacity = String(style.opacity);
+}
+
 async function setPolylines(activeRoutes) {
     await initRoutePointsCache(selectedCampus);
     const forceRoutes = getForceShowRoutes();
@@ -323,33 +343,30 @@ async function setPolylines(activeRoutes) {
         routesToSet = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
     }
 
-    // console.log("Setting polylines for routesToSet: ", routesToSet)
-    
     const fetchPromises = [];
 
     for (const routeName of routesToSet) {
-        const hasInService = routeHasInServiceBuses(routeName);
-        const polyColor = (hasInService || isForceShowEnabled()) ? (colorMappings[routeName] || '#888') : 'gray';
+        const style = getRouteStyle(routeName);
 
         if (polylines[routeName]) {
-            polylines[routeName].setStyle({ color: polyColor });
+            updatePolylineStyle(routeName);
             continue;
         }
 
         let coordinates = await getPolylineData(routeName);
 
-        if (!coordinates) continue // if undefined
+        if (!coordinates) continue;
 
         if (Object.keys(coordinates[0])[0] === 'lat') {
-            coordinates = coordinates.map(point => [point.lat, point.lng]); // Note: Leaflet uses [lat, lng]
+            coordinates = coordinates.map(point => [point.lat, point.lng]);
         } else {
-            coordinates = coordinates.map(point => [point[1], point[0]]); // Note: Leaflet uses [lat, lng]
+            coordinates = coordinates.map(point => [point[1], point[0]]);
         }
 
         const polylineOptions = getPolylineLayerOptions({
-            color: polyColor,
+            color: style.color,
             weight: 4,
-            opacity: 1,
+            opacity: style.opacity,
             smoothFactor: 1,
         });
 
@@ -358,6 +375,8 @@ async function setPolylines(activeRoutes) {
         polyline.addTo(map);
 
         polylines[routeName] = polyline;
+        const pathEl = polyline.getElement();
+        if (pathEl) pathEl.style.opacity = String(style.opacity);
 
         // Cache route bounds and points even if layer later gets pruned
         const bounds = polyline.getBounds();
@@ -367,7 +386,7 @@ async function setPolylines(activeRoutes) {
         fetchPromises.push(coordinates);
     }
 
-    if (fetchPromises.length === 0) return // no routes to populate
+    if (fetchPromises.length === 0) return;
 
     Promise.all(fetchPromises).then(() => {
         updatePolylineBoundsIfNeeded();
@@ -398,20 +417,18 @@ async function getPolylineData(routeName) {
     }
 } 
 
-
 function getValidBusesServicingStop(stopId) {
     let validBuses = [];
-    const routesServicing = getRoutesServicingStop(stopId)
+    const routesServicing = getRoutesServicingStop(stopId);
     routesServicing.forEach(route => {
         busesByRoutes[selectedCampus][route].forEach(busName => {
             if (isValid(busName)) {
                 validBuses.push(busName);
             }
-        })
-    })
+        });
+    });
     return validBuses;
 }
-
 
 // Force-add a polyline for a specific route regardless of bus in-service state
 async function addPolylineForRoute(routeName) {
@@ -428,19 +445,20 @@ async function addPolylineForRoute(routeName) {
             coordinates = coordinates.map(point => [point[1], point[0]]);
         }
 
-        const hasInService = routeHasInServiceBuses(routeName);
-        const polyColor = (hasInService || isForceShowEnabled()) ? (colorMappings[routeName] || '#888') : 'gray';
+        const style = getRouteStyle(routeName);
 
         const polylineOptions = getPolylineLayerOptions({
-            color: polyColor,
+            color: style.color,
             weight: 4,
-            opacity: 1,
+            opacity: style.opacity,
             smoothFactor: 1,
         });
 
         const polyline = L.polyline(coordinates, polylineOptions);
         polyline.addTo(map);
         polylines[routeName] = polyline;
+        const pathEl = polyline.getElement();
+        if (pathEl) pathEl.style.opacity = String(style.opacity);
         
         // Reset removal count when polyline is successfully created
         if (polylineRemovalCount[routeName]) {
@@ -511,27 +529,48 @@ function updatePolylineBoundsIfNeeded() {
 // Update polyline colors and route selector buttons based on in-service status
 function prunePolylinesWithoutInService() {
     try {
-        const forceRoutes = getForceShowRoutes();
-        const campusRoutes = Object.keys(busesByRoutes[selectedCampus] || {});
+        const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
         campusRoutes.forEach(routeName => {
-            const hasInService = routeHasInServiceBuses(routeName);
-            const targetColor = (hasInService || isForceShowEnabled() || (forceRoutes && forceRoutes.includes(routeName))) ? (colorMappings[routeName] || '#888') : 'gray';
+            const style = getRouteStyle(routeName);
 
             if (polylines[routeName]) {
-                polylines[routeName].setStyle({ color: targetColor });
-            } else if (routesByCampusBase[selectedCampus]?.includes(routeName)) {
+                updatePolylineStyle(routeName);
+            } else if (routesByCampusBase[selectedCampus].includes(routeName)) {
                 addPolylineForRoute(routeName);
             }
 
             // Update route selector button color on UI
             const $btn = $(`.route-selector[routeName="${routeName}"]`);
-            if ($btn.length && typeof shownRoute !== 'undefined' && shownRoute !== routeName) {
-                $btn.css('background-color', targetColor);
+            if ($btn.length && shownRoute !== routeName) {
+                $btn.css({ 'background-color': style.buttonColor, 'opacity': String(style.buttonOpacity) });
             }
         });
         updatePolylineBoundsIfNeeded();
+        updateStopsOpacity();
     } catch (e) {
         console.log('Error updating polylines without in-service buses', e);
+    }
+}
+
+function updateStopsOpacity() {
+    const servicedStops = new Set();
+    for (const route of Object.keys(busesByRoutes[selectedCampus])) {
+        if (!routeHasInServiceBuses(route)) continue;
+        const list = stopLists[route];
+        if (!list) continue;
+        list.forEach(id => servicedStops.add(Number(id)));
+    }
+    const baseZ = settings['toggle-stops-above-buses'] ? 1000 : 0;
+    for (const stopId in busStopMarkers) {
+        const marker = busStopMarkers[stopId];
+        const isServiced = servicedStops.has(Number(stopId));
+        const el = marker.getElement();
+        if (el) el.style.opacity = isServiced ? '1' : '0.5';
+        if (popupStopId && String(popupStopId) === String(stopId)) {
+            marker.setZIndexOffset(2000);
+        } else {
+            marker.setZIndexOffset(isServiced ? baseZ + 100 : baseZ - 100);
+        }
     }
 }
 
@@ -614,6 +653,8 @@ function getNextStopAfterCurrentGivenPrev(route, prevStopId, currentStopId) {
 }
 
 function updateStopBuses(stopId, actuallyShownRoute) {
+
+    if (settings['toggle-pause-stop-eta-updates']) return;
 
     // Determine which route (if any) should be visibly filtered in the stop info
     // - If caller passed undefined: use current shownRoute (maintains filter during async refreshes)
@@ -744,12 +785,38 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             return a.eta - b.eta;
         });
 
-    $('.stop-info-buses-grid, .stop-info-buses-grid-next').empty();
+    $('.stop-info-buses-grid, .stop-info-buses-grid-next, .stop-info-buses-grid-post-cutoff, .stop-info-buses-grid-deferred').empty();
+
+    function isPostCutoffEntry(entry, refTime) {
+        const cutoffHr = entry.route === 'summer1' ? 24 : entry.route === 'summer2' ? 23 : null;
+        if (cutoffHr !== null) {
+            const arrival = new Date(refTime.getTime() + entry.eta * 60000);
+            const cutoff = new Date(refTime);
+            cutoff.setHours(cutoffHr, 0, 0, 0);
+            return arrival > cutoff;
+        }
+        return false;
+    }
+
+    const now = new Date();
+    const firstLoopEntries = [];
+    const deferredEntries = [];
+    const postCutoffEntries = [];
+
+    for (const entry of sortedEntries) {
+        if (busData[entry.busName]?.atDepot || !isValid(entry.busName)) {
+            deferredEntries.push(entry);
+        } else if (isPostCutoffEntry(entry, now)) {
+            postCutoffEntries.push(entry);
+        } else {
+            firstLoopEntries.push(entry);
+        }
+    }
 
     // const infoNextStopsScrollPosition = $('.info-next-stops').scrollTop();
     // alert(infoNextStopsScrollPosition)
 
-    sortedEntries.forEach(data => {
+    firstLoopEntries.forEach(data => {
 
         // Skip out of service buses if hide setting is enabled
         if (hideOutOfServiceBuses && busData[data.busName].oos) {
@@ -764,7 +831,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             hour12: true
         });
 
-        const $routeCell = $('<div class="stop-bus-route"></div>');
+        const $routeCell = $('<div class="stop-bus-route user-no-select"></div>');
         $routeCell.append(`<div>${data.route.toUpperCase()}</div>`);
         $('.stop-info-buses-grid').append($routeCell);
 
@@ -788,7 +855,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             busContainerStyle = ' style="grid-column: span 3;"';
         }
 
-        const $stopBusElm = $(`<div class="flex justify-between align-center pointer"${busContainerStyle}>
+        const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select"${busContainerStyle}>
             <div class="flex gap-x-0p5rem">
                 <div class="stop-bus-name">${busData[data.busName].busName}</div>
                 <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
@@ -847,20 +914,27 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
         }
 
-        if (visibleRoute && visibleRoute !== data.route) {
+        if (busData[data.busName]?.atDepot) {
+            $('.stop-bus-route').last().css('color', 'gray');
+            $('.stop-bus-eta').last().css('color', 'gray');
+            $('.stop-info-buses-grid').children().slice(-4).removeClass('pointer');
+        } else if (visibleRoute && visibleRoute !== data.route) {
             $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
             $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
             $('.stop-info-buses-grid').children().slice(-4).removeClass('pointer');
-        } else {
-            if (routeHasInServiceBuses(data.route)) {
-                $('.stop-bus-route').last().css('color', colorMappings[data.route]);
-            } else {
-                $('.stop-bus-route').last().css('color', 'gray');
-            }
+        } else if (visibleRoute) {
+            $('.stop-bus-route').last().css('color', colorMappings[data.route]);
             $('.stop-info-buses-grid').children().slice(-4).click(function() {
                 sourceStopId = stopId;
                 flyToBus(data.busName);
-                $('.stop-info-popup').hide(); // this was def being handled somewhere else before... need to check what happened sometime. Hard finding changes in recent commits that might've affected this.
+                $('.stop-info-popup').hide();
+            });
+        } else {
+            $('.stop-bus-route').last().css('color', colorMappings[data.route]);
+            $('.stop-info-buses-grid').children().slice(-4).click(function() {
+                sourceStopId = stopId;
+                flyToBus(data.busName);
+                $('.stop-info-popup').hide();
             });
         }
 
@@ -868,20 +942,35 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid').append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
         }
              
-    })
+    });
+
+    if ($('.stop-info-buses-grid').children().length > 0) {
+        $('.stop-info-buses-grid').show();
+    } else {
+        $('.stop-info-buses-grid').hide();
+    }
     
 
     const loopTimes = calculateLoopTimes();
-    const nextLoopEntries = servicingEntries.reduce((acc, entry) => {
-        if (!busData[entry.busName].oos && !busData[entry.busName].atDepot && !distanceFromLine(entry.busName)) {
-            acc.push({
-                ...entry,
-                eta: entry.eta + loopTimes[entry.route]
-            })
+    let allNextLoopEntries = servicingEntries
+        .filter(entry => !busData[entry.busName].oos && !busData[entry.busName].atDepot && !distanceFromLine(entry.busName) && !isPostCutoffEntry(entry, now))
+        .map(entry => ({
+            ...entry,
+            eta: entry.eta + loopTimes[entry.route]
+        }));
+
+    const nextLoopEntries = [];
+
+    allNextLoopEntries.forEach(entry => {
+        if (isPostCutoffEntry(entry, now)) {
+            postCutoffEntries.push(entry);
+        } else {
+            nextLoopEntries.push(entry);
         }
-        return acc;
-    }, [])
-    .sort((a, b) => a.eta - b.eta);
+    });
+
+    nextLoopEntries.sort((a, b) => a.eta - b.eta);
+    postCutoffEntries.sort((a, b) => a.eta - b.eta);
 
     nextLoopEntries.forEach(data => {
 
@@ -897,11 +986,11 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
         if (!busData[data.busName].overtime && !busData[data.busName].oos && !busData[data.busName].atDepot && isValid(data.busName)) {
 
-            const $routeCellNext = $('<div class="stop-bus-route"></div>');
+            const $routeCellNext = $('<div class="stop-bus-route user-no-select"></div>');
             $routeCellNext.append(`<div>${data.route.toUpperCase()}</div>`);
             $('.stop-info-buses-grid-next').append($routeCellNext);
 
-            const $stopBusElm = $(`<div class="flex justify-between align-center pointer">
+            const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select">
                 <div class="flex gap-x-0p5rem">
                     <div class="stop-bus-name">${busData[data.busName].busName}</div>
                 </div>
@@ -910,20 +999,30 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
             if (data.eta === 0) {
                 // $('.stop-info-buses-grid').append(`<div></div>`)
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer">Here</div>`);
-                $('.stop-info-buses-grid-next').append(`<div class="pointer"></div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer user-no-select">Here</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="pointer user-no-select"></div>`);
             } else if (!busData[data.busName].atDepot) {
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer right">${data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm'}</div>`);
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer">${formattedTime}</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer right user-no-select">${data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm'}</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer user-no-select">${formattedTime}</div>`);
             } else if (busData[data.busName].atDepot || distanceFromLine(data.busName)) {
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer"></div>`);
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer"></div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-eta pointer user-no-select"></div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-time pointer user-no-select"></div>`);
             }
 
-            if (visibleRoute && visibleRoute !== data.route) {
+            if (busData[data.busName]?.atDepot) {
+                $('.stop-bus-route').last().css('color', 'gray');
+                $('.stop-info-buses-grid-next').children().slice(-4).removeClass('pointer');
+            } else if (visibleRoute && visibleRoute !== data.route) {
                 $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
                 $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
                 $('.stop-info-buses-grid-next').children().slice(-4).removeClass('pointer');
+            } else if (visibleRoute) {
+                $('.stop-bus-route').last().css('color', colorMappings[data.route]);
+                $('.stop-info-buses-grid-next').children().slice(-4).click(function() {
+                    sourceStopId = stopId;
+                    flyToBus(data.busName);
+                    $('.stop-info-popup').hide();
+                });
             } else {
                 $('.stop-bus-route').last().css('color', colorMappings[data.route]);
                 $('.stop-info-buses-grid-next').children().slice(-4).click(function() {
@@ -934,10 +1033,105 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             }
 
             if (data.nextStopName) {
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
             }
         }    
     })
+
+    // Render post-cutoff entries (buses that may go out of service before arriving)
+    $('.stop-info-buses-grid-post-cutoff').empty();
+    if (postCutoffEntries.length > 0) {
+        $('.stop-info-post-cutoff-wrapper').show();
+        postCutoffEntries.forEach(data => {
+            const ct = new Date();
+            ct.setMinutes(ct.getMinutes() + data.eta);
+            const ft = ct.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            const $routeCell = $('<div class="stop-bus-route user-no-select"></div>');
+            $routeCell.append(`<div>${data.route.toUpperCase()}</div>`);
+            $('.stop-info-buses-grid-post-cutoff').append($routeCell);
+
+            const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select">
+                <div class="flex gap-x-0p5rem">
+                    <div class="stop-bus-name">${busData[data.busName].busName}</div>
+                </div>
+            </div>`)
+            $('.stop-info-buses-grid-post-cutoff').append($stopBusElm);
+
+            const etaText = data.eta >= 60 ? (data.eta%60 === 0 ? Math.floor(data.eta/60) + 'h' : Math.floor(data.eta/60) + 'h ' + data.eta%60 + 'm') : data.eta + 'm';
+            $('.stop-info-buses-grid-post-cutoff').append(`<div class="stop-bus-eta pointer right user-no-select">${etaText}</div>`);
+            $('.stop-info-buses-grid-post-cutoff').append(`<div class="stop-bus-time pointer user-no-select">${ft}</div>`);
+
+            if (visibleRoute && visibleRoute !== data.route) {
+                $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
+                $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
+                $('.stop-info-buses-grid-post-cutoff').children().slice(-4).removeClass('pointer');
+            } else if (visibleRoute) {
+                $('.stop-bus-route').last().css('color', colorMappings[data.route]);
+                $('.stop-info-buses-grid-post-cutoff').children().slice(-4).click(function() {
+                    sourceStopId = stopId;
+                    flyToBus(data.busName);
+                    $('.stop-info-popup').hide();
+                });
+            } else {
+                $('.stop-bus-route').last().css('color', colorMappings[data.route]);
+                $('.stop-info-buses-grid-post-cutoff').children().slice(-4).click(function() {
+                    sourceStopId = stopId;
+                    flyToBus(data.busName);
+                    $('.stop-info-popup').hide();
+                });
+            }
+
+            if (data.nextStopName) {
+                $('.stop-info-buses-grid-post-cutoff').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
+            }
+        })
+    } else {
+        $('.stop-info-post-cutoff-wrapper').hide();
+    }
+
+    // Render 3rd section: deferred entries (buses at depot or with invalid ETAs)
+    $('.stop-info-buses-grid-deferred').empty();
+    if (deferredEntries.length > 0) {
+        $('.stop-info-deferred-wrapper').show();
+        deferredEntries.forEach(data => {
+            const $routeCellNext = $('<div class="stop-bus-route user-no-select" style="grid-column: 1; align-self: center;"></div>');
+            $routeCellNext.append(`<div>${data.route.toUpperCase()}</div>`);
+            $('.stop-info-buses-grid-deferred').append($routeCellNext);
+
+            let stopDepotVisibilityClass = 'none';
+            if (busData[data.busName]?.atDepot) {
+                stopDepotVisibilityClass = '';
+            }
+
+            let stopOoSVisibilityClass = 'none';
+            if (busData[data.busName]?.oos) {
+                stopOoSVisibilityClass = '';
+            }
+
+            const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select" style="grid-column: 2 / span 3; align-self: center;">
+                <div class="flex gap-x-0p5rem align-center">
+                    <div class="stop-bus-name">${busData[data.busName].busName}</div>
+                    <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
+                    <div class="stop-depot ${stopDepotVisibilityClass}">Depot</div>
+                </div>
+            </div>`);
+            $('.stop-info-buses-grid-deferred').append($stopBusElm);
+
+            $('.stop-bus-route').last().css('color', 'gray');
+            $('.stop-info-buses-grid-deferred').children().slice(-2).removeClass('pointer');
+
+            if (data.nextStopName) {
+                $('.stop-info-buses-grid-deferred').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: gray">To ${data.nextStopName}</div>`);
+            }
+        });
+    } else {
+        $('.stop-info-deferred-wrapper').hide();
+    }
 
     if (waits[stopId]) {
         const avgWait = waits[stopId];
@@ -1395,6 +1589,7 @@ async function addStopsToMap() {
             busStopMarkers[stopId] = marker;
         }
     });
+    updateStopsOpacity();
 }
 
 

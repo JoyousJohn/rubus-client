@@ -478,6 +478,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-pause-stop-eta-updates':
+            settings['toggle-pause-stop-eta-updates'] = isChecked;
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;

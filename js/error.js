@@ -307,6 +307,7 @@ class ErrorTracker {
         const errorTab = document.getElementById('errors-tab');
         if (errorTab) {
             errorTab.addEventListener('click', () => {
+                sa_event('btn_press', { btn: 'footer_errors' });
                 this.toggleErrorPanel();
             });
         }

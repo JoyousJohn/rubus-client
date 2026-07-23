@@ -555,11 +555,27 @@
                 </div>
                 <div class="info-stop-servicing flex gap-x-1rem justify-center" onclick="$('.stop-info-use-route-selectors-notice').slideDown('fast');"></div>
 
-                <div class="stop-info-use-route-selectors-notice p-1rem br-0p5rem my-0p5rem mx-0 text-1p3rem none">Filter with the route buttons on the bottom of your screen!</div>
+                <div class="stop-info-use-route-selectors-notice p-1rem br-0p5rem my-0p5rem mx-0 text-1p3rem none">It may be easier to filter routes using the buttons on the bottom of your screen.</div>
 
                 <div class="stop-info-buses-grid align-center"></div>
                 <div class="stop-info-next-loop-wrapper none">
                     <div class="stop-info-buses-grid-next align-center"></div>
+                </div>
+                <div class="stop-info-post-cutoff-wrapper none">
+                    <div class="flex align-center" style="padding: 0 0.5rem;">
+                        <hr style="flex: 1; border: none; border-top: 1px solid var(--theme-color-lighter); opacity: 0.25;">
+                        <span class="text-1p3rem" style="color: var(--theme-color-lighter); margin: 0 0.5rem; white-space: nowrap; opacity: 0.8;">Following buses may exit service before arriving</span>
+                        <hr style="flex: 1; border: none; border-top: 1px solid var(--theme-color-lighter); opacity: 0.25;">
+                    </div>
+                    <div class="stop-info-buses-grid-post-cutoff align-center"></div>
+                </div>
+                <div class="stop-info-deferred-wrapper none">
+                    <div class="flex align-center" style="padding: 0 0.5rem;">
+                        <hr style="flex: 1; border: none; border-top: 1px solid var(--theme-color-lighter); opacity: 0.25;">
+                        <span class="text-1p3rem" style="color: var(--theme-color-lighter); margin: 0 0.5rem; white-space: nowrap; opacity: 0.8;">Deadheading buses</span>
+                        <hr style="flex: 1; border: none; border-top: 1px solid var(--theme-color-lighter); opacity: 0.25;">
+                    </div>
+                    <div class="stop-info-buses-grid-deferred align-center"></div>
                 </div>
                 
                 <div class="stop-info-show-next-loop pointer" style="color: #6969bf;" onclick="$('.stop-info-next-loop-wrapper').slideDown(); $('.stop-info-show-next-loop').hide(); $('.always-show-next-loop').show();">Show next loop</div>
@@ -1825,6 +1841,16 @@
                         </div>
                     </div>
 
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Pause Stop ETA Updates</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-pause-stop-eta-updates" class="toggle-input">
+                            <label for="toggle-pause-stop-eta-updates" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="settings-reset-settings">
                         <div class="settings-heading">REMOVE localStorage.SETTINGS</div>
                         <div class="settings-options grid">
@@ -1952,13 +1978,13 @@
                 <div class="contact pointer" onclick="contactClicked();">Contact</div>
                 <div class="changelog pointer" onclick="getChangelog();">Changelog</div>
                 <div class="status pointer" onclick="showStatus();">Status</div>
-                <div class="stats pointer" onclick="showStats();">Stats</div>
+                <div class="stats pointer" onclick="showStats();">1W Stats</div>
             </div>
 
             <div class="settings-rubus-attribution grid grid-cols-4 center select-none gray777777 mt-1p5rem mb-2rem">
                 <div class="events-link pointer">Events</div>
-                <div class="pointer" onclick="window.open('https://joyousjohn.github.io/ruguessr/', '_blank')">RutgersGuessr</div>
-                <div class="source pointer" onclick="window.open('https://src.rubus.live', '_blank')"><i class="fa-brands fa-github"></i> Src</div>
+                <div class="pointer" onclick="sa_event('btn_press',{btn:'footer_ruguessr'});window.open('https://joyousjohn.github.io/ruguessr/', '_blank')">RutgersGuessr</div>
+                <div class="source pointer" onclick="sa_event('btn_press',{btn:'footer_source'});window.open('https://src.rubus.live', '_blank')"><i class="fa-brands fa-github"></i> Src</div>
                 <div id="errors-tab" class="errors-tab pointer justify-center">
                     <span>Errors</span>
                     <span id="error-count" class="error-count flex justify-center align-center h-full">0</span>

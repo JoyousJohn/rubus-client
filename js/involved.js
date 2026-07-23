@@ -1,4 +1,5 @@
 $('.events-link').click(function() {
+    sa_event('btn_press', { btn: 'footer_events' });
     $('.involved-wrapper').show();
 
     fetch('https://demo.rubus.live/involved', {

@@ -8,6 +8,7 @@ let preloadingNextPage = false; // Track if we're preloading the next page
 let loadedPages = new Set(); // Track which pages have been loaded
 
 async function getChangelog() {
+    sa_event('btn_press', { btn: 'footer_changelog' });
     // Prevent spam clicking
     if (changelogLoading) {
         return;

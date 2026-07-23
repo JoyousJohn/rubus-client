@@ -198,8 +198,9 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
             })
         }
 
-        if (!routeHasInServiceBuses(route)) color = 'gray';
-        $routeElm.css('background-color', color);
+        const hasInService = routeHasInServiceBuses(route);
+        if (!hasInService) color = 'gray';
+        $routeElm.css('background-color', color).css('opacity', hasInService ? '1' : '0.7');
         
         // Check if settings button should be at the end
         if (settings['toggle-settings-btn-end']) {
@@ -220,14 +221,14 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn && rn !== shownRoute) {
-                $(this).css('background-color', 'gray');
+                $(this).css('background-color', 'gray').css('opacity', '0.7');
             }
         });
 
         if (routesArray.includes(shownRoute)) {
             // Always use the route color when selected, regardless of in-service status
             const selectedRouteColor = colorMappings[shownRoute];
-            $(`.route-selector[routeName="${shownRoute}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`)
+            $(`.route-selector[routeName="${shownRoute}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`).css('opacity', '1')
 
             const container = $('.route-selectors');
 
@@ -416,15 +417,16 @@ function toggleRouteSelectors(route) {
         $('.route-selector').not('.settings-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn !== 'fav') {
-                const routeColor = routeHasInServiceBuses(rn) ? colorMappings[rn] : 'gray';
-                $(this).css('background-color', routeColor);
+                const hasInService = routeHasInServiceBuses(rn);
+                const routeColor = hasInService ? colorMappings[rn] : 'gray';
+                $(this).css('background-color', routeColor).css('opacity', hasInService ? '1' : '0.7');
             }
         });
         $(`.route-selector[routeName="${route}"]`).css('box-shadow', '');
         shownRoute = null;  
         shownBeforeRoute = null;
 
-        $(`.route-selector[routeName="fav"]`).css('background-color', 'gold');
+        $(`.route-selector[routeName="fav"]`).css('background-color', 'gold').css('opacity', '1');
 
     }
 
@@ -434,13 +436,13 @@ function toggleRouteSelectors(route) {
         $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn !== route) {
-                $(this).css('background-color', 'gray');
+                $(this).css('background-color', 'gray').css('opacity', '0.7');
             }
         });
 
         // Always use the route color when selected, regardless of in-service status
         const selectedRouteColor = colorMappings[route];
-        $(`.route-selector[routeName="${route}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`)
+        $(`.route-selector[routeName="${route}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`).css('opacity', '1')
         $(`.route-selector[routeName="${shownRoute}"]`).css('box-shadow', '');
         shownRoute = route;
 
@@ -517,9 +519,7 @@ function hideAllBusesFromMap() {
 }
 
 function showAllPolylines() {
-    for (const polyline in polylines) {
-        polylines[polyline].setStyle({ opacity: 1 });
-    }
+    prunePolylinesWithoutInService();
 }
 
 function hideAllPolylinesFromMap() {
@@ -536,9 +536,7 @@ function showAllBusesFromMap() {
 }
 
 function showAllPolylinesFromMap() {
-    for (const polyline in polylines) {
-        polylines[polyline].setStyle({ opacity: 1 });
-    }
+    showAllPolylines();
 }
 
 function updateTooltips(route) {
@@ -1788,6 +1786,7 @@ const toggleSettings = [
     'toggle-distances-line-on-focus',
     'toggle-show-capacity',
     'toggle-show-depot-poly',
+    'toggle-pause-stop-eta-updates',
     'toggle-always-show-break-overdue',
     'toggle-settings-btn-end',
     'toggle-force-show-polylines',
@@ -1888,6 +1887,7 @@ let defaultSettings = {
     'toggle-distances-line-on-focus': false,
     'toggle-show-capacity': false,
     'toggle-show-depot-poly': false,
+    'toggle-pause-stop-eta-updates': false,
     'toggle-always-show-break-overdue': false,
     'toggle-force-show-polylines': false,
     'toggle-force-show-stops': true,

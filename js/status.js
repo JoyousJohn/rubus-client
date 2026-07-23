@@ -119,6 +119,7 @@ function isServerOnline(lastResponse, pollInterval, buffer) {
 }
 
 function showStatus() {
+    sa_event('btn_press', { btn: 'footer_status' });
     // Stop any existing status updates to ensure clean state
     stopStatusUpdates();
 

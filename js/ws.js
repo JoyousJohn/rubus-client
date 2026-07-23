@@ -231,6 +231,7 @@ class BusWebSocketClient {
         calculateSpeed(busName);
 
         plotBus(busName);
+        prunePolylinesWithoutInService();
 
         let route = busData[busName].route
         if (!activeRoutes.has(route)) {
