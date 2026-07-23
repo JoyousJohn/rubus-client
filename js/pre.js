@@ -773,11 +773,14 @@ async function startOvernight(setColorBack, immediatelyUpdate = false) {
 
 function getEasternHourAndDayOfWeek() {
     const now = new Date();
-    const eastern = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
-    const easternDate = new Date(eastern);
+    const easternStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const easternDate = new Date(easternStr);
     return {
+        year: easternDate.getFullYear(),
+        month: easternDate.getMonth(), // 0-11
+        date: easternDate.getDate(),
         hour: easternDate.getHours(),
-        dayOfWeek: easternDate.getDay()
+        dayOfWeek: easternDate.getDay() // 0-6 (0=Sun)
     };
 }
 
@@ -785,15 +788,9 @@ function checkMinRoutes() {
 
     console.log("Checking min routes")
 
-    const { hour, dayOfWeek } = getEasternHourAndDayOfWeek();
+    const { year: currentYear, month: currentMonth, date: currentDay, hour, dayOfWeek } = getEasternHourAndDayOfWeek();
     
-    // Check if it's currently spring break period (March 14-23 for 2026, March 11-19 for 2027, March 10-23 for other years)
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth(); // 0-11 (Jan=0, Feb=1, etc.)
-    const currentDay = currentDate.getDate();
-    
-    // Check if within spring break period
+    // Check if within spring break period (March 14-23 for 2026, March 11-19 for 2027, March 10-23 for other years)
     let isSpringBreak = false;
     if (currentYear === 2026) {
         isSpringBreak = (currentMonth === 2 && currentDay >= 14 && currentDay <= 23);
@@ -802,103 +799,64 @@ function checkMinRoutes() {
     } else {
         isSpringBreak = (currentMonth === 2 && currentDay >= 10 && currentDay <= 23);
     }
-    
-    // Early return conditions only apply when NOT in spring break
-    if (!isSpringBreak) {
-        // Fri–Sun: no Knight Mover
-        if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) {
-            $('.knight-mover, .knight-mover-mini').hide();
-            return;
-        }
-        // Mon–Thu overnight window only (3:00–5:59 AM ET); outside that, hide and skip
-        if (hour < 3 || hour >= 6) {
-            $('.knight-mover, .knight-mover-mini').hide();
-            return;
-        }
-    } else {
-        console.log("Spring break detected!")
-    }
-    
-    // Determine knight mover hours based on spring break setting and period
+
+    // Check if summer period (valid until 8/25, i.e., before August 25)
+    // currentMonth is 0-indexed (May=4, June=5, July=6, August=7)
+    const isSummer = (currentMonth > 4 || (currentMonth === 4 && currentDay >= 15)) && (currentMonth < 7 || (currentMonth === 7 && currentDay <= 25));
+
+    let isKnightMoverActive = false;
+
     if (isSpringBreak) {
+        console.log("Spring break detected!");
         const knightMoverHoursText = `Knight Mover accepts calls until 10:00AM<br><span style="color: #4babd7ff">(${currentYear} spring recess special hours)</span>`;
         $('#knight-mover-hours').html(knightMoverHoursText);
         const knightMoverStartHour = 12;
         const knightMoverEndHour = 10;
-        if (hour < knightMoverStartHour || hour >= knightMoverEndHour) {
-            $('.knight-mover, .knight-mover-mini').hide();
-            return;
+        if (hour >= knightMoverStartHour || hour < knightMoverEndHour) {
+            isKnightMoverActive = true;
         }
-        $('.knight-mover').show();
-    } else {
-        $('#knight-mover-hours').html('Knight Mover accepts calls until 5:45AM');
-        // Mon–Thu 3–6 AM ET already enforced above; do not use the old 8 AM–11 PM gate — it made min-route logic unreachable at 3–5 AM
-    }
-
-    if (selectedCampus !== 'nb') return;
-    if (appStyle === 'rider') return;    
-    // Check if search wrapper is fully faded out (opacity 0) before showing knight mover
-    if ($('.search-wrapper').css('opacity') === 0) {
-        console.log("Search wrapper fully faded out, showing knight mover");
-    }
-    
-    // console.log(activeRoutes)
-    if (activeRoutes.has('on1') || activeRoutes.has('on2')) {
-        $('.knight-mover').hide();
-        return;
-    };
-
-    const minRoutes = ["ee", "lx", "h", "bl"];
-
-    let isAnyBusActuallyInService = false;
-    minRoutes.forEach(route => {
-        // remove busesByRoutes[selectedCampus] && later. we need to investigate whyitsnotgetting itscampuskeysettoan empty obj when no buses later.
-        if (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) {
-            busesByRoutes[selectedCampus][route].forEach(busName => {
-                const valid = isValid(busName);
-                if (valid) {
-                    isAnyBusActuallyInService = true;
-                }
-            }) 
-        }
-        
-    })
-
-    if (!activeRoutes.size) {
-        $('.knight-mover').show();
-        $('.knight-mover-mini').hide();
-
-        populateRouteSelectors(); // to remove favs
-        return;
-    }
-
-    const excludeRoutes = ['on1', 'on2'];
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    if (isWeekend) {
-        excludeRoutes.push('wknd1', 'wknd2');
-    }
-
-    if (activeRoutes.has('summer1') && activeRoutes.has('summer2')) { return; }
-
-    // If only one of 'summer1' or 'summer2' is running, show knight mover mini and return
-    if ((activeRoutes.has('summer1') || activeRoutes.has('summer2')) && !(activeRoutes.has('summer1') && activeRoutes.has('summer2'))) {
-        $('.knight-mover-mini').css('display', 'flex');
-        return;
-    }
-
-    if (excludeRoutes.some(route => activeRoutes.has(route))) { return; }
-
-    if(!minRoutes.every(str => activeRoutes.has(str))) {
-
-        if (!isAnyBusActuallyInService) {
-            $('.knight-mover').show();
+    } else if (isSummer) {
+        // Summer hours valid until 8/25:
+        // Weekdays (Mon=1..Fri=5 morning): Midnight to 7:00 AM (0..6)
+        // Weekends/Holidays (Fri night, Sat, Sun): 7:00 PM (19) to 10:00 AM (9)
+        const isWeekendOrHoliday = (dayOfWeek === 0 || dayOfWeek === 6);
+        if (isWeekendOrHoliday) {
+            // 7:00 PM to 10:00 AM
+            if (hour >= 19 || hour < 10) {
+                isKnightMoverActive = true;
+            }
+            $('#knight-mover-hours').html('Knight Mover accepts calls until 10:00AM');
         } else {
-            $('.knight-mover-mini').css('display', 'flex');
+            // Weekday: Midnight to 7:00 AM
+            if (hour >= 0 && hour < 7) {
+                isKnightMoverActive = true;
+            }
+            $('#knight-mover-hours').html('Knight Mover accepts calls until 7:00AM');
         }
-
-    } else if (settings['toggle-show-knight-mover']) {
-        $('.knight-mover-mini').hide();
+    } else {
+        // Regular semester schedule
+        // Fri–Sun: no Knight Mover; Mon–Thu overnight: 3:00–5:59 AM
+        if (dayOfWeek >= 1 && dayOfWeek <= 4 && hour >= 3 && hour < 6) {
+            isKnightMoverActive = true;
+        }
+        $('#knight-mover-hours').html('Knight Mover accepts calls until 5:45AM');
     }
+
+    console.log(`[KnightMover Debug] active:${isKnightMoverActive}, campus:${selectedCampus}, appStyle:${appStyle}, userSettingOverride:${settings['toggle-show-knight-mover']}, time:${currentMonth+1}/${currentDay}/${currentYear} ${hour}:00, day:${dayOfWeek}`);
+
+    if (!isKnightMoverActive) {
+        $('.knight-mover, .knight-mover-mini').hide();
+        return;
+    }
+
+    if (selectedCampus !== 'nb' || appStyle === 'rider') {
+        $('.knight-mover, .knight-mover-mini').hide();
+        return;
+    }
+
+    // Default behavior when active: show main knight mover box unless explicitly turned off via developer toggle
+    $('.knight-mover').show();
+    $('.knight-mover-mini').hide();
 }
 
 function makeActiveRoutes() {
