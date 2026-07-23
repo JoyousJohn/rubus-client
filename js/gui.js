@@ -1692,9 +1692,9 @@ $('.settings-btn').on('touchstart click', function() { // why do i need touchsta
     $('.bottom').hide();
     // }
     $('.settings-close').show();
-    adjustFontOptionSizes();
-    setTimeout(adjustFontOptionSizes, 0);
-    setTimeout(adjustFontOptionSizes, 100);
+    requestAnimationFrame(() => {
+        adjustFontOptionSizes();
+    });
     if (isDesktop && $('.buses-panel-wrapper').is(':visible')) {
         $('.buses-panel-wrapper').slideUp();
     }

@@ -1123,10 +1123,21 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid-deferred').append($stopBusElm);
 
             $('.stop-bus-route').last().css('color', 'gray');
-            $('.stop-info-buses-grid-deferred').children().slice(-2).removeClass('pointer');
+            const $deferredItems = $('.stop-info-buses-grid-deferred').children().slice(-2);
+            $deferredItems.addClass('pointer').click(function() {
+                sourceStopId = stopId;
+                flyToBus(data.busName);
+                $('.stop-info-popup').hide();
+            });
 
             if (data.nextStopName) {
-                $('.stop-info-buses-grid-deferred').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: gray">To ${data.nextStopName}</div>`);
+                const $nextStopEl = $(`<div class="stop-bus-next-stop pointer user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: gray">To ${data.nextStopName}</div>`);
+                $nextStopEl.click(function() {
+                    sourceStopId = stopId;
+                    flyToBus(data.busName);
+                    $('.stop-info-popup').hide();
+                });
+                $('.stop-info-buses-grid-deferred').append($nextStopEl);
             }
         });
     } else {

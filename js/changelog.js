@@ -282,3 +282,7 @@ function renderChangelog() {
         changelogInitialized = true;
     }
 }
+
+$(document).on('click', '.changelog-link', function() {
+    sa_event('btn_press', { btn: 'changelog_commit' });
+});
