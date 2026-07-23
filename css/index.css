@@ -1348,9 +1348,6 @@ html[theme="light"] .settings-panel {
     border-left: 2px solid var(--theme-line-bg);
 }
 
-.settings-font-grid-spacer {
-    background-color: var(--theme-line-bg);
-}
 
 .settings-main-heading {
     font-size: 1.8rem;
@@ -1455,11 +1452,11 @@ html[theme="light"] .settings-panel {
 }
 
 /* Light: explicit white on option cells (parent .settings-options stays --theme-bg-closest-stop) */
-html[theme="light"] .settings-panel .settings-option:not(.settings-font-grid-spacer) {
+html[theme="light"] .settings-panel .settings-option {
     background-color: #fff;
 }
 
-html[theme="light"] .settings-panel .settings-option.settings-selected:not(.settings-font-grid-spacer) {
+html[theme="light"] .settings-panel .settings-option.settings-selected {
     background-color: rgb(210, 210, 255);
 }
 
@@ -1847,6 +1844,10 @@ html[theme="light"] .settings-panel .span-i {
     font-weight: bold;
     text-decoration: underline;
     color: var(--theme-color);
+}
+
+.footer-contact a {
+    color: var(--theme-link);
 }
 
 .rubus-ai {
