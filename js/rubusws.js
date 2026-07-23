@@ -112,6 +112,7 @@ function openRUBusSocket() {
     });
 
     function processEventData(eventData) {
+        if (sim) return;
 
         if ('event' in eventData) {
 

@@ -8,8 +8,8 @@ const SIM_MAX_SPEED_MPH = 28;     // max cruising speed
 const SIM_MIN_SPEED_MPH = 6;      // min rolling speed between stops
 const SIM_ACC_MPH_PER_S = 2.5;    // acceleration per second
 const SIM_DEC_MPH_PER_S = 3.0;    // deceleration per second
-const SIM_TICK_MS = 300;          // movement tick
-const SIM_POLL_INTERVAL_MS = 0; // how often to report/update bus position on the map/UI
+const SIM_TICK_MS = 100;          // movement physics tick
+const SIM_POLL_INTERVAL_MS = 600; // map marker update interval
 const SIM_MIN_ETA_UPDATE_MS = 1000; // min interval between ETA updates per batch
 const SIM_PROGRESS_DELTA_FOR_UPDATE = 0.03; // 3% progress change triggers ETA update
 
@@ -468,7 +468,20 @@ async function buildSegmentForBus(busName) {
         try {
             const polyPoints = await getPolylineData(route); // will need to await this
             if (polyPoints) {
-                coords = polyPoints.map(p => ('lat' in p) ? { lat: p.lat, lng: p.lng } : { lat: p[1], lng: p[0] });
+                coords = polyPoints.map(p => {
+                    if (p && typeof p === 'object' && 'lat' in p && 'lng' in p) {
+                        return { lat: parseFloat(p.lat), lng: parseFloat(p.lng) };
+                    } else if (Array.isArray(p) && p.length >= 2) {
+                        const a = parseFloat(p[0]);
+                        const b = parseFloat(p[1]);
+                        if (b > -90 && b < 90) {
+                            return { lat: b, lng: a };
+                        } else {
+                            return { lat: a, lng: b };
+                        }
+                    }
+                    return null;
+                }).filter(Boolean);
                 percentages = coords.map((_, idx) => coords.length > 1 ? idx / (coords.length - 1) : 0);
             }
         } catch {}
@@ -606,7 +619,7 @@ async function updateSimBus(busName) {
 
     const now = Date.now();
     const dtBase = Math.min(1.0, (now - simState.lastTick) / 1000);
-    const dtSec = dtBase * Math.max(1, window.SIM_TIME_MULTIPLIER);
+    const dtSec = dtBase * Math.max(1, window.SIM_TIME_MULTIPLIER || 1);
     simState.lastTick = now;
 
 	// Determine if it's time to report/publish a new position
@@ -752,6 +765,7 @@ async function updateSimBus(busName) {
 
 		// Plot/update at poll cadence
 		if (doPollNow) {
+			bus.previousTime = now;
 			try { plotBus(busName); } catch {}
 			simState.nextReportAt = now + pollInterval;
 		}
@@ -804,14 +818,19 @@ async function updateSimBus(busName) {
 
 	// Plot at poll cadence
 	if (doPollNow) {
+		bus.previousTime = now;
 		try { plotBus(busName); } catch {}
 		simState.nextReportAt = now + pollInterval;
 	}
 }
 
 function startSimMovementLoop() {
-    if (simMoveTimer) return;
+    stopSimMovementLoop();
+    const mult = Math.max(1, window.SIM_TIME_MULTIPLIER || 1);
+    const tickInterval = Math.max(50, Math.floor(100 / Math.sqrt(mult)));
+
     simMoveTimer = setInterval(async () => {
+        const now = Date.now();
         for (const busName in busData) {
             const bus = busData[busName];
             if (bus && bus.type === 'sim') {
@@ -820,8 +839,7 @@ function startSimMovementLoop() {
         }
 
         // Throttled batch ETA updates for sim buses
-        const now = Date.now();
-        const minEtaInterval = SIM_MIN_ETA_UPDATE_MS / Math.max(1, window.SIM_TIME_MULTIPLIER);
+        const minEtaInterval = SIM_MIN_ETA_UPDATE_MS / mult;
         if (simEtaPending.size && now - simEtaUpdateLast >= minEtaInterval) {
             try {
                 const ids = Array.from(simEtaPending);
@@ -832,7 +850,7 @@ function startSimMovementLoop() {
                 // ignore ETA update errors
             }
         }
-    }, SIM_TICK_MS);
+    }, tickInterval);
 }
 
 function stopSimMovementLoop() {
@@ -852,6 +870,9 @@ async function startSim() {
     $('.sim-popup').slideDown();
 
     sim = true;
+    if (window.activeRoutes && window.activeRoutes.clear) {
+        window.activeRoutes.clear();
+    }
     for (const busName in busData) {
         makeOoS(busName);
     }
@@ -859,7 +880,7 @@ async function startSim() {
     makeBusesByRoutes();
     deleteAllStops();
     addStopsToMap();
-    setPolylines(SIM_ROUTES);
+    await setPolylines(SIM_ROUTES);
     populateRouteSelectors(activeRoutes);
     try { updateTimeToStops(Object.keys(busData).map(id => Number(id))); } catch (e) {}
     startSimMovementLoop();
@@ -879,7 +900,7 @@ async function endSim() {
     sim = false;
     stopSimMovementLoop();
 
-    if (selectedCampus === 'nb') {
+    if (selectedCampus === 'nb' && settings['toggle-show-sim']) {
         $('.sim-btn').fadeIn();
     }
 
@@ -893,11 +914,11 @@ async function endSim() {
 
 // Change simulation time multiplier and adjust waiting timers accordingly
 function setSimTimeMultiplier(newMultiplier) {
-    const allowed = [1, 2, 4];
+    const allowed = [1, 2, 4, 8];
     if (!allowed.includes(newMultiplier)) return;
-    const prev = SIM_TIME_MULTIPLIER;
+    const prev = window.SIM_TIME_MULTIPLIER || 1;
     if (prev === newMultiplier) return;
-    SIM_TIME_MULTIPLIER = newMultiplier;
+    window.SIM_TIME_MULTIPLIER = newMultiplier;
 
     try { $('.sim-speed').text(`${newMultiplier}x`); } catch (e) {}
 
@@ -912,6 +933,9 @@ function setSimTimeMultiplier(newMultiplier) {
             s.waitUntil = Date.now() + scaledRemaining;
         }
     }
+
+    // Retune movement loop tick interval to keep spatial step sizes small and accurate on curves
+    startSimMovementLoop();
 
     // Retune UI countdown cadence if available
     try { window.resetEtaCountdownInterval(); } catch (e) {}
@@ -942,10 +966,11 @@ $(document).ready(async function() {
         });
     })
 
-    // Cycle sim time multiplier: 1x -> 2x -> 4x -> 1x
+    // Cycle sim time multiplier: 1x -> 2x -> 4x -> 8x -> 1x
     $('.sim-speed').on('touchstart click', function(e) {
         e.preventDefault();
-        const next = SIM_TIME_MULTIPLIER === 1 ? 2 : (SIM_TIME_MULTIPLIER === 2 ? 4 : 1);
+        const current = window.SIM_TIME_MULTIPLIER || 1;
+        const next = current === 1 ? 2 : (current === 2 ? 4 : (current === 4 ? 8 : 1));
         setSimTimeMultiplier(next);
 
         sa_event('btn_press', {

@@ -100,7 +100,7 @@
     <script src="js/contact.js"></script>
     <script src="js/stats.js"></script>
     <script src="js/campus.js"></script>
-    <script src="js/sim.js"></script>
+    <script defer src="js/sim.js"></script>
     <script src="js/chat.js"></script>
     <script src="lib/stops.js"></script>
     <script src="lib/routes.js"></script>
@@ -1406,7 +1406,7 @@
                 </script>
             </div>
 
-            <!-- <div class="flex justify-between">
+            <div class="flex justify-between">
                 <div class="settings-heading">Hide Simulator</div>
                 <div class="settings-toggle">
                     <input type="checkbox" id="toggle-hide-sim" class="toggle-input">
@@ -1414,9 +1414,9 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
-            </div> -->
+            </div>
 
-            <!-- <script>
+            <script>
                 // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
                 $(function() {
                     // Ensure settings is loaded
@@ -1429,6 +1429,7 @@
                         var checked = $(this).is(':checked');
                         settings['toggle-show-sim'] = !checked;
                         localStorage.setItem('settings', JSON.stringify(settings));
+                        $('#toggle-show-sim').prop('checked', !checked);
                         // UI update: mimic the real Simulator toggle
                         if (!checked) {
                             if (typeof sim !== 'undefined' && typeof selectedCampus !== 'undefined' && !sim && selectedCampus === 'nb') {
@@ -1439,7 +1440,7 @@
                         }
                     });
                 });
-                </script> -->
+                </script>
 
             <div class="text-1p6rem mb-0p25rem bold-500">EXTRAS</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem settings-section-accent">
@@ -1769,7 +1770,7 @@
                         </div>
                     </div>
 
-                    <!-- <div class="flex justify-between">
+                    <div class="flex justify-between">
                         <div class="settings-heading">Simulator</div>
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-show-sim" class="toggle-input">
@@ -1777,7 +1778,7 @@
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                    </div> -->
+                    </div>
 
                     <div class="flex justify-between">
                         <div class="settings-heading">Assistant</div>
@@ -2098,8 +2099,8 @@
         </div>
         <div class="flex justify-between">
             <div class="route-selectors">
-                <!-- <div class="route-selector sim-btn none">SIM</div> -->
                 <div class="route-selector settings-btn"><i class="fa-solid fa-gear"></i></div>
+                <div class="route-selector sim-btn none">SIM</div>
             </div>
         </div>
     </div>

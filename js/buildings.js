@@ -75,22 +75,7 @@ function updateBuildingClosestStopsSwitcher() {
         // Determine if there are any active buses
         const hasActive = Object.keys(busData).length > 0;
         if (!hasActive) {
-            // $('.building-closest-stops-options .building-closest-stops-option').each(function() {
-            //     if ($(this).text().trim().toLowerCase() === 'active') {
-            //         $(this).hide();
-            //     } else {
-            //         $(this).show().addClass('selected only-option').text('All Routes').removeClass('pointer').show();
-            //     }
-            // });
-            // buildingClosestStopsMode = 'all';
-
-            $('.building-closest-stops-options .building-closest-stops-option').each(function() {
-                if ($(this).text().trim().toLowerCase() === 'active') {
-                    $(this).show().addClass('selected only-option').text('Active Routes').removeClass('pointer').show();
-                } else {
-                    $(this).hide();
-                }
-            });
+            $('.building-closest-stops-options .building-closest-stops-option').show().removeClass('only-option');
         } else {
             $('.building-closest-stops-options .building-closest-stops-option').show().removeClass('only-option');
         }
@@ -103,13 +88,13 @@ function updateBuildingClosestStopsSwitcher() {
     }
 }
 
-// function getAllMainRoutesForStop(stopId) {
-//     stopId = Number(stopId);
-//     const routes = ['a', 'b', 'bl', 'c', 'ee', 'f', 'h', 'lx', 'rexl', 'rexb'].filter(route => {
-//         return stopLists[route].includes(stopId);
-//     });
-//     return routes;
-// }
+function getAllMainRoutesForStop(stopId) {
+    stopId = Number(stopId);
+    const routes = ['a', 'b', 'bl', 'c', 'ee', 'f', 'h', 'lx', 'rexl', 'rexb'].filter(route => {
+        return stopLists[route] && stopLists[route].includes(stopId);
+    });
+    return routes;
+}
 
 async function populateBuildingClosestStopsList(feature) {
     // feature: { name, lat, lng, ... }
@@ -131,8 +116,7 @@ async function populateBuildingClosestStopsList(feature) {
         if (buildingClosestStopsMode === 'active') {
             routes = getRoutesServicingStop(Number(stopId));
         } else {
-            // routes = getAllMainRoutesForStop(stopId);
-            routes = []; // No routes when sim is disabled
+            routes = getAllMainRoutesForStop(stopId);
         }
         return routes.length > 0 ? {
             stopId,
@@ -194,9 +178,9 @@ async function populateBuildingClosestStopsList(feature) {
             </div>
         `);
         $item.click(async () => {
-            // if (buildingClosestStopsMode === 'all') {
-            //     await startSim();
-            // }
+            if (buildingClosestStopsMode === 'all') {
+                await startSim();
+            }
             flyToStop(Number(stop.stopId), true); // true indicates user interaction
             sa_event('btn_press', {
                 'btn': 'building_closest_stop',
@@ -210,9 +194,9 @@ async function populateBuildingClosestStopsList(feature) {
             const color = routeHasInServiceBuses(route) ? colorMappings[route] : 'gray';
             const $badge = $(`<div class="building-route-badge pointer" style="background:${color};color:white;padding:0.2rem 0.8rem;border-radius:0.5rem;font-size:1.2rem;">${route.toUpperCase()}</div>`).click(async function(e) {
                 e.stopPropagation();
-                // if (buildingClosestStopsMode === 'all') {
-                //     await startSim();
-                // }
+                if (buildingClosestStopsMode === 'all') {
+                    await startSim();
+                }
                 flyToStop(Number(stop.stopId), true); // true indicates user interaction
                 setTimeout(() => {
                     toggleRoute(route);

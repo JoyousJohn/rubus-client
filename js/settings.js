@@ -359,15 +359,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
-        // case 'toggle-show-sim':
-        //     settings['toggle-show-sim'] = isChecked;
+        case 'toggle-show-sim':
+            settings['toggle-show-sim'] = isChecked;
+            $('#toggle-hide-sim').prop('checked', !isChecked);
 
-        //     if (isChecked && !sim && selectedCampus === 'nb') {
-        //         $('.sim-btn').show();
-        //     } else {
-        //         $('.sim-btn').hide();
-        //     }
-        //     break;
+            if (isChecked && !sim && selectedCampus === 'nb') {
+                $('.sim-btn').show();
+            } else {
+                $('.sim-btn').hide();
+            }
+            break;
 
         case 'toggle-spoofing':
             settings['toggle-spoofing'] = isChecked;
@@ -659,9 +660,9 @@ $(document).ready(function() {
         $('.rubus-ai-wrapper').show();
     }
 
-    // if (settings['toggle-show-sim'] && selectedCampus === 'nb') {
-    //     $('.sim-btn').show();
-    // }
+    if (settings['toggle-show-sim'] && !sim && selectedCampus === 'nb') {
+        $('.sim-btn').show();
+    }
 
     if (settings['toggle-spoofing']) {
         spoof = true;

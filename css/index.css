@@ -127,7 +127,8 @@ html, body {
     color: #ffffff;
     font-size: 1.5rem;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-    transition: left 0.1s linear, top 0.1s linear, transform 0.15s ease-out;
+    transition: transform 0.15s ease-out;
+    will-change: transform;
     user-select: none;
     backdrop-filter: blur(4px);
     border: 2px solid rgba(255, 255, 255, 0.4);
@@ -141,7 +142,7 @@ html, body {
 .offscreen-bus-marker-arrow {
     display: inline-block;
     font-size: 1.2rem;
-    transition: transform 0.1s linear;
+    will-change: transform;
 }
 
 .bus-icon-outer {

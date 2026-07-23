@@ -437,7 +437,8 @@ $(document).ready(function() {
         };
 
         // If user starts dragging mid-preview, commit real zoom first
-        map.on('dragstart', function() {
+        map.on('movestart dragstart zoomstart touchstart', function() {
+            window.isMapDragging = true;
             if (handler._trackpadGesture) {
                 if (handler._gestureEndTimer != null) {
                     clearTimeout(handler._gestureEndTimer);
@@ -450,7 +451,8 @@ $(document).ready(function() {
         handler.enable();
     })();
 
-    map.on('dragend', function() {
+    map.on('moveend dragend zoomend touchend', function() {
+        window.isMapDragging = false;
         // Set max bounds after user finishes dragging after unfocusing on a bus
         if (shouldSetMaxBoundsAfterDrag) {
             if (!settings['toggle-bypass-max-distance']) {
@@ -458,6 +460,7 @@ $(document).ready(function() {
             }
             shouldSetMaxBoundsAfterDrag = false; // Reset flag after use
         }
+        try { requestOffScreenUpdate(); } catch (e) {}
     });
 
     try { if (typeof initLocationWatchForRiding === 'function') { initLocationWatchForRiding(); } } catch (e) {}
@@ -1359,12 +1362,18 @@ let busLines = {}
 let midpointCircle = {}
 
 
-// Helper function to get the rotation element for any marker type
+// Helper function to get the rotation element for any marker type (cached for high performance)
 function getMarkerRotationElement(marker) {
-    return marker.getElement().querySelector('.bus-icon-outer') ||
-           marker.getElement().querySelector('.passio-marker') ||
-           marker.getElement().querySelector('.rider-marker') ||
-           marker.getElement().querySelector('.duck-marker');
+    if (!marker) return null;
+    if (marker._rotationElement) return marker._rotationElement;
+    const el = marker.getElement ? marker.getElement() : null;
+    if (!el) return null;
+    const rotEl = el.querySelector('.bus-icon-outer') ||
+                  el.querySelector('.passio-marker') ||
+                  el.querySelector('.rider-marker') ||
+                  el.querySelector('.duck-marker');
+    if (rotEl) marker._rotationElement = rotEl;
+    return rotEl;
 }
 
 // Cache for colored SVG data URLs
@@ -1726,7 +1735,6 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
 
     const animateMarker = (currentTime) => {
         // Skip this animation frame if busName has been removed from animationFrames
-        // This happens when a new animation starts or cancellation occurs
         if (!animationFrames[busName]) return;
         
         const elapsedTime = currentTime - startTime;
@@ -1818,11 +1826,16 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
             if (iconElement) {
                 iconElement.style.transform = `rotate(${currentRotation}deg)`;
                 
-                // Counter-rotate the SVG image for Passio markers only
+                // Counter-rotate the SVG image for Passio markers only (cached element)
                 if (settings['marker-type'] === 'passio') {
-                    const busIcon = marker.getElement().querySelector('.passio-bus-icon');
-                    const counterRotation = -currentRotation;
-                    busIcon.style.transform = `rotate(${counterRotation}deg)`;
+                    if (!marker._passioBusIcon && marker.getElement()) {
+                        marker._passioBusIcon = marker.getElement().querySelector('.passio-bus-icon');
+                    }
+                    const busIcon = marker._passioBusIcon;
+                    if (busIcon) {
+                        const counterRotation = -currentRotation;
+                        busIcon.style.transform = `rotate(${counterRotation}deg)`;
+                    }
                 }
             }
         }
@@ -1859,7 +1872,6 @@ let selectedMarkerId;
 let pauseUpdateMarkerPositions = false;
 
 function plotBus(busName, immediatelyUpdate=false) {
-    
     const loc = {lat: busData[busName].lat, long: busData[busName].long};
 
     if (!busMarkers[busName]) {
@@ -3977,8 +3989,19 @@ function updateOffScreenContainerZIndex() {
     container.style.zIndex = isAboveGui ? '650' : '400';
 }
 
+let lastOffscreenUpdateDuringDrag = 0;
+
 function updateOffScreenBusIndicators() {
     if (!map || typeof busMarkers === 'undefined') return;
+
+    // During active map dragging, throttle indicator updates to once per 1000ms (1 FPS)
+    if (window.isMapDragging) {
+        const now = Date.now();
+        if (now - lastOffscreenUpdateDuringDrag < 1000) {
+            return;
+        }
+        lastOffscreenUpdateDuringDrag = now;
+    }
 
     if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators'] === false) {
         let container = document.getElementById('offscreen-bus-indicators-container');
@@ -4185,7 +4208,14 @@ function requestOffScreenUpdate() {
 
 function initOffscreenBusListeners() {
     if (map) {
-        map.on('move drag zoom viewreset moveend resize', requestOffScreenUpdate);
+        map.on('movestart dragstart zoomstart touchstart', function() {
+            window.isMapDragging = true;
+        });
+        map.on('moveend dragend zoomend touchend', function() {
+            window.isMapDragging = false;
+            requestOffScreenUpdate();
+        });
+        map.on('move drag zoom viewreset resize', requestOffScreenUpdate);
     }
 }
 

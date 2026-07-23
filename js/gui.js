@@ -215,6 +215,9 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         }
     });
 
+    // Ensure sim-btn appears after settings button and all route selectors
+    $('.route-selectors').append($('.sim-btn'));
+
     // Apply selection styling to the currently selected route if it exists in the filtered routes
     if (shownRoute) {
         // Use the existing toggleRouteSelectors logic to select the route

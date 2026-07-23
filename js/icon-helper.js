@@ -73,18 +73,42 @@ function createIcon(iconName, size = '', color = '') {
 document.addEventListener('DOMContentLoaded', replaceFontAwesomeIcons);
 
 // Also replace icons after dynamic content is added
+const MAPPED_FA_SELECTORS = [
+    'i.fa-solid.fa-building', 'i.fa-solid.fa-square-parking', 'i.fa-solid.fa-bus-simple',
+    'i.fa-solid.fa-route', 'i.fa-solid.fa-bolt', 'i.fa-solid.fa-map-pin',
+    'i.fa-regular.fa-message', 'i.fa-solid.fa-clock', 'i.fa-solid.fa-share-nodes',
+    'i.fa-regular.fa-star', 'i.fa-solid.fa-star', 'i.fa-solid.fa-phone',
+    'i.fa-solid.fa-person-walking', 'i.fa-solid.fa-diamond-turn-right', 'i.fa-solid.fa-location-dot',
+    'i.fa-solid.fa-bus', 'i.fa.fa-arrow-up', 'i.fa-solid.fa-arrow-right-arrow-left',
+    'i.fa-solid.fa-location-pin', 'i.fa-solid.fa-clock-rotate-left', 'i.fa-solid.fa-rocket',
+    'i.fa-solid.fa-fire-flame-curved', 'i.fa-solid.fa-earth-americas', 'i.fa-solid.fa-comments',
+    'i.fa-solid.fa-search', 'i.fa-solid.fa-bahai', 'i.fa-solid.fa-location-arrow',
+    'i.fa-solid.fa-location-crosshairs', 'i.fa-solid.fa-gear', 'i.fa-solid.fa-filter',
+    'i.fa-solid.fa-rotate-right'
+].join(', ');
+
+let isObservingIconChanges = false;
 const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(mutation) {
-        if (mutation.type === 'childList') {
-            // Check if any new FontAwesome icons were added
-            const faIcons = mutation.target.querySelectorAll ? 
-                mutation.target.querySelectorAll('i[class*="fa-"]') : [];
-            if (faIcons.length > 0) {
-                console.log('Found', faIcons.length, 'FontAwesome icons, converting...');
-                replaceFontAwesomeIcons();
+    if (isObservingIconChanges) return;
+
+    let hasMappedIcon = false;
+    for (const mutation of mutations) {
+        if (mutation.type === 'childList' && mutation.target && mutation.target.querySelector) {
+            if (mutation.target.querySelector(MAPPED_FA_SELECTORS)) {
+                hasMappedIcon = true;
+                break;
             }
         }
-    });
+    }
+
+    if (hasMappedIcon) {
+        isObservingIconChanges = true;
+        try {
+            replaceFontAwesomeIcons();
+        } finally {
+            isObservingIconChanges = false;
+        }
+    }
 });
 
 // Start observing once DOM is ready

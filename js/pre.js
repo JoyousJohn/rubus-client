@@ -513,7 +513,7 @@ function updateTimeToStops(busNames) {
                 if (i === 0 && !data['at_stop']) {
                     prevStopId = sortedStops[sortedStops.length-1]
 
-                    progress = progressToNextStop(busName) // why does this trigger for arrived buses if at_stop is immediately set to true and progress reset to 0?
+                    progress = (sim && busData[busName] && busData[busName].sim) ? progressPercentFor(busName) : progressToNextStop(busName);
                     busData[busName]['progress'] = progress
                     // console.log(`Progress for busName ${busName} (name: ${busData[busName].busName}): ${Math.round(progress*100)}%`)
 
@@ -619,6 +619,7 @@ function updateTimeToStops(busNames) {
 
 
 async function fetchWhere() {
+    if (sim) return;
     try {
         const response = await fetch('https://demo.rubus.live/where');
         if (!response.ok) {
@@ -1165,6 +1166,20 @@ $(document).ready(async function() {
 
     // On app resume/return, force the next update to be immediate and fetch promptly
     const triggerImmediateResumeUpdate = () => {
+        if (sim) {
+            console.log('App resumed in sim mode - syncing sim ticks');
+            const now = Date.now();
+            for (const busName in busData) {
+                const bus = busData[busName];
+                if (bus && bus.type === 'sim') {
+                    if (bus.sim) {
+                        bus.sim.lastTick = now;
+                    }
+                    bus.previousTime = now - 300;
+                }
+            }
+            return;
+        }
         console.log('App resumed - triggering immediate bus update');
         forceImmediateUpdate = true;
 
