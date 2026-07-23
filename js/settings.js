@@ -986,18 +986,12 @@ $(function() {
         const isMobile = $(window).width() <= 992;
         if (isMobile && window.visualViewport && $('.settings-panel').is(':visible')) {
             const vvp = window.visualViewport;
-            const targetTop = vvp.offsetTop + vvp.height - 80; // 80px (approx 5rem) above visual viewport bottom
-            $('.settings-floating-bar').css({
-                'position': 'absolute',
-                'top': targetTop + 'px',
-                'bottom': 'auto'
-            });
+            const keyboardHeight = Math.max(0, window.innerHeight - vvp.height - vvp.offsetTop);
+            $('.settings-floating-bar').css('bottom', (16 + keyboardHeight) + 'px');
+            $('.settings-panel').css('padding-bottom', (100 + keyboardHeight) + 'px');
         } else {
-            $('.settings-floating-bar').css({
-                'position': '',
-                'top': '',
-                'bottom': ''
-            });
+            $('.settings-floating-bar').css('bottom', '');
+            $('.settings-panel').css('padding-bottom', '');
         }
     }
 
@@ -1007,7 +1001,6 @@ $(function() {
         settingsVvpHandler = () => requestAnimationFrame(adjustSettingsFloatingBar);
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', settingsVvpHandler);
-            window.visualViewport.addEventListener('scroll', settingsVvpHandler);
         }
         window.addEventListener('resize', settingsVvpHandler);
     };
@@ -1017,17 +1010,13 @@ $(function() {
         settingsViewportAttached = false;
         if (window.visualViewport && settingsVvpHandler) {
             window.visualViewport.removeEventListener('resize', settingsVvpHandler);
-            window.visualViewport.removeEventListener('scroll', settingsVvpHandler);
         }
         if (settingsVvpHandler) {
             window.removeEventListener('resize', settingsVvpHandler);
         }
         settingsVvpHandler = null;
-        $('.settings-floating-bar').css({
-            'position': '',
-            'top': '',
-            'bottom': ''
-        });
+        $('.settings-floating-bar').css('bottom', '');
+        $('.settings-panel').css('padding-bottom', '');
     };
 
     $searchInput.on('focus', function() {
