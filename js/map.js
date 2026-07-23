@@ -656,9 +656,11 @@ function hideInfoBoxes(instantly_hide) {
     // console.log('hideInfoBoxes() triggered')
 
     if (instantly_hide) {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup, .search-wrapper').hide(); 
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').hide();
+        closeSearch();
     } else {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup, .search-wrapper').fadeOut();  
+        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').fadeOut();
+        closeSearch();
     }
     
     // Hide the out of service hide button when closing popups

@@ -865,7 +865,7 @@ async function startSim() {
 
     $('.sim-btn').hide();
     hideInfoBoxes(); // needs to be first since this might show knight mover
-    $('.updating-buses, .slow-connection, .knight-mover, .past-breaks-wrapper, .bus-btns, .bus-ridership-wrapper, .campus-switcher').hide();
+    $('.updating-buses, .slow-connection, .knight-mover, .past-breaks-wrapper, .bus-ridership-wrapper, .campus-switcher').hide();
     $('.right-btns').removeClass('right-btns-bottom')
     $('.sim-popup').slideDown();
 
@@ -955,7 +955,7 @@ $(document).ready(async function() {
     })
 
     $('.sim-exit').click(function() {
-        $('.updating-buses, .past-breaks-wrapper, .bus-btns, .bus-ridership-wrapper').show();
+        $('.updating-buses, .past-breaks-wrapper, .bus-ridership-wrapper').show();
         if (settings['toggle-show-campus-switcher']) {
             $('.campus-switcher').show();
         }

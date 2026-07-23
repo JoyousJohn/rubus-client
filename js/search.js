@@ -1,6 +1,55 @@
 let buildingIndex;
 let enableSearchButtonGradientFlash = false;
 
+let searchViewportListenersAttached = false;
+let searchVvpHandler = null;
+
+function adjustSearchHeights() {
+  const isMobile = $(window).width() <= 992;
+  if (isMobile && window.visualViewport) {
+    const vvp = window.visualViewport;
+    $('.search-wrapper').css({
+      'position': 'absolute',
+      'top': vvp.offsetTop + 'px',
+      'left': vvp.offsetLeft + 'px',
+      'height': vvp.height + 'px',
+      'width': vvp.width + 'px'
+    });
+  } else {
+    $('.search-wrapper').css({
+      'position': '',
+      'top': '',
+      'left': '',
+      'height': '',
+      'width': ''
+    });
+  }
+}
+
+function attachSearchViewportListeners() {
+  if (searchViewportListenersAttached) return;
+  searchViewportListenersAttached = true;
+  searchVvpHandler = () => requestAnimationFrame(adjustSearchHeights);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', searchVvpHandler);
+    window.visualViewport.addEventListener('scroll', searchVvpHandler);
+  }
+  window.addEventListener('resize', searchVvpHandler);
+}
+
+function detachSearchViewportListeners() {
+  if (!searchViewportListenersAttached) return;
+  searchViewportListenersAttached = false;
+  if (window.visualViewport && searchVvpHandler) {
+    window.visualViewport.removeEventListener('resize', searchVvpHandler);
+    window.visualViewport.removeEventListener('scroll', searchVvpHandler);
+  }
+  if (searchVvpHandler) {
+    window.removeEventListener('resize', searchVvpHandler);
+  }
+  searchVvpHandler = null;
+}
+
 // Function to update search placeholder with building count
 function updateSearchPlaceholder(buildingCount) {
     const $searchInput = $('.search-wrapper input');
@@ -35,7 +84,7 @@ $(document).ready(function() {
             // Press and hold detected - open navigation wrapper
             hideInfoBoxes(true);
             $('.knight-mover').hide();
-            $('.search-wrapper').hide();
+            closeSearch();
 
             // Open navigation wrapper
             $('.navigate-wrapper').show();
@@ -69,6 +118,8 @@ $(document).ready(function() {
         hideInfoBoxes(true);
         $('.knight-mover').hide();
         $('.search-wrapper').show();
+        adjustSearchHeights();
+        attachSearchViewportListeners();
         $input.trigger('input').focus();
         
         const hasInput = $input.val().trim();
@@ -98,6 +149,20 @@ $(document).ready(function() {
         sa_event('btn_press', {
             'btn': 'search_clear'
         });
+    });
+
+    // Nudge layout when search input gains focus (keyboard opening)
+    // Height adjustment is handled by visualViewport listeners; focus handler scrolls input into view
+    $(document).on('focus', '.search-wrapper input', function() {
+      setTimeout(() => {
+        const $container = $('.search-wrapper > div');
+        if ($container.length > 0) {
+          $container.scrollTop(0);
+        }
+      }, 150);
+    });
+    $(document).on('blur', '.search-wrapper input', function() {
+      setTimeout(adjustSearchHeights, 50);
     });
 
     // Track current rotation for the refresh buttons
@@ -890,8 +955,18 @@ $(document).ready(function() {
 
 function closeSearch() {
     $('.search-wrapper').hide();
+    detachSearchViewportListeners();
+    $('.search-wrapper').css({
+      'position': '',
+      'top': '',
+      'left': '',
+      'height': '',
+      'width': ''
+    });
 }
 
 function openSearch() {
     $('.search-wrapper').show();
+    adjustSearchHeights();
+    attachSearchViewportListeners();
 }

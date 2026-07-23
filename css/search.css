@@ -5,6 +5,7 @@
     color: var(--theme-color);
     z-index: 402; /* 402 instead of 401 to get over campus switcher */
     font-family: var(--font-family);
+    overscroll-behavior: contain;
 }
 
 .search-wrapper > div {
@@ -13,8 +14,10 @@
     margin: 1rem;
     border-radius: 1rem;
     padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .search-input-wrapper {

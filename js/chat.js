@@ -278,8 +278,8 @@ $(document).on('click', '.chat-btn', function() {
 });
 
 // Nudge layout when input gains focus (keyboard opening)
+// Height adjustment is handled by visualViewport.resize listener; focus handler just scrolls to bottom
 $(document).on('focus', '.chat-ui-input', function() {
-  setTimeout(adjustChatHeights, 50);
   setTimeout(() => {
     const $messages = $('.chat-ui-messages');
     if ($messages.length > 0) {

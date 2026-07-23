@@ -120,6 +120,7 @@
 /* Input bar */
 .chat-ui-input-bar {
   background: var(--theme-bg);
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 .chat-recs > div {
