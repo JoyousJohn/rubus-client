@@ -343,7 +343,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         if (activeBuses.length) {
             $('.right-btns').removeClass('right-btns-bottom');
             if (!settings['toggle-show-knight-mover']){
-                $('.knight-mover, .knight-mover-mini').hide();
+                $('.knight-mover').hide();
             }
             checkMinRoutes();
         }
@@ -845,18 +845,16 @@ function checkMinRoutes() {
     console.log(`[KnightMover Debug] active:${isKnightMoverActive}, campus:${selectedCampus}, appStyle:${appStyle}, userSettingOverride:${settings['toggle-show-knight-mover']}, time:${currentMonth+1}/${currentDay}/${currentYear} ${hour}:00, day:${dayOfWeek}`);
 
     if (!isKnightMoverActive) {
-        $('.knight-mover, .knight-mover-mini').hide();
+        $('.knight-mover').hide();
         return;
     }
 
     if (selectedCampus !== 'nb' || appStyle === 'rider') {
-        $('.knight-mover, .knight-mover-mini').hide();
+        $('.knight-mover').hide();
         return;
     }
 
-    // Default behavior when active: show main knight mover box unless explicitly turned off via developer toggle
     $('.knight-mover').show();
-    $('.knight-mover-mini').hide();
 }
 
 function makeActiveRoutes() {

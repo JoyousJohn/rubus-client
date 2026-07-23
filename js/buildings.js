@@ -270,7 +270,7 @@ function setupBuildingClosestStopsSwitcher() {
 }
 
 function showBuildingInfo(feature) {
-    $('.knight-mover, .knight-mover-mini, .campus-switcher').hide();
+    $('.knight-mover, .campus-switcher').hide();
     hideInfoBoxes(true);
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
@@ -353,7 +353,7 @@ function loadBuildings() {
 
                         // Hide popups when any building/lot is selected
                         setTimeout(() => {
-                            $('.knight-mover, .knight-mover-mini').hide();
+                            $('.knight-mover').hide();
                         }, 0);
 
                         if (feature.properties && feature.properties.name) {

@@ -113,7 +113,7 @@ function campusChanged() {
     if (selectedCampus === 'nb') {
         // checkMinRoutes();
     } else {
-        $('.knight-mover, .knight-mover-mini').hide();
+        $('.knight-mover').hide();
     }
 
     if (map) {

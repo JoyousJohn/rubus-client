@@ -348,13 +348,8 @@ html, body {
     user-select: none;
 }
 
-.knight-mover-mini {
-    border-radius: 2rem;
-    padding: 0.5rem 1.5rem;
-    font-size: 1.7rem;
-    font-family: var(--font-family);
-    pointer-events: all;
 }
+
 
 .passio-messages {
     font-family: var(--font-family);
