@@ -5,7 +5,7 @@ let passioDown = false;
 async function immediatelyUpdateBusDataPre() {
     cancelAllAnimations();
 
-    $('.updating-buses').fadeIn();
+    $('.updating-buses').stop(true, true).fadeIn();
 
     for (const busName in busData) {
         if (routesByCampus[busData[busName].route] !== selectedCampus) continue; // bc marker only created if selected campus. cna also just check if marker exists like i have commented out below, but i must've previously added that check and removed it to have my code fail fast... possible race condition back then somewhere? maybe when a marker created back on visibility change?
@@ -32,7 +32,7 @@ async function immediatelyUpdateBusDataPost() {
     // if (!Object.keys(busData).length) { // maybe add a condition here to only cheeck on weekends at night?
         startOvernight(true, true);
     // }
-    $('.updating-buses').slideUp();
+    $('.updating-buses').stop(true, true).slideUp();
 }
 
 async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFromFetch) {
