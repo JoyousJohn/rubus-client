@@ -1055,6 +1055,42 @@
                     $el.slideToggle();
                 })
                 </script>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Hide Simulator</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-hide-sim" class="toggle-input">
+                        <label for="toggle-hide-sim" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <script>
+                // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
+                $(function() {
+                    // Ensure settings is loaded
+                    var settings = localStorage.getItem('settings');
+                    if (settings) settings = JSON.parse(settings); else settings = {};
+                    // Set initial state
+                    $('#toggle-hide-sim').prop('checked', !settings['toggle-show-sim']);
+                    // On change, invert toggle-show-sim
+                    $('#toggle-hide-sim').on('change', function() {
+                        var checked = $(this).is(':checked');
+                        settings['toggle-show-sim'] = !checked;
+                        localStorage.setItem('settings', JSON.stringify(settings));
+                        $('#toggle-show-sim').prop('checked', !checked);
+                        // UI update: mimic the real Simulator toggle
+                        if (!checked) {
+                            if (typeof sim !== 'undefined' && typeof selectedCampus !== 'undefined' && !sim && selectedCampus === 'nb') {
+                                $('.sim-btn').show();
+                            }
+                        } else {
+                            $('.sim-btn').hide();
+                        }
+                    });
+                });
+                </script>
             </div>
 
             <div class="text-1p6rem mb-0p25rem bold-500">MAP</div>
@@ -1408,41 +1444,7 @@
                 </script>
             </div>
 
-            <div class="flex justify-between">
-                <div class="settings-heading">Hide Simulator</div>
-                <div class="settings-toggle">
-                    <input type="checkbox" id="toggle-hide-sim" class="toggle-input">
-                    <label for="toggle-hide-sim" class="toggle-label">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
             </div>
-
-            <script>
-                // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
-                $(function() {
-                    // Ensure settings is loaded
-                    var settings = localStorage.getItem('settings');
-                    if (settings) settings = JSON.parse(settings); else settings = {};
-                    // Set initial state
-                    $('#toggle-hide-sim').prop('checked', !settings['toggle-show-sim']);
-                    // On change, invert toggle-show-sim
-                    $('#toggle-hide-sim').on('change', function() {
-                        var checked = $(this).is(':checked');
-                        settings['toggle-show-sim'] = !checked;
-                        localStorage.setItem('settings', JSON.stringify(settings));
-                        $('#toggle-show-sim').prop('checked', !checked);
-                        // UI update: mimic the real Simulator toggle
-                        if (!checked) {
-                            if (typeof sim !== 'undefined' && typeof selectedCampus !== 'undefined' && !sim && selectedCampus === 'nb') {
-                                $('.sim-btn').show();
-                            }
-                        } else {
-                            $('.sim-btn').hide();
-                        }
-                    });
-                });
-                </script>
 
             <div class="text-1p6rem mb-0p25rem bold-500">EXTRAS</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem settings-section-accent">

@@ -54,14 +54,19 @@ $.easing.momentum = function (x) {
 function moveRouteSelectorsToSubpanel() {
     const bottomElement = $('.bottom');
     const routeSelectorsContainer = $('#route-selectors-container');
-        bottomElement.appendTo(routeSelectorsContainer);
+    window._detachedSimBtn = $('.sim-btn').detach();
+    bottomElement.appendTo(routeSelectorsContainer);
 }
 
 // Function to move route selectors back to the main page
 function moveRouteSelectorsToMain() {
     const bottomElement = $('.bottom');
-        bottomElement.insertAfter('.settings-panel');
+    bottomElement.insertAfter('.settings-panel');
+    if (window._detachedSimBtn && window._detachedSimBtn.length) {
+        $('.route-selectors').append(window._detachedSimBtn);
+        window._detachedSimBtn = null;
     }
+}
 
 // Function to restore the last selected panel position when opening info panels
 function restorePanelPosition() {
