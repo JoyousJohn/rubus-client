@@ -328,9 +328,14 @@ function getRouteStyle(routeName) {
 function updatePolylineStyle(routeName) {
     if (!polylines[routeName]) return;
     const style = getRouteStyle(routeName);
-    polylines[routeName].setStyle({ color: style.color, opacity: style.opacity });
+    const targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
+    polylines[routeName].setStyle({ color: style.color, opacity: targetOpacity });
     const pathEl = polylines[routeName].getElement();
-    if (pathEl) pathEl.style.opacity = String(style.opacity);
+    if (pathEl) {
+        pathEl.style.opacity = String(targetOpacity);
+        pathEl.style.display = targetOpacity === 0 ? 'none' : '';
+    }
+    console.log(`[updatePolylineStyle] Route: ${routeName} | targetOpacity: ${targetOpacity} | shownRoute: ${shownRoute}`);
 }
 
 async function setPolylines(activeRoutes) {
@@ -354,6 +359,10 @@ async function setPolylines(activeRoutes) {
         }
 
         let coordinates = await getPolylineData(routeName);
+        if (polylines[routeName]) {
+            updatePolylineStyle(routeName);
+            continue;
+        }
 
         if (!coordinates) continue;
 
@@ -363,10 +372,12 @@ async function setPolylines(activeRoutes) {
             coordinates = coordinates.map(point => [point[1], point[0]]);
         }
 
+        const targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
+
         const polylineOptions = getPolylineLayerOptions({
             color: style.color,
             weight: 4,
-            opacity: style.opacity,
+            opacity: targetOpacity,
             smoothFactor: 1,
         });
 
@@ -376,7 +387,7 @@ async function setPolylines(activeRoutes) {
 
         polylines[routeName] = polyline;
         const pathEl = polyline.getElement();
-        if (pathEl) pathEl.style.opacity = String(style.opacity);
+        if (pathEl) pathEl.style.opacity = String(targetOpacity);
 
         // Cache route bounds and points even if layer later gets pruned
         const bounds = polyline.getBounds();
@@ -437,6 +448,7 @@ async function addPolylineForRoute(routeName) {
         if (!routesByCampusBase[selectedCampus].includes(routeName)) return;
 
         let coordinates = await getPolylineData(routeName);
+        if (polylines[routeName]) return;
         if (!coordinates || !coordinates.length) return;
 
         if (Object.keys(coordinates[0])[0] === 'lat') {
@@ -446,11 +458,12 @@ async function addPolylineForRoute(routeName) {
         }
 
         const style = getRouteStyle(routeName);
+        const targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
 
         const polylineOptions = getPolylineLayerOptions({
             color: style.color,
             weight: 4,
-            opacity: style.opacity,
+            opacity: targetOpacity,
             smoothFactor: 1,
         });
 
@@ -458,7 +471,7 @@ async function addPolylineForRoute(routeName) {
         polyline.addTo(map);
         polylines[routeName] = polyline;
         const pathEl = polyline.getElement();
-        if (pathEl) pathEl.style.opacity = String(style.opacity);
+        if (pathEl) pathEl.style.opacity = String(targetOpacity);
         
         // Reset removal count when polyline is successfully created
         if (polylineRemovalCount[routeName]) {
@@ -541,8 +554,16 @@ function prunePolylinesWithoutInService() {
 
             // Update route selector button color on UI
             const $btn = $(`.route-selector[routeName="${routeName}"]`);
-            if ($btn.length && shownRoute !== routeName) {
-                $btn.css({ 'background-color': style.buttonColor, 'opacity': String(style.buttonOpacity) });
+            if ($btn.length) {
+                if (shownRoute) {
+                    if (routeName === shownRoute) {
+                        $btn.css({ 'background-color': colorMappings[routeName], 'opacity': '1' });
+                    } else {
+                        $btn.css({ 'background-color': 'gray', 'opacity': '1' });
+                    }
+                } else {
+                    $btn.css({ 'background-color': style.buttonColor, 'opacity': String(style.buttonOpacity) });
+                }
             }
         });
         updatePolylineBoundsIfNeeded();

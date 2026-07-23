@@ -843,7 +843,7 @@ function checkMinRoutes() {
         $('#knight-mover-hours').html('Knight Mover accepts calls until 5:45AM');
     }
 
-    console.log(`[KnightMover Debug] active:${isKnightMoverActive}, campus:${selectedCampus}, appStyle:${appStyle}, userSettingOverride:${settings['toggle-show-knight-mover']}, time:${currentMonth+1}/${currentDay}/${currentYear} ${hour}:00, day:${dayOfWeek}`);
+    // console.log(`[KnightMover Debug] active:${isKnightMoverActive}, campus:${selectedCampus}, appStyle:${appStyle}, userSettingOverride:${settings['toggle-show-knight-mover']}, time:${currentMonth+1}/${currentDay}/${currentYear} ${hour}:00, day:${dayOfWeek}`);
 
     if (!isKnightMoverActive) {
         $('.knight-mover').hide();

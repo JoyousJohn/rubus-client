@@ -166,7 +166,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
                 clearTimeout(longPressTimer);
             });
 
-            $routeElm.on('click touchend', function(event) {
+            $routeElm.on('click', function(event) {
 
                 const moved = Math.abs(initialX - (event.originalEvent.clientX || (event.changedTouches && event.changedTouches[0] ? event.changedTouches[0].clientX : 0))) > 10;
 
@@ -224,7 +224,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn && rn !== shownRoute) {
-                $(this).css('background-color', 'gray').css('opacity', '0.7');
+                $(this).css('background-color', 'gray').css('opacity', '1');
             }
         });
 
@@ -410,14 +410,13 @@ let originalShownRoute = null; // Preserve map selection before opening panel
 let lastMapShownRoute = null; // Tracks current map selection when panels are closed
 let isLongPress = false; // Flag to track if a long press occurred
 
-function toggleRouteSelectors(route) {
-    console.log("toggleRouteSelectors called with:", route);
-    console.log("shownRoute before toggleRouteSelectors:", shownRoute);
+function toggleRouteSelectors(route, wasSelected = false) {
+    console.log("[toggleRouteSelectors] called with route:", route, "| wasSelected:", wasSelected);
 
-    if (shownRoute === route) {
+    if (wasSelected) {
 
-        // Restore all route selectors (excluding settings button and fav) to their colors
-        $('.route-selector').not('.settings-btn').each(function() {
+        // Restore all route selectors (excluding settings button, sim button, and parking selector) to their colors
+        $('.route-selector').not('.settings-btn, .sim-btn, .parking-campus-selector').each(function() {
             const rn = $(this).attr('routeName');
             if (rn !== 'fav') {
                 const hasInService = routeHasInServiceBuses(rn);
@@ -430,16 +429,17 @@ function toggleRouteSelectors(route) {
         shownBeforeRoute = null;
 
         $(`.route-selector[routeName="fav"]`).css('background-color', 'gold').css('opacity', '1');
+        $('.sim-btn').css('opacity', '1');
 
     }
 
     else {
 
-        // Gray out all route selectors (including those without polylines) except the selected one, parking campus selector, and settings button
-        $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
+        // Gray out all route selectors (including those without polylines) except the selected one, parking campus selector, sim button, and settings button
+        $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn !== route) {
-                $(this).css('background-color', 'gray').css('opacity', '0.7');
+                $(this).css('background-color', 'gray').css('opacity', '1');
             }
         });
 
@@ -467,7 +467,7 @@ function toggleRouteSelectors(route) {
     }
 
     $('.stop-info-use-route-selectors-notice').slideUp('fast');
-    console.log("shownRoute after toggleRouteSelectors:", shownRoute);
+    console.log("[toggleRouteSelectors] shownRoute after update:", shownRoute);
 
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
@@ -497,8 +497,21 @@ function hideStopsExcept(excludedRoute) {
 
 function hidePolylinesExcept(route) {
     for (const polyline in polylines) {
+        const polyObj = polylines[polyline];
         if (polyline !== route) {
-            polylines[polyline].setStyle({ opacity: 0 });
+            polyObj.setStyle({ opacity: 0 });
+            const pathEl = polyObj.getElement();
+            if (pathEl) {
+                pathEl.style.opacity = '0';
+                pathEl.style.display = 'none';
+            }
+        } else {
+            polyObj.setStyle({ opacity: 1 });
+            const pathEl = polyObj.getElement();
+            if (pathEl) {
+                pathEl.style.opacity = '1';
+                pathEl.style.display = '';
+            }
         }
     }
 }
@@ -579,14 +592,17 @@ function updateBusNameTooltips() {
 }
 
 async function toggleRoute(route) {
-    console.log('toggleRoute called with:', route);
-    console.log('shownRoute before toggle:', shownRoute);
+    console.log('[toggleRoute] called with route:', route, '| current shownRoute:', shownRoute);
 
     if (route === 'fav') { toggleFavorites(); return; }
 
+    const isUnselecting = (shownRoute === route);
+    shownRoute = isUnselecting ? null : route;
+    console.log('[toggleRoute] New shownRoute state set to:', shownRoute);
+
     // Show all polylines and buses
-    if (shownRoute === route) {
-        console.log('Toggling off route:', route);
+    if (isUnselecting) {
+        console.log('[toggleRoute] Toggling off route:', route);
         showAllPolylines();  
         showAllBuses();
         showAllStops();
@@ -605,7 +621,7 @@ async function toggleRoute(route) {
 
     // Hide other polylines and buses
     } else {
-        console.log('Selecting route:', route);
+        console.log('[toggleRoute] Selecting route:', route);
 
         showAllStops();
 
@@ -613,7 +629,6 @@ async function toggleRoute(route) {
 
         for (const marker in busMarkers) {
             if (busData[marker].route !== route) {
-                // busMarkers[marker].remove()
                 busMarkers[marker].getElement().style.display = 'none';
             } else {
                 busMarkers[marker].getElement().style.display = ''; // if switched the one being viewed 
@@ -622,7 +637,6 @@ async function toggleRoute(route) {
 
         hideStopsExcept(route);
 
-        // console.log(route)
         try {
             if (!polylines[route]) {
                 // If user selects a route with no active buses, ensure its polyline is present
@@ -670,13 +684,13 @@ async function toggleRoute(route) {
 
     // Update last known map selection state (panels closed scenario)
     if (!$('.info-panels-show-hide-wrapper').is(':visible')) {
-        lastMapShownRoute = (shownRoute === route) ? null : route;
-        console.log('Updated lastMapShownRoute:', lastMapShownRoute);
+        lastMapShownRoute = shownRoute;
+        console.log('[toggleRoute] Updated lastMapShownRoute:', lastMapShownRoute);
     }
 
-    console.log('About to call toggleRouteSelectors with:', route);
-    toggleRouteSelectors(route);
-    console.log('shownRoute after toggleRoute:', shownRoute);
+    console.log('[toggleRoute] Calling toggleRouteSelectors with route:', route, '| isUnselecting:', isUnselecting);
+    toggleRouteSelectors(route, isUnselecting);
+    console.log('[toggleRoute] Final shownRoute state:', shownRoute);
 
 }
 
