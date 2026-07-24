@@ -896,9 +896,10 @@ $(function() {
             $devHead.show();
             const shouldFilterDev = $devWrapper.is(':visible') || isExpanding;
             if (shouldFilterDev) {
-                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .force-show-dependent').each(function() {
+                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .force-show-dependent').each(function() {
                     const $item = $(this);
                     if ($item.hasClass('force-show-dependent')) return; // handled separately below
+                    if ($item.parents('.settings-custom-tile-url').length) return; // handled as part of parent section
 
                     const text = $item.text().toLowerCase();
                     if (query === '' || text.includes(query)) {
@@ -932,7 +933,8 @@ $(function() {
                         $forceShowDep.find('.force-show-polylines-container').show();
                     }
                 } else {
-                    $routeOptions.show();
+                    $forceShowMainRow.hide();
+                    $forceShowDep.hide();
                 }
 
                 // Update segFocusNotice visibility based on parent toggle row visibility

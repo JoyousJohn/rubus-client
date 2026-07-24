@@ -1954,12 +1954,12 @@
                         </div>
                     </div>
 
-                    <div class="settings-custom-tile-url mt-1rem">
-                        <div class="settings-heading">CUSTOM TILE URL OVERRIDE</div>
-                        <div class="text-1p2rem dimgray mb-0p5rem">Override tiles.rubus.live with custom tile URL pattern (e.g. https://my-tileserver/{z}/{x}/{y}.png or Mapbox raster URL)</div>
+                    <div class="settings-custom-tile-url">
+                        <div class="settings-heading">Custom Tile URL Override</div>
+                        <div class="text-1p2rem dimgray mb-0p5rem ml-0p5rem">Accepted formats: https://tiles/{z}/{x}/{y}.png or raster URL.</div>
                         <div class="flex gap-x-0p5rem">
                             <input type="text" id="custom-tile-url-input" class="w-full p-0p5rem text-1p3rem" placeholder="https://example.com/tiles/{z}/{x}/{y}.png" style="background: var(--theme-card-bg); color: var(--theme-color); border: 1px solid var(--theme-border); border-radius: 6px;">
-                            <button id="apply-custom-tile-url-btn" class="pointer p-0p5rem bold-500" style="background: #171717; color: #ffffff; border: 1px solid var(--theme-border); border-radius: 6px; white-space: nowrap; transition: background 0.2s, color 0.2s;">Apply</button>
+                            <button id="apply-custom-tile-url-btn" class="pointer p-0p5rem bold-500" style="border: 1px solid var(--theme-border); border-radius: 6px; white-space: nowrap; transition: background 0.2s, color 0.2s;">Apply</button>
                             <button id="clear-custom-tile-url-btn" class="pointer p-0p5rem" style="background: var(--theme-card-bg); color: var(--theme-color); border: 1px solid var(--theme-border); border-radius: 6px; white-space: nowrap;">Clear</button>
                         </div>
                         <div id="custom-tile-url-status" class="text-1p2rem mt-0p5rem" style="display: none;"></div>

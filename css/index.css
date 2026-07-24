@@ -17,12 +17,14 @@
     --theme-breaks-min-color: yellow;
     --theme-short-stops-color: #32f832;
     --theme-chat-recs-bg: #4d4d4d;
+    --theme-card-bg: rgb(68, 68, 68);
     --theme-chat-recs-text: #dedede;
     --theme-unselected-route-bg: #484848;
     --theme-unselected-route-text: #9fa1a5;
     --theme-stops-list-bg: #0f4c3a;
     --theme-stops-list-text: #10b981;
     --theme-link: #8ab4f8;
+    --theme-accent: #3155c1;
 }
 
 [theme="light"] {
@@ -40,12 +42,14 @@
     --theme-breaks-min-color: orange;
     --theme-short-stops-color: #29c529;
     --theme-chat-recs-bg: #f1f1f1;
+    --theme-card-bg: #e0e0e0;
     --theme-chat-recs-text: #171717;
     --theme-unselected-route-bg: #f3f4f6;
     --theme-unselected-route-text: #6b7280;
     --theme-stops-list-bg: #dcfce7;
     --theme-stops-list-text: #047857;
     --theme-link: #1a73e8;
+    --theme-accent: #1a73e8;
 }
 
 [theme="y2k-glamour"], [theme="glamour"] {
@@ -1638,6 +1642,11 @@ html[theme="light"] .settings-panel .settings-options {
     color: var(--theme-color);
 }
 
+#apply-custom-tile-url-btn {
+    background: var(--theme-accent);
+    color: white;
+}
+
 .settings-close > div {
     background-color: rgb(208, 77, 77);
     height: 4rem;
@@ -2159,7 +2168,7 @@ html[theme="glamour"] .settings-panel {
 [theme="glamour"] .settings-option.settings-selected {
     background-color: rgba(236, 72, 153, 0.25);
     color: #fdf2f8;
-    box-shadow: inset 0 0 0 2px #ec4899, 0 0 10px rgba(236, 72, 153, 0.3);
+    box-shadow: inset 0 0 0 1px #ec4899, 0 0 10px rgba(236, 72, 153, 0.3);
 }
 
 [theme="y2k-glamour"] .marker-option-cell .settings-option.settings-selected,
@@ -2169,7 +2178,7 @@ html[theme="glamour"] .settings-panel {
 
 [theme="y2k-glamour"] .marker-option-cell:has(.settings-selected),
 [theme="glamour"] .marker-option-cell:has(.settings-selected) {
-    box-shadow: inset 0 0 0 2px #ec4899, 0 0 10px rgba(236, 72, 153, 0.3);
+    box-shadow: inset 0 0 0 1px #ec4899, 0 0 10px rgba(236, 72, 153, 0.3);
 }
 
 [theme="y2k-glamour"] input, [theme="y2k-glamour"] textarea, [theme="y2k-glamour"] select,
@@ -2184,6 +2193,17 @@ html[theme="glamour"] .settings-panel {
     border-color: #ec4899 !important;
     outline: none !important;
     box-shadow: 0 0 8px rgba(236, 72, 153, 0.5) !important;
+}
+
+[theme="y2k-glamour"] #settings-search-input:focus,
+[theme="glamour"] #settings-search-input:focus {
+    box-shadow: none !important;
+}
+
+[theme="y2k-glamour"] .settings-search-wrapper:focus-within,
+[theme="glamour"] .settings-search-wrapper:focus-within {
+    border-color: #ec4899;
+    box-shadow: 0 0 8px rgba(236, 72, 153, 0.5);
 }
 
 [theme="y2k-glamour"] code, [theme="y2k-glamour"] pre, .code-block,
@@ -2245,7 +2265,7 @@ html[theme="coffee"] .settings-panel {
 [theme="coffee"] .settings-option.settings-selected {
     background-color: rgba(160, 82, 45, 0.2);
     color: #3d2b1f;
-    box-shadow: inset 0 0 0 2px #a0522d, 0 0 8px rgba(160, 82, 45, 0.25);
+    box-shadow: inset 0 0 0 1px #a0522d, 0 0 8px rgba(160, 82, 45, 0.25);
 }
 
 [theme="beige-coffee"] .marker-option-cell .settings-option.settings-selected,
@@ -2255,7 +2275,7 @@ html[theme="coffee"] .settings-panel {
 
 [theme="beige-coffee"] .marker-option-cell:has(.settings-selected),
 [theme="coffee"] .marker-option-cell:has(.settings-selected) {
-    box-shadow: inset 0 0 0 2px #a0522d, 0 0 8px rgba(160, 82, 45, 0.25);
+    box-shadow: inset 0 0 0 1px #a0522d, 0 0 8px rgba(160, 82, 45, 0.25);
 }
 
 [theme="beige-coffee"] input, [theme="beige-coffee"] textarea, [theme="beige-coffee"] select,
@@ -2270,6 +2290,17 @@ html[theme="coffee"] .settings-panel {
     border-color: #a0522d !important;
     outline: none !important;
     box-shadow: 0 0 8px rgba(160, 82, 45, 0.4) !important;
+}
+
+[theme="beige-coffee"] #settings-search-input:focus,
+[theme="coffee"] #settings-search-input:focus {
+    box-shadow: none !important;
+}
+
+[theme="beige-coffee"] .settings-search-wrapper:focus-within,
+[theme="coffee"] .settings-search-wrapper:focus-within {
+    border-color: #a0522d;
+    box-shadow: 0 0 8px rgba(160, 82, 45, 0.4);
 }
 
 [theme="beige-coffee"] code, [theme="beige-coffee"] pre,

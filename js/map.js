@@ -888,8 +888,14 @@ function panout() {
 // Map tile style for a UI theme. Light-family themes share streets tiles;
 // dark-family themes share dark tiles. UI chrome is handled purely by CSS vars.
 function resolveMapTileStyle(theme) {
-    if (theme === 'light' || theme === 'beige-coffee' || theme === 'coffee') {
+    if (theme === 'light') {
         return 'streets-v11';
+    }
+    if (theme === 'glamour' || theme === 'y2k-glamour') {
+        return 'glamour-v1';
+    }
+    if (theme === 'coffee' || theme === 'beige-coffee') {
+        return 'coffee-v1';
     }
     return 'dark-v11';
 }
