@@ -99,7 +99,9 @@ $(document).ready(function() {
     let returningToSavedView = false;
 
     map.on('movestart drag', function() {
-        $('.bottom, .knight-mover, .info-top-right').css('opacity', '0.4');
+        if (settings['toggle-dim-on-pan'] !== false) {
+            $('.bottom, .knight-mover, .info-top-right').css('opacity', '0.4');
+        }
     });
 
     map.on('drag', function() {

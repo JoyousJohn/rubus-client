@@ -1045,6 +1045,24 @@
                 </script>
 
                 <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-dim-on-pan">Dim on Pan<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-dim-on-pan" class="toggle-input" checked>
+                        <label for="toggle-dim-on-pan" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="dim-on-pan-explain none ml-0p5rem text-1p3rem dimgray">Fade interface controls and popups while dragging the map.</div>
+                <script>
+                $('.span-i-dim-on-pan').click(function() {
+                    const $el = $('.dim-on-pan-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                </script>
+
+                <div class="flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-settings-end">Move Settings to End<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
                         <input type="checkbox" id="toggle-settings-btn-end" class="toggle-input">

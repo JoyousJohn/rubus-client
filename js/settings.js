@@ -6,8 +6,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
         'toggle': toggleId,
         'isChecked': isChecked
     });
-
     switch (toggleId) {
+
+        case 'toggle-dim-on-pan':
+            console.log(`Dim on Pan now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-dim-on-pan'] = isChecked;
+            if (!isChecked) {
+                $('.bottom, .knight-mover, .info-top-right').css('opacity', '1');
+            }
+            break;
 
         case 'toggle-select-closest-stop':
             console.log(`Auto select closest stop ${isChecked ? 'ON' : 'OFF'}`);
