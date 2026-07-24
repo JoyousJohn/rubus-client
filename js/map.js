@@ -68,24 +68,21 @@ $(document).ready(function() {
     map.setMinZoom(12);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
 
-    let mapTheme;
-    if (settings && settings['theme']) {
-
-        if (settings['theme'] === 'light' || settings['theme'] === 'beige-coffee' || settings['theme'] === 'coffee') {
-            mapTheme = 'streets-v11';
-        } else if (settings['theme'] === 'y2k-glamour' || settings['theme'] === 'glamour') {
-            mapTheme = 'glamour';
-        } else if (settings['theme'] === 'dark') {
-            mapTheme = 'dark-v11';
-        } else if (settings['theme'] === 'auto') {
+    window.resolveMapTileStyle = function(theme) {
+        if (theme === 'light' || theme === 'beige-coffee' || theme === 'coffee') {
+            return 'streets-v11';
+        } else if (theme === 'y2k-glamour' || theme === 'glamour') {
+            return 'glamour';
+        } else if (theme === 'dark') {
+            return 'dark-v11';
+        } else if (theme === 'auto') {
             const currentHour = new Date().getHours();
-            mapTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
-        } else {
-            mapTheme = 'streets-v11';
+            return (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
         }
-    } else {
-        mapTheme = 'streets-v11';
-    }
+        return theme || 'streets-v11';
+    };
+
+    let mapTheme = resolveMapTileStyle(settings && settings['theme']);
 
     if (settings && settings['toggle-pause-update-marker']) {
         pauseUpdateMarkerPositions = settings['toggle-pause-update-marker'];
