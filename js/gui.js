@@ -2029,6 +2029,7 @@ function updateSettings() {
             $(this).addClass('settings-selected')
             settings['font'] = $(this).attr('font-option')
             document.documentElement.style.setProperty('--font-family', settings['font'] + ', sans-serif');
+            tileLayer.redraw();
         }
 
         else if (settingsOption === 'marker-size') {
