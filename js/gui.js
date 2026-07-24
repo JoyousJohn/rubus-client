@@ -2823,7 +2823,7 @@ function selectTheme(theme) {
     document.documentElement.setAttribute('data-selected-theme', theme);
     document.documentElement.setAttribute('theme', previewTheme);
     clearTimeout(_pendingThemeTimeout);
-    _pendingThemeTimeout = setTimeout(() => changeMapStyle(previewTheme), 50);
+    _pendingThemeTimeout = setTimeout(() => changeMapStyle(theme), 50);
 }
 
 window.continueToCampusModal = function() {

@@ -59,7 +59,7 @@
     --theme-stop-bus-time: #b099cc;
     --theme-bg-closest-stop: #1c112e;
     --theme-hidden-route-col: #3b225c;
-    --theme-bus-icon-inner: #ec4899;
+    --theme-bus-icon-inner: #c026d3;
     --theme-satellite-btn: #a855f7;
     --theme-breaks-min-color: #ec4899;
     --theme-short-stops-color: #a855f7;
@@ -2158,9 +2158,18 @@ html[theme="glamour"] .settings-panel {
 [theme="y2k-glamour"] .settings-option.settings-selected,
 [theme="glamour"] .settings-option.settings-selected {
     background-color: rgba(236, 72, 153, 0.25);
-    border-color: #ec4899 !important;
     color: #fdf2f8;
-    box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+    box-shadow: inset 0 0 0 2px #ec4899, 0 0 10px rgba(236, 72, 153, 0.3);
+}
+
+[theme="y2k-glamour"] .marker-option-cell .settings-option.settings-selected,
+[theme="glamour"] .marker-option-cell .settings-option.settings-selected {
+    box-shadow: none;
+}
+
+[theme="y2k-glamour"] .marker-option-cell:has(.settings-selected),
+[theme="glamour"] .marker-option-cell:has(.settings-selected) {
+    box-shadow: inset 0 0 0 2px #ec4899, 0 0 10px rgba(236, 72, 153, 0.3);
 }
 
 [theme="y2k-glamour"] input, [theme="y2k-glamour"] textarea, [theme="y2k-glamour"] select,
@@ -2235,9 +2244,18 @@ html[theme="coffee"] .settings-panel {
 [theme="beige-coffee"] .settings-option.settings-selected,
 [theme="coffee"] .settings-option.settings-selected {
     background-color: rgba(160, 82, 45, 0.2);
-    border-color: #a0522d !important;
     color: #3d2b1f;
-    box-shadow: 0 0 8px rgba(160, 82, 45, 0.25);
+    box-shadow: inset 0 0 0 2px #a0522d, 0 0 8px rgba(160, 82, 45, 0.25);
+}
+
+[theme="beige-coffee"] .marker-option-cell .settings-option.settings-selected,
+[theme="coffee"] .marker-option-cell .settings-option.settings-selected {
+    box-shadow: none;
+}
+
+[theme="beige-coffee"] .marker-option-cell:has(.settings-selected),
+[theme="coffee"] .marker-option-cell:has(.settings-selected) {
+    box-shadow: inset 0 0 0 2px #a0522d, 0 0 8px rgba(160, 82, 45, 0.25);
 }
 
 [theme="beige-coffee"] input, [theme="beige-coffee"] textarea, [theme="beige-coffee"] select,
