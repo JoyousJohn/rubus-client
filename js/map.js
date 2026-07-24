@@ -471,7 +471,7 @@ $(document).ready(function() {
 
     try { if (typeof initLocationWatchForRiding === 'function') { initLocationWatchForRiding(); } } catch (e) {}
 
-    map.on('zoomend', updateZoomToast);
+    map.on('zoom zoomend', updateZoomToast);
     updateZoomToast();
 });
 
