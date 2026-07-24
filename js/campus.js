@@ -66,7 +66,11 @@ async function makeNewMap() {
     } else {
         map.setMaxBounds(null);
     }
-    map.fitBounds(polylineBounds);
+    if (polylineBounds && polylineBounds.isValid()) {
+        map.fitBounds(polylineBounds);
+    } else if (bounds[selectedCampus]) {
+        map.fitBounds(bounds[selectedCampus]);
+    }
 
     activeRoutes.clear(); // only used to avoid having to call populateRouteSelectors below to trigger const newRoutes = pollActiveRoutes.difference(activeRoutes); in pre.js. doesn't affect addstopstoMap bc we're padding isInitial true to fetchBusData
     await fetchETAs();
@@ -79,8 +83,13 @@ async function makeNewMap() {
     // Set polylines for routes that have in-service buses
     const routesWithInServiceBuses = Array.from(activeRoutes).filter(route => routeHasInServiceBuses(route));
     if (routesWithInServiceBuses.length > 0) {
-        setPolylines(new Set(routesWithInServiceBuses));
-		map.fitBounds(polylineBounds, { padding: [10, 10] });
+        await setPolylines(new Set(routesWithInServiceBuses));
+        updatePolylineBoundsIfNeeded();
+        if (polylineBounds && polylineBounds.isValid()) {
+            map.fitBounds(polylineBounds, { padding: [10, 10] });
+        } else {
+            map.fitBounds(bounds[selectedCampus]);
+        }
     } else {
         map.fitBounds(bounds[selectedCampus]);
     }

@@ -495,7 +495,12 @@ async function addPolylineForRoute(routeName) {
 function routeHasInServiceBuses(route) {
     try {
         const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
-        return routeBuses && routeBuses.some(busName => busData[busName] && !busData[busName].oos && !distanceFromLine(busName));
+        return routeBuses && routeBuses.some(busName => 
+            busData[busName] && 
+            !busData[busName].oos && 
+            !busData[busName].atDepot && 
+            isValid(busName)
+        );
     } catch (e) {
         return false;
     }
@@ -504,25 +509,29 @@ function routeHasInServiceBuses(route) {
 // Update polylineBounds efficiently - only when polylines actually change
 function updatePolylineBoundsIfNeeded() {
     try {
-        // Get current routes that have polylines
+        // Get current routes that have polylines AND have valid in-service buses
         const currentRoutesWithPolylines = new Set(
             Object.keys(polylines).filter(route =>
-                routesByCampusBase[selectedCampus]?.includes(route)
+                routesByCampusBase[selectedCampus]?.includes(route) &&
+                routeHasInServiceBuses(route)
             )
         );
 
-        // Quick check: if no routes changed, return early
+        // Quick check: if no routes changed, return early unless polylineBounds is not set
         const currentRoutesArray = Array.from(currentRoutesWithPolylines).sort();
         const previousRoutesArray = Array.from(previousRoutesWithPolylines).sort();
 
-        if (JSON.stringify(currentRoutesArray) === JSON.stringify(previousRoutesArray)) {
+        if (polylineBounds && JSON.stringify(currentRoutesArray) === JSON.stringify(previousRoutesArray)) {
             return; // No changes
         }
 
         let combinedBounds = null;
 
-        // Compute bounds from current polylines
+        // Compute bounds from current polylines for routes with valid buses
         for (const route of currentRoutesWithPolylines) {
+            if (!routeBounds[route] && polylines[route]) {
+                routeBounds[route] = polylines[route].getBounds();
+            }
             if (routeBounds[route]) {
                 if (combinedBounds === null) {
                     combinedBounds = L.latLngBounds(routeBounds[route].getSouthWest(), routeBounds[route].getNorthEast());
@@ -532,7 +541,7 @@ function updatePolylineBoundsIfNeeded() {
             }
         }
 
-        // If no active routes, use campus bounds as default
+        // If no active routes with valid buses, use campus bounds as default
         if (!combinedBounds && bounds[selectedCampus]) {
             combinedBounds = L.latLngBounds(bounds[selectedCampus].getSouthWest(), bounds[selectedCampus].getNorthEast());
         }
