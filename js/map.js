@@ -69,17 +69,15 @@ $(document).ready(function() {
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
 
     window.resolveMapTileStyle = function(theme) {
-        if (theme === 'light' || theme === 'beige-coffee' || theme === 'coffee') {
-            return 'streets-v11';
-        } else if (theme === 'y2k-glamour' || theme === 'glamour') {
-            return 'glamour';
-        } else if (theme === 'dark') {
-            return 'dark-v11';
-        } else if (theme === 'auto') {
+        if (!theme) return 'streets-v11';
+        if (theme.includes('coffee')) return 'coffee';
+        if (theme.includes('glamour')) return 'glamour';
+        if (theme === 'dark') return 'dark-v11';
+        if (theme === 'auto') {
             const currentHour = new Date().getHours();
             return (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
         }
-        return theme || 'streets-v11';
+        return 'streets-v11';
     };
 
     let mapTheme = resolveMapTileStyle(settings && settings['theme']);
@@ -888,16 +886,15 @@ function panout() {
 // Map tile style for a UI theme. Light-family themes share streets tiles;
 // dark-family themes share dark tiles. UI chrome is handled purely by CSS vars.
 function resolveMapTileStyle(theme) {
-    if (theme === 'light') {
-        return 'streets-v11';
+    if (!theme) return 'streets-v11';
+    if (theme.includes('coffee')) return 'coffee';
+    if (theme.includes('glamour')) return 'glamour';
+    if (theme === 'dark') return 'dark-v11';
+    if (theme === 'auto') {
+        const currentHour = new Date().getHours();
+        return (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
     }
-    if (theme === 'glamour' || theme === 'y2k-glamour') {
-        return 'glamour-v1';
-    }
-    if (theme === 'coffee' || theme === 'beige-coffee') {
-        return 'coffee-v1';
-    }
-    return 'dark-v11';
+    return 'streets-v11';
 }
 
 function getTileUrlPattern(styleName) {

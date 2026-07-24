@@ -186,7 +186,8 @@ $(function() {
 		const theme = document.documentElement.getAttribute('theme');
 		$('.campus-carousel-img').each(function() {
 			const $img = $(this);
-			const imgSrc = $img.data(theme) || (theme === 'light' || theme === 'beige-coffee' || theme === 'coffee' ? $img.data('light') : $img.data('dark'));
+			const isLightTheme = theme === 'light' || (theme && theme.includes('coffee'));
+			const imgSrc = $img.data(theme) || (isLightTheme ? $img.data('light') : $img.data('dark'));
 			$img.attr('src', imgSrc);
 		});
 	}
