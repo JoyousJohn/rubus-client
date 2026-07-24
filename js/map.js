@@ -886,33 +886,39 @@ function panout() {
 
 }
 
-function changeMapStyle(newStyle) {
+// Map tile style for a UI theme. Light-family themes share streets tiles;
+// dark-family themes share dark tiles. UI chrome is handled purely by CSS vars.
+function resolveMapTileStyle(theme) {
+    if (theme === 'light' || theme === 'beige-coffee' || theme === 'coffee') {
+        return 'streets-v11';
+    }
+    return 'dark-v11';
+}
 
+// Apply theme CSS immediately; only touch the tile layer when the map style
+// family actually changes. Avoids pan/zoom hacks that rebuild polylines & markers.
+function changeMapStyle(newStyle) {
     console.log('changeMapStyle', newStyle);
 
     document.documentElement.setAttribute('theme', newStyle);
-    
-    // Early return if satellite mode is enabled - don't change map tiles
-    if (currentTileLayerType === 'satellite') {
+
+    // Bus marker inner colors use --theme-bus-icon-inner and update via CSS alone.
+    // Polylines/stop markers are theme-independent and must not be rebuilt.
+
+    // Satellite mode owns its own tiles
+    if (currentTileLayerType === 'satellite' || !tileLayer || !map) {
         return;
     }
 
-    if (newStyle === 'light' || newStyle === 'beige-coffee' || newStyle === 'coffee') {
-        newStyle = 'streets-v11';
-    } else {
-        newStyle = 'dark-v11';
-    }
+    const mapStyle = resolveMapTileStyle(newStyle);
+    const newUrl = `https://tiles.rubus.live/styles/v1/${mapStyle}/tiles/{z}/{x}/{y}.png`;
 
-    // console.log("Setting map style to " + newStyle);
-    let newUrl = `https://tiles.rubus.live/styles/v1/${newStyle}/tiles/{z}/{x}/{y}.png`;
-    tileLayer.setUrl(newUrl);
-    // Note: changeMapStyle only changes between light/dark variants of streets, so currentTileLayerType remains 'streets'
-    
-    // Force map to immediately update (not require zoom)
-    const currentCenter = map.getCenter();
-    const currentZoom = map.getZoom();
-    map.setView([0, 0], 1, { animate: false });
-    map.setView(currentCenter, currentZoom, { animate: true });
+    // setUrl already redraws tiles when the URL changes and is a no-op otherwise.
+    // Do NOT setView to world origin — that forces every polyline/marker to rebuild.
+    if (tileLayer._url !== newUrl) {
+        tileLayer.setUrl(newUrl);
+    }
+    // Note: changeMapStyle only swaps light/dark streets variants; currentTileLayerType stays 'streets'
 }
 
 let userPosition;
@@ -3867,7 +3873,7 @@ $('.satellite-btn').click(function() {
             theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
 
-        const newTheme = (theme === 'light' || theme === 'beige-coffee' || theme === 'coffee') ? 'streets-v11' : 'dark-v11';
+        const newTheme = resolveMapTileStyle(theme);
         map.removeLayer(tileLayer);
 
         tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${newTheme}/tiles/{z}/{x}/{y}.png`).addTo(map);

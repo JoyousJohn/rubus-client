@@ -215,11 +215,11 @@
                 <div class="text-2p3rem select-none">Pick your preferred theme</div>
                 <div class="text-1p7rem select-none" style="color: var(--theme-extra);">You can change this anytime.</div>
                 <div class="theme-slider mx-3rem my-2rem">
-                    <div class="theme-option" data-theme="light" onclick="selectTheme('light')"><i class="fa-solid fa-sun mr-0p5rem"></i>Light</div>
-                    <div class="theme-option selected" data-theme="auto" onclick="selectTheme('auto')"><i class="fa-solid fa-circle-half-stroke mr-0p5rem"></i>Auto</div>
-                    <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')"><i class="fa-solid fa-moon mr-0p5rem"></i>Dark</div>
-                    <div class="theme-option" data-theme="y2k-glamour" onclick="selectTheme('y2k-glamour')"><i class="fa-solid fa-wand-magic-sparkles mr-0p5rem"></i>Glamour</div>
-                    <div class="theme-option" data-theme="beige-coffee" onclick="selectTheme('beige-coffee')"><i class="fa-solid fa-mug-hot mr-0p5rem"></i>Coffee</div>
+                    <div class="theme-option" data-theme="light" onclick="selectTheme('light')"><i class="fa-solid fa-sun"></i><span>Light</span></div>
+                    <div class="theme-option selected" data-theme="auto" onclick="selectTheme('auto')"><i class="fa-solid fa-circle-half-stroke"></i><span>Auto</span></div>
+                    <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')"><i class="fa-solid fa-moon"></i><span>Dark</span></div>
+                    <div class="theme-option" data-theme="y2k-glamour" onclick="selectTheme('y2k-glamour')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Glamour</span></div>
+                    <div class="theme-option" data-theme="beige-coffee" onclick="selectTheme('beige-coffee')"><i class="fa-solid fa-mug-hot"></i><span>Coffee</span></div>
                 </div>
             </div>
             <div class="theme-preview">
@@ -1013,12 +1013,12 @@
 
                 <div class="settings-theme">
                     <div class="settings-heading">Theme</div>
-                    <div class="settings-options grid grid-cols-3">
-                        <div class="settings-option" settings-option="theme" theme-option="light"><i class="fa-solid fa-sun mr-0p5rem"></i>Light</div>
-                        <div class="settings-option" settings-option="theme" theme-option="dark"><i class="fa-solid fa-moon mr-0p5rem"></i>Dark</div>
-                        <div class="settings-option" settings-option="theme" theme-option="y2k-glamour"><i class="fa-solid fa-wand-magic-sparkles mr-0p5rem"></i>Glamour</div>
-                        <div class="settings-option" settings-option="theme" theme-option="beige-coffee" style="border-top: 1px solid rgb(185, 185, 185); border-left: 0;"><i class="fa-solid fa-mug-hot mr-0p5rem"></i>Coffee</div>
-                        <div class="settings-option" settings-option="theme" theme-option="auto" style="border-top: 1px solid rgb(185, 185, 185);"><i class="fa-solid fa-circle-half-stroke mr-0p5rem"></i>Auto</div>
+                    <div class="settings-options grid" style="grid-template-columns: repeat(6, 1fr);">
+                        <div class="settings-option" settings-option="theme" theme-option="light" style="grid-column: span 2;"><i class="fa-solid fa-sun mr-0p5rem"></i>Light</div>
+                        <div class="settings-option" settings-option="theme" theme-option="dark" style="grid-column: span 2;"><i class="fa-solid fa-moon mr-0p5rem"></i>Dark</div>
+                        <div class="settings-option" settings-option="theme" theme-option="auto" style="grid-column: span 2;"><i class="fa-solid fa-circle-half-stroke mr-0p5rem"></i>Auto</div>
+                        <div class="settings-option" settings-option="theme" theme-option="y2k-glamour" style="grid-column: span 3; border-top: 1px solid rgb(185, 185, 185); border-left: 0;"><i class="fa-solid fa-wand-magic-sparkles mr-0p5rem"></i>Glamour</div>
+                        <div class="settings-option" settings-option="theme" theme-option="beige-coffee" style="grid-column: span 3; border-top: 1px solid rgb(185, 185, 185);"><i class="fa-solid fa-mug-hot mr-0p5rem"></i>Coffee</div>
                     </div>
                 </div>
             </div>

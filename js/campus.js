@@ -97,10 +97,17 @@ async function makeNewMap() {
 
 
 function campusChanged() {
+    const previousCampus = selectedCampus;
+    const newCampus = settings['campus'];
+    // True when the live map already represents this campus (e.g. first-run
+    // confirm after the map was fully built behind the theme/campus modals).
+    const mapAlreadyForCampus = map && previousCampus === newCampus;
 
-    $('.updating-buses').show();
+    if (!mapAlreadyForCampus) {
+        $('.updating-buses').show();
+    }
 
-    selectedCampus = settings['campus']
+    selectedCampus = newCampus;
     setSelectedCampusButton(selectedCampus);
     console.log(`campus changed to ${selectedCampus}`)
     stopsData = allStopsData[selectedCampus];
@@ -125,7 +132,9 @@ function campusChanged() {
         $('.knight-mover').hide();
     }
 
-    if (map) {
+    // Map is already populated live behind first-run modals for the default campus.
+    // Only tear down stops/buses/polylines when the campus actually changes.
+    if (map && !mapAlreadyForCampus) {
         cleanupOldMap();
         makeNewMap();
     }
@@ -133,14 +142,16 @@ function campusChanged() {
     renderForceShowCheckboxes();
 
     // Update bike racks if the setting is enabled
-    if (settings['toggle-show-bike-racks']) {
+    if (settings['toggle-show-bike-racks'] && !mapAlreadyForCampus) {
         // Small delay to ensure map is ready
         setTimeout(() => {
             showBikeRacks();
         }, 100);
     }
 
-    $('.updating-buses').slideUp();
+    if (!mapAlreadyForCampus) {
+        $('.updating-buses').slideUp();
+    }
 
 }
 
@@ -343,7 +354,13 @@ $(function() {
 	// Confirm handler
 	window.confirmCampusSelection = function() {
 		localStorage.setItem('settings', JSON.stringify(settings));
-		campusChanged();
+		// Map/buses/polylines are already live behind the modal for the initial
+		// campus. Only rebuild when the user confirmed a different campus.
+		if (settings['campus'] !== selectedCampus) {
+			campusChanged();
+		} else {
+			setSelectedCampusButton(settings['campus'] || 'nb');
+		}
 		$('.campus-modal').fadeOut();
 	};
 });

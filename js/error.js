@@ -199,7 +199,7 @@ class ErrorTracker {
         }
 
         countElement.textContent = this.errors.length;
-        errorTab.style.display = 'block';
+        errorTab.style.display = 'flex';
         if (this.errors.length > 0) {
             countElement.classList.add('error-count-has-errors');
         } else {

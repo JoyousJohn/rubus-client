@@ -1,4 +1,5 @@
 let longPressTimer
+let _pendingThemeTimeout
 
 let selectedCampusRoutes = [];
 
@@ -2763,7 +2764,7 @@ async function getBuildNumber() {
 
             const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
             const lastPage = parseInt(linkHeader.match(/page=(\d+)>; rel="last"/)[1]);
-            $('.build-number').text(`Alpha ${lastPage - 473} | b${lastPage} (${commitDate})`);
+            $('.build-number').text(`Alpha ${lastPage - 473} b${lastPage} (${commitDate})`);
             // $('.build-number').text('- V' + (lastPage - 473) + ' | Build' + lastPage + ' (' + commitDate + ')');
         }
     });
@@ -2794,8 +2795,10 @@ function selectTheme(theme) {
 
         $(`[theme-option="${selectedTheme}"]`).addClass('settings-selected');
 
-        // Update the global attributes on confirm
+        // Theme CSS + tiles were already applied while previewing; flush any
+        // pending tile swap and ensure final theme is set (no full map rebuild).
         document.documentElement.setAttribute('data-selected-theme', selectedTheme);
+        clearTimeout(_pendingThemeTimeout);
         changeMapStyle(activeTheme);
         launchFireworks(12);
         return;
@@ -2815,9 +2818,12 @@ function selectTheme(theme) {
     }
     document.getElementById('theme-preview-img').src = `img/theme-select/${previewTheme}.png`;
     
-    // Immediately update the global theme attributes and styles.
+    // CSS root vars (and bus marker colors via --theme-bus-icon-inner) update immediately.
+    // Debounce only the tile-layer swap so rapid clicks don't thrash tile requests.
     document.documentElement.setAttribute('data-selected-theme', theme);
-    changeMapStyle(previewTheme);
+    document.documentElement.setAttribute('theme', previewTheme);
+    clearTimeout(_pendingThemeTimeout);
+    _pendingThemeTimeout = setTimeout(() => changeMapStyle(previewTheme), 50);
 }
 
 window.continueToCampusModal = function() {
