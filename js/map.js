@@ -940,6 +940,7 @@ function changeMapStyle(newStyle) {
     // Do NOT setView to world origin — that forces every polyline/marker to rebuild.
     if (tileLayer._url !== newUrl) {
         tileLayer.setUrl(newUrl);
+        tileLayer.redraw();
     }
     // Note: changeMapStyle only swaps light/dark streets variants; currentTileLayerType stays 'streets'
 }

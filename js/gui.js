@@ -1720,6 +1720,7 @@ $('.settings-close').click(function() {
     $('.bottom').show();
     $('.settings-floating-bar').hide();
     stopStatusUpdates();
+    tileLayer.redraw();
 })
 
 
@@ -2070,10 +2071,7 @@ function updateSettings() {
             // Set preferCanvas based on renderer choice
             map.options.preferCanvas = settings['map-renderer'] === 'canvas'
             
-            // Force map to refresh with new renderer
-            const center = map.getCenter();
-            const zoom = map.getZoom();
-            map.setView(center, zoom);
+            reapplyPolylineRenderers('settings-map-renderer');
             
         } else if (settingsOption === 'polyline-renderer') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
