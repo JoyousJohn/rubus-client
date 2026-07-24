@@ -98,6 +98,10 @@ $(document).ready(function() {
     let isFittingBounds = false;
     let returningToSavedView = false;
 
+    map.on('movestart drag', function() {
+        $('.bottom, .knight-mover, .info-top-right').css('opacity', '0.4');
+    });
+
     map.on('drag', function() {
         mapDragged = true;
 
@@ -184,7 +188,8 @@ $(document).ready(function() {
     map.on('moveend', function() {
         isTransitioning = false; // Clear the transitioning flag
         // console.log('Set istransitioning to false');
-        $('.panout').css('color', '#5b5b5b')
+        $('.panout').css('color', '#5b5b5b');
+        $('.bottom, .knight-mover, .info-top-right').css('opacity', '1');
     });
 
     isDesktop = $(window).width() > 992;

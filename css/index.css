@@ -341,6 +341,7 @@ html, body {
 .info-top-right {
     /* position: absolute; */
     right: 1rem;
+    transition: opacity 0.33s ease;
 }
 
 .notif-popup {
@@ -420,6 +421,7 @@ html, body {
     pointer-events: all;
     height: max-content;
     user-select: none;
+    transition: opacity 0.33s ease;
 }
 
 }
@@ -1207,6 +1209,7 @@ html, body {
     row-gap: 0.8rem;
     pointer-events: none;
     box-sizing: border-box;
+    transition: opacity 0.33s ease;
 }
 
 .panout, .centerme, .fly-closest-stop, .shoot-fireworks, .satellite-btn, .info-panels, .search-btn, .buildings-btn {
