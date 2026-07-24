@@ -483,6 +483,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-pause-stop-eta-updates'] = isChecked;
             break;
 
+        case 'toggle-show-zoom-toast':
+            settings['toggle-show-zoom-toast'] = isChecked;
+            updateZoomToast();
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;

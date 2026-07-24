@@ -463,7 +463,21 @@ $(document).ready(function() {
     });
 
     try { if (typeof initLocationWatchForRiding === 'function') { initLocationWatchForRiding(); } } catch (e) {}
+
+    map.on('zoomend', updateZoomToast);
+    updateZoomToast();
 });
+
+function updateZoomToast() {
+    if (!map) return;
+    const $toast = $('.zoom-toast');
+    if (settings['toggle-show-zoom-toast']) {
+        $toast.text('ZOOM ' + Math.round(map.getZoom() * 10) / 10);
+        $toast.stop(true, true).fadeIn();
+    } else {
+        $toast.stop(true, true).fadeOut();
+    }
+}
 
 function postLoadEvent() {
     let isPWA = window.matchMedia('(display-mode: standalone)').matches || 
