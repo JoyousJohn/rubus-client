@@ -1025,4 +1025,103 @@ $(function() {
     }).on('blur', function() {
         detachSettingsViewportListeners();
     });
+
+    // Custom Tile URL settings handler
+    if (settings && settings['custom-tile-url']) {
+        $('#custom-tile-url-input').val(settings['custom-tile-url']);
+    }
+
+    function sanitizeTileUrl(url) {
+        if (!url) return '';
+        url = url.trim();
+
+        // Check if it's a Mapbox API style URL (preview html, wmts, or style link)
+        const mapboxStyleRegex = /mapbox\.com\/styles\/v1\/([^\/]+)\/([^\/?#]+)/i;
+        const match = url.match(mapboxStyleRegex);
+
+        if (match) {
+            const username = match[1];
+            const styleId = match[2];
+            
+            // Extract access token if present
+            const tokenMatch = url.match(/access_token=([^&#]+)/i);
+            const tokenParam = tokenMatch ? `?access_token=${tokenMatch[1]}` : '';
+
+            // Return clean Leaflet raster tile URL
+            return `https://api.mapbox.com/styles/v1/${username}/${styleId}/tiles/256/{z}/{x}/{y}@2x${tokenParam}`;
+        }
+
+        return url;
+    }
+
+    function showTileStatus(message, isError) {
+        const $status = $('#custom-tile-url-status');
+        $status.stop(true, true).css({
+            color: isError ? '#ef4444' : '#10b981',
+            display: 'block',
+            opacity: 1
+        }).html(message);
+
+        setTimeout(function() {
+            $status.fadeOut(1000);
+        }, 3000);
+    }
+
+    function applyCustomTileUrl(rawUrl, isClearing) {
+        const url = sanitizeTileUrl(rawUrl);
+
+        if (url) {
+            settings['custom-tile-url'] = url;
+            $('#custom-tile-url-input').val(url);
+            
+            if (rawUrl && rawUrl !== url) {
+                showTileStatus('<i class="fa-solid fa-circle-check mr-0p5rem"></i>Converted & applied Mapbox tile URL!', false);
+            } else {
+                showTileStatus('<i class="fa-solid fa-circle-check mr-0p5rem"></i>Custom tile URL applied!', false);
+            }
+        } else {
+            delete settings['custom-tile-url'];
+            $('#custom-tile-url-input').val('');
+            if (isClearing) {
+                showTileStatus('<i class="fa-solid fa-rotate-left mr-0p5rem"></i>Reset to default tiles.rubus.live tiles', false);
+            } else if (rawUrl) {
+                showTileStatus('<i class="fa-solid fa-circle-xmark mr-0p5rem"></i>Invalid tile URL pattern', true);
+            }
+        }
+        localStorage.setItem('settings', JSON.stringify(settings));
+
+        // Animate apply button feedback
+        const $btn = $('#apply-custom-tile-url-btn');
+        const origText = $btn.text();
+        $btn.text('Applied!').css('background', '#10b981');
+        setTimeout(function() {
+            $btn.text(origText).css('background', '');
+        }, 1500);
+
+        if (typeof tileLayer !== 'undefined' && tileLayer && typeof currentTileLayerType !== 'undefined' && currentTileLayerType === 'streets') {
+            let theme = settings['theme'] || 'streets-v11';
+            if (typeof resolveMapTileStyle === 'function') {
+                theme = resolveMapTileStyle(theme);
+            }
+            if (typeof getTileUrlPattern === 'function') {
+                tileLayer.setUrl(getTileUrlPattern(theme));
+            }
+        }
+    }
+
+    $('#apply-custom-tile-url-btn').on('click', function() {
+        const val = $('#custom-tile-url-input').val();
+        applyCustomTileUrl(val, false);
+    });
+
+    $('#clear-custom-tile-url-btn').on('click', function() {
+        $('#custom-tile-url-input').val('');
+        applyCustomTileUrl('', true);
+    });
+
+    $('#custom-tile-url-input').on('keypress', function(e) {
+        if (e.which === 13) {
+            applyCustomTileUrl($(this).val());
+        }
+    });
 });

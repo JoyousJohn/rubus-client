@@ -73,7 +73,9 @@ $(document).ready(function() {
 
         if (settings['theme'] === 'light' || settings['theme'] === 'beige-coffee' || settings['theme'] === 'coffee') {
             mapTheme = 'streets-v11';
-        } else if (settings['theme'] === 'dark' || settings['theme'] === 'y2k-glamour' || settings['theme'] === 'glamour') {
+        } else if (settings['theme'] === 'y2k-glamour' || settings['theme'] === 'glamour') {
+            mapTheme = 'glamour';
+        } else if (settings['theme'] === 'dark') {
             mapTheme = 'dark-v11';
         } else if (settings['theme'] === 'auto') {
             const currentHour = new Date().getHours();
@@ -89,7 +91,7 @@ $(document).ready(function() {
         pauseUpdateMarkerPositions = settings['toggle-pause-update-marker'];
     }
 
-        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${mapTheme}/tiles/{z}/{x}/{y}.png`, {
+        tileLayer = L.tileLayer(getTileUrlPattern(mapTheme), {
         maxZoom: 20,
         updateWhenIdle: true,   // load tiles after zoom settles (less mid-gesture thrash)
         updateWhenZooming: false,
@@ -895,6 +897,13 @@ function resolveMapTileStyle(theme) {
     return 'dark-v11';
 }
 
+function getTileUrlPattern(styleName) {
+    if (settings && settings['custom-tile-url']) {
+        return settings['custom-tile-url'];
+    }
+    return `https://tiles.rubus.live/styles/v1/${styleName}/tiles/{z}/{x}/{y}.png`;
+}
+
 // Apply theme CSS immediately; only touch the tile layer when the map style
 // family actually changes. Avoids pan/zoom hacks that rebuild polylines & markers.
 function changeMapStyle(newStyle) {
@@ -911,7 +920,7 @@ function changeMapStyle(newStyle) {
     }
 
     const mapStyle = resolveMapTileStyle(newStyle);
-    const newUrl = `https://tiles.rubus.live/styles/v1/${mapStyle}/tiles/{z}/{x}/{y}.png`;
+    const newUrl = getTileUrlPattern(mapStyle);
 
     // setUrl already redraws tiles when the URL changes and is a no-op otherwise.
     // Do NOT setView to world origin — that forces every polyline/marker to rebuild.
@@ -3876,7 +3885,7 @@ $('.satellite-btn').click(function() {
         const newTheme = resolveMapTileStyle(theme);
         map.removeLayer(tileLayer);
 
-        tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/${newTheme}/tiles/{z}/{x}/{y}.png`).addTo(map);
+        tileLayer = L.tileLayer(getTileUrlPattern(newTheme)).addTo(map);
         currentTileLayerType = 'streets';
 
         $(this).removeClass('active');
