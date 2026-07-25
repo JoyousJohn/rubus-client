@@ -867,7 +867,9 @@ async function startSim() {
     hideInfoBoxes(); // needs to be first since this might show knight mover
     $('.updating-buses, .slow-connection, .knight-mover, .past-breaks-wrapper, .bus-ridership-wrapper, .campus-switcher').hide();
     $('.right-btns').removeClass('right-btns-bottom')
-    $('.sim-popup').slideDown();
+    if (!settings['toggle-hide-sim-popup']) {
+        $('.sim-popup').slideDown();
+    }
 
     sim = true;
     if (window.activeRoutes && window.activeRoutes.clear) {

@@ -495,6 +495,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
             updateZoomToast();
             break;
 
+        case 'toggle-hide-sim-popup':
+            settings['toggle-hide-sim-popup'] = isChecked;
+            if (isChecked) {
+                $('.sim-popup').hide();
+            } else if (sim) {
+                $('.sim-popup').slideDown();
+            }
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;

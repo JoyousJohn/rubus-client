@@ -1806,6 +1806,7 @@ const toggleSettings = [
     'toggle-show-depot-poly',
     'toggle-pause-stop-eta-updates',
     'toggle-show-zoom-toast',
+    'toggle-hide-sim-popup',
     'toggle-always-show-break-overdue',
     'toggle-settings-btn-end',
     'toggle-force-show-polylines',
@@ -1858,7 +1859,7 @@ let defaultSettings = {
     'toggle-select-closest-stop': true,
     'toggle-hide-other-routes': true,
     'toggle-stops-above-buses': false,
-    'toggle-offscreen-bus-indicators': true,
+    'toggle-offscreen-bus-indicators': false,
     'toggle-offscreen-bus-indicators-above-gui': false,
     'toggle-offscreen-bus-indicators-select-on-tap': false,
     'toggle-always-show-second': false,
@@ -1909,6 +1910,7 @@ let defaultSettings = {
     'toggle-show-depot-poly': false,
     'toggle-pause-stop-eta-updates': false,
     'toggle-show-zoom-toast': false,
+    'toggle-hide-sim-popup': false,
     'toggle-always-show-break-overdue': false,
     'toggle-force-show-polylines': false,
     'toggle-force-show-stops': true,
@@ -2063,6 +2065,11 @@ function updateSettings() {
             }
 
             changeMapStyle(theme)
+
+            sa_event('theme_changed', {
+                'theme': $(this).attr('theme-option'),
+                'source': 'settings'
+            });
 
         } else if (settingsOption === 'map-renderer') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
@@ -2765,7 +2772,7 @@ async function getBuildNumber() {
 
             const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
             const lastPage = parseInt(linkHeader.match(/page=(\d+)>; rel="last"/)[1]);
-            $('.build-number').text(`Alpha ${lastPage - 473} b${lastPage} (${commitDate})`);
+            $('.build-number').text(`Alpha ${lastPage - 473} b${lastPage.toLocaleString()} (${commitDate})`);
             // $('.build-number').text('- V' + (lastPage - 473) + ' | Build' + lastPage + ' (' + commitDate + ')');
         }
     });
@@ -2787,6 +2794,11 @@ function selectTheme(theme) {
         setDefaultSettings();
         settings['theme'] = selectedTheme;
         localStorage.setItem('settings', JSON.stringify(settings));
+
+        sa_event('theme_changed', {
+            'theme': selectedTheme,
+            'source': 'modal_confirm'
+        });
 
         let activeTheme = selectedTheme;
         if (selectedTheme === 'auto') {
@@ -2820,6 +2832,12 @@ function selectTheme(theme) {
     document.querySelector(`[data-theme="${theme}"]`).classList.add('selected');
     
     selectedTheme = theme;
+
+    sa_event('theme_changed', {
+        'theme': theme,
+        'source': 'modal_preview'
+    });
+
     let previewTheme = theme;
     if (theme === 'auto') {
         const currentHour = new Date().getHours();
