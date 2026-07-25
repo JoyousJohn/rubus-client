@@ -354,6 +354,7 @@ $(function() {
 
 	// Confirm handler
 	window.confirmCampusSelection = function() {
+		const isFirstTimeVisitor = !(settings && settings['campus']);
 		localStorage.setItem('settings', JSON.stringify(settings));
 		// Map/buses/polylines are already live behind the modal for the initial
 		// campus. Only rebuild when the user confirmed a different campus.
@@ -363,6 +364,9 @@ $(function() {
 			setSelectedCampusButton(settings['campus'] || 'nb');
 		}
 		$('.campus-modal').fadeOut();
+		if (isFirstTimeVisitor && !settings['toggle-disable-fireworks-on-open']) {
+			launchFireworks(12);
+		}
 	};
 });
 

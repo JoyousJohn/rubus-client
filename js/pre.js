@@ -29,9 +29,6 @@ async function immediatelyUpdateBusDataPre() {
 }
 
 async function immediatelyUpdateBusDataPost() {
-    // if (!Object.keys(busData).length) { // maybe add a condition here to only cheeck on weekends at night?
-        startOvernight(true, true);
-    // }
     $('.updating-buses').stop(true, true).slideUp();
 }
 
@@ -656,12 +653,6 @@ async function fetchWhere() {
             activeRoutes.add(busData[busName].route)
         }
 
-        // console.log(validBusNames)
-        Object.keys(busData).forEach(busName => {
-            if (!validBusNames.includes(busName) && busData[busName].route.includes('on')) { // this should only affect returning to the app which had overnight buses previously (from ws), otherwise it would briefly cause buses not yet reaching a stop to pop out before respawning from fetch data
-                makeOoS(busName)
-            }
-        })
 
         updateTimeToStops(validBusNames)
         if (popupStopId) {
@@ -686,91 +677,6 @@ async function fetchWhere() {
 }
 
 
-async function startOvernight(setColorBack, immediatelyUpdate = false) {
-    try {
-        response = await fetch('https://demo.rubus.live/overnight');
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-
-        if (Object.keys(data).length) {
-            
-            const previousActiveRoutes = new Set(activeRoutes);
-            
-            for (const busName in data) {
-    
-                const bus = data[busName];
-    
-                if (Object.keys(excludedRouteMappings).includes(bus.route)) {
-                    continue;
-                }
-    
-                if (!busData[busName]) {
-                    busData[busName] = {};
-                    busData[busName].previousTime = new Date().getTime() - 5000;
-                    busData[busName].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]];
-                    busData[busName]['type'] = 'over';
-                }
-    
-                busData[busName].busName = busName;
-                busData[busName].lat = bus.lat;
-                busData[busName].long = bus.lng;
-
-                const currentTime = new Date().getTime();
-                const timeSinceLastUpdate = currentTime - (busData[busName].previousTime || currentTime);
-                const animationDuration = Math.min(timeSinceLastUpdate, 30000) + 2500;
-
-                busData[busName].overnightAnimationDuration = animationDuration;
-
-                console.log(`[Overnight API] Bus ${busName}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
-                
-                busData[busName].previousTime = currentTime;
-    
-                busData[busName].rotation = parseFloat(bus.rotation);
-    
-                const routeStr = bus.route;
-                busData[busName].route = routeStr;
-                busData[busName].isKnown = knownRoutes.includes(routeStr);
-                activeRoutes.add(busData[busName].route);
-
-                busData[busName].capacity = bus.capacity;
-    
-                plotBus(busName, immediatelyUpdate);
-                calculateSpeed(busName);
-
-                if (setColorBack) {
-                    const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
-                    if (iconElement) {
-                        iconElement.style.backgroundColor = colorMappings[routeStr];
-                    }
-                }
-    
-            }
-
-            for (const busName in busData) {
-                if (busData[busName].type === 'over' && !(busName in data)) {
-                    console.log(`[startOvernight()][Out of Service][${busData[busName].route} Bus ${busData[busName].busName} is out of service?`);
-                    makeOoS(busName);
-                }
-            }
-
-            makeBusesByRoutes();
-
-            populateRouteSelectors(activeRoutes);
-            const newActiveRoutes = new Set([...activeRoutes].filter(route => !previousActiveRoutes.has(route)));
-            if (newActiveRoutes.size > 0) {
-                setPolylines(newActiveRoutes);
-                newActiveRoutes.forEach(item => activeRoutes.add(item));
-                updatePolylineBoundsIfNeeded();
-            }
-        }
-    } catch (error) {
-        console.error('Error fetching overnight data:', error);
-    }
-}
 
 function getEasternHourAndDayOfWeek() {
     const now = new Date();
@@ -1074,172 +980,169 @@ $(document).ready(async function() {
 
     await fetchJoinTimes();
 
-    await startOvernight(false);
+    async function initBusDataPipeline() {
+        await fetchBusData(false, true);
 
-    await fetchBusData(false, true);
+        document.dispatchEvent(new Event('rubus-bus-data-loaded'));
 
-    document.dispatchEvent(new Event('rubus-bus-data-loaded'));
+        checkShared();
 
-    checkShared();
 
-    // if (!Object.keys(busData).length) {
-    // await startOvernight();
-    // }
+        makeActiveRoutes();
+        // setPolylines(activeRoutes);
+        updatePolylineBoundsIfNeeded();
 
-    makeActiveRoutes();
-    // setPolylines(activeRoutes);
-    updatePolylineBoundsIfNeeded();
+        // console.log(activeRoutes)
 
-    // console.log(activeRoutes)
+        if (activeRoutes.size > 0) {
+            updateMarkerSize(); // set correct html marker size before plotting
+            checkMinRoutes();
+        } else {
+            $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
+            // setTimeout(() => {
+                // $('.bus-info-popup').hide();
+            if (!passioDown && selectedCampus === 'nb') $('.knight-mover').show();
 
-    if (activeRoutes.size > 0) {
-        updateMarkerSize(); // set correct html marker size before plotting
-        checkMinRoutes();
-    } else {
-        $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
-        // setTimeout(() => {
-            // $('.bus-info-popup').hide();
-        if (!passioDown && selectedCampus === 'nb') $('.knight-mover').show();
-
-        const now = new Date();
-        const hour = now.getHours();
-        if (hour >= 8 && hour < 23) {
-            $('.knight-mover').hide();
-            $('.notif-popup').html(
-                `Passio servers are unavailable. Data shown may be limited. This affects all bus apps.<br><br>You can still see navigation directions, including what bus to take, by tapping the search icon towards the bottom right.<br><br>RUBus will immediately display buses once Passio is back online.` +
-                `<br><br><span class="notif-close-btn" style="color: rgb(138, 193, 248); cursor: pointer; display: inline-block; pointer-events: all;">Close</span>`
-            ).fadeIn();
-            $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
-                $('.notif-popup').slideUp();
-            });
+            const now = new Date();
+            const hour = now.getHours();
+            if (hour >= 8 && hour < 23) {
+                $('.knight-mover').hide();
+                $('.notif-popup').html(
+                    `Passio servers are unavailable. Data shown may be limited. This affects all bus apps.<br><br>You can still see navigation directions, including what bus to take, by tapping the search icon towards the bottom right.<br><br>RUBus will immediately display buses once Passio is back online.` +
+                    `<br><br><span class="notif-close-btn" style="color: rgb(138, 193, 248); cursor: pointer; display: inline-block; pointer-events: all;">Close</span>`
+                ).fadeIn();
+                $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
+                    $('.notif-popup').slideUp();
+                });
+            }
+            // }, 5000);
+            // $('.centerme-wrapper').addClass('centerme-bottom-right')
+            $('.right-btns').addClass('right-btns-bottom')
         }
-        // }, 5000);
-        // $('.centerme-wrapper').addClass('centerme-bottom-right')
-        $('.right-btns').addClass('right-btns-bottom')
-    }
-    $('.centerme-wrapper').fadeIn();
+        $('.centerme-wrapper').fadeIn();
 
-    addStopsToMap()
-    
-    
-    
-    // $('.buses-btn').css('display', 'flex');
+        addStopsToMap();
 
-    setTimeout(() => {
-        populateFavs()
-    }, 1);
-    makeRidershipChart()
+        setTimeout(() => {
+            populateFavs()
+        }, 1);
+        makeRidershipChart()
 
-    await fetchETAs();
+        await fetchETAs();
 
-    
+        await fetchWhere();
 
-    await fetchWhere();
+        function populateJoinedService() {
+            if (popupBusName) {
+                const serviceDate = new Date(joined_service[popupBusName]);
+                const today = new Date();
+                const isToday = serviceDate.getDate() === today.getDate() && 
+                                serviceDate.getMonth() === today.getMonth() &&
+                                serviceDate.getFullYear() === today.getFullYear();
 
-    
+                const formattedTime = serviceDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: undefined,
+                    hour12: true
+                });
 
-    function populateJoinedService() {
-        if (popupBusName) {
-            const serviceDate = new Date(joined_service[popupBusName]);
-            const today = new Date();
-            const isToday = serviceDate.getDate() === today.getDate() && 
-                            serviceDate.getMonth() === today.getMonth() &&
-                            serviceDate.getFullYear() === today.getFullYear();
-
-            const formattedTime = serviceDate.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: undefined,
-                hour12: true
-            });
-
-            const displayTime = isToday ? formattedTime : 
-                `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
-            $('.bus-joined-service').text('Joined service at ' + displayTime);
-            $('.info-next-stops').show();
+                const displayTime = isToday ? formattedTime : 
+                    `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
+                $('.bus-joined-service').text('Joined service at ' + displayTime);
+                $('.info-next-stops').show();
+            }
         }
-    }
-    populateJoinedService();
+        populateJoinedService();
 
-    // wsClient.connect()
-    openRUBusSocket();
+        // wsClient.connect()
+        openRUBusSocket();
 
-    // On app resume/return, force the next update to be immediate and fetch promptly
-    const triggerImmediateResumeUpdate = () => {
-        if (sim) {
-            console.log('App resumed in sim mode - syncing sim ticks');
-            const now = Date.now();
-            for (const busName in busData) {
-                const bus = busData[busName];
-                if (bus && bus.type === 'sim') {
-                    if (bus.sim) {
-                        bus.sim.lastTick = now;
+        // On app resume/return, force the next update to be immediate and fetch promptly
+        const triggerImmediateResumeUpdate = () => {
+            if (sim) {
+                console.log('App resumed in sim mode - syncing sim ticks');
+                const now = Date.now();
+                for (const busName in busData) {
+                    const bus = busData[busName];
+                    if (bus && bus.type === 'sim') {
+                        if (bus.sim) {
+                            bus.sim.lastTick = now;
+                        }
+                        bus.previousTime = now - 300;
                     }
-                    bus.previousTime = now - 300;
+                }
+                return;
+            }
+            console.log('App resumed - triggering immediate bus update');
+            forceImmediateUpdate = true;
+
+            // Cancel all in-progress animations immediately so stale rAF callbacks
+            // don't visually run when the browser unpauses requestAnimationFrame.
+            // This must happen here (not only inside fetchBusData→immediatelyUpdateBusDataPre)
+            // because fetchBusData(true) can be silently dropped by the busFetchInProgress guard.
+            cancelAllAnimations();
+
+            // Reset stale timing data for all buses to prevent incorrect animation durations
+            const currentTime = new Date().getTime();
+            for (const busName in busData) {
+                if (busData[busName]) {
+                    // Reset previousTime to current time to prevent long animation durations
+                    busData[busName].previousTime = currentTime;
+
+                    // Reset previousPositions to current position to prevent stale Bézier curve calculations
+                    if (busData[busName].lat !== undefined && busData[busName].long !== undefined) {
+                        busData[busName].previousPositions = [[busData[busName].lat, busData[busName].long]];
+                    }
+
+                    // Clear any stale stored animation durations so they don't carry over
+                    // to the next non-immediate update. The teleport (immediate) path in
+                    // updateMarkerPosition returns early and never consumes these values.
+                    delete busData[busName].apiAnimationDuration;
+                    delete busData[busName].websocketAnimationDuration;
                 }
             }
-            return;
-        }
-        console.log('App resumed - triggering immediate bus update');
-        forceImmediateUpdate = true;
 
-        // Cancel all in-progress animations immediately so stale rAF callbacks
-        // don't visually run when the browser unpauses requestAnimationFrame.
-        // This must happen here (not only inside fetchBusData→immediatelyUpdateBusDataPre)
-        // because fetchBusData(true) can be silently dropped by the busFetchInProgress guard.
-        cancelAllAnimations();
+            // Kick a fetch right away to avoid waiting for the interval
+            busFetchInProgress = false;
+            if (!settings['toggle-pause-passio-polling']) { fetchBusData(true); }
+        };
 
-        // Reset stale timing data for all buses to prevent incorrect animation durations
-        const currentTime = new Date().getTime();
-        for (const busName in busData) {
-            if (busData[busName]) {
-                // Reset previousTime to current time to prevent long animation durations
-                busData[busName].previousTime = currentTime;
-
-                // Reset previousPositions to current position to prevent stale Bézier curve calculations
-                if (busData[busName].lat !== undefined && busData[busName].long !== undefined) {
-                    busData[busName].previousPositions = [[busData[busName].lat, busData[busName].long]];
-                }
-
-                // Clear any stale stored animation durations so they don't carry over
-                // to the next non-immediate update. The teleport (immediate) path in
-                // updateMarkerPosition returns early and never consumes these values.
-                delete busData[busName].apiAnimationDuration;
-                delete busData[busName].websocketAnimationDuration;
-                delete busData[busName].overnightAnimationDuration;
+        window.addEventListener('focus', triggerImmediateResumeUpdate);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                triggerImmediateResumeUpdate();
             }
-        }
+        });
+        window.addEventListener('pageshow', (ev) => {
+            // pageshow fires when bfcache restores the page in Safari/iOS/Chrome
+            if (ev.persisted) {
+                console.log('Bfcache restoration detected - using standard resume handler');
+                triggerImmediateResumeUpdate();
+            }
+        });
 
-        // Kick a fetch right away to avoid waiting for the interval
-        busFetchInProgress = false;
-        if (!settings['toggle-pause-passio-polling']) { fetchBusData(true); }
-    };
+        // if (!wsClient.ws) {
+            startBusPolling();
+        // }
 
-    window.addEventListener('focus', triggerImmediateResumeUpdate);
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            triggerImmediateResumeUpdate();
-        }
-    });
-    window.addEventListener('pageshow', (ev) => {
-        // pageshow fires when bfcache restores the page in Safari/iOS/Chrome
-        if (ev.persisted) {
-            console.log('Bfcache restoration detected - using standard resume handler');
-            triggerImmediateResumeUpdate();
-        }
-    });
+        setInterval(async () => {
+            await randomStepBusSpeeds();
+        }, Math.floor(Math.random() * (1000 - 200 + 1)) + 200);
 
-    // if (!wsClient.ws) {
-        startBusPolling();
-    // }
+        window.addEventListener('beforeunload', cancelAllAnimations);
 
-    setInterval(async () => {
-        await randomStepBusSpeeds();
-    }, Math.floor(Math.random() * (1000 - 200 + 1)) + 200);
+        // getMessages();
+    }
 
-    window.addEventListener('beforeunload', cancelAllAnimations);
-
-    // getMessages();
+    if (typeof map !== 'undefined' && map) {
+        await initBusDataPipeline();
+    } else {
+        document.addEventListener('rubus-map-created', async function onMapCreated() {
+            document.removeEventListener('rubus-map-created', onMapCreated);
+            await initBusDataPipeline();
+        });
+    }
 
 })
 

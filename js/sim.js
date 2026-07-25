@@ -907,7 +907,6 @@ async function endSim() {
     await fetchBusData();
     $('.updating-buses').slideUp();
     fetchWhere();
-    await startOvernight(false);
     checkMinRoutes();
 }
 

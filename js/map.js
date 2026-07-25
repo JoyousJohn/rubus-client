@@ -38,7 +38,20 @@ function refreshMapTilesAfterLayout() {
     });
 }
 
-$(document).ready(function() {
+window.resolveMapTileStyle = function(theme) {
+    if (!theme) return 'streets-v11';
+    if (theme.includes('coffee')) return 'coffee';
+    if (theme.includes('glamour')) return 'glamour';
+    if (theme === 'dark') return 'dark-v11';
+    if (theme === 'auto') {
+        const currentHour = new Date().getHours();
+        return (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
+    }
+    return 'streets-v11';
+};
+
+window.initMap = function() {
+    if (typeof map !== 'undefined' && map) return;
 
     updateSettings();
 
@@ -84,18 +97,6 @@ $(document).ready(function() {
 
     map.setMinZoom(12);
     // map.getRenderer(map).options.padding = 1; // Keep map outside viewport rendered to avoid flicker
-
-    window.resolveMapTileStyle = function(theme) {
-        if (!theme) return 'streets-v11';
-        if (theme.includes('coffee')) return 'coffee';
-        if (theme.includes('glamour')) return 'glamour';
-        if (theme === 'dark') return 'dark-v11';
-        if (theme === 'auto') {
-            const currentHour = new Date().getHours();
-            return (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
-        }
-        return 'streets-v11';
-    };
 
     let mapTheme = resolveMapTileStyle(settings && settings['theme']);
 
@@ -218,7 +219,9 @@ $(document).ready(function() {
         updateNextStopsMaxHeight();
     });
     
-    if (!$('.theme-modal').is(':visible') && !settings['toggle-disable-fireworks-on-open']) {
+    // Only launch fireworks on open for returning users — first-timers get them after campus confirm
+    const isReturningUser = !!(settings && settings['campus']);
+    if (isReturningUser && !settings['toggle-disable-fireworks-on-open']) {
         launchFireworks(12);
     }
 
@@ -291,7 +294,7 @@ $(document).ready(function() {
         }
 
         // JS can't rebuild DOM layers in true parallel; stage work so the UI stays responsive:
-        // 1) detach heavy vectors  2) setZoom (tiles load async)  3) re-attach on idle
+        // 1) pause marker animations  2) setZoom (tiles load async)  3) resume on idle
         function commitTrackpadGesture() {
             handler._gestureEndTimer = null;
             const g = handler._trackpadGesture;
@@ -311,23 +314,6 @@ $(document).ready(function() {
                     return;
                 }
 
-                const hadBuildings = typeof buildingsLayer !== 'undefined'
-                    && buildingsLayer
-                    && map.hasLayer(buildingsLayer);
-                const hadPolylines = [];
-                if (typeof polylines !== 'undefined' && polylines) {
-                    for (const routeName in polylines) {
-                        const pl = polylines[routeName];
-                        if (pl && map.hasLayer(pl)) {
-                            hadPolylines.push(pl);
-                            map.removeLayer(pl);
-                        }
-                    }
-                }
-                if (hadBuildings) {
-                    map.removeLayer(buildingsLayer);
-                }
-
                 const prevPauseMarkers = typeof pauseUpdateMarkerPositions !== 'undefined'
                     ? pauseUpdateMarkerPositions
                     : false;
@@ -341,33 +327,26 @@ $(document).ready(function() {
                 // Core zoom: markers + tiles only (tiles fetch in parallel over network)
                 map.setZoomAround(origin, finalZoom, { animate: false });
 
-                function restoreHeavyLayers() {
-                    for (let i = 0; i < hadPolylines.length; i++) {
-                        try { hadPolylines[i].addTo(map); } catch (_) {}
-                    }
-                    if (hadBuildings && buildingsLayer && !map.hasLayer(buildingsLayer)) {
-                        try { buildingsLayer.addTo(map); } catch (_) {}
-                    }
-                    if (typeof pauseUpdateMarkerPositions !== 'undefined') {
-                        pauseUpdateMarkerPositions = prevPauseMarkers;
-                    }
-                }
-
-                // Let the browser paint the zoomed map, then restore heavy layers when idle
                 requestAnimationFrame(function() {
                     if (typeof requestIdleCallback === 'function') {
-                        requestIdleCallback(restoreHeavyLayers, { timeout: 400 });
+                        requestIdleCallback(function() {
+                            if (typeof pauseUpdateMarkerPositions !== 'undefined') {
+                                pauseUpdateMarkerPositions = prevPauseMarkers;
+                            }
+                        }, { timeout: 400 });
                     } else {
-                        setTimeout(restoreHeavyLayers, 0);
+                        setTimeout(function() {
+                            if (typeof pauseUpdateMarkerPositions !== 'undefined') {
+                                pauseUpdateMarkerPositions = prevPauseMarkers;
+                            }
+                        }, 0);
                     }
                 });
 
                 if (DEBUG_WHEEL) {
                     console.log('[wheel-zoom] commit trackpad (staged)', {
                         startZoom: startZoom,
-                        finalZoom: finalZoom,
-                        restoredPolylines: hadPolylines.length,
-                        restoredBuildings: hadBuildings
+                        finalZoom: finalZoom
                     });
                 }
             });
@@ -490,6 +469,16 @@ $(document).ready(function() {
 
     map.on('zoom zoomend', updateZoomToast);
     updateZoomToast();
+
+    document.dispatchEvent(new Event('rubus-map-created'));
+};
+
+$(document).ready(function() {
+    updateSettings();
+    // Only build map on ready if the initial theme selection modal is not visible
+    if (!$('.theme-modal').is(':visible')) {
+        initMap();
+    }
 });
 
 function updateZoomToast() {
@@ -1725,7 +1714,6 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
         // duration-consumption code below, so stale values would otherwise persist.
         delete busData[busName].apiAnimationDuration;
         delete busData[busName].websocketAnimationDuration;
-        delete busData[busName].overnightAnimationDuration;
 
         return; // Exit early - no animation needed
     }
@@ -1748,11 +1736,6 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
         // Clear the stored duration after use
         delete busData[busName].apiAnimationDuration;
         // console.log(`[Animation] Using API-calculated duration: ${Math.round(duration/1000)}s for bus ${busName}`);
-    } else if (busData[busName].overnightAnimationDuration) {
-        duration = busData[busName].overnightAnimationDuration;
-        // Clear the stored duration after use
-        delete busData[busName].overnightAnimationDuration;
-        // console.log(`[Animation] Using Overnight API-calculated duration: ${Math.round(duration/1000)}s for bus ${busName}`);
     } else {
         const baseDuration = cappedTimeSinceLastUpdate + 2500;
         duration = baseDuration;
@@ -1949,6 +1932,7 @@ let selectedMarkerId;
 let pauseUpdateMarkerPositions = false;
 
 function plotBus(busName, immediatelyUpdate=false) {
+    if (typeof map === 'undefined' || !map) return;
     const loc = {lat: busData[busName].lat, long: busData[busName].long};
 
     if (!busMarkers[busName]) {

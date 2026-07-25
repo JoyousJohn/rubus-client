@@ -161,11 +161,11 @@
         (function() {
             // Get stored settings, default to auto
             let settings = localStorage.getItem('settings');
-            let selectedTheme = 'auto';
+            let selectedTheme = 'beige-coffee';
       
             if (settings) {
                 const parsed = JSON.parse(settings);
-                selectedTheme = parsed['theme'] || 'auto';
+                selectedTheme = parsed['theme'] || 'beige-coffee';
             }
       
             let computedTheme = selectedTheme;
@@ -206,20 +206,30 @@
         
     </script>
 
+    <div id="theme-bg-lights" aria-hidden="true">
+        <div class="tbl-orb tbl-orb-1"></div>
+        <div class="tbl-orb tbl-orb-2"></div>
+        <div class="tbl-orb tbl-orb-3"></div>
+        <div class="tbl-orb tbl-orb-4"></div>
+        <div class="tbl-orb tbl-orb-5"></div>
+    </div>
+
     <div class="theme-modal flex flex-col justify-between h-100vh center">
-        <div class="theme-header">
+        <div class="theme-header flex justify-center align-center gap-x-1rem mb-1p5rem mr-1rem">
             <img class="theme-img" src="img/rubus-favicon-autumn.png" style="width: 20%;">
+            <div class="left">
+                <div class="text-2rem select-none">Choose your theme</div>
+                <div class="text-1p5rem select-none" style="color: var(--theme-extra);">You can change this anytime.</div>
+            </div>
         </div>
         <div class="theme-body flex flex-col" style="flex:1; overflow:hidden;">
             <div class="theme-controls">
-                <div class="text-2p3rem select-none">Pick your preferred theme</div>
-                <div class="text-1p7rem select-none" style="color: var(--theme-extra);">You can change this anytime.</div>
                 <div class="theme-slider mx-3rem my-2rem">
                     <div class="theme-option" data-theme="light" onclick="selectTheme('light')"><i class="fa-solid fa-sun"></i><span>Light</span></div>
-                    <div class="theme-option selected" data-theme="auto" onclick="selectTheme('auto')"><i class="fa-solid fa-circle-half-stroke"></i><span>Auto</span></div>
                     <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')"><i class="fa-solid fa-moon"></i><span>Dark</span></div>
+                    <div class="theme-option selected" data-theme="beige-coffee" onclick="selectTheme('beige-coffee')"><i class="fa-solid fa-mug-hot"></i><span>Coffee</span></div>
                     <div class="theme-option" data-theme="y2k-glamour" onclick="selectTheme('y2k-glamour')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Glamour</span></div>
-                    <div class="theme-option" data-theme="beige-coffee" onclick="selectTheme('beige-coffee')"><i class="fa-solid fa-mug-hot"></i><span>Coffee</span></div>
+                    <div class="theme-option" data-theme="auto" onclick="selectTheme('auto')"><i class="fa-solid fa-circle-half-stroke"></i><span>Auto</span></div>
                 </div>
             </div>
             <div class="theme-preview">
@@ -276,6 +286,7 @@
         document.querySelector('.campus-modal').style.display = 'none';
         if (JSON.parse(localStorage.getItem('settings')) && JSON.parse(localStorage.getItem('settings'))['theme']) {
             document.querySelector('.theme-modal').style.display = 'none';
+            document.getElementById('theme-bg-lights').style.display = 'none';
             // Only show campus modal if campus is not set
             if (!JSON.parse(localStorage.getItem('settings'))['campus']) {
                 document.querySelector('.campus-modal').style.display = 'flex';
@@ -286,12 +297,13 @@
             }
         } else if (new URLSearchParams(window.location.search).has('bus')) {
             document.querySelector('.theme-modal').style.display = 'none';
+            document.getElementById('theme-bg-lights').style.display = 'none';
             $(document).ready(async function() {
                 if (!localStorage.getItem('settings')) {
                     selectTheme('auto'); // need document ready to wait for this to load
                     setTimeout(() => {
                         updateSettings();
-                        settings['theme'] = 'auto'; // idk why this isn't being set in defaultSettings and am too lazy tracing it
+                        settings['theme'] = 'beige-coffee'; // idk why this isn't being set in defaultSettings and am too lazy tracing it
                     }, 0);
                 }
             })

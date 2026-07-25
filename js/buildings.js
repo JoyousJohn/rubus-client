@@ -420,8 +420,10 @@ function loadBuildings() {
             // Only add to map if buildings setting is enabled AND not in parking-permit mode
             if (settings['toggle-show-buildings'] && !$('body').hasClass('parking-permit-mode')) {
                 console.log('🏗️ Adding buildings layer to map with', buildingsLayer.getLayers().length, 'layers');
-                buildingsLayer.addTo(map);
-                $('.buildings-btn').addClass('active');
+                if (typeof map !== 'undefined' && map) {
+                    buildingsLayer.addTo(map);
+                    $('.buildings-btn').addClass('active');
+                }
             }
         })
         .catch(error => {
@@ -746,8 +748,11 @@ function isPointInPolygon(lat, lng, polygon) {
     return inside;
 }
 
-// Listen for settings update to restore building state
+// Listen for settings update or map creation to restore building state
 document.addEventListener('rubus-settings-updated', function() {
+    restoreBuildingLayerState();
+});
+document.addEventListener('rubus-map-created', function() {
     restoreBuildingLayerState();
 });
 

@@ -1853,7 +1853,7 @@ const defaultColorMappings = {
 let defaultSettings = {
     'font': 'PP Neue Montreal',
     'marker-size': 'medium',
-    'theme': 'auto',
+    'theme': 'beige-coffee',
     'toggle-show-etas-in-seconds': false,
     'toggle-dim-on-pan': true,
     'toggle-select-closest-stop': true,
@@ -1933,7 +1933,7 @@ function setDefaultSettings () {
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     $(`div.settings-option[campus="nb"]`).addClass('settings-selected')
     
-    $(`div.settings-option[theme-option="auto"]`).addClass('settings-selected')
+    $(`div.settings-option[theme-option="beige-coffee"]`).addClass('settings-selected')
     colorMappings = settings['colorMappings']
 }
 
@@ -1971,7 +1971,7 @@ function updateSettings() {
         // but don't save it to localStorage until user confirms
         // settings = setDefaultSettings();
         settings = {...defaultSettings};
-        settings['theme'] = 'auto';
+        settings['theme'] = 'beige-coffee';
         
         // Initialize colorMappings to avoid errors
         colorMappings = settings['colorMappings'] = {...defaultColorMappings};
@@ -2801,8 +2801,16 @@ function selectTheme(theme) {
         // pending tile swap and ensure final theme is set (no full map rebuild).
         document.documentElement.setAttribute('data-selected-theme', selectedTheme);
         clearTimeout(_pendingThemeTimeout);
-        changeMapStyle(activeTheme);
-        launchFireworks(12);
+        if (typeof initMap === 'function' && (typeof map === 'undefined' || !map)) {
+            initMap();
+        } else {
+            changeMapStyle(activeTheme);
+        }
+        // Only launch fireworks here for returning users — first-timers get them after campus confirm
+        const isReturningUser = !!(settings && settings['campus']);
+        if (isReturningUser && !settings['toggle-disable-fireworks-on-open']) {
+            launchFireworks(12);
+        }
         return;
     }
 
@@ -2825,11 +2833,16 @@ function selectTheme(theme) {
     document.documentElement.setAttribute('data-selected-theme', theme);
     document.documentElement.setAttribute('theme', previewTheme);
     clearTimeout(_pendingThemeTimeout);
-    _pendingThemeTimeout = setTimeout(() => changeMapStyle(theme), 50);
+    if (typeof map !== 'undefined' && map) {
+        _pendingThemeTimeout = setTimeout(() => changeMapStyle(theme), 50);
+    }
 }
 
 window.continueToCampusModal = function() {
-    $('.theme-modal').hide();
+    if (typeof initMap === 'function' && (typeof map === 'undefined' || !map)) {
+        initMap();
+    }
+    $('.theme-modal, #theme-bg-lights').hide();
     
     // First, prepare the carousel by setting its scroll position to center NB
     // This happens while the modal is still hidden
