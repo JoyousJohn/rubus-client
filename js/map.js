@@ -21,23 +21,6 @@ let isDesktop;
 let tileLayer;
 let currentTileLayerType = 'streets'; // Track the current tile layer type
 
-// The settings panel is removed from the screen synchronously, but the browser
-// does not commit the resulting layout until a later paint. Wait for that
-// layout before asking Leaflet to recalculate the map size. Do not call
-// tileLayer.redraw() here: redraw() removes all existing raster tiles first,
-// which causes a visible blank-map flash while replacement tiles load.
-function refreshMapTilesAfterLayout() {
-    if (typeof map === 'undefined' || !map || !tileLayer) return;
-
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            if (!map || !tileLayer) return;
-
-            map.invalidateSize({ animate: false, pan: false });
-        });
-    });
-}
-
 window.resolveMapTileStyle = function(theme) {
     if (!theme) return 'streets-v11';
     if (theme.includes('coffee')) return 'coffee';
@@ -666,7 +649,6 @@ $(document).on('keydown', function(e) {
         }
         $('.settings-floating-bar').hide();
         stopStatusUpdates();
-        refreshMapTilesAfterLayout();
 
         if (settings['toggle-hide-other-routes'] && !shownRoute) {
             showAllStops();
@@ -932,6 +914,32 @@ function getTileUrlPattern(styleName) {
     return `https://tiles.rubus.live/styles/v1/${styleName}/tiles/{z}/{x}/{y}.png`;
 }
 
+// Leaflet's tileLayer.setUrl() calls redraw(), which removes the current tile
+// grid before replacement tiles have loaded. Keep the old grid visible until
+// the replacement layer has fully loaded instead.
+function swapMapTileLayer(newUrl) {
+    const previousTileLayer = tileLayer;
+    const replacementTileLayer = L.tileLayer(newUrl, {
+        maxZoom: 20,
+        updateWhenIdle: true,
+        updateWhenZooming: false,
+        keepBuffer: 2,
+        opacity: 0,
+    }).addTo(map);
+
+    tileLayer = replacementTileLayer;
+
+    replacementTileLayer.once('load', function() {
+        // A newer theme was selected before this layer finished loading.
+        if (tileLayer !== replacementTileLayer) return;
+
+        replacementTileLayer.setOpacity(1);
+        if (previousTileLayer && map.hasLayer(previousTileLayer)) {
+            map.removeLayer(previousTileLayer);
+        }
+    });
+}
+
 // Apply theme CSS immediately; only touch the tile layer when the map style
 // family actually changes. Avoids pan/zoom hacks that rebuild polylines & markers.
 function changeMapStyle(newStyle) {
@@ -953,7 +961,7 @@ function changeMapStyle(newStyle) {
     // setUrl already redraws tiles when the URL changes and is a no-op otherwise.
     // Do NOT setView to world origin — that forces every polyline/marker to rebuild.
     if (tileLayer._url !== newUrl) {
-        tileLayer.setUrl(newUrl);
+        swapMapTileLayer(newUrl);
     }
     // Note: changeMapStyle only swaps light/dark streets variants; currentTileLayerType stays 'streets'
 }

@@ -1720,7 +1720,6 @@ $('.settings-close').click(function() {
     $('.bottom').show();
     $('.settings-floating-bar').hide();
     stopStatusUpdates();
-    refreshMapTilesAfterLayout();
 })
 
 
