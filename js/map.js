@@ -21,6 +21,23 @@ let isDesktop;
 let tileLayer;
 let currentTileLayerType = 'streets'; // Track the current tile layer type
 
+// The settings panel is removed from the screen synchronously, but the browser
+// does not commit the resulting layout until a later paint. Wait for that
+// layout before asking Leaflet to recalculate the map size. Do not call
+// tileLayer.redraw() here: redraw() removes all existing raster tiles first,
+// which causes a visible blank-map flash while replacement tiles load.
+function refreshMapTilesAfterLayout() {
+    if (typeof map === 'undefined' || !map || !tileLayer) return;
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            if (!map || !tileLayer) return;
+
+            map.invalidateSize({ animate: false, pan: false });
+        });
+    });
+}
+
 $(document).ready(function() {
 
     updateSettings();
@@ -660,8 +677,7 @@ $(document).on('keydown', function(e) {
         }
         $('.settings-floating-bar').hide();
         stopStatusUpdates();
-        map.invalidateSize({ animate: false });
-        tileLayer.redraw();
+        refreshMapTilesAfterLayout();
 
         if (settings['toggle-hide-other-routes'] && !shownRoute) {
             showAllStops();

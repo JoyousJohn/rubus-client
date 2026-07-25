@@ -1720,8 +1720,7 @@ $('.settings-close').click(function() {
     $('.bottom').show();
     $('.settings-floating-bar').hide();
     stopStatusUpdates();
-    map.invalidateSize({ animate: false });
-    tileLayer.redraw();
+    refreshMapTilesAfterLayout();
 })
 
 
