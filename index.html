@@ -169,9 +169,12 @@
             }
       
             let computedTheme = selectedTheme;
+            // Duplicated from resolveAutoTheme() in vars.js — must run inline before
+            // any JS files load to prevent a flash of unstyled content (FOUC) where
+            // CSS variables resolve to the wrong theme before the attribute is set.
             if (selectedTheme === 'auto') {
                 const currentHour = new Date().getHours();
-                computedTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
+                computedTheme = (currentHour < 6) ? 'y2k-glamour' : (currentHour < 12 ? 'light' : (currentHour < 18 ? 'beige-coffee' : 'dark'));
             }
       
             document.documentElement.setAttribute('data-selected-theme', selectedTheme);

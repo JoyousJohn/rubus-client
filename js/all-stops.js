@@ -70,6 +70,7 @@ function populateAllStops() {
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();
+                        showSimBtnIfEligible();
                         
                         // Show parking campus selector only if user has a campus selected
                         if (settings['parking-campus']) {
@@ -106,7 +107,8 @@ function populateAllStops() {
                                 $('.info-panels-show-hide-wrapper').hide();
                                 $('.bottom').show();
                                 moveRouteSelectorsToMain();
-                                $('.left-btns, .right-btns, .settings-btn').show();
+                        $('.left-btns, .right-btns, .settings-btn').show();
+                        showSimBtnIfEligible();
                         
                                 // Show parking campus selector only if user has a campus selected
                                 if (settings['parking-campus']) {
@@ -194,5 +196,5 @@ $('.info-panels').click(function() {
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
     $('.route-selectors').show();
-    $('.settings-btn, .parking-campus-selector').hide();
+    $('.settings-btn, .parking-campus-selector, .sim-btn').hide();
 })

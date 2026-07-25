@@ -802,7 +802,7 @@ function selectedRoute(route) {
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
     $('.route-selectors').show();
-    $('.settings-btn, .parking-campus-selector').hide();
+    $('.settings-btn, .parking-campus-selector, .sim-btn').hide();
     
     // Make sure route panel is visible by removing the 'none' class
     $('.route-panel').show();
@@ -1636,6 +1636,7 @@ function closeRouteMenu() {
     // Only show settings button if no stop is currently selected
     if (!popupStopId) {
         $('.settings-btn').show();
+        showSimBtnIfEligible();
     }
     
     // Show parking campus selector only if user has a campus selected
@@ -2058,11 +2059,7 @@ function updateSettings() {
             $(this).addClass('settings-selected')
             settings['theme'] = $(this).attr('theme-option')
 
-            let theme = $(this).attr('theme-option')
-            if (theme === 'auto') {
-                const currentHour = new Date().getHours();
-                theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
-            }
+            const theme = resolveAutoTheme($(this).attr('theme-option'));
 
             changeMapStyle(theme)
 
@@ -2800,11 +2797,7 @@ function selectTheme(theme) {
             'source': 'modal_confirm'
         });
 
-        let activeTheme = selectedTheme;
-        if (selectedTheme === 'auto') {
-            const currentHour = new Date().getHours();
-            activeTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
-        }
+        const activeTheme = resolveAutoTheme(selectedTheme);
 
         $(`div.settings-selected[settings-option="theme"]`).removeClass('settings-selected');
         $(`[theme-option="${selectedTheme}"]`).addClass('settings-selected');
@@ -2839,11 +2832,7 @@ function selectTheme(theme) {
         'source': 'modal_preview'
     });
 
-    let previewTheme = theme;
-    if (theme === 'auto') {
-        const currentHour = new Date().getHours();
-        previewTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
-    }
+    const previewTheme = resolveAutoTheme(theme);
     document.getElementById('theme-preview-img').src = `img/theme-select/${previewTheme}.png`;
     
     // CSS root vars (and bus marker colors via --theme-bus-icon-inner) update immediately.

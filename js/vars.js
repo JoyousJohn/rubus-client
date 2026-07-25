@@ -14,6 +14,16 @@ let maxDistanceMiles = 14;
 let sim = false;
 let spoof = false;
 
+function resolveAutoTheme(theme) {
+    if (theme !== 'auto') return theme;
+    // When updating these time ranges, also update the inline script in index.html
+    const h = new Date().getHours();
+    if (h < 6) return 'y2k-glamour';      // 12am–6am
+    if (h < 12) return 'light';           // 6am–12pm
+    if (h < 18) return 'beige-coffee';    // 12pm–6pm
+    return 'dark';                        // 6pm–12am
+}
+
 // Global variable to track if out of service buses should be hidden in stop grid
 let hideOutOfServiceBuses = false;
 
@@ -33,20 +43,28 @@ for (const campus in routesByCampusBase) {
     }
 }
 
-let busesByRoutes = {};
+let busesByRoutes = Object.fromEntries(
+    Object.keys(routesByCampusBase).map(campus => [campus, {}])
+);
 
 function makeBusesByRoutes() {
     busesByRoutes = {};
+    for (const campus of Object.keys(routesByCampusBase)) {
+        busesByRoutes[campus] = {};
+    }
     for (const bus in busData) {
         const route = busData[bus].route;
         const campus = routesByCampus[route];
-        if (!busesByRoutes[campus]) {
-            busesByRoutes[campus] = {};
-        }
         if (!busesByRoutes[campus][route]) {
             busesByRoutes[campus][route] = [];
         }
         busesByRoutes[campus][route].push(bus);
+    }
+}
+
+function showSimBtnIfEligible() {
+    if (!sim && selectedCampus === 'nb' && settings && settings['toggle-show-sim']) {
+        $('.sim-btn').show();
     }
 }
 

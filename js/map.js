@@ -23,14 +23,11 @@ let currentTileLayerType = 'streets'; // Track the current tile layer type
 
 window.resolveMapTileStyle = function(theme) {
     if (!theme) return 'streets-v11';
+    theme = resolveAutoTheme(theme);
     if (theme.includes('coffee')) return 'coffee';
     if (theme.includes('glamour')) return 'glamour';
     if (theme.includes('forest')) return 'forest';
     if (theme === 'dark') return 'dark-v11';
-    if (theme === 'auto') {
-        const currentHour = new Date().getHours();
-        return (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
-    }
     return 'streets-v11';
 };
 
@@ -716,6 +713,7 @@ function hideInfoBoxes(instantly_hide) {
         populateRouteSelectors(activeRoutes);
         
         $('.settings-btn').show();
+        showSimBtnIfEligible();
 
         checkMinRoutes(); // because .knight-mover is hidden in popStopInfo()
     }
@@ -898,14 +896,11 @@ function panout() {
 // dark-family themes share dark tiles. UI chrome is handled purely by CSS vars.
 function resolveMapTileStyle(theme) {
     if (!theme) return 'streets-v11';
+    theme = resolveAutoTheme(theme);
     if (theme.includes('coffee')) return 'coffee';
     if (theme.includes('glamour')) return 'glamour';
     if (theme.includes('forest')) return 'forest';
     if (theme === 'dark') return 'dark-v11';
-    if (theme === 'auto') {
-        const currentHour = new Date().getHours();
-        return (currentHour <= 7 || currentHour >= 18) ? 'dark-v11' : 'streets-v11';
-    }
     return 'streets-v11';
 }
 
@@ -2243,6 +2238,7 @@ function popInfo(busName, resetCampusFontSize) {
         thisClosestStopId = null;
         $('.stop-info-popup').hide();
         $('.settings-btn').show();
+        showSimBtnIfEligible();
         populateRouteSelectors(activeRoutes);
     }
 
@@ -3909,12 +3905,7 @@ function stopOvertimeCounter() {
 
 $('.satellite-btn').click(function() {
     if (currentTileLayerType === 'satellite') {
-        let theme = settings['theme'];
-        if (theme === 'auto') {
-            const currentHour = new Date().getHours();
-            theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
-        }
-
+        const theme = resolveAutoTheme(settings['theme']);
         const newTheme = resolveMapTileStyle(theme);
         map.removeLayer(tileLayer);
 
@@ -3927,11 +3918,7 @@ $('.satellite-btn').click(function() {
         tileLayer = L.tileLayer(`https://tiles.rubus.live/styles/v1/satellite-streets-v11/tiles/{z}/{x}/{y}.png`).addTo(map);
         currentTileLayerType = 'satellite';
 
-        let theme = settings['theme']
-        if (theme === 'auto') {
-            const currentHour = new Date().getHours();
-            theme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
-        }
+        let theme = resolveAutoTheme(settings['theme']);
         $(this).addClass('active');
     }
 });

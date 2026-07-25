@@ -1502,7 +1502,7 @@ async function popStopInfo(stopId) {
     // Update route selectors to only show routes that service this stop
     populateRouteSelectors(activeRoutes, stopId);
     
-    $('.settings-btn').hide();
+    $('.settings-btn, .sim-btn').hide();
 
     // return;
 

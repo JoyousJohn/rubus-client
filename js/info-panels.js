@@ -231,6 +231,7 @@ $('.info-panels-close').click(function() {
     // Only show settings button if no stop is currently selected
     if (!popupStopId) {
         $('.settings-btn').show();
+        showSimBtnIfEligible();
     }
     $('.info-panels-close').show();
     // Restore original route selection if needed
