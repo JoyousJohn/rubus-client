@@ -498,8 +498,12 @@ function routeHasInServiceBuses(route) {
         return routeBuses && routeBuses.some(busName => 
             busData[busName] && 
             !busData[busName].oos && 
-            !busData[busName].atDepot && 
-            isValid(busName)
+            !busData[busName].atDepot
+            // isValid(busName) -- temporarily disabled: requires busETAs which
+            // aren't populated until fetchWhere() runs; this caused route selectors
+            // and polylines to flash gray for ~2s on initial load because
+            // prunePolylinesWithoutInService() was called before ETAs were available.
+            // oos + atDepot alone are sufficient to know if a route is active.
         );
     } catch (e) {
         return false;
