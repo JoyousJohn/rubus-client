@@ -961,6 +961,8 @@ function changeMapStyle(newStyle) {
         swapMapTileLayer(newUrl);
     }
     // Note: changeMapStyle only swaps light/dark streets variants; currentTileLayerType stays 'streets'
+
+    updateBuildingColorsForTheme();
 }
 
 let userPosition;

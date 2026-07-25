@@ -2,31 +2,57 @@ let buildingsLayer = null;
 let highlightedBuildingLayer = null;
 let buildingSpatialIndex = null; // For O(1) spatial lookups
 
+function getBuildingColors() {
+    const theme = resolveAutoTheme(settings['theme']);
+    if (theme === 'dark') return {
+        building: { color: '#999', fillColor: '#bbb', fillOpacity: 0.5 },
+        parking:  { color: '#1a7a6b', fillColor: '#2dd4a8', fillOpacity: 0.3 },
+        fallback: { color: '#888', fillColor: '#aaa', fillOpacity: 0.3 }
+    };
+    if (theme === 'y2k-glamour') return {
+        building: { color: '#9d6ba8', fillColor: '#c9a0d6', fillOpacity: 0.5 },
+        parking:  { color: '#9d174d', fillColor: '#ec4899', fillOpacity: 0.3 },
+        fallback: { color: '#7c5a8a', fillColor: '#a87ec0', fillOpacity: 0.3 }
+    };
+    if (theme === 'beige-coffee') return {
+        building: { color: '#8b6b4a', fillColor: '#b8956e', fillOpacity: 0.5 },
+        parking:  { color: '#6b7a3d', fillColor: '#a3b86c', fillOpacity: 0.3 },
+        fallback: { color: '#9a8568', fillColor: '#c4a882', fillOpacity: 0.3 }
+    };
+    if (theme === 'forest') return {
+        building: { color: '#a0845c', fillColor: '#c4a87a', fillOpacity: 0.5 },
+        parking:  { color: '#8b7a2e', fillColor: '#c4a845', fillOpacity: 0.3 },
+        fallback: { color: '#7a9a5c', fillColor: '#a0c080', fillOpacity: 0.3 }
+    };
+    // light (default)
+    return {
+        building: { color: '#444', fillColor: '#888', fillOpacity: 0.5 },
+        parking:  { color: '#226622', fillColor: '#44cc44', fillOpacity: 0.3 },
+        fallback: { color: '#333', fillColor: '#ccc', fillOpacity: 0.3 }
+    };
+}
+
+function updateBuildingColorsForTheme() {
+    if (!buildingsLayer) return;
+    const colors = getBuildingColors();
+    buildingsLayer.eachLayer(function(layer) {
+        if (!layer.feature) return;
+        // Skip highlighted building (search highlight uses red, don't override)
+        if (layer === highlightedBuildingLayer) return;
+        const category = layer.feature.properties?.category;
+        const style = category === 'building' ? colors.building :
+                      category === 'parking' ? colors.parking : colors.fallback;
+        layer.setStyle({ ...style, weight: 1 });
+    });
+}
+
 function unhighlightBuilding() {
     if (highlightedBuildingLayer) {
         const category = highlightedBuildingLayer.feature?.properties?.category;
-        if (category === 'building') {
-            highlightedBuildingLayer.setStyle({
-                color: '#444',
-                fillColor: '#888',
-                fillOpacity: 0.5,
-                weight: 1
-            });
-        } else if (category === 'parking') {
-            highlightedBuildingLayer.setStyle({
-                color: '#226622',
-                fillColor: '#44cc44',
-                fillOpacity: 0.3,
-                weight: 1
-            });
-        } else {
-            highlightedBuildingLayer.setStyle({
-                color: '#333',
-                fillColor: '#ccc',
-                fillOpacity: 0.3,
-                weight: 1
-            });
-        }
+        const colors = getBuildingColors();
+        const style = category === 'building' ? colors.building :
+                      category === 'parking' ? colors.parking : colors.fallback;
+        highlightedBuildingLayer.setStyle({ ...style, weight: 1 });
     }
     highlightedBuildingLayer = null;
 }
@@ -307,28 +333,13 @@ function loadBuildings() {
             console.log('🏗️ Loading campus-specific buildings GeoJSON with', data.features?.length || 0, 'features');
             buildingsLayer = L.geoJSON(data, {
                 style: function(feature) {
-                    // You can customize style based on feature properties
+                    const colors = getBuildingColors();
                     if (feature.properties && feature.properties.category === 'building') {
-                        return {
-                            color: '#444',
-                            fillColor: '#888',
-                            fillOpacity: 0.5,
-                            weight: 1
-                        };
+                        return { ...colors.building, weight: 1 };
                     } else if (feature.properties && feature.properties.category === 'parking') {
-                        return {
-                            color: '#226622',
-                            fillColor: '#44cc44',
-                            fillOpacity: 0.3,
-                            weight: 1
-                        };
+                        return { ...colors.parking, weight: 1 };
                     }
-                    return {
-                        color: '#333',
-                        fillColor: '#ccc',
-                        fillOpacity: 0.3,
-                        weight: 1
-                    };
+                    return { ...colors.fallback, weight: 1 };
                 },
                 onEachFeature: function(feature, layer) {
                     layer.on('click', function(e) {
@@ -502,12 +513,11 @@ function highlightBuildingByName(buildingName) {
     
     // Clear previous highlight
     if (highlightedBuildingLayer) {
-        highlightedBuildingLayer.setStyle({
-            color: '#333',
-            fillColor: '#ccc',
-            fillOpacity: 0.3,
-            weight: 1
-        });
+        const prevCategory = highlightedBuildingLayer.feature?.properties?.category;
+        const colors = getBuildingColors();
+        const prevStyle = prevCategory === 'building' ? colors.building :
+                          prevCategory === 'parking' ? colors.parking : colors.fallback;
+        highlightedBuildingLayer.setStyle({ ...prevStyle, weight: 1 });
     }
     
     // Style the new highlighted building

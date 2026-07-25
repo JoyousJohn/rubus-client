@@ -1917,6 +1917,24 @@ html[theme="light"] .settings-panel .span-i {
     height: 19px;    
 }
 
+@keyframes rainbow-markers {
+    from { filter: hue-rotate(0deg); }
+    to { filter: hue-rotate(360deg); }
+}
+
+.settings-marker-style .marker,
+.settings-marker-style .passio-marker-circle,
+.settings-marker-style .passio-marker-arrow-in,
+.settings-marker-style .rider-marker,
+.settings-marker-style .duck-marker,
+.settings-marker-size .marker,
+.settings-marker-size .passio-marker-circle,
+.settings-marker-size .passio-marker-arrow-in,
+.settings-marker-size .rider-marker,
+.settings-marker-size .duck-marker {
+    animation: rainbow-markers 12s linear infinite;
+}
+
 .settings-toggle {
     display: flex;
     align-items: center;
