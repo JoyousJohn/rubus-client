@@ -899,6 +899,7 @@ function resolveMapTileStyle(theme) {
     if (!theme) return 'streets-v11';
     if (theme.includes('coffee')) return 'coffee';
     if (theme.includes('glamour')) return 'glamour';
+    if (theme.includes('forest')) return 'forest';
     if (theme === 'dark') return 'dark-v11';
     if (theme === 'auto') {
         const currentHour = new Date().getHours();

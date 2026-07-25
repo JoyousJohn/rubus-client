@@ -2354,3 +2354,115 @@ html[theme="coffee"] .settings-panel {
     color: #f4eae1;
     box-shadow: 0 0 10px rgba(160, 82, 45, 0.4);
 }
+
+/* ==========================================
+   Forest Theme - Core CSS Variables
+   ========================================== */
+[theme="forest"] {
+    --theme-bg: #1a2e1a;
+    --theme-color: #d4cfc3;
+    --theme-color-lighter: #d4cfc3;
+    --theme-extra: #6b8f5e;
+    --theme-line-bg: #2d4230;
+    --theme-border: #2d4230;
+    --theme-stop-bus-name: #6b8f5e;
+    --theme-stop-bus-time: #6b8f5e;
+    --theme-bg-closest-stop: #223a25;
+    --theme-hidden-route-col: #2d4230;
+    --theme-bus-icon-inner: #d4a845;
+    --theme-satellite-btn: #c49a3c;
+    --theme-breaks-min-color: #e8c84a;
+    --theme-short-stops-color: #6aaa50;
+    --theme-chat-recs-bg: #223a25;
+    --theme-chat-recs-text: #d4cfc3;
+    --theme-unselected-route-bg: #223a25;
+    --theme-unselected-route-text: #6b8f5e;
+    --theme-stops-list-bg: #1a2e1a;
+    --theme-stops-list-text: #d4a845;
+    --theme-link: #c49a3c;
+    --theme-accent: #c49a3c;
+    --theme-accent-secondary: #6aaa50;
+    --theme-card-bg: #223a25;
+    --theme-panel-bg: #223a25;
+}
+
+/* ==========================================
+   Forest Theme - Component & UI Styles
+   ========================================== */
+[theme="forest"] ::selection {
+    background-color: #6aaa50;
+    color: #d4cfc3;
+}
+
+html[theme="forest"] .settings-panel {
+    background-color: #223a25;
+}
+
+[theme="forest"] .settings-panel .settings-heading {
+    color: #6b8f5e;
+}
+
+[theme="forest"] .settings-option.settings-selected {
+    background-color: rgba(196, 154, 60, 0.25);
+    color: #d4cfc3;
+    box-shadow: inset 0 0 0 1px #c49a3c, 0 0 10px rgba(196, 154, 60, 0.3);
+}
+
+[theme="forest"] .marker-option-cell .settings-option.settings-selected {
+    box-shadow: none;
+}
+
+[theme="forest"] .marker-option-cell:has(.settings-selected) {
+    box-shadow: inset 0 0 0 1px #c49a3c, 0 0 10px rgba(196, 154, 60, 0.3);
+}
+
+[theme="forest"] input, [theme="forest"] textarea, [theme="forest"] select {
+    border-color: #2d4230;
+    background-color: #223a25;
+    color: #d4cfc3;
+}
+
+[theme="forest"] input:focus, [theme="forest"] textarea:focus, [theme="forest"] select:focus {
+    border-color: #c49a3c !important;
+    outline: none !important;
+    box-shadow: 0 0 8px rgba(196, 154, 60, 0.5) !important;
+}
+
+[theme="forest"] #settings-search-input:focus {
+    box-shadow: none !important;
+}
+
+[theme="forest"] .settings-search-wrapper:focus-within {
+    border-color: #c49a3c;
+    box-shadow: 0 0 8px rgba(196, 154, 60, 0.5);
+}
+
+[theme="forest"] code, [theme="forest"] pre {
+    background-color: #223a25;
+    border: 1px solid #2d4230;
+    color: #d4cfc3;
+}
+
+[theme="forest"] .toggle-slider {
+    background-color: #2d4230;
+}
+
+[theme="forest"] .toggle-input:checked + .toggle-label {
+    background-color: #c49a3c;
+}
+
+[theme="forest"] .stats-legend-item.stats-legend-selected {
+    color: #d4cfc3;
+    border-color: #c49a3c;
+}
+
+[theme="forest"] .theme-slider {
+    border: 1px solid #2d4230;
+    background-color: #223a25;
+}
+
+[theme="forest"] .theme-option.selected {
+    background-color: #c49a3c;
+    color: #1a2e1a;
+    box-shadow: 0 0 12px rgba(196, 154, 60, 0.5);
+}
