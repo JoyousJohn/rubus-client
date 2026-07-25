@@ -2779,7 +2779,7 @@ async function getBuildNumber() {
 }
 
 
-let selectedTheme = 'auto';
+let selectedTheme = document.documentElement.getAttribute('data-selected-theme') || 'beige-coffee';
 
 function selectTheme(theme) {
 
@@ -2806,6 +2806,7 @@ function selectTheme(theme) {
             activeTheme = (currentHour <= 7 || currentHour >= 18) ? 'dark' : 'light';
         }
 
+        $(`div.settings-selected[settings-option="theme"]`).removeClass('settings-selected');
         $(`[theme-option="${selectedTheme}"]`).addClass('settings-selected');
 
         // Theme CSS + tiles were already applied while previewing; flush any

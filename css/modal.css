@@ -57,6 +57,7 @@
     overflow: hidden;
     pointer-events: none;
     background: var(--theme-bg);
+    transition: background 0.5s ease;
 }
 
 .tbl-orb {
