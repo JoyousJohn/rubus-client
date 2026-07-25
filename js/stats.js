@@ -42,6 +42,23 @@ function getStopShortName(name) {
     return map[name] || map[cleanName] || cleanName;
 }
 
+function mergeSimSegments(segments) {
+    const merged = [];
+    let simPct = 0;
+    for (const seg of segments) {
+        if (seg.label && seg.label.startsWith('sim-')) {
+            simPct += seg.percentage;
+        } else {
+            merged.push(seg);
+        }
+    }
+    if (simPct > 0) {
+        merged.push({ label: 'sim', percentage: simPct });
+    }
+    merged.sort((a, b) => b.percentage - a.percentage);
+    return merged;
+}
+
 function fetchStatsJson(url) {
     return fetch(url)
         .then(res => res.ok ? res.json() : null)
@@ -77,9 +94,20 @@ function showStats() {
     const $lineCount = $('.stats-js-lines');
     const $cssCount = $('.stats-css-lines');
     const $htmlCount = $('.stats-html-lines');
-    $lineCount.text(typeof TOTAL_JS_LINES !== 'undefined' ? `${TOTAL_JS_LINES.toLocaleString()} lines of JS` : '').show();
-    $cssCount.text(typeof TOTAL_CSS_LINES !== 'undefined' ? `${TOTAL_CSS_LINES.toLocaleString()} lines of CSS` : '').show();
-    $htmlCount.text(typeof TOTAL_HTML_LINES !== 'undefined' ? `${TOTAL_HTML_LINES.toLocaleString()} lines of HTML` : '').show();
+
+    function lineText(total, label, delta) {
+      if (typeof total === 'undefined') return '';
+      let text = `${total.toLocaleString()} lines of ${label}`;
+      if (typeof delta !== 'undefined' && delta) {
+        const color = delta.startsWith('+') ? '#2ecc71' : '#e74c3c';
+        text += ` (<span style="color:${color}">${delta}</span>)`;
+      }
+      return text;
+    }
+
+    $lineCount.html(lineText(TOTAL_JS_LINES, 'JS', typeof TOTAL_JS_LINES_DELTA !== 'undefined' ? TOTAL_JS_LINES_DELTA : '')).show();
+    $cssCount.html(lineText(TOTAL_CSS_LINES, 'CSS', typeof TOTAL_CSS_LINES_DELTA !== 'undefined' ? TOTAL_CSS_LINES_DELTA : '')).show();
+    $htmlCount.html(lineText(TOTAL_HTML_LINES, 'HTML', typeof TOTAL_HTML_LINES_DELTA !== 'undefined' ? TOTAL_HTML_LINES_DELTA : '')).show();
 
     if (busStatsData) {
         renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
@@ -206,6 +234,7 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
 
     setupCanvasClickListener(canvasId, options);
 
+    statsData.segments = mergeSimSegments(statsData.segments);
     const segments = statsData.segments;
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;

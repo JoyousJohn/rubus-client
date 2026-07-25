@@ -1842,6 +1842,7 @@ const defaultColorMappings = {
     'summer2': '#2bd6ec',
     'commencement': 'LightSalmon',
     'helix': '#db6464',
+    'sim': '#ff6b6b',
 
     'psx': 'LightSalmon',
     'ps': 'LightGreen',

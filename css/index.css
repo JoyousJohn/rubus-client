@@ -2078,6 +2078,24 @@ html[theme="light"] .settings-panel .span-i {
     color: var(--theme-color-lighter);
     font-weight: 500;
     pointer-events: none;
+    background: linear-gradient(
+        90deg,
+        var(--theme-color-lighter) 0%,
+        var(--theme-color-lighter) 40%,
+        rgba(255, 255, 255, 0.6) 50%,
+        var(--theme-color-lighter) 60%,
+        var(--theme-color-lighter) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: loading-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes loading-shimmer {
+    0% { background-position: -100% 0; }
+    100% { background-position: 100% 0; }
 }
 
 .stats-col-60 {
