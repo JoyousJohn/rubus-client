@@ -772,8 +772,10 @@ $(function() {
 
         if (query.length > 0) {
             $clearBtn.show();
+            $('.settings-footer-wrapper').hide();
         } else {
             $clearBtn.hide();
+            $('.settings-footer-wrapper').show();
         }
 
         // Filter sections within settings-list
@@ -914,9 +916,9 @@ $(function() {
         const $devHead = $('.dev-options-head');
         const $devWrapper = $('.dev-options-wrapper');
         if ($devWrapper.length) {
-            $devHead.show();
             const shouldFilterDev = $devWrapper.is(':visible') || isExpanding;
             if (shouldFilterDev) {
+                let devHasMatch = false;
                 $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .force-show-dependent').each(function() {
                     const $item = $(this);
                     if ($item.hasClass('force-show-dependent')) return; // handled separately below
@@ -925,6 +927,7 @@ $(function() {
                     const text = $item.text().toLowerCase();
                     if (query === '' || text.includes(query)) {
                         $item.show();
+                        if (query !== '' && text.includes(query)) devHasMatch = true;
                     } else {
                         $item.hide();
                     }
@@ -948,6 +951,7 @@ $(function() {
                 if (query === '' || forceRouteMatch) {
                     $routeOptions.show();
                     if (forceRouteMatch) {
+                        devHasMatch = true;
                         $forceShowMainRow.show();
                         $forceShowDep.show();
                         $forceShowDep.find('.force-show-stops-row').show();
@@ -958,9 +962,20 @@ $(function() {
                     $forceShowDep.hide();
                 }
 
+                if (query === '') {
+                    $devHead.show();
+                } else {
+                    devHasMatch ? $devHead.show() : $devHead.hide();
+                }
+
                 // Update segFocusNotice visibility based on parent toggle row visibility
                 updateSegFocusNotice();
             } else {
+                if (query === '') {
+                    $devHead.show();
+                } else {
+                    $devHead.hide();
+                }
                 // If collapsed and not expanding, restore internal item visibility so they are ready
                 $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .force-show-dependent, .force-show-option').show();
             }
