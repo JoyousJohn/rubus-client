@@ -1,5 +1,6 @@
 .theme-slider {
     display: flex;
+    position: relative;
     background: var(--theme-line-bg);
     /* padding: 0.3rem; */
     border-radius: 2rem;
@@ -21,6 +22,8 @@
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     aspect-ratio: 1;
+    position: relative;
+    z-index: 1;
 }
 
 .theme-option:focus {
@@ -28,9 +31,22 @@
 }
 
 .theme-option.selected {
-    background: var(--theme-color);
     color: var(--theme-bg);
-    margin: -3px;
+}
+
+.theme-indicator {
+    position: absolute;
+    top: -3px;
+    height: calc(100% + 6px);
+    border-radius: 1.5rem;
+    z-index: 0;
+    transition: none;
+}
+
+.theme-slider .theme-option.selected {
+    background: transparent;
+    box-shadow: none;
+    margin: 0;
 }
 
 .theme-preview {

@@ -192,6 +192,19 @@
                 opt.classList.remove('selected');
             });
             document.querySelector(`[data-theme="${selectedTheme}"]`).classList.add('selected');
+
+            const indicator = document.querySelector('.theme-indicator');
+            const target = document.querySelector(`[data-theme="${selectedTheme}"]`);
+            if (indicator && target) {
+                indicator.style.left = (target.offsetLeft - 3) + 'px';
+                indicator.style.width = (target.offsetWidth + 6) + 'px';
+                const h = new Date().getHours();
+                const resolved = (selectedTheme === 'auto') ? (h < 6 ? 'y2k-glamour' : h < 12 ? 'light' : h < 18 ? 'beige-coffee' : 'dark') : selectedTheme;
+                const cm = { light:{bg:'black',s:'none'}, dark:{bg:'rgb(203,203,203)',s:'none'}, 'y2k-glamour':{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, glamour:{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, 'beige-coffee':{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, coffee:{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, forest:{bg:'#c49a3c',s:'0 0 12px rgba(196,154,60,0.5)'} };
+                const c = cm[resolved];
+                if (c) { indicator.style.backgroundColor = c.bg; indicator.style.boxShadow = c.s; }
+                indicator.style.transition = 'left 0.3s ease, width 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+            }
         });
 
         // Preload preview images and critical UI icons
@@ -229,6 +242,7 @@
         <div class="theme-body flex flex-col" style="flex:1; overflow:hidden;">
             <div class="theme-controls">
                 <div class="theme-slider mx-3rem my-2rem">
+                    <div class="theme-indicator"></div>
                     <div class="theme-option" data-theme="light" onclick="selectTheme('light')"><i class="fa-solid fa-sun"></i><span>Light</span></div>
                     <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')"><i class="fa-solid fa-moon"></i><span>Dark</span></div>
                     <div class="theme-option selected" data-theme="beige-coffee" onclick="selectTheme('beige-coffee')"><i class="fa-solid fa-mug-hot"></i><span>Coffee</span></div>

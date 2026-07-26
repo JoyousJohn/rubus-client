@@ -2779,6 +2779,31 @@ async function getBuildNumber() {
 
 let selectedTheme = document.documentElement.getAttribute('data-selected-theme') || 'beige-coffee';
 
+function updateThemeIndicator(theme) {
+    const indicator = document.querySelector('.theme-indicator');
+    const target = document.querySelector(`[data-theme="${theme}"]`);
+    if (!indicator || !target) return;
+
+    indicator.style.left = (target.offsetLeft - 3) + 'px';
+    indicator.style.width = (target.offsetWidth + 6) + 'px';
+
+    const resolved = resolveAutoTheme(theme);
+    const colorMap = {
+        light:            { bg: 'black',              shadow: 'none' },
+        dark:             { bg: 'rgb(203,203,203)',   shadow: 'none' },
+        'y2k-glamour':    { bg: '#ec4899',            shadow: '0 0 12px rgba(236,72,153,0.5)' },
+        glamour:          { bg: '#ec4899',            shadow: '0 0 12px rgba(236,72,153,0.5)' },
+        'beige-coffee':   { bg: '#a0522d',            shadow: '0 0 10px rgba(160,82,45,0.4)' },
+        coffee:           { bg: '#a0522d',            shadow: '0 0 10px rgba(160,82,45,0.4)' },
+        forest:           { bg: '#c49a3c',            shadow: '0 0 12px rgba(196,154,60,0.5)' }
+    };
+    const colors = colorMap[resolved];
+    if (colors) {
+        indicator.style.backgroundColor = colors.bg;
+        indicator.style.boxShadow = colors.shadow;
+    }
+}
+
 function selectTheme(theme) {
 
     console.log('selectTheme', theme);
@@ -2825,6 +2850,7 @@ function selectTheme(theme) {
         opt.classList.remove('selected');
     });
     document.querySelector(`[data-theme="${theme}"]`).classList.add('selected');
+    updateThemeIndicator(theme);
     
     selectedTheme = theme;
 
