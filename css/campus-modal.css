@@ -115,16 +115,35 @@
 	flex-shrink: 0;
 }
 
+.campus-modal-bottom {
+	margin-top: auto;
+	padding: 0 1.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.campus-modal-back {
+	background-color: var(--theme-bg-closest-stop);
+	padding: 1rem 2rem;
+	font-size: 3rem;
+	color: var(--theme-extra);
+	border-radius: 3rem;
+	font-weight: 500;
+	transition: background 0.25s;
+}
+.campus-modal-back:hover {
+	background: var(--theme-line-bg);
+}
+
 .campus-modal-confirm {
 	background-color: rgb(53, 101, 248);
-	padding: 0.5rem 1.5rem;
-	font-size: 2rem;
+	padding: 1rem 2rem;
+	font-size: 3rem;
 	color: white;
 	border-radius: 3rem;
 	font-weight: 500;
-	align-self: end;
     transition: background 0.25s;
-	margin: 2rem 1.5rem;
+    box-shadow: 0 4px 15px rgba(53, 101, 248, 0.4);
 }
 .campus-modal-confirm:hover {
 	background: #1d2fcb;

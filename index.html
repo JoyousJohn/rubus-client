@@ -317,7 +317,10 @@
                 </div>
             </div>
         </div>
-        <div class="campus-modal-confirm campus-modal-confirm-mobile pointer" onclick="confirmCampusSelection()">Confirm &rarr;</div>
+        <div class="campus-modal-bottom flex justify-between align-center">
+            <div class="campus-modal-back pointer" onclick="$('.campus-modal').hide(); document.querySelector('.theme-modal').style.display = ''; document.getElementById('theme-bg-lights').style.display = '';">&larr;</div>
+            <div class="campus-modal-confirm campus-modal-confirm-mobile pointer" onclick="confirmCampusSelection()">&rarr;</div>
+        </div>
     </div>
     <script>
         // Hide campus modal by default

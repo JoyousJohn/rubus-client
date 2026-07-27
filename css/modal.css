@@ -248,6 +248,7 @@
     font-weight: 500;
     margin: 0 1.5rem;
     align-self: end;
+    box-shadow: 0 4px 15px rgba(53, 101, 248, 0.4);
 }
 
 .dev-build-popup {
