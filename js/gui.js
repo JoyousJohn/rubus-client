@@ -1544,8 +1544,12 @@ function updateAverageWaitByRoute() {
     routes.forEach(route => {
         const minutes = waitByRoute[route];
         const text = (minutes >= 1) ? `${Math.round(minutes)}m` : `${Math.max(1, Math.round(minutes * 60))}s`;
-        const $name = $(`<div class="avg-wait-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]);
+        const $name = $(`<div class="avg-wait-name bold pointer">${route.toUpperCase()}</div>`).css('color', colorMappings[route]);
         const $val = $(`<div class="avg-wait-value">${text}</div>`);
+        $name.click(function() {
+            $('.info-panels-close').trigger('click');
+            toggleRoute(route);
+        });
         $grid.append($name);
         $grid.append($val);
     });
@@ -1571,7 +1575,7 @@ function updateBusServiceTime() {
             const joinedServiceTime = busData[busName].joined_service;
             if (joinedServiceTime) {
                 busesWithServiceTime.push({
-                    busName: busName,
+                    key: busName,
                     busName: busData[busName].busName,
                     route: busData[busName].route,
                     joinedServiceTime: joinedServiceTime
@@ -1609,8 +1613,13 @@ function updateBusServiceTime() {
             timeInService = `${diffMins}m`;
         }
         
-        const $busName = $(`<div class="bus-service-name"><span class="bold bus-service-route text-1p3rem" style="color: ${colorMappings[bus.route]}">${bus.route.toUpperCase()} <span class="bold-500 text-1p5rem">#</span></span><span class="bus-service-busname text-2rem" style="color: ${colorMappings[bus.route]}">${bus.busName}</span></div>`);
+        const $busName = $(`<div class="bus-service-name pointer"><span class="bold bus-service-route text-1p3rem" style="color: ${colorMappings[bus.route]}">${bus.route.toUpperCase()} <span class="bold-500 text-1p5rem">#</span></span><span class="bus-service-busname text-2rem" style="color: ${colorMappings[bus.route]}">${bus.busName}</span></div>`);
         const $timeValue = $(`<div class="bus-service-value">${timeInService}</div>`);
+        $busName.click(function() {
+            $('.info-panels-close').trigger('click');
+            flyToBus(bus.key);
+            selectBusMarker(bus.key);
+        });
         
         $grid.append($busName);
         $grid.append($timeValue);
