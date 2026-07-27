@@ -748,17 +748,17 @@ function makePolygons() {
 
 function updateSegFocusNotice() {
     const focusEnabled = settings['toggle-hide-other-routes'];
+    const segEnabled = settings['toggle-distances-line-on-focus'];
     const notice = document.getElementById('segFocusNotice');
     if (!notice) return;
 
-    // Check if the parent setting row ("Traveling Seg on Focus") is hidden by search filter
     const $parentRow = $('#toggle-distances-line-on-focus').closest('.flex');
     if ($parentRow.length && !$parentRow.is(':visible')) {
         notice.style.display = 'none';
         return;
     }
 
-    notice.style.display = focusEnabled ? 'none' : '';
+    notice.style.display = (segEnabled && !focusEnabled) ? '' : 'none';
 }
 
 updateSegFocusNotice();
