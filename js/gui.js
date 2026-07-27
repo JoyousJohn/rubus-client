@@ -2862,7 +2862,6 @@ function initThemeSliderDrag() {
 
     let dragging = false;
     let startX = 0;
-    let indicatorStartLeft = 0;
     let didDrag = false;
     let holdTimer = null;
     let lastClosestTheme = null;
@@ -2871,9 +2870,9 @@ function initThemeSliderDrag() {
         return option.offsetLeft + option.offsetWidth / 2;
     }
 
-    function getClosestTheme(clientX, dragMode) {
+    function getClosestTheme(clientX) {
         const sliderRect = slider.getBoundingClientRect();
-        const relativeX = clientX - sliderRect.left - (dragMode ? 6 : 3);
+        const relativeX = clientX - sliderRect.left;
         const options = slider.querySelectorAll('.theme-option');
         let closest = null;
         let minDist = Infinity;
@@ -2926,7 +2925,6 @@ function initThemeSliderDrag() {
         dragging = true;
         didDrag = false;
         startX = e.clientX;
-        indicatorStartLeft = indicator.offsetLeft;
         lastClosestTheme = null;
         slider.setPointerCapture(e.pointerId);
 
@@ -2943,8 +2941,6 @@ function initThemeSliderDrag() {
         if (Math.abs(deltaX) > 5) {
             if (!didDrag) {
                 clearTimeout(holdTimer);
-                indicatorStartLeft = indicator.offsetLeft;
-                startX = e.clientX;
                 applyPopup();
                 indicator.style.transition = 'background-color 0.3s ease, box-shadow 0.3s ease';
             }
@@ -2958,12 +2954,14 @@ function initThemeSliderDrag() {
         const minLeft = firstOption.offsetLeft - 6;
         const maxLeft = lastOption.offsetLeft - 6;
 
-        let newLeft = indicatorStartLeft + (e.clientX - startX);
+        const sliderRect = slider.getBoundingClientRect();
+        const indicatorHalfWidth = indicator.offsetWidth / 2;
+        let newLeft = (e.clientX - sliderRect.left) - indicatorHalfWidth;
         newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
 
         indicator.style.left = newLeft + 'px';
 
-        const closest = getClosestTheme(e.clientX, true);
+        const closest = getClosestTheme(e.clientX);
         if (closest) {
             const theme = closest.getAttribute('data-theme');
             if (theme !== lastClosestTheme) {
