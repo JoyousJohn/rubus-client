@@ -2366,7 +2366,7 @@ function popInfo(busName, resetCampusFontSize) {
                 extraDataHtml += `<div>isValid: <span style="opacity: 0.7; color: ${validityResult.valid ? '#4CAF50' : '#f44336'}">${validityText}</span></div>`;
 
                 const distInfo = distanceFromLine(busName, true);
-                const distText = distInfo.isOffLine ? `true (${distInfo.feet.toLocaleString()} ft away)` : 'false';
+                const distText = distInfo.isOffLine ? `true (${distInfo.feet.toLocaleString()} ft away)` : `false (${distInfo.feet.toLocaleString()} ft away)`;
                 extraDataHtml += `<div>distanceFromLine validity: <span style="opacity: 0.7; color: ${distInfo.isOffLine ? '#f44336' : '#4CAF50'}">${distText}</span></div>`;
 
                 continue; // Skip processing isKnown again in the normal flow
