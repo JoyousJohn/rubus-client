@@ -2102,6 +2102,13 @@ function plotBus(busName, immediatelyUpdate=false) {
         updateMarkerPosition(busName, immediatelyUpdate || forceImmediateUpdate);
     }
 
+    // Apply OOS visibility based on the Show Out of Service setting
+    if (busData[busName] && busMarkers[busName]) {
+        const shouldHide = !settings['toggle-show-out-of-service'] &&
+            (busData[busName].oos || busData[busName].atDepot || distanceFromLine(busName));
+        busMarkers[busName].getElement().style.display = shouldHide ? 'none' : '';
+    }
+
     // Record last time a marker was updated/rendered
     try { lastUpdateTime = Date.now(); } catch (e) {}
     try { requestOffScreenUpdate(); } catch (e) {}

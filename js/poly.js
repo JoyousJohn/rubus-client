@@ -510,6 +510,20 @@ function routeHasInServiceBuses(route) {
     }
 }
 
+function routeHasValidInServiceBuses(route) {
+    try {
+        const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
+        return routeBuses && routeBuses.some(busName => 
+            busData[busName] && 
+            !busData[busName].oos && 
+            !busData[busName].atDepot &&
+            !distanceFromLine(busName)
+        );
+    } catch (e) {
+        return false;
+    }
+}
+
 // Update polylineBounds efficiently - only when polylines actually change
 function updatePolylineBoundsIfNeeded() {
     try {
@@ -566,6 +580,15 @@ function prunePolylinesWithoutInService() {
         const forceRoutes = getForceShowRoutes();
         const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
 
+        if (!settings['toggle-show-out-of-service']) {
+            for (const routeName of Object.keys(polylines)) {
+                if (!routeHasValidInServiceBuses(routeName) && !forceRoutes.includes(routeName)) {
+                    try { polylines[routeName].remove(); } catch (e) {}
+                    delete polylines[routeName];
+                }
+            }
+        }
+
         // In force mode, the checked routes are the complete polyline set. Do
         // not recreate polylines for routes merely because they have a bus.
         if (forceMode) {
@@ -583,7 +606,9 @@ function prunePolylinesWithoutInService() {
             if (polylines[routeName]) {
                 updatePolylineStyle(routeName);
             } else if ((!forceMode || forceRoutes.includes(routeName)) && routesByCampusBase[selectedCampus].includes(routeName)) {
-                addPolylineForRoute(routeName);
+                if (settings['toggle-show-out-of-service'] || routeHasValidInServiceBuses(routeName)) {
+                    addPolylineForRoute(routeName);
+                }
             }
 
             // Update route selector button color on UI
@@ -860,6 +885,9 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     for (const entry of sortedEntries) {
         if (busData[entry.busName]?.atDepot || !isValid(entry.busName)) {
+            if (!settings['toggle-show-out-of-service'] || hideOutOfServiceBuses) {
+                continue;
+            }
             deferredEntries.push(entry);
         } else if (isPostCutoffEntry(entry, now)) {
             postCutoffEntries.push(entry);
@@ -873,8 +901,8 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     firstLoopEntries.forEach(data => {
 
-        // Skip out of service buses if hide setting is enabled
-        if (hideOutOfServiceBuses && busData[data.busName].oos) {
+        // Skip out of service buses if the setting is off or session-hide is active
+        if ((!settings['toggle-show-out-of-service'] || hideOutOfServiceBuses) && busData[data.busName].oos) {
             return;
         }
 
@@ -1565,7 +1593,7 @@ async function popStopInfo(stopId) {
         });
     });
     
-    if (hasOutOfServiceBuses && !hideOutOfServiceBuses) {
+    if (hasOutOfServiceBuses && !hideOutOfServiceBuses && settings['toggle-show-out-of-service']) {
         $('.stop-info-hide-oos').show();
     } else {
         $('.stop-info-hide-oos').hide();

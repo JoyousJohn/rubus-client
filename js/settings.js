@@ -98,6 +98,20 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-dev-options'] = isChecked;
             break;
 
+        case 'toggle-show-out-of-service':
+            console.log(`Show Out of Service is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-out-of-service'] = isChecked;
+            populateRouteSelectors(activeRoutes);
+            prunePolylinesWithoutInService();
+            for (const busName in busMarkers) {
+                if (busData[busName]) {
+                    const shouldHide = !isChecked &&
+                        (busData[busName].oos || busData[busName].atDepot || distanceFromLine(busName));
+                    busMarkers[busName].getElement().style.display = shouldHide ? 'none' : '';
+                }
+            }
+            break;
+
         case 'toggle-show-etas-in-seconds':
             console.log(`Show ETAs in seconds is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-etas-in-seconds'] = isChecked;

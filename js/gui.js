@@ -47,7 +47,11 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     routesWithInServiceBuses.sort((a, b) => a.localeCompare(b));
     
     // Combine arrays: in-service routes first, then out-of-service routes
-    routesArray = [...routesWithInServiceBuses, ...routesWithoutInServiceBuses];
+    if (settings['toggle-show-out-of-service']) {
+        routesArray = [...routesWithInServiceBuses, ...routesWithoutInServiceBuses];
+    } else {
+        routesArray = routesArray.filter(route => route === 'undefined' || routeHasValidInServiceBuses(route));
+    }
     
 	if (routesArray.includes('on2')) {
 		routesArray = routesArray.filter(route => route !== 'on2');
@@ -1766,6 +1770,7 @@ const toggleSettings = [
     'toggle-disable-fireworks-on-open',
     'toggle-show-buildings',
     'toggle-show-alerts-other-campuses',
+    'toggle-show-out-of-service',
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
@@ -1859,7 +1864,7 @@ let defaultSettings = {
     'toggle-show-etas-in-seconds': false,
     'toggle-dim-on-pan': true,
     'toggle-select-closest-stop': true,
-    'toggle-hide-other-routes': true,
+    'toggle-hide-other-routes': false,
     'toggle-stops-above-buses': false,
     'toggle-offscreen-bus-indicators': false,
     'toggle-offscreen-bus-indicators-above-gui': false,
@@ -1870,6 +1875,7 @@ let defaultSettings = {
     'toggle-settings-btn-end': false,
     'toggle-show-buildings': true,
     'toggle-show-alerts-other-campuses': false,
+    'toggle-show-out-of-service': false,
     'campus': 'nb',
     'parking-campus': false,
     'marker-type': 'rubus', // 'rubus' or 'passio'

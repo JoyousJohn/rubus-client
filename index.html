@@ -1059,6 +1059,24 @@
             <div class="text-1p6rem mb-0p25rem bold-500">GUI</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem settings-section-accent">
                 <div class="settings- flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-oos">Show Out of Service Buses<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-out-of-service" class="toggle-input">
+                        <label for="toggle-show-out-of-service" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="oos-explain none ml-0p5rem text-1p3rem dimgray">When enabled, buses that are out of service, at the depot, or deadheading will appear in stop info panels.</div>
+                <script>
+                $('.span-i-oos').click(function() {
+                    const $el = $('.oos-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                </script>
+
+                <div class="settings- flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-seconds">Show ETAs in Seconds<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
                         <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
