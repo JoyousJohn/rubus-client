@@ -724,7 +724,7 @@ function checkMinRoutes() {
         }
     } else if (isSummer) {
         // Summer hours valid until 8/25:
-        // Weekdays (Mon=1..Fri=5 morning): Midnight to 7:00 AM (0..6)
+        // Weekdays (Mon=1..Fri=5 morning): Midnight to 8:00 AM (0..7)
         // Weekends/Holidays (Fri night, Sat, Sun): 7:00 PM (19) to 10:00 AM (9)
         const isWeekendOrHoliday = (dayOfWeek === 0 || dayOfWeek === 6);
         if (isWeekendOrHoliday) {
@@ -734,11 +734,12 @@ function checkMinRoutes() {
             }
             $('#knight-mover-hours').html('Knight Mover accepts calls until 10:00AM');
         } else {
-            // Weekday: Midnight to 7:00 AM
-            if (hour >= 0 && hour < 7) {
+            // Weekday: Midnight to 8:00 AM
+            const summerWeekdayEndHour = 7;
+            if (hour >= 0 && hour < summerWeekdayEndHour) {
                 isKnightMoverActive = true;
             }
-            $('#knight-mover-hours').html('Knight Mover accepts calls until 7:00AM');
+            $('#knight-mover-hours').html(`Knight Mover accepts calls until ${summerWeekdayEndHour}:00AM`);
         }
     } else {
         // Regular semester schedule
@@ -762,6 +763,20 @@ function checkMinRoutes() {
     }
 
     $('.knight-mover').show();
+
+    updateKnightMoverStatus();
+}
+
+function updateKnightMoverStatus() {
+    let validBuses = 0;
+    for (const busName in busData) {
+        if (!busData[busName].oos && !busData[busName].atDepot && isValid(busName)) {
+            validBuses++;
+        }
+    }
+    $('#knight-mover-status').text(
+        validBuses > 0 ? '\u24D8 Partial bus service' : '\u24D8 No buses in service'
+    );
 }
 
 function makeActiveRoutes() {

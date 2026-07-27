@@ -3652,6 +3652,8 @@ function distanceFromLine(busName, returnDetails = false) {
     } else if (route && routePointsCache[route]) {
         polyPoints = routePointsCache[route];
     }
+
+    if (!polyPoints) return returnDetails ? { isOffLine: false, feet: 0 } : false;
     
     let flatPoints = polyPoints;
     if (Array.isArray(polyPoints[0])) {
