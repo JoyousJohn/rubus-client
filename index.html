@@ -295,7 +295,7 @@
                 })     
             </script>
             <div></div>
-            <div class="theme-modal-confirm theme-modal-confirm-mobile pointer" onclick="selectTheme('confirm'); continueToCampusModal()">Continue &rarr;</div>
+            <div class="theme-modal-confirm theme-modal-confirm-mobile pointer" onclick="selectTheme('confirm'); continueToCampusModal()">&rarr;</div>
         </div>
     </div>
 
@@ -322,9 +322,12 @@
     <script>
         // Hide campus modal by default
         document.querySelector('.campus-modal').style.display = 'none';
+        // Lock body scroll while theme modal is visible
+        document.body.style.overflow = 'hidden';
         if (JSON.parse(localStorage.getItem('settings')) && JSON.parse(localStorage.getItem('settings'))['theme']) {
             document.querySelector('.theme-modal').style.display = 'none';
             document.getElementById('theme-bg-lights').style.display = 'none';
+            document.body.style.overflow = '';
             // Only show campus modal if campus is not set
             if (!JSON.parse(localStorage.getItem('settings'))['campus']) {
                 document.querySelector('.campus-modal').style.display = 'flex';
@@ -336,6 +339,7 @@
         } else if (new URLSearchParams(window.location.search).has('bus')) {
             document.querySelector('.theme-modal').style.display = 'none';
             document.getElementById('theme-bg-lights').style.display = 'none';
+            document.body.style.overflow = '';
             $(document).ready(async function() {
                 if (!localStorage.getItem('settings')) {
                     selectTheme('auto'); // need document ready to wait for this to load

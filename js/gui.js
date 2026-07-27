@@ -3106,6 +3106,7 @@ window.continueToCampusModal = function() {
         initMap();
     }
     $('.theme-modal, #theme-bg-lights').hide();
+    document.body.style.overflow = '';
     
     // First, prepare the carousel by setting its scroll position to center NB
     // This happens while the modal is still hidden
