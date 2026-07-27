@@ -2009,7 +2009,7 @@ function plotBus(busName, immediatelyUpdate=false) {
                     html: `
                         <div class="bus-marker-wrapper">
                             <div class="rider-marker ${riderSizeClass}" style="will-change: transform; background-color: ${routeColor};">
-                                <i class="fa-solid fa-location-arrow-up" style="color: white;"></i>
+                                <i class="fa-solid fa-location-arrow" style="color: white;"></i>
                             </div>
                             <div class="bus-name-label none" bus-name="${busName}">${busData[busName].busName}</div>
                         </div>

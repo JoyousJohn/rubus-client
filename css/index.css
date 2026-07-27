@@ -1857,7 +1857,7 @@ html[theme="light"] .settings-panel .span-i {
 
 .rider-marker > i {
     text-shadow: 0 0px 2px rgba(0, 0, 0, 0.8);
-    transform: rotate(-45deg);
+    transform: rotate(-90deg);
 }
 
 .rider-marker.small-marker {
