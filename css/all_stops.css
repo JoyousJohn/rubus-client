@@ -34,6 +34,7 @@
 .info-panels-header-buttons {
     flex: 0 0 auto; /* Don't grow, don't shrink, size based on content */
     z-index: 404;
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
 }
 
 .subpanels-container {

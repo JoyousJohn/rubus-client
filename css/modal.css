@@ -202,7 +202,7 @@
     /* background-color: var(--theme-bg); */
     color: var(--theme-color);
     font-family: var(--font-family);
-    padding: 3vh 0 1.5rem;
+    padding: 3vh 0 calc(1.5rem + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     z-index: 403;
     overflow: hidden;

@@ -1612,7 +1612,7 @@ html[theme="light"] .settings-panel .settings-options {
 
 .settings-floating-bar {
     position: fixed;
-    bottom: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     left: 1rem;
     right: 1rem;
     z-index: 1001;
