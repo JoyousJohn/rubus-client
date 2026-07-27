@@ -1869,6 +1869,7 @@ const defaultColorMappings = {
 let defaultSettings = {
     'font': 'PP Neue Montreal',
     'marker-size': 'medium',
+    'gui-scale': 'normal',
     'theme': 'beige-coffee',
     'toggle-show-etas-in-seconds': false,
     'toggle-dim-on-pan': true,
@@ -1945,6 +1946,7 @@ function setDefaultSettings () {
     localStorage.setItem('settings', JSON.stringify(settings));
     $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
+    $(`div.settings-option[gui-scale-option="normal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-type-option="rubus"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
     $(`div.settings-option[polyline-renderer-option="svg"]`).addClass('settings-selected')
@@ -2002,7 +2004,10 @@ function updateSettings() {
 
     $(`div.settings-option[font-option="${settings['font']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="${settings['marker-size']}"]`).addClass('settings-selected')
+    $(`div.settings-option[gui-scale-option="${settings['gui-scale']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-type-option="${settings['marker-type']}"]`).addClass('settings-selected')
+
+    applyGuiScale(settings['gui-scale']);
     
     // Update marker size examples to match the current marker type
     updateMarkerSizeExamples();
@@ -2055,6 +2060,15 @@ function updateSettings() {
             $(this).addClass('settings-selected')
             settings['marker-size'] = $(this).attr('marker-size-option')
             updateMarkerSize()
+
+        }
+
+        else if (settingsOption === 'gui-scale') {
+
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['gui-scale'] = $(this).attr('gui-scale-option')
+            applyGuiScale(settings['gui-scale'])
 
         }
 
@@ -2240,6 +2254,12 @@ function updateMarkerSize() {
     // Update duck marker sizes by changing CSS classes (only map markers, not settings examples)
     const duckSizeClass = duckSizeMap[settings['marker-size']];
     $('.bus-marker-wrapper .duck-marker').removeClass('small-marker medium-marker big-marker').addClass(duckSizeClass);
+}
+
+function applyGuiScale(scale) {
+    const sizes = { small: '50%', normal: '62.5%', large: '75%', larger: '87.5%' };
+    document.documentElement.style.fontSize = sizes[scale] || '62.5%';
+    adjustFontOptionSizes();
 }
 
 function updateMarkerSizeExamples() {

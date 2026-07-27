@@ -162,11 +162,16 @@
             // Get stored settings, default to auto
             let settings = localStorage.getItem('settings');
             let selectedTheme = 'beige-coffee';
+            let guiScale = 'normal';
       
             if (settings) {
                 const parsed = JSON.parse(settings);
                 selectedTheme = parsed['theme'] || 'beige-coffee';
+                guiScale = parsed['gui-scale'] || 'normal';
             }
+
+            const sizes = { small: '50%', normal: '62.5%', large: '75%', larger: '87.5%' };
+            document.documentElement.style.fontSize = sizes[guiScale] || '62.5%';
       
             let computedTheme = selectedTheme;
             // Duplicated from resolveAutoTheme() in vars.js — must run inline before
@@ -1046,12 +1051,12 @@
                 <div class="settings-theme">
                     <div class="settings-heading">Theme</div>
                     <div class="settings-options grid" style="grid-template-columns: repeat(6, 1fr);">
-                        <div class="settings-option" settings-option="theme" theme-option="light" style="grid-column: span 2;"><i class="fa-solid fa-sun mr-0p5rem"></i>Light</div>
-                        <div class="settings-option" settings-option="theme" theme-option="dark" style="grid-column: span 2;"><i class="fa-solid fa-moon mr-0p5rem"></i>Dark</div>
-                        <div class="settings-option" settings-option="theme" theme-option="auto" style="grid-column: span 2;"><i class="fa-solid fa-circle-half-stroke mr-0p5rem"></i>Auto</div>
-                        <div class="settings-option" settings-option="theme" theme-option="y2k-glamour" style="grid-column: span 2; border-top: 1px solid rgb(185, 185, 185); border-left: 0;"><i class="fa-solid fa-wand-magic-sparkles mr-0p5rem"></i>Glamour</div>
-                        <div class="settings-option" settings-option="theme" theme-option="beige-coffee" style="grid-column: span 2; border-top: 1px solid rgb(185, 185, 185);"><i class="fa-solid fa-mug-hot mr-0p5rem"></i>Coffee</div>
-                        <div class="settings-option" settings-option="theme" theme-option="forest" style="grid-column: span 2; border-top: 1px solid rgb(185, 185, 185);"><i class="fa-solid fa-tree mr-0p5rem"></i>Forest</div>
+                        <div class="settings-option" settings-option="theme" theme-option="light" style="grid-column: span 2;"><i class="fa-solid fa-sun"></i>Light</div>
+                        <div class="settings-option" settings-option="theme" theme-option="dark" style="grid-column: span 2;"><i class="fa-solid fa-moon"></i>Dark</div>
+                        <div class="settings-option" settings-option="theme" theme-option="auto" style="grid-column: span 2;"><i class="fa-solid fa-circle-half-stroke"></i>Auto</div>
+                        <div class="settings-option" settings-option="theme" theme-option="y2k-glamour" style="grid-column: span 2; border-top: 1px solid rgb(185, 185, 185); border-left: 0;"><i class="fa-solid fa-wand-magic-sparkles"></i>Glamour</div>
+                        <div class="settings-option" settings-option="theme" theme-option="beige-coffee" style="grid-column: span 2; border-top: 1px solid rgb(185, 185, 185);"><i class="fa-solid fa-mug-hot"></i>Coffee</div>
+                        <div class="settings-option" settings-option="theme" theme-option="forest" style="grid-column: span 2; border-top: 1px solid rgb(185, 185, 185);"><i class="fa-solid fa-tree"></i>Forest</div>
                     </div>
                 </div>
             </div>
@@ -1111,6 +1116,16 @@
                     $el.slideToggle();
                 })
                 </script>
+
+                <div class="settings-gui-scale">
+                    <div class="settings-heading">GUI Scale</div>
+                    <div class="settings-options grid grid-cols-4">
+                        <div class="settings-option" settings-option="gui-scale" gui-scale-option="small">Small</div>
+                        <div class="settings-option" settings-option="gui-scale" gui-scale-option="normal">Normal</div>
+                        <div class="settings-option" settings-option="gui-scale" gui-scale-option="large">Large</div>
+                        <div class="settings-option" settings-option="gui-scale" gui-scale-option="larger">Larger</div>
+                    </div>
+                </div>
 
                 <div class="flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-settings-end">Move Settings to End<span class="span-i pointer select-none">i</span></div>

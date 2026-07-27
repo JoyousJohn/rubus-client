@@ -1519,6 +1519,13 @@ html[theme="light"] .settings-panel {
     cursor: pointer;
 }
 
+.settings-theme .settings-option {
+    flex-wrap: wrap;
+    text-align: center;
+    column-gap: 0.5rem;
+    row-gap: 0.2rem;
+}
+
 .mc-grass-icon {
     width: 1.5rem;
     height: 1.5rem;
