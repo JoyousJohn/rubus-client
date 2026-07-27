@@ -5,6 +5,8 @@
     /* padding: 0.3rem; */
     border-radius: 2rem;
     margin-bottom: 1.5rem;
+    touch-action: none;
+    user-select: none;
 }
 
 .theme-option {
@@ -41,6 +43,10 @@
     border-radius: 1.5rem;
     z-index: 0;
     transition: none;
+    background-color: #a0522d;
+    box-shadow: 0 0 10px rgba(160, 82, 45, 0.4);
+    left: calc(2 * (100% / 6) - 3px);
+    width: calc(100% / 6 + 6px);
 }
 
 .theme-slider .theme-option.selected {

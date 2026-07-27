@@ -2814,29 +2814,173 @@ async function getBuildNumber() {
 
 let selectedTheme = document.documentElement.getAttribute('data-selected-theme') || 'beige-coffee';
 
+const themeIndicatorColorMap = {
+    light:            { bg: 'black',              shadow: 'none' },
+    dark:             { bg: 'rgb(203,203,203)',   shadow: 'none' },
+    'y2k-glamour':    { bg: '#ec4899',            shadow: '0 0 12px rgba(236,72,153,0.5)' },
+    glamour:          { bg: '#ec4899',            shadow: '0 0 12px rgba(236,72,153,0.5)' },
+    'beige-coffee':   { bg: '#a0522d',            shadow: '0 0 10px rgba(160,82,45,0.4)' },
+    coffee:           { bg: '#a0522d',            shadow: '0 0 10px rgba(160,82,45,0.4)' },
+    forest:           { bg: '#c49a3c',            shadow: '0 0 12px rgba(196,154,60,0.5)' }
+};
+
 function updateThemeIndicator(theme) {
     const indicator = document.querySelector('.theme-indicator');
     const target = document.querySelector(`[data-theme="${theme}"]`);
-    if (!indicator || !target) return;
+    const slider = document.querySelector('.theme-slider');
+    if (!indicator || !target || !slider) return;
 
-    indicator.style.left = (target.offsetLeft - 3) + 'px';
-    indicator.style.width = (target.offsetWidth + 6) + 'px';
+    const options = slider.querySelectorAll('.theme-option');
+    const index = Array.from(options).indexOf(target);
+    const count = options.length;
+
+    indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
+    indicator.style.width = `calc(100% / ${count} + 6px)`;
 
     const resolved = resolveAutoTheme(theme);
-    const colorMap = {
-        light:            { bg: 'black',              shadow: 'none' },
-        dark:             { bg: 'rgb(203,203,203)',   shadow: 'none' },
-        'y2k-glamour':    { bg: '#ec4899',            shadow: '0 0 12px rgba(236,72,153,0.5)' },
-        glamour:          { bg: '#ec4899',            shadow: '0 0 12px rgba(236,72,153,0.5)' },
-        'beige-coffee':   { bg: '#a0522d',            shadow: '0 0 10px rgba(160,82,45,0.4)' },
-        coffee:           { bg: '#a0522d',            shadow: '0 0 10px rgba(160,82,45,0.4)' },
-        forest:           { bg: '#c49a3c',            shadow: '0 0 12px rgba(196,154,60,0.5)' }
-    };
-    const colors = colorMap[resolved];
+    const colors = themeIndicatorColorMap[resolved];
     if (colors) {
         indicator.style.backgroundColor = colors.bg;
         indicator.style.boxShadow = colors.shadow;
     }
+}
+
+function initThemeSliderDrag() {
+    const slider = document.querySelector('.theme-slider');
+    const indicator = document.querySelector('.theme-indicator');
+    if (!slider || !indicator) return;
+
+    let dragging = false;
+    let startX = 0;
+    let indicatorStartLeft = 0;
+    let didDrag = false;
+    let lastClosestTheme = null;
+
+    function getOptionCenter(option) {
+        return option.offsetLeft + option.offsetWidth / 2;
+    }
+
+    function getClosestTheme(clientX, dragMode) {
+        const sliderRect = slider.getBoundingClientRect();
+        const relativeX = clientX - sliderRect.left - (dragMode ? 6 : 3);
+        const options = slider.querySelectorAll('.theme-option');
+        let closest = null;
+        let minDist = Infinity;
+
+        options.forEach(opt => {
+            const center = getOptionCenter(opt);
+            const dist = Math.abs(relativeX - center);
+            if (dist < minDist) {
+                minDist = dist;
+                closest = opt;
+            }
+        });
+        return closest;
+    }
+
+    function snapToClosest(clientX) {
+        const closest = getClosestTheme(clientX);
+        if (closest) {
+            indicator.style.transition = 'left 0.2s ease, width 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+            indicator.style.top = '-3px';
+            indicator.style.height = 'calc(100% + 6px)';
+            const theme = closest.getAttribute('data-theme');
+            updateThemeIndicator(theme);
+            selectTheme(theme);
+        }
+        lastClosestTheme = null;
+    }
+
+    slider.addEventListener('pointerdown', function(e) {
+        const indicatorRect = indicator.getBoundingClientRect();
+        if (e.clientX < indicatorRect.left || e.clientX > indicatorRect.right ||
+            e.clientY < indicatorRect.top || e.clientY > indicatorRect.bottom) {
+            return;
+        }
+
+        dragging = true;
+        didDrag = false;
+        startX = e.clientX;
+        indicator.style.transition = 'top 0.1s ease, height 0.1s ease, left 0.1s ease, width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+        indicator.style.top = '-6px';
+        indicator.style.height = 'calc(100% + 12px)';
+        const currentLeft = indicator.offsetLeft;
+        const currentWidth = indicator.offsetWidth;
+        indicator.style.left = (currentLeft - 3) + 'px';
+        indicator.style.width = (currentWidth + 6) + 'px';
+        indicatorStartLeft = indicator.offsetLeft;
+        lastClosestTheme = null;
+        slider.setPointerCapture(e.pointerId);
+    });
+
+    slider.addEventListener('pointermove', function(e) {
+        if (!dragging) return;
+        const deltaX = e.clientX - startX;
+        if (Math.abs(deltaX) > 5) {
+            if (!didDrag) {
+                indicator.style.transition = 'background-color 0.3s ease, box-shadow 0.3s ease';
+            }
+            didDrag = true;
+        }
+        if (!didDrag) return;
+
+        const options = slider.querySelectorAll('.theme-option');
+        const firstOption = options[0];
+        const lastOption = options[options.length - 1];
+        const minLeft = firstOption.offsetLeft - 6;
+        const maxLeft = lastOption.offsetLeft - 6;
+
+        let newLeft = indicatorStartLeft + deltaX;
+        newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+
+        indicator.style.left = newLeft + 'px';
+
+        const closest = getClosestTheme(e.clientX, true);
+        if (closest) {
+            const theme = closest.getAttribute('data-theme');
+            if (theme !== lastClosestTheme) {
+                lastClosestTheme = theme;
+                slider.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('selected'));
+                closest.classList.add('selected');
+                const resolved = resolveAutoTheme(theme);
+                const colors = themeIndicatorColorMap[resolved];
+                if (colors) {
+                    indicator.style.backgroundColor = colors.bg;
+                    indicator.style.boxShadow = colors.shadow;
+                }
+                const previewTheme = resolveAutoTheme(theme);
+                document.documentElement.setAttribute('data-selected-theme', theme);
+                document.documentElement.setAttribute('theme', previewTheme);
+            }
+        }
+    });
+
+    slider.addEventListener('pointerup', function(e) {
+        if (!dragging) return;
+        dragging = false;
+
+        if (didDrag) {
+            snapToClosest(e.clientX);
+        } else {
+            indicator.style.transition = 'top 0.1s ease, height 0.1s ease, left 0.1s ease, width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+            const target = slider.querySelector('.theme-option.selected');
+            if (target) {
+                updateThemeIndicator(target.getAttribute('data-theme'));
+            }
+            indicator.style.top = '-3px';
+            indicator.style.height = 'calc(100% + 6px)';
+        }
+    });
+
+    slider.addEventListener('pointercancel', function(e) {
+        if (!dragging) return;
+        dragging = false;
+        indicator.style.top = '-3px';
+        indicator.style.height = 'calc(100% + 6px)';
+        if (didDrag) {
+            snapToClosest(e.clientX);
+        }
+    });
 }
 
 function selectTheme(theme) {
