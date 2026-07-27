@@ -200,12 +200,21 @@
 
             const indicator = document.querySelector('.theme-indicator');
             const target = document.querySelector(`[data-theme="${selectedTheme}"]`);
-            if (indicator && target) {
+            const slider = document.querySelector('.theme-slider');
+            if (indicator && target && slider) {
                 const options = document.querySelectorAll('.theme-option');
                 const index = Array.from(options).indexOf(target);
                 const count = options.length;
-                indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
-                indicator.style.width = `calc(100% / ${count} + 6px)`;
+                const isColumn = getComputedStyle(slider).flexDirection === 'column';
+                if (isColumn) {
+                    indicator.style.top = `calc(${index} * (100% / ${count}) - 3px)`;
+                    indicator.style.height = `calc(100% / ${count} + 6px)`;
+                    indicator.style.left = '-3px';
+                    indicator.style.width = 'calc(100% + 6px)';
+                } else {
+                    indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
+                    indicator.style.width = `calc(100% / ${count} + 6px)`;
+                }
                 const h = new Date().getHours();
                 const resolved = (selectedTheme === 'auto') ? (h < 6 ? 'y2k-glamour' : h < 12 ? 'light' : h < 18 ? 'beige-coffee' : 'dark') : selectedTheme;
                 const cm = { light:{bg:'black',s:'none'}, dark:{bg:'rgb(203,203,203)',s:'none'}, 'y2k-glamour':{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, glamour:{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, 'beige-coffee':{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, coffee:{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, forest:{bg:'#c49a3c',s:'0 0 12px rgba(196,154,60,0.5)'} };

@@ -145,6 +145,15 @@
 
     .theme-slider {
         flex-direction: column;
+        border-radius: 1.5rem !important;
+    }
+
+    .theme-indicator {
+        left: -3px;
+        width: calc(100% + 6px);
+        top: calc(2 * (100% / 6) - 3px);
+        height: calc(100% / 6 + 6px);
+        border-radius: 1rem;
     }
 
     .theme-controls {

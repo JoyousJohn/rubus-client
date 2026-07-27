@@ -2833,9 +2833,19 @@ function updateThemeIndicator(theme) {
     const options = slider.querySelectorAll('.theme-option');
     const index = Array.from(options).indexOf(target);
     const count = options.length;
+    const isColumn = getComputedStyle(slider).flexDirection === 'column';
 
-    indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
-    indicator.style.width = `calc(100% / ${count} + 6px)`;
+    if (isColumn) {
+        indicator.style.top = `calc(${index} * (100% / ${count}) - 3px)`;
+        indicator.style.height = `calc(100% / ${count} + 6px)`;
+        indicator.style.left = '-3px';
+        indicator.style.width = 'calc(100% + 6px)';
+    } else {
+        indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
+        indicator.style.width = `calc(100% / ${count} + 6px)`;
+        indicator.style.top = '-3px';
+        indicator.style.height = 'calc(100% + 6px)';
+    }
 
     const resolved = resolveAutoTheme(theme);
     const colors = themeIndicatorColorMap[resolved];
@@ -2854,6 +2864,7 @@ function initThemeSliderDrag() {
     let startX = 0;
     let indicatorStartLeft = 0;
     let didDrag = false;
+    let holdTimer = null;
     let lastClosestTheme = null;
 
     function getOptionCenter(option) {
@@ -2878,10 +2889,21 @@ function initThemeSliderDrag() {
         return closest;
     }
 
+    function applyPopup() {
+        if (indicator.style.top === '-6px') return;
+        indicator.style.transition = 'top 0.1s ease, height 0.1s ease, left 0.1s ease, width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+        indicator.style.top = '-6px';
+        indicator.style.height = 'calc(100% + 12px)';
+        const currentLeft = indicator.offsetLeft;
+        const currentWidth = indicator.offsetWidth;
+        indicator.style.left = (currentLeft - 3) + 'px';
+        indicator.style.width = (currentWidth + 6) + 'px';
+    }
+
     function snapToClosest(clientX) {
         const closest = getClosestTheme(clientX);
         if (closest) {
-            indicator.style.transition = 'left 0.2s ease, width 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+            indicator.style.transition = 'left 0.2s ease, width 0.2s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
             indicator.style.top = '-3px';
             indicator.style.height = 'calc(100% + 6px)';
             const theme = closest.getAttribute('data-theme');
@@ -2891,26 +2913,28 @@ function initThemeSliderDrag() {
         lastClosestTheme = null;
     }
 
+    function shrinkBack() {
+        indicator.style.transition = 'left 0.2s ease, width 0.2s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+        indicator.style.top = '-3px';
+        indicator.style.height = 'calc(100% + 6px)';
+        updateThemeIndicator(selectedTheme);
+    }
+
     slider.addEventListener('pointerdown', function(e) {
-        const indicatorRect = indicator.getBoundingClientRect();
-        if (e.clientX < indicatorRect.left || e.clientX > indicatorRect.right ||
-            e.clientY < indicatorRect.top || e.clientY > indicatorRect.bottom) {
-            return;
-        }
+        if (getComputedStyle(slider).flexDirection === 'column') return;
 
         dragging = true;
         didDrag = false;
         startX = e.clientX;
-        indicator.style.transition = 'top 0.1s ease, height 0.1s ease, left 0.1s ease, width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease';
-        indicator.style.top = '-6px';
-        indicator.style.height = 'calc(100% + 12px)';
-        const currentLeft = indicator.offsetLeft;
-        const currentWidth = indicator.offsetWidth;
-        indicator.style.left = (currentLeft - 3) + 'px';
-        indicator.style.width = (currentWidth + 6) + 'px';
         indicatorStartLeft = indicator.offsetLeft;
         lastClosestTheme = null;
         slider.setPointerCapture(e.pointerId);
+
+        clearTimeout(holdTimer);
+        holdTimer = setTimeout(function() {
+            if (!dragging || didDrag) return;
+            applyPopup();
+        }, 400);
     });
 
     slider.addEventListener('pointermove', function(e) {
@@ -2918,6 +2942,10 @@ function initThemeSliderDrag() {
         const deltaX = e.clientX - startX;
         if (Math.abs(deltaX) > 5) {
             if (!didDrag) {
+                clearTimeout(holdTimer);
+                indicatorStartLeft = indicator.offsetLeft;
+                startX = e.clientX;
+                applyPopup();
                 indicator.style.transition = 'background-color 0.3s ease, box-shadow 0.3s ease';
             }
             didDrag = true;
@@ -2930,7 +2958,7 @@ function initThemeSliderDrag() {
         const minLeft = firstOption.offsetLeft - 6;
         const maxLeft = lastOption.offsetLeft - 6;
 
-        let newLeft = indicatorStartLeft + deltaX;
+        let newLeft = indicatorStartLeft + (e.clientX - startX);
         newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
 
         indicator.style.left = newLeft + 'px';
@@ -2958,28 +2986,52 @@ function initThemeSliderDrag() {
     slider.addEventListener('pointerup', function(e) {
         if (!dragging) return;
         dragging = false;
+        clearTimeout(holdTimer);
 
         if (didDrag) {
             snapToClosest(e.clientX);
-        } else {
-            indicator.style.transition = 'top 0.1s ease, height 0.1s ease, left 0.1s ease, width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease';
-            const target = slider.querySelector('.theme-option.selected');
-            if (target) {
-                updateThemeIndicator(target.getAttribute('data-theme'));
-            }
-            indicator.style.top = '-3px';
-            indicator.style.height = 'calc(100% + 6px)';
+        } else if (indicator.style.top === '-6px') {
+            shrinkBack();
         }
     });
 
     slider.addEventListener('pointercancel', function(e) {
         if (!dragging) return;
         dragging = false;
-        indicator.style.top = '-3px';
-        indicator.style.height = 'calc(100% + 6px)';
+        clearTimeout(holdTimer);
         if (didDrag) {
             snapToClosest(e.clientX);
+        } else if (indicator.style.top === '-6px') {
+            shrinkBack();
         }
+    });
+
+    slider.querySelectorAll('.theme-option').forEach(opt => {
+        opt.addEventListener('pointerdown', function(e) {
+            if (getComputedStyle(slider).flexDirection === 'column') return;
+            const theme = opt.getAttribute('data-theme');
+            if (!theme) return;
+
+            dragging = true;
+            didDrag = false;
+            startX = e.clientX;
+            lastClosestTheme = null;
+            slider.setPointerCapture(e.pointerId);
+
+            selectTheme(theme);
+
+            const options = slider.querySelectorAll('.theme-option');
+            const index = Array.from(options).indexOf(opt);
+            const count = options.length;
+
+            indicator.style.transition = 'left 0.3s ease, width 0.3s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+            indicator.style.left = `calc(${index} * (100% / ${count}) - 6px)`;
+            indicator.style.width = `calc(100% / ${count} + 12px)`;
+            indicator.style.top = '-6px';
+            indicator.style.height = 'calc(100% + 12px)';
+
+            clearTimeout(holdTimer);
+        });
     });
 }
 
