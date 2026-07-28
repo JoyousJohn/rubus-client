@@ -2329,10 +2329,22 @@ function updateNearestStop() {
 
     const stopIds = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
 
+    const servicedStops = new Set();
+    const shouldFilter = !settings['toggle-show-out-of-service'] && activeStops.length > 0;
+    if (shouldFilter && busesByRoutes[selectedCampus]) {
+        for (const route of Object.keys(busesByRoutes[selectedCampus])) {
+            if (!routeHasInServiceBuses(route)) continue;
+            const list = stopLists[route];
+            if (!list) continue;
+            list.forEach(id => servicedStops.add(Number(id)));
+        }
+    }
+
     const userLat = userPosition[0];
     const userLong = userPosition[1];
 
     for (const stopId of stopIds) {
+        if (shouldFilter && !servicedStops.has(Number(stopId))) continue;
         const stop = stopsData[stopId];
         const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
 
