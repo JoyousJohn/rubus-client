@@ -690,6 +690,7 @@ $(document).on('keydown', function(e) {
 
 function hideInfoBoxes(instantly_hide) {
     // console.log('hideInfoBoxes() triggered')
+    $('.desktop-esc-notice').hide();
 
     if (instantly_hide) {
         $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').hide();
@@ -785,6 +786,27 @@ function hideInfoBoxes(instantly_hide) {
 
     // checkMinRoutes(); // to reshow knight mover if hidden; so far only hidden by search wrapper opening // find a better way to reshow. having this here causes a run on each drag.
 
+}
+
+function showEscNotice() {
+    const $notice = $('.desktop-esc-notice');
+    if (!$notice.length) return;
+
+    $notice.css('display', 'flex');
+
+    const $svg = $notice.find('.esc-border-glow');
+    const $path = $notice.find('.esc-glow-path');
+
+    const W = $svg[0].clientWidth;
+    const H = $svg[0].clientHeight;
+    const r = 12.8; // 0.8rem border-radius
+
+    const d = `M 0.5 0.5 L ${W - 0.5} 0.5 L ${W - 0.5} ${H - r} Q ${W - 0.5} ${H - 0.5} ${W - r} ${H - 0.5} L ${r} ${H - 0.5} Q 0.5 ${H - 0.5} 0.5 ${H - r} Z`;
+    $path.attr('d', d);
+
+    $path.removeClass('animate-glow');
+    void $path[0]?.offsetWidth;
+    $path.addClass('animate-glow');
 }
 
 // Global flag to track when panout feedback should be active
@@ -2731,6 +2753,7 @@ function popInfo(busName, resetCampusFontSize) {
     unhighlightBuilding();
 
     $('.bus-info-popup').stop(true, true).show();
+    if (isDesktop) showEscNotice();
 
     updateNextStopsMaxHeight();
 

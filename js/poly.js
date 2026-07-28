@@ -1616,6 +1616,7 @@ async function popStopInfo(stopId) {
     $('.stop-info-use-route-selectors-notice').hide();
 
     $('.stop-info-popup').stop(true, true).show();
+    if (typeof isDesktop !== 'undefined' && isDesktop) showEscNotice();
 
     $('.stop-info-popup-inner').scrollTop(0);
 

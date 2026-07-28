@@ -190,6 +190,26 @@
 </head>
 <body>
 
+    <div class="desktop-esc-notice none">
+        <svg class="esc-border-glow">
+            <defs>
+                <linearGradient id="esc-glow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#fff0b8" />
+                    <stop offset="100%" stop-color="#6969bf" />
+                </linearGradient>
+                <filter id="esc-glow-filter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+            <path class="esc-glow-path" fill="none" pathLength="100" />
+        </svg>
+        <i class="fa-light fa-circle-info"></i> Press <kbd>Esc</kbd> to close
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const selectedTheme = document.documentElement.getAttribute('data-selected-theme');
