@@ -645,7 +645,15 @@ function updateStopsOpacity() {
         const marker = busStopMarkers[stopId];
         const isServiced = servicedStops.has(Number(stopId));
         const el = marker.getElement();
-        if (el) el.style.opacity = isServiced ? '1' : '0.5';
+        if (el) {
+            if (!isServiced && !settings['toggle-show-out-of-service']) {
+                el.style.opacity = '0';
+                el.style.pointerEvents = 'none';
+            } else {
+                el.style.opacity = isServiced ? '1' : '0.5';
+                el.style.pointerEvents = '';
+            }
+        }
         if (popupStopId && String(popupStopId) === String(stopId)) {
             marker.setZIndexOffset(2000);
         } else {
