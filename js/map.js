@@ -198,6 +198,10 @@ window.initMap = function() {
     $(window).resize(function() {
         isDesktop = $(window).width() > 992;
         updateNextStopsMaxHeight();
+        const escNotice = document.getElementById('escDesktopNotice');
+        if (escNotice) {
+            escNotice.style.display = isDesktop ? 'none' : 'block';
+        }
     });
     
     // Only launch fireworks on open for returning users — first-timers get them after campus confirm
@@ -788,7 +792,14 @@ function hideInfoBoxes(instantly_hide) {
 
 }
 
-function showEscNotice() {
+const shownEscTypes = new Set();
+
+function showEscNotice(type) {
+    if (!settings['toggle-always-show-esc-hint']) {
+        if (shownEscTypes.has(type)) return;
+        shownEscTypes.add(type);
+    }
+
     const $notice = $('.desktop-esc-notice');
     if (!$notice.length) return;
 
@@ -2753,7 +2764,7 @@ function popInfo(busName, resetCampusFontSize) {
     unhighlightBuilding();
 
     $('.bus-info-popup').stop(true, true).show();
-    if (isDesktop) showEscNotice();
+    if (isDesktop) showEscNotice('bus');
 
     updateNextStopsMaxHeight();
 

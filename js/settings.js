@@ -518,6 +518,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-always-show-esc-hint':
+            settings['toggle-always-show-esc-hint'] = isChecked;
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;
@@ -996,9 +1000,13 @@ $(function() {
         }
     }
 
-    const isDesktopDevice = typeof isDesktop !== 'undefined' ? isDesktop : $(window).width() > 992;
-    if (isDesktopDevice) {
+    if (isDesktop) {
         $searchInput.attr('placeholder', 'Search settings... (Ctrl + K)');
+    }
+
+    const escNotice = document.getElementById('escDesktopNotice');
+    if (escNotice) {
+        escNotice.style.display = isDesktop ? 'none' : 'block';
     }
 
     let settingsSearchDebounce = null;
