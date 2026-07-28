@@ -276,7 +276,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
             animationFrame = null;
         }
         
-        e.preventDefault();
+        if (e.type !== 'touchstart') e.preventDefault();
     })
     .on('mouseleave mouseup touchend', function() {
         if (!isDragging) return;
