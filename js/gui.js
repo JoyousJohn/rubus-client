@@ -3106,7 +3106,7 @@ function selectTheme(theme) {
         }
         // Only launch fireworks here for returning users — first-timers get them after campus confirm
         const isReturningUser = !!(settings && settings['campus']);
-        if (isReturningUser && !settings['toggle-disable-fireworks-on-open']) {
+        if (isReturningUser && !settings['toggle-disable-fireworks-on-open'] && shouldAutoLaunchFireworks()) {
             launchFireworks(12);
         }
         return;

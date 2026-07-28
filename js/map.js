@@ -202,7 +202,7 @@ window.initMap = function() {
     
     // Only launch fireworks on open for returning users — first-timers get them after campus confirm
     const isReturningUser = !!(settings && settings['campus']);
-    if (isReturningUser && !settings['toggle-disable-fireworks-on-open']) {
+    if (isReturningUser && !settings['toggle-disable-fireworks-on-open'] && shouldAutoLaunchFireworks()) {
         launchFireworks(12);
     }
 
@@ -585,6 +585,16 @@ function launchFireworks(totalFireworks, currentCount = 0) {
         fireworks.launch(1);
         launchFireworks(totalFireworks, currentCount + 1);
     }, randomDelay);
+}
+
+function shouldAutoLaunchFireworks() {
+    const lastLaunch = localStorage.getItem('last-fireworks-launch');
+    if (lastLaunch) {
+        const elapsed = Date.now() - parseInt(lastLaunch);
+        if (elapsed < 8 * 60 * 60 * 1000) return false;
+    }
+    localStorage.setItem('last-fireworks-launch', Date.now().toString());
+    return true;
 }
 
 let fireworksTimeout;
