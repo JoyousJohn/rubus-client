@@ -8,6 +8,7 @@
     --theme-color-lighter: rgb(200, 200, 200);
     --theme-extra: rgb(146, 146, 146);
     --theme-line-bg: rgb(99, 99, 99);
+    --theme-border: rgb(99, 99, 99);
     --theme-stop-bus-name: rgb(105, 105, 105);
     --theme-stop-bus-time: rgb(127, 127, 127);
     --theme-bg-closest-stop: rgb(68, 68, 68);
@@ -33,6 +34,7 @@
     --theme-color-lighter: gray;
     --theme-extra: dimgray;
     --theme-line-bg: rgb(240, 240, 240);
+    --theme-border: rgb(240, 240, 240);
     --theme-stop-bus-name: rgb(60, 60, 60);
     --theme-stop-bus-time: rgb(105, 105, 105);
     --theme-bg-closest-stop: rgb(240, 240, 240);
@@ -75,9 +77,7 @@
     --theme-stops-list-text: #ec4899;
     --theme-link: #ec4899;
     --theme-accent: #ec4899;
-    --theme-accent-secondary: #a855f7;
     --theme-card-bg: #1c112e;
-    --theme-panel-bg: #1c112e;
 }
 
 [theme="beige-coffee"], [theme="coffee"] {
@@ -103,9 +103,7 @@
     --theme-stops-list-text: #a0522d;
     --theme-link: #a0522d;
     --theme-accent: #a0522d;
-    --theme-accent-secondary: #c2b280;
     --theme-card-bg: #ebdcd0;
-    --theme-panel-bg: #ebdcd0;
 }
 
 @font-face {
@@ -2424,9 +2422,7 @@ html[theme="coffee"] .settings-panel {
     --theme-stops-list-text: #d4a845;
     --theme-link: #c49a3c;
     --theme-accent: #c49a3c;
-    --theme-accent-secondary: #6aaa50;
     --theme-card-bg: #223a25;
-    --theme-panel-bg: #223a25;
 }
 
 /* ==========================================
