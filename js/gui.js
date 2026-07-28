@@ -3031,6 +3031,32 @@ function initThemeSliderDrag() {
             clearTimeout(holdTimer);
         });
     });
+
+    document.addEventListener('keydown', function(e) {
+        const themeModal = document.querySelector('.theme-modal');
+        if (!themeModal || themeModal.style.display === 'none') return;
+        if (getComputedStyle(slider).flexDirection !== 'column') return;
+
+        const options = slider.querySelectorAll('.theme-option');
+        const selected = slider.querySelector('.theme-option.selected');
+        const currentIndex = Array.from(options).indexOf(selected);
+
+        let newIndex = currentIndex;
+        if (e.key === 'ArrowDown') {
+            newIndex = Math.min(currentIndex + 1, options.length - 1);
+        } else if (e.key === 'ArrowUp') {
+            newIndex = Math.max(currentIndex - 1, 0);
+        } else {
+            return;
+        }
+
+        if (newIndex === currentIndex) return;
+
+        e.preventDefault();
+        const theme = options[newIndex].getAttribute('data-theme');
+        indicator.style.transition = 'left 0.2s ease, width 0.2s ease, top 0.2s ease, height 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+        selectTheme(theme);
+    });
 }
 
 function selectTheme(theme) {

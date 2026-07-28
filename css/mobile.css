@@ -134,13 +134,15 @@
     .theme-header {
         text-align: left !important;
         align-self: flex-start;
+        align-items: flex-start;
+        width: 100%;
     }
 
     .theme-img {
         position: absolute;
         height: 20%;
         width: auto !important;
-        margin-left: 3vh;
+        left: 3vh;
     }
 
     .theme-slider {
@@ -148,7 +150,7 @@
         border-radius: 1.5rem !important;
     }
 
-    .theme-indicator {
+    .theme-modal .theme-indicator {
         left: -3px;
         width: calc(100% + 6px);
         top: calc(2 * (100% / 6) - 3px);
