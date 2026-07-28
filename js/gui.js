@@ -134,7 +134,6 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
             let initialX; // Declare initialX outside to access it later
 
             $routeElm.on('touchstart mousedown', function(event) {
-                event.preventDefault();
 
                 initialX = event.pageX || (event.originalEvent && event.originalEvent.touches && event.originalEvent.touches[0] ? event.originalEvent.touches[0].pageX : 0); // Store initial position
               
