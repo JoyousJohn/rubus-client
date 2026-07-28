@@ -183,6 +183,10 @@
         padding: 1rem 10rem !important;
     }
 
+    .dim-on-pan-row {
+        display: none !important;
+    }
+
     .info-top {
         flex-direction: column;
     }

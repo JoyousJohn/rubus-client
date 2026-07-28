@@ -98,7 +98,7 @@ window.initMap = function() {
     let returningToSavedView = false;
 
     map.on('movestart drag', function() {
-        if (settings['toggle-dim-on-pan'] !== false) {
+        if (!isDesktop && settings['toggle-dim-on-pan'] !== false) {
             $('.bottom, .knight-mover, .info-top-right').css('opacity', '0.4');
         }
     });
