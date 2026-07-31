@@ -2147,9 +2147,7 @@ function plotBus(busName, immediatelyUpdate=false) {
 
     // Apply OOS visibility based on the Show Out of Service setting
     if (busData[busName] && busMarkers[busName]) {
-        const shouldHide = !settings['toggle-show-out-of-service'] &&
-            (busData[busName].oos || busData[busName].atDepot || distanceFromLine(busName));
-        busMarkers[busName].getElement().style.display = shouldHide ? 'none' : '';
+        busMarkers[busName].getElement().style.display = isBusShownOnMap(busName) ? '' : 'none';
     }
 
     // Record last time a marker was updated/rendered
@@ -3720,6 +3718,12 @@ function distanceFromLine(busName, returnDetails = false) {
         return { isOffLine: isOffLine, feet: Math.round(distanceFeet) };
     }
     return isOffLine;
+}
+
+function isBusShownOnMap(busName) {
+    if (!busData[busName]) return false;
+    if (settings['toggle-show-out-of-service']) return true;
+    return !(busData[busName].oos || busData[busName].atDepot || distanceFromLine(busName));
 }
 
 function isValid(busName) {

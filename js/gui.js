@@ -655,7 +655,7 @@ async function toggleRoute(route) {
             clearPanoutFeedback();
 			
 			const routePolyline = polylines[route];
-			const routeBuses = busesByRoutes[selectedCampus][route];
+			const routeBuses = (busesByRoutes[selectedCampus][route] || []).filter(busName => isBusShownOnMap(busName));
 			let boundsToFit = null;
 			if (routePolyline) {
 				const rb = routePolyline.getBounds();
