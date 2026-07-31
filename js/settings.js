@@ -940,7 +940,7 @@ $(function() {
             const shouldFilterDev = $devWrapper.is(':visible') || isExpanding;
             if (shouldFilterDev) {
                 let devHasMatch = false;
-                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .force-show-dependent').each(function() {
+                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-tile-update-when-idle, .settings-tile-update-when-zooming, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .force-show-dependent').each(function() {
                     const $item = $(this);
                     if ($item.hasClass('force-show-dependent')) return; // handled separately below
                     if ($item.parents('.settings-custom-tile-url').length) return; // handled as part of parent section
@@ -998,7 +998,7 @@ $(function() {
                     $devHead.hide();
                 }
                 // If collapsed and not expanding, restore internal item visibility so they are ready
-                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .force-show-dependent, .force-show-option').show();
+                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-tile-update-when-idle, .settings-tile-update-when-zooming, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .force-show-dependent, .force-show-option').show();
             }
         }
     }

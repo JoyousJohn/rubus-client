@@ -87,8 +87,8 @@ window.initMap = function() {
 
         tileLayer = L.tileLayer(getTileUrlPattern(mapTheme), {
         maxZoom: 20,
-        updateWhenIdle: true,   // load tiles after zoom settles (less mid-gesture thrash)
-        updateWhenZooming: false,
+        updateWhenIdle: settings && settings['tile-update-when-idle'] ? settings['tile-update-when-idle'] === 'true' : false,
+        updateWhenZooming: settings && settings['tile-update-when-zooming'] ? settings['tile-update-when-zooming'] === 'true' : true,
         keepBuffer: 2,
     }).addTo(map);
     currentTileLayerType = 'streets';
@@ -228,7 +228,7 @@ window.initMap = function() {
         const TRACKPAD_DELTA_PER_ZOOM = 12;
         const MOUSE_PX_PER_ZOOM = 60;
         const MOUSE_DEBOUNCE_MS = 40;
-        const TRACKPAD_GESTURE_END_MS = 140; // idle after last wheel event → commit real zoom
+        const TRACKPAD_GESTURE_END_MS = 300; // idle after last wheel event → commit real zoom
         const DEBUG_WHEEL = false;
 
         const handler = map.scrollWheelZoom;
@@ -963,8 +963,8 @@ function swapMapTileLayer(newUrl) {
     const previousTileLayer = tileLayer;
     const replacementTileLayer = L.tileLayer(newUrl, {
         maxZoom: 20,
-        updateWhenIdle: true,
-        updateWhenZooming: false,
+        updateWhenIdle: settings && settings['tile-update-when-idle'] ? settings['tile-update-when-idle'] === 'true' : false,
+        updateWhenZooming: settings && settings['tile-update-when-zooming'] ? settings['tile-update-when-zooming'] === 'true' : true,
         keepBuffer: 2,
         opacity: 0,
     }).addTo(map);

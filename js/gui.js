@@ -1894,6 +1894,8 @@ let defaultSettings = {
     // dev settings
     'map-renderer': 'svg',
     'polyline-renderer': 'svg',
+    'tile-update-when-idle': 'false',
+    'tile-update-when-zooming': 'true',
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
     'toggle-whole-pixel-positioning': false, /* this might not be needed? */
@@ -1951,6 +1953,8 @@ function setDefaultSettings () {
     $(`div.settings-option[marker-type-option="rubus"]`).addClass('settings-selected')
     $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
     $(`div.settings-option[polyline-renderer-option="svg"]`).addClass('settings-selected')
+    $(`div.settings-option[tile-update-when-idle-option="false"]`).addClass('settings-selected')
+    $(`div.settings-option[tile-update-when-zooming-option="true"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     $(`div.settings-option[campus="nb"]`).addClass('settings-selected')
     
@@ -2015,6 +2019,8 @@ function updateSettings() {
     
     $(`div.settings-option[map-renderer-option="${settings['map-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[polyline-renderer-option="${settings['polyline-renderer']}"]`).addClass('settings-selected')
+    $(`div.settings-option[tile-update-when-idle-option="${settings['tile-update-when-idle']}"]`).addClass('settings-selected')
+    $(`div.settings-option[tile-update-when-zooming-option="${settings['tile-update-when-zooming']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 
@@ -2114,6 +2120,22 @@ function updateSettings() {
             $(this).addClass('settings-selected')
             settings['polyline-renderer'] = $(this).attr('polyline-renderer-option')
             reapplyPolylineRenderers('settings-polyline-renderer');
+
+        } else if (settingsOption === 'tile-update-when-idle') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['tile-update-when-idle'] = $(this).attr('tile-update-when-idle-option')
+            if (typeof tileLayer !== 'undefined' && tileLayer) {
+                tileLayer.options.updateWhenIdle = settings['tile-update-when-idle'] === 'true';
+            }
+
+        } else if (settingsOption === 'tile-update-when-zooming') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['tile-update-when-zooming'] = $(this).attr('tile-update-when-zooming-option')
+            if (typeof tileLayer !== 'undefined' && tileLayer) {
+                tileLayer.options.updateWhenZooming = settings['tile-update-when-zooming'] === 'true';
+            }
 
         } else if (settingsOption === 'bus-positioning') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
