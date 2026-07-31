@@ -1085,6 +1085,11 @@ $(document).ready(async function() {
                             bus.sim.lastTick = now;
                         }
                         bus.previousTime = now - 300;
+                        if (bus.lat !== undefined && bus.long !== undefined) {
+                            bus.previousPositions = [[bus.lat, bus.long]];
+                        }
+                        delete bus.apiAnimationDuration;
+                        delete bus.websocketAnimationDuration;
                     }
                 }
                 return;
