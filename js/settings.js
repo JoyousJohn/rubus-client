@@ -110,6 +110,9 @@ $('.settings-toggle .toggle-input').on('change', function () {
                     busMarkers[busName].getElement().style.display = shouldHide ? 'none' : '';
                 }
             }
+            if ($('.building-info-popup').is(':visible') && window._currentBuildingFeatureForStops) {
+                populateBuildingClosestStopsList(window._currentBuildingFeatureForStops);
+            }
             break;
 
         case 'toggle-show-etas-in-seconds':

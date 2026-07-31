@@ -144,6 +144,9 @@ async function populateBuildingClosestStopsList(feature) {
         } else {
             routes = getAllMainRoutesForStop(stopId);
         }
+        if (!settings['toggle-show-out-of-service']) {
+            routes = routes.filter(route => routeHasValidInServiceBuses(route));
+        }
         return routes.length > 0 ? {
             stopId,
             name: stop.name,
