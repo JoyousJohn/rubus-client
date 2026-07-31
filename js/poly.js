@@ -652,7 +652,7 @@ function updateStopsOpacity() {
         const isServiced = servicedStops.has(Number(stopId));
         const el = marker.getElement();
         if (el) {
-            if (!isServiced && !settings['toggle-show-out-of-service']) {
+            if (!isServiced && !settings['toggle-show-out-of-service'] && servicedStops.size > 0) {
                 el.style.opacity = '0';
                 el.style.pointerEvents = 'none';
             } else {
@@ -1648,6 +1648,7 @@ async function addStopsToMap() {
         activeStops = [...new Set(activeStops)];
     } else {
         for (const activeRoute in busesByRoutes[selectedCampus]) {
+            if (!settings['toggle-show-out-of-service'] && !routeHasInServiceBuses(activeRoute)) continue;
             if (!(activeRoute in stopLists)) { console.log('does this actually happen?'); continue; }
             activeStops = [...activeStops, ...stopLists[activeRoute]];
             activeStops = [...new Set(activeStops)];
