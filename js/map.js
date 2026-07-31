@@ -202,6 +202,8 @@ window.initMap = function() {
         if (escNotice) {
             escNotice.style.display = isDesktop ? 'none' : 'block';
         }
+        const $settingsInput = $('#settings-search-input');
+        $settingsInput.attr('placeholder', isDesktop ? 'Search settings... (Ctrl + K)' : 'Search settings...');
     });
     
     // Only launch fireworks on open for returning users — first-timers get them after campus confirm

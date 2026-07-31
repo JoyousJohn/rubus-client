@@ -1002,6 +1002,8 @@ $(function() {
 
     if (isDesktop) {
         $searchInput.attr('placeholder', 'Search settings... (Ctrl + K)');
+    } else {
+        $searchInput.attr('placeholder', 'Search settings...');
     }
 
     const escNotice = document.getElementById('escDesktopNotice');
