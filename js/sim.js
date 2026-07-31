@@ -872,6 +872,11 @@ async function startSim() {
     }
 
     sim = true;
+    console.log('[SIM] Simulator started', {
+        campus: selectedCampus,
+        routes: SIM_ROUTES,
+        timestamp: new Date().toISOString()
+    });
     if (window.activeRoutes && window.activeRoutes.clear) {
         window.activeRoutes.clear();
     }

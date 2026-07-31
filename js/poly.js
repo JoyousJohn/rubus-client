@@ -328,7 +328,10 @@ function getRouteStyle(routeName) {
 function updatePolylineStyle(routeName) {
     if (!polylines[routeName]) return;
     const style = getRouteStyle(routeName);
-    const targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
+    let targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
+    if (!settings['toggle-show-out-of-service'] && !routeHasValidInServiceBuses(routeName)) {
+        targetOpacity = 0;
+    }
     polylines[routeName].setStyle({ color: style.color, opacity: targetOpacity });
     const pathEl = polylines[routeName].getElement();
     if (pathEl) {
@@ -583,8 +586,11 @@ function prunePolylinesWithoutInService() {
         if (!settings['toggle-show-out-of-service']) {
             for (const routeName of Object.keys(polylines)) {
                 if (!routeHasValidInServiceBuses(routeName) && !forceRoutes.includes(routeName)) {
-                    try { polylines[routeName].remove(); } catch (e) {}
-                    delete polylines[routeName];
+                    try {
+                        polylines[routeName].setStyle({ opacity: 0 });
+                        const pathEl = polylines[routeName].getElement();
+                        if (pathEl) { pathEl.style.opacity = '0'; pathEl.style.display = 'none'; }
+                    } catch (e) {}
                 }
             }
         }
