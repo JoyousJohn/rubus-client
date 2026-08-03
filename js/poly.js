@@ -162,6 +162,13 @@ function renderForceShowCheckboxes() {
 }
 
 $(document).on('change', '.force-show-cb', function() {
+    // Route checkboxes are locked while Force Show Polylines is off — revert
+    // the change to the stored selection instead of mutating it.
+    if (!isForceShowEnabled()) {
+        const route = $(this).data('route');
+        $(this).prop('checked', getForceShowRoutes().includes(route));
+        return;
+    }
     const route = $(this).data('route');
     const show = $(this).prop('checked');
     let forceRoutes = getForceShowRoutes();
@@ -184,6 +191,12 @@ $(document).on('change', '.force-show-cb', function() {
 });
 
 $(document).on('change', '.force-show-all-cb', function() {
+    // ALL checkbox is locked while Force Show Polylines is off — restore the
+    // stored selection.
+    if (!isForceShowEnabled()) {
+        renderForceShowCheckboxes();
+        return;
+    }
     const selectAll = $(this).prop('checked');
     const campusRoutes = routesByCampusBase[selectedCampus] || [];
     let forceRoutes = getForceShowRoutes();

@@ -364,32 +364,36 @@
         document.querySelector('.campus-modal').style.display = 'none';
         // Lock body scroll while theme modal is visible
         document.body.style.overflow = 'hidden';
-        if (JSON.parse(localStorage.getItem('settings')) && JSON.parse(localStorage.getItem('settings'))['theme']) {
-            document.querySelector('.theme-modal').style.display = 'none';
-            document.getElementById('theme-bg-lights').style.display = 'none';
-            document.body.style.overflow = '';
-            // Only show campus modal if campus is not set
-            if (!JSON.parse(localStorage.getItem('settings'))['campus']) {
-                document.querySelector('.campus-modal').style.display = 'flex';
-                // Ensure proper centering when modal is shown directly
-                requestAnimationFrame(() => {
-                    centerCampusCarouselToNBInstant(true);
-                });
-            }
-        } else if (new URLSearchParams(window.location.search).has('bus')) {
-            document.querySelector('.theme-modal').style.display = 'none';
-            document.getElementById('theme-bg-lights').style.display = 'none';
-            document.body.style.overflow = '';
-            $(document).ready(async function() {
-                if (!localStorage.getItem('settings')) {
-                    selectTheme('auto'); // need document ready to wait for this to load
-                    setTimeout(() => {
-                        updateSettings();
-                        settings['theme'] = 'beige-coffee'; // idk why this isn't being set in defaultSettings and am too lazy tracing it
-                    }, 0);
-                }
-            })
+    // The settings global (vars.js) is the merged view of defaults + stored
+    // overrides. The raw localStorage object only holds non-default overrides,
+    // so checking it directly would re-show the modals on every reload for
+    // users on default values (e.g. campus 'nb').
+    if (settings && settings['theme']) {
+        document.querySelector('.theme-modal').style.display = 'none';
+        document.getElementById('theme-bg-lights').style.display = 'none';
+        document.body.style.overflow = '';
+        // Only show campus modal if campus is not set
+        if (!settings['campus']) {
+            document.querySelector('.campus-modal').style.display = 'flex';
+            // Ensure proper centering when modal is shown directly
+            requestAnimationFrame(() => {
+                centerCampusCarouselToNBInstant(true);
+            });
         }
+    } else if (new URLSearchParams(window.location.search).has('bus')) {
+        document.querySelector('.theme-modal').style.display = 'none';
+        document.getElementById('theme-bg-lights').style.display = 'none';
+        document.body.style.overflow = '';
+        $(document).ready(async function() {
+            if (!localStorage.getItem('settings')) {
+                selectTheme('auto'); // need document ready to wait for this to load
+                setTimeout(() => {
+                    updateSettings();
+                    settings['theme'] = 'beige-coffee'; // idk why this isn't being set in defaultSettings and am too lazy tracing it
+                }, 0);
+            }
+        })
+    }
     </script>
 
 

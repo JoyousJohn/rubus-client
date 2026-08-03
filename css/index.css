@@ -1500,6 +1500,11 @@ html[theme="light"] .settings-panel {
     pointer-events: none;
 }
 
+.force-show-dependent.disabled .force-show-option {
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
 .force-show-dependent.disabled .span-i,
 .offscreen-indicators-dependent.disabled .span-i {
     pointer-events: auto;
