@@ -34,25 +34,22 @@ function getBuildingColors() {
 
 function updateBuildingColorsForTheme() {
     if (!buildingsLayer) return;
-    const colors = getBuildingColors();
-    buildingsLayer.eachLayer(function(layer) {
-        if (!layer.feature) return;
-        // Skip highlighted building (search highlight uses red, don't override)
-        if (layer === highlightedBuildingLayer) return;
-        const category = layer.feature.properties?.category;
-        const style = category === 'building' ? colors.building :
-                      category === 'parking' ? colors.parking : colors.fallback;
-        layer.setStyle({ ...style, weight: 1 });
-    });
+    // Only repaint when the layer is actually on the map (it can be loaded but
+    // hidden when the buildings toggle is off; the button 'active' class is set
+    // in lockstep with add/removeLayer). The MapLibre compat wrapper re-paints
+    // the shared fill/line layers from getPaintColors() (current theme) in one
+    // call — no per-feature loop needed. Any active highlight lives on its own
+    // overlay layer, so it's untouched.
+    if ($('.buildings-btn').hasClass('active') && typeof buildingsLayer.setStyle === 'function') {
+        buildingsLayer.setStyle();
+    }
 }
 
 function unhighlightBuilding() {
     if (highlightedBuildingLayer) {
-        const category = highlightedBuildingLayer.feature?.properties?.category;
-        const colors = getBuildingColors();
-        const style = category === 'building' ? colors.building :
-                      category === 'parking' ? colors.parking : colors.fallback;
-        highlightedBuildingLayer.setStyle({ ...style, weight: 1 });
+        if (typeof highlightedBuildingLayer.clearHighlight === 'function') {
+            highlightedBuildingLayer.clearHighlight();
+        }
     }
     highlightedBuildingLayer = null;
 }
@@ -70,12 +67,14 @@ function highlightBuilding(feature) {
                 const layerNameNorm = layerName ? layerName.trim().toLowerCase() : '';
                 const featureNameNorm = featureName ? featureName.trim().toLowerCase() : '';
                 if (layerNameNorm === featureNameNorm) {
-                    layer.setStyle({
-                        color: '#2255ff',
-                        fillColor: '#66aaff',
-                        fillOpacity: 0.5,
-                        weight: 1
-                    });
+                    if (typeof layer.setHighlight === 'function') {
+                        layer.setHighlight({
+                            color: '#2255ff',
+                            fillColor: '#66aaff',
+                            fillOpacity: 0.5,
+                            weight: 1
+                        });
+                    }
                     highlightedBuildingLayer = layer;
                 }
             }
@@ -513,20 +512,20 @@ function highlightBuildingByName(buildingName) {
     
     // Clear previous highlight
     if (highlightedBuildingLayer) {
-        const prevCategory = highlightedBuildingLayer.feature?.properties?.category;
-        const colors = getBuildingColors();
-        const prevStyle = prevCategory === 'building' ? colors.building :
-                          prevCategory === 'parking' ? colors.parking : colors.fallback;
-        highlightedBuildingLayer.setStyle({ ...prevStyle, weight: 1 });
+        if (typeof highlightedBuildingLayer.clearHighlight === 'function') {
+            highlightedBuildingLayer.clearHighlight();
+        }
     }
     
     // Style the new highlighted building
-    targetLayer.setStyle({
-        color: '#ff6b6b',
-        fillColor: '#ff6b6b',
-        fillOpacity: 0.6,
-        weight: 3
-    });
+    if (typeof targetLayer.setHighlight === 'function') {
+        targetLayer.setHighlight({
+            color: '#ff6b6b',
+            fillColor: '#ff6b6b',
+            fillOpacity: 0.6,
+            weight: 3
+        });
+    }
     
     highlightedBuildingLayer = targetLayer;
 }

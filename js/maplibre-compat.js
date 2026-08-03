@@ -484,10 +484,18 @@ if (typeof L !== 'undefined') {
             const sourceId = `src_${geoId}`;
             const fillLayerId = `fill_${geoId}`;
             const lineLayerId = `line_${geoId}`;
+            // Per-feature highlight overlay: one shared fill/line layer pair per
+            // source can't express per-feature colors, so a highlighted feature is
+            // re-served through a tiny dedicated source and painted on top.
+            const highlightSourceId = `hlsrc_${geoId}`;
+            const highlightFillLayerId = `hlfill_${geoId}`;
+            const highlightLineLayerId = `hlline_${geoId}`;
+            const EMPTY_FEATURE_COLLECTION = { type: 'FeatureCollection', features: [] };
 
             const layersList = [];
             const subLayerSetStyleWarned = new Set();
             let styleLoadBound = false;
+            let highlightedFeature = null;
 
             function onStyleLoad() {
                 add();
@@ -558,6 +566,52 @@ if (typeof L !== 'undefined') {
                             }
                         });
                     }
+                    // Highlight overlay: a dedicated source+layers holding only the
+                    // currently-highlighted feature. Painted above the base building
+                    // fill/line but below bus/stop markers (DOM parity: markers stay
+                    // clickable/visible above polygons).
+                    //   fill → inserted between base fill and base line (before the
+                    //          base line id)
+                    //   line → inserted right after the base line in the current
+                    //          style, so it outlines the highlight above the fill.
+                    // If no markers exist yet (buildings toggled on before any
+                    // buses/stops), they land wherever the base line sits; marker
+                    // layers get re-pinned above by updateStopsLayerOrder later.
+                    if (!map.getSource(highlightSourceId)) {
+                        map.addSource(highlightSourceId, { type: 'geojson', data: EMPTY_FEATURE_COLLECTION });
+                    }
+                    if (!map.getLayer(highlightFillLayerId)) {
+                        map.addLayer({
+                            id: highlightFillLayerId,
+                            type: 'fill',
+                            source: highlightSourceId,
+                            minzoom: 0,
+                            paint: {
+                                'fill-color': 'transparent',
+                                'fill-opacity': 0
+                            }
+                        }, lineLayerId);
+                    }
+                    if (!map.getLayer(highlightLineLayerId)) {
+                        let afterLineId;
+                        try {
+                            const styleLayers = (map.getStyle && map.getStyle().layers) || [];
+                            const lineIdx = styleLayers.findIndex(function(l) { return l.id === lineLayerId; });
+                            if (lineIdx >= 0 && lineIdx + 1 < styleLayers.length) {
+                                afterLineId = styleLayers[lineIdx + 1].id;
+                            }
+                        } catch (e) {}
+                        map.addLayer({
+                            id: highlightLineLayerId,
+                            type: 'line',
+                            source: highlightSourceId,
+                            minzoom: 0,
+                            paint: {
+                                'line-color': 'transparent',
+                                'line-width': 1
+                            }
+                        }, afterLineId);
+                    }
                 } catch (e) {
                     console.error('[L.geoJSON] failed to add source/layer for', fillLayerId, ':', e);
                 }
@@ -573,6 +627,10 @@ if (typeof L !== 'undefined') {
                     if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId);
                     if (map.getLayer(lineLayerId)) map.removeLayer(lineLayerId);
                     if (map.getSource(sourceId)) map.removeSource(sourceId);
+                    if (map.getLayer(highlightFillLayerId)) map.removeLayer(highlightFillLayerId);
+                    if (map.getLayer(highlightLineLayerId)) map.removeLayer(highlightLineLayerId);
+                    if (map.getSource(highlightSourceId)) map.removeSource(highlightSourceId);
+                    highlightedFeature = null;
                 } catch (e) {
                     console.error('[L.geoJSON remove] failed to remove layer', { sourceId, fillLayerId, lineLayerId }, e);
                 }
@@ -623,7 +681,40 @@ if (typeof L !== 'undefined') {
                             const stack = (new Error().stack || '').split('\n').slice(0, 3).join(' | ');
                             if (!subLayerSetStyleWarned.has(stack)) {
                                 subLayerSetStyleWarned.add(stack);
-                                console.error('[L.geoJSON] subLayer.setStyle is a no-op in the MapLibre compat layer (one shared fill/line layer per source); per-feature restyling is not applied. First caller: ' + stack);
+                                console.error('[L.geoJSON] subLayer.setStyle is a no-op in the MapLibre compat layer (one shared fill/line layer per source); per-feature restyling is not applied. Use setHighlight()/clearHighlight() instead. First caller: ' + stack);
+                            }
+                            return subLayer;
+                        },
+                        setHighlight: function(style) {
+                            style = style || {};
+                            try {
+                                if (!map || !map.getSource(highlightSourceId)) return subLayer;
+                                if (highlightedFeature && highlightedFeature !== feat) {
+                                    map.getSource(highlightSourceId).setData(EMPTY_FEATURE_COLLECTION);
+                                }
+                                highlightedFeature = feat;
+                                map.getSource(highlightSourceId).setData({ type: 'FeatureCollection', features: [feat] });
+                                if (map.getLayer(highlightFillLayerId)) {
+                                    map.setPaintProperty(highlightFillLayerId, 'fill-color', style.fillColor || style.color || 'transparent');
+                                    map.setPaintProperty(highlightFillLayerId, 'fill-opacity', style.fillOpacity !== undefined ? style.fillOpacity : 1);
+                                }
+                                if (map.getLayer(highlightLineLayerId)) {
+                                    map.setPaintProperty(highlightLineLayerId, 'line-color', style.color || style.fillColor || 'transparent');
+                                    map.setPaintProperty(highlightLineLayerId, 'line-width', style.weight !== undefined ? style.weight : 1);
+                                }
+                            } catch (e) {
+                                console.error('[L.geoJSON] setHighlight failed:', e);
+                            }
+                            return subLayer;
+                        },
+                        clearHighlight: function() {
+                            try {
+                                if (highlightedFeature === feat && map && map.getSource(highlightSourceId)) {
+                                    map.getSource(highlightSourceId).setData(EMPTY_FEATURE_COLLECTION);
+                                }
+                                highlightedFeature = null;
+                            } catch (e) {
+                                console.error('[L.geoJSON] clearHighlight failed:', e);
                             }
                             return subLayer;
                         },
