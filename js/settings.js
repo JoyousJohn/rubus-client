@@ -104,7 +104,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             // bus here to show/hide their markers immediately on toggle.
             for (const busName in busData) {
                 if (busData[busName] && typeof plotBus === 'function') {
-                    try { plotBus(busName, true); } catch (e) {}
+                    try { plotBus(busName, true); } catch (e) { console.error('[settings] plotBus failed for ' + busName, e); }
                 }
             }
             if ($('.building-info-popup').is(':visible') && window._currentBuildingFeatureForStops) {
@@ -521,6 +521,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-pause-bus-markers-on-pan':
             settings['toggle-pause-bus-markers-on-pan'] = isChecked;
+            break;
+
+        case 'toggle-cull-offscreen-bus-markers':
+            settings['toggle-cull-offscreen-bus-markers'] = isChecked;
             break;
 
         case 'toggle-show-fps':

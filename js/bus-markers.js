@@ -377,6 +377,16 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
             if (pausedAt === null) pausedAt = currentTime;
             return;
         }
+        // When the "Cull Off-Screen Bus Markers" dev setting is enabled, skip
+        // per-frame position/rotation updates for markers outside the expanded
+        // viewport. The skipped wall-clock time is accumulated (same mechanism
+        // as the pan pause above) so markers resume without jumping. Markers
+        // are checked by their current interpolated position, not their target,
+        // so markers mid-flight into the viewport stay animated.
+        if (busAnimationCullBounds && marker.getLatLng && !busAnimationCullBounds.contains(marker.getLatLng())) {
+            if (pausedAt === null) pausedAt = currentTime;
+            return;
+        }
         if (pausedAt !== null) {
             pausedDuration += currentTime - pausedAt;
             pausedAt = null;

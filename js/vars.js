@@ -75,6 +75,7 @@ const defaultSettings = {
     'toggle-hide-sim-popup': false,
     'toggle-always-show-esc-hint': false,
     'toggle-pause-bus-markers-on-pan': false,
+    'toggle-cull-offscreen-bus-markers': false,
     'toggle-show-fps': false,
     'toggle-adaptive-pixel-ratio': false,
     'toggle-low-performance-mode': false,

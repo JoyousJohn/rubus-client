@@ -216,7 +216,7 @@ function selectInfoPanel(panel, element, isUserExplicitSelection = true) {
         if (isUserExplicitSelection) {
             lastUserSelectedPanelIndex = targetIndex;
         }
-	} catch (error) {}
+	} catch (error) { console.error('[info-panels] selectInfoPanel failed:', error); }
 }
 
 // Handle closing the info panels wrapper

@@ -768,7 +768,7 @@ async function updateSimBus(busName) {
 				if (popupStopId) {
 					updateStopBuses(popupStopId);
 				}
-			} catch (e) {}
+			} catch (e) { console.error('[sim] stop bus context update failed for ' + busName, e); }
 		}
 
         // Reset sim state for dwell
@@ -797,7 +797,7 @@ async function updateSimBus(busName) {
 			// minutes-long animations). Consumed by updateMarkerPosition.
 			bus.simAnimationDuration = Math.max(50, Math.min(now - bus.previousTime, 2000));
 			bus.previousTime = now;
-			try { plotBus(busName); } catch {}
+try { plotBus(busName); } catch (e) { console.error('[sim] plotBus failed for ' + busName, e); }
 			simState.nextReportAt = now + pollInterval;
 		}
         return;
@@ -853,7 +853,7 @@ async function updateSimBus(busName) {
 		// previous visual report (clamped). Consumed by updateMarkerPosition.
 		bus.simAnimationDuration = Math.max(50, Math.min(now - bus.previousTime, 2000));
 		bus.previousTime = now;
-		try { plotBus(busName); } catch {}
+		try { plotBus(busName); } catch (e) { console.error('[sim] plotBus failed for ' + busName, e); }
 		simState.nextReportAt = now + pollInterval;
 	}
 }
@@ -923,7 +923,7 @@ function resumeSim() {
             delete bus.websocketAnimationDuration;
             delete bus.simAnimationDuration;
             if (typeof plotBus === 'function') {
-                try { plotBus(busName, true); } catch (e) {}
+                try { plotBus(busName, true); } catch (e) { console.error('[sim] plotBus(force) failed for ' + busName, e); }
             }
         }
     }
@@ -979,7 +979,7 @@ async function startSim() {
     await setPolylines(SIM_ROUTES);
     if (!isSimGenerationCurrent(gen)) return;
     populateRouteSelectors(activeRoutes);
-    try { updateTimeToStops(Object.keys(busData).map(id => Number(id))); } catch (e) {}
+    try { updateTimeToStops(Object.keys(busData).map(id => Number(id))); } catch (e) { console.error('[sim] updateTimeToStops failed', e); }
     startSimMovementLoop();
     $('.knight-mover').hide(); // see why hideinfoboxes didn't do this
     return;
@@ -1016,8 +1016,8 @@ async function endSim() {
 
     makeBusesByRoutes();
     removePreviouslyActiveStops();
-    try { populateMeClosestStops(); } catch (e) {}
-    try { populateFavs(false); } catch (e) {}
+    try { populateMeClosestStops(); } catch (e) { console.error('[sim] populateMeClosestStops failed', e); }
+    try { populateFavs(false); } catch (e) { console.error('[sim] populateFavs failed', e); }
 
     // Rebuild route selectors from the now-empty state so the sim routes'
     // selector buttons are cleared even if the following fetchBusData() poll

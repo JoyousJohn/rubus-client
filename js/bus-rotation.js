@@ -132,6 +132,42 @@ const BUS_ANIMATION_STEP_MS = 100;   // 10Hz step mode
 const WEBGL_ANIMATION_STEP_MS = 33;  // ~30Hz step mode
 const animationLastStep = {};
 
+// Screen-space margin (CSS px) added around the viewport when computing the
+// off-screen animation cull bounds, so markers pause just past the visible
+// map edge instead of exactly at it (no visible freezing at the border).
+const BUS_CULL_MARGIN_PX = 200;
+
+// Expanded viewport bounds used by the "Cull Off-Screen Bus Markers" dev
+// setting. Rebuilt once per animation tick (null when culling is off, so the
+// default path is untouched).
+let busAnimationCullBounds = null;
+
+// Compute a pixel-margin-expanded viewport as lat/lng bounds. A pixel margin
+// (not a bounds ratio) keeps the slack constant in screen space at every zoom.
+function computeBusAnimationCullBounds() {
+    if (!map || typeof map.getSize !== 'function' || typeof map.containerPointToLatLng !== 'function') return null;
+    const size = map.getSize();
+    if (!size || size.x <= 0 || size.y <= 0) return null;
+    const m = BUS_CULL_MARGIN_PX;
+    try {
+        const sw = map.containerPointToLatLng({ x: -m, y: size.y + m });
+        const ne = map.containerPointToLatLng({ x: size.x + m, y: -m });
+        return {
+            south: sw.lat,
+            north: ne.lat,
+            west: sw.lng,
+            east: ne.lng,
+            contains(latlng) {
+                const lat = latlng && (latlng.lat !== undefined ? latlng.lat : (Array.isArray(latlng) ? latlng[0] : latlng.latitude));
+                const lng = latlng && (latlng.lng !== undefined ? latlng.lng : (Array.isArray(latlng) ? latlng[1] : (latlng.longitude !== undefined ? latlng.longitude : latlng.long)));
+                return lat >= this.south && lat <= this.north && lng >= this.west && lng <= this.east;
+            }
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
 // Map a "bus-animation-rate" setting to a step interval for a renderer mode.
 // "off" uses each mode's natural rate (custom DOM = every rAF frame, WebGL =
 // ~30Hz flush throttle); "10hz"/"30hz" force a fixed step for every mode.
@@ -174,6 +210,12 @@ function ensureBusAnimationLoop() {
             cancelAnimationFrame(busAnimationFrameId);
             busAnimationFrameId = null;
             return;
+        }
+        // Rebuild the cull bounds once per frame (not per step) so the check
+        // in each animation step stays cheap. Null when the dev toggle is off.
+        busAnimationCullBounds = null;
+        if (settings && settings['toggle-cull-offscreen-bus-markers']) {
+            busAnimationCullBounds = computeBusAnimationCullBounds();
         }
         for (const busName in animationFrames) {
             const step = animationFrames[busName];
