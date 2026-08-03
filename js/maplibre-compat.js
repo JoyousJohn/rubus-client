@@ -587,6 +587,25 @@ if (typeof L !== 'undefined') {
                             if (event === 'click' && map) {
                                 map.on('click', fillLayerId, (e) => {
                                     if (e.features && e.features.length) {
+                                        // Bus/stop markers render above polygon
+                                        // fills, so a click on a marker must not
+                                        // also select the building/lot below it
+                                        // (DOM parity: the topmost element owns
+                                        // the click). Layer-scoped click
+                                        // handlers fire for every layer hit at
+                                        // the point regardless of stacking, so
+                                        // check for markers explicitly.
+                                        const markerLayers = [
+                                            'bus-markers-layer', 'bus-markers-labels',
+                                            'stop-markers-layer', 'stop-markers-labels',
+                                            'stop-markers-selected', 'stop-markers-selected-labels'
+                                        ].filter(id => map.getLayer(id));
+                                        const glMarkerHit = e.point && markerLayers.length &&
+                                            map.queryRenderedFeatures(e.point, { layers: markerLayers }).length;
+                                        const target = e.originalEvent && e.originalEvent.target;
+                                        const domMarkerHit = target && typeof target.closest === 'function' &&
+                                            !!target.closest('.maplibregl-marker');
+                                        if (glMarkerHit || domMarkerHit) return;
                                         const clickedFeat = e.features[0];
                                         if (clickedFeat.properties && feat.properties && clickedFeat.properties.name === feat.properties.name) {
                                             handler({

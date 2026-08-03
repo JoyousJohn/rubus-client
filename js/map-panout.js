@@ -82,7 +82,7 @@ function panout() {
         'btn': 'panout'
     });
 
-    $('[stop-eta]').text('').hide();
+    clearAllStopEtas();
     savedCenter = null;
     savedView = null;
     returningToSavedView = false; // not sure if I need this, this will be so hard to trigger within 88ms. drag and then panout...

@@ -279,7 +279,12 @@ window.createMapLibrePolyline = function(coordinates, options) {
             }
 
             if (!map.getLayer(layerId)) {
-                const beforeId = map.getLayer('bus-markers-glow') ? 'bus-markers-glow' : (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : undefined);
+                // Anchor polylines BELOW the stop marker layers (when they
+                // exist) so stops always render above linestrings; both stops
+                // and polylines sit below the bus layers.
+                const beforeId = map.getLayer('stop-markers-layer') ? 'stop-markers-layer'
+                    : (map.getLayer('bus-markers-glow') ? 'bus-markers-glow'
+                    : (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : undefined));
                 map.addLayer({
                     id: layerId,
                     type: 'line',
@@ -453,6 +458,26 @@ if (typeof L !== 'undefined') {
         const originalAddTo = marker.addTo.bind(marker);
         const originalRemove = marker.remove.bind(marker);
 
+        // In WebGL renderer mode stop markers are rendered as GL layers
+        // (js/stop-layer.js); their DOM elements must never be attached to
+        // the map, since a DOM element always paints above the GL canvas and
+        // would defeat the "Show Stops Above Buses" ordering. addTo()/remove()
+        // for stops then only flip the registry flag and resync the GL source.
+        const isStopMarker = !!(icon && icon.options && icon.options.className === 'custom-stop-icon');
+        marker._addedToMap = false;
+        marker._originalAddTo = originalAddTo;
+        marker._originalRemove = originalRemove;
+        marker._addToDom = function(targetMap) {
+            originalAddTo(targetMap || map);
+            marker._addedToMap = true;
+            return marker;
+        };
+        marker._removeFromDom = function() {
+            originalRemove();
+            marker._addedToMap = false;
+            return marker;
+        };
+
         marker.setLatLng = function(newLatLng) {
             const p = parseMarkerLatLng(newLatLng);
             marker.setLngLat([p.lng, p.lat]);
@@ -478,15 +503,26 @@ if (typeof L !== 'undefined') {
             return { lat: ll.lat, lng: ll.lng };
         };
         marker.remove = function() {
+            if (typeof window.stopLayerManager !== 'undefined' && window.stopLayerManager.isActive() && isStopMarker) {
+                marker._addedToMap = false;
+                window.stopLayerManager.refresh();
+                return marker;
+            }
             originalRemove();
+            marker._addedToMap = false;
             return marker;
         };
         marker.removeFrom = function() {
-            originalRemove();
-            return marker;
+            return marker.remove();
         };
         marker.addTo = function(targetMap) {
+            if (typeof window.stopLayerManager !== 'undefined' && window.stopLayerManager.isActive() && isStopMarker) {
+                marker._addedToMap = true;
+                window.stopLayerManager.refresh();
+                return marker;
+            }
             originalAddTo(targetMap || map);
+            marker._addedToMap = true;
             return marker;
         };
         marker.on = function(event, handler) {
@@ -1800,6 +1836,9 @@ async function popStopInfo(stopId) {
     if (popupStopId) {
         $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
         busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+        if (typeof stopLayerManager !== 'undefined') {
+            stopLayerManager.setSelected(null);
+        }
         
         // If we have an active route filter, and it doesn't service the previous stop, hide it
         if (shownRoute && shownRoute !== 'fav' && stopLists[shownRoute]) {
@@ -1822,6 +1861,9 @@ async function popStopInfo(stopId) {
 
     $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/stop_marker_selected.png');
     busStopMarkers[stopId].setZIndexOffset(2000);
+    if (typeof stopLayerManager !== 'undefined') {
+        stopLayerManager.setSelected(stopId);
+    }
 
     if (Number(closestStopId) === stopId && (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance'])) {
         $('.closest-stop').show();
@@ -1872,7 +1914,7 @@ async function popStopInfo(stopId) {
         })
         updateTooltips(shownRoute);
     } else {
-        $('[stop-eta]').text('').hide();
+        clearAllStopEtas();
     }
 
     popupStopId = stopId;

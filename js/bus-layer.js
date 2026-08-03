@@ -1306,6 +1306,26 @@
             const self = this;
             this._map.on('click', this._layerId, function(e) {
                 if (!e.features || e.features.length === 0) return;
+                // MapLibre binds its click pipeline to the canvas container, so
+                // clicks on DOM markers (stop icons, distance markers) bubble
+                // in here too. Without this guard, clicking a stop marker that
+                // overlaps a bus would also select the bus underneath it.
+                // Those elements handle their own clicks, so skip them.
+                const target = e.originalEvent && e.originalEvent.target;
+                if (target && typeof target.closest === 'function' && target.closest('.maplibregl-marker')) {
+                    return;
+                }
+                // In WebGL renderer mode stops are GL features too. Mirror DOM
+                // z-order hit-testing: when "Show Stops Above Buses" is on,
+                // stops are above buses, so a stop under the cursor wins over
+                // the bus click (the stop handler in stop-layer.js handles it).
+                if (typeof window.stopLayerManager !== 'undefined' && window.stopLayerManager.isActive()) {
+                    const stopLayers = ['stop-markers-layer', 'stop-markers-labels', 'stop-markers-selected', 'stop-markers-selected-labels'].filter(id => self._map.getLayer(id));
+                    if (stopLayers.length && self._map.queryRenderedFeatures(e.point, { layers: stopLayers }).length) {
+                        const stopsAbove = !!(settings && settings['toggle-stops-above-buses']);
+                        if (stopsAbove) return;
+                    }
+                }
                 const busName = e.features[0].properties.busName;
                 const proxy = self._proxies[busName];
                 if (proxy) {

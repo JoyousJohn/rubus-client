@@ -6,9 +6,18 @@
     z-index: 402; /* 402 instead of 401 to get over campus switcher */
     font-family: var(--font-family);
     overscroll-behavior: contain;
+    /* The wrapper spans the whole (visual) viewport so the card can be placed
+       relative to the on-screen keyboard, but it must not swallow gestures on
+       the map around it — otherwise dragging the map scrolls the page instead
+       of panning (and the map dragstart → closeSearch dismissal never fires).
+       Only the card itself should capture pointer events. */
+    pointer-events: none;
 }
 
 .search-wrapper > div {
+    /* Re-enable pointer events on the card itself (the wrapper is
+       pointer-events: none so the map around it stays draggable). */
+    pointer-events: auto;
     background-color: var(--theme-bg);
     /* background-color: red; */
     margin: 1rem;

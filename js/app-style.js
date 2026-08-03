@@ -30,6 +30,12 @@ function setAppStyle(style) {
             populateRiderRoutes();
         }
 
+        // WebGL-mode stops derive their icon from the appStyle global, so
+        // resync the GL source now that the style has actually switched.
+        if (typeof stopLayerManager !== 'undefined') {
+            stopLayerManager.refresh();
+        }
+
     } else if (style === 'rubus'){
 
     }

@@ -58,6 +58,9 @@ function popInfo(busName, resetCampusFontSize) {
         if (busStopMarkers[popupStopId]) {
             busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
         }
+        if (typeof stopLayerManager !== 'undefined') {
+            stopLayerManager.setSelected(null);
+        }
         popupStopId = null;
         thisClosestStopId = null;
         $('.stop-info-popup').hide();
@@ -427,7 +430,7 @@ function popInfo(busName, resetCampusFontSize) {
                 } else {
                     $('.closest-stop-eta').text(eta)
                     $('.closest-stop-time').text(formattedTime)
-                    $(`[stop-eta="${sortedStops[i]}"]`).text(eta).show();
+                    setStopEtaLabel(sortedStops[i], eta, true);
                 }
             }
 
@@ -446,7 +449,7 @@ function popInfo(busName, resetCampusFontSize) {
             </div>`).click(() => { 
                 flyToStop(sortedStops[i]);  
             }));
-            $(`[stop-eta="${sortedStops[i]}"]`).text(eta).show();
+            setStopEtaLabel(sortedStops[i], eta, true);
 
             if (!firstCircle) {
                 // If closest stop is the next stop and we're showing the closest stop section, use it as first circle

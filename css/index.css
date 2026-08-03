@@ -1365,7 +1365,12 @@ html, body {
     padding-top: 1rem;
     /* margin-left: -1rem; */
     padding-left: 2rem;
-    padding-bottom: 1rem;
+    /* Bottom spacing: keep a small gap so it's easy to drag/tap instead of
+       hitting the phone's native home bar. iOS reports the home indicator via
+       env(safe-area-inset-bottom); on Android browsers that draw the home pill
+       over the viewport, js/home-bar.js measures the overlay and exposes it
+       as --home-bar-inset (absent → 0px). */
+    padding-bottom: calc(1rem + max(var(--home-bar-inset, 0px), env(safe-area-inset-bottom, 0px)));
     scrollbar-width: none;
     pointer-events: all;
     line-height: 1.6;

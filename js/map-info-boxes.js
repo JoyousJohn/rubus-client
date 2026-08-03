@@ -28,6 +28,10 @@ function hideInfoBoxes(instantly_hide) {
         
         busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
 
+        if (typeof stopLayerManager !== 'undefined') {
+            stopLayerManager.setSelected(null);
+        }
+
         popupStopId = null;
         thisClosestStopId = null;
 

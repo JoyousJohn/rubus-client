@@ -131,7 +131,7 @@ $(document).on('keydown', function(e) {
         }
 
         if (!shownRoute) {
-            $('[stop-eta]').text('').hide(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
+            clearAllStopEtas(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
         } else {
             updateTooltips(shownRoute);
         }

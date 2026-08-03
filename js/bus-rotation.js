@@ -24,6 +24,27 @@ function normalizeRotation(rotation) {
     return Number.isFinite(n) ? n : 0;
 }
 
+// Resolve the route polyline points for a bus's route as a flat array of
+// [lat, lng] pairs, from the points cache (persists across polyline layer
+// pruning) or the live polyline layer. Returns null when unavailable.
+function getRoutePolylinePoints(route) {
+    let points = null;
+    if (route && routePointsCache && routePointsCache[route]) {
+        points = routePointsCache[route];
+    } else if (route && polylines && polylines[route] && typeof polylines[route].getLatLngs === 'function') {
+        points = polylines[route].getLatLngs();
+    }
+    if (!points || !points.length) return null;
+    // Flatten multi-segment polylines into a single flat list of [lat, lng].
+    if (Array.isArray(points[0])) {
+        if (typeof points[0][0] === 'number') {
+            return points;
+        }
+        return points.flat(1);
+    }
+    return points;
+}
+
 const calculateRotation = (busName, loc) => {
     // Tear down the previous call's debug layers BEFORE the early return below.
     // The original only cleaned up inside the stopLines branch, so layers leaked
@@ -37,85 +58,124 @@ const calculateRotation = (busName, loc) => {
 
     let newRotation;
     if (!pauseRotationUpdating) {
-        const currentStopId = busData[busName].stopId;
+        const bus = busData[busName];
 
-        if (!stopLines[currentStopId]) {
-            return normalizeRotation(busData[busName].rotation) + 45;
-        }
-        // console.log('at yard')
+        // When a bus is sitting at a stop, its physical GPS rotation is
+        // unreliable — tiny stationary movements make the reported course
+        // jitter. Override it by finding the closest point on the bus's route
+        // polyline and pointing along the segment to the next polyline point,
+        // so the marker faces where it's expected to drive next. Only the
+        // rotation is overridden; the position is never touched here. The
+        // "Disable Bus Rotation Fix at Stops" dev toggle turns this off.
+        if (bus && bus.at_stop && !settings['toggle-disable-bus-rotation-fix-at-stop']) {
+            const rawPoints = getRoutePolylinePoints(bus.route);
+            if (rawPoints && rawPoints.length >= 2) {
+                const polyPoints = rawPoints.map(pt => {
+                    if (Array.isArray(pt)) {
+                        return { lng: pt[1], lat: pt[0] };
+                    }
+                    return { lng: pt.lng, lat: pt.lat };
+                });
+                let minDist = Infinity;
+                let closestIdx = 0;
 
-        let polyPoints = stopLines[currentStopId].map(pt => {
-            if (Array.isArray(pt)) {
-                return { lng: pt[0], lat: pt[1] };
+                // Find the closest point in the array
+                for (let i = 0; i < polyPoints.length; i++) {
+                    const point = polyPoints[i];
+                    const dx = loc.long - point.lng;
+                    const dy = loc.lat - point.lat;
+                    const dist = dx * dx + dy * dy;
+
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closestIdx = i;
+                    }
+                }
+
+                const nextIdx = (closestIdx + 1) % polyPoints.length;
+                const pt1 = polyPoints[closestIdx];
+                const pt2 = polyPoints[nextIdx];
+
+                // Only build the debug layers when the dev toggle is on; the
+                // bearing calculation above always runs so bus rotation stays correct.
+                if (settings['toggle-show-rotation-points']) {
+                    busRotationPoints[busName] = {}
+
+                    // Add markers for the points
+                    busRotationPoints[busName]['pt1'] = L.circleMarker(pt1, {
+                        radius: 6,
+                        fillColor: "red",
+                        color: "#000",
+                        weight: 0,
+                        opacity: 1,
+                        fillOpacity: 1
+                    }).addTo(map);
+
+                    busRotationPoints[busName]['pt2'] = L.circleMarker(pt2, {
+                        radius: 6,
+                        fillColor: "blue",
+                        color: "#000",
+                        weight: 0,
+                        opacity: 1,
+                        fillOpacity: 1
+                    }).addTo(map);
+
+                    // Add green line between the points
+                    busRotationPoints[busName]['line'] = L.polyline([pt1, pt2], {
+                        color: 'green',
+                        weight: 3,
+                        opacity: 1
+                    }).addTo(map);
+                }
+
+                const toRad = deg => deg * Math.PI / 180;
+                const toDeg = rad => rad * 180 / Math.PI;
+                const dLon = toRad(pt2.lng - pt1.lng);
+                const y = Math.sin(dLon) * Math.cos(toRad(pt2.lat));
+                const x = Math.cos(toRad(pt1.lat)) * Math.sin(toRad(pt2.lat)) - Math.sin(toRad(pt1.lat)) * Math.cos(toRad(pt2.lat)) * Math.cos(dLon);
+                let bearing = Math.atan2(y, x);
+                bearing = (toDeg(bearing) + 360) % 360;
+                newRotation = bearing + 45;
+                // console.log(`New rotation for bus: ${busData[busName].busName}: ${newRotation}`)
+                return newRotation;
             }
-            return pt;
-        });
-        let minDist = Infinity;
-        let closestIdx = 0;
 
-        // Find the closest point in the array
-        for (let i = 0; i < polyPoints.length; i++) {
-            const point = polyPoints[i];
-            const dx = loc.long - point.lng;
-            const dy = loc.lat - point.lat;
-            const dist = dx * dx + dy * dy;
-            
-            if (dist < minDist) {
-                minDist = dist;
-                closestIdx = i;
-            }
+            // Route polyline unavailable; fall back to the GPS rotation.
+            return normalizeRotation(bus.rotation) + 45;
         }
 
-        const nextIdx = (closestIdx + 1) % polyPoints.length;
-        const pt1 = polyPoints[closestIdx];
-        const pt2 = polyPoints[nextIdx];
-    
-        // Only build the debug layers when the dev toggle is on; the bearing
-        // calculation above always runs so bus rotation stays correct.
-        if (settings['toggle-show-rotation-points']) {
-            busRotationPoints[busName] = {}
-            
-            // Add markers for the points
-            busRotationPoints[busName]['pt1'] = L.circleMarker(pt1, {
-                radius: 6,
-                fillColor: "red",
-                color: "#000",
-                weight: 0,
-                opacity: 1,
-                fillOpacity: 1
-            }).addTo(map);
-            
-            busRotationPoints[busName]['pt2'] = L.circleMarker(pt2, {
-                radius: 6,
-                fillColor: "blue",
-                color: "#000",
-                weight: 0,
-                opacity: 1,
-                fillOpacity: 1
-            }).addTo(map);
-
-            // Add green line between the points
-            busRotationPoints[busName]['line'] = L.polyline([pt1, pt2], {
-                color: 'green',
-                weight: 3,
-                opacity: 1
-            }).addTo(map);
-        }
-
-            const toRad = deg => deg * Math.PI / 180;
-            const toDeg = rad => rad * 180 / Math.PI;
-            const dLon = toRad(pt2.lng - pt1.lng);
-            const y = Math.sin(dLon) * Math.cos(toRad(pt2.lat));
-            const x = Math.cos(toRad(pt1.lat)) * Math.sin(toRad(pt2.lat)) - Math.sin(toRad(pt1.lat)) * Math.cos(toRad(pt2.lat)) * Math.cos(dLon);
-            let bearing = Math.atan2(y, x);
-            bearing = (toDeg(bearing) + 360) % 360;
-            newRotation = bearing + 45;
-            // console.log(`New rotation for bus: ${busData[busName].busName}: ${newRotation}`)
-        } else {
-            newRotation = normalizeRotation(busData[busName].rotation) + 45;
-        }
+        newRotation = normalizeRotation(bus.rotation) + 45;
+    } else {
+        newRotation = normalizeRotation(busData[busName].rotation) + 45;
+    }
     return newRotation;
 };
+
+// Immediately snap the rotation of every marker currently sitting at a stop to
+// whatever rotation the current "Disable Bus Rotation Fix at Stops" toggle
+// state calls for (polyline-derived when the fix is enabled, GPS when it's
+// disabled), instead of letting the in-flight easing animation crawl toward it.
+function immediatelyUpdateStoppedBusRotations() {
+    if (typeof busData === 'undefined' || typeof busMarkers === 'undefined') return;
+    for (const busName in busData) {
+        const bus = busData[busName];
+        if (!bus || !bus.at_stop) continue;
+        if (bus.lat === undefined || bus.long === undefined) continue;
+        const marker = busMarkers[busName];
+        if (!marker || typeof marker.setRotation !== 'function') continue;
+
+        // Kill the easing animation so its per-frame rotation writes can't
+        // fight the snap below. Position isn't touched; a settled stopped bus
+        // is already at its target position anyway.
+        cancelBusAnimation(busName);
+
+        const loc = { lat: bus.lat, long: bus.long };
+        const newRotation = calculateRotation(busName, loc);
+        if (newRotation !== undefined) {
+            marker.setRotation(newRotation);
+        }
+    }
+}
 
 
 const animationFrames = {}

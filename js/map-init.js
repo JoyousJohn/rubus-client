@@ -54,7 +54,18 @@ window.initMap = function() {
                 if (map.getLayer('bus-markers-glow')) map.moveLayer('bus-markers-glow');
                 if (map.getLayer('bus-markers-layer')) map.moveLayer('bus-markers-layer');
                 if (map.getLayer('bus-markers-labels')) map.moveLayer('bus-markers-labels');
+                // Pin the stop layers directly below the bus layers so stops
+                // render above polylines/other content regardless of when the
+                // content layers were created relative to the stop layers.
+                const stopAnchor = map.getLayer('bus-markers-glow') ? 'bus-markers-glow'
+                    : (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : undefined);
+                if (map.getLayer('stop-markers-layer')) map.moveLayer('stop-markers-layer', stopAnchor);
+                if (map.getLayer('stop-markers-labels')) map.moveLayer('stop-markers-labels', stopAnchor);
             }
+            // The selected stop always paints above everything else (DOM
+            // parity: its z-index is 2000, above bus markers at 500).
+            if (map.getLayer('stop-markers-selected')) map.moveLayer('stop-markers-selected');
+            if (map.getLayer('stop-markers-selected-labels')) map.moveLayer('stop-markers-selected-labels');
         } catch (e) {}
     };
     updateStopsLayerOrder();
@@ -115,6 +126,12 @@ window.initMap = function() {
     // Initialize the WebGL bus marker layer system
     if (typeof busLayerManager !== 'undefined') {
         busLayerManager.init(map);
+    }
+
+    // Initialize the WebGL stop marker layer system (GL stops let the "Show
+    // Stops Above Buses" setting work in maplibre renderer mode).
+    if (typeof stopLayerManager !== 'undefined') {
+        stopLayerManager.init(map);
     }
 
     document.dispatchEvent(new Event('rubus-map-created'));
@@ -204,7 +221,7 @@ window.initMap = function() {
             }
 
             if (!shownRoute) {
-                $('[stop-eta]').text('').hide(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
+                clearAllStopEtas(); // here instead of in hideInfoBoxes(); so fitting map btn doesn't hide them
             } else {
                 updateTooltips(shownRoute);
             }

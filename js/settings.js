@@ -553,6 +553,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-disable-bus-rotation-fix-at-stop':
+            console.log(`Disable Bus Rotation Fix at Stops is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-disable-bus-rotation-fix-at-stop'] = isChecked;
+            // Snap stopped markers straight to the newly-appropriate rotation
+            // (polyline-derived or GPS) instead of easing to it over frames.
+            if (typeof immediatelyUpdateStoppedBusRotations === 'function') {
+                immediatelyUpdateStoppedBusRotations();
+            }
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;
@@ -717,7 +727,7 @@ $(document).ready(function() {
 
                     $(this).text(ETAText)
 
-                    $(`[stop-eta="${$(this).attr('data-stop-id')}"]`).text(ETAText);
+                    setStopEtaLabel($(this).attr('data-stop-id'), ETAText);
 
                 });
             }
@@ -842,6 +852,9 @@ function applyLowPerformanceModeState() {
         settings['bus-marker-renderer'] = 'maplibre';
         if (rendererChanged && typeof recreateAllBusMarkers === 'function') {
             recreateAllBusMarkers();
+        }
+        if (rendererChanged && typeof stopLayerManager !== 'undefined') {
+            stopLayerManager.applyRendererMode();
         }
         $('.settings-bus-marker-renderer .settings-option').removeClass('settings-selected');
         $('.settings-bus-marker-renderer .settings-option[bus-marker-renderer-option="maplibre"]').addClass('settings-selected');

@@ -111,7 +111,7 @@ $('.bus-star').click(function() {
                 }
             }
             
-            $('[stop-eta]').text('').hide();
+            clearAllStopEtas();
             
             // Fit map bounds to show remaining favorite polylines
             if (visibleBounds.isValid()) {
@@ -157,7 +157,7 @@ $('.bus-star').click(function() {
             }
             popupBusName = null;
             showAllPolylines();
-            $('[stop-eta]').hide();            
+            clearAllStopEtas();            
         }
     }
 

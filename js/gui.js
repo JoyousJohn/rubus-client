@@ -592,9 +592,9 @@ function updateTooltips(route) {
 
             if (lowestBusName) {
                 const lowestETAMin = Math.ceil(lowestETA / 60);
-                $(`[stop-eta="${stopId}"]`).text(lowestETAMin + ' min').show();
+                setStopEtaLabel(stopId, lowestETAMin + ' min', true);
             } else {
-                $(`[stop-eta="${stopId}"]`).text('').hide();
+                setStopEtaLabel(stopId, '', false);
             }
         });
     } catch (error) {
@@ -644,7 +644,7 @@ async function toggleRoute(route) {
             updateStopBuses(popupStopId, null);
         }
 
-        $('[stop-eta]').text('').hide();
+        clearAllStopEtas();
 
     // Hide other polylines and buses
     } else {
@@ -1932,6 +1932,7 @@ const toggleSettings = [
     'toggle-force-show-stops',
     'toggle-adaptive-pixel-ratio',
     'toggle-low-performance-mode',
+    'toggle-disable-bus-rotation-fix-at-stop',
 ]
 
 let colorMappings;
@@ -2226,6 +2227,10 @@ function updateSettings() {
             settings['bus-marker-renderer'] = $(this).attr('bus-marker-renderer-option')
             // Recreate markers so the new renderer implementation takes effect.
             recreateAllBusMarkers();
+            // Stops switch between DOM markers and GL layers with the renderer.
+            if (typeof stopLayerManager !== 'undefined') {
+                stopLayerManager.applyRendererMode();
+            }
 
         } else if (settingsOption === 'bus-animation-rate') {
             // Low Performance Mode forces the fixed 10Hz rate.

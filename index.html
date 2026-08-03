@@ -77,11 +77,13 @@
     <script src="js/vars.js"></script>
     <script src="js/status.js"></script>
     <script defer src="js/bus-layer.js"></script>
+    <script defer src="js/stop-layer.js"></script>
     <script defer src="js/map-main.js"></script>
     <script defer src="js/maplibre-compat.js"></script>
     <script defer src="js/map-init.js"></script>
     <script defer src="js/map-zoom-toast.js"></script>
     <script defer src="js/pixel-ratio.js"></script>
+    <script defer src="js/home-bar.js"></script>
     <script defer src="js/map-fireworks.js"></script>
     <script defer src="js/map-info-boxes.js"></script>
     <script defer src="js/map-panout.js"></script>
@@ -2055,6 +2057,16 @@
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-adaptive-pixel-ratio" class="toggle-input">
                             <label for="toggle-adaptive-pixel-ratio" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Disable Bus Rotation Fix at Stops</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-disable-bus-rotation-fix-at-stop" class="toggle-input">
+                            <label for="toggle-disable-bus-rotation-fix-at-stop" class="toggle-label">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
