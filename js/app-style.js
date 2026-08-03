@@ -297,7 +297,7 @@ function popRiderStopInfo(stopId) {
 
 document.addEventListener('rubus-map-created', function() {
 
-    map.on('drag', function() {
+    map.on('dragstart', function() {
         
         if (popupBusName) {
             const riderMarker = $(busMarkers[popupBusName].getElement()).find('.rider-marker');
@@ -352,7 +352,7 @@ document.addEventListener('rubus-map-created', function() {
     $(document).on('click', '.rider-bus-info-stops', function(e) {
         // Find the closest element with data-stop-id
         const $target = $(e.target).closest('[data-stop-id]');
-        const stopId = $target.data('stop-id');
+        const stopId = Number($target.data('stop-id'));
         if (stopId) {
             flyToStop(stopId, true);
         }

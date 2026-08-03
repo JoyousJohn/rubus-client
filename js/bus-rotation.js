@@ -1,0 +1,172 @@
+// js/bus-rotation.js - extracted verbatim from js/map.js
+let busRotationPoints = {}
+
+// Remove a bus's rotation debug layers (pt1/pt2 markers and the connecting
+// line). These are otherwise only cleaned at the start of calculateRotation,
+// which won't run again for a bus whose lifecycle has ended (OOS via the
+// polling path, sim exit, campus switch), so they'd persist on the map.
+function removeBusRotationPoints(busName) {
+    if (busRotationPoints[busName]) {
+        ['pt1', 'pt2', 'line'].forEach(val => {
+            const layer = busRotationPoints[busName][val];
+            if (layer && typeof layer.remove === 'function') {
+                try { layer.remove(); } catch (e) {}
+            }
+        });
+        delete busRotationPoints[busName];
+    }
+}
+
+// Coerce any rotation source (missing/invalid/non-numeric) to a finite
+// number, defaulting to 0, so rotation math never produces NaN.
+function normalizeRotation(rotation) {
+    const n = Number(rotation);
+    return Number.isFinite(n) ? n : 0;
+}
+
+const calculateRotation = (busName, loc) => {
+    // Tear down the previous call's debug layers BEFORE the early return below.
+    // The original only cleaned up inside the stopLines branch, so layers leaked
+    // permanently once a bus left a stop that has rotation points.
+    if (busRotationPoints[busName]) {
+        ['pt1', 'pt2', 'line'].forEach(val => {
+            busRotationPoints[busName][val].remove();
+        });
+        delete busRotationPoints[busName];
+    }
+
+    let newRotation;
+    if (!pauseRotationUpdating) {
+        const currentStopId = busData[busName].stopId;
+
+        if (!stopLines[currentStopId]) {
+            return normalizeRotation(busData[busName].rotation) + 45;
+        }
+        // console.log('at yard')
+
+        let polyPoints = stopLines[currentStopId].map(pt => {
+            if (Array.isArray(pt)) {
+                return { lng: pt[0], lat: pt[1] };
+            }
+            return pt;
+        });
+        let minDist = Infinity;
+        let closestIdx = 0;
+
+        // Find the closest point in the array
+        for (let i = 0; i < polyPoints.length; i++) {
+            const point = polyPoints[i];
+            const dx = loc.long - point.lng;
+            const dy = loc.lat - point.lat;
+            const dist = dx * dx + dy * dy;
+            
+            if (dist < minDist) {
+                minDist = dist;
+                closestIdx = i;
+            }
+        }
+
+        const nextIdx = (closestIdx + 1) % polyPoints.length;
+        const pt1 = polyPoints[closestIdx];
+        const pt2 = polyPoints[nextIdx];
+    
+        // Only build the debug layers when the dev toggle is on; the bearing
+        // calculation above always runs so bus rotation stays correct.
+        if (settings['toggle-show-rotation-points']) {
+            busRotationPoints[busName] = {}
+            
+            // Add markers for the points
+            busRotationPoints[busName]['pt1'] = L.circleMarker(pt1, {
+                radius: 6,
+                fillColor: "red",
+                color: "#000",
+                weight: 0,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(map);
+            
+            busRotationPoints[busName]['pt2'] = L.circleMarker(pt2, {
+                radius: 6,
+                fillColor: "blue",
+                color: "#000",
+                weight: 0,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(map);
+
+            // Add green line between the points
+            busRotationPoints[busName]['line'] = L.polyline([pt1, pt2], {
+                color: 'green',
+                weight: 3,
+                opacity: 1
+            }).addTo(map);
+        }
+
+            const toRad = deg => deg * Math.PI / 180;
+            const toDeg = rad => rad * 180 / Math.PI;
+            const dLon = toRad(pt2.lng - pt1.lng);
+            const y = Math.sin(dLon) * Math.cos(toRad(pt2.lat));
+            const x = Math.cos(toRad(pt1.lat)) * Math.sin(toRad(pt2.lat)) - Math.sin(toRad(pt1.lat)) * Math.cos(toRad(pt2.lat)) * Math.cos(dLon);
+            let bearing = Math.atan2(y, x);
+            bearing = (toDeg(bearing) + 360) % 360;
+            newRotation = bearing + 45;
+            // console.log(`New rotation for bus: ${busData[busName].busName}: ${newRotation}`)
+        } else {
+            newRotation = normalizeRotation(busData[busName].rotation) + 45;
+        }
+    return newRotation;
+};
+
+
+const animationFrames = {}
+let busAnimationFrameId = null;
+let pauseRotationUpdating = false;
+
+// Each animation step declares its own interval via step.stepIntervalMs
+// (0 = every rAF frame). Custom DOM-mode markers run at full frame rate;
+// WebGL markers flush through source.setData()/updateData(), which rebuilds
+// the worker tile index per flush, so they step at ~30Hz. The
+// "toggle-legacy-bus-animation" dev setting restores the old ~10Hz throttle
+// for every mode.
+const BUS_ANIMATION_STEP_MS = 100;   // legacy 10Hz step mode
+const WEBGL_ANIMATION_STEP_MS = 33;  // ~30Hz for WebGL renderer mode
+const animationLastStep = {};
+
+// Cancel a bus's in-flight animation (registered step + throttle timestamp)
+// so a re-registered animation doesn't inherit a stale step interval.
+function cancelBusAnimation(busName) {
+    delete animationFrames[busName];
+    delete animationLastStep[busName];
+}
+
+// Single rAF loop driving all active bus animations. Instead of each bus
+// scheduling its own requestAnimationFrame chain (N callbacks per frame),
+// the loop walks the animation registry once per frame and advances each step.
+function ensureBusAnimationLoop() {
+    if (busAnimationFrameId !== null) return;
+    const tick = (currentTime) => {
+        busAnimationFrameId = requestAnimationFrame(tick);
+        let hasActive = false;
+        for (const busName in animationFrames) {
+            if (animationFrames[busName]) { hasActive = true; break; }
+        }
+        if (!hasActive) {
+            cancelAnimationFrame(busAnimationFrameId);
+            busAnimationFrameId = null;
+            return;
+        }
+        for (const busName in animationFrames) {
+            const step = animationFrames[busName];
+            if (!step) continue;
+            const stepMs = step.stepIntervalMs || 0;
+            if (stepMs > 0 && currentTime - (animationLastStep[busName] || 0) < stepMs) continue;
+            animationLastStep[busName] = currentTime;
+            try {
+                step(currentTime);
+            } catch (e) {
+                console.error('[animate] error for', busName, e);
+            }
+        }
+    };
+    busAnimationFrameId = requestAnimationFrame(tick);
+}

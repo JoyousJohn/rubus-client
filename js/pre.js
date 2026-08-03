@@ -9,12 +9,12 @@ async function immediatelyUpdateBusDataPre() {
 
     for (const busName in busData) {
         if (routesByCampus[busData[busName].route] !== selectedCampus) continue; // bc marker only created if selected campus. cna also just check if marker exists like i have commented out below, but i must've previously added that check and removed it to have my code fail fast... possible race condition back then somewhere? maybe when a marker created back on visibility change?
-        // if (busMarkers[busName]) {
+        if (busMarkers[busName]) {
             const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
             if (iconElement) {
                 iconElement.style.backgroundColor = 'gray';
             }
-        // }
+        }
     }
 
     hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
@@ -114,14 +114,19 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
         for (const busName in data) {
 
+            const markerExisted = !!busMarkers[busName];
+            try {
             const bus = data[busName];
 
             if (Object.keys(excludedRouteMappings).includes(bus.route)) {
                 continue;
             }
 
-            const routeStr = bus.route;
-            const isKnown = knownRoutes.includes(routeStr);
+            const routeStr = normalizeFeedRoute(bus.route);
+            if (!routeStr) {
+                console.warn(`[api] Skipping bus ${busName} with non-serviceable route '${bus.route}'`);
+                continue;
+            }
 
             if (routesByCampus[routeStr] !== selectedCampus) {
                 continue;
@@ -134,7 +139,9 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 console.log(`New bus in API: ${busName} (${routeStr})`)
                 busData[busName] = {};
                 busData[busName].previousTime = new Date().getTime() - 5000;
-                busData[busName].previousPositions = [[parseFloat(bus.lat), parseFloat(bus.lng)]];
+                const initLat = parseFiniteCoord(bus.lat);
+                const initLng = parseFiniteCoord(bus.lng);
+                busData[busName].previousPositions = (isFinite(initLat) && isFinite(initLng)) ? [[initLat, initLng]] : [];
                 populateMeClosestStops();
                 busData[busName].route = routeStr;
                 busData[busName]['type'] = 'api';
@@ -161,6 +168,10 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 busData[busName].busName = busName;
                 await populateFavs();
 
+                // The simulator may have started while this fetch was in
+                // flight; bail so API data never mutates simulator state.
+                if (sim) return;
+
                 isNew = true;
 
             } else {
@@ -174,19 +185,16 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
                     delete busETAs[busName];
                     busData[busName].route = routeStr;
+                    // Keep the cached campus in sync with the new route so
+                    // per-bus consumers don't read a stale campus.
+                    busData[busName]['campus'] = routesByCampus[routeStr];
                     
                     updateTimeToStops([busName]);
 
-                    try {
-                        const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
-                        if (iconElement) {
-                            iconElement.style.backgroundColor = colorMappings[routeStr];
-                        }
-                    } catch (error) {
-                        console.log('Error accessing busMarkers:', error)
-                        console.log(busData)
-                        console.log(busMarkers)
-                    }
+                    // Re-color the marker for its new route (all marker types,
+                    // both renderer modes). Uses the same fallback as marker
+                    // creation (plotBus) for routes without a color mapping.
+                    busLayerManager.setBusRoute(busName, routeStr, colorMappings[routeStr] || '#446bef');
 
                     makeActiveRoutes();
                     if (!activeRoutes.has(oldRoute)) {
@@ -203,42 +211,66 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                         }
                     }
 
-                    if (!skipPolylineUpdateFromFetch && !polylines[routeStr]) {
+                    if (!skipPolylineUpdateFromFetch && !polylines[routeStr] && isBusShownOnMap(busName)) {
                         setPolylines([routeStr]);
                     }
                     populateFavs();
                 }
             }
 
-            busData[busName].lat = bus.lat;
-            busData[busName].long = bus.lng;
+            const apiLat = parseFiniteCoord(bus.lat);
+            const apiLng = parseFiniteCoord(bus.lng);
+            if (isFinite(apiLat) && isFinite(apiLng)) {
+                busData[busName].lat = apiLat;
+                busData[busName].long = apiLng;
+            } else {
+                warnInvalidCoords(busName, bus.lat, bus.lng, 'api');
+            }
 
             let lastPosition;
             try {
                 lastPosition = busData[busName].previousPositions[busData[busName].previousPositions.length - 1];
             } catch (error) {
-                console.log('Error accessing previous positions array:', error)
-                console.log(busData[busName])
+                console.error('Error accessing previous positions array:', error)
+                console.error(busData)
+                console.error(busMarkers)
             }
 
-            if (lastPosition && lastPosition[0] !== parseFloat(bus.lat) && lastPosition[1] !== parseFloat(bus.lng)) {
+            // Movement is any change in latitude OR longitude, so one-axis
+            // moves are never treated as "unchanged".
+            const coordsAreFinite = isFinite(apiLat) && isFinite(apiLng);
+            const moved = lastPosition && (lastPosition[0] !== apiLat || lastPosition[1] !== apiLng);
+
+            if (moved) {
                 const currentTime = new Date().getTime();
                 const timeSinceLastUpdate = currentTime - (busData[busName].previousTime || currentTime);
                 const animationDuration = Math.min(timeSinceLastUpdate, 30000) + 2500;
 
                 busData[busName].apiAnimationDuration = animationDuration;
                 
-                busData[busName].previousPositions.push([parseFloat(bus.lat), parseFloat(bus.lng)]);
-                busData[busName].previousTime = currentTime;
+                // Only append finite coordinates to the Bézier history
+                if (coordsAreFinite) {
+                    busData[busName].previousPositions.push([apiLat, apiLng]);
+                }
                 
                 if (popupBusName === busName && settings['toggle-distances-line-on-focus']) {
                     updateDistanceLinePositionMarker(busName);
                 }
             }
 
-            busData[busName].rotation = parseFloat(bus.rotation);
+            // Advance the timing baseline every accepted poll (stationary or
+            // moving) so a later move doesn't inherit a stale duration. Never
+            // advance it from invalid coordinates.
+            if (coordsAreFinite) {
+                busData[busName].previousTime = new Date().getTime();
+            }
 
-            busData[busName].isKnown = isKnown;
+            const apiRotation = parseFiniteCoord(bus.rotation);
+            if (isFinite(apiRotation)) {
+                busData[busName].rotation = apiRotation;
+            }
+
+            busData[busName].isKnown = knownRoutes.includes(routeStr);
 
             busData[busName].capacity = bus.capacity;
 
@@ -256,13 +288,12 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                         iconElement.style.backgroundColor = colorMappings[routeStr];
                     }
                 }   
-                prunePolylinesWithoutInService();
             }
 
             calculateSpeed(busName);
 
             if (isNew && shownRoute && shownRoute !== routeStr) {
-                busMarkers[busName].getElement().style.display = 'none';
+                busMarkers[busName].setVisibility(false);
             }
 
             if (isNew) {
@@ -275,7 +306,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 updateTimeToStops([busName]);
             }
 
-            if (!busData[busName].oos) {
+            if (isBusShownOnMap(busName)) {
                 pollActiveRoutes.add(busData[busName].route);
             }
 
@@ -287,6 +318,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             }
             if (newRoutes.size > 0) {
                 await initRoutePointsCache(selectedCampus);
+                if (sim) return;
                 if (!skipPolylineUpdateFromFetch) {
                     setPolylines(newRoutes);
                 }
@@ -297,9 +329,26 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                     updateRiderRoutes();
                 }
             }
+            prunePolylinesWithoutInService();
  
             if (busName === popupBusName) {
                 $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + bus.capacity + '%</span> capacity');
+            }
+            } catch (e) {
+                console.error('[fetchBusData] error processing bus', busName, ':', e);
+                // Preserve the busData ⟺ busMarkers invariant: if this bus is
+                // new and its marker was never created (e.g. an exception in
+                // the middle of the update), drop the busData entry so it's
+                // re-fetched fresh next poll instead of persisting as a zombie
+                // that crashes immediatelyUpdateBusDataPre / plotBus consumers.
+                if (!markerExisted && !busMarkers[busName]) {
+                    if (typeof busLayerManager !== 'undefined') {
+                        busLayerManager.removeProxy(busName);
+                    }
+                    delete busMarkers[busName];
+                    delete busETAs[busName];
+                    delete busData[busName];
+                }
             }
         }
 
@@ -318,16 +367,24 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             passioDown = false;
         }
 
+        const oosBusNames = [];
+
         for (const busName in busData) { 
             if (busData[busName]['route'] === 'on1' || busData[busName]['route'] === 'on2') {
                 continue;
             }
 
             if (!activeBuses.includes(busName)) {
-                console.log(`[Out of Service][${busData[busName].route}] Bus ${busData[busName].busName} is out of service`);
-                makeOoS(busName);
+                oosBusNames.push(busName);
             }
         }
+
+        if (oosBusNames.length) {
+            console.log(`[Out of Service][${oosBusNames.length}] Buses out of service: ${oosBusNames.join(', ')}`);
+            makeBulkOoS(oosBusNames);
+        }
+
+        reconcileBusMarkers();
 
         if ($('.buses-panel-wrapper').is(':visible')) {
             updateBusOverview(Array.from(pollActiveRoutes));
@@ -352,6 +409,114 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     }
 }
 
+function makeBulkOoS(oosBusNames) {
+    if (!oosBusNames.length) return;
+
+    // Capture route info before deleting busData entries.
+    const affectedRoutes = new Set();
+    let removedSelectedBus = false;
+    let removedSharedBus = false;
+
+    for (const busName of oosBusNames) {
+        const bus = busData[busName];
+        if (!bus) continue;
+
+        if (bus.route) affectedRoutes.add(bus.route);
+
+        if (busMarkers[busName]) {
+            busMarkers[busName].remove();
+        }
+        if (typeof busLayerManager !== 'undefined') {
+            busLayerManager.removeProxy(busName);
+        }
+        delete busMarkers[busName];
+        delete busETAs[busName];
+        delete busData[busName];
+
+        // Remove any debug path layers this bus left on the map.
+        removeBusPathLayers(busName);
+        removeBusRotationPoints(busName);
+
+        if (popupBusName === busName) removedSelectedBus = true;
+        if (sharedBusName && sharedBusName === busName) removedSharedBus = true;
+    }
+
+    // Rebuild once instead of once per bus (avoids O(n²) when many buses go OoS).
+    makeBusesByRoutes();
+
+    let anyRouteEmptied = false;
+    for (const route of affectedRoutes) {
+        if (!busesByRoutes[selectedCampus] || !busesByRoutes[selectedCampus][route]) {
+            anyRouteEmptied = true;
+            console.log(`[INFO] The last bus for route ${route} went out of service.`)
+            activeRoutes.delete(route);
+
+            if (appStyle === 'rider') {
+                updateRiderRoutes();
+            }
+
+            if (route !== 'none') {
+                console.log(`Removing polyline for route ${route}`);
+                updatePolylineBoundsIfNeeded();
+                if (polylines[route]) {
+                    logPolylineRemoval(route, 'makeBulkOoS');
+                    polylines[route].remove();
+                }
+            } else {
+                console.log('Route is none');
+            }
+            delete polylines[route];
+            $(`.route-selector[routename="${route}"]`).remove();
+
+            if (shownRoute && shownRoute === route) {
+                toggleRoute(route);
+            }
+        }
+    }
+
+    if (removedSelectedBus) {
+        console.log("Selected bus went OOS");
+        hideInfoBoxes();
+        sourceBusName = null;
+    }
+
+    if (removedSharedBus) {
+        $('.shared, .info-shared').hide();
+        sharedBusName = null;
+    }
+
+    removePreviouslyActiveStops();
+    populateMeClosestStops();
+    populateFavs(false);
+
+    if (anyRouteEmptied) {
+        checkMinRoutes();
+    }
+}
+
+function reconcileBusMarkers() {
+    // Guarantees the busData ⟺ busMarkers invariant after every poll. Any
+    // busData entry whose marker is missing (a zombie left by a mid-fetch
+    // error or external cleanup) is re-created via plotBus, or dropped so it's
+    // re-fetched fresh next poll. Logged per-bus so a persistent root cause
+    // stays visible instead of being silently swallowed.
+    for (const busName in busData) {
+        if (busMarkers[busName]) continue;
+        try {
+            plotBus(busName, false);
+        } catch (e) {
+            console.error('[reconcileBusMarkers] could not create marker for', busName, ':', e);
+        }
+        if (!busMarkers[busName]) {
+            if (typeof busLayerManager !== 'undefined') {
+                busLayerManager.removeProxy(busName);
+            }
+            delete busETAs[busName];
+            delete busData[busName];
+        }
+    }
+}
+
 function makeOoS(busName) {
     
     console.log(`[Out of Service][${new Date().toLocaleString('en-US', {timeZone: 'America/New_York', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(',','')}] busName: ${busName}`)
@@ -359,8 +524,17 @@ function makeOoS(busName) {
     if (busMarkers[busName]) { // investigate why this would occur
         busMarkers[busName].remove();
     }
+    // Clean up WebGL proxy
+    if (typeof busLayerManager !== 'undefined') {
+        busLayerManager.removeProxy(busName);
+    }
     delete busMarkers[busName];
-    delete busETAs[busName];   
+    delete busETAs[busName];
+
+    // Remove any debug path layers (busLines/midpointCircle) this bus left on
+    // the map — updateMarkerPosition won't run for it again to clean them up.
+    removeBusPathLayers(busName);
+    removeBusRotationPoints(busName);
 
     const route = busData[busName].route;
 
@@ -386,10 +560,12 @@ function makeOoS(busName) {
             console.log(`Removing polyline for route ${route}`);
             // Update global bounds since a route was removed
             updatePolylineBoundsIfNeeded();
-            logPolylineRemoval(route, 'makeOoS');
-            console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
-            polylines[route].remove();
-            console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
+            if (polylines[route]) {
+                logPolylineRemoval(route, 'makeOoS');
+                console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
+                polylines[route].remove();
+                console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
+            }
         } else {
             console.log('Route is none');
         }
@@ -425,7 +601,7 @@ function makeOoS(busName) {
     }
 
     populateMeClosestStops();
-    populateFavs(popSelectors=false); // Do I need this? <-- yes you do
+    populateFavs(false); // Do I need this? <-- yes you do
 
     // Hide all-stops button if no buses remain
     if (Object.keys(busData).length === 0) {
@@ -917,7 +1093,6 @@ function getMessages() {
 
 function cancelAllAnimations() {
     Object.keys(animationFrames).forEach(busName => {
-        cancelAnimationFrame(animationFrames[busName]);
         delete animationFrames[busName];
     });
   }
@@ -926,13 +1101,17 @@ function cancelAllAnimations() {
 let joined_service = {};
 
 async function fetchETAs() {
+    // Capture the campus once: both fetches below key their data by
+    // selectedCampus, and switching campus mid-flight would otherwise mix ETAs
+    // and waits from different campuses for one poll cycle.
+    const campus = selectedCampus;
     try {
         const response = await fetch('https://demo.rubus.live/etas');
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        etas = data[selectedCampus] || {}; // can prob remove || {} if server defaults eta obj empty campus mappings
+        etas = data[campus] || {}; // can prob remove || {} if server defaults eta obj empty campus mappings
         // console.log('ETAs fetched:', etas);
         // updateTimeToStops('all')
 
@@ -950,7 +1129,7 @@ async function fetchETAs() {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        waits = data[selectedCampus];
+        waits = data[campus];
         updateWaitTimes();
         // console.log('Waits fetched:', waits);
 
@@ -964,12 +1143,11 @@ async function fetchETAs() {
 
 $(document).ready(async function() {
     // Initialize settings before map is created
-    settings = localStorage.getItem('settings');
-    if (settings) {
-        settings = JSON.parse(settings);
-    } else {
-        console.log('does this also run?')
-        settings = defaultSettings;
+    settings = typeof loadSettingsFromStorage === 'function'
+        ? loadSettingsFromStorage()
+        : null;
+    if (!settings) {
+        settings = {...defaultSettings};
     }
 
     // Restore timing variables from localStorage to survive bfcache restoration
@@ -1075,22 +1253,11 @@ $(document).ready(async function() {
 
         // On app resume/return, force the next update to be immediate and fetch promptly
         const triggerImmediateResumeUpdate = () => {
-            if (sim) {
-                console.log('App resumed in sim mode - syncing sim ticks');
-                const now = Date.now();
-                for (const busName in busData) {
-                    const bus = busData[busName];
-                    if (bus && bus.type === 'sim') {
-                        if (bus.sim) {
-                            bus.sim.lastTick = now;
-                        }
-                        bus.previousTime = now - 300;
-                        if (bus.lat !== undefined && bus.long !== undefined) {
-                            bus.previousPositions = [[bus.lat, bus.long]];
-                        }
-                        delete bus.apiAnimationDuration;
-                        delete bus.websocketAnimationDuration;
-                    }
+            if (typeof sim !== 'undefined' && sim) {
+                if (typeof resumeSim === 'function') {
+                    resumeSim();
+                } else if (window.resumeSim) {
+                    window.resumeSim();
                 }
                 return;
             }
@@ -1128,10 +1295,23 @@ $(document).ready(async function() {
             if (!settings['toggle-pause-passio-polling']) { fetchBusData(true); }
         };
 
+        const triggerPause = () => {
+            if (typeof sim !== 'undefined' && sim) {
+                if (typeof pauseSim === 'function') {
+                    pauseSim();
+                } else if (window.pauseSim) {
+                    window.pauseSim();
+                }
+            }
+        };
+
         window.addEventListener('focus', triggerImmediateResumeUpdate);
+        window.addEventListener('blur', triggerPause);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 triggerImmediateResumeUpdate();
+            } else if (document.visibilityState === 'hidden') {
+                triggerPause();
             }
         });
         window.addEventListener('pageshow', (ev) => {

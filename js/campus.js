@@ -30,12 +30,32 @@ function deleteAllStops() {
 function deleteBusMarkers() {
     for (const busName in busMarkers) {
         busMarkers[busName].remove();
+        // Clean up WebGL proxy
+        if (typeof busLayerManager !== 'undefined') {
+            busLayerManager.removeProxy(busName);
+        }
     }
     busMarkers = {};
+
+    // Remove any remaining debug path layers (busLines/midpointCircle). This
+    // tears down every marker at once (sim exit, campus switch), and
+    // updateMarkerPosition won't run again for these buses to clean them up.
+    for (const busName in busLines) {
+        removeBusPathLayers(busName);
+    }
+    for (const busName in midpointCircle) {
+        removeBusPathLayers(busName);
+    }
+
+    // Same for the rotation debug layers (bus-rotation.js).
+    for (const busName in busRotationPoints) {
+        removeBusRotationPoints(busName);
+    }
 }
 
 function deleteAllPolylines() {
     for (const polyline in polylines) {
+        if (!polylines[polyline]) continue;
         logPolylineRemoval(polyline, 'deleteAllPolylines');
         polylines[polyline].remove();
     }
@@ -74,8 +94,12 @@ async function makeNewMap() {
 
     activeRoutes.clear(); // only used to avoid having to call populateRouteSelectors below to trigger const newRoutes = pollActiveRoutes.difference(activeRoutes); in pre.js. doesn't affect addstopstoMap bc we're padding isInitial true to fetchBusData
     await fetchETAs();
-    // Precompute route bounds for all campus routes to enable immediate fits even when OOS
-	try { await precomputeAllRouteBounds(); } catch (e) {}
+	// Precompute route bounds for all campus routes to enable immediate fits even when OOS
+	try {
+		await precomputeAllRouteBounds();
+	} catch (e) {
+		console.error('Error precomputing route bounds:', e);
+	}
     await fetchBusData(false, true, true);
     fetchWhere();
     addStopsToMap();
@@ -161,23 +185,17 @@ $(function(){
         $(`.campus-toggle-btn[data-campus="${campus}"]`).addClass('selected');
     }
     // Initial selection based on current settings (defaults to nb)
-    setSelectedCampusButton((window.settings && settings['campus']) || 'nb');
+    setSelectedCampusButton((settings && settings['campus']) || 'nb');
 
     // Expose so other code (e.g., campusChanged) can sync UI
     window.setSelectedCampusButton = setSelectedCampusButton;
 
     $('.campus-toggle-btn').on('click', function(){
         const campus = $(this).data('campus');
-        if (window.settings) {
-            if (settings['campus'] === campus) { return; }
-            settings['campus'] = campus;
-            localStorage.setItem('settings', JSON.stringify(settings));
-            campusChanged();
-        } else {
-            window.settings = window.settings || {};
-            settings['campus'] = campus;
-            campusChanged();
-        }
+        if (settings['campus'] === campus) { return; }
+        settings['campus'] = campus;
+        localStorage.setItem('settings', JSON.stringify(settings));
+        campusChanged();
     });
 });
 
@@ -290,12 +308,7 @@ $(function() {
 		$('.campus-carousel-item').removeClass('selected');
 		const $selected = $(`.campus-carousel-item[data-campus="${campus}"]`).addClass('selected');
 		setCampusHeaderBold(campus);
-		if (window.settings) {
-			settings['campus'] = campus;
-		} else {
-			window.settings = window.settings || {};
-			settings['campus'] = campus;
-		}
+		settings['campus'] = campus;
 		return $selected;
 	}
 
@@ -341,7 +354,7 @@ $(function() {
 	});
 
 	// Default selection state
-	const initialCampus = (window.settings && settings['campus']) || 'nb';
+	const initialCampus = (settings && settings['campus']) || 'nb';
 	const $initialSelected = selectCampusCarousel(initialCampus);
 	$initialSelected.css({
 		'transition': 'none',

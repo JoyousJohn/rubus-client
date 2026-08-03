@@ -29,13 +29,11 @@
 	}
 
 	window.updateRidingBadgeUI = function updateRidingBadgeUI() {
-		try {
-			if (window.popupBusName && window.ridingState.currentBusName && Number(window.popupBusName) === Number(window.ridingState.currentBusName)) {
-				$('.info-riding').show();
-			} else {
-				$('.info-riding').hide();
-			}
-		} catch (_) {}
+		if (window.popupBusName && window.ridingState.currentBusName && Number(window.popupBusName) === Number(window.ridingState.currentBusName)) {
+			$('.info-riding').show();
+		} else {
+			$('.info-riding').hide();
+		}
 	}
 
 	function onGeoPosition(position) {
@@ -73,7 +71,7 @@
 			accuracyM: accuracy || null,
 		};
 
-		try { evaluateRidingCandidate(); } catch (_) {}
+		evaluateRidingCandidate();
 	}
 
 	function onGeoError(_) {
@@ -82,51 +80,47 @@
 
 	window.startLocationWatchForRiding = function startLocationWatchForRiding() {
 		if (!navigator.geolocation) return;
-		try {
-			if (geoWatchId) return;
-			geoWatchId = navigator.geolocation.watchPosition(onGeoPosition, onGeoError, {
-				enableHighAccuracy: true,
-				maximumAge: 1000,
-				timeout: 10000,
-			});
+		if (geoWatchId) return;
+		geoWatchId = navigator.geolocation.watchPosition(onGeoPosition, onGeoError, {
+			enableHighAccuracy: true,
+			maximumAge: 1000,
+			timeout: 10000,
+		});
 
-			if (!ridingEvaluationTimer) {
-				ridingEvaluationTimer = setInterval(() => {
-					try { evaluateRidingCandidate(); } catch (_) {}
-				}, 1500);
-			}
-		} catch (_) {}
+		if (!ridingEvaluationTimer) {
+			ridingEvaluationTimer = setInterval(() => {
+				evaluateRidingCandidate();
+			}, 1500);
+		}
 	}
 
 	window.initLocationWatchForRiding = function initLocationWatchForRiding() {
-		try {
-			const shared = (() => {
-				try { return !!JSON.parse(localStorage.getItem('locationShared') || 'false'); } catch (_) { return !!localStorage.getItem('locationShared'); }
-			})();
-			if (navigator.permissions && navigator.permissions.query) {
-				navigator.permissions.query({ name: 'geolocation' }).then((status) => {
-					if (status.state === 'granted' || shared) {
-						startLocationWatchForRiding();
-					}
-					status.onchange = function() {
-						if (this.state === 'granted') startLocationWatchForRiding();
-					};
-				}).catch(() => { if (shared) startLocationWatchForRiding(); });
-			} else if (shared) {
-				startLocationWatchForRiding();
-			}
-		} catch (_) {}
+		const shared = (() => {
+			try { return !!JSON.parse(localStorage.getItem('locationShared') || 'false'); } catch (_) { return !!localStorage.getItem('locationShared'); }
+		})();
+		if (navigator.permissions && navigator.permissions.query) {
+			navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+				if (status.state === 'granted' || shared) {
+					startLocationWatchForRiding();
+				}
+				status.onchange = function() {
+					if (this.state === 'granted') startLocationWatchForRiding();
+				};
+			}).catch(() => { if (shared) startLocationWatchForRiding(); });
+		} else if (shared) {
+			startLocationWatchForRiding();
+		}
 	}
 
 	window.evaluateRidingCandidate = function evaluateRidingCandidate() {
-		if (!window.userGeo || window.userGeo.lat === null || !window.busData) return;
+		if (!window.userGeo || window.userGeo.lat === null || !busData) return;
 		const now = Date.now();
 
 		let bestBusId = null;
 		let bestScore = 0;
 
-		for (const id in window.busData) {
-			const bus = window.busData[id];
+		for (const id in busData) {
+			const bus = busData[id];
 			if (!bus || !('lat' in bus) || !('long' in bus)) continue;
 			if (bus.oos && !bus.atDepot) continue;
 
@@ -162,7 +156,7 @@
 
 			if (score > bestScore || (
 				Math.abs(score - bestScore) < 0.02 && bestBusId !== null && (
-					distMeters < milesToMeters(haversine(window.userGeo.lat, window.userGeo.lng, window.busData[bestBusId].lat, window.busData[bestBusId].long)) ||
+					distMeters < milesToMeters(haversine(window.userGeo.lat, window.userGeo.lng, busData[bestBusId].lat, busData[bestBusId].long)) ||
 					window.busMatchStreak[id] > (window.busMatchStreak[bestBusId] || 0)
 				)
 			)) {

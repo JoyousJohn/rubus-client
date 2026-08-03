@@ -379,12 +379,8 @@ function loadBuildings() {
 
                                 // Update location marker (similar to spoof.js)
                                 let locationMarker = window.locationMarker;
-                                if (locationMarker && typeof locationMarker.setLatLng === 'function') {
-                                    if (typeof locationMarker.setLatLngPrecise === 'function') {
-                                        locationMarker.setLatLngPrecise([lat, lng]);
-                                    } else {
-                                        locationMarker.setLatLng([lat, lng]);
-                                    }
+                                if (locationMarker) {
+                                    locationMarker.setLatLngPrecise([lat, lng]);
                                 } else {
                                     // Create new location marker if none exists
                                     locationMarker = L.marker([lat, lng], {

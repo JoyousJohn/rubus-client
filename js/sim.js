@@ -16,11 +16,24 @@ const SIM_PROGRESS_DELTA_FOR_UPDATE = 0.03; // 3% progress change triggers ETA u
 // Global simulation time multiplier (1x, 2x, 4x)
 window.SIM_TIME_MULTIPLIER = 1;
 
+// Exposed so the marker animation code can size sim animations to the
+// visual report cadence (see updateMarkerPosition/retimeSimAnimations).
+window.SIM_POLL_INTERVAL_MS = SIM_POLL_INTERVAL_MS;
+
+// Generation token: bumped on every start/exit so in-flight async simulator
+// work (and API fetches) can detect that the simulator state it is building
+// has been torn down and abort.
+let simGeneration = 0;
+
+function isSimGenerationCurrent(gen) {
+    return gen === simGeneration && sim === true;
+}
+
 let simMoveTimer = null;
 let simEtaPending = new Set();
 let simEtaUpdateLast = 0;
 
-async function generateSimBusData() {
+async function generateSimBusData(gen) {
     // Desired distribution per route
     const targetCounts = {
         'c': 1,
@@ -39,6 +52,10 @@ async function generateSimBusData() {
     const minAtStopQuota = Math.ceil(totalBuses * 0.20);
     let atStopAssigned = 0;
 
+    // Collect current-campus buses so they can all be plotted in one burst
+    // instead of one-per-frame (mirrors makeBulkOoS's once-not-per-bus pattern).
+    const busesToPlot = [];
+
     const routesToGenerate = Object.keys(targetCounts);
     for (const routeName of routesToGenerate) {
         const count = targetCounts[routeName];
@@ -50,6 +67,10 @@ async function generateSimBusData() {
         } catch (e) {
             console.error('Error retrieving polyline data for route', routeName, e);
         }
+
+        // Simulator was exited while this fetch was in flight — stop building
+        // buses so endSim()'s teardown isn't undone by late arrivals.
+        if (!isSimGenerationCurrent(gen)) return;
 
         // Skip this route if we still don't have polyline points
         if (!Array.isArray(polylinePoints) || polylinePoints.length === 0) {
@@ -282,14 +303,8 @@ async function generateSimBusData() {
                     : Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;
             } while (busData[busName]);
 
-            if (!window.activeRoutes) {
-                window.activeRoutes = new Set();
-            }
             activeRoutes.add(routeName);
 
-            if (!window.joined_service) {
-                window.joined_service = {};
-            }
             const hoursAgo = Math.floor(Math.random() * (8 - 1 + 1)) + 1; // 1-8 hours ago
             const joinedTime = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
             joined_service[busName] = joinedTime;
@@ -335,7 +350,6 @@ async function generateSimBusData() {
                             }
                         }
                         if (best.prev !== null && best.next !== null) {
-                            if (!window.busLocations) window.busLocations = {};
                             busLocations[busName] = { where: [best.next, best.prev] };
                             busData[busName].stopId = best.prev; // this is correct
                             busData[busName].prevStopId = best.prev; // this is correct
@@ -366,7 +380,6 @@ async function generateSimBusData() {
                         const prevIdx = (routeStopsS.indexOf(currId) - 1 + routeStopsS.length) % routeStopsS.length;
                         const prevId = routeStopsS[prevIdx];
                         const nextId = getNextStopId(routeName, currId);
-                        if (!window.busLocations) window.busLocations = {};
                         busLocations[busName] = { where: [currId] };
                         busData[busName].stopId = currId;
                         busData[busName].prevStopId = prevId;
@@ -433,16 +446,22 @@ async function generateSimBusData() {
             } catch {}
 
             // Initialize movement state
-            await initSimMovementForBus(busName);
+            await initSimMovementForBus(busName, gen);
 
             // Plot immediately if on current campus
-            try {
-                if (routesByCampus[routeName] === selectedCampus) {
-                    plotBus(busName, true);
-                }
-            } catch (e) {
-                console.error('Error plotting simulated bus', busName, e);
+            if (routesByCampus[routeName] === selectedCampus) {
+                busesToPlot.push(busName);
             }
+        }
+    }
+
+    // Plot every bus in one synchronous burst; the WebGL bus layer coalesces
+    // these into a single setData() per frame.
+    for (const busName of busesToPlot) {
+        try {
+            plotBus(busName, true);
+        } catch (e) {
+            console.error('Error plotting simulated bus', busName, e);
         }
     }
 }
@@ -499,7 +518,7 @@ async function buildSegmentForBus(busName) {
     return { coords, percentages, segDistances, totalMiles };
 }
 
-async function initSimMovementForBus(busName) {
+async function initSimMovementForBus(busName, gen) {
     if (!busData[busName]) return;
 
     const route = busData[busName].route;
@@ -528,6 +547,10 @@ async function initSimMovementForBus(busName) {
     }
 
     const seg = await buildSegmentForBus(busName);
+    // The simulator may have been exited while the segment was being built
+    // (endSim wipes busData). Re-validate before touching busData again so a
+    // stale continuation can't throw on the now-missing entry.
+    if (!isSimGenerationCurrent(gen) || !busData[busName]) return;
     const simState = {
         coords: seg.coords,
         percentages: seg.percentages,
@@ -728,7 +751,6 @@ async function updateSimBus(busName) {
         bus.prevStopId = prevStop;
         bus.stopId = currStop;
         bus.next_stop = getNextStopId(route, currStop);
-        if (!window.busLocations) window.busLocations = {};
         busLocations[busName] = { where: [currStop] };
         bus.at_stop = true;
         bus.timeArrived = new Date();
@@ -757,6 +779,11 @@ async function updateSimBus(busName) {
 
         // Build next segment for when we depart
         const nextSeg = await buildSegmentForBus(busName);
+        // The simulator may have been exited (or restarted) while the segment
+        // fetch was in flight — busData[busName] would now be absent or a
+        // different object. Bail instead of writing segment state into a stale
+        // or wrong bus entry.
+        if (!busData[busName] || busData[busName] !== bus) return;
         simState.coords = nextSeg.coords;
         simState.percentages = nextSeg.percentages;
         simState.segDistances = nextSeg.segDistances;
@@ -765,6 +792,10 @@ async function updateSimBus(busName) {
 
 		// Plot/update at poll cadence
 		if (doPollNow) {
+			// Size the marker animation to the real elapsed time since the
+			// previous visual report (clamped: long dwells shouldn't produce
+			// minutes-long animations). Consumed by updateMarkerPosition.
+			bus.simAnimationDuration = Math.max(50, Math.min(now - bus.previousTime, 2000));
 			bus.previousTime = now;
 			try { plotBus(busName); } catch {}
 			simState.nextReportAt = now + pollInterval;
@@ -818,6 +849,9 @@ async function updateSimBus(busName) {
 
 	// Plot at poll cadence
 	if (doPollNow) {
+		// Size the marker animation to the real elapsed time since the
+		// previous visual report (clamped). Consumed by updateMarkerPosition.
+		bus.simAnimationDuration = Math.max(50, Math.min(now - bus.previousTime, 2000));
 		bus.previousTime = now;
 		try { plotBus(busName); } catch {}
 		simState.nextReportAt = now + pollInterval;
@@ -830,6 +864,7 @@ function startSimMovementLoop() {
     const tickInterval = Math.max(50, Math.floor(100 / Math.sqrt(mult)));
 
     simMoveTimer = setInterval(async () => {
+        if (!sim) return;
         const now = Date.now();
         for (const busName in busData) {
             const bus = busData[busName];
@@ -861,7 +896,51 @@ function stopSimMovementLoop() {
     simEtaPending.clear();
 }
 
+function pauseSim() {
+    if (typeof sim === 'undefined' || !sim) return;
+    console.log('[SIM] Pausing simulator movement loop (background/idle)');
+    stopSimMovementLoop();
+    if (typeof cancelAllAnimations === 'function') {
+        cancelAllAnimations();
+    }
+}
+
+function resumeSim() {
+    if (typeof sim === 'undefined' || !sim) return;
+    console.log('[SIM] Resuming simulator movement loop (foreground/active)');
+    const now = Date.now();
+    for (const busName in busData) {
+        const bus = busData[busName];
+        if (bus && bus.type === 'sim') {
+            if (bus.sim) {
+                bus.sim.lastTick = now;
+            }
+            bus.previousTime = now - 300;
+            if (bus.lat !== undefined && bus.long !== undefined) {
+                bus.previousPositions = [[bus.lat, bus.long]];
+            }
+            delete bus.apiAnimationDuration;
+            delete bus.websocketAnimationDuration;
+            delete bus.simAnimationDuration;
+            if (typeof plotBus === 'function') {
+                try { plotBus(busName, true); } catch (e) {}
+            }
+        }
+    }
+    startSimMovementLoop();
+}
+
+window.pauseSim = pauseSim;
+window.resumeSim = resumeSim;
+
 async function startSim() {
+
+    // Reentrancy guard: the sim button binds both 'touchstart' and 'click',
+    // which fire twice per tap on touch devices. A second concurrent startSim()
+    // would bump simGeneration, invalidating the first call's token, and the
+    // first call's abort path would then tear down the second call's freshly
+    // created buses, leaving the simulator empty.
+    if (sim) return;
 
     $('.sim-btn').hide();
     hideInfoBoxes(); // needs to be first since this might show knight mover
@@ -872,22 +951,33 @@ async function startSim() {
     }
 
     sim = true;
+    const gen = ++simGeneration;
     console.log('[SIM] Simulator started', {
         campus: selectedCampus,
         routes: SIM_ROUTES,
         timestamp: new Date().toISOString()
     });
-    if (window.activeRoutes && window.activeRoutes.clear) {
-        window.activeRoutes.clear();
-    }
+    activeRoutes.clear();
     for (const busName in busData) {
         makeOoS(busName);
     }
-    await generateSimBusData();
+    await generateSimBusData(gen);
+    // Exit while generating — tear down any sim buses created before the
+    // abort so endSim()'s cleanup isn't undone by late arrivals.
+    if (!isSimGenerationCurrent(gen)) {
+        for (const name in busData) {
+            if (busData[name] && busData[name].type === 'sim') {
+                delete busData[name];
+            }
+        }
+        makeBusesByRoutes();
+        return;
+    }
     makeBusesByRoutes();
     deleteAllStops();
     addStopsToMap();
     await setPolylines(SIM_ROUTES);
+    if (!isSimGenerationCurrent(gen)) return;
     populateRouteSelectors(activeRoutes);
     try { updateTimeToStops(Object.keys(busData).map(id => Number(id))); } catch (e) {}
     startSimMovementLoop();
@@ -899,13 +989,43 @@ async function endSim() {
     // Ensure real-time mode runs at normal speed
     try { setSimTimeMultiplier(1); } catch (e) { window.SIM_TIME_MULTIPLIER = 1; try { $('.sim-speed').text('1x'); } catch (_) {} }
     $('.sim-popup').fadeOut();
-    for (const busName in busData) {
-        makeOoS(busName);
+    sim = false;
+    // Invalidate any in-flight startSim()/generateSimBusData() continuations.
+    simGeneration++;
+    stopSimMovementLoop();
+
+    // Batch teardown: remove all sim bus markers/proxies and rebuild shared
+    // state a single time instead of running the full per-bus makeOoS() —
+    // that path deep-clones busData, rebuilds busesByRoutes O(N) times, and
+    // refreshes the closest-stops/favorites DOM for every sim bus, which is
+    // what made exiting the simulator slow.
+    deleteBusMarkers();
+    busData = {};
+    busETAs = {};
+    activeRoutes.clear();
+
+    // Close any popups referencing the removed sim buses
+    if (popupBusName || popupStopId) {
+        hideInfoBoxes();
+        sourceBusName = null;
     }
+    if (sharedBusName) {
+        $('.shared, .info-shared').hide();
+        sharedBusName = null;
+    }
+
+    makeBusesByRoutes();
+    removePreviouslyActiveStops();
+    try { populateMeClosestStops(); } catch (e) {}
+    try { populateFavs(false); } catch (e) {}
+
+    // Rebuild route selectors from the now-empty state so the sim routes'
+    // selector buttons are cleared even if the following fetchBusData() poll
+    // is skipped (e.g. a fetch was already in progress).
+    makeActiveRoutes();
+
     addStopsToMap();
     deleteAllPolylines();
-    sim = false;
-    stopSimMovementLoop();
 
     if (selectedCampus === 'nb' && settings['toggle-show-sim']) {
         $('.sim-btn').fadeIn();

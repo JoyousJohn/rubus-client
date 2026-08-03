@@ -6,6 +6,58 @@
 // Global debug flag for pathfinding - set to false to disable debug messages
 let PATHFINDING_DEBUG = false;
 
+// Threshold (ms) above which a single findPath() run is reported as a
+// performance regression. Generous: the heap-based Dijkstra runs in
+// single-digit milliseconds on the current network (~22k nodes).
+const PATHFINDING_SLOW_MS = 200;
+
+/**
+ * Binary min-heap used as Dijkstra's priority queue. Supports lazy deletion:
+ * stale/superseded entries are skipped at pop time instead of being removed.
+ */
+class MinHeap {
+    constructor() {
+        this.h = [];
+    }
+
+    push(dist, nodeId) {
+        const h = this.h;
+        h.push({ dist, nodeId });
+        let i = h.length - 1;
+        while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (h[p].dist <= h[i].dist) break;
+            [h[p], h[i]] = [h[i], h[p]];
+            i = p;
+        }
+    }
+
+    pop() {
+        const h = this.h;
+        const top = h[0];
+        const last = h.pop();
+        if (h.length > 0) {
+            h[0] = last;
+            let i = 0;
+            for (;;) {
+                const l = 2 * i + 1;
+                const r = l + 1;
+                let smallest = i;
+                if (l < h.length && h[l].dist < h[smallest].dist) smallest = l;
+                if (r < h.length && h[r].dist < h[smallest].dist) smallest = r;
+                if (smallest === i) break;
+                [h[smallest], h[i]] = [h[i], h[smallest]];
+                i = smallest;
+            }
+        }
+        return top;
+    }
+
+    get size() {
+        return this.h.length;
+    }
+}
+
 class PathfindingEngine {
     constructor() {
         this.roadNetwork = null;
@@ -103,6 +155,51 @@ class PathfindingEngine {
         });
 
         if (PATHFINDING_DEBUG) console.log(`Graph built with ${this.graph.size} nodes`);
+
+        this.logConnectivityDiagnostics();
+    }
+
+    /**
+     * Return sizes of the graph's connected components, largest first.
+     * @returns {Array<number>}
+     */
+    computeComponents() {
+        const seen = new Set();
+        const sizes = [];
+        for (const nodeId of this.graph.keys()) {
+            if (seen.has(nodeId)) continue;
+            const queue = [nodeId];
+            seen.add(nodeId);
+            let size = 0;
+            while (queue.length > 0) {
+                const id = queue.pop();
+                size++;
+                for (const neighborId of this.graph.get(id).neighbors.keys()) {
+                    if (!seen.has(neighborId)) {
+                        seen.add(neighborId);
+                        queue.push(neighborId);
+                    }
+                }
+            }
+            sizes.push(size);
+        }
+        sizes.sort((a, b) => b - a);
+        return sizes;
+    }
+
+    /**
+     * Surface disconnected road fragments. A single dominant component with a
+     * tail of tiny isolated segments is usually a data artifact (roads that
+     * don't connect), which is exactly what causes mysterious "No path found"
+     * results. Reported loudly once at build time so it can't be missed.
+     */
+    logConnectivityDiagnostics() {
+        const components = this.computeComponents();
+        if (components.length <= 1) return;
+        const fragments = components.filter(size => size < 25);
+        const summary = `Road network disconnected: ${components.length} components, largest ${components[0]} of ${this.graph.size} nodes`;
+        const tail = components.length > 6 ? `, other sizes: ${components.slice(1, 6).join(', ')}...` : '';
+        console.warn(summary + tail + (fragments.length ? ` (${fragments.length} fragment(s) under 25 nodes)` : ''));
     }
 
     /**
@@ -196,50 +293,56 @@ class PathfindingEngine {
             };
         }
 
-        // Dijkstra's algorithm
+        // Dijkstra's algorithm using a binary min-heap with lazy deletion.
+        // Replaces the previous O(V) min-scan per step (O(V²) total) with
+        // O((V+E) log V).
         const distances = new Map();
         const previous = new Map();
-        const unvisited = new Set();
+        const visited = new Set();
 
         // Initialize distances
         for (const nodeId of this.graph.keys()) {
             distances.set(nodeId, Infinity);
-            unvisited.add(nodeId);
         }
+
+        const heap = new MinHeap();
         distances.set(startNodeId, 0);
+        heap.push(0, startNodeId);
 
-        while (unvisited.size > 0) {
-            // Timeout check to prevent extremely long computations
-            // Note: Timeout check removed as startTime variable was removed
-            
-            // Find unvisited node with minimum distance
-            let currentNodeId = null;
-            let minDistance = Infinity;
-            
-            for (const nodeId of unvisited) {
-                if (distances.get(nodeId) < minDistance) {
-                    minDistance = distances.get(nodeId);
-                    currentNodeId = nodeId;
-                }
-            }
+        const t0 = performance.now();
+        let popped = 0;
 
-            if (currentNodeId === null || currentNodeId === endNodeId) {
-                break;
-            }
+        while (heap.size > 0) {
+            const { dist, nodeId } = heap.pop();
 
-            unvisited.delete(currentNodeId);
+            // Lazy deletion: skip finalized duplicates and superseded entries
+            if (visited.has(nodeId)) continue;
+            if (dist !== distances.get(nodeId)) continue;
 
-            // Update distances to neighbors
-            const currentNode = this.graph.get(currentNodeId);
+            visited.add(nodeId);
+            popped++;
+
+            if (nodeId === endNodeId) break;
+
+            // Relax edges to unvisited neighbors
+            const currentNode = this.graph.get(nodeId);
             for (const [neighborId, edgeData] of currentNode.neighbors) {
-                if (unvisited.has(neighborId)) {
-                    const newDistance = distances.get(currentNodeId) + edgeData.distance;
-                    if (newDistance < distances.get(neighborId)) {
-                        distances.set(neighborId, newDistance);
-                        previous.set(neighborId, currentNodeId);
-                    }
+                if (visited.has(neighborId)) continue;
+                const newDistance = dist + edgeData.distance;
+                if (newDistance < distances.get(neighborId)) {
+                    distances.set(neighborId, newDistance);
+                    previous.set(neighborId, nodeId);
+                    heap.push(newDistance, neighborId);
                 }
             }
+        }
+
+        // Regression canary: a run over the current network should take
+        // single-digit milliseconds. If it ever exceeds the threshold, surface
+        // it loudly instead of letting the slowdown go unnoticed.
+        const elapsed = performance.now() - t0;
+        if (elapsed > PATHFINDING_SLOW_MS) {
+            console.error(`findPath took ${elapsed.toFixed(0)}ms (V=${this.graph.size}, popped=${popped}) — performance regression`);
         }
 
         // Reconstruct path
@@ -262,6 +365,27 @@ class PathfindingEngine {
         }
 
         const totalDistance = distances.get(endNodeId);
+
+        // Invariant: the shortest node-to-node path can never be shorter than
+        // the straight line between the SNAPPED start/end nodes. (The raw
+        // start/end coordinates are not a valid lower bound — nearest-node
+        // snapping can pull both endpoints toward each other.) Violation means
+        // distances/heap are corrupted.
+        const startNodeCoord = this.graph.get(startNodeId).coordinates;
+        const endNodeCoord = this.graph.get(endNodeId).coordinates;
+        const straightLineNodeDistance = this.calculateDistance(startNodeCoord, endNodeCoord);
+        if (Number.isFinite(totalDistance) && totalDistance + 1e-9 < straightLineNodeDistance) {
+            throw new Error(`findPath: computed distance (${totalDistance}m) is less than straight-line distance between snapped nodes (${straightLineNodeDistance}m) — heap/distances corrupted`);
+        }
+
+        // Invariant: every consecutive pair in the reconstructed path must be a
+        // real graph edge — catches previous-pointer/heap corruption fast.
+        for (let i = 0; i < path.length - 1; i++) {
+            const fromNode = this.graph.get(path[i].nodeId);
+            if (!fromNode || !fromNode.neighbors.has(path[i + 1].nodeId)) {
+                throw new Error(`findPath: reconstructed path has non-edge between ${path[i].nodeId} and ${path[i + 1].nodeId}`);
+            }
+        }
 
         return {
             path: path,

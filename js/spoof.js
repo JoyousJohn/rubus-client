@@ -54,18 +54,14 @@ function initSpoofing() {
             watchPositionId = null;
         }
 
-        if (window.marker && typeof window.marker.remove === 'function') {
-            try { window.marker.remove(); } catch (_) {}
+        if (window.marker) {
+            window.marker.remove();
             window.marker = null;
         }
 
         let locationMarker = window.locationMarker;
-        if (locationMarker && typeof locationMarker.setLatLng === 'function') {
-            if (typeof locationMarker.setLatLngPrecise === 'function') {
-                locationMarker.setLatLngPrecise([lat, lng]);
-            } else {
-                locationMarker.setLatLng([lat, lng]);
-            }
+        if (locationMarker) {
+            locationMarker.setLatLngPrecise([lat, lng]);
         } else {
             locationMarker = L.marker([lat, lng], {
                 icon: L.icon({

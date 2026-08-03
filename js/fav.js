@@ -1,4 +1,12 @@
-let favBuses = JSON.parse(localStorage.getItem('favs')) || [];
+let favBuses = [];
+try {
+    favBuses = JSON.parse(localStorage.getItem('favs')) || [];
+    if (!Array.isArray(favBuses)) throw new Error('stored favs is not an array');
+} catch (e) {
+    console.error('[fav] corrupted "favs" in localStorage, starting empty', e);
+    favBuses = [];
+    localStorage.removeItem('favs');
+}
 
 $('.bus-star').click(function() {
     const currentBusName = popupBusName; // don't know why I need to parse sometimes
@@ -21,7 +29,7 @@ $('.bus-star').click(function() {
         })
         $('.favs').append($thisFav)
 
-        busMarkers[currentBusName].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+        busMarkers[currentBusName].setFavorite(true);
 
         if (shownRoute) {
             const previousShownRoute = JSON.parse(JSON.stringify(shownRoute));
@@ -40,7 +48,7 @@ $('.bus-star').click(function() {
         favBuses = favBuses.filter(busName => busName !== currentBusName);
         $(this).find('i').css('color', 'var(--theme-color)').removeClass('icon-star-solid').addClass('icon-star')
         $(`div[data-fav-name="${currentBusName}"]`).remove();
-        busMarkers[currentBusName].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'var(--theme-bus-icon-inner)';
+        busMarkers[currentBusName].setFavorite(false);
     
         if ($('.favs > div').length === 0) {
             if (shownRoute) {
@@ -73,7 +81,7 @@ $('.bus-star').click(function() {
         console.log(favRoutes)
 
         if (shownRoute && shownRoute === 'fav') {
-            busMarkers[currentBusName].getElement().style.display = 'none';
+            busMarkers[currentBusName].setVisibility(false);
             
             hideInfoBoxes();
             
@@ -97,9 +105,9 @@ $('.bus-star').click(function() {
                 const isCurrentCampus = routesByCampus[busData[busName].route] === selectedCampus;
                 
                 if (!isFav || !isCurrentCampus) {
-                    busMarkers[marker].getElement().style.display = 'none';
+                    busMarkers[marker].setVisibility(false);
                 } else {
-                    busMarkers[marker].getElement().style.display = '';
+                    busMarkers[marker].setVisibility(true);
                 }
             }
             
@@ -114,14 +122,21 @@ $('.bus-star').click(function() {
             }
             
             // Hide stops except those belonging to remaining favorite routes
-            const stopIdsForExcludedRoutes = Array.from(favRoutes).flatMap(route => stopLists[route] || []);
-            for (const polyline in polylines) {
-                const stopIdsForRoute = stopLists[polyline];
-                stopIdsForRoute.forEach(stopId => {
-                    if (!stopIdsForExcludedRoutes.includes(stopId)) {
-                        busStopMarkers[stopId].remove();
-                    }
-                });
+            const keepStops = new Set();
+            for (const route of favRoutes) {
+                const routeStops = stopLists[route];
+                if (!routeStops) {
+                    console.warn(`[fav] Route ${route} missing from stopLists — cannot keep its stops`);
+                    continue;
+                }
+                for (const stopId of routeStops) {
+                    keepStops.add(Number(stopId));
+                }
+            }
+            for (const stopId in busStopMarkers) {
+                if (!keepStops.has(Number(stopId))) {
+                    busStopMarkers[stopId].remove();
+                }
             }
         }
 
@@ -184,7 +199,11 @@ async function populateFavs(popSelectors = true) {
                 // console.log(Object.keys(busMarkers))
                 // console.log(favName.toString())
 
-                busMarkers[favName.toString()].getElement().querySelector('.bus-icon-inner').style.backgroundColor = 'gold';
+                // The marker may have been removed since this was scheduled
+                // (a poll could take the bus out of service in between).
+                if (busMarkers[favName.toString()]) {
+                    busMarkers[favName.toString()].setFavorite(true);
+                }
             }, 0);
 
         }
@@ -238,9 +257,9 @@ function toggleFavorites() {
             const isCurrentCampus = routesByCampus[busData[busName].route] === selectedCampus; // don't think we need busData[busName] && 
             
             if (!isFav || !isCurrentCampus) {
-                busMarkers[marker].getElement().style.display = 'none';
+                busMarkers[marker].setVisibility(false);
             } else {
-                busMarkers[marker].getElement().style.display = '';
+                busMarkers[marker].setVisibility(true);
             }
         }
 
@@ -250,10 +269,7 @@ function toggleFavorites() {
             console.log('has bound');
             map.fitBounds(visibleBounds);
         } else { // last fav bus was removed
-            console.log('no buses left')
-            console.log(bounds)
-            map.fitBounds(bounds);
-            
+            map.fitBounds(bounds[selectedCampus]);
         }
         
         $('.bus-info-popup, .stop-info-popup').hide();
@@ -272,20 +288,27 @@ function toggleFavorites() {
             busStopMarkers[stopId].addTo(map);
         }
         for (const marker in busMarkers) {
-            busMarkers[marker].getElement().style.display = '';
+            busMarkers[marker].setVisibility(true);
         }
     }
 
     function hideStopsExcept(excludedRoutes) {
-        const stopIdsForExcludedRoutes = excludedRoutes.flatMap(route => stopLists[route] || []);
-        for (const polyline in polylines) {
-            const stopIdsForRoute = stopLists[polyline];
-            stopIdsForRoute.forEach(stopId => {
-                if (!stopIdsForExcludedRoutes.includes(stopId)) {
-                    busStopMarkers[stopId].remove();
-                }
-            });
-        }    
+        const keepStops = new Set();
+        for (const route of excludedRoutes) {
+            const routeStops = stopLists[route];
+            if (!routeStops) {
+                console.warn(`[fav] Route ${route} missing from stopLists — cannot keep its stops`);
+                continue;
+            }
+            for (const stopId of routeStops) {
+                keepStops.add(Number(stopId));
+            }
+        }
+        for (const stopId in busStopMarkers) {
+            if (!keepStops.has(Number(stopId))) {
+                busStopMarkers[stopId].remove();
+            }
+        }
     }
 
     favsShown = !favsShown;

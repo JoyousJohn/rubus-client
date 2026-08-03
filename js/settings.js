@@ -39,10 +39,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-stops-above-buses':
             settings['toggle-stops-above-buses'] = isChecked;
-
-            const zOffset = isChecked ? 1000 : 0;
-            for (const stopId in busStopMarkers) {
-                busStopMarkers[stopId].setZIndexOffset(zOffset);
+            if (typeof updateStopsLayerOrder === 'function') {
+                updateStopsLayerOrder(isChecked);
+            } else {
+                const zOffset = isChecked ? 1000 : 0;
+                for (const stopId in busStopMarkers) {
+                    if (busStopMarkers[stopId]) busStopMarkers[stopId].setZIndexOffset(zOffset);
+                }
             }
             break;
         
@@ -53,7 +56,6 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-pause-update-marker'] = isChecked;
             if (isChecked) {
                 for (const busName in animationFrames) {
-                    cancelAnimationFrame(animationFrames[busName]);
                     delete animationFrames[busName];
                 }
                 pauseUpdateMarkerPositions = true;
@@ -67,12 +69,6 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-pause-rotation-updating'] = isChecked;
             console.log(`Pause rotation updating now ${isChecked ? 'ON' : 'OFF'}`);
             pauseRotationUpdating = isChecked;
-            break;
-
-        case 'toggle-whole-pixel-positioning':
-            console.log(`Whole pixel positioning is now ${isChecked ? 'ON' : 'OFF'}`);
-            settings['toggle-whole-pixel-positioning'] = isChecked;
-            wholePixelPositioning = isChecked
             break;
 
         case 'toggle-pause-passio-polling':
@@ -103,11 +99,12 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-out-of-service'] = isChecked;
             populateRouteSelectors(activeRoutes);
             prunePolylinesWithoutInService();
-            for (const busName in busMarkers) {
-                if (busData[busName]) {
-                    const shouldHide = !isChecked &&
-                        (busData[busName].oos || busData[busName].atDepot || distanceFromLine(busName));
-                    busMarkers[busName].getElement().style.display = shouldHide ? 'none' : '';
+            addStopsToMap();
+            // Hidden buses are never plotted (see plotBus), so re-plot every
+            // bus here to show/hide their markers immediately on toggle.
+            for (const busName in busData) {
+                if (busData[busName] && typeof plotBus === 'function') {
+                    try { plotBus(busName, true); } catch (e) {}
                 }
             }
             if ($('.building-info-popup').is(':visible') && window._currentBuildingFeatureForStops) {
@@ -125,7 +122,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 countdownInterval = setInterval(() => {
 
                     if (popupBusName && !busData[popupBusName].overtime) {
-                        const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
+                        const step = (sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
                         $('.next-stop-eta').each(function() {
                             let text = $(this).text();
                             // Check for "Xm Xs" format
@@ -183,8 +180,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-bus-path'] = isChecked;
 
             if (!isChecked) {
+                // Remove all debug path layers (polylines and midpoint circles)
+                // still on the map for any bus.
+                for (const busName in busLines) {
+                    removeBusPathLayers(busName);
+                }
                 for (const busName in midpointCircle) {
-                    midpointCircle[busName].removeFrom(map)
+                    removeBusPathLayers(busName);
                 }
             }
 
@@ -259,13 +261,6 @@ $('.settings-toggle .toggle-input').on('change', function () {
             isChecked ? $('.knight-mover').show() : $('.knight-mover').hide();
             break;
 
-        case 'toggle-polyline-padding':
-            settings['toggle-polyline-padding'] = isChecked;
-            reapplyPolylineRenderers(isChecked
-                ? 'settings-toggle-polyline-padding-on'
-                : 'settings-toggle-polyline-padding-off');
-            break;
-
         case 'toggle-offscreen-bus-indicators':
             settings['toggle-offscreen-bus-indicators'] = isChecked;
             if (isChecked) {
@@ -273,19 +268,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
             } else {
                 $('.offscreen-indicators-dependent').addClass('disabled');
             }
-            if (typeof requestOffScreenUpdate === 'function') {
-                requestOffScreenUpdate();
-            }
+            requestOffScreenUpdate();
             break;
 
         case 'toggle-offscreen-bus-indicators-above-gui':
             settings['toggle-offscreen-bus-indicators-above-gui'] = isChecked;
-            if (typeof updateOffScreenContainerZIndex === 'function') {
-                updateOffScreenContainerZIndex();
-            }
-            if (typeof requestOffScreenUpdate === 'function') {
-                requestOffScreenUpdate();
-            }
+            updateOffScreenContainerZIndex();
+            requestOffScreenUpdate();
             break;
 
         case 'toggle-offscreen-bus-indicators-select-on-tap':
@@ -306,24 +295,6 @@ $('.settings-toggle .toggle-input').on('change', function () {
                     busRotationPoints[busName][val].setStyle({'opacity': isChecked ? 1 : 0})
                 })
             }
-            break;
-
-        case 'toggle-allow-iphone-preload':
-            settings['toggle-allow-iphone-preload'] = isChecked;
-
-            if (isChecked) {
-                $('.toggle-polyline-padding-unavailable').html('Disablement overriden via developer!<br>Enabling this may crash your iPhone.')
-                $('#toggle-polyline-padding').parent().css('pointer-events', 'all');
-            } else {
-                $('.toggle-polyline-padding-unavailable').text('Option unavailable on iPhone');
-                $('#toggle-polyline-padding').parent().css('pointer-events', 'none');
-                
-                if (settings['toggle-polyline-padding']) {
-                    $('#toggle-polyline-padding').click();
-                }
-
-            }
-
             break;
 
         case 'toggle-show-rubus-ai':
@@ -525,6 +496,40 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-always-show-esc-hint'] = isChecked;
             break;
 
+        case 'toggle-pause-bus-markers-on-pan':
+            settings['toggle-pause-bus-markers-on-pan'] = isChecked;
+            break;
+
+        case 'toggle-show-fps':
+            settings['toggle-show-fps'] = isChecked;
+            if (isChecked) {
+                if (typeof startFpsCounter === 'function') startFpsCounter();
+            } else {
+                if (typeof stopFpsCounter === 'function') stopFpsCounter();
+            }
+            break;
+
+        case 'toggle-adaptive-pixel-ratio':
+            settings['toggle-adaptive-pixel-ratio'] = isChecked;
+            if (isChecked) {
+                if (typeof startAdaptivePixelRatio === 'function') startAdaptivePixelRatio();
+            } else {
+                if (typeof stopAdaptivePixelRatio === 'function') stopAdaptivePixelRatio();
+            }
+            break;
+
+        case 'toggle-legacy-bus-animation':
+            settings['toggle-legacy-bus-animation'] = isChecked;
+            // Revert to (or leave) the previous 10Hz step mode for all buses,
+            // including in-flight animations. When off, all markers step
+            // every rAF frame.
+            for (const busName in animationFrames) {
+                const step = animationFrames[busName];
+                if (!step) continue;
+                step.stepIntervalMs = isChecked ? BUS_ANIMATION_STEP_MS : 0;
+            }
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;
@@ -604,7 +609,18 @@ $(document).ready(function() {
     }
 
     if (settings['toggle-show-depot-poly']) {
-        map.addLayer(depotLayer);
+        // The map may not exist yet — initMap() runs only after the theme /
+        // campus modals are confirmed — so restore the polygon then if needed.
+        if (typeof map !== 'undefined' && map) {
+            map.addLayer(depotLayer);
+        } else {
+            document.addEventListener('rubus-map-created', function restoreDepotLayer() {
+                document.removeEventListener('rubus-map-created', restoreDepotLayer);
+                if (typeof map !== 'undefined' && map) {
+                    map.addLayer(depotLayer);
+                }
+            });
+        }
     }
 
     if (settings['toggle-show-stop-polygons']) {
@@ -633,7 +649,7 @@ $(document).ready(function() {
         countdownInterval = setInterval(() => {
 
             if (popupBusName && !busData[popupBusName].overtime) { // && !busData[popupBusName].at_stop
-                const step = (window.sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
+                const step = (sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
                 $('.next-stop-eta').each(function() {
                     let text = $(this).text();
                     // Check for "Xm Xs" format
@@ -691,11 +707,6 @@ $(document).ready(function() {
 
     if (settings['toggle-show-knight-mover']) {
         $('.knight-mover').show();
-    }
-
-    if (settings['toggle-allow-iphone-preload']) {
-        $('.toggle-polyline-padding-unavailable').html('Disablement overriden via developer!<br>Enabling this may crash your app.')
-        $('#toggle-polyline-padding').parent().css('pointer-events', 'all');
     }
 
     if (settings['toggle-show-rubus-ai']) {
@@ -940,7 +951,7 @@ $(function() {
             const shouldFilterDev = $devWrapper.is(':visible') || isExpanding;
             if (shouldFilterDev) {
                 let devHasMatch = false;
-                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-tile-update-when-idle, .settings-tile-update-when-zooming, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .force-show-dependent').each(function() {
+                $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .force-show-dependent').each(function() {
                     const $item = $(this);
                     if ($item.hasClass('force-show-dependent')) return; // handled separately below
                     if ($item.parents('.settings-custom-tile-url').length) return; // handled as part of parent section
@@ -998,7 +1009,7 @@ $(function() {
                     $devHead.hide();
                 }
                 // If collapsed and not expanding, restore internal item visibility so they are ready
-                $devWrapper.find('.flex, .settings-map-renderer, .settings-polyline-renderer, .settings-tile-update-when-idle, .settings-tile-update-when-zooming, .settings-bus-positioning, .settings-reset-settings, .settings-reset-location, .force-show-dependent, .force-show-option').show();
+                $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-reset-settings, .settings-reset-location, .force-show-dependent, .force-show-option').show();
             }
         }
     }
@@ -1066,6 +1077,7 @@ $(function() {
         settingsVvpHandler = () => requestAnimationFrame(adjustSettingsFloatingBar);
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', settingsVvpHandler);
+            window.visualViewport.addEventListener('scroll', settingsVvpHandler);
         }
         window.addEventListener('resize', settingsVvpHandler);
     };
@@ -1075,6 +1087,7 @@ $(function() {
         settingsViewportAttached = false;
         if (window.visualViewport && settingsVvpHandler) {
             window.visualViewport.removeEventListener('resize', settingsVvpHandler);
+            window.visualViewport.removeEventListener('scroll', settingsVvpHandler);
         }
         if (settingsVvpHandler) {
             window.removeEventListener('resize', settingsVvpHandler);
@@ -1163,14 +1176,10 @@ $(function() {
             $btn.text(origText).css('background', '');
         }, 1500);
 
-        if (typeof tileLayer !== 'undefined' && tileLayer && typeof currentTileLayerType !== 'undefined' && currentTileLayerType === 'streets') {
+        if (typeof setMapRasterTiles === 'function' && currentTileLayerType === 'streets') {
             let theme = settings['theme'] || 'streets-v11';
-            if (typeof resolveMapTileStyle === 'function') {
-                theme = resolveMapTileStyle(theme);
-            }
-            if (typeof getTileUrlPattern === 'function') {
-                tileLayer.setUrl(getTileUrlPattern(theme));
-            }
+            theme = resolveMapTileStyle(theme);
+            setMapRasterTiles(getTileUrlPattern(theme));
         }
     }
 

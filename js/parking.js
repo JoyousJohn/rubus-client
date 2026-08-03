@@ -31,25 +31,60 @@ let timeToGroupMap = {
 // Cached height for the time scroll container
 let parkingContainerHeight = null;
 
+// Red highlight styling for the parking lot overlay (the MapLibre compat
+// L.geoJSON colors every feature by category, so we pass an explicit palette)
+const PARKING_HIGHLIGHT_COLORS = {
+    building: { color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.3 },
+    parking:  { color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.3 },
+    fallback: { color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.3 }
+};
+
+// Compute a bounding box from a GeoJSON Polygon/MultiPolygon geometry
+function getFeatureBoundsFromGeometry(geometry) {
+    if (!geometry || !geometry.coordinates) return null;
+    const rings = [];
+    if (geometry.type === 'Polygon') {
+        rings.push(geometry.coordinates[0]);
+    } else if (geometry.type === 'MultiPolygon') {
+        geometry.coordinates.forEach(polygon => rings.push(polygon[0]));
+    }
+    if (rings.length === 0) return null;
+
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    rings.forEach(ring => {
+        ring.forEach(([lng, lat]) => {
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+        });
+    });
+    if (minLat === Infinity) return null;
+    return { minLat, maxLat, minLng, maxLng };
+}
+
 // Function to fit map to currently visible parking lots
 function fitMapToParkingLots() {
-    // No parking lots visible, fall back to campus bounds
-    fitMapToCampusBounds();
-    
     // Collect bounds from all visible parking lot features
     const bounds = L.latLngBounds();
     let hasValidBounds = false;
-    
-    currentParkingFeatures.forEach(feature => {
-        if (feature && feature.getBounds) {
-            const featureBounds = feature.getBounds();
-            if (featureBounds && featureBounds.isValid()) {
-                bounds.extend(featureBounds);
+
+    currentParkingFeatures.forEach(layer => {
+        if (!layer) return;
+        const subLayers = layer.getLayers ? layer.getLayers() : [layer];
+        subLayers.forEach(sub => {
+            if (!sub || !sub.feature) return;
+            const b = getFeatureBoundsFromGeometry(sub.feature.geometry);
+            if (b) {
+                bounds.extend([b.minLat, b.minLng]);
+                bounds.extend([b.maxLat, b.maxLng]);
                 hasValidBounds = true;
+            } else {
+                console.warn(`[Parking] fitMapToParkingLots: feature "${sub.feature.properties?.name || 'unknown'}" has unparseable geometry - ignoring for bounds`, sub.feature.geometry);
             }
-        }
+        });
     });
-    
+
     // Fit map to parking lot bounds if we have valid bounds
     if (hasValidBounds) {
         map.fitBounds(bounds, {
@@ -57,6 +92,9 @@ function fitMapToParkingLots() {
             maxZoom: 18 // Don't zoom in too close
         });
     } else {
+        if (currentParkingFeatures.length > 0) {
+            console.warn('[Parking] fitMapToParkingLots: parking features present but no valid bounds computed - falling back to campus bounds');
+        }
         // No valid bounds from parking lots, fall back to campus bounds
         fitMapToCampusBounds();
     }
@@ -1020,12 +1058,23 @@ function precomputeParkingLotGroups(campus) {
 
     // Pre-compute groups for current campus only
     for (const [comboKey, lotNames] of campusCombinations) {
-        const groupLayers = findParkingLotsForGroup(lotNames);
-        if (groupLayers.length > 0) {
-            parkingLotGroups[comboKey] = groupLayers;
-            console.log(`Group "${comboKey}": ${groupLayers.length} layers found`);
+        const features = findParkingLotsForGroup(lotNames);
+        if (features.length > 0) {
+            // Build a dedicated red overlay layer for this group. The MapLibre
+            // compat L.geoJSON can only add/remove the whole layer (source +
+            // fill/line), so we wrap the allowed-lot features in a single
+            // FeatureCollection instead of trying to add bare subLayers.
+            const groupLayer = L.geoJSON({
+                type: 'FeatureCollection',
+                features: features
+            }, {
+                colors: PARKING_HIGHLIGHT_COLORS,
+                minzoom: 15
+            });
+            parkingLotGroups[comboKey] = [groupLayer];
+            console.log(`Group "${comboKey}": ${features.length} layers found`);
         } else {
-            console.log(`Group "${comboKey}": 0 layers found - SKIPPED (no building layers exist)`);
+            console.warn(`[Parking] Group "${comboKey}" (${lotNames.join(', ')}) has 0 resolvable features - SKIPPED. Likely name mismatch between parking data and buildings GeoJSON`);
         }
     }
 
@@ -1042,28 +1091,19 @@ function findParkingLotsForGroup(lotNames) {
         throw new Error('Building spatial index not available');
     }
 
-    const layers = [];
+    const features = [];
 
     lotNames.forEach(lotName => {
         // Look up the lot in the spatial index
-
         const layer = window.buildingSpatialIndex.getBuildingLayerByName(lotName.toLowerCase());
-        if (layer) {
-            // Style the layer as a red parking lot
-            if (layer.setStyle) {
-                layer.setStyle({
-                    fillColor: '#ff0000',
-                    color: '#ff0000',
-                    weight: 2,
-                    opacity: 0.8,
-                    fillOpacity: 0.3
-                });
-            }
-            layers.push(layer);
+        if (layer && layer.feature) {
+            features.push(layer.feature);
+        } else {
+            console.warn(`[Parking] Lot "${lotName}" has no matching building feature in the spatial index - check parking data vs buildings GeoJSON name mismatch`);
         }
     });
 
-    return layers;
+    return features;
 }
 
 // Get allowed parking lots for a specific time, day type, and campus
@@ -1103,7 +1143,7 @@ function showParkingLotsOnMap(lotNames) {
 
     // Show all layers in this group
     groupLayers.forEach(layer => {
-        if (layer && typeof layer.addTo === 'function') {
+        if (layer) {
             debugLayerAdded(layer, 'showParkingLotsOnMap');
             layer.addTo(map);
             currentParkingFeatures.push(layer);
@@ -1133,7 +1173,7 @@ function findBuildingFeaturesByName(targetName) {
 function clearParkingFeatures() {
     console.log(`🧹 clearParkingFeatures: removing ${currentParkingFeatures.length} tracked features`);
     currentParkingFeatures.forEach(feature => {
-        if (feature && typeof feature.remove === 'function') {
+        if (feature) {
             console.log(`🗑️ Removing tracked parking feature: ${feature.feature?.properties?.name || 'unknown'} (ID: ${feature._leaflet_id})`);
             map.removeLayer(feature);
         }
@@ -1274,7 +1314,7 @@ function updateParkingLotsForTime(hour, dayType, campus) {
     clearParkingFeatures();
 
     groupLayers.forEach(layer => {
-        if (layer && typeof layer.addTo === 'function') {
+        if (layer) {
             debugLayerAdded(layer, 'showParkingLotsOnMap');
             layer.addTo(map);
             currentParkingFeatures.push(layer);

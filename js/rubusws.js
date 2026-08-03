@@ -84,28 +84,41 @@ function updateWaits(waitsData) {
 }
 
 function closeRUBusSocket() {
-    if (socket.readyState === WebSocket.OPEN) {
+    if (!socket) {
+        return;
+    }
+    if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
         socket.close();
+    } else if (socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED) {
+        console.warn("closeRUBusSocket() called on socket already " +
+            (socket.readyState === WebSocket.CLOSING ? "closing" : "closed") + ".");
     }
 }
 
 function openRUBusSocket() {
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        closeRUBusSocket();
-        // fetchBusData(true); // immediately update positions
+    if (socket) {
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+            closeRUBusSocket();
+        }
+        socket = null;
     }
 
     // if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
         // socket = new WebSocket('ws://127.0.0.1:5000/ws');
     // } else {
-        socket = new WebSocket('wss://demo.rubus.live/ws');
+    const ws = new WebSocket('wss://demo.rubus.live/ws');
     // }
 
     // Make it globally accessible for status checking
-    window.socket = socket;
+    window.socket = socket = ws;
 
-    socket.addEventListener("open", (event) => {
+    ws.addEventListener("open", (event) => {
+        if (socket !== ws) {
+            console.error("Stale RUBus socket fired 'open' after being replaced; closing it.");
+            ws.close();
+            return;
+        }
         // console.log("RUBus WebSocket connection opened");
         // Update response time to indicate WebSocket is active
         updateRubusResponseTime();
@@ -215,7 +228,7 @@ function openRUBusSocket() {
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
 
                 if (busRotationPoints[busName]) {
-                    ['px1', 'px2', 'line'].forEach(val => {
+                    ['pt1', 'pt2', 'line'].forEach(val => {
                         if (busRotationPoints[busName][val]) { // not sure why this check is necessary... something with buses going in/out of service removing the point but not the var reference? how is this possible?
                             busRotationPoints[busName][val].remove();
                         }
@@ -266,8 +279,14 @@ function openRUBusSocket() {
         }
     }
 
-    socket.addEventListener("message", (event) => {    
-        
+    ws.addEventListener("message", (event) => {
+
+        if (socket !== ws) {
+            console.error("Stale RUBus socket fired 'message'; ignoring and closing it.");
+            ws.close();
+            return;
+        }
+
         try {
             const eventData = JSON.parse(event.data);
             // console.log("Formatted message from server:", eventData);
@@ -282,11 +301,20 @@ function openRUBusSocket() {
 
     });
 
-    socket.addEventListener("close", (event) => {
+    ws.addEventListener("close", (event) => {
+        if (socket !== ws) {
+            console.warn("Stale RUBus socket closed.");
+            return;
+        }
         // console.log("Passio WebSocket connection closed:", event);
     });
 
-    socket.addEventListener("error", (event) => {
+    ws.addEventListener("error", (event) => {
+        if (socket !== ws) {
+            console.warn("Stale RUBus socket error; ignoring.");
+            return;
+        }
+
         // Extract meaningful error information from the Event object and WebSocket
         let errorMessage = "Unknown RUBus WebSocket error";
         let errorDetails = {};

@@ -129,6 +129,10 @@
 body {
     margin: 0;
     height: 100dvh; /* cool unit */
+    /* Anchors absolute-positioned overlays like .bottom to the dynamic
+       viewport (tracks mobile URL-bar show/hide), instead of the initial
+       containing block which stays at the old viewport size. */
+    position: relative;
     background-color: var(--theme-bg);
 }
 
@@ -149,6 +153,11 @@ html, body {
 }
 
 #map {
+    /* Stacking context: keeps DOM-marker z-indexes (500+, set per-marker for
+       stops-above-buses / selected-bus ordering) inside the map so they can't
+       paint above UI overlays like .bottom, .info-popup-wrapper (z-index 402). */
+    position: relative;
+    z-index: 0;
     height: 100%;
     background-color: var(--theme-bg);
 }
@@ -169,6 +178,17 @@ html, body {
     pointer-events: none;
     z-index: 400;
     overflow: hidden;
+}
+
+.maplibregl-marker {
+    will-change: transform;
+    contain: layout style;
+    transition: none !important;
+}
+
+.maplibregl-marker.bus-marker-wrapper,
+.maplibregl-marker.custom-stop-icon {
+    cursor: pointer;
 }
 
 .offscreen-bus-marker {
@@ -231,6 +251,18 @@ html, body {
     position: relative;
     width: 18px;
     height: 18px;
+    transition: transform 0.15s ease;
+}
+
+/* Hover indication for clickable stop markers. Transform must go on the inner
+   .marker-wrapper, not the .maplibregl-marker element (MapLibre positions it
+   via an inline transform). */
+.custom-stop-icon:hover .marker-wrapper {
+    transform: scale(1.3);
+}
+
+.custom-stop-icon:hover .marker-wrapper img {
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.55));
 }
 
 .custom-stop-icon .corner-label {
@@ -383,7 +415,9 @@ html, body {
     background-color: orange;
 }
 
-.zoom-toast {
+.zoom-toast,
+.fps-toast,
+.pixel-ratio-toast {
     padding: 0.3rem 1rem;
     background-color: rgb(126, 57, 245);
     color: white;
@@ -394,6 +428,15 @@ html, body {
     text-align: center;
     width: fit-content;
     margin-top: 0.5rem;
+    cursor: default;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color 0.3s ease;
+}
+
+.fps-reset-btn {
+    cursor: pointer;
 }
 
 .install-pwa {

@@ -130,16 +130,18 @@ class BusWebSocketClient {
             // console.log(data)
 
 
-            if (!data.route) {
-                console.log("[WHAT] " + busName + " " + JSON.stringify(data) + " doesn't have a route...");
-                // return;
-                data.route = 'undefined'
-            }
-
-            if (!data.route.includes('ONWK')) return;
+            if (!data.route || !data.route.includes('ONWK')) return;
 
             // Don't add overnight buses to map when simulator is active
             if (sim) return;
+
+            const wsRoute = normalizeFeedRoute(data.route);
+            // WS only carries overnight (ONWK) buses; the alias map hands those
+            // back as on1/on2. Anything else reaching this point is unexpected.
+            if (!wsRoute) {
+                console.warn(`[ws] Skipping new bus ${busName} with non-serviceable route '${data.route}'`);
+                return;
+            }
 
             console.log(`New bus in WS: ${data.bus} (${busName}) (${data.route})`);
             busData[busName] = {};
@@ -147,27 +149,8 @@ class BusWebSocketClient {
             busData[busName].previousTime = new Date().getTime() - 5000;
             busData[busName].previousPositions = [[parseFloat(data.latitude), parseFloat(data.longitude)]];
             busData[busName].type = 'ws';
-            busData[busName]['campus'] = routesByCampus[data.route];
-
-            if (!('route' in data)) { // sometimes none...
-                busData[busName].route = 'none';
-            } else {
-
-                if (data.route === 'ONWK1FS') {
-                    busData[busName].route = 'on1';
-                } else if (data.route === 'ONWK2FS') {
-                    busData[busName].route = 'on2';
-                } else {
-                    return; // just don't deal with normal buses since these should show up inapi, hope this fixes everything
-                    // let alphaRouteId = data.routeId.replace(/[^a-zA-Z]/g, '')
-
-                    // if (alphaRouteId in routeMapping) {
-                    //     busData[busName].route = routeMapping[alphaRouteId]
-                    // }  else {
-                    //     busData[busName].route = data.route
-                    // }
-                } 
-            }
+            busData[busName]['campus'] = routesByCampus[wsRoute];
+            busData[busName].route = wsRoute;
 
             // makeBusesByRoutes(); // might need this, gotta check by spoofing a on bus
             addStopsToMap();
@@ -178,12 +161,21 @@ class BusWebSocketClient {
 
         }
 
-        busData[busName].lat = data.latitude
-        busData[busName].long = data.longitude
+        const busLat = parseFiniteCoord(data.latitude);
+        const busLng = parseFiniteCoord(data.longitude);
+        if (isFinite(busLat) && isFinite(busLng)) {
+            busData[busName].lat = busLat;
+            busData[busName].long = busLng;
+        } else {
+            warnInvalidCoords(busName, data.latitude, data.longitude, 'ws');
+        }
 
         // Log position update source
         // console.log(`[WebSocket] Bus ${busName} position update: ${data.latitude}, ${data.longitude}`);
-        busData[busName].rotation = data.course
+        const busCourse = parseFiniteCoord(data.course);
+        if (isFinite(busCourse)) {
+            busData[busName].rotation = busCourse;
+        }
         busData[busName].capacity = data.paxLoad
         
         // Update distance line position marker if this bus is focused
@@ -208,7 +200,10 @@ class BusWebSocketClient {
 
         // console.log(`[WebSocket] Bus ${busName}: Time since last update: ${Math.round(timeSinceLastUpdate/1000)}s, Remaining poll time: ${Math.round(remainingPollTime/1000)}s, Animation duration: ${Math.round(animationDuration/1000)}s`);
 
-        busData[busName].previousPositions.push([parseFloat(data.latitude), parseFloat(data.longitude)]);
+        // Only append finite coordinates to the Bézier history
+        if (isFinite(busLat) && isFinite(busLng)) {
+            busData[busName].previousPositions.push([busLat, busLng]);
+        }
 
         // Keep only the last 10 positions to prevent memory bloat
         if (busData[busName].previousPositions.length > 10) {
@@ -237,7 +232,6 @@ class BusWebSocketClient {
         let route = busData[busName].route
         if (!activeRoutes.has(route)) {
             console.log("Does this ever run?") // yes it does, after something like "New bus in WS: 4035 (13211) (ONWK2FS)"
-            if (!route) route = 'undefined'
             // if (route === 'Campus Connect Express') alert('hi')
             activeRoutes.add(route)
             setPolylines(activeRoutes)

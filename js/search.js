@@ -4,12 +4,13 @@ let enableSearchButtonGradientFlash = false;
 let searchViewportListenersAttached = false;
 let searchVvpHandler = null;
 
+const SEARCH_PLACEHOLDER_TEMPLATE = 'Search {num} buildings & lots';
+
 function adjustSearchHeights() {
   const isMobile = $(window).width() <= 992;
   if (isMobile && window.visualViewport) {
     const vvp = window.visualViewport;
     $('.search-wrapper').css({
-      'position': 'absolute',
       'top': vvp.offsetTop + 'px',
       'left': vvp.offsetLeft + 'px',
       'height': vvp.height + 'px',
@@ -59,7 +60,10 @@ function updateSearchPlaceholder(buildingCount) {
     
     const formattedCount = buildingCount.toLocaleString();
     
-    const originalPlaceholder = $searchInput.attr('placeholder');
+    const currentPlaceholder = $searchInput.attr('placeholder') || '';
+    const originalPlaceholder = currentPlaceholder.includes('{num}')
+        ? currentPlaceholder
+        : SEARCH_PLACEHOLDER_TEMPLATE;
     const updatedPlaceholder = originalPlaceholder.replace('{num}', formattedCount);
     $searchInput.attr('placeholder', updatedPlaceholder);
 }
@@ -297,7 +301,7 @@ $(document).ready(function() {
 
     // Load campus-specific building and stop index and initialize Fuse.js
     function initSearchIndex() {
-        const campusKey = (window.settings && settings['campus']) || 'nb';
+        const campusKey = (settings && settings['campus']) || 'nb';
         const campusToFile = {
             'nb': 'lib/building_index_nb.json',
             'newark': 'lib/building_index_newark.json',
@@ -323,7 +327,7 @@ $(document).ready(function() {
                 });
 
                 // Add bus stops for the selected campus
-                const campusStops = (typeof allStopsData !== 'undefined' && allStopsData[campusKey]) ? allStopsData[campusKey] : (window.stopsData || {});
+                const campusStops = (typeof allStopsData !== 'undefined' && allStopsData[campusKey]) ? allStopsData[campusKey] : stopsData;
                 if (campusStops) {
                     for (const [stopId, stop] of Object.entries(campusStops)) {
                         if (!stop || !stop.name) continue;

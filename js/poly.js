@@ -26,7 +26,7 @@ function setForceShowRoutes(routes) {
 
 async function addForceShowPolyline(routeName) {
     if (polylines[routeName]) return;
-    if (!routesByCampusBase[selectedCampus].includes(routeName)) return;
+    if (!getCampusRoutes(selectedCampus).includes(routeName)) return;
     let coordinates = await getPolylineData(routeName);
     if (!coordinates || !coordinates.length) return;
     if (Object.keys(coordinates[0])[0] === 'lat') {
@@ -34,12 +34,12 @@ async function addForceShowPolyline(routeName) {
     } else {
         coordinates = coordinates.map(point => [point[1], point[0]]);
     }
-    const polylineOptions = getPolylineLayerOptions({
+    const polylineOptions = {
         color: colorMappings[routeName] || '#888',
         weight: 4,
         opacity: 1,
         smoothFactor: 1,
-    });
+    };
     const polyline = L.polyline(coordinates, polylineOptions);
     polyline.addTo(map);
     polylines[routeName] = polyline;
@@ -58,7 +58,7 @@ function applyForceShowState() {
     const forceRoutes = getForceShowRoutes();
     for (const route of Object.keys(polylines)) {
         if (!forceRoutes.includes(route)) {
-            try { polylines[route].remove(); } catch (e) {}
+            try { polylines[route].remove(); } catch (e) { console.warn('[applyForceShowState] failed to remove polyline for route ' + route + ':', e); }
             delete polylines[route];
         }
     }
@@ -70,7 +70,7 @@ function applyForceShowState() {
 function revertForceShowState() {
     for (const route of Object.keys(polylines)) {
         if (!routeHasInServiceBuses(route)) {
-            try { polylines[route].remove(); } catch (e) {}
+            try { polylines[route].remove(); } catch (e) { console.warn('[revertForceShowState] failed to remove polyline for route ' + route + ':', e); }
             delete polylines[route];
         }
     }
@@ -100,7 +100,7 @@ function applyForceShowStops() {
         }
     }
     for (const stopId of allowedStopIds) {
-        const id = String(stopId);
+        const id = Number(stopId);
         if (!busStopMarkers[id] && stopsData[id]) {
             const s = stopsData[id];
             const marker = L.marker([s.latitude, s.longitude], {
@@ -125,6 +125,7 @@ function applyForceShowStops() {
             busStopMarkers[id] = marker;
         }
     }
+    updateStopsOpacity();
 }
 
 function revertForceShowStops() {
@@ -206,41 +207,319 @@ $(document).on('change', '.force-show-all-cb', function() {
     if (isForceShowStopsEnabled()) applyForceShowStops();
 });
 
-// Canvas/SVG renderer for route polylines; respects polyline-renderer + padding settings
-// Uses polylinesPane so routes stay above buildings (overlayPane) for both SVG and Canvas
-function ensurePolylinesPane() {
-    if (!map || map.getPane('polylinesPane')) return;
-    map.createPane('polylinesPane');
-    map.getPane('polylinesPane').style.zIndex = 450;
-}
-
-function createPolylineRenderer() {
-    ensurePolylinesPane();
-    const useCanvas = settings && settings['polyline-renderer'] === 'canvas';
-    const usePadding = settings && settings['toggle-polyline-padding'];
-    const options = { pane: 'polylinesPane' };
-    if (usePadding) options.padding = 1.0;
-    return useCanvas ? L.canvas(options) : L.svg(options);
-}
-
-function getPolylineLayerOptions(extra) {
-    return Object.assign({
-        pane: 'polylinesPane',
-        renderer: createPolylineRenderer()
-    }, extra || {});
-}
-
-function reapplyPolylineRenderers(reason) {
-    for (const routeName in polylines) {
-        const polyline = polylines[routeName];
-        logPolylineRemoval(routeName, reason);
-        polyline.removeFrom(map);
-        polyline.options.pane = 'polylinesPane';
-        polyline.setStyle({
-            renderer: createPolylineRenderer()
+// MapLibre GeoJSON line layer for route polylines
+window.createMapLibrePolyline = function(coordinates, options) {
+    options = options || {};
+    const routeId = 'poly_' + Math.random().toString(36).substring(2, 9);
+    const sourceId = `src_${routeId}`;
+    const layerId = `layer_${routeId}`;
+    
+    let geoCoords = [];
+    if (coordinates && coordinates.length) {
+        geoCoords = coordinates.map(pt => {
+            // Number() coercion: some route geometry (e.g. 'bl') is served with
+            // string lat/lng values, which MapLibre's GeoJSON validation rejects.
+            if (Array.isArray(pt)) {
+                return [Number(pt[1]), Number(pt[0])];
+            } else if (pt && pt.lat !== undefined && pt.lng !== undefined) {
+                return [Number(pt.lng), Number(pt.lat)];
+            }
+            return pt;
         });
-        polyline.addTo(map);
     }
+
+    let isAdded = false;
+    let removed = false;
+    let styleLoadBound = false;
+    let currentColor = options.color || '#888';
+    let currentOpacity = options.opacity !== undefined ? options.opacity : 1;
+    let currentWeight = options.weight || 4;
+
+    // Layer creation is gated on the style JSON being parsed: Style.addSource /
+    // addLayer throw while the style isn't loaded (Style._checkLoaded). The
+    // gate is 'style.load' / style._loaded — NOT map.isStyleLoaded() or the map
+    // 'load' event, which additionally wait on every source's data requests and
+    // can stall indefinitely (e.g. a hung tile request), leaving layers
+    // permanently unadded while the polylines registry thinks they exist.
+    // 'style.load' fires as soon as the style JSON is applied, and fires again
+    // whenever the style is replaced, re-adding any missing layers.
+    function add() {
+        if (!map) return;
+        if (removed) return;
+        if (isAdded && map.getSource(sourceId) && map.getLayer(layerId)) return;
+        if (!(map.style && map.style._loaded)) return; // retried on style.load
+        isAdded = false;
+        try {
+            if (map.getSource(sourceId)) {
+                map.getSource(sourceId).setData({
+                    type: 'Feature',
+                    geometry: { type: 'LineString', coordinates: geoCoords }
+                });
+            } else {
+                map.addSource(sourceId, {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: { type: 'LineString', coordinates: geoCoords }
+                    }
+                });
+            }
+
+            if (!map.getLayer(layerId)) {
+                const beforeId = map.getLayer('bus-markers-glow') ? 'bus-markers-glow' : (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : undefined);
+                map.addLayer({
+                    id: layerId,
+                    type: 'line',
+                    source: sourceId,
+                    layout: {
+                        'line-cap': 'round',
+                        'line-join': 'round'
+                    },
+                    paint: {
+                        'line-color': currentColor,
+                        'line-width': currentWeight,
+                        'line-opacity': currentOpacity
+                    }
+                }, beforeId);
+            }
+            isAdded = true;
+        } catch (e) {
+            console.error('[MapLibre Polyline] failed to add source/layer for', layerId, ':', e);
+        }
+    }
+
+    function onStyleLoad() {
+        if (!removed) add();
+    }
+
+    // Called from wrapper.addTo: attempts the add now and guarantees a retry
+    // once the style parses (and on any future style replacement).
+    function ensureAdded() {
+        if (!map) return;
+        if (!styleLoadBound) {
+            styleLoadBound = true;
+            map.on('style.load', onStyleLoad);
+            // Fail-fast: if the style never parses (bad URL / network / style
+            // error), the layer would otherwise never be created and nothing
+            // would ever report it.
+            setTimeout(function() {
+                if (!removed && !isAdded && !(map.style && map.style._loaded)) {
+                    console.warn('[MapLibre Polyline] add() for "' + layerId + '" is still waiting for the style to load 15s later; the style may have failed to load. Layer was never added.');
+                }
+            }, 15000);
+        }
+        add();
+    }
+
+    function remove() {
+        if (!map) throw new Error('[MapLibre Polyline] Attempted to remove polyline before map was initialized.');
+        removed = true;
+        if (styleLoadBound) {
+            map.off('style.load', onStyleLoad);
+            styleLoadBound = false;
+        }
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+        isAdded = false;
+    }
+
+    const wrapper = {
+        _latlngs: coordinates,
+        _mapLibreLayerId: layerId,
+        addTo: function(targetMap) {
+            ensureAdded();
+            return wrapper;
+        },
+        remove: function() {
+            remove();
+            return wrapper;
+        },
+        removeFrom: function() {
+            remove();
+            return wrapper;
+        },
+        setStyle: function(newStyle) {
+            if (newStyle.color) currentColor = newStyle.color;
+            if (newStyle.opacity !== undefined) currentOpacity = newStyle.opacity;
+            if (newStyle.weight) currentWeight = newStyle.weight;
+            if (map && map.getLayer && map.getLayer(layerId)) {
+                map.setPaintProperty(layerId, 'line-color', currentColor);
+                map.setPaintProperty(layerId, 'line-opacity', currentOpacity);
+                map.setPaintProperty(layerId, 'line-width', currentWeight);
+            }
+            return wrapper;
+        },
+        getBounds: function() {
+            if (!geoCoords.length) return L.latLngBounds([0,0], [0,0]);
+            let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+            for (const pt of geoCoords) {
+                if (pt[0] < minLng) minLng = pt[0];
+                if (pt[0] > maxLng) maxLng = pt[0];
+                if (pt[1] < minLat) minLat = pt[1];
+                if (pt[1] > maxLat) maxLat = pt[1];
+            }
+            return L.latLngBounds([minLat, minLng], [maxLat, maxLng]);
+        },
+        getLatLngs: function() {
+            return coordinates;
+        },
+        getElement: function() {
+            return null;
+        },
+        options: options
+    };
+
+    return wrapper;
+};
+
+if (typeof L !== 'undefined') {
+    L.polyline = function(coordinates, options) {
+        return window.createMapLibrePolyline(coordinates, options);
+    };
+
+    function parseMarkerLatLng(latlng) {
+        if (!latlng) return { lat: 0, lng: 0 };
+        if (Array.isArray(latlng)) return { lat: Number(latlng[0]), lng: Number(latlng[1]) };
+        if (typeof latlng === 'object') {
+            const lat = latlng.lat !== undefined ? latlng.lat : (latlng.latitude !== undefined ? latlng.latitude : latlng[0]);
+            const lng = latlng.lng !== undefined ? latlng.lng : (latlng.longitude !== undefined ? latlng.longitude : (latlng.long !== undefined ? latlng.long : latlng[1]));
+            return { lat: Number(lat), lng: Number(lng) };
+        }
+        return { lat: 0, lng: 0 };
+    }
+
+    L.marker = function(latlng, options) {
+        options = options || {};
+        const pos = parseMarkerLatLng(latlng);
+        let icon = options.icon || null;
+
+        function applyIcon(el, iconObj) {
+            // maplibre adds the 'maplibregl-marker' class (and any classes the
+            // app appended) to this element; preserve them across icon swaps.
+            const keepClasses = [];
+            el.classList.forEach(c => keepClasses.push(c));
+            el.className = '';
+            for (const c of keepClasses) el.classList.add(c);
+            el.style.width = '';
+            el.style.height = '';
+            el.style.backgroundImage = '';
+            el.style.backgroundSize = '';
+            el.style.backgroundRepeat = '';
+            el.style.backgroundPosition = '';
+            el.innerHTML = '';
+            if (!iconObj || !iconObj.options) {
+                el.classList.add('custom-default-marker');
+                return;
+            }
+            if (iconObj.options.className) {
+                el.classList.add(iconObj.options.className);
+            }
+            if (iconObj.options.iconSize && Array.isArray(iconObj.options.iconSize)) {
+                el.style.width = iconObj.options.iconSize[0] + 'px';
+                el.style.height = iconObj.options.iconSize[1] + 'px';
+            }
+            if (iconObj.options.iconUrl) {
+                el.style.backgroundImage = `url('${iconObj.options.iconUrl}')`;
+                el.style.backgroundSize = 'contain';
+                el.style.backgroundRepeat = 'no-repeat';
+                el.style.backgroundPosition = 'center';
+            }
+            if (iconObj.options.html) {
+                el.innerHTML = iconObj.options.html;
+            }
+        }
+
+        const markerEl = document.createElement('div');
+        applyIcon(markerEl, icon);
+
+        const marker = new maplibregl.Marker({
+            element: markerEl,
+            anchor: 'center'
+        }).setLngLat([pos.lng, pos.lat]);
+
+        const originalAddTo = marker.addTo.bind(marker);
+        const originalRemove = marker.remove.bind(marker);
+
+        marker.setLatLng = function(newLatLng) {
+            const p = parseMarkerLatLng(newLatLng);
+            marker.setLngLat([p.lng, p.lat]);
+            return marker;
+        };
+        marker.setLatLngPrecise = function(newLatLng) {
+            return marker.setLatLng(newLatLng);
+        };
+        marker.setZIndexOffset = function(offset) {
+            if (markerEl) {
+                // Treat offset as the absolute z-index (floored at 1). Bus
+                // markers sit at 500 (selected: 5000); stops pass 1/100 when
+                // "stops above buses" is off so they stay BELOW buses, and
+                // 900/1100+ when it's on. (A prior `500 + offset` base put
+                // serviced stops at 600 — always above buses.)
+                const safeZ = Math.max(1, Number(offset || 0));
+                markerEl.style.zIndex = String(safeZ);
+            }
+            return marker;
+        };
+        marker.getLatLng = function() {
+            const ll = marker.getLngLat();
+            return { lat: ll.lat, lng: ll.lng };
+        };
+        marker.remove = function() {
+            originalRemove();
+            return marker;
+        };
+        marker.removeFrom = function() {
+            originalRemove();
+            return marker;
+        };
+        marker.addTo = function(targetMap) {
+            originalAddTo(targetMap || map);
+            return marker;
+        };
+        marker.on = function(event, handler) {
+            markerEl.addEventListener(event, handler);
+            return marker;
+        };
+        marker.getElement = function() {
+            return markerEl;
+        };
+        marker._icon = markerEl;
+
+        marker.getIcon = function() {
+            return icon;
+        };
+        marker.setIcon = function(newIcon) {
+            icon = newIcon || null;
+            applyIcon(markerEl, icon);
+            return marker;
+        };
+        marker.bindPopup = function(content, popupOptions) {
+            const html = typeof content === 'string'
+                ? content
+                : (content && content.options && content.options.html)
+                    ? content.options.html
+                    : (content && content._html)
+                        ? content._html
+                        : (content ? String(content) : '');
+            marker.setPopup(new maplibregl.Popup(popupOptions || {}).setHTML(html));
+            return marker;
+        };
+        marker.unbindPopup = function() {
+            if (marker.getPopup()) marker.getPopup().remove();
+            return marker;
+        };
+        marker.openPopup = function() {
+            const popup = marker.getPopup();
+            if (popup) popup.addTo(marker.getMap ? marker.getMap() : map);
+            return marker;
+        };
+        marker.closePopup = function() {
+            if (marker.getPopup()) marker.getPopup().remove();
+            return marker;
+        };
+
+        return marker;
+    };
 }
 
 // Track polyline removal for debugging race conditions
@@ -321,7 +600,7 @@ function getRouteStyle(routeName) {
         color: active ? (colorMappings[routeName] || '#888') : 'rgba(128,128,128,0.7)',
         opacity: active ? 1 : 0.5,
         buttonColor: active ? (colorMappings[routeName] || '#888') : 'gray',
-        buttonOpacity: active ? 1 : 0.7
+        buttonOpacity: active ? 1 : 0.5
     };
 }
 
@@ -345,7 +624,7 @@ async function setPolylines(activeRoutes) {
     const forceRoutes = getForceShowRoutes();
     let routesToSet;
     if (isForceShowEnabled()) {
-        routesToSet = forceRoutes.filter(r => routesByCampusBase[selectedCampus].includes(r));
+        routesToSet = forceRoutes.filter(r => getCampusRoutes(selectedCampus).includes(r));
         for (const routeName in polylines) {
             if (!routesToSet.includes(routeName)) {
                 if (polylines[routeName]) {
@@ -355,27 +634,41 @@ async function setPolylines(activeRoutes) {
             }
         }
     } else {
-        routesToSet = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
+        routesToSet = Array.from(activeRoutes).filter(route => getCampusRoutes(selectedCampus).includes(route));
+        if (!settings['toggle-show-out-of-service']) {
+            routesToSet = routesToSet.filter(route => routeHasValidInServiceBuses(route));
+        }
     }
 
-    const fetchPromises = [];
+    // Fetch all route geometry in parallel, then create every polyline in one
+    // synchronous burst so routes appear together instead of one-per-frame
+    // (mirrors makeBulkOoS's once-not-per-bus pattern).
+    const pendingRoutes = [];
 
     for (const routeName of routesToSet) {
-        const style = getRouteStyle(routeName);
+        if (polylines[routeName]) {
+            updatePolylineStyle(routeName);
+            continue;
+        }
+        pendingRoutes.push({ routeName, style: getRouteStyle(routeName) });
+    }
+
+    if (pendingRoutes.length === 0) return;
+
+    const fetched = await Promise.all(pendingRoutes.map(({ routeName }) => getPolylineData(routeName)));
+
+    let addedAny = false;
+    for (let i = 0; i < pendingRoutes.length; i++) {
+        const { routeName, style } = pendingRoutes[i];
+        let coordinates = fetched[i];
 
         if (polylines[routeName]) {
             updatePolylineStyle(routeName);
             continue;
         }
-
-        let coordinates = await getPolylineData(routeName);
-        if (polylines[routeName]) {
-            updatePolylineStyle(routeName);
-            continue;
-        }
-
         if (!coordinates) continue;
 
+        try {
         if (Object.keys(coordinates[0])[0] === 'lat') {
             coordinates = coordinates.map(point => [point.lat, point.lng]);
         } else {
@@ -384,14 +677,12 @@ async function setPolylines(activeRoutes) {
 
         const targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
 
-        const polylineOptions = getPolylineLayerOptions({
+        const polyline = L.polyline(coordinates, {
             color: style.color,
             weight: 4,
             opacity: targetOpacity,
             smoothFactor: 1,
         });
-
-        const polyline = L.polyline(coordinates, polylineOptions);
 
         polyline.addTo(map);
 
@@ -400,18 +691,40 @@ async function setPolylines(activeRoutes) {
         if (pathEl) pathEl.style.opacity = String(targetOpacity);
 
         // Cache route bounds and points even if layer later gets pruned
-        const bounds = polyline.getBounds();
-        routeBounds[routeName] = bounds;
+        routeBounds[routeName] = polyline.getBounds();
         routePointsCache[routeName] = polyline.getLatLngs();
 
-        fetchPromises.push(coordinates);
+        addedAny = true;
+        } catch (e) {
+            // Isolate per-route failures (bad geometry, etc.) so one route can't
+            // abort the loop and silently prevent every later route from rendering.
+            console.error('Failed to add polyline for route', routeName, ':', e);
+        }
     }
 
-    if (fetchPromises.length === 0) return;
-
-    Promise.all(fetchPromises).then(() => {
+    if (addedAny) {
         updatePolylineBoundsIfNeeded();
         map.fitBounds(polylineBounds, { padding: [10, 10] });
+    }
+}
+
+// Coerce coordinate values to numbers, preserving the source format (objects
+// stay objects, arrays stay arrays). The /r/{route} endpoints are inconsistent:
+// some serve {lat,lng} numbers, some [lng,lat] arrays, and 'bl' serves string
+// values — string coordinates are rejected by MapLibre's GeoJSON validation.
+function normalizePolylineData(data) {
+    if (!Array.isArray(data)) return data;
+    return data.map(pt => {
+        if (Array.isArray(pt)) {
+            return [Number(pt[0]), Number(pt[1])];
+        }
+        if (pt && typeof pt === 'object' && (pt.lat !== undefined || pt.lng !== undefined)) {
+            const out = {};
+            if (pt.lat !== undefined) out.lat = Number(pt.lat);
+            if (pt.lng !== undefined) out.lng = Number(pt.lng);
+            return out;
+        }
+        return pt;
     });
 }
 
@@ -423,12 +736,12 @@ async function getPolylineData(routeName) {
         const cache = await caches.open('route-polylines');
 
         const cached = await cache.match(url);
-        if (cached) return cached.json();
+        if (cached) return normalizePolylineData(await cached.json());
 
         const response = await fetch(url);
         if (response.status === 200) {
             cache.put(url, response.clone());
-            return response.json();
+            return normalizePolylineData(await response.json());
         }
 
         console.error(`Error fetching polyline data for route ${routeName}:`, response.statusText);
@@ -455,7 +768,7 @@ function getValidBusesServicingStop(stopId) {
 async function addPolylineForRoute(routeName) {
     try {
         if (polylines[routeName]) return;
-        if (!routesByCampusBase[selectedCampus].includes(routeName)) return;
+        if (!getCampusRoutes(selectedCampus).includes(routeName)) return;
 
         let coordinates = await getPolylineData(routeName);
         if (polylines[routeName]) return;
@@ -470,12 +783,12 @@ async function addPolylineForRoute(routeName) {
         const style = getRouteStyle(routeName);
         const targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
 
-        const polylineOptions = getPolylineLayerOptions({
+        const polylineOptions = {
             color: style.color,
             weight: 4,
             opacity: targetOpacity,
             smoothFactor: 1,
-        });
+        };
 
         const polyline = L.polyline(coordinates, polylineOptions);
         polyline.addTo(map);
@@ -490,7 +803,7 @@ async function addPolylineForRoute(routeName) {
         const bounds = polyline.getBounds();
         routeBounds[routeName] = bounds;
     } catch (e) {
-        console.log('Failed to add polyline for route', routeName, e);
+        console.error('Failed to add polyline for route', routeName, e);
     }
 }
 
@@ -570,7 +883,7 @@ function updatePolylineBoundsIfNeeded() {
         polylineBounds = combinedBounds;
         previousRoutesWithPolylines = currentRoutesWithPolylines;
     } catch (e) {
-        console.log('Error updating polyline bounds', e);
+        console.error('Error updating polyline bounds', e);
         polylineBounds = null;
         previousRoutesWithPolylines.clear();
     }
@@ -590,7 +903,7 @@ function prunePolylinesWithoutInService() {
                         polylines[routeName].setStyle({ opacity: 0 });
                         const pathEl = polylines[routeName].getElement();
                         if (pathEl) { pathEl.style.opacity = '0'; pathEl.style.display = 'none'; }
-                    } catch (e) {}
+                    } catch (e) { console.warn('[prunePolylinesWithoutInService] failed to hide polyline for route ' + routeName + ':', e); }
                 }
             }
         }
@@ -600,7 +913,7 @@ function prunePolylinesWithoutInService() {
         if (forceMode) {
             for (const routeName of Object.keys(polylines)) {
                 if (!forceRoutes.includes(routeName)) {
-                    try { polylines[routeName].remove(); } catch (e) {}
+                    try { polylines[routeName].remove(); } catch (e) { console.warn('[prunePolylinesWithoutInService] failed to remove polyline for route ' + routeName + ':', e); }
                     delete polylines[routeName];
                 }
             }
@@ -611,7 +924,7 @@ function prunePolylinesWithoutInService() {
 
             if (polylines[routeName]) {
                 updatePolylineStyle(routeName);
-            } else if ((!forceMode || forceRoutes.includes(routeName)) && routesByCampusBase[selectedCampus].includes(routeName)) {
+            } else if ((!forceMode || forceRoutes.includes(routeName)) && getCampusRoutes(selectedCampus).includes(routeName)) {
                 if (settings['toggle-show-out-of-service'] || routeHasValidInServiceBuses(routeName)) {
                     addPolylineForRoute(routeName);
                 }
@@ -624,7 +937,7 @@ function prunePolylinesWithoutInService() {
                     if (routeName === shownRoute) {
                         $btn.css({ 'background-color': colorMappings[routeName], 'opacity': '1' });
                     } else {
-                        $btn.css({ 'background-color': 'gray', 'opacity': '1' });
+                        $btn.css({ 'background-color': 'gray', 'opacity': routeHasInServiceBuses(routeName) ? '1' : '0.5' });
                     }
                 } else {
                     $btn.css({ 'background-color': style.buttonColor, 'opacity': String(style.buttonOpacity) });
@@ -634,37 +947,75 @@ function prunePolylinesWithoutInService() {
         updatePolylineBoundsIfNeeded();
         updateStopsOpacity();
     } catch (e) {
-        console.log('Error updating polylines without in-service buses', e);
+        console.error('Error updating polylines without in-service buses', e);
     }
 }
 
 function updateStopsOpacity() {
     const servicedStops = new Set();
-    for (const route of Object.keys(busesByRoutes[selectedCampus])) {
-        if (!routeHasInServiceBuses(route)) continue;
+    const oosStops = new Set();
+    const routeKeys = Object.keys(stopLists || {});
+
+    for (const route of routeKeys) {
+        const isInService = routeHasInServiceBuses(route);
         const list = stopLists[route];
         if (!list) continue;
-        list.forEach(id => servicedStops.add(Number(id)));
+        if (isInService) {
+            list.forEach(id => servicedStops.add(Number(id)));
+        } else if (settings['toggle-show-out-of-service']) {
+            list.forEach(id => oosStops.add(Number(id)));
+        }
     }
+
     const baseZ = settings['toggle-stops-above-buses'] ? 1000 : 0;
+    const isShowOOS = !!settings['toggle-show-out-of-service'];
+
     for (const stopId in busStopMarkers) {
         const marker = busStopMarkers[stopId];
-        const isServiced = servicedStops.has(Number(stopId));
+        const numId = Number(stopId);
+        const isServiced = servicedStops.has(numId);
+        const isOOS = oosStops.has(numId);
         const el = marker.getElement();
-        if (el) {
-            if (!isServiced && !settings['toggle-show-out-of-service'] && servicedStops.size > 0) {
-                el.style.opacity = '0';
-                el.style.pointerEvents = 'none';
-            } else {
-                el.style.opacity = isServiced ? '1' : '0.5';
+
+        let shouldBeOnMap = false;
+        let opacity = '1';
+
+        if (servicedStops.size === 0) {
+            // No bus services any stop: keep stops visible but dim them to
+            // indicate nothing is running (matches the 0.5 used for OOS stops).
+            shouldBeOnMap = true;
+            opacity = '0.5';
+        } else if (isServiced) {
+            shouldBeOnMap = true;
+            opacity = '1';
+        } else if (isOOS && isShowOOS) {
+            shouldBeOnMap = true;
+            opacity = '0.5';
+        } else {
+            shouldBeOnMap = false;
+        }
+
+        if (shouldBeOnMap) {
+            marker.addTo(map);
+            if (el) {
+                el.style.opacity = opacity;
+                el.querySelectorAll('.marker-wrapper, .marker-wrapper img, .corner-label').forEach(child => {
+                    child.style.opacity = opacity;
+                });
+                el.style.display = '';
                 el.style.pointerEvents = '';
             }
+        } else {
+            marker.remove();
         }
         if (popupStopId && String(popupStopId) === String(stopId)) {
             marker.setZIndexOffset(2000);
         } else {
             marker.setZIndexOffset(isServiced ? baseZ + 100 : baseZ - 100);
         }
+    }
+    if (typeof window.updateStopsLayerOrder === 'function') {
+        window.updateStopsLayerOrder();
     }
 }
 
@@ -1504,7 +1855,7 @@ async function popStopInfo(stopId) {
 
     if (shownRoute && popupBusName) {
         busesByRoutes[selectedCampus][shownRoute].forEach(busName => {
-            busMarkers[busName].getElement().style.display = '';
+            busMarkers[busName].setVisibility(true);
         })
         updateTooltips(shownRoute);
     } else {
@@ -1518,7 +1869,7 @@ async function popStopInfo(stopId) {
         const route = busData[popupBusName].route;
         if (!routeHasInServiceBuses(route) && polylines[route]) {
             logPolylineRemoval(route, 'popStopInfo');
-            try { polylines[route].remove(); } catch (e) {}
+            try { polylines[route].remove(); } catch (e) { console.warn('[popStopInfo] failed to remove polyline for route ' + route + ':', e); }
             delete polylines[route];
             // Keep routeBounds cached; recompute global polyline bounds via shared helper
             updatePolylineBoundsIfNeeded();
@@ -1656,11 +2007,9 @@ async function addStopsToMap() {
     }
 
     if (!activeStops.length && !isForceShowStopsEnabled()) {
-        console.log('no buses running, showing all stops')
-        activeStops = Array.from({length: Object.keys(stopsData).length}, (_, i) => i + 1);
+        console.log('no buses running, showing all stops');
+        activeStops = Object.keys(stopsData || {}).map(Number);
     }
-
-    console.log('[DEBUG addStopsToMap]', { selectedCampus, activeStopsCount: activeStops.length, activeStops, busesByRoutes: busesByRoutes[selectedCampus], stopsDataKeysCount: Object.keys(stopsData || {}).length });
 
     checkIfLocationShared();
 
@@ -1758,7 +2107,7 @@ function removePreviouslyActiveStops() {
 
 function routesServicing(stopId) {
     let routesServicing = []  
-    let routesArray = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
+    let routesArray = Array.from(activeRoutes).filter(route => getCampusRoutes(selectedCampus).includes(route));
     routesArray.forEach(activeRoute => {
         if (stopLists[activeRoute].includes(stopId)) { // remove activeRoute in stopLists check after adding football routes + stops
             routesServicing.push(activeRoute);

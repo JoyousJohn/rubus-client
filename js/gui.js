@@ -18,7 +18,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         console.log(typeof allRoutesArray);
     }
 
-    let routesArray = allRoutesArray.filter(route => routesByCampusBase[selectedCampus].includes(route));
+    let routesArray = allRoutesArray.filter(route => getCampusRoutes(selectedCampus).includes(route));
     
     // If a stop is selected, filter routes to only show those that service this stop
     if (stopId !== null) {
@@ -131,20 +131,18 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         } else if (knownRoutes.includes(route)) {
             color = colorMappings[route]
 
-            let initialX; // Declare initialX outside to access it later
+            const elem = $routeElm[0];
+            const handleTouchStart = function(event) {
+                const touch = (event.touches && event.touches[0]) || (event.originalEvent && event.originalEvent.touches && event.originalEvent.touches[0]);
+                initialX = event.pageX || (touch ? touch.pageX : 0); // Store initial position
 
-            $routeElm.on('touchstart mousedown', function(event) {
-
-                initialX = event.pageX || (event.originalEvent && event.originalEvent.touches && event.originalEvent.touches[0] ? event.originalEvent.touches[0].pageX : 0); // Store initial position
-              
                 // Store the original route state BEFORE any click/long-press processing
                 if (!routePanelOpenedFromLongPress) {
                     shownBeforeRoute = shownRoute;
                     console.log('Storing shownBeforeRoute before interaction:', shownBeforeRoute);
                 }
-              
-                longPressTimer = setTimeout(() => {
 
+                longPressTimer = setTimeout(() => {
                     isLongPress = true;
                     console.log('Long press triggered for route:', route);
                     // Remember current map selection state so we can restore it on close
@@ -154,17 +152,22 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
                         console.log('Calling selectedRoute from long press while in subpanel');
                         selectedRoute(route);
                     }
-
                 }, 500); 
-            });
+            };
 
-            $routeElm.on('touchmove', function(event) {
-        
-                const moved = Math.abs(initialX - (event.changedTouches && event.changedTouches[0] ? event.changedTouches[0].clientX : 0)) > 10;
+            const handleTouchMove = function(event) {
+                const touch = (event.changedTouches && event.changedTouches[0]) || (event.originalEvent && event.originalEvent.changedTouches && event.originalEvent.changedTouches[0]);
+                const moved = Math.abs(initialX - (touch ? touch.clientX : 0)) > 10;
                 if (!moved) { return; }
 
                 clearTimeout(longPressTimer);
-            })
+            };
+
+            if (elem) {
+                elem.addEventListener('touchstart', handleTouchStart, { passive: true });
+                elem.addEventListener('touchmove', handleTouchMove, { passive: true });
+            }
+            $routeElm.on('mousedown', handleTouchStart);
 
             $routeElm.on('touchend touchcancel mouseup', function() {
                 clearTimeout(longPressTimer);
@@ -204,7 +207,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
 
         const hasInService = routeHasInServiceBuses(route);
         if (!hasInService) color = 'gray';
-        $routeElm.css('background-color', color).css('opacity', hasInService ? '1' : '0.7');
+        $routeElm.css('background-color', color).css('opacity', hasInService ? '1' : '0.5');
         
         // Check if settings button should be at the end
         if (settings['toggle-settings-btn-end']) {
@@ -228,7 +231,8 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn && rn !== shownRoute) {
-                $(this).css('background-color', 'gray').css('opacity', '1');
+                const rnInService = routeHasInServiceBuses(rn);
+                $(this).css('background-color', 'gray').css('opacity', rnInService ? '1' : '0.5');
             }
         });
 
@@ -423,7 +427,7 @@ function toggleRouteSelectors(route, wasSelected = false) {
             if (rn !== 'fav') {
                 const hasInService = routeHasInServiceBuses(rn);
                 const routeColor = hasInService ? colorMappings[rn] : 'gray';
-                $(this).css('background-color', routeColor).css('opacity', hasInService ? '1' : '0.7');
+                $(this).css('background-color', routeColor).css('opacity', hasInService ? '1' : '0.5');
             }
         });
         $(`.route-selector[routeName="${route}"]`).css('box-shadow', '');
@@ -441,7 +445,8 @@ function toggleRouteSelectors(route, wasSelected = false) {
         $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn !== route) {
-                $(this).css('background-color', 'gray').css('opacity', '1');
+                const rnInService = routeHasInServiceBuses(rn);
+                $(this).css('background-color', 'gray').css('opacity', rnInService ? '1' : '0.5');
             }
         });
 
@@ -477,25 +482,26 @@ function toggleRouteSelectors(route, wasSelected = false) {
 function hideAllStops() {
     // Used to loop (active) polylines and then get stop ids from stopLists, but this didn't hide all stops on the very first bus because there are no polylines.
     for (const stopId in busStopMarkers) {
-        busStopMarkers[stopId].remove();
+        if (busStopMarkers[stopId]) {
+            busStopMarkers[stopId].remove();
+        }
     }
 }
 
 function hideStopsExcept(excludedRoute) {
     console.log('hideStopsExcept', excludedRoute);
     const stopIdsForSelectedRoute = stopLists[excludedRoute];
+    if (!stopIdsForSelectedRoute) return;
     // Hide stops for all routes except the selected one, even if a route has no polyline
     const campusRoutes = Object.keys(busesByRoutes[selectedCampus] || {});
-    console.log('[DEBUG hideStopsExcept]', { excludedRoute, stopIdsForSelectedRoute, campusRoutes, existingMarkers: Object.keys(busStopMarkers) });
     campusRoutes.forEach(routeName => {
         const stopIdsForRoute = stopLists[routeName];
         if (stopIdsForRoute) {
             stopIdsForRoute.forEach(stopId => {
                 if (!stopIdsForSelectedRoute.includes(stopId)) {
-                    if (!busStopMarkers[stopId]) {
-                        console.error('[DEBUG hideStopsExcept] Cannot remove missing marker for stopId:', stopId, 'in route:', routeName);
+                    if (busStopMarkers[stopId]) {
+                        busStopMarkers[stopId].remove();
                     }
-                    busStopMarkers[stopId].remove();
                 }
             });
         }
@@ -525,19 +531,33 @@ function hidePolylinesExcept(route) {
 
 function showAllStops() {
     for (const stopId in busStopMarkers) {
-        busStopMarkers[stopId].addTo(map);
+        // Only add when not already on the map — addTo() makes MapLibre
+        // remove + re-append the element and reorder overlapping markers.
+        if (!busStopMarkers[stopId]._map) {
+            busStopMarkers[stopId].addTo(map);
+        }
     }
+    updateStopsOpacity();
 }
 
 function showAllBuses() {
     for (const marker in busMarkers) {
-        busMarkers[marker].getElement().style.display = '';
+        if (isBusShownOnMap(marker)) {
+            // Only add when not already on the map — addTo() re-appends the
+            // element and reorders overlapping markers (see plotBus).
+            if (!busMarkers[marker]._isOnMap) {
+                busMarkers[marker].addTo(map);
+            }
+            busMarkers[marker].setVisibility(true);
+        } else {
+            busMarkers[marker].remove();
+        }
     }
 }
 
 function hideAllBusesFromMap() {
     for (const marker in busMarkers) {
-        busMarkers[marker].getElement().style.display = 'none';
+        busMarkers[marker].remove();
     }
 }
 
@@ -553,7 +573,7 @@ function hideAllPolylinesFromMap() {
 
 function showAllBusesFromMap() {
     for (const marker in busMarkers) {
-        busMarkers[marker].getElement().style.display = '';
+        busMarkers[marker].setVisibility(true);
     }
     // updateBusNameTooltips();
 }
@@ -578,9 +598,9 @@ function updateTooltips(route) {
             }
         });
     } catch (error) {
-        console.log(busesByRoutes);
-        console.log(stopLists);
-        console.log(`Error updating tooltips for route ${route}: ${error}`);
+        console.error(busesByRoutes);
+        console.error(stopLists);
+        console.error(`Error updating tooltips for route ${route}: ${error}`);
     }
 }
 
@@ -595,6 +615,10 @@ function updateBusNameTooltips() {
         } else {
             $busNameLabel.addClass('none');
         }
+    }
+    // WebGL-mode labels are driven from the GeoJSON features, so re-serialize.
+    if (typeof busLayerManager !== 'undefined' && typeof busLayerManager.markAllDirty === 'function') {
+        busLayerManager.markAllDirty();
     }
 }
 
@@ -629,11 +653,7 @@ async function toggleRoute(route) {
         hidePolylinesExcept(route);
 
         for (const marker in busMarkers) {
-            if (busData[marker].route !== route) {
-                busMarkers[marker].getElement().style.display = 'none';
-            } else {
-                busMarkers[marker].getElement().style.display = ''; // if switched the one being viewed 
-            }
+            busMarkers[marker].setVisibility(!isBusMarkerHiddenByRoute(marker));
         }
 
         hideStopsExcept(route);
@@ -643,11 +663,16 @@ async function toggleRoute(route) {
                 // If user selects a route with no active buses, ensure its polyline is present
                 await addPolylineForRoute(route);
             }
+            // The click handler doesn't await toggleRoute, so a second selection
+            // can land while this one is awaiting the polyline fetch. A stale
+            // call must not re-show its own polyline or fit the map to the
+            // wrong route — abort if we're no longer the selected route.
+            if (shownRoute !== route) return;
             if (polylines[route]) {
                 polylines[route].setStyle({ opacity: 1 }); // show this one if it was prev hidden
             }
         } catch (e) {
-            console.log('Error setting style for route:', route, e);
+            console.error('Error setting style for route:', route, e);
         }
 
 		if (!popupStopId) {
@@ -1014,14 +1039,19 @@ $('.color-circle-select').click(function() {
 
 function updateColorMappingsSelection(selectedColor) {
     colorMappings[shownRoute] = selectedColor
-    settings['colorMappings'] = colorMappings
+    settings['colorMappings'] = {...(settings['colorMappings'] || {})}
+    settings['colorMappings'][shownRoute] = selectedColor
     localStorage.setItem('settings', JSON.stringify(settings))
 
-    // Regenerate colored SVG for this route if using Passio markers
+    // Update all existing markers for this route through the manager (every
+    // marker type, both renderer modes).
+    busLayerManager.updateRouteColor(shownRoute, selectedColor);
+
+    // Passio bus icons embed a recolored SVG; regenerate it first, then
+    // re-apply so the icon's src is updated.
     if (settings['marker-type'] === 'passio') {
         generateColoredSvgForColor(selectedColor).then(() => {
-            // Update existing markers for this route
-            updateExistingPassioMarkersForRoute(shownRoute);
+            busLayerManager.updateRouteColor(shownRoute, selectedColor);
         }).catch(error => {
             console.error(`Failed to regenerate SVG for route ${shownRoute}:`, error);
         });
@@ -1033,13 +1063,9 @@ function updateColorMappingsSelection(selectedColor) {
     // Always update route selector with the selected color when it's the currently shown route
     $(`.route-selector[routename="${shownRoute}"]`).css('background-color', selectedColor).css('box-shadow', `0 0 10px ${selectedColor}`)
 
-    busesByRoutes[selectedCampus][shownRoute].forEach(busName => {
-        const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
-        if (iconElement) {
-            iconElement.style.backgroundColor = selectedColor;
-        }
+    if (polylines[shownRoute]) {
         polylines[shownRoute].setStyle({ color: selectedColor });
-    })
+    }
 
     if (popupStopId) {
         updateStopBuses(popupStopId)
@@ -1707,7 +1733,28 @@ function closeRouteMenu() {
 }
 
 
-$('.settings-btn').on('touchstart click', function() { // why do i need touchstart here but not below? idk
+let settingsPanelScrollSaveTimer = null;
+let settingsPanelRestoreTimer = null;
+let settingsPanelRestoreCancelled = false;
+
+function saveSettingsPanelScroll() {
+    if (!isDesktop) return;
+    const settingsPanelEl = $('.settings-panel')[0];
+    if (settingsPanelEl) {
+        localStorage.setItem('settingsPanelScroll', String(settingsPanelEl.scrollTop));
+    }
+}
+
+function restoreSettingsPanelScroll() {
+    if (!isDesktop) return;
+    const settingsPanelEl = $('.settings-panel')[0];
+    if (!settingsPanelEl || !$('.settings-panel').is(':visible') || settingsPanelRestoreCancelled) return;
+    const savedScroll = parseInt(localStorage.getItem('settingsPanelScroll'), 10);
+    if (isNaN(savedScroll)) return;
+    settingsPanelEl.scrollTop = savedScroll;
+}
+
+function openSettingsPanel() {
     sa_event('btn_press', {
         'btn': 'settings'
     });
@@ -1717,56 +1764,114 @@ $('.settings-btn').on('touchstart click', function() { // why do i need touchsta
     $('.bottom').hide();
     // }
     $('.settings-floating-bar').show();
+    if (isDesktop) {
+        settingsPanelRestoreCancelled = false;
+        // Keep the scroll position persisted while the panel is open so a
+        // refresh restores the exact position (previously only saved on close).
+        $('.settings-panel')
+            .off('.settingsScrollSave .settingsScrollRestore')
+            .on('scroll.settingsScrollSave', function() {
+            clearTimeout(settingsPanelScrollSaveTimer);
+            settingsPanelScrollSaveTimer = setTimeout(saveSettingsPanelScroll, 150);
+            })
+            .on('wheel.settingsScrollRestore pointerdown.settingsScrollRestore keydown.settingsScrollRestore touchstart.settingsScrollRestore', function() {
+                settingsPanelRestoreCancelled = true;
+            });
+    }
     requestAnimationFrame(() => {
         adjustFontOptionSizes();
+        restoreSettingsPanelScroll();
+        // Web fonts load asynchronously and grow the panel, clamping an early
+        // scrollTop to 0. Re-apply once fonts are ready and after a beat so
+        // the restored position survives the late layout.
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(restoreSettingsPanelScroll);
+        }
+        clearTimeout(settingsPanelRestoreTimer);
+        settingsPanelRestoreTimer = setTimeout(restoreSettingsPanelScroll, 250);
     });
     if (isDesktop && $('.buses-panel-wrapper').is(':visible')) {
         $('.buses-panel-wrapper').slideUp();
     }
-})
+    if (isDesktop) {
+        localStorage.setItem('settingsPanelOpen', 'true');
+    }
+}
 
-$('.settings-close').click(function() {
+function closeSettingsPanel() {
     if (typeof detachSettingsViewportListeners === 'function') {
         detachSettingsViewportListeners();
+    }
+    if (isDesktop) {
+        $('.settings-panel').off('.settingsScrollSave .settingsScrollRestore');
+        clearTimeout(settingsPanelScrollSaveTimer);
+        clearTimeout(settingsPanelRestoreTimer);
+        settingsPanelRestoreCancelled = true;
+        saveSettingsPanelScroll();
     }
     $('.settings-panel').hide();
     $('.bottom').show();
     $('.settings-floating-bar').hide();
     stopStatusUpdates();
-})
+    if (isDesktop) {
+        localStorage.setItem('settingsPanelOpen', 'false');
+    }
+}
 
+// Save the current scroll when the page is left with the panel open, since a
+// refresh never fires closeSettingsPanel().
+window.addEventListener('pagehide', function() {
+    if (isDesktop && $('.settings-panel').is(':visible')) {
+        saveSettingsPanelScroll();
+    }
+});
+
+window.restoreSettingsPanelState = function() {
+    if (isDesktop && localStorage.getItem('settingsPanelOpen') === 'true') {
+        openSettingsPanel();
+    }
+}
+
+// Open/close bindings for the settings panel (delegated so they survive any
+// re-render of the route-selector row that contains the settings button).
+$(document).on('click', '.settings-btn', function(e) {
+    e.preventDefault();
+    openSettingsPanel();
+});
+
+$(document).on('click', '.settings-close', function() {
+    closeSettingsPanel();
+});
 
 const markerSizeMap = {
     'small': '20',
     'medium': '27',
     'big': '35'
-}
+};
 
 const innerSizeMap = {
     'small': '8',
     'medium': '13',
     'big': '19'
-}
+};
 
 const passioSizeMap = {
     'small': 'small-marker',
     'medium': 'medium-marker',
     'big': 'big-marker'
-}
+};
 
 const riderSizeMap = {
     'small': 'small-marker',
     'medium': 'medium-marker',
     'big': 'big-marker'
-}
+};
 
 const duckSizeMap = {
     'small': 'small-marker',
     'medium': 'medium-marker',
     'big': 'big-marker'
-}
-
-let settings = {}
+};
 
 const toggleSettings = [
     'toggle-select-closest-stop',
@@ -1782,7 +1887,6 @@ const toggleSettings = [
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
-    'toggle-whole-pixel-positioning',
     'toggle-pause-passio-polling',
     'toggle-show-stop-polygons',
     'toggle-show-dev-options',
@@ -1799,13 +1903,11 @@ const toggleSettings = [
     'toggle-show-extra-bus-data',
     'toggle-show-stop-id',
     'toggle-show-knight-mover',
-    'toggle-polyline-padding',
     'toggle-offscreen-bus-indicators',
     'toggle-offscreen-bus-indicators-above-gui',
     'toggle-offscreen-bus-indicators-select-on-tap',
     'toggle-show-invalid-etas',
     'toggle-show-rotation-points',
-    'toggle-allow-iphone-preload',
     'toggle-show-rubus-ai',
     'toggle-show-bus-quickness-breakdown',
     'toggle-always-immediate-update',
@@ -1822,10 +1924,13 @@ const toggleSettings = [
     'toggle-show-zoom-toast',
     'toggle-hide-sim-popup',
     'toggle-always-show-esc-hint',
+    'toggle-pause-bus-markers-on-pan',
     'toggle-always-show-break-overdue',
     'toggle-settings-btn-end',
     'toggle-force-show-polylines',
     'toggle-force-show-stops',
+    'toggle-adaptive-pixel-ratio',
+    'toggle-legacy-bus-animation',
 ]
 
 let colorMappings;
@@ -1892,16 +1997,13 @@ let defaultSettings = {
 
     
     // dev settings
-    'map-renderer': 'svg',
-    'polyline-renderer': 'svg',
-    'tile-update-when-idle': 'false',
-    'tile-update-when-zooming': 'true',
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
-    'toggle-whole-pixel-positioning': false, /* this might not be needed? */
     'toggle-pause-passio-polling': false,
     'toggle-show-stop-polygons': false,
     'toggle-show-dev-options': false,
+    'raster-sharpness': 'bicubic',
+    'bus-marker-renderer': 'custom',
     'toggle-show-bus-progress': false,
     'toggle-show-bus-overtime-timer': false,
     'toggle-show-bus-names': false,
@@ -1912,10 +2014,8 @@ let defaultSettings = {
     'toggle-show-extra-bus-data': false,
     'toggle-show-stop-id': false,
     'toggle-show-knight-mover': false,
-    'toggle-polyline-padding': false,
     'toggle-show-invalid-etas': false,
     'toggle-show-rotation-points': false,
-    'toggle-allow-iphone-preload': false,
     'toggle-show-rubus-ai': false,
     'toggle-show-bus-quickness-breakdown': false,
     'toggle-always-immediate-update': false,
@@ -1932,6 +2032,10 @@ let defaultSettings = {
     'toggle-show-zoom-toast': false,
     'toggle-hide-sim-popup': false,
     'toggle-always-show-esc-hint': false,
+    'toggle-pause-bus-markers-on-pan': false,
+    'toggle-show-fps': false,
+    'toggle-adaptive-pixel-ratio': false,
+    'toggle-legacy-bus-animation': false,
     'toggle-always-show-break-overdue': false,
     'toggle-force-show-polylines': false,
     'toggle-force-show-stops': true,
@@ -1940,34 +2044,57 @@ let defaultSettings = {
     // going to remove
     'toggle-show-arrival-times': true,
     'toggle-show-bus-speeds': true,
-    'colorMappings': JSON.parse(JSON.stringify(defaultColorMappings))
+    'colorMappings': {},
+    'colorMappingsMigrated': true
 
 };
 
 function setDefaultSettings () {
-    settings = defaultSettings;
+    settings = {...defaultSettings, 'colorMappings': {}};
     localStorage.setItem('settings', JSON.stringify(settings));
     $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
     $(`div.settings-option[gui-scale-option="normal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-type-option="rubus"]`).addClass('settings-selected')
-    $(`div.settings-option[map-renderer-option="svg"]`).addClass('settings-selected')
-    $(`div.settings-option[polyline-renderer-option="svg"]`).addClass('settings-selected')
-    $(`div.settings-option[tile-update-when-idle-option="false"]`).addClass('settings-selected')
-    $(`div.settings-option[tile-update-when-zooming-option="true"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="exact"]`).addClass('settings-selected')
     $(`div.settings-option[campus="nb"]`).addClass('settings-selected')
     
     $(`div.settings-option[theme-option="beige-coffee"]`).addClass('settings-selected')
-    colorMappings = settings['colorMappings']
+    colorMappings = {...defaultColorMappings, ...settings['colorMappings']}
+}
+
+function loadSettingsFromStorage() {
+    const raw = localStorage.getItem('settings');
+    if (!raw) return null;
+    let parsed;
+    try {
+        parsed = JSON.parse(raw);
+    } catch (e) {
+        console.error('[settings] corrupted "settings" in localStorage; resetting to defaults:', e, '(raw: ' + raw + ')');
+        localStorage.removeItem('settings');
+        return null;
+    }
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed;
+    }
+    console.error('[settings] stored "settings" is not a plain object; resetting to defaults:', parsed);
+    localStorage.removeItem('settings');
+    return null;
 }
 
 function updateSettings() {
-    settings = localStorage.getItem('settings');
-    // console.log(settings)
+    settings = loadSettingsFromStorage();
     if (settings) {
 
-        settings = JSON.parse(settings);
+        // One-time migration: older clients may have a full copy of the default
+        // palette stored in 'colorMappings' (even if they never customized any
+        // color). Drop it so the current defaults in code take effect; only
+        // routes the user directly chose are kept going forward.
+        if (settings['colorMappingsMigrated'] !== true) {
+            settings['colorMappings'] = {};
+            settings['colorMappingsMigrated'] = true;
+        }
+
         for (let key in defaultSettings) {
             if (!settings.hasOwnProperty(key)) {
                 settings[key] = defaultSettings[key];
@@ -1979,12 +2106,18 @@ function updateSettings() {
             }
         }
 
-        colorMappings = settings['colorMappings']
-        for (const key in defaultColorMappings) {
-            if (!colorMappings.hasOwnProperty(key)) {
-                colorMappings[key] = defaultColorMappings[key];
+        // Runtime palette = current defaults (from code) overlaid with stored
+        // user overrides. Entries equal to the current default are redundant
+        // (the default is applied automatically), so prune them to keep the
+        // stored dict minimal and let future default changes flow through.
+        const overrides = {};
+        for (const key in (settings['colorMappings'] || {})) {
+            if (settings['colorMappings'][key] !== defaultColorMappings[key]) {
+                overrides[key] = settings['colorMappings'][key];
             }
         }
+        settings['colorMappings'] = overrides;
+        colorMappings = {...defaultColorMappings, ...overrides};
 
         localStorage.setItem('settings', JSON.stringify(settings))
 
@@ -1999,7 +2132,8 @@ function updateSettings() {
         settings['theme'] = 'beige-coffee';
         
         // Initialize colorMappings to avoid errors
-        colorMappings = settings['colorMappings'] = {...defaultColorMappings};
+        settings['colorMappings'] = {};
+        colorMappings = {...defaultColorMappings};
         
         // Don't save to localStorage here - wait for user confirmation
     }
@@ -2017,11 +2151,9 @@ function updateSettings() {
     // Update marker size examples to match the current marker type
     updateMarkerSizeExamples();
     
-    $(`div.settings-option[map-renderer-option="${settings['map-renderer']}"]`).addClass('settings-selected')
-    $(`div.settings-option[polyline-renderer-option="${settings['polyline-renderer']}"]`).addClass('settings-selected')
-    $(`div.settings-option[tile-update-when-idle-option="${settings['tile-update-when-idle']}"]`).addClass('settings-selected')
-    $(`div.settings-option[tile-update-when-zooming-option="${settings['tile-update-when-zooming']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
+    $(`div.settings-option[raster-sharpness-option="${settings['raster-sharpness']}"]`).addClass('settings-selected')
+    $(`div.settings-option[bus-marker-renderer-option="${settings['bus-marker-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 
     if (!$('.theme-modal').is(':visible')) {
@@ -2105,42 +2237,25 @@ function updateSettings() {
                 'source': 'settings'
             });
 
-        } else if (settingsOption === 'map-renderer') {
-            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
-            $(this).addClass('settings-selected')
-            settings['map-renderer'] = $(this).attr('map-renderer-option')
-            
-            // Set preferCanvas based on renderer choice
-            map.options.preferCanvas = settings['map-renderer'] === 'canvas'
-            
-            reapplyPolylineRenderers('settings-map-renderer');
-            
-        } else if (settingsOption === 'polyline-renderer') {
-            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
-            $(this).addClass('settings-selected')
-            settings['polyline-renderer'] = $(this).attr('polyline-renderer-option')
-            reapplyPolylineRenderers('settings-polyline-renderer');
-
-        } else if (settingsOption === 'tile-update-when-idle') {
-            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
-            $(this).addClass('settings-selected')
-            settings['tile-update-when-idle'] = $(this).attr('tile-update-when-idle-option')
-            if (typeof tileLayer !== 'undefined' && tileLayer) {
-                tileLayer.options.updateWhenIdle = settings['tile-update-when-idle'] === 'true';
-            }
-
-        } else if (settingsOption === 'tile-update-when-zooming') {
-            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
-            $(this).addClass('settings-selected')
-            settings['tile-update-when-zooming'] = $(this).attr('tile-update-when-zooming-option')
-            if (typeof tileLayer !== 'undefined' && tileLayer) {
-                tileLayer.options.updateWhenZooming = settings['tile-update-when-zooming'] === 'true';
-            }
-
         } else if (settingsOption === 'bus-positioning') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['bus-positioning'] = $(this).attr('bus-positioning-option')
+
+        } else if (settingsOption === 'raster-sharpness') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['raster-sharpness'] = $(this).attr('raster-sharpness-option')
+            if (typeof applyRasterSharpnessSetting === 'function') {
+                applyRasterSharpnessSetting();
+            }
+
+        } else if (settingsOption === 'bus-marker-renderer') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['bus-marker-renderer'] = $(this).attr('bus-marker-renderer-option')
+            // Recreate markers so the new renderer implementation takes effect.
+            recreateAllBusMarkers();
 
         } else if (settingsOption === 'campus') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
@@ -2277,6 +2392,11 @@ function updateMarkerSize() {
     // Update duck marker sizes by changing CSS classes (only map markers, not settings examples)
     const duckSizeClass = duckSizeMap[settings['marker-size']];
     $('.bus-marker-wrapper .duck-marker').removeClass('small-marker medium-marker big-marker').addClass(duckSizeClass);
+
+    // Update WebGL bus markers
+    if (typeof busLayerManager !== 'undefined') {
+        busLayerManager.updateAllMarkerStyles();
+    }
 }
 
 function applyGuiScale(scale) {
@@ -2322,16 +2442,39 @@ function updateMarkerType() {
     // Update marker size examples to match the new marker type
     updateMarkerSizeExamples();
 
-    // Recreate all existing markers with the new marker type
-    for (const busName in busMarkers) {
+    recreateAllBusMarkers();
+}
+
+// Tear down and recreate every bus marker (used when the marker type or the
+// marker renderer implementation changes).
+function recreateAllBusMarkers() {
+    const busNames = Object.keys(busMarkers);
+    for (const busName of busNames) {
         // Remove the old marker from the map
-        map.removeLayer(busMarkers[busName]);
+        if (busMarkers[busName] && typeof busMarkers[busName].remove === 'function') {
+            busMarkers[busName].remove();
+        }
+        
+        // Clean up the proxy
+        if (typeof busLayerManager !== 'undefined') {
+            busLayerManager.removeProxy(busName);
+        }
         
         // Clear the marker from the busMarkers object
         delete busMarkers[busName];
-        
-        // Recreate the marker with the new type
-        plotBus(busName, true); // true for immediate update
+
+        // Recreate the marker with the new type. On failure, drop the busData
+        // entry so the busData ⟺ busMarkers invariant holds (it will be
+        // re-fetched on the next poll) instead of leaving a markerless bus.
+        try {
+            plotBus(busName, true); // true for immediate update
+        } catch (e) {
+            console.error('[recreateAllBusMarkers] could not recreate marker for', busName, ':', e);
+            if (!busMarkers[busName]) {
+                delete busETAs[busName];
+                delete busData[busName];
+            }
+        }
     }
 }
 
@@ -2376,7 +2519,7 @@ function updateNearestStop() {
         if (distance < thisClosestDistance) {
             thisClosestDistance = distance;
             closestStop = stop;
-            thisClosestStopId = stopId;
+            thisClosestStopId = Number(stopId);
         }
     }
 
@@ -2752,7 +2895,7 @@ function populateMeClosestStops() {
         
         const stopNameDiv = $(`<div class="name pointer">${stopsData[stopId].name}</div>`).click(() => { 
             clearPanoutFeedback();
-            flyToStop(stopId);
+            flyToStop(Number(stopId));
         })
         const stopDistDiv = $(`<div class="center" style="grid-row: span 2; color: var(--theme-color-lighter)">
             <div class="dist bold pointer justify-center">${Math.round((distance*1000*3.28)).toLocaleString()}ft</div>
@@ -3104,7 +3247,6 @@ function selectTheme(theme) {
 
     if (theme === 'confirm') {
         $('.theme-modal').fadeOut();
-        setDefaultSettings();
         settings['theme'] = selectedTheme;
         localStorage.setItem('settings', JSON.stringify(settings));
 

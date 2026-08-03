@@ -1,6 +1,6 @@
 function getRoutesServicingStop(stopId) {
     let routes = [];
-    let routesArray = Array.from(activeRoutes).filter(route => routesByCampusBase[selectedCampus].includes(route));
+    let routesArray = Array.from(activeRoutes).filter(route => getCampusRoutes(selectedCampus).includes(route));
     routesArray.forEach(route => {
         if (stopLists[route].includes(stopId)) {
             routes.push(route)
@@ -33,11 +33,11 @@ function getSoonestBus(stopId, route) {
             }
         })
     } catch (error) {
-        console.log('error in getSoonestBus');
-        console.log(error);
-        console.log(route);
-        console.log(stopId);
-        console.log(busesByRoutes);
+        console.error('error in getSoonestBus');
+        console.error(error);
+        console.error(route);
+        console.error(stopId);
+        console.error(busesByRoutes);
     }
     return [lowestBusName, lowestETA];
 }
@@ -48,7 +48,7 @@ function populateAllStops() {
     }
 
     $('.all-stops-inner').empty();
-    for (campus in stopsByCampus[selectedCampus]) {
+    for (const campus in stopsByCampus[selectedCampus]) {
         const stops = stopsByCampus[selectedCampus][campus];
         let campusHasBuses = false;
         const $allStopsGridElm = $('<div class="all-stops-grid mb-2rem select-none"></div>')

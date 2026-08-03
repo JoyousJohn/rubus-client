@@ -2398,7 +2398,7 @@ function displayRoute(routeData) {
                 stopsData[id].name.toLowerCase() === waypointName.toLowerCase()
             );
             
-            if (stopId && typeof popStopInfo === 'function') {
+            if (stopId) {
                 const stop = stopsData[stopId];
                 
                 // Fly to the stop location

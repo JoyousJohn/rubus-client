@@ -53,10 +53,10 @@ function updateStatusDisplay() {
     // Check RUBus WebSocket
     try {
         rubusWsText = getWebSocketStatusText(window.socket);
-        rubusWsConnected = window.socket.readyState === WebSocket.OPEN;
-        console.log('RUBus WebSocket state:', window.socket.readyState, 'Status:', rubusWsText);
+        rubusWsConnected = !!(window.socket && window.socket.readyState === WebSocket.OPEN);
+        console.log('RUBus WebSocket state:', window.socket && window.socket.readyState, 'Status:', rubusWsText);
     } catch (e) {
-        console.log('Error checking RUBus WebSocket:', e);
+        console.error('Error checking RUBus WebSocket:', e);
         rubusWsText = "Loading...";
     }
 
