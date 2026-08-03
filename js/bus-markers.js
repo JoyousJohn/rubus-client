@@ -477,11 +477,13 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
     // Custom DOM-mode markers update a DOM transform and step every rAF
     // frame; WebGL markers flush via the batched setData()/updateData()
     // source patch in bus-layer.js, which rebuilds the worker tile index per
-    // flush, so they step at ~30Hz. The "toggle-legacy-bus-animation" dev
-    // setting restores the old 10Hz stepping for every mode.
-    animateMarker.stepIntervalMs = (settings && settings['toggle-legacy-bus-animation'])
-        ? BUS_ANIMATION_STEP_MS
-        : ((marker && marker._rendererMode === 'maplibre') ? WEBGL_ANIMATION_STEP_MS : 0);
+    // flush, so they step at ~30Hz. The "bus-animation-rate" dev setting
+    // ("off"/"10hz"/"30hz") forces a fixed step for every mode, or keeps the
+    // per-mode defaults when "off".
+    animateMarker.stepIntervalMs = busAnimationStepIntervalMs(
+        marker && marker._rendererMode,
+        settings && settings['bus-animation-rate']
+    );
 
     // Register this bus's step with the shared animation loop (coalesces all
     // bus animations into a single requestAnimationFrame per frame).

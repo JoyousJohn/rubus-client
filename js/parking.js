@@ -307,7 +307,7 @@ function selectParkingCampus(parkingCampus) {
 
     // Save to settings
     settings['parking-campus'] = parkingCampus;
-    localStorage.setItem('settings', JSON.stringify(settings));
+    saveSettings();
 
     addParkingCampusRouteSelector();
 
@@ -476,7 +476,7 @@ function resetParkingSelection() {
 
     // Save to settings
     settings['parking-campus'] = false;
-    localStorage.setItem('settings', JSON.stringify(settings));
+    saveSettings();
 
     // Track analytics event
     sa_event('btn_press', {

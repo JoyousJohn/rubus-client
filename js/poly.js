@@ -21,7 +21,7 @@ function getForceShowRoutes() {
 
 function setForceShowRoutes(routes) {
     settings[FORCE_SHOW_SETTING] = routes.join(',');
-    localStorage.setItem('settings', JSON.stringify(settings));
+    saveSettings();
 }
 
 async function addForceShowPolyline(routeName) {

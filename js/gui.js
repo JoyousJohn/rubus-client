@@ -1041,7 +1041,7 @@ function updateColorMappingsSelection(selectedColor) {
     colorMappings[shownRoute] = selectedColor
     settings['colorMappings'] = {...(settings['colorMappings'] || {})}
     settings['colorMappings'][shownRoute] = selectedColor
-    localStorage.setItem('settings', JSON.stringify(settings))
+    saveSettings()
 
     // Update all existing markers for this route through the manager (every
     // marker type, both renderer modes).
@@ -1930,10 +1930,13 @@ const toggleSettings = [
     'toggle-force-show-polylines',
     'toggle-force-show-stops',
     'toggle-adaptive-pixel-ratio',
-    'toggle-legacy-bus-animation',
+    'toggle-low-performance-mode',
 ]
 
 let colorMappings;
+
+// defaultSettings lives in vars.js (loaded first) so every script sees the
+// current defaults; only user overrides are persisted by saveSettings().
 
 const defaultColorMappings = {
     'ee': '#fd0000', // bc red is also a color in color circle select, checkmark will appear double
@@ -1971,87 +1974,9 @@ const defaultColorMappings = {
     'cam': 'navy',
 }
 
-let defaultSettings = {
-    'font': 'PP Neue Montreal',
-    'marker-size': 'medium',
-    'gui-scale': 'normal',
-    'theme': 'beige-coffee',
-    'toggle-show-etas-in-seconds': false,
-    'toggle-dim-on-pan': true,
-    'toggle-select-closest-stop': true,
-    'toggle-hide-other-routes': false,
-    'toggle-stops-above-buses': false,
-    'toggle-offscreen-bus-indicators': false,
-    'toggle-offscreen-bus-indicators-above-gui': false,
-    'toggle-offscreen-bus-indicators-select-on-tap': false,
-    'toggle-always-show-second': false,
-    'toggle-show-bike-racks': false,
-    'toggle-disable-fireworks-on-open': false,
-    'toggle-settings-btn-end': false,
-    'toggle-show-buildings': true,
-    'toggle-show-alerts-other-campuses': false,
-    'toggle-show-out-of-service': false,
-    'campus': 'nb',
-    'parking-campus': false,
-    'marker-type': 'rubus', // 'rubus' or 'passio'
-
-    
-    // dev settings
-    'bus-positioning': 'exact',
-    'toggle-pause-update-marker': false,
-    'toggle-pause-passio-polling': false,
-    'toggle-show-stop-polygons': false,
-    'toggle-show-dev-options': false,
-    'raster-sharpness': 'bicubic',
-    'bus-marker-renderer': 'custom',
-    'toggle-show-bus-progress': false,
-    'toggle-show-bus-overtime-timer': false,
-    'toggle-show-bus-names': false,
-    'toggle-show-bus-path': false,
-    'toggle-launch-fireworks-button': false,
-    'toggle-show-campus-switcher': false,
-    'toggle-show-bus-log': false,
-    'toggle-show-extra-bus-data': false,
-    'toggle-show-stop-id': false,
-    'toggle-show-knight-mover': false,
-    'toggle-show-invalid-etas': false,
-    'toggle-show-rotation-points': false,
-    'toggle-show-rubus-ai': false,
-    'toggle-show-bus-quickness-breakdown': false,
-    'toggle-always-immediate-update': false,
-    'toggle-bypass-max-distance': false,
-    'toggle-show-sim': true,
-    'toggle-spoofing': false,
-    'toggle-show-chat': false,
-    'toggle-show-thinking': false,
-    'toggle-show-road-network': false,
-    'toggle-distances-line-on-focus': false,
-    'toggle-show-capacity': false,
-    'toggle-show-depot-poly': false,
-    'toggle-pause-stop-eta-updates': false,
-    'toggle-show-zoom-toast': false,
-    'toggle-hide-sim-popup': false,
-    'toggle-always-show-esc-hint': false,
-    'toggle-pause-bus-markers-on-pan': false,
-    'toggle-show-fps': false,
-    'toggle-adaptive-pixel-ratio': false,
-    'toggle-legacy-bus-animation': false,
-    'toggle-always-show-break-overdue': false,
-    'toggle-force-show-polylines': false,
-    'toggle-force-show-stops': true,
-    'force-show-polylines': '',
-    
-    // going to remove
-    'toggle-show-arrival-times': true,
-    'toggle-show-bus-speeds': true,
-    'colorMappings': {},
-    'colorMappingsMigrated': true
-
-};
-
 function setDefaultSettings () {
     settings = {...defaultSettings, 'colorMappings': {}};
-    localStorage.setItem('settings', JSON.stringify(settings));
+    saveSettings();
     $(`div.settings-option[font-option="PP Neue Montreal"]`).addClass('settings-selected')
     $(`div.settings-option[marker-size-option="medium"]`).addClass('settings-selected')
     $(`div.settings-option[gui-scale-option="normal"]`).addClass('settings-selected')
@@ -2075,11 +2000,43 @@ function loadSettingsFromStorage() {
         return null;
     }
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        return parsed;
+        // Stored settings only contain user overrides (saveSettings prunes
+        // defaults), so overlay them on the current defaults to get the full
+        // effective settings object.
+        const merged = {...defaultSettings, ...parsed};
+        if (!('colorMappings' in parsed)) delete merged['colorMappings'];
+        if (!('colorMappingsMigrated' in parsed)) delete merged['colorMappingsMigrated'];
+        return merged;
     }
     console.error('[settings] stored "settings" is not a plain object; resetting to defaults:', parsed);
     localStorage.removeItem('settings');
     return null;
+}
+
+// Persist settings to localStorage, keeping only the values the user actually
+// changed from the current defaults (same pattern as colorMappings). This
+// keeps the stored dict minimal so future default changes in code flow
+// through to existing clients automatically.
+function saveSettings() {
+    const stored = {};
+    for (const key in settings) {
+        if (key === 'colorMappings') {
+            const overrides = {};
+            for (const route in (settings[key] || {})) {
+                if (settings[key][route] !== defaultColorMappings[route]) {
+                    overrides[route] = settings[key][route];
+                }
+            }
+            stored[key] = overrides;
+        } else if (key === 'colorMappingsMigrated') {
+            // Always persist the migration flag once set so the one-time
+            // colorMappings migration doesn't re-run and wipe overrides.
+            stored[key] = settings[key];
+        } else if (settings[key] !== defaultSettings[key]) {
+            stored[key] = settings[key];
+        }
+    }
+    localStorage.setItem('settings', JSON.stringify(stored));
 }
 
 function updateSettings() {
@@ -2093,6 +2050,13 @@ function updateSettings() {
         if (settings['colorMappingsMigrated'] !== true) {
             settings['colorMappings'] = {};
             settings['colorMappingsMigrated'] = true;
+        }
+
+        // One-time migration: the old "legacy 10Hz bus animation" toggle is now
+        // a three-way rate selector ("off"/"10hz"/"30hz"); map a stored "on"
+        // to 10Hz so the previous choice is preserved.
+        if (settings['toggle-legacy-bus-animation'] === true) {
+            settings['bus-animation-rate'] = '10hz';
         }
 
         for (let key in defaultSettings) {
@@ -2119,7 +2083,7 @@ function updateSettings() {
         settings['colorMappings'] = overrides;
         colorMappings = {...defaultColorMappings, ...overrides};
 
-        localStorage.setItem('settings', JSON.stringify(settings))
+        saveSettings()
 
         document.documentElement.style.setProperty('--font-family', settings['font'] + ', sans-serif');
 
@@ -2154,6 +2118,7 @@ function updateSettings() {
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[raster-sharpness-option="${settings['raster-sharpness']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-marker-renderer-option="${settings['bus-marker-renderer']}"]`).addClass('settings-selected')
+    $(`div.settings-option[bus-animation-rate-option="${settings['bus-animation-rate']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 
     if (!$('.theme-modal').is(':visible')) {
@@ -2251,11 +2216,26 @@ function updateSettings() {
             }
 
         } else if (settingsOption === 'bus-marker-renderer') {
+            // Low Performance Mode forces the MapLibre WebGL renderer.
+            if (settings && settings['toggle-low-performance-mode'] && $(this).attr('bus-marker-renderer-option') !== 'maplibre') {
+                return;
+            }
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['bus-marker-renderer'] = $(this).attr('bus-marker-renderer-option')
             // Recreate markers so the new renderer implementation takes effect.
             recreateAllBusMarkers();
+
+        } else if (settingsOption === 'bus-animation-rate') {
+            // Low Performance Mode forces the fixed 10Hz rate.
+            if (settings && settings['toggle-low-performance-mode'] && $(this).attr('bus-animation-rate-option') !== '10hz') {
+                return;
+            }
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['bus-animation-rate'] = $(this).attr('bus-animation-rate-option')
+            // Reapply to in-flight animations (buses already animating).
+            applyBusAnimationRate(settings['bus-animation-rate'])
 
         } else if (settingsOption === 'campus') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
@@ -2280,7 +2260,7 @@ function updateSettings() {
         }
 
         if (settingsOption) { // don't reset ls if ls was cleared (that option doesn't currently have settingsOption). add some sort of attribute later as this will be in analytics
-            localStorage.setItem('settings', JSON.stringify(settings))
+            saveSettings()
         }
 
     })
@@ -2295,6 +2275,11 @@ function updateSettings() {
         }
 
     });
+
+    // Low Performance Mode forces bus focusing off; enforce at every settings load.
+    if (typeof applyLowPerformanceModeState === 'function') {
+        applyLowPerformanceModeState();
+    }
 
     if (!localStorage.getItem('uid')) {
         function genUid() {
@@ -2342,7 +2327,7 @@ $(document).ready(function() {
         $('#toggle-show-bus-log').prop('checked', false);
         $('.bus-log-wrapper').hide();
         settings['toggle-show-bus-log'] = false;
-        localStorage.setItem('settings', JSON.stringify(settings));
+        saveSettings();
     });
 
     // Handle window resize to adjust font option sizes
@@ -3248,7 +3233,7 @@ function selectTheme(theme) {
     if (theme === 'confirm') {
         $('.theme-modal').fadeOut();
         settings['theme'] = selectedTheme;
-        localStorage.setItem('settings', JSON.stringify(settings));
+        saveSettings();
 
         sa_event('theme_changed', {
             'theme': selectedTheme,

@@ -194,7 +194,7 @@ $(function(){
         const campus = $(this).data('campus');
         if (settings['campus'] === campus) { return; }
         settings['campus'] = campus;
-        localStorage.setItem('settings', JSON.stringify(settings));
+        saveSettings();
         campusChanged();
     });
 });
@@ -368,7 +368,7 @@ $(function() {
 	// Confirm handler
 	window.confirmCampusSelection = function() {
 		const isFirstTimeVisitor = !(settings && settings['campus']);
-		localStorage.setItem('settings', JSON.stringify(settings));
+		saveSettings();
 		// Map/buses/polylines are already live behind the modal for the initial
 		// campus. Only rebuild when the user confirmed a different campus.
 		if (settings['campus'] !== selectedCampus) {

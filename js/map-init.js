@@ -130,7 +130,10 @@ window.initMap = function() {
     let isFittingBounds = false;
     let returningToSavedView = false;
 
-    map.on('movestart dragstart', function() {
+    // Only dim while the user is actively dragging the map. Using just
+    // 'dragstart' (not 'movestart') keeps programmatic pans like panout's
+    // fitBounds(), flyTo(), and centerme from triggering the fade.
+    map.on('dragstart', function() {
         if (!isDesktop && settings['toggle-dim-on-pan'] !== false) {
             $('.bottom, .knight-mover, .info-top-right').css('opacity', '0.4');
         }

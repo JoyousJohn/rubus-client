@@ -126,11 +126,31 @@ let pauseRotationUpdating = false;
 // (0 = every rAF frame). Custom DOM-mode markers run at full frame rate;
 // WebGL markers flush through source.setData()/updateData(), which rebuilds
 // the worker tile index per flush, so they step at ~30Hz. The
-// "toggle-legacy-bus-animation" dev setting restores the old ~10Hz throttle
-// for every mode.
-const BUS_ANIMATION_STEP_MS = 100;   // legacy 10Hz step mode
-const WEBGL_ANIMATION_STEP_MS = 33;  // ~30Hz for WebGL renderer mode
+// "bus-animation-rate" dev setting ("off"/"10hz"/"30hz") forces a fixed step
+// for every mode, or keeps the per-mode defaults when "off".
+const BUS_ANIMATION_STEP_MS = 100;   // 10Hz step mode
+const WEBGL_ANIMATION_STEP_MS = 33;  // ~30Hz step mode
 const animationLastStep = {};
+
+// Map a "bus-animation-rate" setting to a step interval for a renderer mode.
+// "off" uses each mode's natural rate (custom DOM = every rAF frame, WebGL =
+// ~30Hz flush throttle); "10hz"/"30hz" force a fixed step for every mode.
+function busAnimationStepIntervalMs(rendererMode, rate) {
+    if (rate === '10hz') return BUS_ANIMATION_STEP_MS;
+    if (rate === '30hz') return WEBGL_ANIMATION_STEP_MS;
+    return rendererMode === 'maplibre' ? WEBGL_ANIMATION_STEP_MS : 0;
+}
+
+// Recompute the step interval for every in-flight animation after the
+// "bus-animation-rate" setting changes (includes currently animating buses).
+function applyBusAnimationRate(rate) {
+    for (const busName in animationFrames) {
+        const step = animationFrames[busName];
+        if (!step) continue;
+        const marker = busMarkers[busName];
+        step.stepIntervalMs = busAnimationStepIntervalMs(marker && marker._rendererMode, rate);
+    }
+}
 
 // Cancel a bus's in-flight animation (registered step + throttle timestamp)
 // so a re-registered animation doesn't inherit a stale step interval.

@@ -1506,6 +1506,54 @@ html[theme="light"] .settings-panel {
     cursor: pointer;
 }
 
+.bus-focusing-row.disabled {
+    opacity: 0.4;
+}
+
+.bus-names-row.disabled {
+    opacity: 0.4;
+}
+
+.offscreen-indicators-row.disabled {
+    opacity: 0.4;
+}
+
+.adaptive-pixel-ratio-row.disabled {
+    opacity: 0.4;
+}
+
+.settings-bus-marker-renderer.disabled,
+.settings-bus-animation.disabled {
+    opacity: 0.4;
+}
+
+.bus-focusing-row.disabled .settings-toggle,
+.bus-focusing-row.disabled .toggle-label,
+.bus-names-row.disabled .settings-toggle,
+.bus-names-row.disabled .toggle-label,
+.offscreen-indicators-row.disabled .settings-toggle,
+.offscreen-indicators-row.disabled .toggle-label,
+.adaptive-pixel-ratio-row.disabled .settings-toggle,
+.adaptive-pixel-ratio-row.disabled .toggle-label,
+.settings-bus-marker-renderer.disabled .settings-option,
+.settings-bus-animation.disabled .settings-option {
+    cursor: not-allowed;
+}
+
+.settings-notice-banner {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    margin: 0.75rem 0.75rem 0;
+    padding: 0.75rem 1rem;
+    background: #e74c3c;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.3rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 .force-show-stops-row {
     margin-bottom: 0.5rem;
 }

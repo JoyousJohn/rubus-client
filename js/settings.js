@@ -173,6 +173,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-show-bus-names':
             console.log(`Show bus names on map is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-bus-names'] = isChecked;
+
+            // Manually enabling bus names turns Low Performance Mode off.
+            if (isChecked && settings['toggle-low-performance-mode']) {
+                settings['toggle-low-performance-mode'] = false;
+                $('#toggle-low-performance-mode').prop('checked', false);
+                applyLowPerformanceModeState();
+            }
+
             updateBusNameTooltips();
             break;
 
@@ -214,6 +222,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-hide-other-routes':
             settings['toggle-hide-other-routes'] = isChecked;
             updateSegFocusNotice();
+
+            // Manually enabling bus focusing turns Low Performance Mode off.
+            if (isChecked && settings['toggle-low-performance-mode']) {
+                settings['toggle-low-performance-mode'] = false;
+                $('#toggle-low-performance-mode').prop('checked', false);
+                applyLowPerformanceModeState();
+            }
 
             if (!isChecked && popupBusName) {
                 // Remove distance line if it was showing
@@ -263,6 +278,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-offscreen-bus-indicators':
             settings['toggle-offscreen-bus-indicators'] = isChecked;
+
+            // Manually enabling offscreen indicators turns Low Performance Mode off.
+            if (isChecked && settings['toggle-low-performance-mode']) {
+                settings['toggle-low-performance-mode'] = false;
+                $('#toggle-low-performance-mode').prop('checked', false);
+                applyLowPerformanceModeState();
+            }
+
             if (isChecked) {
                 $('.offscreen-indicators-dependent').removeClass('disabled');
             } else {
@@ -511,22 +534,18 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-adaptive-pixel-ratio':
             settings['toggle-adaptive-pixel-ratio'] = isChecked;
+
+            // Manually disabling adaptive pixel ratio turns Low Performance Mode off.
+            if (!isChecked && settings['toggle-low-performance-mode']) {
+                settings['toggle-low-performance-mode'] = false;
+                $('#toggle-low-performance-mode').prop('checked', false);
+                applyLowPerformanceModeState();
+            }
+
             if (isChecked) {
                 if (typeof startAdaptivePixelRatio === 'function') startAdaptivePixelRatio();
             } else {
                 if (typeof stopAdaptivePixelRatio === 'function') stopAdaptivePixelRatio();
-            }
-            break;
-
-        case 'toggle-legacy-bus-animation':
-            settings['toggle-legacy-bus-animation'] = isChecked;
-            // Revert to (or leave) the previous 10Hz step mode for all buses,
-            // including in-flight animations. When off, all markers step
-            // every rAF frame.
-            for (const busName in animationFrames) {
-                const step = animationFrames[busName];
-                if (!step) continue;
-                step.stepIntervalMs = isChecked ? BUS_ANIMATION_STEP_MS : 0;
             }
             break;
 
@@ -577,12 +596,31 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-low-performance-mode':
+            settings['toggle-low-performance-mode'] = isChecked;
+            if (isChecked) {
+                // Bus focusing is disabled while Low Performance Mode is on, so
+                // undo any active focus first.
+                settings['toggle-hide-other-routes'] = false;
+                updateSegFocusNotice();
+                if (popupBusName) {
+                    removeDistanceLineOnFocus();
+                    showAllPolylines();
+                    showAllBuses();
+                    map.flyTo(savedCenter, savedZoom, {animate: false});
+                    savedCenter = null;
+                    savedZoom = null;
+                }
+            }
+            applyLowPerformanceModeState();
+            break;
+
         default:
             console.log(`Unknown toggle changed: ${toggleId}`);
             break;
     }
 
-    localStorage.setItem('settings', JSON.stringify(settings));
+    saveSettings();
 
 });
 
@@ -778,6 +816,125 @@ function updateSegFocusNotice() {
 
     notice.style.display = (segEnabled && !focusEnabled) ? '' : 'none';
 }
+
+// Low Performance Mode and bus focusing are mutually exclusive. When Low
+// Performance Mode is on, the bus focusing toggle is forced off and grayed
+// out, and the bus marker renderer is forced to the MapLibre WebGL mode
+// (recreating markers so the switch takes effect). Enabling bus focusing
+// (when possible) switches Low Performance Mode off.
+function applyLowPerformanceModeState() {
+    const lowPerfOn = !!(settings && settings['toggle-low-performance-mode']);
+    const $focusInput = $('#toggle-hide-other-routes');
+
+    if (lowPerfOn) {
+        settings['toggle-hide-other-routes'] = false;
+        if ($focusInput.length) {
+            $focusInput.prop('checked', false).prop('disabled', true);
+        }
+        $('.bus-focusing-row').addClass('disabled');
+
+        // Force the MapLibre WebGL marker renderer over the custom DOM one.
+        const rendererChanged = settings['bus-marker-renderer'] !== 'maplibre';
+        settings['bus-marker-renderer'] = 'maplibre';
+        if (rendererChanged && typeof recreateAllBusMarkers === 'function') {
+            recreateAllBusMarkers();
+        }
+        $('.settings-bus-marker-renderer .settings-option').removeClass('settings-selected');
+        $('.settings-bus-marker-renderer .settings-option[bus-marker-renderer-option="maplibre"]').addClass('settings-selected');
+        $('.settings-bus-marker-renderer').addClass('disabled');
+
+        // Force the fixed 10Hz animation step (more performant than the WebGL
+        // ~30Hz default). Reapply to in-flight animations so it takes effect now.
+        settings['bus-animation-rate'] = '10hz';
+        if (typeof applyBusAnimationRate === 'function') {
+            applyBusAnimationRate('10hz');
+        }
+        $('.settings-bus-animation .settings-option').removeClass('settings-selected');
+        $('.settings-bus-animation .settings-option[bus-animation-rate-option="10hz"]').addClass('settings-selected');
+        $('.settings-bus-animation').addClass('disabled');
+
+        // Turn off bus name tooltips (per-marker DOM/GeoJSON labels).
+        settings['toggle-show-bus-names'] = false;
+        if (typeof updateBusNameTooltips === 'function') {
+            updateBusNameTooltips();
+        }
+        $('#toggle-show-bus-names').prop('checked', false).prop('disabled', true);
+        $('.bus-names-row').addClass('disabled');
+
+        // Turn off offscreen bus indicators (per-bus edge badges).
+        settings['toggle-offscreen-bus-indicators'] = false;
+        $('.offscreen-indicators-dependent').addClass('disabled');
+        if (typeof requestOffScreenUpdate === 'function') {
+            requestOffScreenUpdate();
+        }
+        $('#toggle-offscreen-bus-indicators').prop('checked', false).prop('disabled', true);
+        $('.offscreen-indicators-row').addClass('disabled');
+
+        // Turn on adaptive pixel ratio (self-tunes the render DPR down under load).
+        settings['toggle-adaptive-pixel-ratio'] = true;
+        if (typeof startAdaptivePixelRatio === 'function') {
+            startAdaptivePixelRatio();
+        }
+        $('#toggle-adaptive-pixel-ratio').prop('checked', true).prop('disabled', true);
+        $('.adaptive-pixel-ratio-row').addClass('disabled');
+
+        saveSettings();
+    } else {
+        if ($focusInput.length) {
+            $focusInput.prop('disabled', false);
+        }
+        $('.bus-focusing-row').removeClass('disabled');
+        $('.settings-bus-marker-renderer').removeClass('disabled');
+        $('.settings-bus-animation').removeClass('disabled');
+        $('.bus-names-row').removeClass('disabled');
+        $('#toggle-show-bus-names').prop('disabled', false);
+        $('.offscreen-indicators-row').removeClass('disabled');
+        $('#toggle-offscreen-bus-indicators').prop('disabled', false);
+        $('.adaptive-pixel-ratio-row').removeClass('disabled');
+        $('#toggle-adaptive-pixel-ratio').prop('disabled', false);
+        // Restore the offscreen dependent rows from the (now-current) setting.
+        if (settings['toggle-offscreen-bus-indicators']) {
+            $('.offscreen-indicators-dependent').removeClass('disabled');
+        } else {
+            $('.offscreen-indicators-dependent').addClass('disabled');
+        }
+    }
+    updateSegFocusNotice();
+}
+
+// Sticky banner at the top of the settings panel explaining why a control is
+// locked (Low Performance Mode is forcing it off). Auto-dismisses.
+let settingsNoticeTimer = null;
+
+function showSettingsNotice(message) {
+    let $banner = $('.settings-notice-banner');
+    if (!$banner.length) {
+        $banner = $('<div class="settings-notice-banner"></div>').prependTo('.settings-panel');
+    }
+    clearTimeout(settingsNoticeTimer);
+    $banner.stop(true, true).html(message).slideDown(150);
+    settingsNoticeTimer = setTimeout(() => {
+        $banner.stop(true, true).slideUp(200);
+    }, 3500);
+}
+
+// Intercept clicks on the controls Low Performance Mode has locked, so the user
+// gets feedback instead of a dead control. The inputs/options themselves are
+// already guarded (disabled input, early-return guards), so nothing changes.
+$(document).on('click',
+    '.bus-focusing-row.disabled .settings-toggle, ' +
+    '.bus-names-row.disabled .settings-toggle, ' +
+    '.offscreen-indicators-row.disabled .settings-toggle, ' +
+    '.adaptive-pixel-ratio-row.disabled .settings-toggle, ' +
+    '.settings-bus-marker-renderer.disabled .settings-option:not(.settings-selected), ' +
+    '.settings-bus-animation.disabled .settings-option:not(.settings-selected)',
+    function(e) {
+        if (!settings || !settings['toggle-low-performance-mode']) return;
+        e.preventDefault();
+        e.stopPropagation();
+        showSettingsNotice('Low Performance Mode is enabled. Disable it to change this option.');
+    }
+);
 
 updateSegFocusNotice();
 
@@ -1076,8 +1233,10 @@ $(function() {
         settingsViewportAttached = true;
         settingsVvpHandler = () => requestAnimationFrame(adjustSettingsFloatingBar);
         if (window.visualViewport) {
+            // Only the resize event tracks keyboard geometry. The vvp scroll
+            // event fires constantly while scrolling the list (momentum,
+            // rubber-banding) and caused the floating bar to drift up/down.
             window.visualViewport.addEventListener('resize', settingsVvpHandler);
-            window.visualViewport.addEventListener('scroll', settingsVvpHandler);
         }
         window.addEventListener('resize', settingsVvpHandler);
     };
@@ -1087,7 +1246,6 @@ $(function() {
         settingsViewportAttached = false;
         if (window.visualViewport && settingsVvpHandler) {
             window.visualViewport.removeEventListener('resize', settingsVvpHandler);
-            window.visualViewport.removeEventListener('scroll', settingsVvpHandler);
         }
         if (settingsVvpHandler) {
             window.removeEventListener('resize', settingsVvpHandler);
@@ -1166,7 +1324,7 @@ $(function() {
                 showTileStatus('<i class="fa-solid fa-circle-xmark mr-0p5rem"></i>Invalid tile URL pattern', true);
             }
         }
-        localStorage.setItem('settings', JSON.stringify(settings));
+        saveSettings();
 
         // Animate apply button feedback
         const $btn = $('#apply-custom-tile-url-btn');

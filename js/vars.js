@@ -9,6 +9,90 @@ let forceImmediateUpdate = false;
 // Prevent overlapping network fetches
 let busFetchInProgress = false;
 
+// Current defaults for every setting. Only user overrides are persisted to
+// localStorage (see saveSettings()), so this object is the single source of
+// truth for default behavior and can be changed freely without old clients
+// being stuck on stale stored values.
+const defaultSettings = {
+    'font': 'PP Neue Montreal',
+    'marker-size': 'medium',
+    'gui-scale': 'normal',
+    'theme': 'beige-coffee',
+    'toggle-show-etas-in-seconds': false,
+    'toggle-dim-on-pan': true,
+    'toggle-select-closest-stop': true,
+    'toggle-hide-other-routes': false,
+    'toggle-stops-above-buses': false,
+    'toggle-offscreen-bus-indicators': false,
+    'toggle-offscreen-bus-indicators-above-gui': false,
+    'toggle-offscreen-bus-indicators-select-on-tap': false,
+    'toggle-always-show-second': false,
+    'toggle-show-bike-racks': false,
+    'toggle-disable-fireworks-on-open': false,
+    'toggle-settings-btn-end': false,
+    'toggle-show-buildings': true,
+    'toggle-show-alerts-other-campuses': false,
+    'toggle-show-out-of-service': false,
+    'campus': 'nb',
+    'parking-campus': false,
+    'marker-type': 'rubus', // 'rubus' or 'passio'
+
+    
+    // dev settings
+    'bus-positioning': 'exact',
+    'toggle-pause-update-marker': false,
+    'toggle-pause-passio-polling': false,
+    'toggle-show-stop-polygons': false,
+    'toggle-show-dev-options': false,
+    'raster-sharpness': 'bicubic',
+    'bus-marker-renderer': 'maplibre',
+    'toggle-show-bus-progress': false,
+    'toggle-show-bus-overtime-timer': false,
+    'toggle-show-bus-names': false,
+    'toggle-show-bus-path': false,
+    'toggle-launch-fireworks-button': false,
+    'toggle-show-campus-switcher': false,
+    'toggle-show-bus-log': false,
+    'toggle-show-extra-bus-data': false,
+    'toggle-show-stop-id': false,
+    'toggle-show-knight-mover': false,
+    'toggle-show-invalid-etas': false,
+    'toggle-show-rotation-points': false,
+    'toggle-show-rubus-ai': false,
+    'toggle-show-bus-quickness-breakdown': false,
+    'toggle-always-immediate-update': false,
+    'toggle-bypass-max-distance': false,
+    'toggle-show-sim': true,
+    'toggle-spoofing': false,
+    'toggle-show-chat': false,
+    'toggle-show-thinking': false,
+    'toggle-show-road-network': false,
+    'toggle-distances-line-on-focus': false,
+    'toggle-show-capacity': false,
+    'toggle-show-depot-poly': false,
+    'toggle-pause-stop-eta-updates': false,
+    'toggle-show-zoom-toast': false,
+    'toggle-hide-sim-popup': false,
+    'toggle-always-show-esc-hint': false,
+    'toggle-pause-bus-markers-on-pan': false,
+    'toggle-show-fps': false,
+    'toggle-adaptive-pixel-ratio': false,
+    'toggle-low-performance-mode': false,
+    'bus-animation-rate': 'off',
+    'toggle-always-show-break-overdue': false,
+    'toggle-force-show-polylines': false,
+    'toggle-force-show-stops': true,
+    'force-show-polylines': '',
+    'custom-tile-url': '',
+    
+    // going to remove
+    'toggle-show-arrival-times': true,
+    'toggle-show-bus-speeds': true,
+    'colorMappings': {},
+    'colorMappingsMigrated': true
+
+};
+
 // Global settings object, loaded synchronously so every script (including
 // ready-handler code in campus.js/search.js that runs before pre.js loads
 // settings) sees the real stored values. Mirrors loadSettingsFromStorage().
@@ -18,7 +102,9 @@ try {
     if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-            settings = parsed;
+            settings = {...defaultSettings, ...parsed};
+            if (!('colorMappings' in parsed)) delete settings['colorMappings'];
+            if (!('colorMappingsMigrated' in parsed)) delete settings['colorMappingsMigrated'];
         } else {
             console.error('[settings] stored "settings" is not a plain object; starting empty:', parsed);
             localStorage.removeItem('settings');

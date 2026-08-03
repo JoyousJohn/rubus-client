@@ -467,7 +467,7 @@ $(document).ready(function() {
             $('.buildings-btn').removeClass('active');
             
             settings['toggle-show-buildings'] = false;
-            localStorage.setItem('settings', JSON.stringify(settings));
+            saveSettings();
             
             sa_event('btn_press', {
                 'btn': 'buildings_toggle',
@@ -482,7 +482,7 @@ $(document).ready(function() {
             
             // Save state to settings
             settings['toggle-show-buildings'] = true;
-            localStorage.setItem('settings', JSON.stringify(settings));
+            saveSettings();
             
             sa_event('btn_press', {
                 'btn': 'buildings_toggle',

@@ -1124,24 +1124,6 @@
             <div class="text-1p6rem mb-0p25rem bold-500">GUI</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem settings-section-accent">
                 <div class="settings- flex justify-between">
-                    <div class="settings-heading flex flex-1 align-center span-i-oos">Show Out of Service Buses<span class="span-i pointer select-none">i</span></div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-show-out-of-service" class="toggle-input">
-                        <label for="toggle-show-out-of-service" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="oos-explain none ml-0p5rem text-1p3rem dimgray">When enabled, buses that are out of service, at the depot, or deadheading will appear in stop info panels.</div>
-                <script>
-                $('.span-i-oos').click(function() {
-                    const $el = $('.oos-explain');
-                    if ($el.is(':animated')) return;
-                    $el.slideToggle();
-                })
-                </script>
-
-                <div class="settings- flex justify-between">
                     <div class="settings-heading flex flex-1 align-center span-i-seconds">Show ETAs in Seconds<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
                         <input type="checkbox" id="toggle-show-etas-in-seconds" class="toggle-input">
@@ -1154,6 +1136,24 @@
                 <script>
                 $('.span-i-seconds').click(function() {
                     const $el = $('.seconds-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                </script>
+
+                <div class="flex justify-between low-performance-row">
+                    <div class="settings-heading flex flex-1 align-center span-i-low-performance">Low Performance Mode<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-low-performance-mode" class="toggle-input">
+                        <label for="toggle-low-performance-mode" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="low-performance-explain none ml-0p5rem text-1p3rem dimgray">Reduces rendering load by changing several settings at once: animates a lower quality marker at a lower frame rate, enables adaptive pixel ratio, and turns off bus focusing, bus name labels, and offscreen bus indicators.</div>
+                <script>
+                $('.span-i-low-performance').click(function() {
+                    const $el = $('.low-performance-explain');
                     if ($el.is(':animated')) return;
                     $el.slideToggle();
                 })
@@ -1254,7 +1254,7 @@
             <div class="text-1p6rem mb-0p25rem bold-500">MAP</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem settings-section-accent">
 
-                <div class="flex justify-between">
+                <div class="flex justify-between offscreen-indicators-row">
                     <div class="settings-heading flex flex-1 align-center">
                         <span class="span-i-offscreen-indicators pointer">Offscreen Bus Indicators</span>
                         <span class="span-i pointer select-none span-i-offscreen-indicators">i</span>
@@ -1351,7 +1351,25 @@
             <div class="text-1p6rem mb-0p25rem bold-500">BUSES</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem settings-section-accent">
                 
-                <div class="flex justify-between">
+                <div class="settings- flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-oos">Show Out of Service Buses<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-out-of-service" class="toggle-input">
+                        <label for="toggle-show-out-of-service" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="oos-explain none ml-0p5rem text-1p3rem dimgray">When enabled, buses that are out of service, at the depot, or deadheading will appear in stop info panels.</div>
+                <script>
+                $('.span-i-oos').click(function() {
+                    const $el = $('.oos-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                </script>
+
+                <div class="flex justify-between bus-focusing-row">
                     <div class="settings-heading flex flex-1 align-center span-i-focus">Bus Focusing<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
                         <input type="checkbox" id="toggle-hide-other-routes" class="toggle-input">
@@ -1527,7 +1545,7 @@
                 })
                 </script>
 
-                <div class="flex justify-between">
+                <div class="flex justify-between bus-names-row">
                     <div class="settings-heading">Bus Names on Map</div>
                     <div class="settings-toggle">
                         <input type="checkbox" id="toggle-show-bus-names" class="toggle-input">
@@ -2018,7 +2036,7 @@
                         </div>
                     </div>
 
-                    <div class="flex justify-between">
+                    <div class="flex justify-between adaptive-pixel-ratio-row">
                         <div class="settings-heading">Adaptive Pixel Ratio</div>
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-adaptive-pixel-ratio" class="toggle-input">
@@ -2028,13 +2046,12 @@
                         </div>
                     </div>
 
-                    <div class="flex justify-between">
-                        <div class="settings-heading">Legacy 10Hz Bus Animation</div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-legacy-bus-animation" class="toggle-input">
-                            <label for="toggle-legacy-bus-animation" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
+                    <div class="settings-bus-animation">
+                        <div class="settings-heading">BUS ANIMATION RATE</div>
+                        <div class="settings-options grid grid-cols-3">
+                            <div class="settings-option" settings-option="bus-animation-rate" bus-animation-rate-option="off">Full Natural</div>
+                            <div class="settings-option" settings-option="bus-animation-rate" bus-animation-rate-option="10hz">10Hz</div>
+                            <div class="settings-option" settings-option="bus-animation-rate" bus-animation-rate-option="30hz">30Hz</div>
                         </div>
                     </div>
 

@@ -128,7 +128,7 @@ function _prEvaluatePan() {
         _prStep(1);
     }
 
-    _prToast('PIXEL RATIO ' + self.currentRatio.toFixed(2) + ' | ' + Math.round(1000 / median) + ' FPS');
+    _prToast('PIXEL RATIO ' + self.currentRatio.toFixed(2));
 }
 
 function startAdaptivePixelRatio() {
