@@ -866,6 +866,21 @@ function getEasternHourAndDayOfWeek() {
     };
 }
 
+// Knight Mover stops accepting calls 15 minutes before it leaves service so the
+// driver can finish the active trip(s) already in progress. Instead of hardcoding
+// the call cutoff, subtract this buffer from the service end hour dynamically so
+// the "accepts calls until" text stays correct if the schedule ever changes.
+const KNIGHT_MOVER_CALL_BUFFER_MIN = 15;
+
+function formatKnightMoverCallCutoff(serviceEndHour) {
+    const totalMinutes = serviceEndHour * 60 - KNIGHT_MOVER_CALL_BUFFER_MIN;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const suffix = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours % 12 === 0 ? 12 : hours % 12;
+    return `${displayHour}:${String(minutes).padStart(2, '0')}${suffix}`;
+}
+
 function checkMinRoutes() {
 
     console.log("Checking min routes")
@@ -890,39 +905,45 @@ function checkMinRoutes() {
 
     if (isSpringBreak) {
         console.log("Spring break detected!");
-        const knightMoverHoursText = `Knight Mover accepts calls until 10:00AM<br><span style="color: #4babd7ff">(${currentYear} spring recess special hours)</span>`;
-        $('#knight-mover-hours').html(knightMoverHoursText);
         const knightMoverStartHour = 12;
         const knightMoverEndHour = 10;
+        $('#knight-mover-hours').html(
+            `Knight Mover accepts calls until ${formatKnightMoverCallCutoff(knightMoverEndHour)}<br>` +
+            `<span style="color: #4babd7ff">(${currentYear} spring recess special hours)</span>`
+        );
         if (hour >= knightMoverStartHour || hour < knightMoverEndHour) {
             isKnightMoverActive = true;
         }
     } else if (isSummer) {
         // Summer hours valid until 8/25:
-        // Weekdays (Mon=1..Fri=5 morning): Midnight to 8:00 AM (0..7)
+        // Weekdays (Mon=1..Fri=5 morning): Midnight to 7:00 AM (0..6)
         // Weekends/Holidays (Fri night, Sat, Sun): 7:00 PM (19) to 10:00 AM (9)
         const isWeekendOrHoliday = (dayOfWeek === 0 || dayOfWeek === 6);
         if (isWeekendOrHoliday) {
             // 7:00 PM to 10:00 AM
-            if (hour >= 19 || hour < 10) {
+            const summerWeekendEndHour = 10;
+            if (hour >= 19 || hour < summerWeekendEndHour) {
                 isKnightMoverActive = true;
             }
-            $('#knight-mover-hours').html('Knight Mover accepts calls until 10:00AM');
+            $('#knight-mover-hours').html(`Knight Mover accepts calls until ${formatKnightMoverCallCutoff(summerWeekendEndHour)}`);
         } else {
-            // Weekday: Midnight to 8:00 AM
+            // Weekday: Midnight to 7:00 AM
             const summerWeekdayEndHour = 7;
             if (hour >= 0 && hour < summerWeekdayEndHour) {
                 isKnightMoverActive = true;
             }
-            $('#knight-mover-hours').html(`Knight Mover accepts calls until ${summerWeekdayEndHour}:00AM`);
+            $('#knight-mover-hours').html(`Knight Mover accepts calls until ${formatKnightMoverCallCutoff(summerWeekdayEndHour)}`);
         }
     } else {
         // Regular semester schedule
-        // Fri–Sun: no Knight Mover; Mon–Thu overnight: 3:00–5:59 AM
-        if (dayOfWeek >= 1 && dayOfWeek <= 4 && hour >= 3 && hour < 6) {
+        // Fri–Sun: no Knight Mover; Mon–Thu overnight: 3:00 AM to service end.
+        // Service runs until 6:00 AM; the call cutoff (5:45 AM) is derived from
+        // that via the 15-minute buffer so the text is never hardcoded.
+        const knightMoverEndHour = 6;
+        if (dayOfWeek >= 1 && dayOfWeek <= 4 && hour >= 3 && hour < knightMoverEndHour) {
             isKnightMoverActive = true;
         }
-        $('#knight-mover-hours').html('Knight Mover accepts calls until 5:45AM');
+        $('#knight-mover-hours').html(`Knight Mover accepts calls until ${formatKnightMoverCallCutoff(knightMoverEndHour)}`);
     }
 
     // console.log(`[KnightMover Debug] active:${isKnightMoverActive}, campus:${selectedCampus}, appStyle:${appStyle}, userSettingOverride:${settings['toggle-show-knight-mover']}, time:${currentMonth+1}/${currentDay}/${currentYear} ${hour}:00, day:${dayOfWeek}`);
