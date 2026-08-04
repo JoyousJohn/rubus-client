@@ -635,10 +635,14 @@ html, body {
     line-height: 0.7;
 }
 
-.info-extra {
-    /* Keep the bus name at a stable y-position when the conditional stopped
-       label and its octagon are hidden. */
-    min-height: 1.5rem;
+.info-campuses-serviced {
+    font-size: 1.2rem;
+    color: var(--theme-extra);
+    text-align: center;
+}
+
+.info-campuses-serviced b {
+    font-weight: 600;
 }
 
 .info-overdue-break {

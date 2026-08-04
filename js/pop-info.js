@@ -3,6 +3,53 @@ let stoppedForInterval;
 let stoppedForHideTimeout;
 let stoppedOctagonHideTimeout;
 
+// Build the ordered list of campuses the bus's route services, starting from
+// the bus's current/next stop so the sequence reflects where it's going next.
+// Consecutive stops on the same campus collapse into one entry (e.g. an LX at
+// the College Ave Student Center -> "CA -> Livi"). Since routes are loops, a
+// trailing campus that matches the first is dropped (the bus wraps back to it).
+function getBusServicedCampuses(busName) {
+    const data = busData[busName];
+    if (!data || !data.route) return [];
+    const routeStops = stopLists[data.route];
+    if (!routeStops || routeStops.length === 0 || typeof stopsData === 'undefined') return [];
+
+    let startStopId = data.next_stop;
+    if (data.at_stop && data.stopId != null) {
+        let current = data.stopId;
+        if (Array.isArray(current)) {
+            current = routeStops.indexOf(current[1]) !== -1 ? current[1] : current[0];
+        }
+        startStopId = current;
+    }
+    if (startStopId == null) return [];
+
+    let startIndex = routeStops.indexOf(startStopId);
+    if (startIndex === -1) startIndex = routeStops.indexOf(Number(startStopId));
+    if (startIndex === -1) startIndex = 0;
+
+    const campuses = [];
+    let lastCampus = null;
+    // Local copy so 'Douglas' is shortened to 'Doug' here only; the shared
+    // campusShortNamesMappings used elsewhere keeps 'Douglas'.
+    const campusNames = { ...campusShortNamesMappings, 'douglas': 'Doug' };
+    for (let i = 0; i < routeStops.length; i++) {
+        const stop = stopsData[routeStops[(startIndex + i) % routeStops.length]];
+        if (!stop) continue;
+        const short = campusNames[stop.campus];
+        if (!short) continue;
+        if (short !== lastCampus) {
+            campuses.push(short);
+            lastCampus = short;
+        }
+    }
+
+    if (campuses.length > 1 && campuses[campuses.length - 1] === campuses[0]) {
+        campuses.pop();
+    }
+    return campuses;
+}
+
 let savedCenter;
 let savedZoom;
 
@@ -109,17 +156,22 @@ function popInfo(busName, resetCampusFontSize) {
     
     let busNameElmText = data.busName
     
-    if (resetCampusFontSize === true) {
-        $('.info-campuses-mid').css('font-size', '2.5rem');
-    }
     const campusesElement = $('.info-campuses-mid');
-    campusesElement.text(campusMappings[data.route]);
+    const campusText = campusMappings[data.route];
+    if (resetCampusFontSize === true || campusText) {
+        campusesElement.css('font-size', '2.5rem');
+    }
+    // Hide when there's no campus mapping so the empty element's flex gap
+    // doesn't shift the route letter off-center.
+    campusesElement.text(campusText).toggle(!!campusText);
     
-    setTimeout(() => {
-        while (campusesElement[0].scrollWidth > campusesElement[0].clientWidth && parseInt(campusesElement.css('font-size')) > 12) {
-            campusesElement.css('font-size', (parseInt(campusesElement.css('font-size')) - 1) + 'px');
-        }  
-    }, 0);    
+    if (campusText) {
+        setTimeout(() => {
+            while (campusesElement[0].scrollWidth > campusesElement[0].clientWidth && parseInt(campusesElement.css('font-size')) > 12) {
+                campusesElement.css('font-size', (parseInt(campusesElement.css('font-size')) - 1) + 'px');
+            }  
+        }, 0);    
+    }
 
     if (showBusSpeeds && !Number.isNaN(parseInt(data.visualSpeed))) {
         $('.info-speed-mid').text(parseInt(data.visualSpeed));
@@ -129,6 +181,12 @@ function popInfo(busName, resetCampusFontSize) {
         $('.info-speed-wrapper').css('visibility', 'hidden');
     }
     $('.info-name-mid').text(busNameElmText);
+    const servicedCampuses = getBusServicedCampuses(busName);
+    // Two campuses means the bus shuttles back and forth between them, so use
+    // a left-right arrow; otherwise chain the sequence with a right arrow.
+    const campusesArrow = servicedCampuses.length === 2 ? ' \u2194 ' : ' \u2192 ';
+    const campusesHtml = servicedCampuses.map((seg, i) => i === 0 ? `<b>${seg}</b>` : seg).join(campusesArrow);
+    $('.info-campuses-serviced').html(campusesHtml).toggle(servicedCampuses.length > 0);
     $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + data.capacity + '%</span> capacity');
 
     if (busData[busName].oos) {
