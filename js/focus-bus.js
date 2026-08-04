@@ -504,7 +504,6 @@ function startStoppedForTimer(busName) {
     clearTimeout(stoppedForHideTimeout);
     stoppedForHideTimeout = null;
     $('.info-stopped-for').css('opacity', '').css('transition', '');
-    $('.info-name-mid').css('transition', 'none').css('transform', 'none'); // defensive: no name transforms are used anymore
 
     const arrivedDatetime = new Date(busData[busName].timeArrived);
     const now = new Date()//.toISOString();

@@ -63,6 +63,98 @@ function getBusServicedCampuses(busName) {
     return { campuses, approachingNewCampus };
 }
 
+const busNameInkCache = new Map();
+
+// Vertically nudge the bus number so its rendered ink (not its em/line box) is
+// pixel-centered against the route. The ink is measured by pixel-scanning the
+// rendered glyphs on an offscreen canvas, since the browser doesn't expose ink
+// bounds through the DOM. Digits share metrics, so the correction is cached
+// per (text, font).
+function centerBusNameInk() {
+    const $name = $('.info-name-mid');
+    const text = $name.text();
+    if (!$name.length || !text) return;
+    const style = getComputedStyle($name[0]);
+    const font = style.font || `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const key = text + '\u0000' + font;
+    let offset = busNameInkCache.get(key);
+    if (offset === undefined) {
+        // Measure against the real font; the fallback font has different
+        // metrics and would cache a wrong correction. popInfo re-runs on the
+        // poll cycle, so this resolves itself once the font is loaded.
+        if (typeof document.fonts !== 'undefined' && document.fonts.check && !document.fonts.check(font)) {
+            return;
+        }
+        offset = computeInkCenteringOffset(text, font, parseFloat(style.fontSize));
+        busNameInkCache.set(key, offset);
+    }
+    $name.css('transform', offset ? `translateY(${Math.round(offset)}px)` : '');
+}
+
+function computeInkCenteringOffset(text, fontShorthand, fontSizePx) {
+    const canvas = computeInkCenteringOffset._canvas || (computeInkCenteringOffset._canvas = document.createElement('canvas'));
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.font = fontShorthand;
+    const m = ctx.measureText(text);
+
+    const fbAscent = (typeof m.fontBoundingBoxAscent === 'number' && m.fontBoundingBoxAscent) ? m.fontBoundingBoxAscent : m.actualBoundingBoxAscent;
+    const fbDescent = (typeof m.fontBoundingBoxDescent === 'number' && m.fontBoundingBoxDescent) ? m.fontBoundingBoxDescent : m.actualBoundingBoxDescent;
+
+    // Pixel-scan the rendered ink instead of trusting measureText() ink bounds,
+    // which can disagree with actual rendering (hinting/subpixel AA). Draw with
+    // a known baseline so the ink's top/bottom rows map straight to
+    // ascent/descent.
+    const pad = 10;
+    const baselineY = Math.ceil(fbAscent) + pad;
+    const width = Math.ceil(m.width) + pad * 2 + 4;
+    const height = Math.ceil(fbAscent + fbDescent) + pad * 2 + 4;
+    canvas.width = width;
+    canvas.height = height;
+    ctx.font = fontShorthand; // resizing the canvas resets its context state
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#000';
+    ctx.fillText(text, pad, baselineY);
+
+    const data = ctx.getImageData(0, 0, width, height).data;
+    let inkTop = -1;
+    let inkBottom = -1;
+    outer: for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            if (data[(y * width + x) * 4 + 3] !== 0) { inkTop = y; break outer; }
+        }
+    }
+    outer2: for (let y = height - 1; y >= 0; y--) {
+        for (let x = 0; x < width; x++) {
+            if (data[(y * width + x) * 4 + 3] !== 0) { inkBottom = y; break outer2; }
+        }
+    }
+    if (inkTop === -1) return 0; // nothing rendered — shouldn't happen
+
+    const inkAscent = baselineY - inkTop;
+    const inkDescent = inkBottom - baselineY;
+
+    // With line-height: 1 the line box is exactly font-size tall, and the
+    // browser centers the font's content box (ascent + descent) in it via
+    // half-leading.
+    const lineBoxHeight = fontSizePx;
+    const halfLeading = (lineBoxHeight - (fbAscent + fbDescent)) / 2;
+    const baselineFromTop = halfLeading + fbAscent;
+    // Ink box center measured from the top of the line box.
+    const inkCenterFromTop = baselineFromTop + (inkDescent - inkAscent) / 2;
+    // Flex centers the line box in the element, so centering the ink only needs
+    // this line-box-relative correction.
+    return lineBoxHeight / 2 - inkCenterFromTop;
+}
+
+// Re-measure once the real font finishes loading — the cached entries may have
+// been measured against a fallback (or not applied at all yet).
+if (typeof document.fonts !== 'undefined' && document.fonts.ready) {
+    document.fonts.ready.then(function() {
+        busNameInkCache.clear();
+        centerBusNameInk();
+    });
+}
+
 let savedCenter;
 let savedZoom;
 
@@ -194,6 +286,7 @@ function popInfo(busName, resetCampusFontSize) {
         $('.info-speed-wrapper').css('visibility', 'hidden');
     }
     $('.info-name-mid').text(busNameElmText);
+    centerBusNameInk();
     const serviced = getBusServicedCampuses(busName);
     const servicedCampuses = serviced.campuses;
     // Two campuses means the bus shuttles back and forth between them, so use
