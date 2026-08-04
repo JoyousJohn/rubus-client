@@ -524,6 +524,15 @@ if (typeof L !== 'undefined') {
                     if (!map.getSource(sourceId)) {
                         map.addSource(sourceId, { type: 'geojson', data: data });
                     }
+                    // Insert the base building layers just below the lowest existing
+                    // marker layer so stops/buses always render above buildings —
+                    // even when buildings are hidden and re-enabled after markers
+                    // already exist (without an anchor, addLayer appends on top).
+                    const baseAnchor = ['stop-markers-layer', 'stop-markers-labels',
+                        'bus-markers-glow', 'bus-markers-layer', 'bus-markers-labels',
+                        'stop-markers-selected', 'stop-markers-selected-labels'].find(function(id) {
+                        return map.getLayer(id);
+                    });
                     if (!map.getLayer(fillLayerId)) {
                         const colors = getPaintColors();
                         const minZoom = options.minzoom || options.minZoom || 0;
@@ -548,7 +557,7 @@ if (typeof L !== 'undefined') {
                                     colors.fallback.fillOpacity
                                 ]
                             }
-                        });
+                        }, baseAnchor);
                         map.addLayer({
                             id: lineLayerId,
                             type: 'line',
@@ -564,7 +573,7 @@ if (typeof L !== 'undefined') {
                                 ],
                                 'line-width': 1
                             }
-                        });
+                        }, baseAnchor);
                     }
                     // Highlight overlay: a dedicated source+layers holding only the
                     // currently-highlighted feature. Painted above the base building
