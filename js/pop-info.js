@@ -405,6 +405,12 @@ function popInfo(busName, resetCampusFontSize) {
 
     $('.next-stop-circle').remove(); // remaining .next-stop-circles rom rote menu messes this up
 
+    // Stop-marker ETA tooltips (setStopEtaLabel) are collected here and applied
+    // after the popup is shown: each call does a synchronous WebGL feature
+    // update (and possibly a sprite texture upload), which would otherwise delay
+    // the popup's first paint by ~18 pushes per render.
+    const etaLabelsToSet = [];
+
     if ('next_stop' in data && busETAs[busName] && !busData[busName].atDepot) { // Hide next stops when bus is at depot
         $('.next-stops-grid > div').empty();
         
@@ -607,7 +613,7 @@ function popInfo(busName, resetCampusFontSize) {
                 } else {
                     $('.closest-stop-eta').text(eta)
                     $('.closest-stop-time').text(formattedTime)
-                    setStopEtaLabel(sortedStops[i], eta, true);
+                    etaLabelsToSet.push([sortedStops[i], eta]);
                 }
             }
 
@@ -626,7 +632,7 @@ function popInfo(busName, resetCampusFontSize) {
             </div>`).click(() => { 
                 flyToStop(sortedStops[i]);  
             }));
-            setStopEtaLabel(sortedStops[i], eta, true);
+            etaLabelsToSet.push([sortedStops[i], eta]);
 
             if (!firstCircle) {
                 // If closest stop is the next stop and we're showing the closest stop section, use it as first circle
@@ -717,6 +723,14 @@ function popInfo(busName, resetCampusFontSize) {
 
     $('.bus-info-popup').stop(true, true).show();
     if (isDesktop) showEscNotice('bus');
+
+    // Apply the collected stop-marker ETA tooltips after the popup has painted
+    // (next frame), so the per-stop WebGL feature updates don't delay it.
+    if (etaLabelsToSet.length) {
+        requestAnimationFrame(() => {
+            etaLabelsToSet.forEach(([stopId, eta]) => setStopEtaLabel(stopId, eta, true));
+        });
+    }
 
     updateNextStopsMaxHeight();
 
