@@ -944,6 +944,7 @@ function prunePolylinesWithoutInService() {
         const forceMode = isForceShowEnabled();
         const forceRoutes = getForceShowRoutes();
         const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
+        let activeRoutesChanged = false;
 
         if (!settings['toggle-show-out-of-service']) {
             for (const routeName of Object.keys(polylines)) {
@@ -992,7 +993,23 @@ function prunePolylinesWithoutInService() {
                     $btn.css({ 'background-color': style.buttonColor, 'opacity': String(style.buttonOpacity) });
                 }
             }
+
+            // Drop routes whose buses are all invalid (off-line / not shown on
+            // the map) but still present in busData. The makeBulkOoS /
+            // makeBusesByRoutes prune only fires when a route has zero buses,
+            // so without this a strayed bus's route selector button lingers
+            // even though its marker/polyline were hidden.
+            if (!settings['toggle-show-out-of-service'] && !forceRoutes.includes(routeName)) {
+                if (!routeHasValidInServiceBuses(routeName) && activeRoutes.delete(routeName)) {
+                    activeRoutesChanged = true;
+                    if (appStyle === 'rider') updateRiderRoutes();
+                    if (shownRoute === routeName) toggleRoute(routeName);
+                }
+            }
         });
+        if (activeRoutesChanged) {
+            populateRouteSelectors(activeRoutes);
+        }
         updatePolylineBoundsIfNeeded();
         updateStopsOpacity();
     } catch (e) {
