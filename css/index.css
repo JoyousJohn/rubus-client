@@ -578,6 +578,20 @@ html, body {
     position: relative;
 }
 
+.info-name-mid {
+    position: absolute;
+    right: 100%;
+    margin-right: 0.6rem;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    white-space: pre;
+    font-size: 1.5rem;
+    color: var(--theme-extra);
+    line-height: 1;
+}
+
 .info-route {
     font-weight: 800;
     font-size: 2.5rem;
@@ -639,6 +653,7 @@ html, body {
     font-size: 1.2rem;
     color: var(--theme-extra);
     text-align: center;
+    opacity: 0.8;
 }
 
 .info-campuses-serviced b {
@@ -705,12 +720,6 @@ html, body {
     gap: 0.5rem;
     white-space: pre;
     transition: color 300ms ease;
-}
-
-/* The "//" separator matches the footer's build-number "//". */
-.info-stopped-for-slash {
-    color: var(--theme-extra);
-    opacity: 0.42;
 }
 
 /* Red once the bus is stopped overtime (matches the octagon color). */

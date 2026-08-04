@@ -8,11 +8,14 @@ let stoppedOctagonHideTimeout;
 // Consecutive stops on the same campus collapse into one entry (e.g. an LX at
 // the College Ave Student Center -> "CA -> Livi"). Since routes are loops, a
 // trailing campus that matches the first is dropped (the bus wraps back to it).
+// Returns { campuses, approachingNewCampus } where approachingNewCampus is true
+// when the bus is moving between stops into a different campus than the one it
+// just left.
 function getBusServicedCampuses(busName) {
     const data = busData[busName];
-    if (!data || !data.route) return [];
+    if (!data || !data.route) return { campuses: [], approachingNewCampus: false };
     const routeStops = stopLists[data.route];
-    if (!routeStops || routeStops.length === 0 || typeof stopsData === 'undefined') return [];
+    if (!routeStops || routeStops.length === 0 || typeof stopsData === 'undefined') return { campuses: [], approachingNewCampus: false };
 
     let startStopId = data.next_stop;
     if (data.at_stop && data.stopId != null) {
@@ -22,17 +25,27 @@ function getBusServicedCampuses(busName) {
         }
         startStopId = current;
     }
-    if (startStopId == null) return [];
+    if (startStopId == null) return { campuses: [], approachingNewCampus: false };
 
     let startIndex = routeStops.indexOf(startStopId);
     if (startIndex === -1) startIndex = routeStops.indexOf(Number(startStopId));
     if (startIndex === -1) startIndex = 0;
 
-    const campuses = [];
-    let lastCampus = null;
     // Local copy so 'Douglas' is shortened to 'Doug' here only; the shared
     // campusShortNamesMappings used elsewhere keeps 'Douglas'.
     const campusNames = { ...campusShortNamesMappings, 'douglas': 'Doug' };
+
+    let approachingNewCampus = false;
+    if (!data.at_stop && data.prevStopId != null) {
+        const prevStop = stopsData[data.prevStopId];
+        const nextStop = stopsData[data.next_stop];
+        if (prevStop && nextStop && campusNames[prevStop.campus] && campusNames[nextStop.campus]) {
+            approachingNewCampus = campusNames[prevStop.campus] !== campusNames[nextStop.campus];
+        }
+    }
+
+    const campuses = [];
+    let lastCampus = null;
     for (let i = 0; i < routeStops.length; i++) {
         const stop = stopsData[routeStops[(startIndex + i) % routeStops.length]];
         if (!stop) continue;
@@ -47,7 +60,7 @@ function getBusServicedCampuses(busName) {
     if (campuses.length > 1 && campuses[campuses.length - 1] === campuses[0]) {
         campuses.pop();
     }
-    return campuses;
+    return { campuses, approachingNewCampus };
 }
 
 let savedCenter;
@@ -181,11 +194,19 @@ function popInfo(busName, resetCampusFontSize) {
         $('.info-speed-wrapper').css('visibility', 'hidden');
     }
     $('.info-name-mid').text(busNameElmText);
-    const servicedCampuses = getBusServicedCampuses(busName);
+    const serviced = getBusServicedCampuses(busName);
+    const servicedCampuses = serviced.campuses;
     // Two campuses means the bus shuttles back and forth between them, so use
     // a left-right arrow; otherwise chain the sequence with a right arrow.
     const campusesArrow = servicedCampuses.length === 2 ? ' \u2194 ' : ' \u2192 ';
-    const campusesHtml = servicedCampuses.map((seg, i) => i === 0 ? `<b>${seg}</b>` : seg).join(campusesArrow);
+    // Crossing into a new campus: prepend a bold approach arrow and leave the
+    // campuses regular weight; otherwise bold the first campus abbreviation.
+    let campusesHtml;
+    if (serviced.approachingNewCampus && servicedCampuses.length) {
+        campusesHtml = '<b>\u2192</b> ' + servicedCampuses.join(campusesArrow);
+    } else {
+        campusesHtml = servicedCampuses.map((seg, i) => i === 0 ? `<b>${seg}</b>` : seg).join(campusesArrow);
+    }
     $('.info-campuses-serviced').html(campusesHtml).toggle(servicedCampuses.length > 0);
     $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + data.capacity + '%</span> capacity');
 
