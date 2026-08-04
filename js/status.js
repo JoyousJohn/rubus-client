@@ -68,11 +68,9 @@ function updateStatusDisplay() {
     const wsColor = '#6366f1'; // Blue for WebSocket status
 
     // Display polling status (top row)
-    // $('.passio-status').text(`Passio ${passioOnline ? 'Online' : 'Offline'} (-${passioTimeAgo})`).css('color', passioOnline ? onlineColor : offlineColor);
     // $('.rubus-status').text(`RUBus ${rubusOnline ? 'Online' : 'Offline'} (-${rubusTimeAgo})`).css('color', rubusOnline ? onlineColor : offlineColor);
 
     // Display WebSocket status (bottom row)
-    // $('.passio-ws-status').text(`Passio WS ${passioWsConnected ? 'Connected' : 'Disconnected'}`).css('color', passioWsConnected ? wsColor : offlineColor);
     $('.rubus-ws-status').text(`RUBus WS ${rubusWsConnected ? 'Connected' : 'Disconnected'}`).css('color', rubusWsConnected ? wsColor : offlineColor);
 }
 

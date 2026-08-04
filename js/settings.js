@@ -71,9 +71,9 @@ $('.settings-toggle .toggle-input').on('change', function () {
             pauseRotationUpdating = isChecked;
             break;
 
-        case 'toggle-pause-passio-polling':
-            console.log(`Pause Passio Polling is now ${isChecked ? 'ON' : 'OFF'}`);
-            settings['toggle-pause-passio-polling'] = isChecked;
+        case 'toggle-pause-tripshot-polling':
+            console.log(`Pause TripShot Polling is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-pause-tripshot-polling'] = isChecked;
             break;
 
         case 'toggle-disconnect-rubus':

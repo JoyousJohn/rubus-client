@@ -1,6 +1,6 @@
 const excludedRouteMappings = {};
 
-let passioDown = false;
+let tripshotDown = false;
 
 async function immediatelyUpdateBusDataPre() {
     cancelAllAnimations();
@@ -82,8 +82,8 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         $('.slow-connection').slideUp();
 
         if (!response.ok) {
-            $('.notif-popup').html(`Passio servers are unavailable and incorrect (if any) bus data may be being displayed.`).fadeIn();
-            passioDown = true;
+            $('.notif-popup').html(`TripShot servers are unavailable and incorrect (if any) bus data may be being displayed.`).fadeIn();
+            tripshotDown = true;
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
@@ -99,13 +99,13 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
                 $('.notif-popup').slideUp();
             });
-            passioDown = true;
+            tripshotDown = true;
             return;
         } else {
-            // Server is responding successfully, hide notification popup and reset passioDown flag
-            if (passioDown) {
+            // Server is responding successfully, hide notification popup and reset tripshotDown flag
+            if (tripshotDown) {
                 $('.notif-popup').slideUp();
-                passioDown = false;
+                tripshotDown = false;
             }
         }
 
@@ -362,9 +362,9 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
         updateRubusResponseTime();
 
-        if (passioDown) {
+        if (tripshotDown) {
             $('.notif-popup').slideUp();
-            passioDown = false;
+            tripshotDown = false;
         }
 
         const oosBusNames = [];
@@ -967,8 +967,8 @@ function makeActiveRoutes() {
 let cachedAlertMessages = null;
 
 function clearAlertsDisplay() {
-    $('.passio-messages-list').empty();
-    $('.passio-mini').empty();
+    $('.tripshot-messages-list').empty();
+    $('.tripshot-mini').empty();
 }
 
 function refreshAlertsDisplay() {
@@ -1037,17 +1037,17 @@ function populateMessages(messages) {
 
             $msgElm.find('#big-hide').click(function() {
                 $(`[data-alert-big="${message['id']}"]`).slideUp();
-                $(`.passio-mini-alert[data-alert-mini="${message['id']}"]`).show();
+                $(`.tripshot-mini-alert[data-alert-mini="${message['id']}"]`).show();
             })
 
             $msgElm.find('#big-close').click(function() {
                 $(this).parent().parent().remove();
-                $(`.passio-mini-alert[data-alert-mini="${message['id']}"]`).remove();
+                $(`.tripshot-mini-alert[data-alert-mini="${message['id']}"]`).remove();
             })
 
-        $('.passio-messages-list').append($msgElm)
+        $('.tripshot-messages-list').append($msgElm)
 
-        const $miniElm = $(`<div data-alert-mini="${message['id']}" class="passio-mini-alert gap-x-0p5rem pointer">
+        const $miniElm = $(`<div data-alert-mini="${message['id']}" class="tripshot-mini-alert gap-x-0p5rem pointer">
             <div class="br-1rem bold flex justify-center align-center" style="background-color: white; color: red; aspect-ratio: 1; height: 100%;">!</div>
             <div class="pr-0p5rem">${title}</div>
         </div>`);
@@ -1057,7 +1057,7 @@ function populateMessages(messages) {
             $(`[data-alert-mini="${message['id']}"]`).hide();
         });
         
-        $('.passio-mini').append($miniElm);
+        $('.tripshot-mini').append($miniElm);
 
     })
 
@@ -1193,7 +1193,7 @@ $(document).ready(async function() {
             $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
             // setTimeout(() => {
                 // $('.bus-info-popup').hide();
-            if (!passioDown && selectedCampus === 'nb') $('.knight-mover').show();
+            if (!tripshotDown && selectedCampus === 'nb') $('.knight-mover').show();
 
             const now = new Date();
             const hour = now.getHours();
@@ -1291,7 +1291,7 @@ $(document).ready(async function() {
 
             // Kick a fetch right away to avoid waiting for the interval
             busFetchInProgress = false;
-            if (!settings['toggle-pause-passio-polling']) { fetchBusData(true); }
+            if (!settings['toggle-pause-tripshot-polling']) { fetchBusData(true); }
         };
 
         const triggerPause = () => {
@@ -1347,11 +1347,11 @@ $(document).ready(async function() {
 
 function startBusPolling() {
     setTimeout(() => {
-        if (!settings['toggle-pause-passio-polling']) { fetchBusData(); }
+        if (!settings['toggle-pause-tripshot-polling']) { fetchBusData(); }
     }, initPollDelay);
 
     setInterval(async () => {
-        if (!settings['toggle-pause-passio-polling']) { fetchBusData(); }
+        if (!settings['toggle-pause-tripshot-polling']) { fetchBusData(); }
     }, pollDelay);
 }
 

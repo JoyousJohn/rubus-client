@@ -179,7 +179,7 @@
     gap: 0.5rem;
 }
 
-.passio-status, .rubus-status, .passio-ws-status, .rubus-ws-status {
+.rubus-status, .rubus-ws-status {
     /* Colors will be set dynamically via JavaScript */
     min-width: 150px;
     text-align: center;

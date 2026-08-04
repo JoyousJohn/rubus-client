@@ -1887,7 +1887,7 @@ const toggleSettings = [
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',
-    'toggle-pause-passio-polling',
+    'toggle-pause-tripshot-polling',
     'toggle-show-stop-polygons',
     'toggle-show-dev-options',
     'toggle-show-etas-in-seconds',

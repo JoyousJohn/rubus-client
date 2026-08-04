@@ -41,7 +41,11 @@ const defaultSettings = {
     // dev settings
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
-    'toggle-pause-passio-polling': false,
+    // Renamed from 'toggle-pause-passio-polling' when TripShot replaced Passio
+    // as the data source. saveSettings() persists only overrides, so anyone
+    // who had the old key enabled will have it orphaned in localStorage and
+    // this new key simply starts at its default (false) for them.
+    'toggle-pause-tripshot-polling': false,
     'toggle-show-stop-polygons': false,
     'toggle-show-dev-options': false,
     'raster-sharpness': 'bicubic',

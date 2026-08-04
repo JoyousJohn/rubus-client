@@ -468,14 +468,14 @@ html, body {
 }
 
 
-.passio-messages {
+.tripshot-messages {
     font-family: var(--font-family);
     color: var(--theme-color);
     font-size: 1.7rem;
     pointer-events: auto;
 }
 
-.passio-mini-alert {
+.tripshot-mini-alert {
     padding: 0.5rem;
     border-radius: 2rem;
     color: white;
@@ -488,7 +488,7 @@ html, body {
     grid-template-columns: auto auto;
 }
 
-.passio-mini {
+.tripshot-mini {
     pointer-events: auto;
 }
 
