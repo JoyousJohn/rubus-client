@@ -195,6 +195,14 @@
                             // making the text look doubled and unsharp.
                             'icon-image': ['get', 'etaSprite'],
                             'icon-size': 1,
+                            // Pin the pill's left edge beside the stop marker
+                            // (DOM corner-label parity: top -0.8rem, left 1.7rem
+                            // on the 18px wrapper -> (2, -23) from the anchor).
+                            // 'left' anchors the sprite's left edge at icon-offset
+                            // so the pill grows rightward instead of covering
+                            // the marker.
+                            'icon-anchor': 'left',
+                            'icon-offset': [2, -15.5],
                             'icon-allow-overlap': true,
                             'icon-ignore-placement': true
                         },
@@ -234,6 +242,9 @@
                             // sprite; no GL text-field (see LABEL_LAYER_ID).
                             'icon-image': ['get', 'etaSprite'],
                             'icon-size': 1,
+                            // Same side placement as LABEL_LAYER_ID.
+                            'icon-anchor': 'left',
+                            'icon-offset': [2, -15.5],
                             'icon-allow-overlap': true,
                             'icon-ignore-placement': true
                         },
