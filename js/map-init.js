@@ -15,7 +15,6 @@ window.initMap = function() {
         minZoom: 12,
         maxZoom: 20,
         attributionControl: false,
-        dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
         // A/B test: native sharpness (DPR 1.354). If FPS regresses vs the
@@ -37,9 +36,6 @@ window.initMap = function() {
         if (window.__rubusRasterFix) window.__rubusRasterFix.setMode(mode);
     };
     applyRasterSharpnessSetting();
-
-    if (map.dragRotate) map.dragRotate.disable();
-    if (map.touchZoomRotate) map.touchZoomRotate.disableRotation();
 
     window.updateStopsLayerOrder = function(stopsAboveBuses) {
         if (typeof settings !== 'undefined' && stopsAboveBuses === undefined) {
