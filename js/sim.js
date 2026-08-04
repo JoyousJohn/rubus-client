@@ -665,6 +665,7 @@ async function updateSimBus(busName) {
             simState.lastReportedProgress = 0;
             simEtaPending.add(busName);
         } else {
+            bus.visualSpeed = 0;
             return;
         }
     }
@@ -686,6 +687,10 @@ async function updateSimBus(busName) {
     } else if (simState.speedMph > simState.targetSpeedMph) {
         simState.speedMph = Math.max(simState.targetSpeedMph, simState.speedMph - SIM_DEC_MPH_PER_S * dtSec);
     }
+
+    // Expose the sim speed on the bus entry so the popup speed circle (and
+    // route list) render it for sim buses, mirroring real buses' visualSpeed.
+    bus.visualSpeed = simState.speedMph;
 
     // Advance along segment by distance
     const moveMiles = simState.speedMph * (dtSec / 3600);
