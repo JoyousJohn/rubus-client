@@ -1,6 +1,7 @@
 // js/pop-info.js - extracted verbatim from js/map.js
 let stoppedForInterval;
 let stoppedForHideTimeout;
+let stoppedOctagonHideTimeout;
 
 let savedCenter;
 let savedZoom;
@@ -74,14 +75,14 @@ function popInfo(busName, resetCampusFontSize) {
         // Stopped overtime: red text + red octagon to the right of the
         // "Stopped Xm Xs" label.
         $('.info-stopped-for').addClass('overtime');
-        $('.info-stopped-octagon').removeClass('none');
+        showStoppedOctagon();
         if (settings['toggle-show-bus-overtime-timer']) {
             startOvertimeCounter(busName);
         }
     } else {
         stopOvertimeCounter();
         $('.info-stopped-for').removeClass('overtime');
-        $('.info-stopped-octagon').addClass('none');
+        hideStoppedOctagon();
     }
 
     let displayRoute;

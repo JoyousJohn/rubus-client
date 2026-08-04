@@ -700,6 +700,7 @@ html, body {
     display: inline-flex;
     gap: 0.5rem;
     white-space: pre;
+    transition: color 300ms ease;
 }
 
 /* The "//" separator matches the footer's build-number "//". */

@@ -4,10 +4,10 @@ function hideInfoBoxes(instantly_hide) {
     $('.desktop-esc-notice').hide();
 
     if (instantly_hide) {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').hide();
+        $('.bus-info-popup, .stop-info-popup, .my-location-popup, .building-info-popup').hide();
         closeSearch();
     } else {
-        $('.bus-info-popup, .stop-info-popup, .bus-stopped-for, .my-location-popup, .building-info-popup').fadeOut();
+        $('.bus-info-popup, .stop-info-popup, .my-location-popup, .building-info-popup').fadeOut();
         closeSearch();
     }
     
@@ -49,7 +49,6 @@ function hideInfoBoxes(instantly_hide) {
         const busIdThatWasFocused = popupBusName;
         popupBusName = null;
         $('.info-shared-bus-mid').hide();
-        // $('.time, .overtime-time').text(''); // optional <- nvm, the wrapper fades out so by hiding this changes div size while still fading out.
 
         // Remove distance line when bus is unfocused
         removeDistanceLineOnFocus();

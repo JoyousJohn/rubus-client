@@ -528,7 +528,7 @@ function startStoppedForTimer(busName) {
     $('.info-stopped-for').removeClass('none').find('.info-stopped-for-text').html(' <span class="info-stopped-for-slash">//</span> ' + formatStoppedTime(secondsDifference));
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight - 135)
+    $('.info-next-stops').css('max-height', maxHeight)
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {
@@ -630,6 +630,34 @@ function flyToBus(busName) {
 let overtimeInterval;
 let overtimeBusId;
 
+// Fade the overtime octagon in. It toggles display:none, and a transition
+// can't animate from a display:none before-state, so ramp opacity manually
+// with a forced reflow (same technique as hideStoppedFor).
+function showStoppedOctagon() {
+    const $oct = $('.info-stopped-octagon');
+    clearTimeout(stoppedOctagonHideTimeout);
+    stoppedOctagonHideTimeout = null;
+    if (!$oct.hasClass('none')) {
+        $oct.css('transition', 'none').css('opacity', 1);
+        return;
+    }
+    $oct.removeClass('none').css('transition', 'none').css('opacity', 0);
+    void $oct[0].offsetWidth;
+    $oct.css('transition', `opacity ${STOPPED_FOR_FADE_MS}ms ease`).css('opacity', 1);
+}
+
+// Fade the overtime octagon out, then drop it from the layout.
+function hideStoppedOctagon() {
+    const $oct = $('.info-stopped-octagon');
+    if ($oct.hasClass('none')) return;
+    clearTimeout(stoppedOctagonHideTimeout);
+    $oct.css('transition', `opacity ${STOPPED_FOR_FADE_MS}ms ease`).css('opacity', 0);
+    stoppedOctagonHideTimeout = setTimeout(() => {
+        stoppedOctagonHideTimeout = null;
+        $oct.addClass('none').css('opacity', '').css('transition', '');
+    }, STOPPED_FOR_FADE_MS);
+}
+
 function startOvertimeCounter(busName) {
 
     // Force-unstopped (dev helper): never re-show the overtime indicator.
@@ -653,7 +681,7 @@ function startOvertimeCounter(busName) {
     const applyOvertimeState = () => {
         if (busData[busName] && busData[busName]['overtime']) {
             $('.info-stopped-for').removeClass('none').addClass('overtime');
-            $('.info-stopped-octagon').removeClass('none');
+            showStoppedOctagon();
         } else {
             stopOvertimeCounter();
         }
@@ -670,7 +698,7 @@ function stopOvertimeCounter() {
         overtimeBusId = null;
     }
     $('.info-stopped-for').removeClass('overtime');
-    $('.info-stopped-octagon').addClass('none');
+    hideStoppedOctagon();
 }
 
 $('.satellite-btn').click(function() {

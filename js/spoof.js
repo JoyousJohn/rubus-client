@@ -71,7 +71,7 @@ function initSpoofing() {
                 })
             }).addTo(map);
             locationMarker.on('click', function() {
-                $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();
+                $('.bus-info-popup, .stop-info-popup').hide();
                 $('.my-location-popup').show();
             });
             window.locationMarker = locationMarker;

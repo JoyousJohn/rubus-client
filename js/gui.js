@@ -2636,7 +2636,7 @@ function handleNearestStop(fly) {
         });
 
         locationMarker.on('click', function() {
-            $('.bus-info-popup, .stop-info-popup, .bus-stopped-for').hide();  
+            $('.bus-info-popup, .stop-info-popup').hide();  
             $('.my-location-popup').show();
             // map.flyTo(userPosition, 18, {
             //     animate: true,
