@@ -94,10 +94,18 @@ function panout() {
         return;
     }
 
-    if (shownRoute) {
-        map.fitBounds(routeBounds[shownRoute]);
-    } else {
-        map.fitBounds(polylineBounds);
+    const bounds = shownRoute ? routeBounds[shownRoute] : polylineBounds;
+    if (bounds) {
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        const camera = map.cameraForBounds([[sw.lng, sw.lat], [ne.lng, ne.lat]]);
+        if (camera) {
+            map.flyTo({
+                center: camera.center,
+                zoom: camera.zoom,
+                duration: 500
+            });
+        }
     }
 
     hideInfoBoxes();
