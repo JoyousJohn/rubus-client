@@ -294,13 +294,14 @@ async function generateSimBusData(gen) {
                 if (angleDeg < 0) angleDeg += 360;
             }
 
-            // Unique 4 or 5 digit busName
+            // Unique 4 or 5 digit busName (string, matching the real bus
+            // schema so strict === compares against popupBusName work).
             let busName;
             do {
                 const fourOrFive = Math.random() < 0.5;
                 busName = fourOrFive
-                    ? Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
-                    : Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;
+                    ? String(Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000)
+                    : String(Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000);
             } while (busData[busName]);
 
             activeRoutes.add(routeName);
@@ -317,7 +318,7 @@ async function generateSimBusData(gen) {
             busData[busName].route = routeName;
             busData[busName].type = 'sim';
             busData[busName].campus = routesByCampus[routeName];
-            busData[busName].busName = String(Math.floor(Math.random() * 9000) + 1000);
+            busData[busName].busName = busName;
             busData[busName].rotation = angleDeg;
             busData[busName].capacity = Math.floor(Math.random() * 101); // 0-100
             busData[busName].joined_service = joinedTime;

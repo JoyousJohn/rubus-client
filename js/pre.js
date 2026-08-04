@@ -711,7 +711,6 @@ function updateTimeToStops(busNames) {
                             busData[busName]['overtime'] = true;
     
                             if (popupBusName === busName && !overtimeInterval && settings['toggle-show-bus-overtime-timer']) {
-                                $('.bus-stopped-for .stop-octagon').show();
                                 startOvertimeCounter(busName);
                             }
                         }

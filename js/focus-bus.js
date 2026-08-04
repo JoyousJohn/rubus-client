@@ -1,4 +1,9 @@
 // js/focus-bus.js - extracted verbatim from js/map.js
+
+// Dev-helper state: buses force-treated as departed (forceUnstopBus) so the
+// stopped label stays gone. Clear with forceUnstoppedBuses.delete(busName).
+const forceUnstoppedBuses = new Set();
+
 async function focusBus(busName) {
     // Clear panout feedback when focusing on a bus
     clearPanoutFeedback();
@@ -398,21 +403,119 @@ function formatStoppedTime(totalSeconds) {
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-        return `Stopped for ${hours}h ${minutes}m ${seconds}s`;
+        return `Stopped ${hours}h ${minutes}m ${seconds}s`;
     } else if (totalSeconds >= 60) {
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
-        return `Stopped for ${minutes}m ${seconds}s`;
+        return `Stopped ${minutes}m ${seconds}s`;
     } else if (totalSeconds > 0) {
-        return `Stopped for ${totalSeconds}s`;
+        return `Stopped ${totalSeconds}s`;
     } else {
-        return "Stopped for 0s";
+        return "Stopped 0s";
     }
+}
+
+// Hide and clear the in-line "// Stopped Xm Xs" label (bus departed,
+// unfocused, or no longer at a stop). The label fades out while the bus
+// name slides right from its current spot (next to the label) to the
+// horizontal center it lands on once the label leaves the row.
+const STOPPED_FOR_FADE_MS = 300;
+
+// Dev helper: force-treat a bus as departed (console: forceUnstopBus('4054'))
+// so the "// Stopped Xm Xs" label fades out and the name slides to center.
+// Only animates if that bus's popup is the one open.
+function forceUnstopBus(busName) {
+    busName = String(busName); // accept ints (4054) too — keys/set membership are string-based
+    forceUnstoppedBuses.add(busName);
+    console.log(`[forceUnstopBus] ${busName} marked force-unstopped`);
+
+    if (busData[busName]) {
+        busData[busName].at_stop = false;
+        delete busData[busName].timeArrived;
+        delete busData[busName].overtime;
+        console.log(`[forceUnstopBus] cleared at_stop/timeArrived/overtime for ${busName}`);
+    } else {
+        console.warn(`[forceUnstopBus] ${busName} not found in busData`);
+    }
+
+    if (popupBusName === busName) {
+        console.log(`[forceUnstopBus] popup is on ${busName}; label visible: ${!$('.info-stopped-for').hasClass('none')}`);
+        hideStoppedFor();
+    } else {
+        console.warn(`[forceUnstopBus] popup is on ${popupBusName}, not ${busName}. Open ${busName}'s popup (selectBusMarker('${busName}')) with its "// Stopped" label visible, then re-run.`);
+    }
+}
+
+function hideStoppedFor() {
+    clearInterval(stoppedForInterval);
+    stoppedForInterval = null;
+    clearTimeout(stoppedForHideTimeout);
+    stoppedForHideTimeout = null;
+
+    const $stoppedFor = $('.info-stopped-for');
+    const $name = $('.info-name-mid');
+
+    // Nothing to fade out if the label is already hidden.
+    if ($stoppedFor.hasClass('none')) {
+        stopOvertimeCounter();
+        return;
+    }
+
+    // Where the bus name sits now (label visible, row centered as a group).
+    const startLeft = $name[0].getBoundingClientRect().left;
+
+    // Where it sits once the label leaves the row (name re-centers alone).
+    $stoppedFor.addClass('none');
+    const endLeft = $name[0].getBoundingClientRect().left;
+    $stoppedFor.removeClass('none');
+    // Force a reflow with the label visible again. The getBoundingClientRect
+    // above committed the element's style as display:none, and a transition
+    // whose before-change style is display:none never animates (the label
+    // would just vanish instantly instead of fading).
+    void $stoppedFor[0].offsetWidth;
+
+    const delta = endLeft - startLeft;
+
+    // Kick off both transitions together: fade the label out and slide the
+    // name rightward to its final centered spot over the same duration.
+    $name.css('transition', 'none').css('transform', 'none');
+    $stoppedFor.css('transition', `opacity ${STOPPED_FOR_FADE_MS}ms ease`).css('opacity', 0);
+
+    if (delta) {
+        $name.css('transition', `transform ${STOPPED_FOR_FADE_MS}ms ease`);
+        void $name[0].offsetWidth; // force reflow so the transform animates from its current spot
+        $name.css('transform', `translateX(${delta}px)`);
+    }
+
+    stoppedForHideTimeout = setTimeout(() => {
+        stoppedForHideTimeout = null;
+        // Drop the label from the row (its re-centering lands the name exactly
+        // where the transform animation ended) and clear the transform with no
+        // transition so there's no snap back.
+        $stoppedFor.addClass('none').removeClass('overtime').css('opacity', '').css('transition', '');
+        $('.info-stopped-for-text').text('');
+        $('.info-stopped-octagon').addClass('none');
+        $name.css('transition', 'none').css('transform', 'none');
+        stopOvertimeCounter();
+    }, STOPPED_FOR_FADE_MS);
 }
 
 function startStoppedForTimer(busName) {
 
     clearInterval(stoppedForInterval); // not sure what could be causing the double timer that requires me to add this
+
+    // Force-unstopped (dev helper): never re-show the stopped label.
+    if (forceUnstoppedBuses.has(busName)) {
+        return;
+    }
+
+    // Cancel any in-progress fade-out from hideStoppedFor() and reset the
+    // inline opacity/transform it set, so the freshly-shown label is fully
+    // visible and the name is back to its natural position.
+    clearTimeout(stoppedForHideTimeout);
+    stoppedForHideTimeout = null;
+    $('.info-stopped-for').css('opacity', '').css('transition', '');
+    $('.info-name-mid').css('transition', 'none').css('transform', 'none');
 
     const arrivedDatetime = new Date(busData[busName].timeArrived);
     const now = new Date()//.toISOString();
@@ -420,7 +523,9 @@ function startStoppedForTimer(busName) {
     const secondsDifference = Math.floor((now - arrivedDatetime) / 1000);
     // console.log('secondsDifference: ', secondsDifference)
 
-    $('.bus-stopped-for').show().find('.time').text(formatStoppedTime(secondsDifference));
+    // "4054 // Stopped 4m 5s" - the label sits on the same row as the bus
+    // name, separated by " // ".
+    $('.info-stopped-for').removeClass('none').find('.info-stopped-for-text').html(' <span class="info-stopped-for-slash">//</span> ' + formatStoppedTime(secondsDifference));
 
     const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
     $('.info-next-stops').css('max-height', maxHeight - 135)
@@ -429,8 +534,10 @@ function startStoppedForTimer(busName) {
     stoppedForInterval = setInterval(() => {
         if (popupBusName === busName) {
             const step = (sim === true) ? Math.max(1, (window.SIM_TIME_MULTIPLIER || 1)) : 1;
-            seconds += step;
-            $('.bus-stopped-for').show().find('.time').text(formatStoppedTime(seconds));
+            if (!settings['toggle-pause-stopped-for-timer']) {
+                seconds += step;
+                $('.info-stopped-for').removeClass('none').find('.info-stopped-for-text').html(' <span class="info-stopped-for-slash">//</span> ' + formatStoppedTime(seconds));
+            }
         } else {
             clearInterval(stoppedForInterval);
         }
@@ -525,6 +632,11 @@ let overtimeBusId;
 
 function startOvertimeCounter(busName) {
 
+    // Force-unstopped (dev helper): never re-show the overtime indicator.
+    if (forceUnstoppedBuses.has(busName)) {
+        return;
+    }
+
     if (busName === overtimeBusId) {
         return;
     }
@@ -535,30 +647,20 @@ function startOvertimeCounter(busName) {
         clearInterval(overtimeInterval);
     }
 
-    $('.overtime-time').show();
-    
-    const timeArrived = new Date(busData[busName].timeArrived);
-    const avgWaitAtStop = waits[busData[busName].stopId[0]];
-    const arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000);
-    const overtimeSeconds = arrivedAgoSeconds - avgWaitAtStop;
-    // console.log(arrivedAgoSeconds)
-    // console.log(avgWaitAtStop)
-    // console.log(overtimeSeconds)
-    const minutes = Math.floor(overtimeSeconds / 60);
-    const seconds = overtimeSeconds % 60;
-    $('.overtime-time').text((minutes > 0 ? minutes + 'm ' : '') + seconds + 's overtime');
-
-    overtimeInterval = setInterval(() => {
+    // Show the overtime indicator (red octagon + red text) and keep it in
+    // sync with the overtime flag, auto-cleaning when the bus is no longer
+    // overtime.
+    const applyOvertimeState = () => {
         if (busData[busName] && busData[busName]['overtime']) {
-            const arrivedAgoSeconds = Math.floor((new Date().getTime() - timeArrived) / 1000);
-            const overtimeSeconds = arrivedAgoSeconds - avgWaitAtStop;
-            const minutes = Math.floor(overtimeSeconds / 60);
-            const seconds = overtimeSeconds % 60;
-            $('.overtime-time').text((minutes > 0 ? minutes + 'm ' : '') + seconds + 's overtime');
+            $('.info-stopped-for').removeClass('none').addClass('overtime');
+            $('.info-stopped-octagon').removeClass('none');
         } else {
             stopOvertimeCounter();
         }
-    }, 1000);
+    };
+
+    applyOvertimeState();
+    overtimeInterval = setInterval(applyOvertimeState, 1000);
 }
 
 function stopOvertimeCounter() {
@@ -566,8 +668,9 @@ function stopOvertimeCounter() {
         clearInterval(overtimeInterval);
         overtimeInterval = null;
         overtimeBusId = null;
-        $('.overtime-time').text('').hide();;
     }
+    $('.info-stopped-for').removeClass('overtime');
+    $('.info-stopped-octagon').addClass('none');
 }
 
 $('.satellite-btn').click(function() {

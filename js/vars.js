@@ -80,6 +80,7 @@ const defaultSettings = {
     'toggle-adaptive-pixel-ratio': false,
     'toggle-low-performance-mode': false,
     'toggle-disable-bus-rotation-fix-at-stop': false,
+    'toggle-pause-stopped-for-timer': false,
     'bus-animation-rate': 'off',
     'toggle-always-show-break-overdue': false,
     'toggle-force-show-polylines': false,

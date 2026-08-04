@@ -563,6 +563,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-pause-stopped-for-timer':
+            console.log(`Pause Stopped For Timer is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-pause-stopped-for-timer'] = isChecked;
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;
@@ -1125,7 +1130,7 @@ $(function() {
             const shouldFilterDev = $devWrapper.is(':visible') || isExpanding;
             if (shouldFilterDev) {
                 let devHasMatch = false;
-                $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .force-show-dependent').each(function() {
+                $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .settings-my-stats, .force-show-dependent').each(function() {
                     const $item = $(this);
                     if ($item.hasClass('force-show-dependent')) return; // handled separately below
                     if ($item.parents('.settings-custom-tile-url').length) return; // handled as part of parent section

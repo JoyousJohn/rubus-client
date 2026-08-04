@@ -41,6 +41,12 @@
 
         saScript.onload = function() {
             saScriptReady = true;
+            // SA replaced window.sa_event with its own; immediately re-wrap so
+            // local tracking (stats-tracker.js) doesn't miss the 'load' event
+            // that fires synchronously below.
+            if (typeof LocalStats !== 'undefined' && LocalStats.rewrapSaEvent) {
+                LocalStats.rewrapSaEvent();
+            }
             const isFallback = window.sa_event.toString().includes('Silent fallback');
             if (!isFallback) {
                 console.log('Simple Analytics loaded successfully');
@@ -68,6 +74,8 @@
             person_profiles: 'identified_only',
         })
     </script>
+
+    <script src="js/stats-tracker.js"></script>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/aquawolf04/font-awesome-pro@5cd1511/css/all.css">
 
@@ -118,6 +126,7 @@
     <script src="js/feedback.js"></script>
     <script src="js/contact.js"></script>
     <script src="js/stats.js"></script>
+    <script src="js/my-stats.js"></script>
     <script src="js/campus.js"></script>
     <script defer src="js/sim.js"></script>
     <script src="js/chat.js"></script>
@@ -432,18 +441,14 @@
                         </div>
                         <div class="info-extra flex justify-center" style="white-space: pre;">
                             <div class="info-name-mid"></div>
+                            <div class="info-stopped-for none">
+                                <span class="info-stopped-for-text"></span>
+                                <div class="info-stopped-octagon none"><div class="flex align-center justify-center">!</div></div>
+                            </div>
                             <div class="info-capacity info-capacity-mid none"></div>
                             <div class="info-quickness-mid"></div>
                         </div>
                         <div class="info-overdue-break none mt-0p5rem" style="opacity: 0.7;"></div>
-                    </div>
-                </div>
-
-                <div class="bus-stopped-for">
-                    <div class="flex justify-between">
-                        <div class="time">Stopped for Xm</div>
-                        <div class="overtime-time"></div>
-                        <div class="stop-octagon none"><div class="flex align-center justify-center">!</div></div>
                     </div>
                 </div>
 
@@ -2072,6 +2077,16 @@
                         </div>
                     </div>
 
+                    <div class="flex justify-between">
+                        <div class="settings-heading">Pause Stopped For Timer</div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-pause-stopped-for-timer" class="toggle-input">
+                            <label for="toggle-pause-stopped-for-timer" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="settings-bus-animation">
                         <div class="settings-heading">BUS ANIMATION RATE</div>
                         <div class="settings-options grid grid-cols-3">
@@ -2185,6 +2200,54 @@
                             <button id="clear-custom-tile-url-btn" class="pointer p-0p5rem" style="background: var(--theme-card-bg); color: var(--theme-color); border: 1px solid var(--theme-border); border-radius: 6px; white-space: nowrap;">Clear</button>
                         </div>
                         <div id="custom-tile-url-status" class="text-1p2rem mt-0p5rem" style="display: none;"></div>
+                    </div>
+
+                    <div class="settings-my-stats mt-2rem">
+                        <div class="settings-heading mt-2rem center pointer select-none" onclick="toggleMyStats()" id="my-stats-head">Show My Stats ▼</div>
+                        <div class="my-stats-wrapper none text-1p3rem mt-1rem">
+                            <div class="stats-title text-1p5rem center mb-1rem">Visits</div>
+                            <div class="my-stats-visits-summary flex justify-around mb-1rem text-1p2rem">
+                                <div class="center"><div class="my-stats-big-num bold-600" id="my-stats-total">-</div><div class="dimgray">Total</div></div>
+                                <div class="center"><div class="my-stats-big-num bold-600" id="my-stats-7d">-</div><div class="dimgray">Last 7 Days</div></div>
+                                <div class="center"><div class="my-stats-big-num bold-600" id="my-stats-30d">-</div><div class="dimgray">Last 30 Days</div></div>
+                            </div>
+                            <div id="my-stats-visits-bars" class="my-stats-bars"></div>
+
+                            <div class="stats-title text-1p5rem center mt-2rem mb-1rem">Bus Views by Route</div>
+                            <div class="stats-chart-area">
+                                <div id="my-stats-loading-bus" class="stats-loading-overlay">Loading...</div>
+                                <div class="stats-col-60">
+                                    <canvas id="my-bus-canvas" class="stats-canvas" width="300" height="300"></canvas>
+                                </div>
+                                <div class="stats-col-40">
+                                    <div id="my-bus-legend" class="stats-legend"></div>
+                                </div>
+                            </div>
+
+                            <div class="stats-title text-1p5rem center mt-2rem mb-1rem">Stop Views by Stop</div>
+                            <div class="stats-chart-area">
+                                <div id="my-stats-loading-stop" class="stats-loading-overlay">Loading...</div>
+                                <div class="stats-col-60">
+                                    <canvas id="my-stop-canvas" class="stats-canvas" width="300" height="300"></canvas>
+                                </div>
+                                <div class="stats-col-40">
+                                    <div id="my-stop-legend" class="stats-legend"></div>
+                                </div>
+                            </div>
+
+                            <div class="stats-title text-1p5rem center mt-2rem mb-1rem">Building Taps</div>
+                            <div class="stats-chart-area">
+                                <div id="my-stats-loading-building" class="stats-loading-overlay">Loading...</div>
+                                <div class="stats-col-60">
+                                    <canvas id="my-building-canvas" class="stats-canvas" width="300" height="300"></canvas>
+                                </div>
+                                <div class="stats-col-40">
+                                    <div id="my-building-legend" class="stats-legend"></div>
+                                </div>
+                            </div>
+
+                            <div id="my-stats-empty" class="none center dimgray mt-1rem">No local stats recorded yet.</div>
+                        </div>
                     </div>
                 </div>
             </div>

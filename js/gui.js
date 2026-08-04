@@ -1933,6 +1933,7 @@ const toggleSettings = [
     'toggle-adaptive-pixel-ratio',
     'toggle-low-performance-mode',
     'toggle-disable-bus-rotation-fix-at-stop',
+    'toggle-pause-stopped-for-timer',
 ]
 
 let colorMappings;

@@ -1,5 +1,6 @@
 // js/pop-info.js - extracted verbatim from js/map.js
 let stoppedForInterval;
+let stoppedForHideTimeout;
 
 let savedCenter;
 let savedZoom;
@@ -69,15 +70,18 @@ function popInfo(busName, resetCampusFontSize) {
         populateRouteSelectors(activeRoutes);
     }
 
-    if (busData[busName]['overtime']) {
-        $('.bus-stopped-for .stop-octagon').show();
+    if (busData[busName]['overtime'] && !forceUnstoppedBuses.has(busName)) {
+        // Stopped overtime: red text + red octagon to the right of the
+        // "Stopped Xm Xs" label.
+        $('.info-stopped-for').addClass('overtime');
+        $('.info-stopped-octagon').removeClass('none');
         if (settings['toggle-show-bus-overtime-timer']) {
             startOvertimeCounter(busName);
         }
     } else {
         stopOvertimeCounter();
-        $('.bus-stopped-for').hide();
-        $('.stop-octagon, .overtime-time').hide();
+        $('.info-stopped-for').removeClass('overtime');
+        $('.info-stopped-octagon').addClass('none');
     }
 
     let displayRoute;
@@ -220,7 +224,7 @@ function popInfo(busName, resetCampusFontSize) {
     if ('at_stop' in busData[busName] && busData[busName].at_stop === true) {
         startStoppedForTimer(busName)
     } else {
-        $('.bus-stopped-for').hide();
+        hideStoppedFor();
     }
 
     // console.log('data: ', data)

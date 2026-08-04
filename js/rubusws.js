@@ -214,9 +214,8 @@ function openRUBusSocket() {
                 delete busData[busName]['timeArrived'];
                 // console.log(`[Departure] Bus ${busName} departed from ${stopName}`)
 
-                if ($('.bus-stopped-for').is(':visible') && popupBusName === busName) {
-                    clearInterval(stoppedForInterval)
-                    $('.bus-stopped-for').slideUp();
+                if (popupBusName === busName) {
+                    hideStoppedFor();
                 }
                 delete busData[busName].overtime
 
@@ -273,6 +272,14 @@ function openRUBusSocket() {
                 busData[busName].stopId = busInfo.stopId
                 busData[busName].next_stop = getNextStopId(busData[busName].route, parseInt(busInfo.stopId)) // might throw error if busName not yet in busData (if rubus ws broadcasts data before new bus added from passio getData)
                 busData[busName].timeArrived = busInfo.time_arrived;
+
+                // Force-unstopped (dev helper): keep the bus treated as
+                // departed so the stopped label stays gone.
+                if (forceUnstoppedBuses.has(busName)) {
+                    busData[busName].at_stop = false;
+                    delete busData[busName].timeArrived;
+                    delete busData[busName].overtime;
+                }
 
             }
 

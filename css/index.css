@@ -635,6 +635,12 @@ html, body {
     line-height: 0.7;
 }
 
+.info-extra {
+    /* Keep the bus name at a stable y-position when the conditional stopped
+       label and its octagon are hidden. */
+    min-height: 1.5rem;
+}
+
 .info-overdue-break {
     font-size: 1.3rem !important;
 }
@@ -690,13 +696,50 @@ html, body {
     margin-top: -0.5rem;
 }
 
-.bus-stopped-for {
-    background-color: var(--theme-bg);
-    border-radius: 1rem;
-    padding: 1rem 2rem;
-    font-size: 1.5rem;
+.info-stopped-for {
+    display: inline-flex;
+    gap: 0.5rem;
+    white-space: pre;
+}
+
+/* The "//" separator matches the footer's build-number "//". */
+.info-stopped-for-slash {
+    color: var(--theme-extra);
+    opacity: 0.42;
+}
+
+/* Red once the bus is stopped overtime (matches the octagon color). */
+.info-stopped-for.overtime {
     color: #f62929;
-    display: none;
+}
+
+.info-stopped-octagon {
+    width: 1.5rem;
+    aspect-ratio: 1;
+    --o: calc(50%*tan(-22.5deg));
+    clip-path: polygon(
+        var(--o) 50%,50% var(--o),
+        calc(100% - var(--o)) 50%,
+        50% calc(100% - var(--o))
+    );
+    background-color: rgb(241, 70, 70);
+    transform: rotate(90deg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* The octagon (1.5rem) is taller than the text line box (1.5rem *
+       line-height 0.7 = 1.05rem); shift it up by half the difference so it
+       is vertically centered on the text line. */
+    margin-top: -0.15em;
+}
+
+.info-stopped-octagon > div {
+    font-size: 1.1rem;
+    transform: rotate(-90deg);
+    font-weight: 900;
+    color: white;
+    font-family: 'PP Neue Montreal';
+    line-height: 1;
 }
 
 .info-next-stops {
@@ -2181,6 +2224,19 @@ html[theme="light"] .settings-panel .span-i {
     max-width: 480px;
     width: 100%;
     margin: 0 auto;
+}
+
+.my-stats-big-num {
+    font-size: 1.8rem;
+    line-height: 1.2;
+}
+
+.my-stats-bars {
+    width: 100%;
+}
+
+.my-stats-bars .flex {
+    gap: 0.2rem;
 }
 
 .stats-chart-area {
