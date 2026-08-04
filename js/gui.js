@@ -1934,6 +1934,7 @@ const toggleSettings = [
     'toggle-low-performance-mode',
     'toggle-disable-bus-rotation-fix-at-stop',
     'toggle-pause-stopped-for-timer',
+    'toggle-offscreen-bus-indicators-pan-end-only',
 ]
 
 let colorMappings;

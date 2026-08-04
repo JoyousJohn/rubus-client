@@ -247,8 +247,17 @@ function requestOffScreenUpdate() {
 }
 
 function initOffscreenBusListeners() {
-    if (map) {
+    if (!map) return;
+    // Default (off): keep indicator positions live during the pan by refreshing
+    // on 'move' (fires every frame while dragging/zooming). The dev setting
+    // reverts to pan-end-only updates, matching the behavior after the
+    // Leaflet->MapLibre migration (b14dfed) dropped 'move drag zoom'.
+    const panEndOnly = typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-pan-end-only'] === true;
+    map.off('move drag zoom moveend zoomend resize', requestOffScreenUpdate);
+    if (panEndOnly) {
         map.on('moveend zoomend resize', requestOffScreenUpdate);
+    } else {
+        map.on('move drag zoom moveend zoomend resize', requestOffScreenUpdate);
     }
 }
 

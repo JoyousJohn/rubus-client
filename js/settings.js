@@ -568,6 +568,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-pause-stopped-for-timer'] = isChecked;
             break;
 
+        case 'toggle-offscreen-bus-indicators-pan-end-only':
+            console.log(`Off-Screen Indicators on Pan End is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-offscreen-bus-indicators-pan-end-only'] = isChecked;
+            // Re-wire the map listeners so indicator positions refresh either
+            // live during the pan (off) or only once the pan ends (on).
+            initOffscreenBusListeners();
+            requestOffScreenUpdate();
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;
