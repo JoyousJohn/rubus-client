@@ -7,6 +7,34 @@ let changelogLoading = false; // Prevent spam clicking on changelog
 let preloadingNextPage = false; // Track if we're preloading the next page
 let loadedPages = new Set(); // Track which pages have been loaded
 
+// The build number the user is actually running: what's displayed in the footer
+// (fetched once at page load). Parsing the footer — rather than re-fetching
+// GitHub — guarantees we never save a commit that landed after the client loaded.
+function getCurrentRunningBuildNumber() {
+    const text = $('.build-number').text();
+    const match = text.match(/b([\d,]+)/);
+    if (match) {
+        const parsed = parseInt(match[1].replace(/,/g, ''), 10);
+        if (!isNaN(parsed)) return parsed;
+    }
+    return (typeof currentBuildNumber !== 'undefined' && currentBuildNumber !== null) ? currentBuildNumber : null;
+}
+
+// Show the changelog "NEW" badge only when the current build is newer than the
+// one the user last opened the changelog on (build = total GitHub commit count,
+// exposed by getBuildNumber in gui.js).
+function updateChangelogNewBadge() {
+    const $badge = $('.changelog-new-badge');
+    if ($badge.length === 0) return;
+    if (typeof currentBuildNumber === 'undefined' || currentBuildNumber === null) return;
+    const seenBuild = parseInt(localStorage.getItem('changelog-new-seen-build'), 10);
+    if (isNaN(seenBuild) || currentBuildNumber > seenBuild) {
+        $badge.addClass('visible');
+    } else {
+        $badge.remove();
+    }
+}
+
 async function getChangelog() {
     sa_event('btn_press', { btn: 'footer_changelog' });
     // Prevent spam clicking
@@ -39,6 +67,14 @@ async function getChangelog() {
     // Immediately select changelog and show wrapper
     $('.changelog').addClass('footer-selected');
     $('.changelog-wrapper').show();
+
+    // The user has now seen the changelog — drop the "NEW" badge and remember
+    // the build they're running so it only reappears on a newer build.
+    const seenBuild = getCurrentRunningBuildNumber();
+    if (seenBuild !== null) {
+        localStorage.setItem('changelog-new-seen-build', String(seenBuild));
+    }
+    $('.changelog-new-badge').remove();
 
     // If changelog was already initialized, just show it again
     if (changelogInitialized) {

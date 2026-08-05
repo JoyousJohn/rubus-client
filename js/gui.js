@@ -2307,8 +2307,6 @@ function updateSettings() {
 
     // Dispatch event to notify other components that settings are updated
     document.dispatchEvent(new CustomEvent('rubus-settings-updated'));
-
-    getBuildNumber()
 }
 
 $(document).ready(function() {
@@ -2963,7 +2961,12 @@ function populateMeClosestStops() {
 }
 
 
+let currentBuildNumber = null;
+
 async function getBuildNumber() {
+    // The build number is constant per deploy; fetch it once no matter how many
+    // times this is called.
+    if (currentBuildNumber !== null) return;
     $.ajax({
         url: 'https://api.github.com/repos/JoyousJohn/rubus-client/commits?per_page=1', // &page = 1
         type: 'GET',
@@ -2976,7 +2979,11 @@ async function getBuildNumber() {
 
             const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
             const lastPage = parseInt(linkHeader.match(/page=(\d+)>; rel="last"/)[1]);
+            currentBuildNumber = lastPage;
             $('.build-number').html(`Alpha ${lastPage - 473} <span style="color:var(--theme-extra)">//</span> b${lastPage.toLocaleString()} (${commitDate})`);
+            // Show the changelog "NEW" badge only when the build has advanced
+            // past the one the user last opened the changelog on.
+            updateChangelogNewBadge();
             // $('.build-number').text('- V' + (lastPage - 473) + ' | Build' + lastPage + ' (' + commitDate + ')');
         }
     });

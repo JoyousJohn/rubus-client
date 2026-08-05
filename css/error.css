@@ -39,6 +39,27 @@
     background-color: #dc3545;
 }
 
+.changelog {
+    line-height: 1;
+}
+
+.changelog-new-badge {
+    display: none;
+    width: 0;
+    overflow: visible;
+    vertical-align: super;
+    text-indent: 0.2rem;
+    color: var(--theme-stops-list-text);
+    font-size: 0.6rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.changelog-new-badge.visible {
+    display: inline-block;
+}
+
 .errors-wrapper {
     background-color: var(--theme-bg);
     border: 2px solid #dc3545;

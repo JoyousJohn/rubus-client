@@ -320,12 +320,14 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 await initRoutePointsCache(selectedCampus);
                 if (sim) return;
                 if (!skipPolylineUpdateFromFetch) {
-                    // Await so the polylines are created (and fitBounds to the
-                    // route bounds runs) before prunePolylinesWithoutInService
-                    // below races the same routes through addPolylineForRoute —
-                    // otherwise that path wins, setPolylines adds nothing, and
-                    // its fit never fires, leaving the camera at the init view.
-                    await setPolylines(newRoutes);
+                    // Await so the polylines are created before
+                    // prunePolylinesWithoutInService below races the same routes
+                    // through addPolylineForRoute — otherwise that path wins,
+                    // setPolylines adds nothing, and its fit never fires. The
+                    // fit itself is suppressed here (fitBounds:false) so the
+                    // camera doesn't re-fit once per route; initBusDataPipeline
+                    // fits once to the final bounds after all routes load.
+                    await setPolylines(newRoutes, { fitBounds: false });
                 }
                 newRoutes.forEach(item => activeRoutes.add(item))
                 populateRouteSelectors(activeRoutes);
@@ -1209,6 +1211,14 @@ $(document).ready(async function() {
         makeActiveRoutes();
         // setPolylines(activeRoutes);
         updatePolylineBoundsIfNeeded();
+
+        // Fit once to the final route bounds after all polylines have loaded.
+        // setPolylines in fetchBusData is called once per new route with
+        // fitBounds:false, so this single fit is where the initial zoom-out
+        // happens (skipped when there are no buses to fit).
+        if (activeRoutes.size > 0 && polylineBounds && polylineBounds.isValid()) {
+            map.fitBounds(polylineBounds, { padding: [10, 10] });
+        }
 
         // console.log(activeRoutes)
 

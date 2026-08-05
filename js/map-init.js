@@ -296,6 +296,9 @@ window.initMap = function() {
 
 $(document).ready(function() {
     updateSettings();
+    // The build number doesn't depend on the map or the modals, so fetch it
+    // once here rather than from updateSettings() (which runs multiple times).
+    getBuildNumber();
     // Only build map on ready if the initial theme selection modal is not visible
     if (!$('.theme-modal').is(':visible')) {
         initMap();
