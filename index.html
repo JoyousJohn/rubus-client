@@ -1153,24 +1153,6 @@
                 })
                 </script>
 
-                <div class="flex justify-between low-performance-row">
-                    <div class="settings-heading flex flex-1 align-center span-i-low-performance">Low Performance Mode<span class="span-i pointer select-none">i</span></div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-low-performance-mode" class="toggle-input">
-                        <label for="toggle-low-performance-mode" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="low-performance-explain none ml-0p5rem text-1p3rem dimgray">Reduces rendering load by changing several settings at once: animates a lower quality marker at a lower frame rate, enables adaptive pixel ratio, and turns off bus focusing, bus name labels, and offscreen bus indicators.</div>
-                <script>
-                $('.span-i-low-performance').click(function() {
-                    const $el = $('.low-performance-explain');
-                    if ($el.is(':animated')) return;
-                    $el.slideToggle();
-                })
-                </script>
-
                 <div class="flex justify-between dim-on-pan-row">
                     <div class="settings-heading flex flex-1 align-center span-i-dim-on-pan">Dim on Pan<span class="span-i pointer select-none">i</span></div>
                     <div class="settings-toggle">
@@ -1295,24 +1277,6 @@
                 </script>
                 <div class="offscreen-indicators-dependent none">
                     <div class="flex justify-between">
-                        <div class="settings-heading flex flex-1 align-center span-i-offscreen-indicators-above-gui">Indicator Badges Above GUI<span class="span-i pointer select-none">i</span></div>
-                        <div class="settings-toggle">
-                            <input type="checkbox" id="toggle-offscreen-bus-indicators-above-gui" class="toggle-input">
-                            <label for="toggle-offscreen-bus-indicators-above-gui" class="toggle-label">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="offscreen-indicators-above-gui-explain none ml-0p5rem text-1p3rem dimgray">Render indicator badges above map interface buttons and route selectors instead of underneath them.</div>
-                    <script>
-                    $('.span-i-offscreen-indicators-above-gui').click(function() {
-                        const $el = $('.offscreen-indicators-above-gui-explain');
-                        if ($el.is(':animated')) return;
-                        $el.slideToggle();
-                    })
-                    </script>
-
-                    <div class="flex justify-between mt-0p5rem">
                         <div class="settings-heading flex flex-1 align-center span-i-offscreen-indicators-select-on-tap">Select Bus on Badge Tap<span class="span-i pointer select-none">i</span></div>
                         <div class="settings-toggle">
                             <input type="checkbox" id="toggle-offscreen-bus-indicators-select-on-tap" class="toggle-input">
@@ -1325,6 +1289,24 @@
                     <script>
                     $('.span-i-offscreen-indicators-select-on-tap').click(function() {
                         const $el = $('.offscreen-indicators-select-on-tap-explain');
+                        if ($el.is(':animated')) return;
+                        $el.slideToggle();
+                    })
+                    </script>
+
+                    <div class="flex justify-between mt-0p5rem">
+                        <div class="settings-heading flex flex-1 align-center span-i-offscreen-indicators-above-gui">Indicator Badges Above GUI<span class="span-i pointer select-none">i</span></div>
+                        <div class="settings-toggle">
+                            <input type="checkbox" id="toggle-offscreen-bus-indicators-above-gui" class="toggle-input">
+                            <label for="toggle-offscreen-bus-indicators-above-gui" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="offscreen-indicators-above-gui-explain none ml-0p5rem text-1p3rem dimgray">Render indicator badges above map interface buttons and route selectors instead of underneath them.</div>
+                    <script>
+                    $('.span-i-offscreen-indicators-above-gui').click(function() {
+                        const $el = $('.offscreen-indicators-above-gui-explain');
                         if ($el.is(':animated')) return;
                         $el.slideToggle();
                     })
@@ -1610,6 +1592,24 @@
 
             <div class="text-1p6rem mb-0p25rem bold-500">EXTRAS</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem settings-section-accent">
+
+                <div class="flex justify-between low-performance-row">
+                    <div class="settings-heading flex flex-1 align-center span-i-low-performance">Low Performance Mode<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-low-performance-mode" class="toggle-input">
+                        <label for="toggle-low-performance-mode" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="low-performance-explain none ml-0p5rem text-1p3rem dimgray">Reduces rendering load by changing several settings at once: animates a lower quality marker at a lower frame rate, enables adaptive pixel ratio, and turns off bus focusing, bus name labels, and offscreen bus indicators.</div>
+                <script>
+                $('.span-i-low-performance').click(function() {
+                    const $el = $('.low-performance-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                </script>
 
                 <div class="flex justify-between">
                     <div class="settings-heading">Launch Fireworks Button</div>
@@ -2289,22 +2289,26 @@
 
             </div>
 
-            <div class="settings-rubus-attribution grid grid-cols-4 center select-none gray777777 mt-1p5rem mb-2rem">
+            <div class="settings-rubus-attribution grid grid-cols-3 center select-none gray777777 mt-1p5rem mb-2rem">
                 <!-- <div>About</div> -->
                 <div class="contact pointer" onclick="contactClicked();">Contact</div>
                 <div class="changelog pointer" onclick="getChangelog();">Changelog<sup class="changelog-new-badge">NEW</sup></div>
-                <div class="status pointer" onclick="showStatus();">Status</div>
-                <div class="stats pointer" onclick="showStats();">1W Stats</div>
+                <div class="source pointer" onclick="sa_event('btn_press',{btn:'footer_source'});window.open('https://src.rubus.live', '_blank')"><i class="fa-brands fa-github"></i> Src</div>
             </div>
 
-            <div class="settings-rubus-attribution grid grid-cols-4 center select-none gray777777 mt-1p5rem mb-2rem">
-                <div class="events-link pointer">Events</div>
-                <div class="pointer" onclick="sa_event('btn_press',{btn:'footer_ruguessr'});window.open('https://joyousjohn.github.io/ruguessr/', '_blank')">RutgersGuessr</div>
-                <div class="source pointer" onclick="sa_event('btn_press',{btn:'footer_source'});window.open('https://src.rubus.live', '_blank')"><i class="fa-brands fa-github"></i> Src</div>
+            <div class="settings-rubus-attribution grid grid-cols-3 center select-none gray777777 mt-1p5rem mb-2rem">
+                <div class="status pointer" onclick="showStatus();">Status</div>
+                <div class="stats pointer" onclick="showStats();">1W Stats</div>
                 <div id="errors-tab" class="errors-tab pointer justify-center">
                     <span>Errors</span>
                     <span id="error-count" class="error-count flex justify-center align-center h-full">0</span>
                 </div>
+            </div>
+
+            <div class="settings-rubus-attribution grid grid-cols-3 center select-none gray777777 mt-1p5rem mb-2rem">
+                <div class="events-link pointer">Events</div>
+                <div class="pointer" onclick="sa_event('btn_press',{btn:'footer_ruwho'});window.open('https://ruwho.pages.dev', '_blank')">RUwho?</div>
+                <div class="pointer" onclick="sa_event('btn_press',{btn:'footer_ruguessr'});window.open('https://joyousjohn.github.io/ruguessr/', '_blank')">RutgersGuessr</div>
             </div>
 
             <div class="footer flex justify-center mb-10rem flex-col">
