@@ -320,7 +320,12 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 await initRoutePointsCache(selectedCampus);
                 if (sim) return;
                 if (!skipPolylineUpdateFromFetch) {
-                    setPolylines(newRoutes);
+                    // Await so the polylines are created (and fitBounds to the
+                    // route bounds runs) before prunePolylinesWithoutInService
+                    // below races the same routes through addPolylineForRoute —
+                    // otherwise that path wins, setPolylines adds nothing, and
+                    // its fit never fires, leaving the camera at the init view.
+                    await setPolylines(newRoutes);
                 }
                 newRoutes.forEach(item => activeRoutes.add(item))
                 populateRouteSelectors(activeRoutes);
