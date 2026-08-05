@@ -113,6 +113,7 @@ function initMapLibreCompatibility(mapInstance) {
                 }
             }
             if (options.animate !== undefined) mapLibreOptions.animate = options.animate;
+            if (options.bearing !== undefined) mapLibreOptions.bearing = options.bearing;
             if (!bbox || isNaN(bbox[0][0]) || isNaN(bbox[0][1]) || isNaN(bbox[1][0]) || isNaN(bbox[1][1])) {
                 throw new Error('[MapLibre] Invalid bbox provided to fitBounds: ' + JSON.stringify(bounds));
             }

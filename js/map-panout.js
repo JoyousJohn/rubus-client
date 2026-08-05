@@ -103,9 +103,13 @@ function panout() {
             map.flyTo({
                 center: camera.center,
                 zoom: camera.zoom,
+                bearing: 0,
                 duration: 500
             });
         }
+    } else {
+        // No bounds to fit (e.g. no polylines yet) — still reset rotation to north.
+        map.easeTo({ bearing: 0, duration: 500 });
     }
 
     hideInfoBoxes();

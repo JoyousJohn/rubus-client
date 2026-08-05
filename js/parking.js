@@ -89,7 +89,8 @@ function fitMapToParkingLots() {
     if (hasValidBounds) {
         map.fitBounds(bounds, {
             padding: [20, 20], // Add some padding around the bounds
-            maxZoom: 18 // Don't zoom in too close
+            maxZoom: 18, // Don't zoom in too close
+            bearing: 0 // Reset rotation to north (panout always straightens the view)
         });
     } else {
         if (currentParkingFeatures.length > 0) {
@@ -104,11 +105,11 @@ function fitMapToParkingLots() {
 function fitMapToCampusBounds() {
     // Get the current campus bounds (same logic as regular panout)
     if (typeof bounds !== 'undefined' && bounds[selectedCampus]) {
-        map.fitBounds(bounds[selectedCampus]);
+        map.fitBounds(bounds[selectedCampus], { bearing: 0 });
     } else {
         // Fallback to polyline bounds if campus bounds not available
         if (typeof polylineBounds !== 'undefined') {
-            map.fitBounds(polylineBounds);
+            map.fitBounds(polylineBounds, { bearing: 0 });
         }
     }
 }
