@@ -196,11 +196,6 @@ function popInfo(busName, resetCampusFontSize) {
         $('.bus-historical-capacity').empty();
     }
 
-    let secondsDivisor = 60;
-    if (showETAsInSeconds) {
-        secondsDivisor = 1;
-    }
-    
     if (popupStopId) {
         if (appStyle === 'rider') {
             $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/rider/rider-stop-marker.png');
@@ -403,288 +398,15 @@ function popInfo(busName, resetCampusFontSize) {
     // console.log('data: ', data)
     // console.log('next_stop' in data)
 
-    $('.next-stop-circle').remove(); // remaining .next-stop-circles rom rote menu messes this up
+    $('.route-stops-grid .next-stop-circle').remove(); // leftover circles from the route menu mess this up. Scoped to the route menu only: the grid's own circles must survive the incremental update path.
 
-    // Stop-marker ETA tooltips (setStopEtaLabel) are collected here and applied
-    // after the popup is shown: each call does a synchronous WebGL feature
-    // update (and possibly a sprite texture upload), which would otherwise delay
-    // the popup's first paint by ~18 pushes per render.
-    const etaLabelsToSet = [];
-
-    if ('next_stop' in data && busETAs[busName] && !busData[busName].atDepot) { // Hide next stops when bus is at depot
-        $('.next-stops-grid > div').empty();
-        
-        // Track whether we should show the closest stop section
-        const shouldShowClosestStop = closestStopId && routesServicing(closestStopId).includes(data.route) && 
-            (userPosition ? (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance']) : true);
-        
-        if (shouldShowClosestStop) {
-            const $circle = $('<div class="closest-stop-circle closest-stop-bg" style="margin-right: 1rem;"></div>').css('background-color', colorMappings[data.route])
-            $('.next-stops-grid > div').append($(`<div class="flex justify-center align-center closest-stop-bg h-100" style="margin-right: -2rem; margin-left: -1rem; border-radius: 0.8rem 0 0 0.8rem;"></div>`).append($circle))
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;">
-                <div class="next-stop-closest closest-stop">Closest Stop</div>
-                <div class="next-stop-name flex">${stopsData[closestStopId].name}</div>
-            </div>`).click(() => {
-                flyToStop(closestStopId, true); // true indicates user interaction
-            }));
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
-                <div class="next-stop-eta closest-stop-eta" data-stop-id="${closestStopId}">temp</div>
-                <div class="next-stop-time closest-stop-time">temp:temp</div>
-            </div>`).click(() => {
-                flyToStop(closestStopId, true); // true indicates user interaction
-            }));
-            $('.next-stops-grid > .grid').css('margin-top', '-0.5rem')
-            // $('.next-stops-grid > div').append('<div class="closest-stop-divider"><hr></div>')
-        }
-
-        let firstCircle = null;
-        let lastCircle = null;
-
-        const nextStop = data.next_stop
-        let routeStops = stopLists[data.route]
-        let sortedStops = []
-
-        const nextStopIndex = routeStops.indexOf(nextStop);
-
-        if (nextStopIndex !== -1) {
-            sortedStops = routeStops
-                .slice(nextStopIndex)
-                .concat(routeStops.slice(0, nextStopIndex));
-        }
-
-        // Check if closest stop is the next stop (first in route)
-        const closestStopIsNextStop = closestStopId && closestStopId === sortedStops[0] && routesServicing(closestStopId).includes(data.route);
-
-        // Special-case ordering for SAC NB (stop 3) approach legs on weekend/all-style routes
-        let approachPrev = null;
-        if ((busData[busName]['route'] === 'wknd1' || busData[busName]['route'] === 'all' || busData[busName]['route'] === 'winter1' || busData[busName]['route'] === 'on1' || busData[busName]['route'] === 'summer1') && nextStop === 3) {
-            approachPrev = busData[busName]['prevStopId'];
-            if (!approachPrev) {
-                const viaMap = busETAs && busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
-                const via22 = viaMap && (viaMap['22'] ?? viaMap[22]);
-                const via2 = viaMap && (viaMap['2'] ?? viaMap[2]);
-                if (typeof via22 === 'number' && typeof via2 === 'number') {
-                    approachPrev = via22 <= via2 ? 22 : 2;
-                }
-            }
-            if (approachPrev === 2) {
-                // Base is [3, ..., 22, 1, 2]; insert second 3 between 22 and 1
-                const idx22 = sortedStops.indexOf(22);
-                if (idx22 !== -1) {
-                    const head = sortedStops.slice(0, idx22 + 1); // includes 22
-                    const tail = sortedStops.slice(idx22 + 1);     // typically [1,2]
-                    sortedStops = head.concat([3]).concat(tail);
-                }
-            } else if (approachPrev === 22) {
-                // Move [1,2] right after first 3 and add a second 3 before continuing
-                const afterFirst3 = sortedStops.slice(1).filter(s => s !== 1 && s !== 2);
-                sortedStops = [3, 1, 2, 3].concat(afterFirst3);
-            }
-        }
-
-        if (busData[busName].at_stop && !(closestStopId && closestStopId === busData[busName].stopId)) {
-
-            let stopId = busData[busName].stopId
-            if (Array.isArray(stopId)) {
-                stopId = stopId[0];
-            }
-
-            let stopName = stopsData[stopId].name;
-            let campusName = '';
-            if (selectedCampus === 'nb') {
-                campusName = campusShortNamesMappings[stopsData[stopId].campus];
-            }
-
-            $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
-                    <div class="next-stop-campus">${campusName}</div>
-                    <div class="next-stop-name flex">${stopName}</div>
-                </div>`).click(() => { 
-                    flyToStop(stopId); 
-                }));
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
-                <div class="next-stop-eta" data-stop-id="${stopId}">Here</div>
-            </div>`).click(() => { 
-                flyToStop(stopId);  
-            }));
-
-            if (!firstCircle) {
-                // If closest stop is the next stop, use closest stop circle as first circle
-                if (closestStopIsNextStop) {
-                    firstCircle = $('.closest-stop-circle').css('background-color', 'red').addClass('next-stop-circle');
-                    firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
-                } else {
-                    firstCircle = $('.next-stops-grid .next-stop-circle').last().css('background-color', 'red');
-                    firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
-                }
-            }
-
-        }
-
-        let negativeETA = false;
-
-        for (let i = 0; i < sortedStops.length; i++) {
-
-            let eta;
-
-            if ((busData[busName]['route'] === 'wknd1' || busData[busName]['route'] === 'all' || busData[busName]['route'] === 'winter1' || busData[busName]['route'] === 'on1' || busData[busName]['route'] === 'summer1') && sortedStops[i] === 3) { // special case
-                if (nextStop === 3 && busData[busName]['stopId'] && !approachPrev) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
-                    delete busETAs[busName];
-                    console.log("I'm amazed this actually happened, wow"); // encountered this 4/19/2025 six:38 pm at livi dining
-                    return;
-                }
-                // Use correct approach prev stop for ETA calculation for each SAC NB visit
-                let etaPrevStopId;
-                if (i === 0) {
-                    // First SAC NB - use the actual approach previous stop
-                    etaPrevStopId = approachPrev;
-                } else {
-                    // Second SAC NB - use the previous stop in the current sorted sequence
-                    etaPrevStopId = sortedStops[i-1];
-                }
-                const etaSecs = getETAForStop(busName, 3, etaPrevStopId);
-                eta = Math.round(((etaSecs || 0) + 10)/secondsDivisor);
-            } else {
-                const etaSecs = getETAForStop(busName, sortedStops[i]);
-                eta = Math.round(((etaSecs || 0) + 10)/secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
-            }
-
-            if (eta < 0 && !settings['toggle-show-invalid-etas']) {
-                negativeETA = true;
-                break;
-            }
-
-            const currentTime = new Date();
-
-            let formattedTime;
-            if (showETAsInSeconds && (eta < 600 || i === 0)) {
-                currentTime.setSeconds(currentTime.getSeconds() + eta);
-                formattedTime = currentTime.toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true
-                });
-
-                let hours = Math.floor(eta / 3600);
-                let minutes = Math.floor((eta % 3600) / 60);
-                let seconds = eta % 60;
-                eta = hours > 0 ? `${hours}h ${minutes}m ${seconds}s` : 
-                      minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-
-            } else if (showETAsInSeconds && eta >= 600) {
-                currentTime.setMinutes(currentTime.getMinutes() + Math.floor(eta / 60));
-                formattedTime = currentTime.toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                });
-
-                let hours = Math.floor(eta / 3600);
-                let minutes = Math.floor((eta % 3600) / 60);
-                eta = hours > 0 ? (minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`) : `${minutes}m`;
-
-            } else {
-                currentTime.setMinutes(currentTime.getMinutes() + eta);
-                formattedTime = currentTime.toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                });
-
-                if (eta === 0) { eta = 1 }
-                eta += 'm'
-            }
-
-            let stopName = stopsData[sortedStops[i]].name
-            let campusName = '';
-            if (selectedCampus === 'nb') {
-                campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus];
-            }
-
-            if (i === 0 && settings['toggle-show-bus-progress']) {
-                stopName += `<div class="ml-0p5rem" style="color: #00abff;">(${Math.round(busData[busName].progress*100)}%)</div>`
-            }
-
-            if (closestStopId && closestStopId === sortedStops[i] && routesServicing(closestStopId).includes(data.route)) {
-                if (busData[busName].at_stop && closestStopId === busData[busName].stopId) {
-                    $('.closest-stop-eta').text('Here')
-                    $('.closest-stop-time').hide();
-                } else {
-                    $('.closest-stop-eta').text(eta)
-                    $('.closest-stop-time').text(formattedTime)
-                    etaLabelsToSet.push([sortedStops[i], eta]);
-                }
-            }
-
-            if (i === 0 && shouldShowClosestStop && closestStopId === sortedStops[i] && !busData[busName].at_stop) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
-
-            $('.next-stops-grid > div').append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col pointer">
-                    <div class="next-stop-campus">${campusName}</div>
-                    <div class="next-stop-name flex">${stopName}</div>
-                </div>`).click(() => { 
-                    flyToStop(sortedStops[i]); 
-                }));
-            $('.next-stops-grid > div').append($(`<div class="flex flex-col center pointer">
-                <div class="next-stop-eta" data-stop-id="${sortedStops[i]}">${eta}</div>
-                <div class="next-stop-time">${formattedTime}</div>
-            </div>`).click(() => { 
-                flyToStop(sortedStops[i]);  
-            }));
-            etaLabelsToSet.push([sortedStops[i], eta]);
-
-            if (!firstCircle) {
-                // If closest stop is the next stop and we're showing the closest stop section, use it as first circle
-                if (closestStopIsNextStop && shouldShowClosestStop) {
-                    firstCircle = $('.closest-stop-circle').addClass('next-stop-circle');
-                    firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
-                } else {
-                    firstCircle = $('.next-stops-grid .next-stop-circle').last();
-                    firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
-                }
-            }
-
-            // Always set lastCircle to the most recently added circle in the next-stops-grid
-            lastCircle = $('.next-stops-grid .next-stop-circle').last();
-
-        }
-
-        if (busData[busName].oos) {
-            distanceFromLine(busName);
-        }
-
-        if (!negativeETA) {
-
-            $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
-
-            if (popupBusName !== busName) {
-                setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
-                    $('.info-next-stops').scrollTop(0)
-                }, 0);
-            }  
-
-            setTimeout(() => {
-                const firstRect = firstCircle[0].getBoundingClientRect();
-                const lastRect = lastCircle[0].getBoundingClientRect();
-                const heightDiff = Math.abs(lastRect.top - firstRect.top);
-                firstCircle.addClass('connecting-line');
-                firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
-            }, 0);
-            
-        } else {
-            $('.next-stops-grid').hide(); // For some reason *only* the closest stop at top of next stops remains visible if negative ETA, and only if negative ETA happens while site was open. Investigate why, unsure if this fixes. The closest stop should be part of the element, so I'm confused...
-            setTimeout(() => {
-                $('.info-next-stops').scrollTop(0)
-            }, 0);
-        }
-    }
-
-    else {
-        $('.next-stops-grid').hide();
-        $('.next-stops-grid > div').empty();
-    }
-
+    // Stop-marker ETA tooltips (setStopEtaLabel) are collected in
+    // renderNextStopsGrid and applied after the popup is shown: each call does
+    // a synchronous WebGL feature update (and possibly a sprite texture
+    // upload), which would otherwise delay the popup's first paint.
+    const gridResult = renderNextStopsGrid(busName);
+    if (gridResult.aborted) return;
+    const etaLabelsToSet = gridResult.etaLabels;
     updateHistoricalCapacity(busName);
 
     if (sourceBusName !== busName) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
@@ -739,6 +461,374 @@ function popInfo(busName, resetCampusFontSize) {
     }
 
     updateRidingBadgeUI();
+}
+
+// Incremental renderer for the next-stops grid. The grid's structure (stop
+// order, closest-stop section, "at stop" row) only changes when the bus passes
+// a stop or a state flag flips, while the ETA numbers change every poll. So
+// instead of rebuilding the whole grid (and re-flashing the connecting line)
+// on every poll, we rebuild only when a structural signature changes and
+// update the ETA/time texts in place otherwise.
+let lastNextStopsSignature = null;
+
+function renderNextStopsGrid(busName) {
+    const data = busData[busName];
+    const etaLabelsToSet = [];
+
+    if (!('next_stop' in data) || !busETAs[busName] || data.atDepot) { // Hide next stops when bus is at depot
+        $('.next-stops-grid').hide();
+        $('.next-stops-grid > div').empty();
+        lastNextStopsSignature = null;
+        return { aborted: false, etaLabels: etaLabelsToSet };
+    }
+
+    // Track whether we should show the closest stop section
+    const shouldShowClosestStop = closestStopId && routesServicing(closestStopId).includes(data.route) &&
+        (userPosition ? (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance']) : true);
+
+    const nextStop = data.next_stop;
+    let routeStops = stopLists[data.route];
+    let sortedStops = [];
+
+    const nextStopIndex = routeStops.indexOf(nextStop);
+    if (nextStopIndex !== -1) {
+        sortedStops = routeStops
+            .slice(nextStopIndex)
+            .concat(routeStops.slice(0, nextStopIndex));
+    }
+
+    // Check if closest stop is the next stop (first in route)
+    const closestStopIsNextStop = closestStopId && closestStopId === sortedStops[0] && routesServicing(closestStopId).includes(data.route);
+
+    // Special-case ordering for SAC NB (stop 3) approach legs on weekend/all-style routes
+    let approachPrev = null;
+    if (isSpecialRoute(data.route) && nextStop === 3) {
+        approachPrev = data.prevStopId;
+        if (!approachPrev) {
+            const viaMap = busETAs && busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
+            const via22 = viaMap && (viaMap['22'] ?? viaMap[22]);
+            const via2 = viaMap && (viaMap['2'] ?? viaMap[2]);
+            if (typeof via22 === 'number' && typeof via2 === 'number') {
+                approachPrev = via22 <= via2 ? 22 : 2;
+            }
+        }
+        if (approachPrev === 2) {
+            // Base is [3, ..., 22, 1, 2]; insert second 3 between 22 and 1
+            const idx22 = sortedStops.indexOf(22);
+            if (idx22 !== -1) {
+                const head = sortedStops.slice(0, idx22 + 1); // includes 22
+                const tail = sortedStops.slice(idx22 + 1);     // typically [1,2]
+                sortedStops = head.concat([3]).concat(tail);
+            }
+        } else if (approachPrev === 22) {
+            // Move [1,2] right after first 3 and add a second 3 before continuing
+            const afterFirst3 = sortedStops.slice(1).filter(s => s !== 1 && s !== 2);
+            sortedStops = [3, 1, 2, 3].concat(afterFirst3);
+        }
+    }
+
+    const build = buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shouldShowClosestStop);
+    if (build.aborted) return { aborted: true };
+
+    // Structural signature: anything that changes the grid's shape rather than
+    // just the ETA numbers. The ETA values themselves are intentionally not
+    // part of it — they're what the incremental path updates.
+    const signature = JSON.stringify([
+        busName, data.route, data.at_stop, String(data.stopId == null ? '' : data.stopId),
+        String(closestStopId == null ? '' : closestStopId), shouldShowClosestStop,
+        build.negativeETA, showETAsInSeconds, !!settings['toggle-show-bus-progress'], sortedStops
+    ]);
+
+    if (lastNextStopsSignature === signature && $('.next-stops-grid > div').children().length > 0) {
+        updateGridIncremental(busName, build.rows, build.negativeETA, etaLabelsToSet);
+        return { aborted: false, etaLabels: etaLabelsToSet };
+    }
+
+    lastNextStopsSignature = signature;
+    rebuildGrid(busName, data, build.rows, shouldShowClosestStop, closestStopIsNextStop, build.negativeETA, etaLabelsToSet);
+    return { aborted: false, etaLabels: etaLabelsToSet };
+}
+
+// Pure computation pass: per-stop display data (ETA string, time string, stop
+// name, campus) shared by both the rebuild and incremental paths, so the ETA
+// math never runs twice. Mirrors the original inline loop exactly.
+function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shouldShowClosestStop) {
+    const secondsDivisor = showETAsInSeconds ? 1 : 60;
+    const route = data.route;
+    const rows = [];
+    let negativeETA = false;
+
+    for (let i = 0; i < sortedStops.length; i++) {
+
+        let eta;
+
+        if (isSpecialRoute(route) && sortedStops[i] === 3) { // special case
+            if (nextStop === 3 && data.stopId && !approachPrev) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known // only triggers if just passed socam sb or yard (at least for current 2024 routes [wknd1, all])
+                delete busETAs[busName];
+                console.log("I'm amazed this actually happened, wow"); // encountered this 4/19/2025 six:38 pm at livi dining
+                return { aborted: true };
+            }
+            // Use correct approach prev stop for ETA calculation for each SAC NB visit
+            let etaPrevStopId;
+            if (i === 0) {
+                // First SAC NB - use the actual approach previous stop
+                etaPrevStopId = approachPrev;
+            } else {
+                // Second SAC NB - use the previous stop in the current sorted sequence
+                etaPrevStopId = sortedStops[i - 1];
+            }
+            const etaSecs = getETAForStop(busName, 3, etaPrevStopId);
+            eta = Math.round(((etaSecs || 0) + 10) / secondsDivisor);
+        } else {
+            const etaSecs = getETAForStop(busName, sortedStops[i]);
+            eta = Math.round(((etaSecs || 0) + 10) / secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
+        }
+
+        if (eta < 0 && !settings['toggle-show-invalid-etas']) {
+            negativeETA = true;
+            break;
+        }
+
+        const currentTime = new Date();
+
+        let formattedTime;
+        if (showETAsInSeconds && (eta < 600 || i === 0)) {
+            currentTime.setSeconds(currentTime.getSeconds() + eta);
+            formattedTime = currentTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+
+            let hours = Math.floor(eta / 3600);
+            let minutes = Math.floor((eta % 3600) / 60);
+            let seconds = eta % 60;
+            eta = hours > 0 ? `${hours}h ${minutes}m ${seconds}s` :
+                  minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+        } else if (showETAsInSeconds && eta >= 600) {
+            currentTime.setMinutes(currentTime.getMinutes() + Math.floor(eta / 60));
+            formattedTime = currentTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            let hours = Math.floor(eta / 3600);
+            let minutes = Math.floor((eta % 3600) / 60);
+            eta = hours > 0 ? (minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`) : `${minutes}m`;
+
+        } else {
+            currentTime.setMinutes(currentTime.getMinutes() + eta);
+            formattedTime = currentTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            if (eta === 0) { eta = 1 }
+            eta += 'm'
+        }
+
+        let stopName = stopsData[sortedStops[i]].name;
+        let campusName = '';
+        if (selectedCampus === 'nb') {
+            campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus];
+        }
+
+        if (i === 0 && settings['toggle-show-bus-progress']) {
+            stopName += `<div class="ml-0p5rem" style="color: #00abff;">(${Math.round(busData[busName].progress * 100)}%)</div>`
+        }
+
+        const isClosest = closestStopId && closestStopId === sortedStops[i] && routesServicing(closestStopId).includes(route);
+        rows.push({
+            stopId: sortedStops[i],
+            eta: eta,
+            formattedTime: formattedTime,
+            stopName: stopName,
+            campusName: campusName,
+            isClosest: isClosest,
+            here: isClosest && data.at_stop && closestStopId === data.stopId,
+            skipRow: i === 0 && shouldShowClosestStop && isClosest && !data.at_stop
+        });
+    }
+
+    return { aborted: false, rows: rows, negativeETA: negativeETA };
+}
+
+// Full DOM rebuild path (first render or structural change).
+function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNextStop, negativeETA, etaLabelsToSet) {
+    const $grid = $('.next-stops-grid > div');
+    $grid.empty();
+
+    if (shouldShowClosestStop) {
+        const $circle = $('<div class="closest-stop-circle closest-stop-bg" style="margin-right: 1rem;"></div>').css('background-color', colorMappings[data.route])
+        $grid.append($(`<div class="flex justify-center align-center closest-stop-bg h-100" style="margin-right: -2rem; margin-left: -1rem; border-radius: 0.8rem 0 0 0.8rem;"></div>`).append($circle))
+        $grid.append($(`<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;">
+            <div class="next-stop-closest closest-stop">Closest Stop</div>
+            <div class="next-stop-name flex">${stopsData[closestStopId].name}</div>
+        </div>`).click(() => {
+            flyToStop(closestStopId, true); // true indicates user interaction
+        }));
+        $grid.append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
+            <div class="next-stop-eta closest-stop-eta" data-stop-id="${closestStopId}">temp</div>
+            <div class="next-stop-time closest-stop-time">temp:temp</div>
+        </div>`).click(() => {
+            flyToStop(closestStopId, true); // true indicates user interaction
+        }));
+        $('.next-stops-grid > .grid').css('margin-top', '-0.5rem')
+        // $('.next-stops-grid > div').append('<div class="closest-stop-divider"><hr></div>')
+    }
+
+    let firstCircle = null;
+    let lastCircle = null;
+
+    if (data.at_stop && !(closestStopId && closestStopId === data.stopId)) {
+
+        let stopId = data.stopId
+        if (Array.isArray(stopId)) {
+            stopId = stopId[0];
+        }
+
+        let stopName = stopsData[stopId].name;
+        let campusName = '';
+        if (selectedCampus === 'nb') {
+            campusName = campusShortNamesMappings[stopsData[stopId].campus];
+        }
+
+        $grid.append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
+        $grid.append($(`<div class="flex flex-col pointer">
+                <div class="next-stop-campus">${campusName}</div>
+                <div class="next-stop-name flex">${stopName}</div>
+            </div>`).click(() => {
+                flyToStop(stopId);
+            }));
+        $grid.append($(`<div class="flex flex-col center pointer">
+            <div class="next-stop-eta here-eta" data-stop-id="${stopId}">Here</div>
+        </div>`).click(() => {
+            flyToStop(stopId);
+        }));
+
+        if (!firstCircle) {
+            // If closest stop is the next stop, use closest stop circle as first circle
+            if (closestStopIsNextStop) {
+                firstCircle = $('.closest-stop-circle').css('background-color', 'red').addClass('next-stop-circle');
+                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+            } else {
+                firstCircle = $('.next-stops-grid .next-stop-circle').last().css('background-color', 'red');
+                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+            }
+        }
+
+    }
+
+    for (const row of rows) {
+
+        if (row.isClosest) {
+            if (row.here) {
+                $('.closest-stop-eta').text('Here')
+                $('.closest-stop-time').hide();
+            } else {
+                $('.closest-stop-eta').text(row.eta)
+                $('.closest-stop-time').text(row.formattedTime)
+                etaLabelsToSet.push([row.stopId, row.eta]);
+            }
+        }
+
+        if (row.skipRow) { continue; } // don't show duplicates if next bus stop is closest stop. Has to be down here because eta still needs to be calculated.
+
+        $grid.append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
+        $grid.append($(`<div class="flex flex-col pointer">
+                <div class="next-stop-campus">${row.campusName}</div>
+                <div class="next-stop-name flex">${row.stopName}</div>
+            </div>`).click(() => {
+                flyToStop(row.stopId);
+            }));
+        $grid.append($(`<div class="flex flex-col center pointer">
+            <div class="next-stop-eta" data-stop-id="${row.stopId}">${row.eta}</div>
+            <div class="next-stop-time">${row.formattedTime}</div>
+        </div>`).click(() => {
+            flyToStop(row.stopId);
+        }));
+        etaLabelsToSet.push([row.stopId, row.eta]);
+
+        if (!firstCircle) {
+            // If closest stop is the next stop and we're showing the closest stop section, use it as first circle
+            if (closestStopIsNextStop && shouldShowClosestStop) {
+                firstCircle = $('.closest-stop-circle').addClass('next-stop-circle');
+                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+            } else {
+                firstCircle = $('.next-stops-grid .next-stop-circle').last();
+                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+            }
+        }
+
+        // Always set lastCircle to the most recently added circle in the next-stops-grid
+        lastCircle = $('.next-stops-grid .next-stop-circle').last();
+
+    }
+
+    if (data.oos) {
+        distanceFromLine(busName);
+    }
+
+    if (!negativeETA) {
+
+        $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
+
+        if (popupBusName !== busName) {
+            setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
+                $('.info-next-stops').scrollTop(0)
+            }, 0);
+        }
+
+        setTimeout(() => {
+            const firstRect = firstCircle[0].getBoundingClientRect();
+            const lastRect = lastCircle[0].getBoundingClientRect();
+            const heightDiff = Math.abs(lastRect.top - firstRect.top);
+            firstCircle.addClass('connecting-line');
+            firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
+        }, 0);
+
+    } else {
+        $('.next-stops-grid').hide(); // For some reason *only* the closest stop at top of next stops remains visible if negative ETA, and only if negative ETA happens while site was open. Investigate why, unsure if this fixes. The closest stop should be part of the element, so I'm confused...
+        setTimeout(() => {
+            $('.info-next-stops').scrollTop(0)
+        }, 0);
+    }
+}
+
+// Text-only update path: the grid structure is unchanged since the last render,
+// so update just the ETA/time strings (the connecting line stays put — no
+// flash). The `.here-eta` rows ("Here" current-stop label) are static and
+// excluded; the closest-stop section gets its own handling below.
+function updateGridIncremental(busName, rows, negativeETA, etaLabelsToSet) {
+    for (const row of rows) {
+        $(`.next-stop-eta[data-stop-id="${row.stopId}"]:not(.here-eta)`).text(row.eta).siblings('.next-stop-time').text(row.formattedTime);
+        if (!row.skipRow) etaLabelsToSet.push([row.stopId, row.eta]);
+
+        if (row.isClosest) {
+            if (row.here) {
+                $('.closest-stop-eta').text('Here')
+                $('.closest-stop-time').hide();
+            } else if (row.skipRow) {
+                // The closest stop has no regular row (it is the next stop), so
+                // this is the only place its tooltip label gets queued.
+                etaLabelsToSet.push([row.stopId, row.eta]);
+            }
+        }
+    }
+
+    if (busData[busName].oos) {
+        distanceFromLine(busName);
+    }
+
+    if (negativeETA) {
+        $('.next-stops-grid').hide();
+    } else {
+        $('.next-stops-grid').show();
+    }
 }
 
 function updateNextStopsMaxHeight() {
