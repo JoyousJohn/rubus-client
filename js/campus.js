@@ -98,11 +98,9 @@ async function makeNewMap() {
     } else {
         map.setMaxBounds(null);
     }
-    if (polylineBounds && polylineBounds.isValid()) {
-        map.fitBounds(polylineBounds);
-    } else if (bounds[selectedCampus]) {
-        map.fitBounds(bounds[selectedCampus]);
-    }
+    // Teleport straight to the new campus center instead of flying there.
+    const campusView = views[selectedCampus] || [40.5033, -74.4521];
+    map.jumpTo({ center: [campusView[1], campusView[0]], zoom: 14 });
 
     activeRoutes.clear(); // only used to avoid having to call populateRouteSelectors below to trigger const newRoutes = pollActiveRoutes.difference(activeRoutes); in pre.js. doesn't affect addstopstoMap bc we're padding isInitial true to fetchBusData
     await fetchETAs();
@@ -116,18 +114,19 @@ async function makeNewMap() {
     fetchWhere();
     addStopsToMap();
 
-    // Set polylines for routes that have in-service buses
+    // Set polylines for routes that have in-service buses, then instantly fit
+    // to their bounds (animate: false) — no flying across the map on switch.
     const routesWithInServiceBuses = Array.from(activeRoutes).filter(route => routeHasInServiceBuses(route));
     if (routesWithInServiceBuses.length > 0) {
-        await setPolylines(new Set(routesWithInServiceBuses));
+        await setPolylines(new Set(routesWithInServiceBuses), { fitBounds: false });
         updatePolylineBoundsIfNeeded();
         if (polylineBounds && polylineBounds.isValid()) {
-            map.fitBounds(polylineBounds, { padding: [10, 10] });
+            map.fitBounds(polylineBounds, { padding: [10, 10], animate: false });
         } else {
-            map.fitBounds(bounds[selectedCampus]);
+            map.fitBounds(bounds[selectedCampus], { animate: false });
         }
     } else {
-        map.fitBounds(bounds[selectedCampus]);
+        map.fitBounds(bounds[selectedCampus], { animate: false });
     }
 }
 

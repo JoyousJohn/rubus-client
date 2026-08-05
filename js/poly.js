@@ -668,7 +668,7 @@ function updatePolylineStyle(routeName) {
     }
 }
 
-async function setPolylines(activeRoutes) {
+async function setPolylines(activeRoutes, opts = {}) {
     await initRoutePointsCache(selectedCampus);
     const forceRoutes = getForceShowRoutes();
     let routesToSet;
@@ -753,7 +753,9 @@ async function setPolylines(activeRoutes) {
 
     if (addedAny) {
         updatePolylineBoundsIfNeeded();
-        map.fitBounds(polylineBounds, { padding: [10, 10] });
+        if (opts.fitBounds !== false) {
+            map.fitBounds(polylineBounds, { padding: [10, 10] });
+        }
     }
 }
 
