@@ -1203,6 +1203,8 @@ $(document).ready(async function() {
     async function initBusDataPipeline() {
         await fetchBusData(false, true);
 
+        $('.loading-buses').stop(true, true).fadeOut();
+
         document.dispatchEvent(new Event('rubus-bus-data-loaded'));
 
         checkShared();

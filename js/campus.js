@@ -131,14 +131,17 @@ async function makeNewMap() {
 }
 
 
-function campusChanged() {
+async function campusChanged() {
     const previousCampus = selectedCampus;
     const newCampus = settings['campus'];
     // True when the live map already represents this campus (e.g. first-run
     // confirm after the map was fully built behind the theme/campus modals).
     const mapAlreadyForCampus = map && previousCampus === newCampus;
 
-    if (!mapAlreadyForCampus) {
+    // Only flash the UPDATING toast for a real campus rebuild. campusChanged
+    // also runs on every load from updateSettings() before the map exists,
+    // which used to show the toast and immediately slide it up.
+    if (!mapAlreadyForCampus && map) {
         $('.updating-buses').show();
     }
 
@@ -171,7 +174,13 @@ function campusChanged() {
     // Only tear down stops/buses/polylines when the campus actually changes.
     if (map && !mapAlreadyForCampus) {
         cleanupOldMap();
-        makeNewMap();
+        try {
+            await makeNewMap();
+        } finally {
+            // Keep the UPDATING toast up until the campus buses and polylines
+            // have finished fetching/adding, then hide it.
+            $('.updating-buses').stop(true, true).slideUp();
+        }
     }
 
     renderForceShowCheckboxes();
@@ -182,10 +191,6 @@ function campusChanged() {
         setTimeout(() => {
             showBikeRacks();
         }, 100);
-    }
-
-    if (!mapAlreadyForCampus) {
-        $('.updating-buses').slideUp();
     }
 
 }

@@ -399,7 +399,7 @@ html, body {
     animation: pulse 1s infinite;
 } */
 
-.updating-buses, .getting-location-popup, .slow-connection {
+.updating-buses, .loading-buses, .getting-location-popup, .slow-connection {
     padding: 0.3rem 1rem;
     background-color: rgb(51, 160, 211);
     color: white;
