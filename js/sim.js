@@ -1078,7 +1078,8 @@ function setSimTimeMultiplier(newMultiplier) {
 
 
 $(document).ready(async function() {
-    $('.sim-btn').on('touchstart click', function() {
+    $('.sim-btn').on('touchstart click', function(e) {
+        e.preventDefault();
         startSim();
 
         sa_event('btn_press', {
