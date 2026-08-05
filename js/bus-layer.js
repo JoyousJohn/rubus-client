@@ -53,12 +53,15 @@
         }
     }
 
-    function drawRubusTeardrop(ctx, cx, cy, radius) {
+    function drawRubusTeardrop(ctx, cx, cy, radius, cornerRadius) {
+        cornerRadius = cornerRadius === undefined ? 3 : cornerRadius;
         ctx.beginPath();
         ctx.moveTo(cx, cy - radius);
         ctx.arc(cx, cy, radius, -Math.PI / 2, Math.PI, false);
-        ctx.quadraticCurveTo(cx - radius, cy - radius, cx - radius + 3, cy - radius + 3);
-        ctx.quadraticCurveTo(cx - radius, cy - radius, cx, cy - radius);
+        // Smooth rounded corner at the top-left (DOM parity:
+        // border-top-left-radius: 10%). The two-curve approach pinched
+        // inward at the junction, leaving a concave notch in the outline.
+        ctx.arcTo(cx - radius, cy - radius, cx, cy - radius, cornerRadius);
         ctx.closePath();
     }
 
@@ -84,19 +87,23 @@
         const cy = s / 2;
         const R = dim.outer / 2;
 
-        // Outer ring: the 2px black border sits OUTSIDE the color fill,
-        // matching the content-box CSS border. Total footprint = dim.outer + 4.
-        drawRubusTeardrop(ctx, cx, cy, R + 2);
+        // Outer ring: the 1.5px black border sits OUTSIDE the color fill.
+        // Total footprint = dim.outer + 3.
+        // The inner color path's corner radius must shrink by the border
+        // width (3 -> 1.5) so its corner arc is concentric with the outer's —
+        // otherwise the corner arcs land 1.5px off and the color fails to
+        // fill right up to the border at the tip.
+        drawRubusTeardrop(ctx, cx, cy, R + 1.5, 3);
         ctx.fillStyle = '#000000';
         ctx.fill();
-        drawRubusTeardrop(ctx, cx, cy, R);
+        drawRubusTeardrop(ctx, cx, cy, R, 1.5);
         ctx.fillStyle = color;
         ctx.fill();
 
-        // Inner circle dot: 2px black border outside the theme-color fill.
+        // Inner circle dot: 1.5px black border outside the theme-color fill.
         const innerR = dim.inner / 2;
         ctx.beginPath();
-        ctx.arc(cx, cy, innerR + 2, 0, Math.PI * 2);
+        ctx.arc(cx, cy, innerR + 1.5, 0, Math.PI * 2);
         ctx.fillStyle = '#000000';
         ctx.fill();
         ctx.beginPath();
@@ -1304,6 +1311,16 @@
          */
         _setupClickHandler() {
             const self = this;
+            this._map.on('mousemove', this._layerId, function() {
+                if (self._map && self._map.getCanvas()) {
+                    self._map.getCanvas().style.cursor = 'pointer';
+                }
+            });
+            this._map.on('mouseleave', this._layerId, function() {
+                if (self._map && self._map.getCanvas()) {
+                    self._map.getCanvas().style.cursor = '';
+                }
+            });
             this._map.on('click', this._layerId, function(e) {
                 if (!e.features || e.features.length === 0) return;
                 // MapLibre binds its click pipeline to the canvas container, so
