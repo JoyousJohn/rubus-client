@@ -60,6 +60,13 @@ function deleteAllPolylines() {
         polylines[polyline].remove();
     }
     polylines = {};
+    // Reset the shared polyline bounds cache so panout/next fitBounds always
+    // targets the new campus. updatePolylineBoundsIfNeeded() early-returns when
+    // the set of routes with polylines is unchanged, which would otherwise leave
+    // polylineBounds pointing at the previous campus (route names collide across
+    // campuses, e.g. NB and Newark share names).
+    polylineBounds = null;
+    previousRoutesWithPolylines = new Set();
 }
 
 
@@ -77,6 +84,11 @@ function cleanupOldMap() {
     returningToSavedView = false;
     savedCenter = null;
     savedZoom = null;
+
+    // The focused route (and its cached bounds) no longer exist on the new
+    // campus. Clear it so panout/route selectors can't target stale geometry.
+    shownRoute = null;
+    shownBeforeRoute = null;
 }
 
 async function makeNewMap() {
