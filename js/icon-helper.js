@@ -69,6 +69,20 @@ function createIcon(iconName, size = '', color = '') {
     return icon;
 }
 
+/**
+ * Create the pulsing location dot marker icon (like GPS/map apps).
+ * @returns {L.DivIcon} - A pulsing dot icon centered on the location
+ */
+function createLocationMarkerIcon() {
+    return L.divIcon({
+        className: 'location-marker-wrapper',
+        html: '<span class="location-marker-dot"></span>' +
+              '<span class="location-marker-pulse"></span>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+    });
+}
+
 // Auto-replace icons when DOM is loaded
 document.addEventListener('DOMContentLoaded', replaceFontAwesomeIcons);
 

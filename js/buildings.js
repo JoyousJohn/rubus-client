@@ -384,11 +384,7 @@ function loadBuildings() {
                                 } else {
                                     // Create new location marker if none exists
                                     locationMarker = L.marker([lat, lng], {
-                                        icon: L.icon({
-                                            iconUrl: 'img/location_marker.png',
-                                            iconSize: [24, 24],
-                                            iconAnchor: [12, 12]
-                                        })
+                                        icon: createLocationMarkerIcon()
                                     }).addTo(map);
                                     locationMarker.on('click', function() {
                                         $('.bus-info-popup, .stop-info-popup').hide();

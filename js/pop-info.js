@@ -712,14 +712,8 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         }));
 
         if (!firstCircle) {
-            // If closest stop is the next stop, use closest stop circle as first circle
-            if (closestStopIsNextStop) {
-                firstCircle = $('.closest-stop-circle').css('background-color', 'red').addClass('next-stop-circle');
-                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
-            } else {
-                firstCircle = $('.next-stops-grid .next-stop-circle').last().css('background-color', 'red');
-                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
-            }
+            firstCircle = $('.next-stops-grid .next-stop-circle').last();
+            firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`);
         }
 
     }
@@ -755,13 +749,13 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         etaLabelsToSet.push([row.stopId, row.eta]);
 
         if (!firstCircle) {
-            // If closest stop is the next stop and we're showing the closest stop section, use it as first circle
-            if (closestStopIsNextStop && shouldShowClosestStop) {
+            const closestStopIsFirstRouteStop = shouldShowClosestStop && ((!data.at_stop && closestStopIsNextStop) || (data.at_stop && closestStopId && closestStopId === data.stopId));
+            if (closestStopIsFirstRouteStop) {
                 firstCircle = $('.closest-stop-circle').addClass('next-stop-circle');
-                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`);
             } else {
                 firstCircle = $('.next-stops-grid .next-stop-circle').last();
-                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`)
+                firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[data.route]}"></div>`);
             }
         }
 

@@ -2599,15 +2599,16 @@ function handleNearestStop(fly) {
         // Remove any existing location marker
         if (window.locationMarker) {
             window.locationMarker.remove();
+            window.locationMarker = null;
+        }
+        if (window.marker) {
+            window.marker.remove();
+            window.marker = null;
         }
 
         const locationMarker = L.marker(userPosition, 
-            { icon: L.icon({
-                iconUrl: 'img/location_marker.png',
-                iconSize: [24, 24],
-                iconAnchor: [12, 12],
-            })
-        }).addTo(map);
+            { icon: createLocationMarkerIcon() }
+        ).addTo(map);
         
         // Store reference to location marker globally
         window.locationMarker = locationMarker;

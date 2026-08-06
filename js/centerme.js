@@ -44,7 +44,7 @@ function centerme() {
 
     if (userPosition) {
         // User position already available - fly to location and keep background active
-        map.flyTo(userPosition, 18, {
+        map.flyTo(userPosition, 16, {
             animate: true,
             duration: 0.3
         });
@@ -99,20 +99,23 @@ function centerme() {
             const userLong = position.coords.longitude;
             userPosition = [userLat, userLong];
 
+            // Remove any existing location marker before adding a new one,
+            // so both this flow and handleNearestStop share the same global
+            if (window.locationMarker) {
+                window.locationMarker.remove();
+                window.locationMarker = null;
+            }
+
             marker = L.marker(userPosition, 
-                { icon: L.icon({
-                    iconUrl: 'img/location_marker.png',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12],
-                })
-            })
+                { icon: createLocationMarkerIcon() }
+            )
             .addTo(map)
             .on('click', function() {
                 $('.bus-info-popup, .stop-info-popup').hide();  
                 $('.my-location-popup').show();
                 sourceStopId = null;
                 sourceBusName = null;
-            })
+            });
 
             // Check distance before flying and showing nearest stop button
             const closestStop = findClosestStop(userLat, userLong);
@@ -120,7 +123,7 @@ function centerme() {
             
             if (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance']) {
                 // Only fly to location if within distance limit
-                map.flyTo(userPosition, 18, {
+map.flyTo(userPosition, 16, {
                     animate: true,
                     duration: 0.3
                 });

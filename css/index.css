@@ -19,6 +19,7 @@
     --theme-short-stops-color: #32f832;
     --theme-chat-recs-bg: #4d4d4d;
     --theme-card-bg: rgb(68, 68, 68);
+    --theme-panel-bg: rgb(53, 53, 53);
     --theme-chat-recs-text: #dedede;
     --theme-unselected-route-bg: #484848;
     --theme-unselected-route-text: #9fa1a5;
@@ -45,6 +46,7 @@
     --theme-short-stops-color: #29c529;
     --theme-chat-recs-bg: #f1f1f1;
     --theme-card-bg: #e0e0e0;
+    --theme-panel-bg: #f4f4f4;
     --theme-chat-recs-text: #171717;
     --theme-unselected-route-bg: #f3f4f6;
     --theme-unselected-route-text: #6b7280;
@@ -78,10 +80,11 @@
     --theme-link: #ec4899;
     --theme-accent: #ec4899;
     --theme-card-bg: #1c112e;
+    --theme-panel-bg: #12091f;
 }
 
 [theme="beige-coffee"], [theme="coffee"] {
-    --theme-bg: #f4eae1;
+    --theme-bg: #f9f2eb;
     --theme-color: #3d2b1f;
     --theme-color-lighter: #3d2b1f;
     --theme-extra: #70533e;
@@ -89,7 +92,7 @@
     --theme-border: #d0beae;
     --theme-stop-bus-name: #70533e;
     --theme-stop-bus-time: #70533e;
-    --theme-bg-closest-stop: #ebdcd0;
+    --theme-bg-closest-stop: #f2e6dc;
     --theme-hidden-route-col: #d0beae;
     --theme-bus-icon-inner: #f4eae1;
     --theme-satellite-btn: #a0522d;
@@ -104,6 +107,7 @@
     --theme-link: #a0522d;
     --theme-accent: #a0522d;
     --theme-card-bg: #ebdcd0;
+    --theme-panel-bg: #f9f2eb;
 }
 
 @font-face {
@@ -304,6 +308,51 @@ html, body {
     z-index: 1000;
     pointer-events: none;
     /* border: 1px solid black; */
+}
+
+/* Pulsing user-location dot marker (GPS/map-app style) */
+.location-marker-wrapper {
+    position: relative;
+    width: 24px;
+    height: 24px;
+}
+
+.location-marker-wrapper .location-marker-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    background-color: #1a73e8;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+    z-index: 2;
+}
+
+.location-marker-wrapper .location-marker-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background-color: rgba(26, 115, 232, 0.4);
+    z-index: 1;
+    animation: location-marker-pulse 2s ease-out infinite;
+}
+
+@keyframes location-marker-pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(3.2);
+        opacity: 0;
+    }
 }
 
 /* Distance line marker and tooltip styling - matches ETA tooltip styling */
@@ -801,6 +850,7 @@ html, body {
     background-color: rgb(162, 162, 162);
     border-radius: 50%;
     position: relative;
+    z-index: 1;
 }
 
 .next-stop-circle::after {
@@ -811,12 +861,14 @@ html, body {
     left: 50%;
     transform: translateX(-50%);
     top: 100%;
+    z-index: -1;
 }
 
 .next-stop-circle.connecting-line::after {
     height: var(--connecting-line-height);
     background: var(--theme-line-bg);
     top: 4px;
+    z-index: -1;
 }
 
 .next-stop-campus {
@@ -1573,7 +1625,7 @@ html, body {
 
 .settings-panel {
     /* height: 100vh; */
-    background-color: var(--theme-bg);
+    background-color: var(--theme-panel-bg, var(--theme-bg));
     color: var(--theme-color);
     display: none;
     font-family: var(--font-family);
@@ -1583,10 +1635,6 @@ html, body {
     inset: 0;
     overflow-y: scroll;
     overscroll-behavior: contain;
-}
-
-html[theme="light"] .settings-panel {
-    background-color: #f4f4f4;
 }
 
 .settings-section-accent {
@@ -2447,11 +2495,6 @@ html[theme="light"] .settings-panel .span-i {
     color: #ffffff;
 }
 
-html[theme="y2k-glamour"] .settings-panel,
-html[theme="glamour"] .settings-panel {
-    background-color: #12091f;
-}
-
 [theme="y2k-glamour"] .settings-panel .settings-heading,
 [theme="glamour"] .settings-panel .settings-heading {
     color: #b099cc;
@@ -2542,11 +2585,6 @@ html[theme="glamour"] .settings-panel {
 [theme="coffee"] ::selection {
     background-color: #c2b280;
     color: #3d2b1f;
-}
-
-html[theme="beige-coffee"] .settings-panel,
-html[theme="coffee"] .settings-panel {
-    background-color: #f4eae1;
 }
 
 [theme="beige-coffee"] .settings-panel .settings-heading,
@@ -2659,6 +2697,7 @@ html[theme="coffee"] .settings-panel {
     --theme-link: #c49a3c;
     --theme-accent: #c49a3c;
     --theme-card-bg: #223a25;
+    --theme-panel-bg: #223a25;
 }
 
 /* ==========================================
@@ -2667,10 +2706,6 @@ html[theme="coffee"] .settings-panel {
 [theme="forest"] ::selection {
     background-color: #6aaa50;
     color: #d4cfc3;
-}
-
-html[theme="forest"] .settings-panel {
-    background-color: #223a25;
 }
 
 [theme="forest"] .settings-panel .settings-heading {
