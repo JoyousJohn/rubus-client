@@ -92,12 +92,20 @@ function _csWrapLineWidths(name, maxPx) {
     return widths;
 }
 
-// If a stop name ends with "(NB)" or "(SB)", split it into the displayable
-// base text and a small direction badge. Returns {base, tag} or null.
+// If a stop's displayed name ends with "North"/"South" (short names) or with
+// "(NB)"/"(SB)" (main names), split off a small direction badge. Returns
+// {base, tag} or null.
 function _csParseBadge(name) {
-    var m = /^(.*?)\s*\((NB|SB)\)$/i.exec(name);
-    if (!m) return null;
-    return { base: m[1].replace(/\s+$/, ''), tag: m[2].toUpperCase() };
+    var dir = /^(.*?)\s+(North|South)$/i.exec(name);
+    if (dir) {
+        var tag = dir[2].charAt(0).toUpperCase() + dir[2].slice(1).toLowerCase();
+        return { base: dir[1].trim(), tag: tag };
+    }
+    var nsb = /^(.*?)\s*\((NB|SB)\)$/i.exec(name);
+    if (nsb) {
+        return { base: nsb[1].replace(/\s+$/, '').trim(), tag: nsb[2].toUpperCase() };
+    }
+    return null;
 }
 
 // Measured rendered width (border-box) of a direction badge for the given tag,
@@ -207,9 +215,11 @@ function _csTopCandidates(centerLat, centerLng) {
         var lat = Number(stop.latitude);
         var lng = Number(stop.longitude);
         if (!isFinite(lat) || !isFinite(lng)) continue;
+        var useMain = typeof settings !== 'undefined' && settings['toggle-center-stops-main-name'] === true;
+        var displayName = useMain ? (stop.name || stop.shortName) : (stop.shortName || stop.name);
         candidates.push({
             stopId: Number(stopId),
-            name: stop.name,
+            name: displayName,
             distance: haversine(centerLat, centerLng, lat, lng)
         });
     }

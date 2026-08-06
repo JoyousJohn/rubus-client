@@ -577,6 +577,19 @@ $('.settings-toggle .toggle-input').on('change', function () {
             requestOffScreenUpdate();
             break;
 
+        case 'toggle-center-stops-main-name':
+            console.log(`Center Stops: Use Main Name is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-center-stops-main-name'] = isChecked;
+            // Force the chips to re-render with the newly chosen name field
+            // (el._csStopId short-circuits unchanged stops, so clear it).
+            $('.center-stops-btns-item').each(function() {
+                this._csStopId = null;
+            });
+            if (typeof window.updateCenterStops === 'function') {
+                window.updateCenterStops();
+            }
+            break;
+
         case 'toggle-show-capacity':
             console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-capacity'] = isChecked;

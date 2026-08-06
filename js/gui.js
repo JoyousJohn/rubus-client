@@ -1938,6 +1938,7 @@ const toggleSettings = [
     'toggle-disable-bus-rotation-fix-at-stop',
     'toggle-pause-stopped-for-timer',
     'toggle-offscreen-bus-indicators-pan-end-only',
+    'toggle-center-stops-main-name',
 ]
 
 let colorMappings;
