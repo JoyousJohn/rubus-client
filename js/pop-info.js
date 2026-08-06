@@ -444,6 +444,7 @@ function popInfo(busName, resetCampusFontSize) {
     unhighlightBuilding();
 
     $('.bus-info-popup').stop(true, true).show();
+    if (typeof hideCenterStops === 'function') hideCenterStops();
     if (isDesktop) showEscNotice('bus');
 
     // Apply the collected stop-marker ETA tooltips after the popup has painted

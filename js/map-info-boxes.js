@@ -102,6 +102,12 @@ function hideInfoBoxes(instantly_hide) {
 
     updateRidingBadgeUI();
 
+    // Restore the "closest stops" widget once all popups/info boxes are hidden
+    // (drag, panout, close).
+    if (typeof showCenterStops === 'function') {
+        showCenterStops();
+    }
+
     // checkMinRoutes(); // to reshow knight mover if hidden; so far only hidden by search wrapper opening // find a better way to reshow. having this here causes a run on each drag.
 
 }

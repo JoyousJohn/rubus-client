@@ -506,6 +506,9 @@ function hideStopsExcept(excludedRoute) {
             });
         }
     });
+    if (typeof window.updateCenterStops === 'function') {
+        window.updateCenterStops();
+    }
 }
 
 function hidePolylinesExcept(route) {
@@ -2883,8 +2886,14 @@ function populateMeClosestStops() {
     for (const [stopId, distance] of closestStopsMap) {
 
         if (!activeStops.includes(parseInt(stopId))) continue;
+
+        const stop = stopsData[stopId];
+        // Skip stop IDs that no longer exist in the current campus's data.
+        // This guards against stale closestStopsMap entries that could otherwise
+        // crash here by reading `.name` on undefined.
+        if (!stop) continue;
         
-        const stopNameDiv = $(`<div class="name pointer">${stopsData[stopId].name}</div>`).click(() => { 
+        const stopNameDiv = $(`<div class="name pointer">${stop.name}</div>`).click(() => { 
             clearPanoutFeedback();
             flyToStop(Number(stopId));
         })

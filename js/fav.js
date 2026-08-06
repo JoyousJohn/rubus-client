@@ -312,5 +312,9 @@ function toggleFavorites() {
     }
 
     favsShown = !favsShown;
+
+    if (typeof window.updateCenterStops === 'function') {
+        window.updateCenterStops();
+    }
 }
 

@@ -122,6 +122,7 @@ $(document).ready(function() {
         hideInfoBoxes(true);
         $('.knight-mover').hide();
         $('.search-wrapper').show();
+        if (typeof hideCenterStops === 'function') hideCenterStops();
         adjustSearchHeights();
         attachSearchViewportListeners();
         $input.trigger('input').focus();
@@ -959,6 +960,7 @@ $(document).ready(function() {
 
 function closeSearch() {
     $('.search-wrapper').hide();
+    if (typeof showCenterStops === 'function') showCenterStops();
     detachSearchViewportListeners();
     $('.search-wrapper').css({
       'position': '',
@@ -971,6 +973,7 @@ function closeSearch() {
 
 function openSearch() {
     $('.search-wrapper').show();
+    if (typeof hideCenterStops === 'function') hideCenterStops();
     adjustSearchHeights();
     attachSearchViewportListeners();
 }

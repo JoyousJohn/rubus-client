@@ -89,6 +89,19 @@ function cleanupOldMap() {
     // campus. Clear it so panout/route selectors can't target stale geometry.
     shownRoute = null;
     shownBeforeRoute = null;
+
+    // Reset all nearest-stop state so stop IDs from the previous campus can't be
+    // looked up against the new campus's stopsData. `stopsData` is swapped
+    // before makeNewMap() rebuilds things, and updateNearestStop() rebuilds
+    // closestStopDistances for the new campus — otherwise stale stop IDs persist
+    // and crash populateMeClosestStops (gui.js:2887).
+    activeStops = [];
+    closestStopId = null;
+    closestDistance = null;
+    closestStopDistances = {};
+    sortedClosestStopDistances = {};
+    closestStopsMap = undefined;
+    $('.closest-stops-list').empty();
 }
 
 async function makeNewMap() {

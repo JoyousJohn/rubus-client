@@ -111,6 +111,7 @@
     <script defer src="js/riding.js"></script>
     <script defer src="js/spoof.js"></script>
     <script defer src="js/poly.js"></script>
+    <script defer src="js/center-stops.js"></script>
     <script src="js/parking.js"></script>
     <script defer src="js/gui.js"></script>
     <script defer src="js/info-panels.js"></script>
@@ -439,14 +440,16 @@
                                 <div class="info-name-mid"></div>
                                 <div class="info-route info-route-mid"></div>
                                 <i class="info-bolt fa-solid fa-bolt none" style="font-size: 2rem;"></i>
-                                <div class="info-speed-wrapper">
-                                    <div class="info-speed-circle">
-                                        <span class="info-speed-mid"></span>
-                                        <span class="info-mph-mid none"></span>
+                                <div class="route-right-mid">
+                                    <div class="info-campuses info-campuses-mid"></div>
+                                    <div class="info-speed-wrapper">
+                                        <div class="info-speed-circle">
+                                            <span class="info-speed-mid"></span>
+                                            <span class="info-mph-mid none"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="info-campuses info-campuses-mid"></div>
                         </div>
                         <div class="info-campuses-serviced"></div>
                         <div class="info-overdue-break none mt-0p5rem" style="opacity: 0.7;"></div>
@@ -2401,6 +2404,11 @@
         <div class="flex justify-between align-end" style="padding: 0 1rem;">
 
             <div class="left-btns flex flex-col" style="row-gap: 0.8rem">
+                <div class="center-stops-btns flex flex-col" style="row-gap: 0.6rem">
+                    <div class="center-stops-btns-item"></div>
+                    <div class="center-stops-btns-item"></div>
+                    <div class="center-stops-btns-item"></div>
+                </div>
                 <div class="buildings-btn"><i class="fa-solid fa-building"></i></div>
                 <div class="satellite-btn"><i class="fa-solid fa-earth-americas text-2rem"></i></div>
                 <!-- <div class="buses-btn none" onclick="busesOverview()"><i class="fa-solid fa-bus"></i></div> -->

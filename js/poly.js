@@ -1085,6 +1085,9 @@ function updateStopsOpacity() {
     if (typeof window.updateStopsLayerOrder === 'function') {
         window.updateStopsLayerOrder();
     }
+    if (typeof window.updateCenterStops === 'function') {
+        window.updateCenterStops();
+    }
 }
 
 async function preloadRoutePolylines(campus) {
@@ -2047,6 +2050,7 @@ async function popStopInfo(stopId) {
     $('.stop-info-use-route-selectors-notice').hide();
 
     $('.stop-info-popup').stop(true, true).show();
+    if (typeof hideCenterStops === 'function') hideCenterStops();
     if (typeof isDesktop !== 'undefined' && isDesktop) showEscNotice('stop');
 
     $('.stop-info-popup-inner').scrollTop(0);
@@ -2175,6 +2179,10 @@ function removePreviouslyActiveStops() {
     }
 
     activeStops = newActiveStops;
+
+    if (typeof window.updateCenterStops === 'function') {
+        window.updateCenterStops();
+    }
 }
 
 
