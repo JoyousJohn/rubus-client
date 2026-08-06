@@ -2488,25 +2488,23 @@ function updateNearestStop() {
     let thisClosestStopId = null;
     let thisClosestDistance = Infinity;
 
-    const stopIds = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
-
-    const servicedStops = new Set();
-    const shouldFilter = !settings['toggle-show-out-of-service'] && activeStops.length > 0;
-    if (shouldFilter && busesByRoutes[selectedCampus]) {
-        for (const route of Object.keys(busesByRoutes[selectedCampus])) {
-            if (!routeHasInServiceBuses(route)) continue;
-            const list = stopLists[route];
-            if (!list) continue;
-            list.forEach(id => servicedStops.add(Number(id)));
-        }
-    }
-
     const userLat = userPosition[0];
     const userLong = userPosition[1];
 
+    const stopIds = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
+
     for (const stopId of stopIds) {
-        if (shouldFilter && !servicedStops.has(Number(stopId))) continue;
+        // Only consider stops that are actually shown on the map (the same
+        // visible marker pool the center-stop chips draw from). This keeps the
+        // closest stop consistent with what's rendered: a stop visible only
+        // because "show out of service buses" is on counts, and when no buses
+        // are running we fall back to showing all stops, so every one counts.
+        // (The old servicedStops filter excluded all stops whenever no buses
+        // ran, and never matched OOS-visible stops.)
+        const marker = busStopMarkers[stopId];
+        if (!marker || !marker._addedToMap) continue;
         const stop = stopsData[stopId];
+        if (!stop) continue;
         const distance = haversine(userLat, userLong, stop.latitude, stop.longitude);
 
         closestStopDistances[stopId] = distance;
