@@ -167,9 +167,12 @@ function _csLayout(name, limit) {
     return result;
 }
 
-function _csRender(el, layout) {
+function _csRender(el, layout, isClosest) {
     var $item = $(el);
     $item.empty();
+    if (isClosest) {
+        $('<div class="cs-closest">CLOSEST</div>').appendTo($item);
+    }
     if (layout.badge) {
         if (layout.badge.base) {
             $('<span class="cs-base">').text(layout.badge.base).appendTo($item);
@@ -178,8 +181,14 @@ function _csRender(el, layout) {
         }
         $('<span class="cs-badge">').text(layout.badge.tag).appendTo($item);
     } else {
-        $item.text(layout.name);
+        $('<span class="cs-base">').text(layout.name).appendTo($item);
     }
+}
+
+// Width of the CLOSEST badge content (measured with the name font, an upper
+// bound since the badge renders at a smaller size) plus its horizontal padding.
+function _csMeasureClosestBadge() {
+    return _measureCS('CLOSEST') + (2 * 0.6 * _csRootFont());
 }
 
 var _csItems = null;
@@ -238,13 +247,20 @@ function _csRenderChips(top) {
         var el = $item[0];
         if (!stop) { $item.hide(); return; }
         var layout = _csLayout(stop.name, m.limit);
-        // Only rebuild chip DOM when it actually changes stop; re-ranking an
-        // already-rendered stop is just a width refresh.
-        if (el._csStopId !== stop.stopId) {
+        var isClosest = typeof closestStopId !== 'undefined' && closestStopId != null && stop.stopId === Number(closestStopId);
+        // Only rebuild chip DOM when it actually changes stop (or its closest
+        // state); re-ranking an already-rendered stop is just a width refresh.
+        if (el._csStopId !== stop.stopId || el._csClosest !== isClosest) {
             el._csStopId = stop.stopId;
-            _csRender(el, layout);
+            el._csClosest = isClosest;
+            _csRender(el, layout, isClosest);
         }
-        el.style.width = Math.min(layout.need + _csBuffer + m.padH, m.maxPx) + 'px';
+        var need = layout.need;
+        if (isClosest) {
+            var closestW = _csMeasureClosestBadge();
+            if (closestW > need) need = closestW;
+        }
+        el.style.width = Math.min(need + _csBuffer + m.padH, m.maxPx) + 'px';
         $item.show().off('click').on('click', function() {
             clearPanoutFeedback();
             flyToStop(stop.stopId);
@@ -311,6 +327,14 @@ function fitCenterStopsWidth() {
 }
 
 window.fitCenterStopsWidth = fitCenterStopsWidth;
+
+// Lightweight re-render used when the user's closest stop changes (location
+// shared or updated) without the map moving: re-ranks from the last known
+// center so the CLOSEST badge can appear/disappear on already-shown chips.
+window.refreshCenterStopsClosest = function() {
+    if (typeof map === 'undefined' || !map || !stopsData || !_csLastCenter) return;
+    _csRenderChips(_csTopCandidates(_csLastCenter.lat, _csLastCenter.lng));
+};
 
 document.addEventListener('rubus-map-created', function() {
     if (typeof map === 'undefined' || !map) return;

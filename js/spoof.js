@@ -69,6 +69,7 @@ function initSpoofing() {
             locationMarker.on('click', function() {
                 $('.bus-info-popup, .stop-info-popup').hide();
                 $('.my-location-popup').show();
+                if (typeof hideCenterStops === 'function') hideCenterStops();
             });
             window.locationMarker = locationMarker;
         }
@@ -78,6 +79,7 @@ function initSpoofing() {
 
         $('.fly-closest-stop-wrapper').fadeIn();
         $('.my-location-popup').show();
+        if (typeof hideCenterStops === 'function') hideCenterStops();
     });
 }
 document.addEventListener('rubus-map-created', initSpoofing);

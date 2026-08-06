@@ -1436,6 +1436,19 @@ html, body {
     vertical-align: 1px;
 }
 
+.center-stops-btns-item .cs-closest {
+    display: block;
+    width: max-content;
+    background-color: black;
+    color: white;
+    font-size: 0.65em;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.35rem;
+}
+
 .btn-feedback-active {
     background-color: var(--theme-satellite-btn) !important;
     color: white !important;

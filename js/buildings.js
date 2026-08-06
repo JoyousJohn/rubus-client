@@ -389,6 +389,7 @@ function loadBuildings() {
                                     locationMarker.on('click', function() {
                                         $('.bus-info-popup, .stop-info-popup').hide();
                                         $('.my-location-popup').show();
+                                        if (typeof hideCenterStops === 'function') hideCenterStops();
                                     });
                                     window.locationMarker = locationMarker;
                                 }
@@ -399,6 +400,7 @@ function loadBuildings() {
 
                                 $('.fly-closest-stop-wrapper').fadeIn();
                                 $('.my-location-popup').show();
+                                if (typeof hideCenterStops === 'function') hideCenterStops();
 
                                 sa_event('btn_press', {
                                     'btn': 'building_spoof_location',

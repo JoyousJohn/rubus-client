@@ -50,6 +50,7 @@ function centerme() {
         });
         hideInfoBoxes(true);
         $('.my-location-popup').show();
+        if (typeof hideCenterStops === 'function') hideCenterStops();
 
         // Clear other location button backgrounds since we're flying to location (force clear to override in-progress states)
         clearPanoutFeedback();
@@ -113,6 +114,7 @@ function centerme() {
             .on('click', function() {
                 $('.bus-info-popup, .stop-info-popup').hide();  
                 $('.my-location-popup').show();
+                if (typeof hideCenterStops === 'function') hideCenterStops();
                 sourceStopId = null;
                 sourceBusName = null;
             });

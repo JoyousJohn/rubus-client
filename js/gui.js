@@ -2520,6 +2520,10 @@ function updateNearestStop() {
 
     closestStopId = thisClosestStopId;
 
+    if (typeof window.refreshCenterStopsClosest === 'function') {
+        window.refreshCenterStopsClosest();
+    }
+
     closestStopsMap = new Map(
         Object.entries(closestStopDistances)
             .sort(([, distanceA], [, distanceB]) => distanceA - distanceB)
@@ -2642,6 +2646,7 @@ function handleNearestStop(fly) {
         locationMarker.on('click', function() {
             $('.bus-info-popup, .stop-info-popup').hide();  
             $('.my-location-popup').show();
+            if (typeof hideCenterStops === 'function') hideCenterStops();
             // map.flyTo(userPosition, 18, {
             //     animate: true,
             //     duration: 0.3
