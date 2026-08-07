@@ -1010,6 +1010,10 @@ async function endSim() {
     busETAs = {};
     activeRoutes.clear();
 
+    // Drop any favorites made on simulated buses (session-only), so they never
+    // linger in the favorites list or route selectors after the sim ends.
+    try { window.clearSimFavs(); } catch (e) { console.error('[sim] clearSimFavs failed', e); }
+
     // Close any popups referencing the removed sim buses
     if (popupBusName || popupStopId) {
         hideInfoBoxes();

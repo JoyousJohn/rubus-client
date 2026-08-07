@@ -8,6 +8,28 @@ try {
     localStorage.removeItem('favs');
 }
 
+// Favorites made on simulated buses are session-only: they work normally in the
+// sim UI but are never persisted, and are dropped when the simulator ends.
+let simFavs = new Set();
+
+// Persist favorites to localStorage, excluding any sim-session favorites so a
+// throwaway simulated bus can never leak into the real favorites list.
+function saveFavs() {
+    localStorage.setItem('favs', JSON.stringify(favBuses.filter(name => !simFavs.has(name))));
+}
+
+// Called when the simulator ends: purge sim favorites from memory and refresh
+// the favorites list so only real (persisted) favorites remain visible.
+function clearSimFavs() {
+    if (simFavs.size) {
+        favBuses = favBuses.filter(name => !simFavs.has(name));
+        simFavs.clear();
+    }
+    $('.favs').empty();
+    favsShown = false;
+}
+window.clearSimFavs = clearSimFavs;
+
 $('.bus-star').click(function() {
     const currentBusName = popupBusName; // don't know why I need to parse sometimes
 
@@ -16,6 +38,9 @@ $('.bus-star').click(function() {
         console.log('hmm')
 
         favBuses.push(currentBusName); 
+        if (sim && busData[currentBusName] && busData[currentBusName].type === 'sim') {
+            simFavs.add(currentBusName);
+        }
         $(this).find('i').css('color', 'gold').removeClass('icon-star').addClass('icon-star-solid')
         const $thisFav = $(`<div class="br-1rem" data-fav-name="${currentBusName}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[currentBusName].route]}">${busData[currentBusName].route.toUpperCase()}</span>${busData[currentBusName].busName}</div>`)
         $thisFav.click(function() {
@@ -46,6 +71,7 @@ $('.bus-star').click(function() {
         console.log('hmm2')
 
         favBuses = favBuses.filter(busName => busName !== currentBusName);
+        simFavs.delete(currentBusName);
         $(this).find('i').css('color', 'var(--theme-color)').removeClass('icon-star-solid').addClass('icon-star')
         $(`div[data-fav-name="${currentBusName}"]`).remove();
         busMarkers[currentBusName].setFavorite(false);
@@ -161,7 +187,7 @@ $('.bus-star').click(function() {
         }
     }
 
-    localStorage.setItem('favs', JSON.stringify(favBuses))
+    saveFavs();
 })
 
 async function populateFavs(popSelectors = true) {
