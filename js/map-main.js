@@ -17,6 +17,7 @@ let shouldSetMaxBoundsAfterDrag = false;
 
 // settings vars
 let showETAsInSeconds = false;
+let showETAsInMs = false;
 
 let isDesktop;
 let currentTileLayerType = 'streets'; // Track the current tile layer type

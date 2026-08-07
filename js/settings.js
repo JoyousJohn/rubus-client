@@ -116,6 +116,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
             console.log(`Show ETAs in seconds is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-etas-in-seconds'] = isChecked;
             showETAsInSeconds = isChecked;
+            // Show ETAs in Seconds and Show ETAs in Milliseconds are mutually
+            // exclusive — enabling one turns the other off.
+            if (isChecked && settings['toggle-show-etas-in-ms']) {
+                settings['toggle-show-etas-in-ms'] = false;
+                showETAsInMs = false;
+                $('#toggle-show-etas-in-ms').prop('checked', false);
+                stopMsEtaCountdown();
+            }
             if (popupBusName && !busData[popupBusName].overtime) popInfo(popupBusName);
 
             if (isChecked) {
@@ -151,6 +159,31 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 if (countdownInterval) {
                     clearInterval(countdownInterval);
                 }
+            }
+
+            break;
+
+        case 'toggle-show-etas-in-ms':
+            console.log(`Show ETAs in Milliseconds is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-etas-in-ms'] = isChecked;
+            showETAsInMs = isChecked;
+            // Show ETAs in Milliseconds and Show ETAs in Seconds are mutually
+            // exclusive — enabling one turns the other off.
+            if (isChecked && settings['toggle-show-etas-in-seconds']) {
+                settings['toggle-show-etas-in-seconds'] = false;
+                showETAsInSeconds = false;
+                $('#toggle-show-etas-in-seconds').prop('checked', false);
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+            }
+            if (popupBusName && !busData[popupBusName].overtime) popInfo(popupBusName);
+
+            if (isChecked) {
+                startMsEtaCountdown();
+            } else {
+                stopMsEtaCountdown();
             }
 
             break;
@@ -666,6 +699,39 @@ $('.settings-toggle .toggle-input').on('change', function () {
 });
 
 let countdownInterval;
+let msCountdownInterval;
+
+function startMsEtaCountdown() {
+    stopMsEtaCountdown();
+    // Update the millisecond counter at a modest cadence (~10Hz) rather than
+    // every millisecond — the underlying ETA only has second precision anyway,
+    // so a per-ms tick would be pure wasted DOM churn for no added accuracy.
+    // Values come straight from the absolute arrival stamps seeded by
+    // buildStopRows, so they tick down even while the bus is stopped, are
+    // immune to grid re-renders, and never drift (always abs - now).
+    msCountdownInterval = setInterval(() => {
+        if (!popupBusName || !busData[popupBusName]) return;
+        const base = (window.msEtaAbs && window.msEtaAbs.get) ? window.msEtaAbs : null;
+        if (!base) return;
+        $('.next-stop-eta').each(function() {
+            const stopId = $(this).attr('data-stop-id');
+            if (stopId == null) return;
+            const abs = base.get(`${popupBusName}:${stopId}`);
+            if (typeof abs !== 'number') return;
+            const nextText = `${Math.max(0, abs - Date.now()).toLocaleString('en-US')}ms`;
+            if ($(this).text() !== nextText) {
+                $(this).text(nextText);
+            }
+        });
+    }, 100);
+}
+
+function stopMsEtaCountdown() {
+    if (msCountdownInterval) {
+        clearInterval(msCountdownInterval);
+        msCountdownInterval = null;
+    }
+}
 
 $(document).ready(function() {
 
@@ -770,6 +836,10 @@ $(document).ready(function() {
         if (!showETAsInSeconds) {
             clearInterval(countdownInterval);
         }
+    } else if (settings['toggle-show-etas-in-ms']) {
+        // Show ETAs in Milliseconds takes precedence over Seconds on load.
+        showETAsInMs = settings['toggle-show-etas-in-ms'];
+        startMsEtaCountdown();
     }
 
     if (settings['toggle-launch-fireworks-button']) {

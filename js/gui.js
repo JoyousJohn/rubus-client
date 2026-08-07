@@ -1939,6 +1939,7 @@ const toggleSettings = [
     'toggle-pause-stopped-for-timer',
     'toggle-offscreen-bus-indicators-pan-end-only',
     'toggle-center-stops-main-name',
+    'toggle-show-etas-in-ms',
 ]
 
 let colorMappings;

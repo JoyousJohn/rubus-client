@@ -554,7 +554,7 @@ function renderNextStopsGrid(busName) {
 // name, campus) shared by both the rebuild and incremental paths, so the ETA
 // math never runs twice. Mirrors the original inline loop exactly.
 function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shouldShowClosestStop) {
-    const secondsDivisor = showETAsInSeconds ? 1 : 60;
+    const secondsDivisor = (showETAsInSeconds || showETAsInMs) ? 1 : 60;
     const route = data.route;
     const rows = [];
     let negativeETA = false;
@@ -593,7 +593,37 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
         const currentTime = new Date();
 
         let formattedTime;
-        if (showETAsInSeconds && (eta < 600 || i === 0)) {
+        if (showETAsInMs) {
+            // Seed an absolute wall-clock arrival timestamp per (bus, stop) once.
+            // Subsequent re-renders (each triggered by a websocket bus update)
+            // recompute the same schedule-constant ETA and could otherwise clobber
+            // the client-side tickdown, so the display is always derived from
+            // abs - now rather than from the freshly parsed string.
+            if (!window.msEtaAbs) window.msEtaAbs = new Map();
+            const msKey = `${busName}:${sortedStops[i]}`;
+            if (!window.msEtaAbs.has(msKey)) {
+                window.msEtaAbs.set(msKey, Date.now() + Math.floor(eta) * 1000);
+            }
+            // If the schedule-constant ETA genuinely grew (e.g. bus delayed or
+            // re-sequenced), re-anchor the stamp instead of counting from a
+            // stale value; a shrink is already handled by continuing the countdown.
+            const freshMs = Math.floor(eta) * 1000;
+            const remainingMsFromAbs = window.msEtaAbs.get(msKey) - Date.now();
+            if (freshMs > remainingMsFromAbs + 3000) {
+                window.msEtaAbs.set(msKey, Date.now() + freshMs);
+            }
+            const msAbs = window.msEtaAbs.get(msKey);
+            const remainingMs = Math.max(0, msAbs - Date.now());
+            currentTime.setTime(Date.now() + remainingMs);
+            formattedTime = currentTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            eta = `${remainingMs.toLocaleString('en-US')}ms`;
+
+        } else if (showETAsInSeconds && (eta < 600 || i === 0)) {
             currentTime.setSeconds(currentTime.getSeconds() + eta);
             formattedTime = currentTime.toLocaleTimeString('en-US', {
                 hour: 'numeric',
