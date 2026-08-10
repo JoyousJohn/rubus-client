@@ -127,6 +127,13 @@ try {
 
 let maxDistanceMiles = 14;
 
+// Recurring zoom constants. Zoomin is capped by maxZoom (20); zooming OUT
+// (the "max zoom out" restriction) is capped by minZoom. When the bypass max
+// distance dev setting is enabled the minZoom cap is lifted so users can fly
+// out of bounds and zoom all the way out to see where they are.
+const defaultMinZoomLevel = 12;
+const bypassMinZoomLevel = 0;
+
 let sim = false;
 let spoof = false;
 

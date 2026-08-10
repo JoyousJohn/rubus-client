@@ -383,6 +383,8 @@ $('.settings-toggle .toggle-input').on('change', function () {
             if (isChecked) {
                 // Disable maxBounds to allow flying to locations outside bounds
                 map.setMaxBounds(null);
+                // Also lift the max zoom-out (minZoom) restriction
+                map.setMinZoom(bypassMinZoomLevel);
                 if (popupStopId && Number(closestStopId) === popupStopId && (closestDistance < maxDistanceMiles || settings['toggle-bypass-max-distance'])) {
                     $('.closest-stop').show();
                 } else {
@@ -396,6 +398,8 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 // Re-enable maxBounds with the original bounds
                 const newBounds = expandBounds(bounds[selectedCampus], 2);
                 map.setMaxBounds(newBounds);
+                // Restore the max zoom-out (minZoom) restriction
+                map.setMinZoom(defaultMinZoomLevel);
 
                 if (popupStopId && Number(closestStopId) === popupStopId && closestDistance < maxDistanceMiles) {
                     $('.closest-stop').show();

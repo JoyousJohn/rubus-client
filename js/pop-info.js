@@ -433,8 +433,8 @@ function popInfo(busName, resetCampusFontSize) {
         if (!settings['toggle-bypass-max-distance']) {
             const expandedBounds = expandBounds(bounds[selectedCampus], 2.8);
             map.setMaxBounds(expandedBounds);
+            map.setMinZoom(9);
         }
-        map.setMinZoom(9);
     }
 
     $('.my-location-popup').hide(); // investigate why I don't have to hide the other info boxes

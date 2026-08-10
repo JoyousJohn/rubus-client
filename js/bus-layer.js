@@ -232,6 +232,60 @@
     }
 
     /**
+     * Render a soft glow sprite matching the marker's silhouette. Used by the
+     * 'maplibre' mode's selection glow. The DOM equivalent is an inline
+     * `box-shadow: 0 0 10px <routeColor>` on the marker element; here the marker
+     * shape is re-drawn filled with the route color plus a blurred shadow that
+     * spills ~10px past the silhouette, so the glow hugs the actual marker shape
+     * (rubus teardrop, passio/rider/duck circle) instead of a generic circle.
+     * The canvas is padded so the blur is never clipped at the edges, and the
+     * shape is centered so it lines up with the marker sprite.
+     */
+    function renderGlowSprite(type, color, size) {
+        const pad = 10;
+        let s;
+        let drawGlow;
+
+        if (type === 'rubus') {
+            const dimensions = { small: { outer: 20 }, medium: { outer: 27 }, big: { outer: 35 } };
+            const dim = dimensions[size] || dimensions.medium;
+            s = dim.outer + 8 + pad * 2;
+            const R = dim.outer / 2 + 1.5;
+            drawGlow = function(ctx, cx, cy) { drawRubusTeardrop(ctx, cx, cy, R); };
+        } else {
+            const sizes = { small: 26, medium: 34, big: 42 };
+            const markerS = sizes[size] || 34;
+            s = markerS + pad * 2;
+            const r = markerS / 2 - 3;
+            drawGlow = function(ctx, cx, cy) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.closePath();
+            };
+        }
+
+        const { canvas, ctx } = createHiDPICanvas(s, s);
+        const cx = s / 2;
+        const cy = s / 2;
+
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.65;
+        // Multiple passes compound the blurred shadow (canvas shadows don't
+        // accumulate from a single fill), giving a pronounced halo that still
+        // hugs the marker silhouette.
+        for (let i = 0; i < 3; i++) {
+            drawGlow(ctx, cx, cy);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        return canvas;
+    }
+
+    /**
      * Create a colored version of the bus SVG icon on a canvas.
      */
     function createColoredBusIconCanvas(svgImage, color, size) {
@@ -551,6 +605,7 @@
             this._isFavorite = false;
 
             this._spriteName = manager._ensureSprite(markerType, routeColor, sizeClass);
+            this._glowSpriteName = manager._ensureGlowSprite(markerType, routeColor, sizeClass);
 
             // Detached mock DOM tree — never attached to the map, used only as
             // a property bag for jQuery/DOM queries.
@@ -726,6 +781,7 @@
                 properties: {
                     busName: this._busName,
                     spriteName: this._spriteName,
+                    glowSpriteName: this._glowSpriteName,
                     rotation: this._rotation || 0,
                     visible: this._isVisible(),
                     selected: this._selected,
@@ -743,6 +799,9 @@
             this._spriteName = this._manager._ensureSprite(
                 this._markerType, this._routeColor, this._sizeClass,
                 this._isFavorite ? 'gold' : undefined
+            );
+            this._glowSpriteName = this._manager._ensureGlowSprite(
+                this._markerType, this._routeColor, this._sizeClass
             );
             this._dirty = true;
         }
@@ -814,6 +873,7 @@
             this._cachedFeatures = {};   // busName → last-serialized GeoJSON Feature
             this._rafScheduled = false;
             this._spriteCache = {};      // spriteName → {type, color, size} metadata
+            this._glowSpriteCache = {};  // glowSpriteName → true
             this._busIconImage = null;
             this._busIconLoaded = false;
             this._pendingSpriteQueue = [];
@@ -855,14 +915,23 @@
                     if (!mapInstance.getLayer(self._glowLayerId)) {
                         mapInstance.addLayer({
                             id: self._glowLayerId,
-                            type: 'circle',
+                            type: 'symbol',
                             source: self._sourceId,
                             filter: ['all', ['==', ['get', 'visible'], true], ['==', ['get', 'selected'], true]],
+                            layout: {
+                                // Glow sprite is a blurred silhouette of the
+                                // marker shape; it must rotate in lockstep with
+                                // the icon so the glow hugs the rotated shape.
+                                'icon-image': ['get', 'glowSpriteName'],
+                                'icon-rotate': ['get', 'rotation'],
+                                'icon-rotation-alignment': 'map',
+                                'icon-allow-overlap': true,
+                                'icon-ignore-placement': true,
+                                'icon-size': 1,
+                                'icon-pitch-alignment': 'map'
+                            },
                             paint: {
-                                'circle-radius': 18,
-                                'circle-color': ['get', 'routeColor'],
-                                'circle-opacity': 0.35,
-                                'circle-blur': 0.6
+                                'icon-opacity': ['get', 'opacity']
                             }
                         });
                     }
@@ -1003,6 +1072,23 @@
 
             this._spriteCache[name] = { type: type, color: color, size: size, innerColor: innerColor };
             this._addSpriteToMap(name, canvas);
+
+            return name;
+        }
+
+        /**
+         * Ensure a glow sprite exists for the given type/color/size. The glow
+         * is a blurred silhouette of the marker shape (see renderGlowSprite)
+         * drawn as a separate sprite beneath the icon. Returns the sprite name.
+         */
+        _ensureGlowSprite(type, color, size) {
+            const colorKey = color.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            const name = 'glow-' + type + '-' + colorKey + '-' + size;
+
+            if (this._glowSpriteCache[name]) return name;
+
+            this._glowSpriteCache[name] = true;
+            this._addSpriteToMap(name, renderGlowSprite(type, color, size));
 
             return name;
         }

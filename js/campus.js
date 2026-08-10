@@ -111,6 +111,7 @@ async function makeNewMap() {
     } else {
         map.setMaxBounds(null);
     }
+    map.setMinZoom(settings['toggle-bypass-max-distance'] ? bypassMinZoomLevel : defaultMinZoomLevel);
     // Teleport straight to the new campus center instead of flying there.
     const campusView = views[selectedCampus] || [40.5033, -74.4521];
     map.jumpTo({ center: [campusView[1], campusView[0]], zoom: 14 });

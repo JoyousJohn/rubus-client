@@ -12,7 +12,7 @@ window.initMap = function() {
         style: getMapLibreStyleSpec(getTileUrlPattern(mapTheme)),
         center: [initialView[1], initialView[0]],
         zoom: 14,
-        minZoom: 12,
+        minZoom: settings['toggle-bypass-max-distance'] ? bypassMinZoomLevel : defaultMinZoomLevel,
         maxZoom: 20,
         attributionControl: false,
         pitchWithRotate: false,
@@ -166,10 +166,14 @@ window.initMap = function() {
             isTransitioning = true;
 
             if (popupBusName && !isDesktop) {
-                const minZoomLevel = 12;
-                map.setMinZoom(minZoomLevel);
-                if (map.getZoom() < minZoomLevel) {
-                    map.setZoom(minZoomLevel);
+                if (settings['toggle-bypass-max-distance']) {
+                    map.setMinZoom(bypassMinZoomLevel);
+                } else {
+                    const minZoomLevel = defaultMinZoomLevel;
+                    map.setMinZoom(minZoomLevel);
+                    if (map.getZoom() < minZoomLevel) {
+                        map.setZoom(minZoomLevel);
+                    }
                 }
                 shouldSetMaxBoundsAfterDrag = true;
             }
