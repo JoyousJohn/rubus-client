@@ -59,6 +59,8 @@
     .left-btns > .center-stops-btns {
         grid-column: 1 / -1;
         width: fit-content;
+        align-items: flex-start;
+        justify-content: flex-start;
     }
 
     .left-btns > div {
