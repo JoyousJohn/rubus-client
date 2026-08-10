@@ -306,7 +306,12 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-show-knight-mover':
             settings['toggle-show-knight-mover'] = isChecked;
 
-            isChecked ? $('.knight-mover').show() : $('.knight-mover').hide();
+            // Never surface the Call Knight Mover popup while the simulator is running.
+            if (isChecked && !sim) {
+                $('.knight-mover').show();
+            } else {
+                $('.knight-mover').hide();
+            }
             break;
 
         case 'toggle-offscreen-bus-indicators':
@@ -858,7 +863,7 @@ $(document).ready(function() {
         $('.bus-data-extra').show();
     }
 
-    if (settings['toggle-show-knight-mover']) {
+    if (settings['toggle-show-knight-mover'] && !sim) {
         $('.knight-mover').show();
     }
 

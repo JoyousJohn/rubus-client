@@ -892,6 +892,15 @@ function checkMinRoutes() {
 
     console.log("Checking min routes")
 
+    // The Call Knight Mover popup must never appear while the simulator is
+    // running. It's still hidden at the end of startSim() and when closing a
+    // stop popup, but hideInfoBoxes() re-invokes checkMinRoutes() to restore
+    // it after a drag, which would otherwise resurrect it mid-sim.
+    if (sim) {
+        $('.knight-mover').hide();
+        return;
+    }
+
     const { year: currentYear, month: currentMonth, date: currentDay, hour, dayOfWeek } = getEasternHourAndDayOfWeek();
     
     // Check if within spring break period (March 14-23 for 2026, March 11-19 for 2027, March 10-23 for other years)
@@ -1231,7 +1240,9 @@ $(document).ready(async function() {
             $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
             // setTimeout(() => {
                 // $('.bus-info-popup').hide();
-            if (!tripshotDown && selectedCampus === 'nb') $('.knight-mover').show();
+            // Never surface the Call Knight Mover popup while the simulator is
+            // running, even when a real fetch poll lands with no active routes.
+            if (!sim && !tripshotDown && selectedCampus === 'nb') $('.knight-mover').show();
 
             const now = new Date();
             const hour = now.getHours();
