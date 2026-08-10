@@ -868,6 +868,7 @@
             this._map = null;
             this._proxies = {};          // busName → BusMarkerProxy | WebGLBusMarkerProxy
             this._initialized = false;
+            this._selectedBusName = null; // busName currently shown selected
 
             // WebGL mode state
             this._cachedFeatures = {};   // busName → last-serialized GeoJSON Feature
@@ -1148,6 +1149,13 @@
             }
             this._proxies[busName] = proxy;
 
+            // Re-apply selection if this bus is the currently selected one
+            // (e.g. after a full marker teardown/recreate when toggling the
+            // renderer mode) — the newly built proxy starts unselected.
+            if (busName === this._selectedBusName) {
+                this.setSelectedBus(busName);
+            }
+
             return proxy;
         }
 
@@ -1173,6 +1181,7 @@
          * Set the selected bus.
          */
         setSelectedBus(busName) {
+            this._selectedBusName = busName;
             for (const name in this._proxies) {
                 const proxy = this._proxies[name];
                 const selected = (name === busName);
