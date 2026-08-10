@@ -59,7 +59,7 @@
     .left-btns > .center-stops-btns {
         grid-column: 1 / -1;
         width: fit-content;
-        align-items: flex-start;
+        align-items: flex-end;
         justify-content: flex-start;
     }
 

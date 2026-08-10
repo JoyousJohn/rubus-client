@@ -270,6 +270,7 @@ function _csRenderChips(top) {
 
 function updateCenterStops() {
     fitCenterStopsWidth();
+    _csPositionDesktop();
     _csRefreshMetrics();
     var $items = _csItemsList();
     if (!$items.length || typeof map === 'undefined' || !map || typeof stopsData === 'undefined' || !stopsData) {
@@ -336,6 +337,35 @@ window.refreshCenterStopsClosest = function() {
     _csRenderChips(_csTopCandidates(_csLastCenter.lat, _csLastCenter.lng));
 };
 
+// On desktop the chips column is taken out of the left button grid and anchored
+// to the right side of the viewport, above the right button column (search,
+// centerme, etc.), so a long route-selector column can't overflow into it. The
+// exact offset is measured from the rendered right-btns column because its
+// height varies with which buttons are visible. Mobile keeps the normal in-flow
+// layout under the left buttons.
+function _csPositionDesktop() {
+    var wrapper = document.querySelector('.center-stops-btns');
+    if (!wrapper) return;
+    if (typeof isDesktop === 'undefined' || !isDesktop) {
+        wrapper.style.position = '';
+        wrapper.style.right = '';
+        wrapper.style.bottom = '';
+        return;
+    }
+    var rightBtns = document.querySelector('.right-btns');
+    var bottom = document.querySelector('.bottom');
+    if (!rightBtns || !bottom) return;
+    if ($('.right-btns').is(':hidden')) return;
+    var bb = bottom.getBoundingClientRect();
+    var rb = rightBtns.getBoundingClientRect();
+    if (rb.height <= 0) return;
+    var padBottom = parseFloat(getComputedStyle(bottom).paddingBottom) || 0;
+    var gap = 0.8 * _csRootFont(); // match the .right-btns row-gap
+    wrapper.style.position = 'absolute';
+    wrapper.style.right = Math.round(bb.right - rb.right) + 'px';
+    wrapper.style.bottom = Math.round((bb.bottom - padBottom) - rb.top + gap) + 'px';
+}
+
 document.addEventListener('rubus-map-created', function() {
     if (typeof map === 'undefined' || !map) return;
     map.on('moveend', updateCenterStops);
@@ -360,4 +390,5 @@ window.hideCenterStops = function() {
 };
 window.showCenterStops = function() {
     $('.center-stops-btns').show();
+    _csPositionDesktop();
 };
