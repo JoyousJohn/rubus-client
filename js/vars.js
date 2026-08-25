@@ -21,7 +21,7 @@ const defaultSettings = {
     'toggle-show-etas-in-seconds': false,
     'toggle-dim-on-pan': true,
     'toggle-select-closest-stop': true,
-    'toggle-hide-other-routes': false,
+    'toggle-hide-other-routes': true,
     'toggle-stops-above-buses': false,
     'toggle-offscreen-bus-indicators': false,
     'toggle-offscreen-bus-indicators-above-gui': false,

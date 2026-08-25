@@ -60,46 +60,47 @@ async function focusBus(busName) {
         }
     }
 
-    // if (!popupBusName) {
-        const topContainerHeight = 1 - ($(window).height() - $('.bus-btns').offset().top)/$(window).height()
+    // Temporarily commented out: refit bounds to focused bus's route
+    /*
+    const topContainerHeight = 1 - ($(window).height() - $('.bus-btns').offset().top)/$(window).height()
 
-        let focusBounds = null;
-        if (polylines[route]) {
-            const rb = polylines[route].getBounds();
-            focusBounds = L.latLngBounds(rb.getSouthWest(), rb.getNorthEast());
+    let focusBounds = null;
+    if (polylines[route]) {
+        const rb = polylines[route].getBounds();
+        focusBounds = L.latLngBounds(rb.getSouthWest(), rb.getNorthEast());
+    }
+
+    // Always contribute the bus's own position. This is the general fallback
+    // that makes focusBounds-null impossible for any bus with coordinates,
+    // depot or not, polyline or not.
+    if (bus.lat !== undefined && bus.long !== undefined) {
+        const busLocBounds = L.latLngBounds(L.latLng(bus.lat, bus.long));
+        if (focusBounds) {
+            focusBounds.extend(busLocBounds);
+        } else {
+            focusBounds = busLocBounds;
         }
+    }
 
-        // Always contribute the bus's own position. This is the general fallback
-        // that makes focusBounds-null impossible for any bus with coordinates,
-        // depot or not, polyline or not.
-        if (bus.lat !== undefined && bus.long !== undefined) {
-            const busLocBounds = L.latLngBounds(L.latLng(bus.lat, bus.long));
-            if (focusBounds) {
-                focusBounds.extend(busLocBounds);
-            } else {
-                focusBounds = busLocBounds;
-            }
-        }
+    // Invariant: a bus in busData must have usable coordinates. Reaching here
+    // with neither a route polyline nor coordinates is a data bug — fail loud.
+    if (!focusBounds) {
+        throw new Error(`focusBus: cannot compute bounds for ${busName} (route "${route}" has no polyline and bus has no coordinates)`);
+    }
 
-        // Invariant: a bus in busData must have usable coordinates. Reaching here
-        // with neither a route polyline nor coordinates is a data bug — fail loud.
-        if (!focusBounds) {
-            throw new Error(`focusBus: cannot compute bounds for ${busName} (route "${route}" has no polyline and bus has no coordinates)`);
-        }
+    const mapSize = map.getSize();
+    // Only apply top padding on mobile - on desktop the wrapper is to the side, not covering the top
+    const topGuiHeight = !isDesktop ? mapSize.y * topContainerHeight : 0;
 
-        const mapSize = map.getSize();
-        // Only apply top padding on mobile - on desktop the wrapper is to the side, not covering the top
-        const topGuiHeight = !isDesktop ? mapSize.y * topContainerHeight : 0;
+    const extraPaddingY = 30;
+    const extraPaddingX = 30;
 
-        const extraPaddingY = 30;
-        const extraPaddingX = 30;
-
-        map.fitBounds(focusBounds, {
-            paddingTopLeft:     [extraPaddingX, topGuiHeight],
-            paddingBottomRight: [extraPaddingX, extraPaddingY + 30],
-            animate: true
-        });
-    // }
+    map.fitBounds(focusBounds, {
+        paddingTopLeft:     [extraPaddingX, topGuiHeight],
+        paddingBottomRight: [extraPaddingX, extraPaddingY + 30],
+        animate: true
+    });
+    */
 
     if (!savedCenter) {
         savedCenter = map.getCenter();

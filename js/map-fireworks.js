@@ -136,6 +136,8 @@ $(document).on('keydown', function(e) {
             updateTooltips(shownRoute);
         }
 
+        // Temporarily commented out: fly back to previous camera position
+        /*
         if (savedCenter && settings['toggle-hide-other-routes']) {
             returningToSavedView = true;
             flyToWithCallback(savedCenter, savedZoom, () => {
@@ -144,6 +146,9 @@ $(document).on('keydown', function(e) {
                 savedZoom = null;
             });
         }
+        */
+        savedCenter = null;
+        savedZoom = null;
 
     }
 })

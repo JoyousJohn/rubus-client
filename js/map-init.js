@@ -228,6 +228,8 @@ window.initMap = function() {
 
             $('.favs').show();
 
+            // Temporarily commented out: fly back to previous camera position
+            /*
             if (savedCenter && settings['toggle-hide-other-routes']) {
                 returningToSavedView = true;
                 flyToWithCallback(savedCenter, savedZoom, () => {
@@ -236,6 +238,9 @@ window.initMap = function() {
                     savedZoom = null;
                 });
             }
+            */
+            savedCenter = null;
+            savedZoom = null;
         }
     });
 
