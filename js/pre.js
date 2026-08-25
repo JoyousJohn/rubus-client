@@ -309,34 +309,6 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             if (isBusShownOnMap(busName)) {
                 pollActiveRoutes.add(busData[busName].route);
             }
-
-            let newRoutes;
-            if (typeof pollActiveRoutes.difference === 'function') {
-                newRoutes = pollActiveRoutes.difference(activeRoutes);
-            } else {
-                newRoutes = new Set([...pollActiveRoutes].filter(route => !activeRoutes.has(route)));
-            }
-            if (newRoutes.size > 0) {
-                await initRoutePointsCache(selectedCampus);
-                if (sim) return;
-                if (!skipPolylineUpdateFromFetch) {
-                    // Await so the polylines are created before
-                    // prunePolylinesWithoutInService below races the same routes
-                    // through addPolylineForRoute — otherwise that path wins,
-                    // setPolylines adds nothing, and its fit never fires. The
-                    // fit itself is suppressed here (fitBounds:false) so the
-                    // camera doesn't re-fit once per route; initBusDataPipeline
-                    // fits once to the final bounds after all routes load.
-                    await setPolylines(newRoutes, { fitBounds: false });
-                }
-                newRoutes.forEach(item => activeRoutes.add(item))
-                populateRouteSelectors(activeRoutes);
-                
-                if (appStyle === 'rider') {
-                    updateRiderRoutes();
-                }
-            }
-            prunePolylinesWithoutInService();
  
             if (busName === popupBusName) {
                 $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + bus.capacity + '%</span> capacity');
@@ -358,6 +330,29 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 }
             }
         }
+
+        const newRoutes = new Set([...pollActiveRoutes].filter(route => !activeRoutes.has(route)));
+        if (newRoutes.size > 0) {
+            await initRoutePointsCache(selectedCampus);
+            if (sim) return;
+            if (!skipPolylineUpdateFromFetch) {
+                // Await so the polylines are created before
+                // prunePolylinesWithoutInService below races the same routes
+                // through addPolylineForRoute — otherwise that path wins,
+                // setPolylines adds nothing, and its fit never fires. The
+                // fit itself is suppressed here (fitBounds:false) so the
+                // camera doesn't re-fit once per route; initBusDataPipeline
+                // fits once to the final bounds after all routes load.
+                await setPolylines(newRoutes, { fitBounds: false });
+            }
+            newRoutes.forEach(item => activeRoutes.add(item));
+            populateRouteSelectors(activeRoutes);
+            
+            if (appStyle === 'rider') {
+                updateRiderRoutes();
+            }
+        }
+        prunePolylinesWithoutInService();
 
         if (shouldImmediateUpdate) {
             immediatelyUpdateBusDataPost();
