@@ -2,6 +2,7 @@
     display: flex;
     position: relative;
     background: var(--theme-line-bg);
+    border: 1px solid var(--theme-border);
     /* padding: 0.3rem; */
     border-radius: 2rem;
     margin-bottom: 1.5rem;
