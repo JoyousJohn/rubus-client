@@ -268,11 +268,15 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 removeDistanceLineOnFocus();
                 showAllPolylines();
                 showAllBuses();
+                if (!shownRoute) {
+                    clearAllStopEtas();
+                }
                 map.flyTo(savedCenter, savedZoom, {animate: false});
                 savedCenter = null;
                 savedZoom = null;
             } else if (isChecked && popupBusName) {
                 focusBus(popupBusName);
+                popInfo(popupBusName);
             }
 
             break;

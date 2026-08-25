@@ -449,10 +449,13 @@ function popInfo(busName, resetCampusFontSize) {
 
     // Apply the collected stop-marker ETA tooltips after the popup has painted
     // (next frame), so the per-stop WebGL feature updates don't delay it.
-    if (etaLabelsToSet.length) {
+    // ETA tooltips on stops when selecting a bus should only be visible if bus focusing is enabled.
+    if (etaLabelsToSet.length && settings['toggle-hide-other-routes']) {
         requestAnimationFrame(() => {
             etaLabelsToSet.forEach(([stopId, eta]) => setStopEtaLabel(stopId, eta, true));
         });
+    } else if (!settings['toggle-hide-other-routes'] && !shownRoute) {
+        clearAllStopEtas();
     }
 
     updateNextStopsMaxHeight();
