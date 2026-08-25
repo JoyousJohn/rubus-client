@@ -657,6 +657,14 @@ function updatePolylineStyle(routeName) {
     if (!polylines[routeName]) return;
     const style = getRouteStyle(routeName);
     let targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
+    if (settings['toggle-hide-other-routes'] && popupBusName && busData[popupBusName]) {
+        const focusedRoute = busData[popupBusName].route;
+        if (focusedRoute !== routeName) {
+            targetOpacity = 0;
+        } else if (settings['toggle-distances-line-on-focus']) {
+            targetOpacity = 0;
+        }
+    }
     if (!settings['toggle-show-out-of-service'] && !routeHasValidInServiceBuses(routeName)) {
         targetOpacity = 0;
     }
@@ -724,7 +732,13 @@ async function setPolylines(activeRoutes, opts = {}) {
             coordinates = coordinates.map(point => [point[1], point[0]]);
         }
 
-        const targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
+        let targetOpacity = (shownRoute && shownRoute !== routeName) ? 0 : style.opacity;
+        if (settings['toggle-hide-other-routes'] && popupBusName && busData[popupBusName]) {
+            const focusedRoute = busData[popupBusName].route;
+            if (focusedRoute !== routeName || settings['toggle-distances-line-on-focus']) {
+                targetOpacity = 0;
+            }
+        }
 
         const polyline = L.polyline(coordinates, {
             color: style.color,
@@ -1048,6 +1062,9 @@ function updateStopsOpacity() {
         let shouldBeOnMap = false;
         let opacity = '1';
 
+        const focusedRoute = (settings['toggle-hide-other-routes'] && popupBusName && busData[popupBusName]) ? busData[popupBusName].route : null;
+        const activeFilterRoute = shownRoute || focusedRoute;
+
         if (servicedStops.size === 0) {
             // No bus services any stop: keep stops visible but dim them to
             // indicate nothing is running (matches the 0.5 used for OOS stops).
@@ -1061,6 +1078,13 @@ function updateStopsOpacity() {
             opacity = '0.5';
         } else {
             shouldBeOnMap = false;
+        }
+
+        if (activeFilterRoute) {
+            const allowedStops = (stopLists[activeFilterRoute] || []).map(Number);
+            if (!allowedStops.includes(numId)) {
+                shouldBeOnMap = false;
+            }
         }
 
         if (shouldBeOnMap) {

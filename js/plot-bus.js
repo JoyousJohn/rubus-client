@@ -82,9 +82,13 @@ function plotBus(busName, immediatelyUpdate=false) {
 }
 
 function selectBusMarker(busName) {
-
+    const isNewFocus = (popupBusName !== busName);
+    popupBusName = busName;
     popInfo(busName, true);
-    popupBusName = busName
+
+    if (settings['toggle-hide-other-routes'] && isNewFocus) {
+        focusBus(busName);
+    }
 
     if (selectedMarkerId) {
         const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);

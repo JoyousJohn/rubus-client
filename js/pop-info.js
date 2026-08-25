@@ -457,7 +457,7 @@ function popInfo(busName, resetCampusFontSize) {
 
     updateNextStopsMaxHeight();
 
-    if (!popupBusName && settings['toggle-hide-other-routes']) {
+    if (settings['toggle-hide-other-routes'] && (!popupBusName || popupBusName !== busName)) {
         focusBus(busName);
     }
 

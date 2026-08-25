@@ -43,8 +43,10 @@ let tilesDisabledForTest = false;
 // busData[busName] is guaranteed by both callers, so a missing entry here
 // fails fast rather than silently treating the bus as visible.
 function isBusMarkerHiddenByRoute(busName) {
-    const route = busData[busName].route;
+    const route = busData[busName]?.route;
     if (shownRoute && shownRoute !== route) return true;
-    if (settings['toggle-hide-other-routes'] && popupBusName && busData[popupBusName] && busData[popupBusName].route !== route) return true;
+    if (settings['toggle-hide-other-routes'] && popupBusName && busData[popupBusName]) {
+        if (busName.toString() !== popupBusName.toString()) return true;
+    }
     return false;
 }
