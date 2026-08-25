@@ -1,16 +1,18 @@
-// js/offscreen-indicators.js - extracted verbatim from js/map.js
 function getVisibleActiveBuses() {
     const activeBuses = [];
     if (typeof busMarkers === 'undefined' || typeof busData === 'undefined' || !map) return activeBuses;
     
     for (const busName in busMarkers) {
         const marker = busMarkers[busName];
-        if (!marker || !map.hasLayer(marker)) continue;
+        if (!marker) continue;
+        const isOnMap = marker._isOnMap ?? (map.hasLayer && map.hasLayer(marker));
+        if (!isOnMap) continue;
+
         const data = busData[busName];
         if (!data || !data.route || data.atDepot) continue;
         
         // Skip hidden elements
-        const el = marker.getElement();
+        const el = marker.getElement ? marker.getElement() : null;
         if (el && (el.style.display === 'none' || el.style.visibility === 'hidden')) {
             continue;
         }
@@ -20,7 +22,12 @@ function getVisibleActiveBuses() {
             continue;
         }
 
-        const latLng = marker.getLatLng();
+        // Filter out if bus focusing is active on another bus
+        if (typeof settings !== 'undefined' && settings['toggle-hide-other-routes'] && typeof popupBusName !== 'undefined' && popupBusName && busName.toString() !== popupBusName.toString()) {
+            continue;
+        }
+
+        const latLng = marker.getLatLng ? marker.getLatLng() : { lat: Number(data.lat), lng: Number(data.long) };
         if (!latLng || isNaN(latLng.lat) || isNaN(latLng.lng)) continue;
 
         activeBuses.push({

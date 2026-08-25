@@ -205,7 +205,7 @@ function initMapLibreCompatibility(mapInstance) {
 
     mapInstance.hasLayer = function(layer) {
         if (!layer) return false;
-        if (layer._addedToMap) return true;
+        if (layer._isOnMap || layer._addedToMap) return true;
         if (layer._mapLibreLayerId) return !!mapInstance.getLayer(layer._mapLibreLayerId);
         if (layer.getElement) {
             const el = layer.getElement();
