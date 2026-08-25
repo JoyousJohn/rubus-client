@@ -2341,9 +2341,12 @@ $(document).ready(function() {
         saveSettings();
     });
 
-    // Handle window resize to adjust font option sizes
+    // Handle window resize to adjust font option sizes and theme modal indicator
     $(window).on('resize', function() {
         adjustFontOptionSizes();
+        if (typeof updateThemeIndicator === 'function') {
+            updateThemeIndicator();
+        }
     });
 
     adjustFontOptionSizes();
@@ -3018,6 +3021,9 @@ const themeIndicatorColorMap = {
 };
 
 function updateThemeIndicator(theme) {
+    if (!theme) {
+        theme = (typeof selectedTheme !== 'undefined' && selectedTheme) || document.documentElement.getAttribute('data-selected-theme') || (typeof settings !== 'undefined' && settings && settings['theme']) || 'beige-coffee';
+    }
     const indicator = document.querySelector('.theme-indicator');
     const target = document.querySelector(`[data-theme="${theme}"]`);
     const slider = document.querySelector('.theme-slider');
@@ -3045,6 +3051,40 @@ function updateThemeIndicator(theme) {
     if (colors) {
         indicator.style.backgroundColor = colors.bg;
         indicator.style.boxShadow = colors.shadow;
+    }
+}
+
+let _currentActivePreviewImg = 0;
+let _lastPreviewThemeSrc = null;
+
+function updateThemePreviewImage(theme) {
+    const previewTheme = resolveAutoTheme(theme);
+    const newSrc = `img/theme-select/${previewTheme}.png`;
+
+    const img0 = document.getElementById('theme-preview-img');
+    const img1 = document.getElementById('theme-preview-img-next');
+    if (!img0) return;
+    if (!img1) {
+        img0.src = newSrc;
+        return;
+    }
+
+    if (!_lastPreviewThemeSrc) {
+        _lastPreviewThemeSrc = img0.getAttribute('src');
+    }
+    if (_lastPreviewThemeSrc === newSrc) return;
+    _lastPreviewThemeSrc = newSrc;
+
+    if (_currentActivePreviewImg === 0) {
+        img1.src = newSrc;
+        img1.style.opacity = '1';
+        img0.style.opacity = '0';
+        _currentActivePreviewImg = 1;
+    } else {
+        img0.src = newSrc;
+        img0.style.opacity = '1';
+        img1.style.opacity = '0';
+        _currentActivePreviewImg = 0;
     }
 }
 
@@ -3170,6 +3210,7 @@ function initThemeSliderDrag() {
                 const previewTheme = resolveAutoTheme(theme);
                 document.documentElement.setAttribute('data-selected-theme', theme);
                 document.documentElement.setAttribute('theme', previewTheme);
+                updateThemePreviewImage(theme);
             }
         }
     });
@@ -3307,7 +3348,7 @@ function selectTheme(theme) {
     });
 
     const previewTheme = resolveAutoTheme(theme);
-    document.getElementById('theme-preview-img').src = `img/theme-select/${previewTheme}.png`;
+    updateThemePreviewImage(theme);
     
     // CSS root vars (and bus marker colors via --theme-bus-icon-inner) update immediately.
     // Debounce only the tile-layer swap so rapid clicks don't thrash tile requests.

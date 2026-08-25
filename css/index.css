@@ -27,6 +27,8 @@
     --theme-stops-list-text: #10b981;
     --theme-link: #8ab4f8;
     --theme-accent: #3155c1;
+    --theme-preview-shadow: 2px 2px 3px rgba(0, 0, 0, 0.7);
+    --theme-preview-shadow-desktop: 0 0 18px rgba(0, 0, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
 [theme="light"] {
@@ -54,6 +56,8 @@
     --theme-stops-list-text: #047857;
     --theme-link: #1a73e8;
     --theme-accent: #1a73e8;
+    --theme-preview-shadow: 2px 2px 3px rgba(0, 0, 0, 0.25);
+    --theme-preview-shadow-desktop: 0 0 15px rgba(0, 0, 0, 0.18), 0 0 5px rgba(0, 0, 0, 0.08);
 }
 
 [theme="y2k-glamour"], [theme="glamour"] {
@@ -81,6 +85,8 @@
     --theme-accent: #ec4899;
     --theme-card-bg: #1c112e;
     --theme-panel-bg: #12091f;
+    --theme-preview-shadow: 2px 2px 3px rgba(236, 72, 153, 0.7);
+    --theme-preview-shadow-desktop: 0 0 18px rgba(236, 72, 153, 0.45), 0 0 6px rgba(168, 85, 247, 0.35);
 }
 
 [theme="beige-coffee"], [theme="coffee"] {
@@ -108,6 +114,8 @@
     --theme-accent: #a0522d;
     --theme-card-bg: #ebdcd0;
     --theme-panel-bg: #f9f2eb;
+    --theme-preview-shadow: 2px 2px 3px rgba(160, 82, 45, 0.7);
+    --theme-preview-shadow-desktop: 0 0 18px rgba(160, 82, 45, 0.35), 0 0 6px rgba(112, 83, 62, 0.25);
 }
 
 @font-face {
@@ -2708,6 +2716,8 @@ html[theme="light"] .settings-panel .span-i {
     --theme-accent: #c49a3c;
     --theme-card-bg: #223a25;
     --theme-panel-bg: #223a25;
+    --theme-preview-shadow: 2px 2px 3px rgba(196, 154, 60, 0.7);
+    --theme-preview-shadow-desktop: 0 0 18px rgba(196, 154, 60, 0.4), 0 0 6px rgba(45, 66, 48, 0.5);
 }
 
 /* ==========================================

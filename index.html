@@ -241,36 +241,43 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const selectedTheme = document.documentElement.getAttribute('data-selected-theme');
-            document.querySelectorAll('.theme-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-            document.querySelector(`[data-theme="${selectedTheme}"]`).classList.add('selected');
+            function updateThemeIndicatorInline() {
+                const selectedTheme = document.documentElement.getAttribute('data-selected-theme') || 'beige-coffee';
+                document.querySelectorAll('.theme-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                const target = document.querySelector(`[data-theme="${selectedTheme}"]`);
+                if (target) target.classList.add('selected');
 
-            const indicator = document.querySelector('.theme-indicator');
-            const target = document.querySelector(`[data-theme="${selectedTheme}"]`);
-            const slider = document.querySelector('.theme-slider');
-            if (indicator && target && slider) {
-                const options = document.querySelectorAll('.theme-option');
-                const index = Array.from(options).indexOf(target);
-                const count = options.length;
-                const isColumn = getComputedStyle(slider).flexDirection === 'column';
-                if (isColumn) {
-                    indicator.style.top = `calc(${index} * (100% / ${count}) - 3px)`;
-                    indicator.style.height = `calc(100% / ${count} + 6px)`;
-                    indicator.style.left = '-3px';
-                    indicator.style.width = 'calc(100% + 6px)';
-                } else {
-                    indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
-                    indicator.style.width = `calc(100% / ${count} + 6px)`;
+                const indicator = document.querySelector('.theme-indicator');
+                const slider = document.querySelector('.theme-slider');
+                if (indicator && target && slider) {
+                    const options = document.querySelectorAll('.theme-option');
+                    const index = Array.from(options).indexOf(target);
+                    const count = options.length;
+                    const isColumn = getComputedStyle(slider).flexDirection === 'column';
+                    if (isColumn) {
+                        indicator.style.top = `calc(${index} * (100% / ${count}) - 3px)`;
+                        indicator.style.height = `calc(100% / ${count} + 6px)`;
+                        indicator.style.left = '-3px';
+                        indicator.style.width = 'calc(100% + 6px)';
+                    } else {
+                        indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
+                        indicator.style.width = `calc(100% / ${count} + 6px)`;
+                        indicator.style.top = '-3px';
+                        indicator.style.height = 'calc(100% + 6px)';
+                    }
+                    const h = new Date().getHours();
+                    const resolved = (selectedTheme === 'auto') ? (h < 6 ? 'y2k-glamour' : h < 12 ? 'light' : h < 18 ? 'beige-coffee' : 'dark') : selectedTheme;
+                    const cm = { light:{bg:'black',s:'none'}, dark:{bg:'rgb(203,203,203)',s:'none'}, 'y2k-glamour':{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, glamour:{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, 'beige-coffee':{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, coffee:{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, forest:{bg:'#c49a3c',s:'0 0 12px rgba(196,154,60,0.5)'} };
+                    const c = cm[resolved];
+                    if (c) { indicator.style.backgroundColor = c.bg; indicator.style.boxShadow = c.s; }
+                    indicator.style.transition = 'left 0.3s ease, width 0.3s ease, top 0.3s ease, height 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease';
                 }
-                const h = new Date().getHours();
-                const resolved = (selectedTheme === 'auto') ? (h < 6 ? 'y2k-glamour' : h < 12 ? 'light' : h < 18 ? 'beige-coffee' : 'dark') : selectedTheme;
-                const cm = { light:{bg:'black',s:'none'}, dark:{bg:'rgb(203,203,203)',s:'none'}, 'y2k-glamour':{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, glamour:{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, 'beige-coffee':{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, coffee:{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, forest:{bg:'#c49a3c',s:'0 0 12px rgba(196,154,60,0.5)'} };
-                const c = cm[resolved];
-                if (c) { indicator.style.backgroundColor = c.bg; indicator.style.boxShadow = c.s; }
-                indicator.style.transition = 'left 0.3s ease, width 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease';
             }
+
+            updateThemeIndicatorInline();
+            window.addEventListener('resize', updateThemeIndicatorInline);
 
             initThemeSliderDrag();
         });
@@ -307,9 +314,9 @@
                 <div class="text-1p5rem select-none" style="color: var(--theme-extra);">You can change this anytime.</div>
             </div>
         </div>
-        <div class="theme-body flex flex-col" style="flex:1; overflow:hidden;">
+        <div class="theme-body flex flex-col" style="flex:1; min-height: 0;">
             <div class="theme-controls">
-                <div class="theme-slider mx-3rem my-2rem">
+                <div class="theme-slider my-2rem">
                     <div class="theme-indicator"></div>
                     <div class="theme-option" data-theme="light" onclick="selectTheme('light')"><i class="fa-solid fa-sun"></i><span>Light</span></div>
                     <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')"><i class="fa-solid fa-moon"></i><span>Dark</span></div>
@@ -320,14 +327,19 @@
                 </div>
             </div>
             <div class="theme-preview">
-                <img class="br-1rem w-100" src="img/theme-select/light.png" id="theme-preview-img">
+                <img class="br-1rem" src="img/theme-select/light.png" id="theme-preview-img" style="opacity: 1;">
+                <img class="br-1rem" src="img/theme-select/light.png" id="theme-preview-img-next" style="opacity: 0;">
                 <script>
                     // Immediately update the preview image before painting
                     (function() {
                         const selectedTheme = document.documentElement.getAttribute('data-selected-theme');
                         const computedTheme = document.documentElement.getAttribute('theme');
                         const previewTheme = (selectedTheme === 'auto') ? computedTheme : selectedTheme;
-                        document.getElementById('theme-preview-img').src = `img/theme-select/${previewTheme}.png`;
+                        const src = `img/theme-select/${previewTheme}.png`;
+                        const img0 = document.getElementById('theme-preview-img');
+                        const img1 = document.getElementById('theme-preview-img-next');
+                        if (img0) img0.src = src;
+                        if (img1) img1.src = src;
                     })();
                 </script>
             </div>
