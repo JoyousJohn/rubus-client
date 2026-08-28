@@ -434,6 +434,17 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-hide-sim':
+            settings['toggle-show-sim'] = !isChecked;
+            $('#toggle-show-sim').prop('checked', !isChecked);
+
+            if (!isChecked && !sim && selectedCampus === 'nb') {
+                $('.sim-btn').show();
+            } else {
+                $('.sim-btn').hide();
+            }
+            break;
+
         case 'toggle-spoofing':
             settings['toggle-spoofing'] = isChecked;
             spoof = isChecked;
@@ -875,8 +886,12 @@ $(document).ready(function() {
         $('.rubus-ai-wrapper').show();
     }
 
+    $('#toggle-hide-sim').prop('checked', !settings['toggle-show-sim']);
+
     if (settings['toggle-show-sim'] && !sim && selectedCampus === 'nb') {
         $('.sim-btn').show();
+    } else {
+        $('.sim-btn').hide();
     }
 
     if (settings['toggle-spoofing']) {

@@ -2289,6 +2289,8 @@ function updateSettings() {
 
     });
 
+    $('#toggle-hide-sim').prop('checked', !settings['toggle-show-sim']);
+
     // Low Performance Mode forces bus focusing off; enforce at every settings load.
     if (typeof applyLowPerformanceModeState === 'function') {
         applyLowPerformanceModeState();

@@ -66,7 +66,7 @@ const defaultSettings = {
     'toggle-show-bus-quickness-breakdown': false,
     'toggle-always-immediate-update': false,
     'toggle-bypass-max-distance': false,
-    'toggle-show-sim': true,
+    'toggle-show-sim': false,
     'toggle-spoofing': false,
     'toggle-show-chat': false,
     'toggle-show-thinking': false,

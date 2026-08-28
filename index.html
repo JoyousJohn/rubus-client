@@ -1292,40 +1292,6 @@
                         </label>
                     </div>
                 </div>
-
-                <script>
-                // Custom handler for Hide Simulator toggle (inverts toggle-show-sim)
-                $(function() {
-                    // Read the stored value safely for the initial checkbox state.
-                    // Note: the global `settings` object isn't populated from storage
-                    // until pre.js's ready handler runs (after this one), so read
-                    // localStorage directly here instead of shadowing the global.
-                    function readStoredSettings() {
-                        try {
-                            const parsed = JSON.parse(localStorage.getItem('settings'));
-                            return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-                        } catch (e) {
-                            return {};
-                        }
-                    }
-                    $('#toggle-hide-sim').prop('checked', !readStoredSettings()['toggle-show-sim']);
-                    // On change, invert toggle-show-sim on the live global settings
-                    $('#toggle-hide-sim').on('change', function() {
-                        var checked = $(this).is(':checked');
-                        settings['toggle-show-sim'] = !checked;
-                        localStorage.setItem('settings', JSON.stringify(settings));
-                        $('#toggle-show-sim').prop('checked', !checked);
-                        // UI update: mimic the real Simulator toggle
-                        if (!checked) {
-                            if (typeof sim !== 'undefined' && typeof selectedCampus !== 'undefined' && !sim && selectedCampus === 'nb') {
-                                $('.sim-btn').show();
-                            }
-                        } else {
-                            $('.sim-btn').hide();
-                        }
-                    });
-                });
-                </script>
             </div>
 
             <div class="text-1p6rem mb-0p25rem bold-500">MAP</div>
