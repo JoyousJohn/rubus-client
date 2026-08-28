@@ -952,7 +952,7 @@
                                 'icon-size': 1,
                                 'icon-pitch-alignment': 'map',
                                 'text-field': '',
-                                'symbol-sort-key': ['case', ['get', 'selected'], 0, 1]
+                                'symbol-sort-key': ['case', ['get', 'selected'], 100, 1]
                             },
                             paint: {
                                 'icon-opacity': ['get', 'opacity']
@@ -972,7 +972,8 @@
                                 'text-allow-overlap': true,
                                 'text-ignore-placement': true,
                                 'text-anchor': 'bottom',
-                                'text-offset': [0, -1.4]
+                                'text-offset': [0, -1.4],
+                                'symbol-sort-key': ['case', ['get', 'selected'], 100, 1]
                             },
                             paint: {
                                 'text-color': '#111111',
@@ -1387,9 +1388,11 @@
             if (idsInSource.size === 0 || typeof source.updateData !== 'function') {
                 // First population (or a MapLibre build without updateData):
                 // full rebuild.
+                const allFeatures = Object.values(this._cachedFeatures);
+                allFeatures.sort((a, b) => (a.properties.selected ? 1 : 0) - (b.properties.selected ? 1 : 0));
                 source.setData({
                     type: 'FeatureCollection',
-                    features: Object.values(this._cachedFeatures)
+                    features: allFeatures
                 });
                 return;
             }
