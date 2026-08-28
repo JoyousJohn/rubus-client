@@ -825,24 +825,31 @@ async function fetchWhere() {
             
             if (!busLocations[busName]['where']) { continue; } // joined service and didn't get to a stop polygon yet        
             
-            busData[busName]['stopId'] = parseInt(busLocations[busName]['where'][0])
+            busData[busName]['stopId'] = parseInt(busLocations[busName]['where'][0]);
             if (busLocations[busName]['where'].length === 2) {
-                busData[busName]['prevStopId'] = parseInt(busLocations[busName]['where'][1])  
+                busData[busName]['prevStopId'] = parseInt(busLocations[busName]['where'][1]);
+                busData[busName]['at_stop'] = false;
+            } else if (busLocations[busName]['where'].length === 1) {
+                busData[busName]['at_stop'] = true;
+                delete busData[busName]['prevStopId'];
             }
 
-            validBusNames.push(busName)
-            activeRoutes.add(busData[busName].route)
+            validBusNames.push(busName);
+            activeRoutes.add(busData[busName].route);
         }
 
+        if (typeof immediatelyUpdateStoppedBusRotations === 'function') {
+            immediatelyUpdateStoppedBusRotations();
+        }
 
-        updateTimeToStops(validBusNames)
+        updateTimeToStops(validBusNames);
         if (popupStopId) {
             // Preserve any active route filter in the stop info
-            updateStopBuses(popupStopId)
+            updateStopBuses(popupStopId);
         }
 
         if (popupBusName) {
-            popInfo(popupBusName)
+            popInfo(popupBusName);
         }
 
         // Update all stops menu if info panels are open (after activeStops is created)

@@ -151,11 +151,12 @@ const calculateRotation = (busName, loc) => {
     return newRotation;
 };
 
-// Immediately snap the rotation of every marker currently sitting at a stop to
+// Update the rotation of every marker currently sitting at a stop to
 // whatever rotation the current "Disable Bus Rotation Fix at Stops" toggle
 // state calls for (polyline-derived when the fix is enabled, GPS when it's
-// disabled), instead of letting the in-flight easing animation crawl toward it.
-function immediatelyUpdateStoppedBusRotations() {
+// disabled). Snaps immediately by default (for initial load / where sync),
+// or smoothly animates if smooth is true.
+function immediatelyUpdateStoppedBusRotations(smooth = false) {
     if (typeof busData === 'undefined' || typeof busMarkers === 'undefined') return;
     for (const busName in busData) {
         const bus = busData[busName];
@@ -164,15 +165,15 @@ function immediatelyUpdateStoppedBusRotations() {
         const marker = busMarkers[busName];
         if (!marker || typeof marker.setRotation !== 'function') continue;
 
-        // Kill the easing animation so its per-frame rotation writes can't
-        // fight the snap below. Position isn't touched; a settled stopped bus
-        // is already at its target position anyway.
-        cancelBusAnimation(busName);
-
         const loc = { lat: bus.lat, long: bus.long };
         const newRotation = calculateRotation(busName, loc);
         if (newRotation !== undefined) {
-            marker.setRotation(newRotation);
+            if (smooth) {
+                animateBusRotation(busName, newRotation);
+            } else {
+                cancelBusAnimation(busName);
+                marker.setRotation(newRotation);
+            }
         }
     }
 }
@@ -291,4 +292,55 @@ function ensureBusAnimationLoop() {
         }
     };
     busAnimationFrameId = requestAnimationFrame(tick);
+}
+
+// Smoothly animate a bus marker's rotation to a target angle using cubic ease-out
+function animateBusRotation(busName, targetRotation, duration = 650) {
+    const marker = (typeof busMarkers !== 'undefined' && busMarkers) ? busMarkers[busName] : null;
+    if (!marker || typeof marker.setRotation !== 'function') return;
+
+    const startRotation = typeof marker.getRotation === 'function' ? marker.getRotation() : 0;
+    let rotationChange = targetRotation - startRotation;
+    if (rotationChange > 180) {
+        rotationChange -= 360;
+    } else if (rotationChange < -180) {
+        rotationChange += 360;
+    }
+
+    if (Math.abs(rotationChange) < 0.5) {
+        marker.setRotation(targetRotation);
+        return;
+    }
+
+    cancelBusAnimation(busName);
+
+    const startTime = performance.now();
+    const animate = (currentTime) => {
+        if (!busMarkers[busName]) {
+            delete animationFrames[busName];
+            return;
+        }
+
+        const elapsed = currentTime - startTime;
+        const progress = Math.max(0, Math.min(elapsed / duration, 1));
+        // Cubic ease-out: fast start with smooth deceleration into alignment
+        const eased = 1 - Math.pow(1 - progress, 3);
+
+        if (!pauseRotationUpdating) {
+            const currentRotation = startRotation + rotationChange * eased;
+            marker.setRotation(currentRotation);
+        }
+
+        if (progress >= 1) {
+            delete animationFrames[busName];
+        }
+    };
+
+    animate.stepIntervalMs = busAnimationStepIntervalMs(
+        marker._rendererMode,
+        settings && settings['bus-animation-rate']
+    );
+
+    animationFrames[busName] = animate;
+    ensureBusAnimationLoop();
 }

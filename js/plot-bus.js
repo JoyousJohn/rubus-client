@@ -21,17 +21,18 @@ function plotBus(busName, immediatelyUpdate=false) {
         }[currentSize] || 'medium-marker';
 
         // Create the WebGL proxy marker (replaces all 4 DOM marker types)
+        const initialRotation = (typeof calculateRotation === 'function') ? calculateRotation(busName, loc) : (normalizeRotation(busData[busName].rotation) + 45);
         busMarkers[busName] = busLayerManager.createProxy(busName, [loc.lat, loc.long], {
             markerType: markerType,
             route: route,
             routeColor: routeColor,
             sizeClass: sizeClass,
             displayName: busData[busName].busName,
-            rotation: normalizeRotation(busData[busName].rotation) + 45
+            rotation: initialRotation
         }).addTo(map);
 
         // Set initial rotation (stored as a plain number; mock DOM kept in sync for compat)
-        busMarkers[busName].setRotation(normalizeRotation(busData[busName].rotation) + 45);
+        busMarkers[busName].setRotation(initialRotation);
 
         // Hide the marker at creation if the route filter says so (the default
         // is visible; without this a new bus on a hidden route would show).

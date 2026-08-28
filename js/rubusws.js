@@ -186,6 +186,16 @@ function openRUBusSocket() {
 
                 busData[busName].progress = 0;
 
+                if (typeof animateBusRotation === 'function') {
+                    const loc = { lat: busData[busName].lat, long: busData[busName].long };
+                    const targetRotation = calculateRotation(busName, loc);
+                    if (targetRotation !== undefined) {
+                        animateBusRotation(busName, targetRotation, 700);
+                    }
+                } else if (typeof immediatelyUpdateStoppedBusRotations === 'function') {
+                    immediatelyUpdateStoppedBusRotations(true);
+                }
+
                 const $busLogElm = $(`
                     <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
                     <div><strong>${busName}</strong> <span style="color: #46dd46;">arrived</span> at ${stopName}</div>
