@@ -229,187 +229,339 @@ $(function(){
     });
 });
 
+let selectedCampusModal = (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
+let _currentActiveCampusPreviewImg = 0;
+let _lastPreviewCampusSrc = null;
+
+function resolveCampusThemeMode() {
+    const currentTheme = document.documentElement.getAttribute('data-selected-theme') || (typeof selectedTheme !== 'undefined' && selectedTheme) || (typeof settings !== 'undefined' && settings && settings['theme']) || 'beige-coffee';
+    const resolvedTheme = (typeof resolveAutoTheme === 'function') ? resolveAutoTheme(currentTheme) : currentTheme;
+    return (resolvedTheme === 'light' || (resolvedTheme && resolvedTheme.includes('coffee'))) ? 'light' : 'dark';
+}
+
+function getCampusPreviewSrc(campus) {
+    const mode = resolveCampusThemeMode();
+    return `img/campus-images/${campus}-${mode}.png`;
+}
+
+function updateCampusPreviewImage(campus) {
+    if (!campus) campus = selectedCampusModal || 'nb';
+    const newSrc = getCampusPreviewSrc(campus);
+
+    const img0 = document.getElementById('campus-preview-img');
+    const img1 = document.getElementById('campus-preview-img-next');
+    if (!img0) return;
+    if (!img1) {
+        img0.src = newSrc;
+        return;
+    }
+
+    if (!_lastPreviewCampusSrc) {
+        _lastPreviewCampusSrc = img0.getAttribute('src');
+    }
+    if (_lastPreviewCampusSrc === newSrc) return;
+    _lastPreviewCampusSrc = newSrc;
+
+    if (_currentActiveCampusPreviewImg === 0) {
+        img1.src = newSrc;
+        img1.style.opacity = '1';
+        img0.style.opacity = '0';
+        _currentActiveCampusPreviewImg = 1;
+    } else {
+        img0.src = newSrc;
+        img0.style.opacity = '1';
+        img1.style.opacity = '0';
+        _currentActiveCampusPreviewImg = 0;
+    }
+}
+
+function updateCampusIndicator(campus) {
+    if (!campus) {
+        campus = selectedCampusModal || (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
+    }
+    const indicator = document.querySelector('.campus-indicator');
+    const target = document.querySelector(`.campus-option[data-campus="${campus}"]`);
+    const slider = document.querySelector('.campus-slider');
+    if (!indicator || !target || !slider) return;
+
+    const options = slider.querySelectorAll('.campus-option');
+    const index = Array.from(options).indexOf(target);
+    const count = options.length;
+    const isColumn = getComputedStyle(slider).flexDirection === 'column';
+
+    if (isColumn) {
+        indicator.style.top = `calc(${index} * (100% / ${count}) - 3px)`;
+        indicator.style.height = `calc(100% / ${count} + 6px)`;
+        indicator.style.left = '-3px';
+        indicator.style.width = 'calc(100% + 6px)';
+    } else {
+        indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
+        indicator.style.width = `calc(100% / ${count} + 6px)`;
+        indicator.style.top = '-3px';
+        indicator.style.height = 'calc(100% + 6px)';
+    }
+
+    const currentTheme = document.documentElement.getAttribute('data-selected-theme') || (typeof selectedTheme !== 'undefined' && selectedTheme) || (typeof settings !== 'undefined' && settings && settings['theme']) || 'beige-coffee';
+    const resolved = (typeof resolveAutoTheme === 'function') ? resolveAutoTheme(currentTheme) : currentTheme;
+    if (typeof themeIndicatorColorMap !== 'undefined' && themeIndicatorColorMap[resolved]) {
+        indicator.style.backgroundColor = themeIndicatorColorMap[resolved].bg;
+        indicator.style.boxShadow = themeIndicatorColorMap[resolved].shadow;
+    }
+}
+
+function selectCampusModal(campus) {
+    selectedCampusModal = campus;
+    document.querySelectorAll('.campus-option').forEach(opt => opt.classList.remove('selected'));
+    const target = document.querySelector(`.campus-option[data-campus="${campus}"]`);
+    if (target) target.classList.add('selected');
+    updateCampusIndicator(campus);
+    updateCampusPreviewImage(campus);
+}
+
+function updateCampusModalTheme() {
+    const campus = selectedCampusModal || (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
+    updateCampusPreviewImage(campus);
+    updateCampusIndicator(campus);
+}
+
+window.selectCampusModal = selectCampusModal;
+window.updateCampusModalTheme = updateCampusModalTheme;
+window.updateCampusIndicator = updateCampusIndicator;
+
+function initCampusSliderDrag() {
+    const slider = document.querySelector('.campus-slider');
+    const indicator = document.querySelector('.campus-indicator');
+    if (!slider || !indicator) return;
+
+    let dragging = false;
+    let startX = 0;
+    let didDrag = false;
+    let holdTimer = null;
+    let lastClosestCampus = null;
+
+    function getOptionCenter(option) {
+        return option.offsetLeft + option.offsetWidth / 2;
+    }
+
+    function getClosestCampus(clientX) {
+        const sliderRect = slider.getBoundingClientRect();
+        const relativeX = clientX - sliderRect.left;
+        const options = slider.querySelectorAll('.campus-option');
+        let closest = null;
+        let minDist = Infinity;
+
+        options.forEach(opt => {
+            const center = getOptionCenter(opt);
+            const dist = Math.abs(relativeX - center);
+            if (dist < minDist) {
+                minDist = dist;
+                closest = opt;
+            }
+        });
+        return closest;
+    }
+
+    function applyPopup() {
+        if (indicator.style.top === '-6px') return;
+        indicator.style.transition = 'top 0.1s ease, height 0.1s ease, left 0.1s ease, width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+        indicator.style.top = '-6px';
+        indicator.style.height = 'calc(100% + 12px)';
+        const currentLeft = indicator.offsetLeft;
+        const currentWidth = indicator.offsetWidth;
+        indicator.style.left = (currentLeft - 3) + 'px';
+        indicator.style.width = (currentWidth + 6) + 'px';
+    }
+
+    function snapToClosest(clientX) {
+        const closest = getClosestCampus(clientX);
+        if (closest) {
+            indicator.style.transition = 'left 0.2s ease, width 0.2s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+            indicator.style.top = '-3px';
+            indicator.style.height = 'calc(100% + 6px)';
+            const campus = closest.getAttribute('data-campus');
+            selectCampusModal(campus);
+        }
+        lastClosestCampus = null;
+    }
+
+    function shrinkBack() {
+        indicator.style.transition = 'left 0.2s ease, width 0.2s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+        indicator.style.top = '-3px';
+        indicator.style.height = 'calc(100% + 6px)';
+        updateCampusIndicator(selectedCampusModal);
+    }
+
+    slider.addEventListener('pointerdown', function(e) {
+        if (getComputedStyle(slider).flexDirection === 'column') return;
+
+        dragging = true;
+        didDrag = false;
+        startX = e.clientX;
+        lastClosestCampus = null;
+        slider.setPointerCapture(e.pointerId);
+
+        clearTimeout(holdTimer);
+        holdTimer = setTimeout(function() {
+            if (!dragging || didDrag) return;
+            applyPopup();
+        }, 400);
+    });
+
+    slider.addEventListener('pointermove', function(e) {
+        if (!dragging) return;
+        const deltaX = e.clientX - startX;
+        if (Math.abs(deltaX) > 5) {
+            if (!didDrag) {
+                clearTimeout(holdTimer);
+                applyPopup();
+                indicator.style.transition = 'background-color 0.3s ease, box-shadow 0.3s ease';
+            }
+            didDrag = true;
+        }
+        if (!didDrag) return;
+
+        const options = slider.querySelectorAll('.campus-option');
+        const firstOption = options[0];
+        const lastOption = options[options.length - 1];
+        const minLeft = firstOption.offsetLeft - 6;
+        const maxLeft = lastOption.offsetLeft - 6;
+
+        const sliderRect = slider.getBoundingClientRect();
+        const indicatorHalfWidth = indicator.offsetWidth / 2;
+        let newLeft = (e.clientX - sliderRect.left) - indicatorHalfWidth;
+        newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+
+        indicator.style.left = newLeft + 'px';
+
+        const closest = getClosestCampus(e.clientX);
+        if (closest) {
+            const campus = closest.getAttribute('data-campus');
+            if (campus !== lastClosestCampus) {
+                lastClosestCampus = campus;
+                slider.querySelectorAll('.campus-option').forEach(opt => opt.classList.remove('selected'));
+                closest.classList.add('selected');
+                updateCampusPreviewImage(campus);
+            }
+        }
+    });
+
+    slider.addEventListener('pointerup', function(e) {
+        if (!dragging) return;
+        dragging = false;
+        clearTimeout(holdTimer);
+
+        if (didDrag) {
+            snapToClosest(e.clientX);
+        } else if (indicator.style.top === '-6px') {
+            shrinkBack();
+        }
+    });
+
+    slider.addEventListener('pointercancel', function(e) {
+        if (!dragging) return;
+        dragging = false;
+        clearTimeout(holdTimer);
+        if (didDrag) {
+            snapToClosest(e.clientX);
+        } else if (indicator.style.top === '-6px') {
+            shrinkBack();
+        }
+    });
+
+    slider.querySelectorAll('.campus-option').forEach(opt => {
+        opt.addEventListener('pointerdown', function(e) {
+            if (getComputedStyle(slider).flexDirection === 'column') return;
+            const campus = opt.getAttribute('data-campus');
+            if (!campus) return;
+
+            dragging = true;
+            didDrag = false;
+            startX = e.clientX;
+            lastClosestCampus = null;
+            slider.setPointerCapture(e.pointerId);
+
+            selectCampusModal(campus);
+
+            const options = slider.querySelectorAll('.campus-option');
+            const index = Array.from(options).indexOf(opt);
+            const count = options.length;
+
+            indicator.style.transition = 'left 0.3s ease, width 0.3s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+            indicator.style.left = `calc(${index} * (100% / ${count}) - 6px)`;
+            indicator.style.width = `calc(100% / ${count} + 12px)`;
+            indicator.style.top = '-6px';
+            indicator.style.height = 'calc(100% + 12px)';
+
+            clearTimeout(holdTimer);
+        });
+    });
+
+    document.addEventListener('keydown', function(e) {
+        const campusModal = document.querySelector('.campus-modal');
+        if (!campusModal || campusModal.style.display === 'none') return;
+
+        const isColumn = getComputedStyle(slider).flexDirection === 'column';
+        const options = slider.querySelectorAll('.campus-option');
+        const selected = slider.querySelector('.campus-option.selected');
+        const currentIndex = Array.from(options).indexOf(selected);
+
+        let newIndex = currentIndex;
+        if (isColumn) {
+            if (e.key === 'ArrowDown') newIndex = Math.min(currentIndex + 1, options.length - 1);
+            else if (e.key === 'ArrowUp') newIndex = Math.max(currentIndex - 1, 0);
+            else return;
+        } else {
+            if (e.key === 'ArrowRight') newIndex = Math.min(currentIndex + 1, options.length - 1);
+            else if (e.key === 'ArrowLeft') newIndex = Math.max(currentIndex - 1, 0);
+            else return;
+        }
+
+        if (newIndex === currentIndex) return;
+
+        e.preventDefault();
+        const campus = options[newIndex].getAttribute('data-campus');
+        indicator.style.transition = 'left 0.2s ease, width 0.2s ease, top 0.2s ease, height 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+        selectCampusModal(campus);
+    });
+}
+window.initCampusSliderDrag = initCampusSliderDrag;
+
+window.backToThemeModal = function() {
+    $('.campus-modal').hide();
+    $('.theme-modal').css('display', 'flex');
+    $('#theme-bg-lights').show();
+    document.body.style.overflow = 'hidden';
+    if (typeof updateThemeIndicator === 'function') updateThemeIndicator();
+};
+
+window.centerCampusCarouselToNBInstant = function() {
+    updateCampusIndicator('nb');
+};
+
+window.confirmCampusSelection = function() {
+    const isFirstTimeVisitor = !(settings && settings['campus']);
+    const chosenCampus = selectedCampusModal || (settings && settings['campus']) || 'nb';
+    settings['campus'] = chosenCampus;
+    saveSettings();
+
+    $('.campus-modal, #theme-bg-lights').fadeOut();
+    document.body.style.overflow = '';
+
+    if (settings['campus'] !== selectedCampus) {
+        campusChanged();
+    } else {
+        setSelectedCampusButton(settings['campus'] || 'nb');
+    }
+
+    if (isFirstTimeVisitor && !settings['toggle-disable-fireworks-on-open'] && (typeof shouldAutoLaunchFireworks !== 'function' || shouldAutoLaunchFireworks())) {
+        if (typeof launchFireworks === 'function') launchFireworks(12);
+    }
+};
+
 $(function() {
-	function updateCampusCarouselTheme() {
-		const theme = document.documentElement.getAttribute('theme');
-		$('.campus-carousel-img').each(function() {
-			const $img = $(this);
-			const isLightTheme = theme === 'light' || (theme && theme.includes('coffee'));
-			const imgSrc = $img.data(theme) || (isLightTheme ? $img.data('light') : $img.data('dark'));
-			$img.attr('src', imgSrc);
-		});
-	}
-
-	function computeCenterScroll($carousel, $item) {
-		const pos = $item.position();
-		const itemCenter = pos.left + ($item.outerWidth() / 2);
-		const viewportCenter = $carousel.innerWidth() / 2;
-		const target = itemCenter - viewportCenter;
-		console.log('[carousel] computeCenterScroll', { itemLeft: pos.left, itemWidth: $item.outerWidth(), itemCenter, viewportCenter, target });
-		return Math.max(0, target);
-	}
-
-	let currentCarouselAnimCancel = null;
-	function centerToItem($item, instant = false, allowDesktop = false) {
-		if (isDesktop && !allowDesktop) { console.log('[carousel] skip center (desktop)'); return; }
-		const $carousel = $('.campus-carousel');
-		const carEl = $carousel[0];
-		const itemEl = $item && $item[0];
-		if (!carEl || !itemEl) { console.log('[carousel] missing elements for centering'); return; }
-		// Cancel any prior animations (jQuery or our own)
-		$carousel.stop(true);
-		const prevBehavior = $carousel.css('scroll-behavior');
-		$carousel.css('scroll-behavior', 'auto');
-		// Pre-centering diagnostics
-		const preItem = itemEl.getBoundingClientRect();
-		const preCar = carEl.getBoundingClientRect();
-		const preDelta = (preItem.left + preItem.width / 2) - (preCar.left + preCar.width / 2);
-		console.log('[carousel][verify] before', { preScroll: carEl.scrollLeft, preDelta });
-		if (instant) {
-			const delta = preDelta;
-			carEl.scrollLeft += delta;
-			// Post verify
-			const postItem = itemEl.getBoundingClientRect();
-			const postCar = carEl.getBoundingClientRect();
-			const postDelta = (postItem.left + postItem.width / 2) - (postCar.left + postCar.width / 2);
-			if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
-			console.log('[carousel] centered instantly', { from: carEl.scrollLeft - delta, appliedDelta: delta, finalScroll: carEl.scrollLeft });
-			console.log('[carousel][verify] after', { postScroll: carEl.scrollLeft, postDelta, pass: Math.abs(postDelta) <= 0.6 });
-			return;
-		}
-		// Only cancel previous animation when starting a new one
-		if (typeof currentCarouselAnimCancel === 'function') {
-			currentCarouselAnimCancel();
-		}
-		// Smooth convergence using rect deltas per frame
-		const epsilon = 0.6;
-		const maxMs = 260;
-		const start = performance.now();
-		let cancelled = false;
-		currentCarouselAnimCancel = () => { cancelled = true; };
-		(function step() {
-			if (cancelled) { if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); } console.log('[carousel] animation cancelled'); return; }
-			const now = performance.now();
-			const elapsed = now - start;
-			const itemRect = itemEl.getBoundingClientRect();
-			const carRect = carEl.getBoundingClientRect();
-			const delta = (itemRect.left + itemRect.width / 2) - (carRect.left + carRect.width / 2);
-			if (Math.abs(delta) <= epsilon || elapsed >= maxMs) {
-				carEl.scrollLeft += delta; // snap remaining tiny error
-				if (prevBehavior) { $carousel.css('scroll-behavior', prevBehavior); }
-				const postItem = itemEl.getBoundingClientRect();
-				const postCar = carEl.getBoundingClientRect();
-				const postDelta = (postItem.left + postItem.width / 2) - (postCar.left + postCar.width / 2);
-				console.log('[carousel] animation done', { elapsed, finalScroll: carEl.scrollLeft, residual: delta });
-				console.log('[carousel][verify] after', { postScroll: carEl.scrollLeft, postDelta, pass: Math.abs(postDelta) <= epsilon });
-				currentCarouselAnimCancel = null;
-				return;
-			}
-			// Move a fraction of the current delta; ease by time (easeOutCubic)
-			const t = Math.min(1, elapsed / maxMs);
-			const easeOut = 1 - Math.pow(1 - t, 3);
-			const fraction = 0.18 + 0.22 * easeOut; // from 0.18 to ~0.4
-			const stepDelta = delta * fraction;
-			carEl.scrollLeft += stepDelta;
-			console.log('[carousel] animation step', { elapsed, delta, stepDelta, scroll: carEl.scrollLeft });
-			requestAnimationFrame(step);
-		})();
-	}
-
-	// Expose one global helper to center NB instantly (used when opening the modal)
-	window.centerCampusCarouselToNBInstant = function(forceDesktop = true) {
-		if (forceDesktop) {
-			console.log('[carousel] center NB instant trigger (forced)');
-		} else if (typeof isDesktop !== 'undefined' && isDesktop) {
-			console.log('[carousel] skip NB instant (desktop)');
-			return;
-		}
-		const $nb = $(`.campus-carousel-item[data-campus="nb"]`);
-		centerToItem($nb, true, /*allowDesktop*/ forceDesktop);
-	}
-
-	function setCampusHeaderBold(campus) {
-		// Unbold all campus labels, then bold only the selected one
-		$('.campus-carousel-label').css('font-weight', '');
-		$(`.campus-carousel-item[data-campus="${campus}"] .campus-carousel-label`).css('font-weight', 'bold');
-	}
-
-	function selectCampusCarousel(campus) {
-		$('.campus-carousel-item').removeClass('selected');
-		const $selected = $(`.campus-carousel-item[data-campus="${campus}"]`).addClass('selected');
-		setCampusHeaderBold(campus);
-		settings['campus'] = campus;
-		return $selected;
-	}
-
-	updateCampusCarouselTheme();
-	const observer = new MutationObserver(updateCampusCarouselTheme);
-	observer.observe(document.documentElement, { attributes: true, attributeFilter: ['theme'] });
-
-	// Prevent accidental selection when user is dragging
-	let dragStartX = 0;
-	let dragStartY = 0;
-	let dragMoved = false;
-	$('.campus-carousel')
-		.on('mousedown touchstart', function(e){
-			const pt = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
-			dragStartX = pt.clientX; dragStartY = pt.clientY; dragMoved = false;
-			$(this).stop(true); // cancel ongoing jQuery animations
-			if (typeof currentCarouselAnimCancel === 'function') {
-				currentCarouselAnimCancel();
-			}
-			console.log('[carousel] interaction start, stop animations');
-		})
-		.on('mousemove touchmove', function(e){
-			const pt = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
-			if (Math.abs(pt.clientX - dragStartX) > 8 || Math.abs(pt.clientY - dragStartY) > 8) { dragMoved = true; }
-		})
-		.on('mouseup touchend', function(){
-			console.log('[carousel] interaction end', { dragMoved });
-		});
-
-	$('.campus-carousel-item').on('click', function(e) {
-		if (dragMoved) { console.log('[carousel] suppress click after drag'); return; }
-		const campus = $(this).data('campus');
-		const $selected = selectCampusCarousel(campus);
-		console.log('[carousel] item selected (click)', campus);
-		requestAnimationFrame(() => centerToItem($selected, false, /*allowDesktop*/ false));
-	});
-	$('.campus-carousel-item').on('touchend', function(e) {
-		if (dragMoved) { console.log('[carousel] suppress tap after drag'); dragMoved = false; return; }
-		const campus = $(this).data('campus');
-		const $selected = selectCampusCarousel(campus);
-		console.log('[carousel] item selected (tap)', campus);
-		requestAnimationFrame(() => centerToItem($selected, false, /*allowDesktop*/ false));
-	});
-
-	// Default selection state
-	const initialCampus = (settings && settings['campus']) || 'nb';
-	const $initialSelected = selectCampusCarousel(initialCampus);
-	$initialSelected.css({
-		'transition': 'none',
-		'transform': 'scale(1)',
-		'opacity': '1',
-		'z-index': '2'
-	});
-	// Re-enable transitions for future interactions on next frame
-	requestAnimationFrame(() => { $initialSelected.css('transition', ''); });
-
-	// Confirm handler
-	window.confirmCampusSelection = function() {
-		const isFirstTimeVisitor = !(settings && settings['campus']);
-		saveSettings();
-		// Map/buses/polylines are already live behind the modal for the initial
-		// campus. Only rebuild when the user confirmed a different campus.
-		if (settings['campus'] !== selectedCampus) {
-			campusChanged();
-		} else {
-			setSelectedCampusButton(settings['campus'] || 'nb');
-		}
-		$('.campus-modal').fadeOut();
-		if (isFirstTimeVisitor && !settings['toggle-disable-fireworks-on-open']) {
-			launchFireworks(12);
-		}
-	};
+    updateCampusModalTheme();
+    const observer = new MutationObserver(updateCampusModalTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['theme', 'data-selected-theme'] });
+    initCampusSliderDrag();
 });
 

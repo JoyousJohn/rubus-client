@@ -276,10 +276,51 @@
                 }
             }
 
+            function updateCampusIndicatorInline() {
+                const campus = (typeof selectedCampusModal !== 'undefined' && selectedCampusModal) || (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
+                document.querySelectorAll('.campus-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                const target = document.querySelector(`.campus-option[data-campus="${campus}"]`);
+                if (target) target.classList.add('selected');
+
+                const indicator = document.querySelector('.campus-indicator');
+                const slider = document.querySelector('.campus-slider');
+                if (indicator && target && slider) {
+                    const options = document.querySelectorAll('.campus-option');
+                    const index = Array.from(options).indexOf(target);
+                    const count = options.length;
+                    const isColumn = getComputedStyle(slider).flexDirection === 'column';
+                    if (isColumn) {
+                        indicator.style.top = `calc(${index} * (100% / ${count}) - 3px)`;
+                        indicator.style.height = `calc(100% / ${count} + 6px)`;
+                        indicator.style.left = '-3px';
+                        indicator.style.width = 'calc(100% + 6px)';
+                    } else {
+                        indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
+                        indicator.style.width = `calc(100% / ${count} + 6px)`;
+                        indicator.style.top = '-3px';
+                        indicator.style.height = 'calc(100% + 6px)';
+                    }
+                    const selectedTheme = document.documentElement.getAttribute('data-selected-theme') || 'beige-coffee';
+                    const h = new Date().getHours();
+                    const resolved = (selectedTheme === 'auto') ? (h < 6 ? 'y2k-glamour' : h < 12 ? 'light' : h < 18 ? 'beige-coffee' : 'dark') : selectedTheme;
+                    const cm = { light:{bg:'black',s:'none'}, dark:{bg:'rgb(203,203,203)',s:'none'}, 'y2k-glamour':{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, glamour:{bg:'#ec4899',s:'0 0 12px rgba(236,72,153,0.5)'}, 'beige-coffee':{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, coffee:{bg:'#a0522d',s:'0 0 10px rgba(160,82,45,0.4)'}, forest:{bg:'#c49a3c',s:'0 0 12px rgba(196,154,60,0.5)'} };
+                    const c = cm[resolved];
+                    if (c) { indicator.style.backgroundColor = c.bg; indicator.style.boxShadow = c.s; }
+                    indicator.style.transition = 'left 0.3s ease, width 0.3s ease, top 0.3s ease, height 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+                }
+            }
+
             updateThemeIndicatorInline();
-            window.addEventListener('resize', updateThemeIndicatorInline);
+            updateCampusIndicatorInline();
+            window.addEventListener('resize', function() {
+                updateThemeIndicatorInline();
+                updateCampusIndicatorInline();
+            });
 
             initThemeSliderDrag();
+            if (typeof initCampusSliderDrag === 'function') initCampusSliderDrag();
         });
 
         // Preload preview images and critical UI icons
@@ -289,6 +330,12 @@
             'img/theme-select/y2k-glamour.png',
             'img/theme-select/beige-coffee.png',
             'img/theme-select/forest.png',
+            'img/campus-images/camden-light.png',
+            'img/campus-images/camden-dark.png',
+            'img/campus-images/nb-light.png',
+            'img/campus-images/nb-dark.png',
+            'img/campus-images/newark-light.png',
+            'img/campus-images/newark-dark.png',
             'img/stop_marker_selected.png'
         ];
         preloadImages.forEach(src => {
@@ -361,25 +408,44 @@
     </div>
 
     <div class="campus-modal none flex-col justify-between center">
-        <div class="campus-header">Select Your Campus</div>
-        <div class="campus-carousel-wrapper flex justify-center align-center" style="flex:1; overflow: visible;">
-            <div class="campus-carousel flex align-center" style="scroll-behavior: smooth; width: 100vw;">
-                <div class="campus-carousel-item" data-campus="camden">
-                    <div class="campus-carousel-label">Camden</div>
-                    <img class="campus-carousel-img campus-img-camden" src="img/campus-images/camden-light.png" data-light="img/campus-images/camden-light.png" data-dark="img/campus-images/camden-dark.png">
+        <div class="campus-header flex justify-center align-center gap-x-1rem mb-1p5rem mr-1rem">
+            <img class="campus-img" src="img/rubus-favicon-autumn.png" style="width: 20%;">
+            <div class="left">
+                <div class="text-2rem select-none">Select your campus</div>
+                <div class="text-1p5rem select-none" style="color: var(--theme-extra);">You can change this anytime.</div>
+            </div>
+        </div>
+        <div class="campus-body flex flex-col" style="flex:1; min-height: 0;">
+            <div class="campus-controls">
+                <div class="campus-slider my-2rem">
+                    <div class="campus-indicator"></div>
+                    <div class="campus-option" data-campus="camden" onclick="selectCampusModal('camden')"><i class="fa-solid fa-building-columns"></i><span>Camden</span></div>
+                    <div class="campus-option selected" data-campus="nb" onclick="selectCampusModal('nb')"><i class="fa-solid fa-graduation-cap"></i><span>New Brunswick</span></div>
+                    <div class="campus-option" data-campus="newark" onclick="selectCampusModal('newark')"><i class="fa-solid fa-city"></i><span>Newark</span></div>
                 </div>
-                <div class="campus-carousel-item" data-campus="nb">
-                    <div class="campus-carousel-label">New Brunswick</div>
-                    <img class="campus-carousel-img campus-img-nb" src="img/campus-images/nb-light.png" data-light="img/campus-images/nb-light.png" data-dark="img/campus-images/nb-dark.png">
-                </div>
-                <div class="campus-carousel-item" data-campus="newark">
-                    <div class="campus-carousel-label">Newark</div>
-                    <img class="campus-carousel-img campus-img-newark" src="img/campus-images/newark-light.png" data-light="img/campus-images/newark-light.png" data-dark="img/campus-images/newark-dark.png">
-                </div>
+            </div>
+            <div class="campus-preview">
+                <img class="br-1rem" src="img/campus-images/nb-light.png" id="campus-preview-img" style="opacity: 1;">
+                <img class="br-1rem" src="img/campus-images/nb-light.png" id="campus-preview-img-next" style="opacity: 0;">
+                <script>
+                    // Immediately update the campus preview image before painting
+                    (function() {
+                        const campus = (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
+                        const selectedTheme = document.documentElement.getAttribute('data-selected-theme') || (typeof settings !== 'undefined' && settings && settings['theme']) || 'beige-coffee';
+                        const computedTheme = document.documentElement.getAttribute('theme') || selectedTheme;
+                        const isLight = (selectedTheme === 'light' || selectedTheme.includes('coffee') || computedTheme === 'light' || computedTheme.includes('coffee'));
+                        const mode = isLight ? 'light' : 'dark';
+                        const src = `img/campus-images/${campus}-${mode}.png`;
+                        const img0 = document.getElementById('campus-preview-img');
+                        const img1 = document.getElementById('campus-preview-img-next');
+                        if (img0) img0.src = src;
+                        if (img1) img1.src = src;
+                    })();
+                </script>
             </div>
         </div>
         <div class="campus-modal-bottom flex justify-between align-center">
-            <div class="campus-modal-back pointer" onclick="$('.campus-modal').hide(); document.querySelector('.theme-modal').style.display = ''; document.getElementById('theme-bg-lights').style.display = '';">&larr;</div>
+            <div class="campus-modal-back pointer" onclick="backToThemeModal()">&larr;</div>
             <div class="campus-modal-confirm campus-modal-confirm-mobile pointer" onclick="confirmCampusSelection()">&rarr;</div>
         </div>
     </div>
@@ -394,15 +460,16 @@
     // users on default values (e.g. campus 'nb').
     if (settings && settings['theme']) {
         document.querySelector('.theme-modal').style.display = 'none';
-        document.getElementById('theme-bg-lights').style.display = 'none';
-        document.body.style.overflow = '';
         // Only show campus modal if campus is not set
         if (!settings['campus']) {
+            document.getElementById('theme-bg-lights').style.display = '';
             document.querySelector('.campus-modal').style.display = 'flex';
-            // Ensure proper centering when modal is shown directly
-            requestAnimationFrame(() => {
-                centerCampusCarouselToNBInstant(true);
-            });
+            document.body.style.overflow = 'hidden';
+            if (typeof updateCampusModalTheme === 'function') updateCampusModalTheme();
+            if (typeof updateCampusIndicator === 'function') updateCampusIndicator(settings['campus'] || 'nb');
+        } else {
+            document.getElementById('theme-bg-lights').style.display = 'none';
+            document.body.style.overflow = '';
         }
     } else if (new URLSearchParams(window.location.search).has('bus')) {
         document.querySelector('.theme-modal').style.display = 'none';

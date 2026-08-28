@@ -2586,7 +2586,9 @@ html[theme="light"] .settings-panel .span-i {
 }
 
 [theme="y2k-glamour"] .theme-slider,
-[theme="glamour"] .theme-slider {
+[theme="glamour"] .theme-slider,
+[theme="y2k-glamour"] .campus-slider,
+[theme="glamour"] .campus-slider {
     background-color: #1c112e;
 }
 
@@ -2677,7 +2679,9 @@ html[theme="light"] .settings-panel .span-i {
 }
 
 [theme="beige-coffee"] .theme-slider,
-[theme="coffee"] .theme-slider {
+[theme="coffee"] .theme-slider,
+[theme="beige-coffee"] .campus-slider,
+[theme="coffee"] .campus-slider {
     background-color: #ebdcd0;
 }
 
@@ -2786,7 +2790,8 @@ html[theme="light"] .settings-panel .span-i {
     border-color: #c49a3c;
 }
 
-[theme="forest"] .theme-slider {
+[theme="forest"] .theme-slider,
+[theme="forest"] .campus-slider {
     background-color: #223a25;
 }
 

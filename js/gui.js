@@ -3364,32 +3364,27 @@ window.continueToCampusModal = function() {
     if (typeof initMap === 'function' && (typeof map === 'undefined' || !map)) {
         initMap();
     }
-    $('.theme-modal, #theme-bg-lights').hide();
-    document.body.style.overflow = '';
-    
-    // First, prepare the carousel by setting its scroll position to center NB
-    // This happens while the modal is still hidden
-    const $carousel = $('.campus-carousel');
-    const $nbItem = $(`.campus-carousel-item[data-campus="nb"]`);
-    
-    if ($carousel[0] && $nbItem[0]) {
-        // Calculate the target scroll position to center NB
-        const nbRect = $nbItem[0].getBoundingClientRect();
-        const carouselRect = $carousel[0].getBoundingClientRect();
-        const itemCenter = nbRect.left + nbRect.width / 2;
-        const viewportCenter = carouselRect.left + carouselRect.width / 2;
-        const targetScroll = itemCenter - viewportCenter;
-        
-        // Set the scroll position while modal is still hidden
-        $carousel[0].scrollLeft = targetScroll;
+    $('.theme-modal').hide();
+    $('#theme-bg-lights').show();
+    document.body.style.overflow = 'hidden';
+
+    const campus = (typeof selectedCampusModal !== 'undefined' && selectedCampusModal) || (settings && settings['campus']) || 'nb';
+    if (typeof selectCampusModal === 'function') {
+        selectCampusModal(campus);
     }
-    
-    // Now make the modal visible - it should already be centered
+    if (typeof updateCampusModalTheme === 'function') {
+        updateCampusModalTheme();
+    }
+    if (typeof updateCampusIndicator === 'function') {
+        updateCampusIndicator(campus);
+    }
+
     $('.campus-modal').css('display', 'flex');
-    
-    // Use RAF to ensure proper layout and fine-tune if needed
+
     requestAnimationFrame(() => {
-        window.centerCampusCarouselToNBInstant(true);
+        if (typeof updateCampusIndicator === 'function') {
+            updateCampusIndicator(campus);
+        }
     });
 };
 

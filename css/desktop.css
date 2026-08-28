@@ -204,6 +204,95 @@
         padding: 1rem 10rem !important;
     }
 
+    .campus-modal {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .campus-header {
+        text-align: left !important;
+        align-self: flex-start;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .campus-img {
+        position: absolute;
+        height: 20%;
+        width: auto !important;
+        left: 3vh;
+    }
+
+    .campus-slider {
+        flex-direction: column;
+        border-radius: 1.5rem !important;
+        margin: 0.5rem;
+    }
+
+    .campus-modal .campus-indicator {
+        left: -3px;
+        width: calc(100% + 6px);
+        top: calc(1 * (100% / 3) - 3px);
+        height: calc(100% / 3 + 6px);
+        border-radius: 1rem;
+    }
+
+    .campus-controls {
+        width: fit-content;
+        grid-column: 1;
+        justify-self: end;
+        margin-right: 3rem;
+    }
+
+    .campus-option {
+        font-size: 1.7rem;
+        padding: 1.2rem 2.5rem;
+    }
+
+    .campus-body {
+        display: grid !important;
+        grid-template-columns: 1fr auto 1fr;
+        grid-template-rows: 100%;
+        align-items: center;
+        height: 100%;
+        overflow: visible !important;
+    }
+
+    .campus-preview {
+        grid-column: 2;
+        justify-self: center;
+        height: 100%;
+        overflow: visible;
+    }
+
+    .campus-modal .campus-preview img {
+        max-height: 100%;
+        box-shadow: var(--theme-preview-shadow-desktop, 0 0 18px rgba(0, 0, 0, 0.45));
+    }
+
+    .campus-modal-bottom {
+        display: flex !important;
+        flex-direction: column-reverse;
+        gap: 1.5rem;
+        width: auto !important;
+        align-self: center !important;
+        grid-column: 3;
+        margin: 0 3rem 0 1.5rem;
+    }
+
+    .campus-modal-confirm {
+        align-self: center !important;
+        padding: 1rem 6rem !important;
+        margin: 0 !important;
+    }
+
+    .campus-modal-back {
+        align-self: center !important;
+        padding: 0.8rem 4rem !important;
+        font-size: 2.2rem;
+        margin: 0 !important;
+    }
+
     .dim-on-pan-row {
         display: none !important;
     }
