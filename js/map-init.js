@@ -47,17 +47,22 @@ window.initMap = function() {
                 if (map.getLayer('stop-markers-layer')) map.moveLayer('stop-markers-layer');
                 if (map.getLayer('stop-markers-labels')) map.moveLayer('stop-markers-labels');
             } else {
-                if (map.getLayer('bus-markers-glow')) map.moveLayer('bus-markers-glow');
                 if (map.getLayer('bus-markers-layer')) map.moveLayer('bus-markers-layer');
                 if (map.getLayer('bus-markers-labels')) map.moveLayer('bus-markers-labels');
+                if (map.getLayer('bus-markers-glow')) map.moveLayer('bus-markers-glow');
+                if (map.getLayer('bus-markers-selected')) map.moveLayer('bus-markers-selected');
+                if (map.getLayer('bus-markers-selected-labels')) map.moveLayer('bus-markers-selected-labels');
                 // Pin the stop layers directly below the bus layers so stops
                 // render above polylines/other content regardless of when the
                 // content layers were created relative to the stop layers.
-                const stopAnchor = map.getLayer('bus-markers-glow') ? 'bus-markers-glow'
-                    : (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : undefined);
+                const stopAnchor = map.getLayer('bus-markers-layer') ? 'bus-markers-layer'
+                    : (map.getLayer('bus-markers-glow') ? 'bus-markers-glow' : undefined);
                 if (map.getLayer('stop-markers-layer')) map.moveLayer('stop-markers-layer', stopAnchor);
                 if (map.getLayer('stop-markers-labels')) map.moveLayer('stop-markers-labels', stopAnchor);
             }
+            if (map.getLayer('bus-markers-glow')) map.moveLayer('bus-markers-glow');
+            if (map.getLayer('bus-markers-selected')) map.moveLayer('bus-markers-selected');
+            if (map.getLayer('bus-markers-selected-labels')) map.moveLayer('bus-markers-selected-labels');
             // The selected stop always paints above everything else (DOM
             // parity: its z-index is 2000, above bus markers at 500).
             if (map.getLayer('stop-markers-selected')) map.moveLayer('stop-markers-selected');

@@ -530,7 +530,8 @@ if (typeof L !== 'undefined') {
                     // even when buildings are hidden and re-enabled after markers
                     // already exist (without an anchor, addLayer appends on top).
                     const baseAnchor = ['stop-markers-layer', 'stop-markers-labels',
-                        'bus-markers-glow', 'bus-markers-layer', 'bus-markers-labels',
+                        'bus-markers-layer', 'bus-markers-labels',
+                        'bus-markers-glow', 'bus-markers-selected', 'bus-markers-selected-labels',
                         'stop-markers-selected', 'stop-markers-selected-labels'].find(function(id) {
                         return map.getLayer(id);
                     });

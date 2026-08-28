@@ -66,6 +66,64 @@
     }
 
     /**
+     * Render a standalone white rounded-pill badge sprite with subtle shadow
+     * and black bus number text level with the viewport (matching DOM .bus-name-label).
+     */
+    function renderLabelPillSprite(labelText) {
+        // Measure text width using an offscreen canvas
+        const measureCanvas = document.createElement('canvas');
+        const measureCtx = measureCanvas.getContext('2d');
+        measureCtx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const textMetrics = measureCtx.measureText(labelText || '');
+        const textWidth = textMetrics.width;
+
+        const pad = 4;
+        const pillWidth = Math.max(textWidth + 8, 16);
+        const pillHeight = 13;
+        const totalW = Math.ceil(pillWidth + pad * 2);
+        const totalH = Math.ceil(pillHeight + pad * 2);
+
+        const { canvas, ctx } = createHiDPICanvas(totalW, totalH);
+
+        const cx = totalW / 2;
+        const cy = totalH / 2;
+        const pillRadius = pillHeight / 2; // radius 6.5px for smooth rounded bubble
+        const pillX = cx - pillWidth / 2;
+        const pillY = cy - pillHeight / 2;
+
+        // Shadow matching DOM: box-shadow: 0 1px 2px rgba(0,0,0,0.3)
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+        ctx.shadowBlur = 2;
+        ctx.shadowOffsetY = 1;
+
+        // Draw white rounded pill
+        ctx.beginPath();
+        ctx.arc(pillX + pillRadius, pillY + pillRadius, pillRadius, Math.PI / 2, Math.PI * 3 / 2);
+        ctx.arc(pillX + pillWidth - pillRadius, pillY + pillRadius, pillRadius, -Math.PI / 2, Math.PI / 2);
+        ctx.closePath();
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // Subtle crisp border
+        ctx.shadowColor = 'transparent';
+        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.stroke();
+
+        // Draw label text
+        ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#000000';
+        ctx.fillText(labelText || '', cx, cy + 0.5);
+
+        ctx.restore();
+
+        return canvas;
+    }
+
+    /**
      * Render a RUBus-style marker sprite to a canvas.
      * Dimensions match the original DOM markers: small (20px outer / 8px inner),
      * medium (27px / 13px), big (35px / 19px).
@@ -88,11 +146,6 @@
         const R = dim.outer / 2;
 
         // Outer ring: the 1.5px black border sits OUTSIDE the color fill.
-        // Total footprint = dim.outer + 3.
-        // The inner color path's corner radius must shrink by the border
-        // width (3 -> 1.5) so its corner arc is concentric with the outer's —
-        // otherwise the corner arcs land 1.5px off and the color fails to
-        // fill right up to the border at the tip.
         drawRubusTeardrop(ctx, cx, cy, R + 1.5, 3);
         ctx.fillStyle = '#000000';
         ctx.fill();
@@ -782,10 +835,11 @@
                     busName: this._busName,
                     spriteName: this._spriteName,
                     glowSpriteName: this._glowSpriteName,
+                    pillSpriteName: this._pillSpriteName || '',
                     rotation: this._rotation || 0,
                     visible: this._isVisible(),
                     selected: this._selected,
-                    showLabel: this._isLabelVisible(),
+                    showLabel: this._isLabelVisible() && !!this._pillSpriteName,
                     label: this._labelEl.textContent || '',
                     routeColor: this._routeColor,
                     opacity: this._opacity !== undefined ? this._opacity : 1
@@ -793,8 +847,8 @@
             };
         }
 
-        // Re-ensure this marker's sprite from its current type/color/size and
-        // favorite state (gold inner dot for favorites).
+        // Re-ensure this marker's sprite from its current type/color/size,
+        // favorite state, and optional label text.
         _refreshSprite() {
             this._spriteName = this._manager._ensureSprite(
                 this._markerType, this._routeColor, this._sizeClass,
@@ -803,6 +857,8 @@
             this._glowSpriteName = this._manager._ensureGlowSprite(
                 this._markerType, this._routeColor, this._sizeClass
             );
+            const labelText = this._isLabelVisible() ? (this._labelEl && this._labelEl.textContent) : undefined;
+            this._pillSpriteName = labelText ? this._manager._ensureLabelPillSprite(labelText) : null;
             this._dirty = true;
         }
 
@@ -875,14 +931,17 @@
             this._rafScheduled = false;
             this._spriteCache = {};      // spriteName → {type, color, size} metadata
             this._glowSpriteCache = {};  // glowSpriteName → true
+            this._labelPillCache = {};   // pillSpriteName → true
             this._busIconImage = null;
             this._busIconLoaded = false;
             this._pendingSpriteQueue = [];
             this._zIndexCounter = 500;   // stable per-bus z-index for DOM mode
             this._sourceId = 'bus-markers-source';
             this._layerId = 'bus-markers-layer';
-            this._glowLayerId = 'bus-markers-glow';
             this._labelLayerId = 'bus-markers-labels';
+            this._glowLayerId = 'bus-markers-glow';
+            this._selectedLayerId = 'bus-markers-selected';
+            this._selectedLabelLayerId = 'bus-markers-selected-labels';
         }
 
         /**
@@ -913,6 +972,50 @@
                         });
                     }
 
+                    // Layer 1: Unselected bus markers
+                    if (!mapInstance.getLayer(self._layerId)) {
+                        mapInstance.addLayer({
+                            id: self._layerId,
+                            type: 'symbol',
+                            source: self._sourceId,
+                            filter: ['all', ['==', ['get', 'visible'], true], ['!=', ['get', 'selected'], true]],
+                            layout: {
+                                'icon-image': ['get', 'spriteName'],
+                                'icon-rotate': ['get', 'rotation'],
+                                'icon-rotation-alignment': 'map',
+                                'icon-allow-overlap': true,
+                                'icon-ignore-placement': true,
+                                'icon-size': 1,
+                                'icon-pitch-alignment': 'map'
+                            },
+                            paint: {
+                                'icon-opacity': ['get', 'opacity']
+                            }
+                        });
+                    }
+
+                    // Layer 2: Unselected bus name labels (level with viewport, never hidden)
+                    if (!mapInstance.getLayer(self._labelLayerId)) {
+                        mapInstance.addLayer({
+                            id: self._labelLayerId,
+                            type: 'symbol',
+                            source: self._sourceId,
+                            filter: ['all', ['==', ['get', 'visible'], true], ['!=', ['get', 'selected'], true], ['==', ['get', 'showLabel'], true]],
+                            layout: {
+                                'icon-image': ['get', 'pillSpriteName'],
+                                'icon-rotation-alignment': 'viewport',
+                                'icon-pitch-alignment': 'viewport',
+                                'icon-allow-overlap': true,
+                                'icon-ignore-placement': true,
+                                'icon-size': 1
+                            },
+                            paint: {
+                                'icon-opacity': ['get', 'opacity']
+                            }
+                        });
+                    }
+
+                    // Layer 3: Selected bus glow
                     if (!mapInstance.getLayer(self._glowLayerId)) {
                         mapInstance.addLayer({
                             id: self._glowLayerId,
@@ -920,9 +1023,6 @@
                             source: self._sourceId,
                             filter: ['all', ['==', ['get', 'visible'], true], ['==', ['get', 'selected'], true]],
                             layout: {
-                                // Glow sprite is a blurred silhouette of the
-                                // marker shape; it must rotate in lockstep with
-                                // the icon so the glow hugs the rotated shape.
                                 'icon-image': ['get', 'glowSpriteName'],
                                 'icon-rotate': ['get', 'rotation'],
                                 'icon-rotation-alignment': 'map',
@@ -937,12 +1037,13 @@
                         });
                     }
 
-                    if (!mapInstance.getLayer(self._layerId)) {
+                    // Layer 4: Selected bus marker (paints above unselected markers and labels)
+                    if (!mapInstance.getLayer(self._selectedLayerId)) {
                         mapInstance.addLayer({
-                            id: self._layerId,
+                            id: self._selectedLayerId,
                             type: 'symbol',
                             source: self._sourceId,
-                            filter: ['==', ['get', 'visible'], true],
+                            filter: ['all', ['==', ['get', 'visible'], true], ['==', ['get', 'selected'], true]],
                             layout: {
                                 'icon-image': ['get', 'spriteName'],
                                 'icon-rotate': ['get', 'rotation'],
@@ -950,9 +1051,7 @@
                                 'icon-allow-overlap': true,
                                 'icon-ignore-placement': true,
                                 'icon-size': 1,
-                                'icon-pitch-alignment': 'map',
-                                'text-field': '',
-                                'symbol-sort-key': ['case', ['get', 'selected'], 100, 1]
+                                'icon-pitch-alignment': 'map'
                             },
                             paint: {
                                 'icon-opacity': ['get', 'opacity']
@@ -960,25 +1059,23 @@
                         });
                     }
 
-                    if (!mapInstance.getLayer(self._labelLayerId)) {
+                    // Layer 5: Selected bus name label (paints above selected bus marker)
+                    if (!mapInstance.getLayer(self._selectedLabelLayerId)) {
                         mapInstance.addLayer({
-                            id: self._labelLayerId,
+                            id: self._selectedLabelLayerId,
                             type: 'symbol',
                             source: self._sourceId,
-                            filter: ['all', ['==', ['get', 'visible'], true], ['==', ['get', 'showLabel'], true]],
+                            filter: ['all', ['==', ['get', 'visible'], true], ['==', ['get', 'selected'], true], ['==', ['get', 'showLabel'], true]],
                             layout: {
-                                'text-field': ['get', 'label'],
-                                'text-size': 12,
-                                'text-allow-overlap': true,
-                                'text-ignore-placement': true,
-                                'text-anchor': 'bottom',
-                                'text-offset': [0, -1.4],
-                                'symbol-sort-key': ['case', ['get', 'selected'], 100, 1]
+                                'icon-image': ['get', 'pillSpriteName'],
+                                'icon-rotation-alignment': 'viewport',
+                                'icon-pitch-alignment': 'viewport',
+                                'icon-allow-overlap': true,
+                                'icon-ignore-placement': true,
+                                'icon-size': 1
                             },
                             paint: {
-                                'text-color': '#111111',
-                                'text-halo-color': '#ffffff',
-                                'text-halo-width': 1.2
+                                'icon-opacity': ['get', 'opacity']
                             }
                         });
                     }
@@ -1079,6 +1176,21 @@
         }
 
         /**
+         * Ensure a white rounded-pill badge sprite exists for the given bus name label.
+         */
+        _ensureLabelPillSprite(labelText) {
+            if (!labelText) return null;
+            const name = 'pill-' + String(labelText).replace(/[^a-zA-Z0-9]/g, '');
+
+            if (this._labelPillCache[name]) return name;
+
+            this._labelPillCache[name] = true;
+            this._addSpriteToMap(name, renderLabelPillSprite(labelText));
+
+            return name;
+        }
+
+        /**
          * Ensure a glow sprite exists for the given type/color/size. The glow
          * is a blurred silhouette of the marker shape (see renderGlowSprite)
          * drawn as a separate sprite beneath the icon. Returns the sprite name.
@@ -1110,11 +1222,15 @@
                 const ctx = canvas.getContext('2d');
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const dpr = canvas._dpr || window.devicePixelRatio || 2;
+                const options = { pixelRatio: dpr };
+                if (canvas._stretchX) options.stretchX = canvas._stretchX;
+                if (canvas._stretchY) options.stretchY = canvas._stretchY;
+                if (canvas._content) options.content = canvas._content;
                 this._map.addImage(name, {
                     width: canvas.width,
                     height: canvas.height,
                     data: new Uint8Array(imageData.data.buffer)
-                }, { pixelRatio: dpr });
+                }, options);
             } catch (e) {
                 console.warn('[BusLayerManager] Error adding sprite ' + name + ':', e);
             }
@@ -1268,12 +1384,14 @@
         }
 
         /**
-         * Mark every WebGL proxy dirty so the next flush re-serializes it.
+         * Mark every WebGL proxy dirty and refresh sprites so the next flush re-serializes it.
          */
         markAllDirty() {
             for (const name in this._proxies) {
                 const proxy = this._proxies[name];
-                if (proxy._rendererMode === 'maplibre') proxy._dirty = true;
+                if (proxy._rendererMode === 'maplibre') {
+                    proxy._refreshSprite();
+                }
             }
             this.scheduleBatchUpdate();
         }
@@ -1405,48 +1523,57 @@
         }
 
         /**
-         * Single click handler for all WebGL bus markers.
+         * Single click handler for all WebGL bus markers and labels.
          */
         _setupClickHandler() {
             const self = this;
-            this._map.on('mousemove', this._layerId, function() {
-                if (self._map && self._map.getCanvas()) {
-                    self._map.getCanvas().style.cursor = 'pointer';
-                }
-            });
-            this._map.on('mouseleave', this._layerId, function() {
-                if (self._map && self._map.getCanvas()) {
-                    self._map.getCanvas().style.cursor = '';
-                }
-            });
-            this._map.on('click', this._layerId, function(e) {
-                if (!e.features || e.features.length === 0) return;
-                // MapLibre binds its click pipeline to the canvas container, so
-                // clicks on DOM markers (stop icons, distance markers) bubble
-                // in here too. Without this guard, clicking a stop marker that
-                // overlaps a bus would also select the bus underneath it.
-                // Those elements handle their own clicks, so skip them.
-                const target = e.originalEvent && e.originalEvent.target;
-                if (target && typeof target.closest === 'function' && target.closest('.maplibregl-marker')) {
-                    return;
-                }
-                // In WebGL renderer mode stops are GL features too. Mirror DOM
-                // z-order hit-testing: when "Show Stops Above Buses" is on,
-                // stops are above buses, so a stop under the cursor wins over
-                // the bus click (the stop handler in stop-layer.js handles it).
-                if (typeof window.stopLayerManager !== 'undefined' && window.stopLayerManager.isActive()) {
-                    const stopLayers = ['stop-markers-layer', 'stop-markers-labels', 'stop-markers-selected', 'stop-markers-selected-labels'].filter(id => self._map.getLayer(id));
-                    if (stopLayers.length && self._map.queryRenderedFeatures(e.point, { layers: stopLayers }).length) {
-                        const stopsAbove = !!(settings && settings['toggle-stops-above-buses']);
-                        if (stopsAbove) return;
+            const layers = [
+                this._layerId,
+                this._labelLayerId,
+                this._selectedLayerId,
+                this._selectedLabelLayerId
+            ].filter(id => self._map.getLayer(id));
+
+            for (const layerId of layers) {
+                this._map.on('mousemove', layerId, function() {
+                    if (self._map && self._map.getCanvas()) {
+                        self._map.getCanvas().style.cursor = 'pointer';
                     }
-                }
-                const busName = e.features[0].properties.busName;
-                const proxy = self._proxies[busName];
-                if (proxy) {
-                    proxy._fireClick();
-                }
-            });
+                });
+                this._map.on('mouseleave', layerId, function() {
+                    if (self._map && self._map.getCanvas()) {
+                        self._map.getCanvas().style.cursor = '';
+                    }
+                });
+                this._map.on('click', layerId, function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    // MapLibre binds its click pipeline to the canvas container, so
+                    // clicks on DOM markers (stop icons, distance markers) bubble
+                    // in here too. Without this guard, clicking a stop marker that
+                    // overlaps a bus would also select the bus underneath it.
+                    // Those elements handle their own clicks, so skip them.
+                    const target = e.originalEvent && e.originalEvent.target;
+                    if (target && typeof target.closest === 'function' && target.closest('.maplibregl-marker')) {
+                        return;
+                    }
+                    // In WebGL renderer mode stops are GL features too. Mirror DOM
+                    // z-order hit-testing: when "Show Stops Above Buses" is on,
+                    // stops are above buses, so a stop under the cursor wins over
+                    // the bus click (the stop handler in stop-layer.js handles it).
+                    if (typeof window.stopLayerManager !== 'undefined' && window.stopLayerManager.isActive()) {
+                        const stopLayers = ['stop-markers-layer', 'stop-markers-labels', 'stop-markers-selected', 'stop-markers-selected-labels'].filter(id => self._map.getLayer(id));
+                        if (stopLayers.length && self._map.queryRenderedFeatures(e.point, { layers: stopLayers }).length) {
+                            const stopsAbove = !!(settings && settings['toggle-stops-above-buses']);
+                            if (stopsAbove) return;
+                        }
+                    }
+                    const busName = e.features[0].properties.busName;
+                    const proxy = self._proxies[busName];
+                    if (proxy) {
+                        proxy._fireClick();
+                    }
+                });
+            }
         }
 
         /**

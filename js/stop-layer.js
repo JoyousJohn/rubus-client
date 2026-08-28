@@ -129,7 +129,10 @@
             // off, buses are above stops, so a bus glyph under the cursor wins
             // over the stop click.
             if (typeof settings !== 'undefined' && !settings['toggle-stops-above-buses'] && this._map) {
-                const busLayers = ['bus-markers-glow', 'bus-markers-layer', 'bus-markers-labels'].filter(id => this._map.getLayer(id));
+                const busLayers = [
+                    'bus-markers-layer', 'bus-markers-labels',
+                    'bus-markers-glow', 'bus-markers-selected', 'bus-markers-selected-labels'
+                ].filter(id => this._map.getLayer(id));
                 if (busLayers.length && this._map.queryRenderedFeatures(e.point, { layers: busLayers }).length) {
                     return;
                 }
