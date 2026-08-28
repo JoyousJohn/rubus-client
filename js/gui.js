@@ -2015,6 +2015,7 @@ function loadSettingsFromStorage() {
         const merged = {...defaultSettings, ...parsed};
         if (!('colorMappings' in parsed)) delete merged['colorMappings'];
         if (!('colorMappingsMigrated' in parsed)) delete merged['colorMappingsMigrated'];
+        if (!('hideSimMigrated_2026_08_28' in parsed)) delete merged['hideSimMigrated_2026_08_28'];
         return merged;
     }
     console.error('[settings] stored "settings" is not a plain object; resetting to defaults:', parsed);
@@ -2037,9 +2038,9 @@ function saveSettings() {
                 }
             }
             stored[key] = overrides;
-        } else if (key === 'colorMappingsMigrated') {
+        } else if (key === 'colorMappingsMigrated' || key === 'hideSimMigrated_2026_08_28') {
             // Always persist the migration flag once set so the one-time
-            // colorMappings migration doesn't re-run and wipe overrides.
+            // migration doesn't re-run and wipe overrides.
             stored[key] = settings[key];
         } else if (settings[key] !== defaultSettings[key]) {
             stored[key] = settings[key];
@@ -2059,6 +2060,13 @@ function updateSettings() {
         if (settings['colorMappingsMigrated'] !== true) {
             settings['colorMappings'] = {};
             settings['colorMappingsMigrated'] = true;
+        }
+
+        // One-time migration (8/28): disable simulator by default for existing users
+        if (settings['hideSimMigrated_2026_08_28'] !== true) {
+            settings['toggle-show-sim'] = false;
+            settings['hideSimMigrated_2026_08_28'] = true;
+            localStorage.setItem('simDisabledAt', new Date().toISOString());
         }
 
         // One-time migration: the old "legacy 10Hz bus animation" toggle is now

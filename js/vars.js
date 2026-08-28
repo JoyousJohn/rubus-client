@@ -99,7 +99,8 @@ const defaultSettings = {
     'toggle-show-arrival-times': true,
     'toggle-show-bus-speeds': true,
     'colorMappings': {},
-    'colorMappingsMigrated': true
+    'colorMappingsMigrated': true,
+    'hideSimMigrated_2026_08_28': true
 
 };
 
@@ -115,6 +116,7 @@ try {
             settings = {...defaultSettings, ...parsed};
             if (!('colorMappings' in parsed)) delete settings['colorMappings'];
             if (!('colorMappingsMigrated' in parsed)) delete settings['colorMappingsMigrated'];
+            if (!('hideSimMigrated_2026_08_28' in parsed)) delete settings['hideSimMigrated_2026_08_28'];
         } else {
             console.error('[settings] stored "settings" is not a plain object; starting empty:', parsed);
             localStorage.removeItem('settings');
