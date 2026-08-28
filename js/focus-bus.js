@@ -514,9 +514,6 @@ function startStoppedForTimer(busName) {
 
     // "Stopped 4m 5s" - the label sits on its own line above the bus route.
     $('.info-stopped-for').removeClass('none').find('.info-stopped-for-text').text(formatStoppedTime(secondsDifference));
-
-    const maxHeight = window.innerHeight - $('.info-next-stops').offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight()
-    $('.info-next-stops').css('max-height', maxHeight)
     
     let seconds = secondsDifference
     stoppedForInterval = setInterval(() => {
