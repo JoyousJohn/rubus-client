@@ -17,7 +17,11 @@ async function immediatelyUpdateBusDataPre() {
         }
     }
 
-    hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
+    // Temporarily commented out for testing: Preemptively calling hideInfoBoxes() causes open bus/stop
+    // popups to close immediately whenever network drops or long update gaps trigger an immediate update.
+    // Downstream reconciliation in fetchBusData and makeBulkOoS already closes popups if a bus goes OOS
+    // or updates the popup content in-place if the bus is still active.
+    // hideInfoBoxes(); // Otherwise can check what menus were open and update them after getting new bus data - e.g. having to close "stopped for" from pre-existing selected bus if no longer stopped
 
     if ($('.buses-panel-wrapper').is(':visible')) { // hide info boxes closes this so we should show it again immediately as it shouldn't be included in the panels being hidden
         $('.buses-panel-wrapper').stop(true, true).show(); // true true to cancel slideup (which is already in progress) animation which completes *after* this .show, thus overrides
