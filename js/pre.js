@@ -1306,6 +1306,7 @@ $(document).ready(async function() {
         openRUBusSocket();
 
         // On app resume/return, force the next update to be immediate and fetch promptly
+        let _lastResumeTrigger = 0;
         const triggerImmediateResumeUpdate = () => {
             if (typeof sim !== 'undefined' && sim) {
                 if (typeof resumeSim === 'function') {
@@ -1315,6 +1316,11 @@ $(document).ready(async function() {
                 }
                 return;
             }
+            const now = Date.now();
+            if (now - _lastResumeTrigger < 5000) {
+                return;
+            }
+            _lastResumeTrigger = now;
             console.log('App resumed - triggering immediate bus update');
             forceImmediateUpdate = true;
 

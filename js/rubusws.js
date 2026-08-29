@@ -96,11 +96,10 @@ function closeRUBusSocket() {
 }
 
 function openRUBusSocket() {
-
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
     if (socket) {
-        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-            closeRUBusSocket();
-        }
         socket = null;
     }
 
@@ -115,7 +114,7 @@ function openRUBusSocket() {
 
     ws.addEventListener("open", (event) => {
         if (socket !== ws) {
-            console.error("Stale RUBus socket fired 'open' after being replaced; closing it.");
+            console.log("Stale RUBus socket fired 'open' after being replaced; closing it.");
             ws.close();
             return;
         }
@@ -322,7 +321,7 @@ function openRUBusSocket() {
 
     ws.addEventListener("close", (event) => {
         if (socket !== ws) {
-            console.warn("Stale RUBus socket closed.");
+            console.log("Stale RUBus socket closed.");
             return;
         }
         // console.log("Passio WebSocket connection closed:", event);
@@ -330,7 +329,7 @@ function openRUBusSocket() {
 
     ws.addEventListener("error", (event) => {
         if (socket !== ws) {
-            console.warn("Stale RUBus socket error; ignoring.");
+            console.log("Stale RUBus socket error; ignoring.");
             return;
         }
 
