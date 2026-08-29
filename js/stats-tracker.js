@@ -2,6 +2,12 @@
 // Captures only visits, bus views, stop views, and building taps. Data never
 // leaves the device. Wraps window.sa_event so Simple Analytics keeps working.
 const LocalStats = (function() {
+    if (typeof window.indexedDB === 'undefined') {
+        throw new Error('[stats] indexedDB required but unavailable');
+    }
+    if (typeof window.sa_event !== 'function') {
+        throw new Error('[stats] window.sa_event missing before wrap');
+    }
     const DB_NAME = 'rubus_analytics';
     const DB_VERSION = 1;
     const TRACKED_EVENTS = new Set(['load', 'view_bus', 'view_stop', 'building_tap']);
@@ -107,39 +113,55 @@ const LocalStats = (function() {
         pending = [];
         if (!db) {
             pending = batch.concat(pending);
+            scheduleFlush();
             return;
         }
+        let tx;
         try {
-            const tx = db.transaction(['events', 'daily'], 'readwrite');
-            const eventsStore = tx.objectStore('events');
-            const dailyStore = tx.objectStore('daily');
-            const bumps = {};
-            batch.forEach(function(ev) {
-                eventsStore.add({ name: ev.name, ts: ev.ts, day: ev.day, props: ev.props });
-                const bucket = getBucket(ev);
-                const key = ev.name + '\u0000' + ev.day + '\u0000' + bucket;
-                if (!bumps[key]) {
-                    bumps[key] = { name: ev.name, day: ev.day, bucket: bucket, count: 0, lastTs: 0 };
-                }
-                bumps[key].count++;
-                bumps[key].lastTs = Math.max(bumps[key].lastTs, ev.ts);
-            });
-            Object.keys(bumps).forEach(function(keyStr) {
-                const bump = bumps[keyStr];
-                dailyStore.get([bump.name, bump.day, bump.bucket]).onsuccess = function(e) {
-                    const existing = e.target.result;
-                    if (existing) {
-                        existing.count += bump.count;
-                        existing.lastTs = Math.max(existing.lastTs, bump.lastTs);
-                        dailyStore.put(existing);
-                    } else {
-                        dailyStore.add({ name: bump.name, day: bump.day, bucket: bump.bucket, count: bump.count, lastTs: bump.lastTs });
-                    }
-                };
-            });
+            tx = db.transaction(['events', 'daily'], 'readwrite');
         } catch (e) {
             pending = batch.concat(pending);
+            scheduleFlush();
+            return;
         }
+        const eventsStore = tx.objectStore('events');
+        const dailyStore = tx.objectStore('daily');
+        const bumps = {};
+        batch.forEach(function(ev) {
+            eventsStore.add({ name: ev.name, ts: ev.ts, day: ev.day, props: ev.props });
+            const bucket = getBucket(ev);
+            const key = ev.name + '\u0000' + ev.day + '\u0000' + bucket;
+            if (!bumps[key]) {
+                bumps[key] = { name: ev.name, day: ev.day, bucket: bucket, count: 0, lastTs: 0 };
+            }
+            bumps[key].count++;
+            bumps[key].lastTs = Math.max(bumps[key].lastTs, ev.ts);
+        });
+        Object.keys(bumps).forEach(function(keyStr) {
+            const bump = bumps[keyStr];
+            const req = dailyStore.get([bump.name, bump.day, bump.bucket]);
+            req.onsuccess = function(e) {
+                const existing = e.target.result;
+                if (existing) {
+                    existing.count += bump.count;
+                    existing.lastTs = Math.max(existing.lastTs, bump.lastTs);
+                    dailyStore.put(existing);
+                } else {
+                    dailyStore.add({ name: bump.name, day: bump.day, bucket: bump.bucket, count: bump.count, lastTs: bump.lastTs });
+                }
+            };
+        });
+        let done = false;
+        let requeued = false;
+        function requeue() {
+            if (requeued || done) return;
+            requeued = true;
+            pending = batch.concat(pending);
+            scheduleFlush();
+        }
+        tx.oncomplete = function() { done = true; };
+        tx.onerror = requeue;
+        tx.onabort = requeue;
     }
 
     function scheduleFlush() {
@@ -207,20 +229,32 @@ const LocalStats = (function() {
         window.sa_event = localSaEvent;
     }
 
-    function init() {
-        if (navigator.storage && navigator.storage.persist) {
-            navigator.storage.persist().catch(function() {});
+    async function init() {
+        let persisted = false;
+        try {
+            if (navigator.storage && navigator.storage.persist) {
+                persisted = await navigator.storage.persist();
+            }
+        } catch (e) {
+            persisted = false;
         }
-        openDB().then(function(d) {
-            db = d;
+        if (!persisted && navigator.storage && navigator.storage.persisted) {
+            try { persisted = await navigator.storage.persisted(); } catch (e) {}
+        }
+        if (!persisted) {
+            console.warn('[stats] storage NOT persisted; may be evicted (e.g. iOS 7-day cap)');
+        }
+        try {
+            db = await openDB();
             db.onversionchange = function() { db.close(); db = null; };
             ensureMeta();
             pruneOldEvents();
-            scheduleFlush();
-        }).catch(function() {
-            // IndexedDB unavailable (private mode / disabled): silent no-op.
-        });
+        } catch (e) {
+            db = null;
+            console.error('[stats] IndexedDB unavailable; stats not persisted', e);
+        }
         wrapSaEvent();
+        if (db) scheduleFlush();
         window.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'hidden') flush();
         });
