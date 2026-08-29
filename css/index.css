@@ -1574,7 +1574,8 @@ html, body {
     font-weight: bold;
     column-gap: 0.5rem;
     user-select: none;
-    width: min-content;
+    width: max-content;
+    max-width: 100%;
     overflow-x: scroll;
     touch-action: pan-x;
     padding-top: 1rem;
@@ -1589,7 +1590,14 @@ html, body {
     scrollbar-width: none;
     pointer-events: all;
     line-height: 1.6;
-    padding-right: 1rem;
+    padding-right: 0;
+    box-sizing: border-box;
+}
+
+.route-selectors::after {
+    content: '';
+    flex: 0 0 2rem;
+    pointer-events: none;
 }
 
 /* Hide scrollbar for WebKit browsers */
@@ -1603,6 +1611,8 @@ html, body {
     border-radius: 4rem;
     padding: 0.5rem 2rem;
     white-space: pre;
+    flex-shrink: 0;
+    box-sizing: border-box;
     /* pointer-events: none; */
 }
 
@@ -1624,10 +1634,6 @@ html, body {
         margin-bottom: 1rem;
         padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     }
-}
-
-.route-selector:last-child {
-    margin-right: 2rem;
 }
 
 
