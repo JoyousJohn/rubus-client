@@ -47,11 +47,9 @@ function populateBusBreaks(busBreakData, busName) {
 
     if (lastBreakMin && lastBreakMin > 120) {
         // Only show if actually overdue (more than 2 hours)
-        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>${Math.floor(lastBreakMin / 60)} HOURS SINCE BREAK</span></div>`).slideDown(function() {
-            // Update max height after slideDown animation completes
-            updateNextStopsMaxHeight();
-        });
-    } else if (settings['toggle-always-show-break-overdue']) {
+        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>${Math.floor(lastBreakMin / 60)} HOURS SINCE BREAK</span></div>`).show();
+        updateNextStopsMaxHeight();
+    } else if (settings['toggle-always-show-break-overdue'] && lastBreakMin !== null) {
         const hours = Math.floor(lastBreakMin / 60);
         const minutes = lastBreakMin % 60;
         let timeString = '';
@@ -62,10 +60,8 @@ function populateBusBreaks(busBreakData, busName) {
             if (hours > 0) timeString += ' ';
             timeString += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
         }
-        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>Last break ${timeString} ago!</span></div>`).slideDown(function() {
-            // Update max height after slideDown animation completes
-            updateNextStopsMaxHeight();
-        });
+        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>Last break ${timeString} ago!</span></div>`).show();
+        updateNextStopsMaxHeight();
     } else {
         $('.info-overdue-break').hide();
     }
