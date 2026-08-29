@@ -1375,10 +1375,16 @@ $(function() {
         settingsViewportAttached = true;
         settingsVvpHandler = () => requestAnimationFrame(adjustSettingsFloatingBar);
         if (window.visualViewport) {
-            // Only the resize event tracks keyboard geometry. The vvp scroll
-            // event fires constantly while scrolling the list (momentum,
-            // rubber-banding) and caused the floating bar to drift up/down.
+            // Listen to both resize AND scroll. Resize alone tracks keyboard
+            // open/close, but while the keyboard is up, scrolling the list pans
+            // the visual viewport (offsetTop changes) so the keyboard's top
+            // edge shifts within the layout viewport. Without the scroll
+            // listener the floating bar keeps its stale 'bottom' offset and
+            // appears to scroll with the settings content instead of staying
+            // pinned above the keyboard. The rAF throttle coalesces the
+            // constant scroll fire into one layout pass per frame.
             window.visualViewport.addEventListener('resize', settingsVvpHandler);
+            window.visualViewport.addEventListener('scroll', settingsVvpHandler);
         }
         window.addEventListener('resize', settingsVvpHandler);
     };
@@ -1388,6 +1394,7 @@ $(function() {
         settingsViewportAttached = false;
         if (window.visualViewport && settingsVvpHandler) {
             window.visualViewport.removeEventListener('resize', settingsVvpHandler);
+            window.visualViewport.removeEventListener('scroll', settingsVvpHandler);
         }
         if (settingsVvpHandler) {
             window.removeEventListener('resize', settingsVvpHandler);
