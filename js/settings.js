@@ -1357,23 +1357,26 @@ $(function() {
     let settingsVvpHandler = null;
     let settingsViewportAttached = false;
 
-    // The keyboard-height offset for the floating bar, cached so the panel's
-    // padding-bottom is only rewritten when the keyboard geometry actually
-    // changes (open/close). Rewriting padding-bottom on every visualViewport
-    // scroll event changes the panel's scrollable height mid-drag, which makes
-    // the browser re-pan the viewport to keep the focused input visible — a
-    // feedback loop that jitters the bar while the finger is down.
+    // The keyboard inset is the true height of the on-screen keyboard:
+    // the layout viewport height minus the visual viewport height. It stays
+    // constant while the keyboard is open and only changes on open/close.
+    // The bar's offset must additionally subtract vvp.offsetTop because that
+    // is the scroll pan amount, which changes every frame while dragging.
+    // Keeping padding-bottom driven by keyboardInset (not the pan amount)
+    // avoids rewriting the panel's scrollable height mid-drag, which caused
+    // a feedback loop that jittered the bar during fast scrolling.
     let settingsBarKeyboardOffset = -1;
 
     function adjustSettingsFloatingBar() {
         const isMobile = $(window).width() <= 992;
         if (isMobile && window.visualViewport && $('.settings-panel').is(':visible')) {
             const vvp = window.visualViewport;
-            const keyboardHeight = Math.max(0, window.innerHeight - vvp.height - vvp.offsetTop);
-            $('.settings-floating-bar').css('bottom', (16 + keyboardHeight) + 'px');
-            if (keyboardHeight !== settingsBarKeyboardOffset) {
-                settingsBarKeyboardOffset = keyboardHeight;
-                $('.settings-panel').css('padding-bottom', (100 + keyboardHeight) + 'px');
+            const keyboardInset = Math.max(0, window.innerHeight - vvp.height);
+            const barOffset = Math.max(0, keyboardInset - vvp.offsetTop);
+            $('.settings-floating-bar').css('bottom', (16 + barOffset) + 'px');
+            if (keyboardInset !== settingsBarKeyboardOffset) {
+                settingsBarKeyboardOffset = keyboardInset;
+                $('.settings-panel').css('padding-bottom', (100 + keyboardInset) + 'px');
             }
         } else {
             $('.settings-floating-bar').css('bottom', '');
