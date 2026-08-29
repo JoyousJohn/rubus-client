@@ -2361,6 +2361,7 @@ function updateRubusLogo(logoFilename) {
     settings['rubus-logo'] = logoFilename;
     $('.settings-rubus-logo').css('background-image', `url('img/${logoFilename}')`);
     $('link[rel="icon"]').attr('href', `img/${logoFilename}`);
+    $('.theme-img, .campus-img').attr('src', `img/${logoFilename}`);
     $('.rubus-logo-option').removeClass('settings-selected');
     $(`.rubus-logo-option[logo-option="${logoFilename}"]`).addClass('settings-selected');
 }
