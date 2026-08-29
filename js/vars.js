@@ -244,7 +244,7 @@ function makeBusesByRoutes() {
 }
 
 function showSimBtnIfEligible() {
-    if (!sim && selectedCampus === 'nb' && settings && settings['toggle-show-sim']) {
+    if (!sim && settings && settings['toggle-show-sim']) {
         $('.sim-btn').show();
     }
 }

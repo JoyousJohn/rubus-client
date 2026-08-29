@@ -427,7 +427,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-sim'] = isChecked;
             $('#toggle-hide-sim').prop('checked', !isChecked);
 
-            if (isChecked && !sim && selectedCampus === 'nb') {
+            if (isChecked && !sim) {
                 $('.sim-btn').show();
             } else {
                 $('.sim-btn').hide();
@@ -438,7 +438,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
             settings['toggle-show-sim'] = !isChecked;
             $('#toggle-show-sim').prop('checked', !isChecked);
 
-            if (!isChecked && !sim && selectedCampus === 'nb') {
+            if (!isChecked && !sim) {
                 $('.sim-btn').show();
             } else {
                 $('.sim-btn').hide();
@@ -888,7 +888,7 @@ $(document).ready(function() {
 
     $('#toggle-hide-sim').prop('checked', !settings['toggle-show-sim']);
 
-    if (settings['toggle-show-sim'] && !sim && selectedCampus === 'nb') {
+    if (settings['toggle-show-sim'] && !sim) {
         $('.sim-btn').show();
     } else {
         $('.sim-btn').hide();

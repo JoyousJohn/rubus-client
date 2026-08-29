@@ -809,8 +809,21 @@ async function getPolylineData(routeName) {
             return normalizePolylineData(await response.json());
         }
 
+        try {
+            const localResp = await fetch(`lib/routes/${routeName}_route.json`);
+            if (localResp.status === 200) {
+                return normalizePolylineData(await localResp.json());
+            }
+        } catch (_) {}
+
         console.error(`Error fetching polyline data for route ${routeName}:`, response.statusText);
     } catch (error) {
+        try {
+            const localResp = await fetch(`lib/routes/${routeName}_route.json`);
+            if (localResp.status === 200) {
+                return normalizePolylineData(await localResp.json());
+            }
+        } catch (_) {}
         console.error(`Error fetching polyline data for route ${routeName}:`, error);
         markRubusRequestsFailing();
     }

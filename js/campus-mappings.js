@@ -39,5 +39,7 @@ const campusShortNamesMappings = {
     'livingston': 'Livi',
     'cook': 'Cook',
     'douglas': 'Douglas',
-    'downtown': 'NB'
+    'downtown': 'NB',
+    'newark': 'Newark',
+    'camden': 'Camden'
 }

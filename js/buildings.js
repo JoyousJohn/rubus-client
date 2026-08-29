@@ -115,7 +115,10 @@ function updateBuildingClosestStopsSwitcher() {
 
 function getAllMainRoutesForStop(stopId) {
     stopId = Number(stopId);
-    const routes = ['a', 'b', 'bl', 'c', 'ee', 'f', 'h', 'lx', 'rexl', 'rexb'].filter(route => {
+    const campusRoutes = (typeof getCampusRoutes === 'function') 
+        ? getCampusRoutes(selectedCampus).filter(r => r !== 'fav') 
+        : ['a', 'b', 'bl', 'c', 'ee', 'f', 'h', 'lx', 'rexl', 'rexb'];
+    const routes = campusRoutes.filter(route => {
         return stopLists[route] && stopLists[route].includes(stopId);
     });
     return routes;

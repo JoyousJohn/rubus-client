@@ -172,7 +172,7 @@ async function campusChanged() {
 
     if (sim) {
         endSim();
-    } else if (settings['toggle-show-sim'] && selectedCampus === 'nb') {
+    } else if (settings['toggle-show-sim']) {
         $('.sim-btn').fadeIn();
     } else {
         $('.sim-btn').hide();

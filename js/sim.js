@@ -1,5 +1,27 @@
-const SIM_ROUTES = ['lx', 'ee', 'f', 'c', 'bl', 'b', 'h', 'a', 'rexl', 'rexb']
-const SC_STOPS = [1, 10, 13, 17]
+const SIM_ROUTES_BY_CAMPUS = {
+    'nb': ['lx', 'ee', 'f', 'c', 'bl', 'b', 'h', 'a', 'rexl', 'rexb'],
+    'camden': ['cam'],
+    'newark': ['cc', 'ccx', 'ps', 'psx']
+};
+
+const SIM_ROUTES = SIM_ROUTES_BY_CAMPUS['nb'];
+
+function getSimRoutes(campus = selectedCampus) {
+    return SIM_ROUTES_BY_CAMPUS[campus] || SIM_ROUTES_BY_CAMPUS['nb'];
+}
+
+const SC_STOPS_BY_CAMPUS = {
+    'nb': [1, 10, 13, 17],
+    'newark': [1, 15],
+    'camden': [1, 3]
+};
+
+const SC_STOPS = SC_STOPS_BY_CAMPUS['nb'];
+
+function isStudentCenterStop(stopId, campus = selectedCampus) {
+    const scList = SC_STOPS_BY_CAMPUS[campus] || SC_STOPS_BY_CAMPUS['nb'] || [];
+    return scList.includes(Number(stopId));
+}
 
 // Simulation config (customizable)
 const SIM_MIN_STOP_SECS = 30;     // minimum dwell time at stops
@@ -34,19 +56,34 @@ let simEtaPending = new Set();
 let simEtaUpdateLast = 0;
 
 async function generateSimBusData(gen) {
+    const campus = selectedCampus || 'nb';
     // Desired distribution per route
-    const targetCounts = {
-        'c': 1,
-        'lx': 10,
-        'rexl': Math.floor(Math.random() * (5 - 4 + 1)) + 4,   // 4-5
-        'rexb': Math.floor(Math.random() * (5 - 4 + 1)) + 4,   // 4-5
-        'f': 5,
-        'ee': 8,                                               // 7
-        'bl': 2,                                               // 2
-        'b': 8,                                                // 5
-        'h': Math.floor(Math.random() * (7 - 4 + 1)) + 4,      // 4-7
-        'a': Math.floor(Math.random() * (7 - 4 + 1)) + 4       // 4-7
-    };
+    let targetCounts = {};
+    if (campus === 'camden') {
+        targetCounts = {
+            'cam': 3
+        };
+    } else if (campus === 'newark') {
+        targetCounts = {
+            'cc': 3,
+            'ccx': 2,
+            'ps': 3,
+            'psx': 2
+        };
+    } else {
+        targetCounts = {
+            'c': 1,
+            'lx': 10,
+            'rexl': Math.floor(Math.random() * (5 - 4 + 1)) + 4,   // 4-5
+            'rexb': Math.floor(Math.random() * (5 - 4 + 1)) + 4,   // 4-5
+            'f': 5,
+            'ee': 8,                                               // 7
+            'bl': 2,                                               // 2
+            'b': 8,                                                // 5
+            'h': Math.floor(Math.random() * (7 - 4 + 1)) + 4,      // 4-7
+            'a': Math.floor(Math.random() * (7 - 4 + 1)) + 4       // 4-7
+        };
+    }
 
     const totalBuses = Object.values(targetCounts).reduce((acc, n) => acc + n, 0);
     const minAtStopQuota = Math.ceil(totalBuses * 0.20);
@@ -358,6 +395,49 @@ async function generateSimBusData(gen) {
                             busData[busName].at_stop = false;
                         }
                     }
+
+                    // Fallback when percentageDistances has no entry for this campus/segment
+                    if (!busData[busName].stopId && routeStopsNS.length >= 2) {
+                        const stopsObj = allStopsData[campusKeyNS] || {};
+                        const stopPositions = routeStopsNS.map(sid => {
+                            const info = stopsObj[String(sid)] || stopsObj[sid];
+                            if (!info) return { id: sid, idx: 0 };
+                            let bestPIdx = 0, bestPD2 = Infinity;
+                            for (let p = 0; p < polylinePoints.length; p++) {
+                                const pt = polylinePoints[p];
+                                const plat = (pt && typeof pt === 'object' && 'lat' in pt) ? parseFloat(pt.lat) : (Array.isArray(pt) ? parseFloat(pt[1]) : 0);
+                                const plng = (pt && typeof pt === 'object' && 'lng' in pt) ? parseFloat(pt.lng) : (Array.isArray(pt) ? parseFloat(pt[0]) : 0);
+                                const d2 = Math.pow(plng - info.longitude, 2) + Math.pow(plat - info.latitude, 2);
+                                if (d2 < bestPD2) { bestPD2 = d2; bestPIdx = p; }
+                            }
+                            return { id: sid, idx: bestPIdx };
+                        });
+
+                        let bestPrev = stopPositions[0].id;
+                        let bestNext = stopPositions[1 % stopPositions.length].id;
+                        for (let s = 0; s < stopPositions.length; s++) {
+                            const sCurr = stopPositions[s];
+                            const sNext = stopPositions[(s + 1) % stopPositions.length];
+                            const idx1 = sCurr.idx;
+                            const idx2 = sNext.idx;
+                            let inside = false;
+                            if (idx1 <= idx2) {
+                                inside = (randomIdx >= idx1 && randomIdx <= idx2);
+                            } else {
+                                inside = (randomIdx >= idx1 || randomIdx <= idx2);
+                            }
+                            if (inside) {
+                                bestPrev = sCurr.id;
+                                bestNext = sNext.id;
+                                break;
+                            }
+                        }
+                        busLocations[busName] = { where: [bestNext, bestPrev] };
+                        busData[busName].stopId = bestPrev;
+                        busData[busName].prevStopId = bestPrev;
+                        busData[busName].next_stop = bestNext;
+                        busData[busName].at_stop = false;
+                    }
                 } catch (e) {
                     console.error('Error determining nearest segment for sim bus', busName, e);
                 }
@@ -371,7 +451,7 @@ async function generateSimBusData(gen) {
                         let currId = routeStopsS[0];
                         let bestD2 = Infinity;
                         for (const sid of routeStopsS) {
-                            const si = allStopsData[campusKeyS][String(sid)] || allStopsData[campusKeyS][sid];
+                            const si = allStopsData[campusKeyS] && (allStopsData[campusKeyS][String(sid)] || allStopsData[campusKeyS][sid]);
                             if (!si) continue;
                             const dx = (si.longitude - lng);
                             const dy = (si.latitude - lat);
@@ -388,7 +468,7 @@ async function generateSimBusData(gen) {
                         busData[busName].at_stop = true;
                         // Set timeArrived now for seeded-at-stop placement
                         try {
-                            const isStudentCenter = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(currId));
+                            const isStudentCenter = isStudentCenterStop(currId, campusKeyS);
                             const minSec = isStudentCenter ? 60 : SIM_MIN_STOP_SECS;   // 1 min vs configured min
                             const maxSec = isStudentCenter ? 600 : SIM_MAX_STOP_SECS; // 10 min vs configured max
                             const secsAgo = Math.floor(Math.random() * (maxSec - minSec + 1)) + minSec;
@@ -412,7 +492,7 @@ async function generateSimBusData(gen) {
                         const dMiles = haversine(lat, lng, stopInfo.latitude, stopInfo.longitude)
                         if (dMiles <= thresholdMiles) {
                             busData[busName].at_stop = true;
-                            const isStudentCenter = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(stopId));
+                            const isStudentCenter = isStudentCenterStop(stopId, campusKey2);
                             const minSec = isStudentCenter ? 60 : SIM_MIN_STOP_SECS;   // 1 min vs configured min
                             const maxSec = isStudentCenter ? 600 : SIM_MAX_STOP_SECS; // 10 min vs configured max
                             const secsAgo = Math.floor(Math.random() * (maxSec - minSec + 1)) + minSec;
@@ -433,12 +513,12 @@ async function generateSimBusData(gen) {
                     let nearestStopId = null;
                     let bestDMiles = Infinity;
                     for (const sid of routeStops3) {
-                        const si = allStopsData[campusKey3][String(sid)] || allStopsData[campusKey3][sid];
+                        const si = allStopsData[campusKey3] && (allStopsData[campusKey3][String(sid)] || allStopsData[campusKey3][sid]);
                         if (!si) continue;
                         const dMiles = haversine(lat, lng, si.latitude, si.longitude)
                         if (dMiles < bestDMiles) { bestDMiles = dMiles; nearestStopId = sid; }
                     }
-                    const isStudentCenter2 = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(nearestStopId));
+                    const isStudentCenter2 = isStudentCenterStop(nearestStopId, campusKey3);
                     const minSec2 = isStudentCenter2 ? 60 : SIM_MIN_STOP_SECS;
                     const maxSec2 = isStudentCenter2 ? 600 : SIM_MAX_STOP_SECS;
                     const secsAgo2 = Math.floor(Math.random() * (maxSec2 - minSec2 + 1)) + minSec2;
@@ -484,11 +564,11 @@ async function buildSegmentForBus(busName) {
         coords = seg.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
         percentages = (seg.properties && Array.isArray(seg.properties.percentages)) ? seg.properties.percentages : [];
     } else {
-        // Fallback: use full route polyline
+        // Fallback: slice route polyline between currStop and nextStop
         try {
-            const polyPoints = await getPolylineData(route); // will need to await this
-            if (polyPoints) {
-                coords = polyPoints.map(p => {
+            const polyPoints = await getPolylineData(route);
+            if (polyPoints && polyPoints.length) {
+                const fullCoords = polyPoints.map(p => {
                     if (p && typeof p === 'object' && 'lat' in p && 'lng' in p) {
                         return { lat: parseFloat(p.lat), lng: parseFloat(p.lng) };
                     } else if (Array.isArray(p) && p.length >= 2) {
@@ -502,9 +582,46 @@ async function buildSegmentForBus(busName) {
                     }
                     return null;
                 }).filter(Boolean);
-                percentages = coords.map((_, idx) => coords.length > 1 ? idx / (coords.length - 1) : 0);
+
+                if (fullCoords.length > 0) {
+                    const stopsObj = allStopsData[campusKey] || {};
+                    const currInfo = stopsObj[String(currStop)] || stopsObj[currStop];
+                    const nextInfo = stopsObj[String(nextStop)] || stopsObj[nextStop];
+
+                    if (currInfo && nextInfo && fullCoords.length >= 2) {
+                        let currIdx = 0, nextIdx = 0;
+                        let minCurrD2 = Infinity, minNextD2 = Infinity;
+                        for (let p = 0; p < fullCoords.length; p++) {
+                            const pt = fullCoords[p];
+                            const d2Curr = Math.pow(pt.lat - currInfo.latitude, 2) + Math.pow(pt.lng - currInfo.longitude, 2);
+                            if (d2Curr < minCurrD2) { minCurrD2 = d2Curr; currIdx = p; }
+                            const d2Next = Math.pow(pt.lat - nextInfo.latitude, 2) + Math.pow(pt.lng - nextInfo.longitude, 2);
+                            if (d2Next < minNextD2) { minNextD2 = d2Next; nextIdx = p; }
+                        }
+
+                        let sliced = [];
+                        if (currIdx <= nextIdx) {
+                            sliced = fullCoords.slice(currIdx, nextIdx + 1);
+                        } else {
+                            sliced = fullCoords.slice(currIdx).concat(fullCoords.slice(0, nextIdx + 1));
+                        }
+
+                        if (sliced.length >= 2) {
+                            coords = sliced;
+                        } else {
+                            coords = [
+                                { lat: currInfo.latitude, lng: currInfo.longitude },
+                                { lat: nextInfo.latitude, lng: nextInfo.longitude }
+                            ];
+                        }
+                    } else {
+                        coords = fullCoords;
+                    }
+                }
             }
-        } catch {}
+        } catch (e) {
+            console.error('Error building polyline segment for route', route, e);
+        }
     }
 
     // Precompute distances between points (miles)
@@ -514,6 +631,19 @@ async function buildSegmentForBus(busName) {
         const d = haversine(coords[i - 1].lat, coords[i - 1].lng, coords[i].lat, coords[i].lng);
         segDistances.push(d);
         totalMiles += d;
+    }
+
+    if (!percentages.length && coords.length > 0) {
+        if (totalMiles > 0) {
+            let running = 0;
+            percentages = [0];
+            for (let i = 0; i < segDistances.length; i++) {
+                running += segDistances[i];
+                percentages.push(Math.min(1, running / totalMiles));
+            }
+        } else {
+            percentages = coords.map((_, idx) => coords.length > 1 ? idx / (coords.length - 1) : 0);
+        }
     }
 
     return { coords, percentages, segDistances, totalMiles };
@@ -533,7 +663,7 @@ async function initSimMovementForBus(busName, gen) {
             let bestId = routeStops[0];
             let bestD = Infinity;
             for (const sid of routeStops) {
-                const si = allStopsData[campusKey][String(sid)] || allStopsData[campusKey][sid];
+                const si = allStopsData[campusKey] && (allStopsData[campusKey][String(sid)] || allStopsData[campusKey][sid]);
                 if (!si) continue;
                 const dx = (si.longitude - busData[busName].long);
                 const dy = (si.latitude - busData[busName].lat);
@@ -621,8 +751,10 @@ async function initSimMovementForBus(busName, gen) {
 }
 
 function randomDwellMs(busName) {
-    const stopId = busData[busName].stopId;
-    const isSC = Array.isArray(SC_STOPS) && SC_STOPS.includes(Number(stopId));
+    const bus = busData[busName];
+    const stopId = bus ? bus.stopId : null;
+    const campusKey = (bus && bus.campus) || (bus && routesByCampus[bus.route]) || selectedCampus || 'nb';
+    const isSC = isStudentCenterStop(stopId, campusKey);
     const min = isSC ? 60 : SIM_MIN_STOP_SECS;
     const max = isSC ? 600 : SIM_MAX_STOP_SECS;
     const secs = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -958,9 +1090,10 @@ async function startSim() {
 
     sim = true;
     const gen = ++simGeneration;
+    const currentSimRoutes = getSimRoutes(selectedCampus);
     console.log('[SIM] Simulator started', {
         campus: selectedCampus,
-        routes: SIM_ROUTES,
+        routes: currentSimRoutes,
         timestamp: new Date().toISOString()
     });
     activeRoutes.clear();
@@ -982,7 +1115,7 @@ async function startSim() {
     makeBusesByRoutes();
     deleteAllStops();
     addStopsToMap();
-    await setPolylines(SIM_ROUTES);
+    await setPolylines(currentSimRoutes);
     if (!isSimGenerationCurrent(gen)) return;
     populateRouteSelectors(activeRoutes);
     try { updateTimeToStops(Object.keys(busData).map(id => Number(id))); } catch (e) { console.error('[sim] updateTimeToStops failed', e); }
@@ -1037,7 +1170,7 @@ async function endSim() {
     addStopsToMap();
     deleteAllPolylines();
 
-    if (selectedCampus === 'nb' && settings['toggle-show-sim']) {
+    if (settings['toggle-show-sim']) {
         $('.sim-btn').fadeIn();
     }
 
