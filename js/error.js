@@ -337,13 +337,17 @@ class ErrorTracker {
             $('.stats').removeClass('footer-selected');
             stopStatusUpdates();
 
+            // Clear inline display:none set by other footers' $('.errors-wrapper').hide()
+            // and use class-based visibility consistently (fail-fast: no typeof guard)
+            $('.errors-wrapper').show();
             errorsWrapper.classList.remove('none');
             errorsWrapper.classList.add('error-panel-visible');
             $('.errors-tab').addClass('footer-selected');
         } else {
-            errorsWrapper.classList.add('none');
             errorsWrapper.classList.remove('error-panel-visible');
             $('.errors-tab').removeClass('footer-selected');
+            $('.errors-wrapper').hide();
+            errorsWrapper.classList.add('none');
         }
     }
 
