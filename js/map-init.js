@@ -67,6 +67,25 @@ window.initMap = function() {
             // parity: its z-index is 2000, above bus markers at 500).
             if (map.getLayer('stop-markers-selected')) map.moveLayer('stop-markers-selected');
             if (map.getLayer('stop-markers-selected-labels')) map.moveLayer('stop-markers-selected-labels');
+            // Repair any polylines that were inserted above buses by the
+            // previous beforeId logic (always preferred 'stop-markers-layer',
+            // so when stops were above buses a new polyline landed between
+            // buses and stops). Move every polyline layer before the lowest
+            // marker group so polylines stay below both stops and buses.
+            try {
+                const lowestMarkerId = stopsAboveBuses
+                    ? (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : (map.getLayer('bus-markers-glow') ? 'bus-markers-glow' : (map.getLayer('stop-markers-layer') ? 'stop-markers-layer' : null)))
+                    : (map.getLayer('stop-markers-layer') ? 'stop-markers-layer' : (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : (map.getLayer('bus-markers-glow') ? 'bus-markers-glow' : null)));
+                if (lowestMarkerId && typeof polylines !== 'undefined') {
+                    for (const route in polylines) {
+                        const poly = polylines[route];
+                        const lid = poly && poly._mapLibreLayerId;
+                        if (lid && map.getLayer(lid) && map.getLayer(lowestMarkerId)) {
+                            map.moveLayer(lid, lowestMarkerId);
+                        }
+                    }
+                }
+            } catch (e2) {}
         } catch (e) {}
     };
     updateStopsLayerOrder();

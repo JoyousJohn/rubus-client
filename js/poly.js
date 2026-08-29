@@ -85,6 +85,10 @@ function revertForceShowState() {
     }
     removePreviouslyActiveStops();
     addStopsToMap();
+    // Any polylines that survived the mode switch may have been created with
+    // the old buggy beforeId (above buses when stops were above). Re-pin them
+    // below the marker layers so buses stay above polylines after the toggle.
+    window.updateStopsLayerOrder();
 }
 
 function applyForceShowStops() {
@@ -279,12 +283,25 @@ window.createMapLibrePolyline = function(coordinates, options) {
             }
 
             if (!map.getLayer(layerId)) {
-                // Anchor polylines BELOW the stop marker layers (when they
-                // exist) so stops always render above linestrings; both stops
-                // and polylines sit below the bus layers.
-                const beforeId = map.getLayer('stop-markers-layer') ? 'stop-markers-layer'
-                    : (map.getLayer('bus-markers-glow') ? 'bus-markers-glow'
-                    : (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : undefined));
+                // Anchor polylines below ALL marker layers. The "Show Stops
+                // Above Buses" toggle inverts the stop/bus stacking order, so
+                // the correct anchor depends on it: when stops are above buses
+                // the bus layers are the lowest marker group, otherwise the
+                // stop layers are. Previously this always preferred the stop
+                // layer, so when stops were above buses a new polyline was
+                // inserted between buses and stops — above the buses — which
+                // then persisted via force-show settings (polyline at:243).
+                const stopsAbove = !!(typeof settings !== 'undefined' && settings && settings['toggle-stops-above-buses']);
+                let beforeId;
+                if (stopsAbove) {
+                    if (map.getLayer('bus-markers-layer')) beforeId = 'bus-markers-layer';
+                    else if (map.getLayer('bus-markers-glow')) beforeId = 'bus-markers-glow';
+                    else if (map.getLayer('stop-markers-layer')) beforeId = 'stop-markers-layer';
+                } else {
+                    if (map.getLayer('stop-markers-layer')) beforeId = 'stop-markers-layer';
+                    else if (map.getLayer('bus-markers-layer')) beforeId = 'bus-markers-layer';
+                    else if (map.getLayer('bus-markers-glow')) beforeId = 'bus-markers-glow';
+                }
                 map.addLayer({
                     id: layerId,
                     type: 'line',
