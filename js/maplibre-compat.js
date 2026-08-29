@@ -560,6 +560,16 @@ if (typeof L !== 'undefined') {
                                 ]
                             }
                         }, baseAnchor);
+                        map.on('mousemove', fillLayerId, function() {
+                            if (map && map.getCanvas()) {
+                                map.getCanvas().style.cursor = 'pointer';
+                            }
+                        });
+                        map.on('mouseleave', fillLayerId, function() {
+                            if (map && map.getCanvas()) {
+                                map.getCanvas().style.cursor = '';
+                            }
+                        });
                         map.addLayer({
                             id: lineLayerId,
                             type: 'line',
@@ -602,6 +612,16 @@ if (typeof L !== 'undefined') {
                                 'fill-opacity': 0
                             }
                         }, lineLayerId);
+                        map.on('mousemove', highlightFillLayerId, function() {
+                            if (map && map.getCanvas()) {
+                                map.getCanvas().style.cursor = 'pointer';
+                            }
+                        });
+                        map.on('mouseleave', highlightFillLayerId, function() {
+                            if (map && map.getCanvas()) {
+                                map.getCanvas().style.cursor = '';
+                            }
+                        });
                     }
                     if (!map.getLayer(highlightLineLayerId)) {
                         let afterLineId;

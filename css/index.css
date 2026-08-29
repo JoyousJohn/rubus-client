@@ -264,6 +264,7 @@ html, body {
     width: 18px;
     height: 18px;
     transition: transform 0.15s ease;
+    cursor: pointer;
 }
 
 /* Hover indication for clickable stop markers. Transform must go on the inner
@@ -283,6 +284,7 @@ html, body {
     left: 1.7rem;
     background: white;
     color: black;
+    cursor: pointer;
     font-size: 1rem;
     line-height: 1;
     padding: 2px 4px;

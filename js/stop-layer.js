@@ -79,13 +79,27 @@
             // sources/layers/sprites get reset - re-ensure everything then.
             map.on('style.load', () => this._ensureLayers());
             this._ensureLayers();
-            // Stop clicks can land on icon or label glyphs; bind all four
-            // layers so label hits open the stop popup like the DOM corner
-            // label does.
-            map.on('click', LAYER_ID, (e) => this._onStopClick(e));
-            map.on('click', LABEL_LAYER_ID, (e) => this._onStopClick(e));
-            map.on('click', SELECTED_LAYER_ID, (e) => this._onStopClick(e));
-            map.on('click', SELECTED_LABEL_LAYER_ID, (e) => this._onStopClick(e));
+            // Stop clicks and hover cursor can land on icon or label glyphs; bind
+            // all four layers so hovering changes the cursor and label hits open
+            // the stop popup like the DOM corner label does.
+            const layers = [LAYER_ID, LABEL_LAYER_ID, SELECTED_LAYER_ID, SELECTED_LABEL_LAYER_ID];
+            for (const layerId of layers) {
+                map.on('mousemove', layerId, () => {
+                    if (this._map && this._map.getCanvas()) {
+                        if ($('body').hasClass('parking-permit-mode')) {
+                            this._map.getCanvas().style.cursor = '';
+                        } else {
+                            this._map.getCanvas().style.cursor = 'pointer';
+                        }
+                    }
+                });
+                map.on('mouseleave', layerId, () => {
+                    if (this._map && this._map.getCanvas()) {
+                        this._map.getCanvas().style.cursor = '';
+                    }
+                });
+                map.on('click', layerId, (e) => this._onStopClick(e));
+            }
         },
 
         // Call after the "bus-marker-renderer" setting changes: attach/detach
