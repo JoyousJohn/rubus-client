@@ -1,16 +1,51 @@
 .leave-feedback-modal {
     background-color: var(--theme-bg);
-    opacity: 0.9;
+    opacity: 0.3;
 }
 
 .leave-feedback-wrapper {
     color: var(--theme-color);
     font-family: var(--font-family);
+    inset: 0;
+    z-index: 1002;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.feedback-input, .feedback-contact-input {
+    border: 1px solid var(--theme-color);
+    background-color: var(--theme-bg);
+    color: var(--theme-color);
+    font-family: inherit;
+    box-sizing: border-box;
 }
 
 .feedback-input {
-    border: 1px solid var(--theme-color);
     min-height: 5rem;
     resize: none;
-    font-family: inherit;
+}
+
+.feedback-contact-toggle {
+    color: var(--theme-link, #5672f7);
+    font-size: 1.4rem;
+    text-decoration: none;
+}
+
+.feedback-contact-plus {
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.feedback-contact-label {
+    text-decoration: underline;
+}
+
+.feedback-send-btn {
+    transition: filter 0.2s ease, background-color 0.2s ease;
+}
+
+.feedback-send-btn.disabled {
+    cursor: not-allowed;
+    filter: grayscale(1);
 }

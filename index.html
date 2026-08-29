@@ -497,9 +497,9 @@
     </script>
 
 
-    <div class="info-popup-wrapper h-100">
+    <div class="feedback-sent w-fit fixed none"><i class="fa-solid fa-circle-check mr-0p5rem"></i>Feedback sent</div>
 
-        <div class="feedback-sent w-fit fixed none">Feedback sent!</div>
+    <div class="info-popup-wrapper h-100">
 
         <div class="bus-info-popup">
             <div class="flex flex-col gap-y-0p5rem h-100 ">
@@ -590,7 +590,7 @@
                             <i class="fa-solid fa-map-pin"></i>
                         </div> -->
                         <div class="bus-comment br-1rem align-center pointer">
-                            <i class="fa-regular fa-message" onclick="$('.leave-feedback-wrapper').fadeIn('fast'); $('.bottom').hide();"></i>
+                            <i class="fa-regular fa-message" onclick="openFeedbackModal('bus');"></i>
                         </div>
 
                         <div class="bus-history br-1rem align-center pointer" onclick="$('.past-breaks-wrapper')[0].scrollIntoView({behavior: 'smooth'});">
@@ -1127,20 +1127,26 @@
     </div>
 
     <div class="leave-feedback-wrapper h-full none">
-        <div class="feedback-x flex justify-center align-center" style="top: 2rem; right: 2rem; color: var(--theme-bg); background-color: var(--theme-color)" onclick="$('.leave-feedback-wrapper').hide(); $('.bottom').show();">X</div>
+        <div class="feedback-x flex justify-center align-center" style="top: 2rem; right: 2rem; color: var(--theme-bg); background-color: var(--theme-color)" onclick="closeFeedbackModal();">X</div>
         <div class="leave-feedback-modal h-full"></div>
         <div class="absolute" style="inset: 0;">
             <div class="feedback-outside flex flex-col justify-center align-center h-full left mb-8rem" style="padding: 0 5rem;">
                 <div class="w-mn">
-                    <div class="text-2p5rem w-full bold-500">Leave feedback</div>
-                    <div class="text-1p8rem w-full">About this bus or how RUBus is displaying it.</div>
+                    <div class="feedback-title text-2p5rem w-full bold-500">Leave feedback</div>
+                    <div class="feedback-subtext text-1p8rem w-full">About this bus or how RUBus is displaying it.</div>
                     <div class="flex">
                         <textarea class="feedback-input mt-2rem text-1p5rem br-0p5rem p-1rem w-full" placeholder="What's on your mind?"></textarea>
                     </div>
-                    <!-- <div class="flex justify-center"> -->
-                    <div class="empty-feedback none white br-2rem text-1p4rem w-fit mt-2rem" style="padding: 0.5rem 1.5rem; background-color: #f24160;">You can't submit empty feedback.</div>
-                    <div class="white br-2rem text-1p4rem w-fit mt-2rem select-none" style="padding: 0.5rem 1.5rem; background-color: #4f4fd8;" onclick="sendFeedback();">Send Feedback</div>
-                    <!-- </div> -->
+                    <div class="feedback-contact-toggle-wrapper mt-1rem select-none">
+                        <span class="feedback-contact-toggle pointer" onclick="$('.feedback-contact-container').slideDown('fast'); $('.feedback-contact-toggle-wrapper').hide();"><span class="feedback-contact-plus bold-700">+</span> <span class="feedback-contact-label">Leave return contact info (optional)</span></span>
+                    </div>
+                    <div class="feedback-contact-container none mt-1rem">
+                        <input type="text" class="feedback-contact-input text-1p5rem br-0p5rem p-1rem w-full" placeholder="Insta @, Reddit u/, email, etc. (optional)">
+                    </div>
+                    <div class="flex flex-col align-center">
+                        <div class="empty-feedback none white br-2rem text-1p4rem w-fit mt-2rem" style="padding: 0.5rem 1.5rem; background-color: #f24160;">You can't submit empty feedback.</div>
+                        <div class="feedback-send-btn white br-3rem text-1p5rem bold-500 w-fit mt-2rem select-none pointer" style="padding: 1.5rem 3rem; background-color: var(--theme-accent);" onclick="sendFeedback();">Send</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1203,7 +1209,10 @@
             <div class="text-1p6rem mb-0p25rem bold-500">LOOK & FEEL</div>
             <div class="flex flex-col gap-y-1rem pl-1rem mb-3rem settings-section-accent">
                 <div class="settings-font">
-                    <div class="settings-heading">Font</div>
+                    <div class="flex justify-between align-center">
+                        <div class="settings-heading">Font</div>
+                        <div class="font-suggest-btn pointer select-none text-1p3rem mr-0p5rem" onclick="openFeedbackModal('font');">Suggest</div>
+                    </div>
                     <div class="settings-options grid grid-cols-3">
                         <div class="settings-option" settings-option="font" font-option="yusei magic" style="font-family: Yusei Magic;">Yusei</div>
                         <div class="settings-option" settings-option="font" font-option="PP Neue Montreal" style="font-family: PP Neue Montreal;">Montreal</div>
@@ -1218,7 +1227,10 @@
                 </div>
 
                 <div class="settings-theme">
-                    <div class="settings-heading">Theme</div>
+                    <div class="flex justify-between align-center">
+                        <div class="settings-heading">Theme</div>
+                        <div class="theme-suggest-btn font-suggest-btn pointer select-none text-1p3rem mr-0p5rem" onclick="openFeedbackModal('theme');">Suggest</div>
+                    </div>
                     <div class="settings-options grid" style="grid-template-columns: repeat(6, 1fr);">
                         <div class="settings-option" settings-option="theme" theme-option="light" style="grid-column: span 2;"><i class="fa-solid fa-sun"></i>Light</div>
                         <div class="settings-option" settings-option="theme" theme-option="dark" style="grid-column: span 2;"><i class="fa-solid fa-moon"></i>Dark</div>
@@ -2378,7 +2390,7 @@
                 <!-- <div>About</div> -->
                 <div class="contact pointer" onclick="contactClicked();">Contact</div>
                 <div class="changelog pointer" onclick="getChangelog();">Changelog<sup class="changelog-new-badge">NEW</sup></div>
-                <div class="source pointer" onclick="sa_event('btn_press',{btn:'footer_source'});window.open('https://src.rubus.live', '_blank')"><i class="fa-brands fa-github"></i> Src</div>
+                <div class="feedback-link pointer" onclick="openFeedbackModal('general');">Feedback</div>
             </div>
 
             <div class="settings-rubus-attribution grid grid-cols-3 center select-none gray777777 mt-1p5rem mb-2rem">
@@ -2394,6 +2406,12 @@
                 <div class="events-link pointer">Events</div>
                 <div class="pointer" onclick="sa_event('btn_press',{btn:'footer_ruwho'});window.open('https://ruwho.pages.dev', '_blank')">RUwho?</div>
                 <div class="pointer" onclick="sa_event('btn_press',{btn:'footer_ruguessr'});window.open('https://joyousjohn.github.io/ruguessr/', '_blank')">RutgersGuessr</div>
+            </div>
+
+            <div class="settings-rubus-attribution grid grid-cols-3 center select-none gray777777 mt-1p5rem mb-2rem">
+                <div></div>
+                <div class="source pointer" onclick="sa_event('btn_press',{btn:'footer_source'});window.open('https://src.rubus.live', '_blank')"><i class="fa-brands fa-github"></i> Src</div>
+                <div></div>
             </div>
 
             <div class="footer flex justify-center mb-10rem flex-col">
