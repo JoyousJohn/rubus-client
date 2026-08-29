@@ -2,24 +2,23 @@ let __spoofHandlerAttached = false;
 
 function initSpoofing() {
     if (__spoofHandlerAttached) { return; }
-    if (typeof map === 'undefined' || !map || typeof map.on !== 'function') { return; }
     __spoofHandlerAttached = true;
 
     map.on('click', function(e) {
-        const spoofEnabled = (spoof) || (settings && settings['toggle-spoofing']);
+        const spoofEnabled = spoof || settings['toggle-spoofing'];
         if (!spoofEnabled) { return; }
 
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
 
-        // Check if click is on a building (even if buildings layer is disabled)
+        // --- Hit detection ---
+
+        // Building at click (via spatial index, works even when fill layer is hidden)
         let buildingAtClick = null;
         if (buildingSpatialIndex) {
-            // Use spatial index to find buildings near the click point
             const nearbyBuildings = buildingSpatialIndex.getBuildingsNearPoint(lat, lng);
             for (const feature of nearbyBuildings) {
                 if (feature.properties && (feature.properties.category === 'building' || feature.properties.category === 'parking')) {
-                    // Check if point is actually inside the building polygon
                     if (isPointInPolygon(lat, lng, feature.geometry.coordinates[0])) {
                         buildingAtClick = feature;
                         break;
@@ -27,30 +26,110 @@ function initSpoofing() {
                 }
             }
         } else if (spoofEnabled) {
-            // Buildings not loaded yet, load them for spoofing detection
             loadBuildings().then(() => {
-                // Re-trigger the click handler with buildings now loaded
-                // This is a bit of a hack, but ensures building detection works
                 setTimeout(() => {
                     const clickEvent = { latlng: e.latlng };
                     map.fire('click', clickEvent);
                 }, 100);
             });
-            return; // Exit early, will re-trigger after buildings load
+            return;
         }
 
+        // Building hits are handled exclusively by js/buildings.js (first tap
+        // shows info, second tap teleports if spoof enabled). Suppress spoof.js
+        // for any building hit to avoid teleporting on first selection and to
+        // avoid double teleport on second tap.
         if (buildingAtClick) {
-            // Spoof to building center coordinates instead of exact click point
-            const buildingLat = buildingAtClick.properties.lat;
-            const buildingLng = buildingAtClick.properties.lng;
-            userPosition = [buildingLat, buildingLng];
-        } else {
-            // Regular spoofing to exact click point
-            userPosition = [lat, lng];
+            return;
         }
 
-        if (typeof watchPositionId !== 'undefined' && watchPositionId !== null) {
-            try { navigator.geolocation.clearWatch(watchPositionId); } catch (_) {}
+        // Bus / stop hits: check GL symbol layers via queryRenderedFeatures and
+        // DOM markers via the event target. Only empty map or a hit on the
+        // already-selected feature may teleport; selecting a new bus/stop must
+        // not teleport.
+        const point = e.point;
+        let busHit = null;
+        let stopHit = null;
+
+        if (point && map.queryRenderedFeatures) {
+            const busLayers = ['bus-markers-layer', 'bus-markers-labels', 'bus-markers-glow', 'bus-markers-selected', 'bus-markers-selected-labels'].filter(function(id) { return map.getLayer(id); });
+            if (busLayers.length) {
+                const hits = map.queryRenderedFeatures(point, { layers: busLayers });
+                if (hits.length) {
+                    busHit = hits[0].properties.busName;
+                }
+            }
+            const stopLayers = ['stop-markers-layer', 'stop-markers-labels', 'stop-markers-selected', 'stop-markers-selected-labels'].filter(function(id) { return map.getLayer(id); });
+            if (stopLayers.length) {
+                const hits = map.queryRenderedFeatures(point, { layers: stopLayers });
+                if (hits.length) {
+                    stopHit = String(hits[0].properties.stopId);
+                }
+            }
+        }
+
+        // DOM fallback when renderer is 'custom' (maplibregl.Marker HTML)
+        const target = e.originalEvent && e.originalEvent.target;
+        if (target && target.closest) {
+            const markerEl = target.closest('.maplibregl-marker');
+            if (markerEl) {
+                if (!busHit && !stopHit) {
+                    // Determine marker type by inspecting wrapper contents
+                    const isBusDom = markerEl.querySelector('.bus-marker-wrapper');
+                    const isStopDom = markerEl.querySelector('.custom-stop-icon') || markerEl.querySelector('[stop-marker-id]');
+                    if (isBusDom) {
+                        for (const name in busMarkers) {
+                            const m = busMarkers[name];
+                            const el = m.getElement();
+                            if (el && (el === markerEl || el.contains(target) || markerEl.contains(el))) {
+                                busHit = name;
+                                break;
+                            }
+                        }
+                        if (!busHit) busHit = '__dom_bus_hit__';
+                    } else if (isStopDom) {
+                        let idAttr = null;
+                        const inner = markerEl.querySelector('[stop-marker-id]');
+                        if (inner) idAttr = inner.getAttribute('stop-marker-id');
+                        if (!idAttr) {
+                            for (const sid in busStopMarkers) {
+                                const m = busStopMarkers[sid];
+                                const el = m.getElement();
+                                if (el && (el === markerEl || el.contains(target) || markerEl.contains(el))) {
+                                    idAttr = String(sid);
+                                    break;
+                                }
+                            }
+                        }
+                        stopHit = idAttr ? String(idAttr) : '__dom_stop_hit__';
+                    }
+                }
+            }
+        }
+
+        // Bus selection click (new bus) must not teleport. Only allow if bus
+        // already selected (tap within already-selected feature).
+        if (busHit) {
+            if (busHit !== popupBusName) {
+                return;
+            }
+            // Same bus second tap: allowed -> fall through to spoof at tap location
+        }
+
+        // Stop selection click (new stop) must not teleport. Only allow if stop
+        // already selected.
+        if (stopHit) {
+            if (stopHit !== String(popupStopId)) {
+                return;
+            }
+        }
+
+        // Building case already returned above; empty map falls through.
+
+        userPosition = [lat, lng];
+
+        if (watchPositionId !== null) {
+            navigator.geolocation.clearWatch(watchPositionId);
             watchPositionId = null;
         }
 
@@ -69,17 +148,17 @@ function initSpoofing() {
             locationMarker.on('click', function() {
                 $('.bus-info-popup, .stop-info-popup').hide();
                 $('.my-location-popup').show();
-                if (typeof hideCenterStops === 'function') hideCenterStops();
+                hideCenterStops();
             });
             window.locationMarker = locationMarker;
         }
 
-        try { updateNearestStop(); } catch (_) {}
-        try { populateMeClosestStops(); } catch (_) {}
+        updateNearestStop();
+        populateMeClosestStops();
 
         $('.fly-closest-stop-wrapper').fadeIn();
         $('.my-location-popup').show();
-        if (typeof hideCenterStops === 'function') hideCenterStops();
+        hideCenterStops();
     });
 }
 document.addEventListener('rubus-map-created', initSpoofing);

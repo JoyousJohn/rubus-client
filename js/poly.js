@@ -291,7 +291,7 @@ window.createMapLibrePolyline = function(coordinates, options) {
                 // layer, so when stops were above buses a new polyline was
                 // inserted between buses and stops — above the buses — which
                 // then persisted via force-show settings (polyline at:243).
-                const stopsAbove = !!(typeof settings !== 'undefined' && settings && settings['toggle-stops-above-buses']);
+                const stopsAbove = !!settings['toggle-stops-above-buses'];
                 let beforeId;
                 if (stopsAbove) {
                     if (map.getLayer('bus-markers-layer')) beforeId = 'bus-markers-layer';

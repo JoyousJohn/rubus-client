@@ -364,6 +364,11 @@ function loadBuildings() {
                                 highlightedBuildingLayer.feature.properties.name === feature.properties.name;
 
                             if (isSameBuilding) {
+                                const spoofEnabled = spoof || settings['toggle-spoofing'];
+                                if (!spoofEnabled) {
+                                    showBuildingInfo(feature.properties);
+                                    return;
+                                }
                                 // Second click on same building - update spoofed location
                                 const lat = feature.properties.lat;
                                 const lng = feature.properties.lng;
