@@ -642,8 +642,24 @@ $('.settings-toggle .toggle-input').on('change', function () {
             $('.center-stops-btns-item').each(function() {
                 this._csStopId = null;
             });
-            if (typeof window.updateCenterStops === 'function') {
+            window.updateCenterStops();
+            break;
+
+        case 'toggle-show-closest-stops':
+        case 'toggle-show-center-stops':
+            console.log(`Show Closest Stops is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-closest-stops'] = isChecked;
+            settings['toggle-show-center-stops'] = isChecked;
+            // Keep the dependent Use Main Name toggle visually disabled when hidden
+            var $dep = $('#toggle-center-stops-main-name').closest('.flex');
+            if (isChecked) {
+                $dep.removeClass('disabled');
+                $('#toggle-center-stops-main-name').prop('disabled', false);
                 window.updateCenterStops();
+            } else {
+                $dep.addClass('disabled');
+                $('#toggle-center-stops-main-name').prop('disabled', true);
+                $('.center-stops-btns').hide();
             }
             break;
 

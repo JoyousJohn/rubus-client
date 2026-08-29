@@ -88,6 +88,8 @@ const defaultSettings = {
     'toggle-pause-stopped-for-timer': false,
     'toggle-offscreen-bus-indicators-pan-end-only': false,
     'toggle-center-stops-main-name': false,
+    'toggle-show-closest-stops': true,
+    'toggle-show-center-stops': true,
     'toggle-show-etas-in-ms': false,
     'bus-animation-rate': 'off',
     'toggle-always-show-break-overdue': false,

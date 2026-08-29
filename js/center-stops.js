@@ -115,7 +115,7 @@ var _csHostStylesElComputed;
 var _csLayoutCache = new Map();
 
 function _csRootFont() {
-    if (typeof _csCachedRootFont === 'undefined') {
+    if (_csCachedRootFont === undefined) {
         _csCachedRootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     }
     return _csCachedRootFont;
@@ -197,6 +197,12 @@ var _csLastCenter = null;
 var _csLastTopKey = null;
 var _csMoveRaf = null;
 
+function _csIsEnabled() {
+    if (settings['toggle-show-closest-stops'] === false) return false;
+    if (settings['toggle-show-center-stops'] === false) return false;
+    return true;
+}
+
 function _csItemsList() {
     if (!_csItems) _csItems = $('.center-stops-btns-item');
     return _csItems;
@@ -224,7 +230,7 @@ function _csTopCandidates(centerLat, centerLng) {
         var lat = Number(stop.latitude);
         var lng = Number(stop.longitude);
         if (!isFinite(lat) || !isFinite(lng)) continue;
-        var useMain = typeof settings !== 'undefined' && settings['toggle-center-stops-main-name'] === true;
+        var useMain = settings['toggle-center-stops-main-name'] === true;
         var displayName = useMain ? (stop.name || stop.shortName) : (stop.shortName || stop.name);
         candidates.push({
             stopId: Number(stopId),
@@ -247,7 +253,7 @@ function _csRenderChips(top) {
         var el = $item[0];
         if (!stop) { $item.hide(); return; }
         var layout = _csLayout(stop.name, m.limit);
-        var isClosest = typeof closestStopId !== 'undefined' && closestStopId != null && stop.stopId === Number(closestStopId);
+        var isClosest = closestStopId != null && stop.stopId === Number(closestStopId);
         // Only rebuild chip DOM when it actually changes stop (or its closest
         // state); re-ranking an already-rendered stop is just a width refresh.
         if (el._csStopId !== stop.stopId || el._csClosest !== isClosest) {
@@ -269,11 +275,15 @@ function _csRenderChips(top) {
 }
 
 function updateCenterStops() {
+    if (!_csIsEnabled()) {
+        $('.center-stops-btns').hide();
+        return;
+    }
     fitCenterStopsWidth();
     _csPositionDesktop();
     _csRefreshMetrics();
     var $items = _csItemsList();
-    if (!$items.length || typeof map === 'undefined' || !map || typeof stopsData === 'undefined' || !stopsData) {
+    if (!$items.length || !map || !stopsData) {
         return;
     }
     var center = map.getCenter();
@@ -297,7 +307,8 @@ function _csScheduleMoveUpdate() {
 }
 
 function _csUpdateOnMove() {
-    if (typeof map === 'undefined' || !map || typeof stopsData === 'undefined' || !stopsData) return;
+    if (!_csIsEnabled()) return;
+    if (!map || !stopsData) return;
     if ($('.center-stops-btns').is(':hidden')) return; // popup open; moveend fixes it
     if (!_csMetrics) _csRefreshMetrics();
     var center = map.getCenter();
@@ -333,7 +344,8 @@ window.fitCenterStopsWidth = fitCenterStopsWidth;
 // shared or updated) without the map moving: re-ranks from the last known
 // center so the CLOSEST badge can appear/disappear on already-shown chips.
 window.refreshCenterStopsClosest = function() {
-    if (typeof map === 'undefined' || !map || !stopsData || !_csLastCenter) return;
+    if (!_csIsEnabled()) return;
+    if (!map || !stopsData || !_csLastCenter) return;
     _csRenderChips(_csTopCandidates(_csLastCenter.lat, _csLastCenter.lng));
 };
 
@@ -346,7 +358,7 @@ window.refreshCenterStopsClosest = function() {
 function _csPositionDesktop() {
     var wrapper = document.querySelector('.center-stops-btns');
     if (!wrapper) return;
-    if (typeof isDesktop === 'undefined' || !isDesktop) {
+    if (!isDesktop) {
         wrapper.style.position = '';
         wrapper.style.right = '';
         wrapper.style.bottom = '';
@@ -367,7 +379,7 @@ function _csPositionDesktop() {
 }
 
 document.addEventListener('rubus-map-created', function() {
-    if (typeof map === 'undefined' || !map) return;
+    if (!map) return;
     map.on('moveend', updateCenterStops);
     map.on('move', _csScheduleMoveUpdate);
     updateCenterStops();
@@ -381,6 +393,24 @@ $(function() {
     fitCenterStopsWidth();
     _csRefreshMetrics();
     window.addEventListener('resize', updateCenterStops);
+    // Respect the Show Closest Stops toggle on initial load
+    if (!_csIsEnabled()) {
+        $('.center-stops-btns').hide();
+    } else {
+        // Keep dependent toggle visually in sync
+        var $dep = $('#toggle-center-stops-main-name').closest('.flex');
+        if ($dep.length) {
+            $dep.removeClass('disabled');
+            $('#toggle-center-stops-main-name').prop('disabled', false);
+        }
+    }
+    if (!_csIsEnabled()) {
+        var $dep2 = $('#toggle-center-stops-main-name').closest('.flex');
+        if ($dep2.length) {
+            $dep2.addClass('disabled');
+            $('#toggle-center-stops-main-name').prop('disabled', true);
+        }
+    }
 });
 
 // The whole widget is hidden while a stop/bus/building popup is open, and
@@ -389,6 +419,7 @@ window.hideCenterStops = function() {
     $('.center-stops-btns').hide();
 };
 window.showCenterStops = function() {
+    if (!_csIsEnabled()) return;
     $('.center-stops-btns').show();
     _csPositionDesktop();
 };

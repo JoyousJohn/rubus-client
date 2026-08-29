@@ -1203,7 +1203,7 @@
     </div>
 
     <div class="settings-panel">
-        <div class="settings-main-heading center">Settings</div>
+        <div class="settings-main-heading center flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-gear" style="opacity: 0.88;"></i>Settings</div>
         <div class="settings-list flex flex-col">
 
             <div class="text-1p6rem mb-0p25rem bold-500">LOOK & FEEL</div>
@@ -1289,25 +1289,6 @@
                         <div class="settings-option" settings-option="gui-scale" gui-scale-option="larger">Larger</div>
                     </div>
                 </div>
-
-                <div class="flex justify-between">
-                    <div class="settings-heading flex flex-1 align-center span-i-settings-end">Move Settings to End<span class="span-i pointer select-none">i</span></div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-settings-btn-end" class="toggle-input">
-                        <label for="toggle-settings-btn-end" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>  
-                
-                <div class="settings-end-explain none ml-0p5rem text-1p3rem dimgray">Move the settings button after the route buttons to reduce scrolling need by clearing up space in front for more routes.</div>
-                <script>
-                $('.span-i-settings-end').click(function() {
-                    const $el = $('.settings-end-explain');
-                    if ($el.is(':animated')) return;
-                    $el.slideToggle();
-                })
-                </script>
 
                 <!-- Temporarily hidden: Simulator is hidden by default; can be enabled via Developer Settings
                 <div class="flex justify-between hide-sim-row">
@@ -1413,6 +1394,24 @@
                 <script>
                 $('.span-i-spoofing').click(function() {
                     const $el = $('.settings-spoofing-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                });
+                </script>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-closest-stops">Show Closest Stops<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-show-closest-stops" class="toggle-input">
+                        <label for="toggle-show-closest-stops" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="closest-stops-explain none ml-0p5rem text-1p3rem dimgray">Show stops near your map view to quickly select them.</div>
+                <script>
+                $('.span-i-closest-stops').click(function() {
+                    const $el = $('.closest-stops-explain');
                     if ($el.is(':animated')) return;
                     $el.slideToggle();
                 });
@@ -1717,6 +1716,25 @@
                         </label>
                     </div>
                 </div>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-settings-end">Move Settings to End<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-settings-btn-end" class="toggle-input">
+                        <label for="toggle-settings-btn-end" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>  
+                
+                <div class="settings-end-explain none ml-0p5rem text-1p3rem dimgray">Move the settings button after the route buttons to reduce scrolling need by clearing up space in front for more routes.</div>
+                <script>
+                $('.span-i-settings-end').click(function() {
+                    const $el = $('.settings-end-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                </script>
             </div>
 
             <div class="text-1p6rem mb-0p25rem bold-500">CAMPUS</div>

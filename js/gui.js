@@ -1965,6 +1965,8 @@ const toggleSettings = [
     'toggle-pause-stopped-for-timer',
     'toggle-offscreen-bus-indicators-pan-end-only',
     'toggle-center-stops-main-name',
+    'toggle-show-closest-stops',
+    'toggle-show-center-stops',
     'toggle-show-etas-in-ms',
 ]
 
@@ -2331,10 +2333,25 @@ function updateSettings() {
 
     $('#toggle-hide-sim').prop('checked', !settings['toggle-show-sim']);
 
-    // Low Performance Mode forces bus focusing off; enforce at every settings load.
-    if (typeof applyLowPerformanceModeState === 'function') {
-        applyLowPerformanceModeState();
+    // Show Closest Stops toggle controls the center-stops chips above the buildings button
+    var _csEnabled = (settings['toggle-show-closest-stops'] !== false) && (settings['toggle-show-center-stops'] !== false);
+    if (!_csEnabled) {
+        $('.center-stops-btns').hide();
+        var $csDep = $('#toggle-center-stops-main-name').closest('.flex');
+        $csDep.addClass('disabled');
+        $('#toggle-center-stops-main-name').prop('disabled', true);
+    } else {
+        var $csDep2 = $('#toggle-center-stops-main-name').closest('.flex');
+        $csDep2.removeClass('disabled');
+        $('#toggle-center-stops-main-name').prop('disabled', false);
+        // If no popup is open, ensure the widget is visible (updateCenterStops will populate it)
+        if (!$('.bus-info-popup').is(':visible') && !$('.stop-info-popup').is(':visible') && !$('.building-info-popup').is(':visible')) {
+            window.updateCenterStops();
+        }
     }
+
+    // Low Performance Mode forces bus focusing off; enforce at every settings load.
+    applyLowPerformanceModeState();
 
     if (!localStorage.getItem('uid')) {
         function genUid() {
