@@ -1357,16 +1357,28 @@ $(function() {
     let settingsVvpHandler = null;
     let settingsViewportAttached = false;
 
+    // The keyboard-height offset for the floating bar, cached so the panel's
+    // padding-bottom is only rewritten when the keyboard geometry actually
+    // changes (open/close). Rewriting padding-bottom on every visualViewport
+    // scroll event changes the panel's scrollable height mid-drag, which makes
+    // the browser re-pan the viewport to keep the focused input visible — a
+    // feedback loop that jitters the bar while the finger is down.
+    let settingsBarKeyboardOffset = -1;
+
     function adjustSettingsFloatingBar() {
         const isMobile = $(window).width() <= 992;
         if (isMobile && window.visualViewport && $('.settings-panel').is(':visible')) {
             const vvp = window.visualViewport;
             const keyboardHeight = Math.max(0, window.innerHeight - vvp.height - vvp.offsetTop);
             $('.settings-floating-bar').css('bottom', (16 + keyboardHeight) + 'px');
-            $('.settings-panel').css('padding-bottom', (100 + keyboardHeight) + 'px');
+            if (keyboardHeight !== settingsBarKeyboardOffset) {
+                settingsBarKeyboardOffset = keyboardHeight;
+                $('.settings-panel').css('padding-bottom', (100 + keyboardHeight) + 'px');
+            }
         } else {
             $('.settings-floating-bar').css('bottom', '');
             $('.settings-panel').css('padding-bottom', '');
+            settingsBarKeyboardOffset = -1;
         }
     }
 
