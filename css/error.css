@@ -89,6 +89,14 @@
     color: var(--theme-color);
 }
 
+.error-panel-title-count {
+    color: var(--theme-extra);
+}
+
+.error-panel-title.has-errors .error-panel-title-count {
+    color: var(--theme-accent);
+}
+
 
 .error-list {
     max-height: calc(50vh - 80px);
@@ -105,7 +113,7 @@
 
 .error-item {
     display: grid;
-    grid-template-columns: 120px 1fr;
+    grid-template-columns: auto 1fr;
     gap: 1rem;
     padding: 1rem;
     border-bottom: 1px solid var(--theme-line-bg);

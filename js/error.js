@@ -67,14 +67,15 @@ class ErrorTracker {
                     if (arg instanceof Error) {
                         // Handle Error objects specially
                         return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
-                    } else if (typeof arg === 'object') {
-                        // Try to get useful information from objects
+                    } else if (typeof arg === 'object' && arg !== null) {
                         try {
-                            if (arg.message) return arg.message;
-                            if (arg.toString) return arg.toString();
                             return JSON.stringify(arg, Object.getOwnPropertyNames(arg), 2);
                         } catch {
-                            return String(arg);
+                            try {
+                                return String(arg);
+                            } catch {
+                                return '[Unserializable object]';
+                            }
                         }
                     }
                     return String(arg);
@@ -110,14 +111,15 @@ class ErrorTracker {
                     if (arg instanceof Error) {
                         // Handle Error objects specially
                         return `${arg.name}: ${arg.message}${arg.stack ? '\n' + arg.stack : ''}`;
-                    } else if (typeof arg === 'object') {
-                        // Try to get useful information from objects
+                    } else if (typeof arg === 'object' && arg !== null) {
                         try {
-                            if (arg.message) return arg.message;
-                            if (arg.toString) return arg.toString();
                             return JSON.stringify(arg, Object.getOwnPropertyNames(arg), 2);
                         } catch {
-                            return String(arg);
+                            try {
+                                return String(arg);
+                            } catch {
+                                return '[Unserializable object]';
+                            }
                         }
                     }
                     return String(arg);
@@ -284,10 +286,11 @@ class ErrorTracker {
             errorList.innerHTML = this.renderErrorsHTML();
         }
         
-        // Also update the panel title with current error count
+        // Also update the panel title with current error count - count colored via theme vars
         const errorPanelTitle = document.querySelector('.error-panel-title');
         if (errorPanelTitle) {
-            errorPanelTitle.textContent = `JavaScript Errors (${this.errors.length})`;
+            errorPanelTitle.innerHTML = `<span class="error-panel-title-text">JavaScript Errors</span> <span class="error-panel-title-count">(${this.errors.length})</span>`;
+            errorPanelTitle.classList.toggle('has-errors', this.errors.length > 0);
         }
     }
 
