@@ -3,9 +3,12 @@
   "name": "RUBus",
   "short_name": "RUBus",
   "description": "Accurate live bus tracking for Rutgers University.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#007bff",
@@ -33,6 +36,13 @@
       "sizes": "2048x2048",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Chat",
+      "url": "/?chat",
+      "description": "Ask RUBus about routes, schedules, and live buses"
     }
   ]
 }
