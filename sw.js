@@ -1,4 +1,4 @@
-﻿// sw.js - Service Worker for RUBus PWA
+// sw.js - Service Worker for RUBus PWA
 const CACHE_NAME = 'rubus-cache-v1';
 
 // Static app shell assets pre-cached for instant launch & offline fallback
@@ -10,7 +10,7 @@ const PRECACHE_ASSETS = [
     '/css/desktop.css',
     '/css/theme.css',
     '/img/rubus-favicon.png',
-    '/img/rubus-favicon-autumn.png',
+    '/img/rubus-favicon-back-to-college.png',
     '/img/stop_marker.png',
     '/img/stop_marker_selected.png',
     '/img/passio-bus.svg'
