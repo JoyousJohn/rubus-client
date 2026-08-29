@@ -1353,55 +1353,35 @@ $(function() {
         $searchInput.focus();
     });
 
-    // Mobile keyboard visualViewport handling for floating search bar
+    // Mobile keyboard handling for the floating search bar.
+    // Viewport meta: interactive-widget=resizes-content makes the keyboard
+    // shrink the layout viewport, so position:fixed bars stay above it
+    // without tracking visualViewport offsetTop. JS only reserves scroll
+    // padding for the last settings items (keyboard open/close), not for
+    // scroll-panning — otherwise rAF can't keep up and jitters.
     let settingsVvpHandler = null;
     let settingsViewportAttached = false;
 
-    // The keyboard inset is the true height of the on-screen keyboard:
-    // the layout viewport height minus the visual viewport height. It stays
-    // constant while the keyboard is open and only changes on open/close.
-    // The bar's offset must additionally subtract vvp.offsetTop because that
-    // is the scroll pan amount, which changes every frame while dragging.
-    // Keeping padding-bottom driven by keyboardInset (not the pan amount)
-    // avoids rewriting the panel's scrollable height mid-drag, which caused
-    // a feedback loop that jittered the bar during fast scrolling.
-    let settingsBarKeyboardOffset = -1;
-
-    function adjustSettingsFloatingBar() {
+    function applySettingsKeyboardPadding() {
         const isMobile = $(window).width() <= 992;
         if (isMobile && window.visualViewport && $('.settings-panel').is(':visible')) {
-            const vvp = window.visualViewport;
-            const keyboardInset = Math.max(0, window.innerHeight - vvp.height);
-            const barOffset = Math.max(0, keyboardInset - vvp.offsetTop);
-            $('.settings-floating-bar').css('bottom', (16 + barOffset) + 'px');
-            if (keyboardInset !== settingsBarKeyboardOffset) {
-                settingsBarKeyboardOffset = keyboardInset;
-                $('.settings-panel').css('padding-bottom', (100 + keyboardInset) + 'px');
-            }
+            const keyboardHeight = Math.max(0, window.innerHeight - window.visualViewport.height);
+            $('.settings-panel').css('padding-bottom', (100 + keyboardHeight) + 'px');
         } else {
-            $('.settings-floating-bar').css('bottom', '');
             $('.settings-panel').css('padding-bottom', '');
-            settingsBarKeyboardOffset = -1;
         }
+        $('.settings-floating-bar').css('bottom', '');
     }
 
     window.attachSettingsViewportListeners = function() {
         if (settingsViewportAttached) return;
         settingsViewportAttached = true;
-        settingsVvpHandler = () => requestAnimationFrame(adjustSettingsFloatingBar);
+        settingsVvpHandler = () => requestAnimationFrame(applySettingsKeyboardPadding);
         if (window.visualViewport) {
-            // Listen to both resize AND scroll. Resize alone tracks keyboard
-            // open/close, but while the keyboard is up, scrolling the list pans
-            // the visual viewport (offsetTop changes) so the keyboard's top
-            // edge shifts within the layout viewport. Without the scroll
-            // listener the floating bar keeps its stale 'bottom' offset and
-            // appears to scroll with the settings content instead of staying
-            // pinned above the keyboard. The rAF throttle coalesces the
-            // constant scroll fire into one layout pass per frame.
             window.visualViewport.addEventListener('resize', settingsVvpHandler);
-            window.visualViewport.addEventListener('scroll', settingsVvpHandler);
         }
         window.addEventListener('resize', settingsVvpHandler);
+        applySettingsKeyboardPadding();
     };
 
     window.detachSettingsViewportListeners = function() {
@@ -1409,19 +1389,16 @@ $(function() {
         settingsViewportAttached = false;
         if (window.visualViewport && settingsVvpHandler) {
             window.visualViewport.removeEventListener('resize', settingsVvpHandler);
-            window.visualViewport.removeEventListener('scroll', settingsVvpHandler);
         }
         if (settingsVvpHandler) {
             window.removeEventListener('resize', settingsVvpHandler);
         }
         settingsVvpHandler = null;
-        $('.settings-floating-bar').css('bottom', '');
         $('.settings-panel').css('padding-bottom', '');
     };
 
     $searchInput.on('focus', function() {
         attachSettingsViewportListeners();
-        adjustSettingsFloatingBar();
     }).on('blur', function() {
         detachSettingsViewportListeners();
     });
