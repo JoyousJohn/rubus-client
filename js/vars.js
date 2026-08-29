@@ -18,6 +18,7 @@ const defaultSettings = {
     'marker-size': 'medium',
     'gui-scale': 'normal',
     'theme': 'beige-coffee',
+    'rubus-logo': 'rubus-favicon-back-to-college.png',
     'toggle-show-etas-in-seconds': false,
     'toggle-dim-on-pan': true,
     'toggle-select-closest-stop': true,

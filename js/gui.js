@@ -2153,6 +2153,8 @@ function updateSettings() {
     $(`div.settings-option[gui-scale-option="${settings['gui-scale']}"]`).addClass('settings-selected')
     $(`div.settings-option[marker-type-option="${settings['marker-type']}"]`).addClass('settings-selected')
 
+    updateRubusLogo(settings['rubus-logo'] || 'rubus-favicon-back-to-college.png');
+
     applyGuiScale(settings['gui-scale']);
     
     // Update marker size examples to match the current marker type
@@ -2174,6 +2176,10 @@ function updateSettings() {
     });
 
     // Load parking campus setting
+    if (settings['parking-campus']) {
+        $('.parking-campus-option').addClass('settings-selected');
+    }
+
     const parkingCampus = settings['parking-campus'];
     if (parkingCampus && parkingCampus !== false) {
         // Update parking button UI to show selected campus
@@ -2348,6 +2354,23 @@ function updateSettings() {
 
     // Dispatch event to notify other components that settings are updated
     document.dispatchEvent(new CustomEvent('rubus-settings-updated'));
+}
+
+function updateRubusLogo(logoFilename) {
+    if (!logoFilename) logoFilename = 'rubus-favicon-back-to-college.png';
+    settings['rubus-logo'] = logoFilename;
+    $('.settings-rubus-logo').css('background-image', `url('img/${logoFilename}')`);
+    $('link[rel="icon"]').attr('href', `img/${logoFilename}`);
+    $('.rubus-logo-option').removeClass('settings-selected');
+    $(`.rubus-logo-option[logo-option="${logoFilename}"]`).addClass('settings-selected');
+}
+
+function selectRubusLogo(logoFilename) {
+    updateRubusLogo(logoFilename);
+    saveSettings();
+    if (typeof sa_event === 'function') {
+        sa_event('settings_change', { setting: 'rubus_logo', value: logoFilename });
+    }
 }
 
 $(document).ready(function() {

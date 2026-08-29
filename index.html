@@ -2376,14 +2376,37 @@
             </div>
 
             <div class="settings-rubus mt-2rem">
-                <div class="settings-rubus-logo"></div>
+                <div class="settings-rubus-logo pointer" onclick="$('.settings-rubus-logo-picker').slideToggle('fast');"></div>
                 <div class="settings-rubus-attribution">
                     <div>
                         RUBus <span class="build-number"></span><br><br>
                         Not affiliated with Rutgers University or Transit Technologies. Made with ❤️<br>
                     </div>
                 </div>
+            </div>
 
+            <div class="settings-rubus-logo-picker none mt-1rem mb-1rem p-1rem br-0p5rem" style="border: 1px solid var(--theme-line-bg); background-color: var(--theme-bg-closest-stop);">
+                <div class="text-1p3rem mb-0p5rem gray777777 bold-500 center select-none">SELECT LOGO</div>
+                <div class="grid grid-cols-3 gap-1rem center align-center">
+                    <div class="rubus-logo-option pointer br-0p5rem p-0p5rem" logo-option="rubus-favicon.png" onclick="selectRubusLogo('rubus-favicon.png')">
+                        <img src="img/rubus-favicon.png" class="w-full h-auto max-h-3rem object-contain" alt="Standard Logo">
+                    </div>
+                    <div class="rubus-logo-option pointer br-0p5rem p-0p5rem" logo-option="rubus-favicon-back-to-college.png" onclick="selectRubusLogo('rubus-favicon-back-to-college.png')">
+                        <img src="img/rubus-favicon-back-to-college.png" class="w-full h-auto max-h-3rem object-contain" alt="Back to College Logo">
+                    </div>
+                    <div class="rubus-logo-option pointer br-0p5rem p-0p5rem" logo-option="rubus-favicon-autumn.png" onclick="selectRubusLogo('rubus-favicon-autumn.png')">
+                        <img src="img/rubus-favicon-autumn.png" class="w-full h-auto max-h-3rem object-contain" alt="Autumn Logo">
+                    </div>
+                    <div class="rubus-logo-option pointer br-0p5rem p-0p5rem" logo-option="rubus-favicon-graduation.png" onclick="selectRubusLogo('rubus-favicon-graduation.png')">
+                        <img src="img/rubus-favicon-graduation.png" class="w-full h-auto max-h-3rem object-contain" alt="Graduation Logo">
+                    </div>
+                    <div class="rubus-logo-option pointer br-0p5rem p-0p5rem" logo-option="rubus-favicon-pattys.png" onclick="selectRubusLogo('rubus-favicon-pattys.png')">
+                        <img src="img/rubus-favicon-pattys.png" class="w-full h-auto max-h-3rem object-contain" alt="St. Patty's Logo">
+                    </div>
+                    <div class="rubus-logo-option pointer br-0p5rem p-0p5rem" logo-option="rubus-favicon-xmas.png" onclick="selectRubusLogo('rubus-favicon-xmas.png')">
+                        <img src="img/rubus-favicon-xmas.png" class="w-full h-auto max-h-3rem object-contain" alt="Xmas Logo">
+                    </div>
+                </div>
             </div>
 
             <div class="settings-rubus-attribution grid grid-cols-3 center select-none gray777777 mt-1p5rem mb-2rem">

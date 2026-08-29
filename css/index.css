@@ -2352,6 +2352,15 @@ html[theme="light"] .settings-panel .span-i {
     background-position: center center;
 }
 
+.rubus-logo-option {
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.rubus-logo-option:hover, .rubus-logo-option.settings-selected {
+    border-color: var(--theme-color);
+}
+
 .settings-rubus-attribution {
     font-size: 1.25rem;
 }
