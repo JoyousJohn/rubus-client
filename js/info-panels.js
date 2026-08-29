@@ -303,6 +303,8 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
         dragStartX = e.clientX;
         dragStartY = e.clientY;
     }
+	dragEndX = dragStartX;
+	dragEndY = dragStartY;
 	initialTransformX = getTranslateX($container);
 	velocityX = 0;
 	lastMoveTime = 0;
@@ -316,7 +318,7 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
 	ipCounters.moves += 1;
 	const $container = $('.subpanels-container');
     const target = $(e.target);
-	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart').length > 0) {
+	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select').length > 0) {
 		ipCounters.ignoredInteractive += 1;
 		console.log('[IP] move ignored: interactive target', { type: e.type, moves: ipCounters.moves, ignoredInteractive: ipCounters.ignoredInteractive });
 		return;
@@ -379,9 +381,16 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 	}
 	if (e.type === 'touchend') {
 		lastTouchEndTime = Date.now();
+		if (e.originalEvent && e.originalEvent.changedTouches && e.originalEvent.changedTouches[0]) {
+			dragEndX = e.originalEvent.changedTouches[0].clientX;
+			dragEndY = e.originalEvent.changedTouches[0].clientY;
+		}
+	} else if (e.type === 'mouseup') {
+		dragEndX = e.clientX;
+		dragEndY = e.clientY;
 	}
     const target = $(e.target);
-    const isInteractive = target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart').length > 0;
+    const isInteractive = target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select').length > 0;
     if (isInteractive && !isDragging && (!dragStartX || Math.abs(dragEndX - dragStartX) < 10)) {
 		console.log('[IP] end ignored: interactive area');
         dragStartX = dragStartY = dragEndX = dragEndY = 0;
@@ -400,7 +409,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 	} else {
 		// Flick fallback: animate based on displacement even if drag never crossed move threshold
 		const horizontalDominant = Math.abs(totalDx) > Math.abs(totalDy);
-		if (horizontalDominant && Math.abs(totalDx) > 20) {
+		if (isDragging && horizontalDominant && Math.abs(totalDx) > 20) {
 			const vScaled = totalDuration > 0 ? (totalDx / totalDuration) * 20 : 0;
 			console.log('[IP] end -> flick animate', { dx: totalDx, vScaled: vScaled, durationMs: totalDuration });
 			animateToTargetPanel(vScaled, { dragDeltaX: totalDx });
@@ -409,7 +418,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 			const currentX = getTranslateX($container);
 			const expectedX = -currentPanelIndex * window.innerWidth;
 			if (Math.abs(currentX - expectedX) > 5) {
-				animateToTargetPanel(0);
+				animateToTargetPanel(0, { targetIndex: currentPanelIndex });
 			} else {
 				console.log('[IP] end without drag', { isDragging, hasStart: !!dragStartX });
 			}

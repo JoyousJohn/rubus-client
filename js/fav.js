@@ -30,6 +30,70 @@ function clearSimFavs() {
 }
 window.clearSimFavs = clearSimFavs;
 
+// --- Route Favorites ---
+function saveFavoriteRoutes() {
+    localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+}
+window.saveFavoriteRoutes = saveFavoriteRoutes;
+
+function isRouteFavorite(route) {
+    if (!route || route === 'fav') return false;
+    return favoriteRoutes.includes(route.toLowerCase());
+}
+window.isRouteFavorite = isRouteFavorite;
+
+function updateRouteStarState(route) {
+    if (!route || route === 'fav') {
+        $('.route-star').hide();
+        return;
+    }
+    $('.route-star').show();
+    const $starIcon = $('.route-star').find('i');
+    if (isRouteFavorite(route)) {
+        $starIcon.css('color', 'gold').removeClass('icon-star fa-regular').addClass('icon-star-solid fa-solid');
+    } else {
+        $starIcon.css('color', 'var(--theme-color)').removeClass('icon-star-solid fa-solid').addClass('icon-star fa-regular');
+    }
+}
+window.updateRouteStarState = updateRouteStarState;
+
+function toggleFavoriteRoute(route) {
+    if (!route || route === 'fav') return;
+    const lowerRoute = route.toLowerCase();
+    const index = favoriteRoutes.indexOf(lowerRoute);
+    const isNowFavorite = (index === -1);
+    
+    if (isNowFavorite) {
+        favoriteRoutes.push(lowerRoute);
+    } else {
+        favoriteRoutes.splice(index, 1);
+    }
+    saveFavoriteRoutes();
+    updateRouteStarState(lowerRoute);
+
+    if (typeof sa_event === 'function') {
+        sa_event('route_favorite_toggle', {
+            'route': lowerRoute,
+            'isFavorite': isNowFavorite
+        });
+    }
+
+    if (typeof populateRouteSelectors === 'function' && typeof activeRoutes !== 'undefined') {
+        populateRouteSelectors(activeRoutes);
+    }
+}
+window.toggleFavoriteRoute = toggleFavoriteRoute;
+
+$(document).on('click pointerdown touchstart mousedown', '.route-star', function(e) {
+    e.stopPropagation();
+    if (e.type === 'click') {
+        const currentRoute = (typeof panelRoute !== 'undefined' && panelRoute) ? panelRoute : (typeof shownRoute !== 'undefined' ? shownRoute : null);
+        if (currentRoute && currentRoute !== 'fav') {
+            toggleFavoriteRoute(currentRoute);
+        }
+    }
+});
+
 $('.bus-star').click(function() {
     const currentBusName = popupBusName; // don't know why I need to parse sometimes
 

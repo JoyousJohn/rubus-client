@@ -289,3 +289,18 @@ window.warnInvalidCoords = function(busName, lat, lng, source) {
     _invalidCoordWarns[busName] = now;
     console.warn(`[data] rejected invalid coordinates for bus ${busName} (${source}): lat=${lat} lng=${lng}`);
 };
+
+// Route favorites initialization
+let favoriteRoutes = [];
+try {
+    favoriteRoutes = JSON.parse(localStorage.getItem('favoriteRoutes')) || [];
+    if (!Array.isArray(favoriteRoutes)) throw new Error('stored favoriteRoutes is not an array');
+} catch (e) {
+    favoriteRoutes = [];
+}
+function isRouteFavorite(route) {
+    if (!route || route === 'fav') return false;
+    return favoriteRoutes.includes(route.toLowerCase());
+}
+window.favoriteRoutes = favoriteRoutes;
+window.isRouteFavorite = isRouteFavorite;

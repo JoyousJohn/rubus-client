@@ -43,14 +43,22 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         }
     });
     
-    // Sort in-service routes alphabetically
-    routesWithInServiceBuses.sort((a, b) => a.localeCompare(b));
+    // Sort in-service routes: favorited first, then non-favorited (alphabetical)
+    const favInService = routesWithInServiceBuses.filter(r => typeof isRouteFavorite === 'function' && isRouteFavorite(r)).sort((a, b) => a.localeCompare(b));
+    const nonFavInService = routesWithInServiceBuses.filter(r => !(typeof isRouteFavorite === 'function' && isRouteFavorite(r))).sort((a, b) => a.localeCompare(b));
+    const sortedInService = [...favInService, ...nonFavInService];
     
     // Combine arrays: in-service routes first, then out-of-service routes
     if (settings['toggle-show-out-of-service']) {
-        routesArray = [...routesWithInServiceBuses, ...routesWithoutInServiceBuses];
+        const favOutOfService = routesWithoutInServiceBuses.filter(r => typeof isRouteFavorite === 'function' && isRouteFavorite(r)).sort((a, b) => a.localeCompare(b));
+        const nonFavOutOfService = routesWithoutInServiceBuses.filter(r => !(typeof isRouteFavorite === 'function' && isRouteFavorite(r))).sort((a, b) => a.localeCompare(b));
+        const sortedOutOfService = [...favOutOfService, ...nonFavOutOfService];
+        routesArray = [...sortedInService, ...sortedOutOfService];
     } else {
         routesArray = routesArray.filter(route => route === 'undefined' || routeHasValidInServiceBuses(route));
+        const favRoutes = routesArray.filter(r => typeof isRouteFavorite === 'function' && isRouteFavorite(r)).sort((a, b) => a.localeCompare(b));
+        const nonFavRoutes = routesArray.filter(r => !(typeof isRouteFavorite === 'function' && isRouteFavorite(r))).sort((a, b) => a.localeCompare(b));
+        routesArray = [...favRoutes, ...nonFavRoutes];
     }
     
 	if (routesArray.includes('on2')) {
@@ -78,6 +86,15 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     if (routesArray.includes('wknd1')) {
         routesArray = routesArray.filter(route => route !== 'wknd1');
         routesArray.unshift('wknd1');
+    }
+
+    // Favorited routes should always show up first
+    if (typeof isRouteFavorite === 'function') {
+        const favRoutesInList = routesArray.filter(r => isRouteFavorite(r));
+        if (favRoutesInList.length > 0) {
+            routesArray = routesArray.filter(r => !isRouteFavorite(r));
+            routesArray.unshift(...favRoutesInList);
+        }
     }
 
     if ($('.favs > div').length) {
@@ -112,7 +129,12 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         if (route === 'fav') {
             $routeElm = $(`<div class="route-selector flex justify-center align-center" routeName="${route}" style="padding: 0.5rem; aspect-ratio: 1;"><i class="fa-solid fa-star"></i></div>`).css('background-color', 'gold')
         } else {
-            $routeElm = $(`<div class="route-selector" routeName="${route}">${routeFormatted.toUpperCase()}</div>`)  
+            const isFav = typeof isRouteFavorite === 'function' && isRouteFavorite(route);
+            const favStarHtml = isFav ? ` <i class="route-pill-star fa-solid fa-star"></i>` : '';
+            $routeElm = $(`<div class="route-selector" routeName="${route}">${routeFormatted.toUpperCase()}${favStarHtml}</div>`);
+            if (isFav) {
+                $routeElm.addClass('is-favorite-route');
+            }
         }
 
         let color = 'darkgray'
@@ -217,7 +239,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         }
         
         // Convert icons after adding to DOM
-        if (route === 'fav') {
+        if (route === 'fav' || (typeof isRouteFavorite === 'function' && isRouteFavorite(route))) {
             replaceFontAwesomeIcons();
         }
     });
@@ -749,6 +771,7 @@ function selectedRoute(route) {
             $('.route-name').text('').css('color', '');
             $('.route-campuses').text('');
             $('.color-circle').css('background-color', '');
+            $('.route-star').hide();
             $('.route-active-buses').text('');
             $('.active-buses').empty();
             $('.route-stops-grid').empty();
@@ -803,6 +826,9 @@ function selectedRoute(route) {
     $('.route-name').text(route.toUpperCase()).css('color', colorMappings[route])
     $('.route-campuses').text(campusMappings[route])
     $('.color-circle').css('background-color', colorMappings[route])
+    if (typeof updateRouteStarState === 'function') {
+        updateRouteStarState(route);
+    }
     $('.route-active-buses').text(busesByRoutes[selectedCampus][route].length === 1 ? '1 bus running' : busesByRoutes[selectedCampus][route].length + ' buses running')
 
     $('.active-buses').empty();
