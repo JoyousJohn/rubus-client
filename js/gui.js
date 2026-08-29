@@ -730,7 +730,24 @@ async function toggleRoute(route) {
     }
 
     if (!popupStopId) {
+        // Capture focus state before it is cleared - toggleRoute's earlier
+        // setVisibility loop ran while popupBusName was still set, so
+        // isBusMarkerHiddenByRoute hid all buses except the focused one
+        // even though the polyline for the new route was shown. Re-evaluate
+        // after hideInfoBoxes clears popupBusName so the newly selected
+        // route's buses become visible immediately instead of on next poll.
+        const hadFocusedBus = !!popupBusName;
         hideInfoBoxes();
+        if (!isUnselecting && hadFocusedBus) {
+            for (const marker in busMarkers) {
+                const shouldBeVisible = !isBusMarkerHiddenByRoute(marker);
+                // Ensure marker is on map if it should be visible and is allowed by isBusShownOnMap
+                if (shouldBeVisible && !busMarkers[marker]._isOnMap && isBusShownOnMap(marker)) {
+                    busMarkers[marker].addTo(map);
+                }
+                busMarkers[marker].setVisibility(shouldBeVisible);
+            }
+        }
     }
 
     // Update last known map selection state (panels closed scenario)
