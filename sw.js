@@ -9,6 +9,8 @@ const PRECACHE_ASSETS = [
     '/css/index.css',
     '/css/desktop.css',
     '/css/theme.css',
+    '/img/rubus-icon-192.png',
+    '/img/rubus-icon-512.png',
     '/img/rubus-favicon.png',
     '/img/rubus-favicon-back-to-college.png',
     '/img/stop_marker.png',
