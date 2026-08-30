@@ -112,6 +112,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-bus-btns':
+            console.log(`Show bus buttons is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-bus-btns'] = isChecked;
+            if (isChecked) {
+                $('.bus-btns').show();
+            } else {
+                $('.bus-btns').hide();
+            }
+            break;
+
         case 'toggle-show-etas-in-seconds':
             console.log(`Show ETAs in seconds is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-etas-in-seconds'] = isChecked;
@@ -928,6 +938,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-road-network']) {
         loadAndDisplayRoadNetwork();
+    }
+
+    if (!settings['toggle-show-bus-btns']) {
+        $('.bus-btns').hide();
     }
 });
 

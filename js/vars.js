@@ -35,6 +35,7 @@ const defaultSettings = {
     'toggle-show-buildings': true,
     'toggle-show-alerts-other-campuses': false,
     'toggle-show-out-of-service': false,
+    'toggle-show-bus-btns': true,
     'campus': 'nb',
     'parking-campus': false,
     'marker-type': 'rubus', // 'rubus' or 'passio'
