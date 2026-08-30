@@ -33,6 +33,12 @@
     color: var(--theme-bg);
 }
 
+.building-divider {
+    border: none;
+    border-top: 1px solid var(--theme-border);
+    width: 50%;
+    margin: 0.75rem auto;
+}
 
 .building-closest-stops-list {
     margin: 0 1rem 1rem 1rem;

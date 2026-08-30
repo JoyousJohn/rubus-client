@@ -94,8 +94,8 @@ function populateAllStops() {
                         } else {
                             eta = `${eta}s`;
                         }
-                        const _rc = (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[busData[busName].route] || '#000') : (colorMappings[busData[busName].route] || '#000'));
-                        const $routeChip = $('<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="padding: 0.2rem 1rem;"></div>').css('background-color', _rc).text(busData[busName].route.toUpperCase())
+                        const _rc = (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[busData[busName]?.route] || colorMappings[route] || '#000') : (colorMappings[busData[busName]?.route] || colorMappings[route] || '#000'));
+                        const $routeChip = $('<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="padding: 0.2rem 1rem;"></div>').css('background-color', _rc).text((busData[busName]?.route || route).toUpperCase())
                             .on('click', function(e) {
                                 // Prevent the parent stop click from firing
                                 e.stopPropagation();

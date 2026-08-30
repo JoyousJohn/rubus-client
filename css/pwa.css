@@ -3,11 +3,41 @@
     color: var(--theme-color);
     font-family: var(--font-family);
     height: 100%;
-    z-index: 403;
+    inset: 0;
+    z-index: 1005;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .install-pwa-wrapper img {
     max-width: 100%;
     border-radius: 2rem;
     box-shadow: 0 4px 7px rgba(0, 0, 0, 0.6);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
+}
+
+.pwa-continue-btn {
+    background-color: var(--theme-accent, #3155c1);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 3rem;
+    font-size: 1.7rem;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: filter 0.2s ease, transform 0.1s ease;
+    user-select: none;
+}
+
+.pwa-continue-btn:hover {
+    filter: brightness(1.1);
+}
+
+.pwa-continue-btn:active {
+    transform: scale(0.98);
 }

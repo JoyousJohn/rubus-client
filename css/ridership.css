@@ -22,7 +22,7 @@
     display: flex;
     justify-content: space-evenly;
     width: 100%;
-    margin: 1rem 0;
+    margin: 1rem 0 7rem 0;
 }
 
 .ridership-avg, .ridership-max {
@@ -106,7 +106,6 @@
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
     padding: 2rem;
-    margin-bottom: 7rem;
 }
 
 .bus-service-title {

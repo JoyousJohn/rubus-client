@@ -673,7 +673,7 @@
                     </div>
 
                     <div class="info-top-right flex flex-col align-end">
-                        <div class="install-pwa pointer none mb-1rem" onclick="$('.install-pwa-wrapper').show();">Install App ➜</div>
+                        <div class="install-pwa pointer none mb-1rem" onclick="openPwaInstallModal();">Install App ➜</div>
                         <script> 
                         function shouldAutoShowPwaModal() {
                             const lastShow = localStorage.getItem('last-pwa-modal-show');
@@ -685,57 +685,54 @@
                             return true;
                         }
 
-                        $(document).ready(function(){ if (!isDesktop && 'matchMedia' in window && !new URLSearchParams(window.location.search).has('bus')) {
-                            if (!window.matchMedia('(display-mode: standalone)').matches) {
-                                $('.install-pwa').show();
-                                const iPhoneOrAndroid = /iPhone/i.test(navigator.userAgent) ? 'iphone' : 
-                                                       /Android/i.test(navigator.userAgent) ? 'android' : 
-                                                       null;
-                                const shouldShowModal = shouldAutoShowPwaModal();
+                        function openPwaInstallModal() {
+                            const iPhoneOrAndroid = /iPhone/i.test(navigator.userAgent) ? 'iphone' : 
+                                                   /Android/i.test(navigator.userAgent) ? 'android' : 
+                                                   null;
+                            if (iPhoneOrAndroid === 'android') {
+                                $('.install-pic-1 > img').attr('src', 'img/android-pwa-1-arrow.png');
+                                $('.install-pic-2 > img').attr('src', 'img/android-pwa-2-arrow.png');
+                                $('.pwa-install-head').text('Install Android Web App');
+                            } else {
+                                $('.install-pic-1 > img').attr('src', 'img/iphone-pwa-1-arrow.png');
+                                $('.install-pic-2 > img').attr('src', 'img/iphone-pwa-2-arrow.png');
+                                $('.pwa-install-head').text('Install iPhone Web App');
+                            }
+                            $('.install-pwa-wrapper').show();
+                            setTimeout(() => {
+                                const container = $('.install-pwa-wrapper');
+                                if (container.length && container[0].scrollHeight > 0) {
+                                    container.css('height', container[0].scrollHeight + 'px');
+                                }
+                            }, 50);
+                        }
 
-                                if (iPhoneOrAndroid && iPhoneOrAndroid === 'iphone') {
-                                    $('.install-pic-1 > img').attr('src', 'img/iphone-pwa-1-arrow.png');
-                                    $('.install-pic-2 > img').attr('src', 'img/iphone-pwa-2-arrow.png');
-                                    $('.pwa-install-head').text('Install iPhone Web App');
-                                    if (shouldShowModal) {
-                                        $('.install-pwa-wrapper').show();
+                        $(document).ready(function(){ 
+                            $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
+                                setTimeout(() => {
+                                    const container = $('.install-pwa-wrapper');
+                                    if (container.length && container[0].scrollHeight > 0) {
+                                        container.css('height', container[0].scrollHeight + 'px');
                                     }
-                                    
-                                    let loadedImages = 0;
-                                    $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
-                                        loadedImages++;
-                                        if (loadedImages === 2) {
-                                            setTimeout(() => {
-                                                const container = $('.install-pwa-wrapper');
-                                                const height = container[0].scrollHeight;
-                                                container.css('height', height + 'px');
-                                            }, 100);
+                                }, 100);
+                            });
+
+                            if (!isDesktop && 'matchMedia' in window && !new URLSearchParams(window.location.search).has('bus')) {
+                                if (!window.matchMedia('(display-mode: standalone)').matches) {
+                                    $('.install-pwa').show();
+                                    const iPhoneOrAndroid = /iPhone/i.test(navigator.userAgent) ? 'iphone' : 
+                                                           /Android/i.test(navigator.userAgent) ? 'android' : 
+                                                           null;
+                                    if (iPhoneOrAndroid) {
+                                        if (shouldAutoShowPwaModal()) {
+                                            openPwaInstallModal();
                                         }
-                                    });
-                                } else if (iPhoneOrAndroid && iPhoneOrAndroid === 'android') {
-                                    $('.install-pic-1 > img').attr('src', 'img/android-pwa-1-arrow.png');
-                                    $('.install-pic-2 > img').attr('src', 'img/android-pwa-2-arrow.png');
-                                    $('.pwa-install-head').text('Install Android Web App');
-                                    if (shouldShowModal) {
-                                        $('.install-pwa-wrapper').show();
+                                    } else {
+                                        $('.install-pwa').hide();
                                     }
-                                    
-                                    let loadedImages = 0;
-                                    $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
-                                        loadedImages++;
-                                        if (loadedImages === 2) {
-                                            setTimeout(() => {
-                                                const container = $('.install-pwa-wrapper');
-                                                const height = container[0].scrollHeight;
-                                                container.css('height', height + 'px');
-                                            }, 100);
-                                        }
-                                    });
-                                } else {
-                                    $('.install-pwa').hide();
                                 }
                             }
-                        }}) 
+                        }) 
                         </script>
                         <div class="tripshot-mini flex flex-col gap-y-1rem"></div>
                         <div class="campus-switcher none my-1rem">
@@ -880,7 +877,8 @@
 
             <div class="br-1rem p-1rem" style="background-color: var(--theme-bg); color: var(--theme-color);">
                 <div class="building-name text-2rem">Hill Center</div>
-                <div class="flex justify-center align-center px-1rem mt-1rem">
+                <hr class="building-divider">
+                <div class="flex justify-center align-center px-1rem mt-0p5rem">
                     <div class="text-1p4rem mt-0p5rem building-closest-stops-heading">Closest Stops</div>
                     <div class="building-closest-stops-options select-none">
                         <!-- <div class="building-closest-stops-option pointer">Active</div> -->
@@ -1004,14 +1002,6 @@
                                     </div>
                                 </div>
                                 <div class="ridership-super-wrapper">
-                                    <div class="ridership-chart-wrapper">
-                                        <!-- <div class="ridership-title">Ridership Today</div> -->
-                                        <canvas id="ridership-chart" width="400" height="200"></canvas>
-                                    </div>
-                                    <div class="ridership-stats-row">
-                                        <div class="ridership-avg"></div>
-                                        <div class="ridership-max"></div>
-                                    </div>
                                     <div class="avg-wait-wrapper">
                                         <div class="avg-wait-title text-1p7rem">Wait Between Buses</div>
                                         <div class="avg-wait-grid grid select-none">
@@ -1025,6 +1015,14 @@
                                             <div class="bus-service-heading">BUS</div>
                                             <div class="bus-service-heading">IN SERVICE FOR</div>
                                         </div>
+                                    </div>
+                                    <div class="ridership-chart-wrapper">
+                                        <!-- <div class="ridership-title">Ridership Today</div> -->
+                                        <canvas id="ridership-chart" width="400" height="200"></canvas>
+                                    </div>
+                                    <div class="ridership-stats-row">
+                                        <div class="ridership-avg"></div>
+                                        <div class="ridership-max"></div>
                                     </div>
                                 </div>
                             </div>
@@ -1118,24 +1116,24 @@
                     <div class="text-2p3rem pwa-install-head"></div>
                     <div class="text-1p7rem" style="max-width: 70%; color: var(--theme-extra)">For all features & automatic updates, storage-free.</div>
                 </div>
-                <div class="grid grid-cols-2 gap-x-2rem m-2rem left text-1p5rem"">
+                <div class="grid grid-cols-2 gap-x-2rem m-2rem left text-1p5rem">
                     <div class="flex flex-col gap-y-0p5rem">
                         <div class="mx-1rem" style="border-bottom: 1px solid gray;">Step 1</div>
                         <div class="install-pic-1">
-                            <img>
+                            <img draggable="false">
                         </div>
                     </div>
                     
                     <div class="flex flex-col gap-y-0p5rem">
                         <div class="mx-1rem" style="border-bottom: 1px solid gray;">Step 2</div>
                         <div class="install-pic-2">
-                            <img>
+                            <img draggable="false">
                         </div>
                     </div>
                 </div>
 
                 <div class="text-1p3rem gray777777 mt-2rem">Or</div>
-                <div class="text-1p7rem white br-2rem mt-1rem pointer" style="padding: 0.5rem 1rem; background-color: rgb(89, 89, 205);" onclick="$('.install-pwa-wrapper').hide();">Continue in browser</div>
+                <div class="pwa-continue-btn" onclick="$('.install-pwa-wrapper').hide();">Continue in browser</div>
 
             </div>
         </div>
@@ -2270,31 +2268,18 @@
                         </div>
                     </div> -->
 
-                    <div class="settings-reset-location">
-                        <div class="settings-heading">Hide Nav Wrapper</div>
-                        <div class="settings-options grid dev-settings-option">
-                            <div class="settings-option" onclick="$('.navigate-wrapper').hide();">Hide</div>
-                        </div>
-                    </div>
-
-                    <div class="settings-reset-location">
-                        <div class="settings-heading">Show Nav Wrapper</div>
-                        <div class="settings-options grid dev-settings-option">
-                            <div class="settings-option" onclick="$('.navigate-wrapper').show();">Show</div>
-                        </div>
-                    </div>
-
-                    <div class="settings-reset-location">
-                        <div class="settings-heading">Toggle Nav Wrapper</div>
-                        <div class="settings-options grid dev-settings-option">
-                            <div class="settings-option" onclick="$('.navigate-wrapper').toggle();">Toggle</div>
-                        </div>
-                    </div>
 
                     <div class="settings-reset-location">
                         <div class="settings-heading">Set App Style to TransLoc Rider</div>
                         <div class="settings-options grid dev-settings-option">
                             <div class="settings-option" onclick="setAppStyle('rider');">Update Style (Temporarily)</div>
+                        </div>
+                    </div>
+
+                    <div class="settings-reset-location">
+                        <div class="settings-heading">Show PWA Install Modal</div>
+                        <div class="settings-options grid dev-settings-option">
+                            <div class="settings-option" onclick="openPwaInstallModal();">Open Modal</div>
                         </div>
                     </div>
 

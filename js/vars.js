@@ -319,13 +319,16 @@ function escapeHtml(str) {
 window.escapeHtml = escapeHtml;
 
 // Escape a string for safe use inside a CSS string context (e.g. style="color: X").
-// Only allows hex / rgb / hsl values; anything else falls back to a safe default.
+// Allows named CSS colors, hex, rgb, and hsl values; anything else falls back to a safe default.
 function escapeCssColor(str) {
     if (typeof str !== 'string') return '#000';
+    const s = str.trim();
+    // Allow named CSS colors (e.g. IndianRed, RoyalBlue, gold, limegreen, etc.)
+    if (/^[a-zA-Z]{3,30}$/.test(s)) return s;
     // Allow #fff, #ffffff, rgb(...), rgba(...), hsl(...), hsla(...)
-    if (/^#[0-9a-fA-F]{3,8}$/.test(str.trim())) return str.trim();
-    if (/^rgba?\(.+\)$/.test(str.trim()) && !/[<>"'`;]/.test(str)) return str.trim();
-    if (/^hsla?\(.+\)$/.test(str.trim()) && !/[<>"'`;]/.test(str)) return str.trim();
+    if (/^#[0-9a-fA-F]{3,8}$/.test(s)) return s;
+    if (/^rgba?\(.+\)$/.test(s) && !/[<>"'`;]/.test(s)) return s;
+    if (/^hsla?\(.+\)$/.test(s) && !/[<>"'`;]/.test(s)) return s;
     return '#000';
 }
 window.escapeCssColor = escapeCssColor;

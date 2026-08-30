@@ -1199,10 +1199,13 @@ function updateBusOverview(routes) {
     }
 
     routeData.forEach(({route}) => {
+        const loopMin = loopTimes[route];
+        const loopTimeDisplay = (typeof loopMin === 'number' && !isNaN(loopMin)) ? `${loopMin} min` : '--';
+
         if ($(`.bus-overview-ridership[route="${route}"]`).length === 0) {
             const $busName = $(`<div class="bus-overview-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]); // (${busesByRoutes[selectedCampus][route].length})
             const $busRidership = $(`<div class="bus-overview-ridership" route="${route}">${routeRiderships[route]} riders</div>`);
-            const $loopTime = $(`<div class="bus-overview-loop-time" route="${route}">${loopTimes[route]} min</div>`);
+            const $loopTime = $(`<div class="bus-overview-loop-time" route="${route}">${loopTimeDisplay}</div>`);
             const $grid = $('.buses-overview-grid').first();
             // Insert new routes before the total row in correct order
             const $firstTotalElement = $grid.find('.bus-overview-name:contains("Total")').first();
@@ -1220,6 +1223,11 @@ function updateBusOverview(routes) {
                 $grid.append($loopTime);     // Loop Time (third in DOM)
             }
         } else {
+            const $loopTimeElm = $(`.bus-overview-loop-time[route="${route}"]`);
+            if ($loopTimeElm.length > 0 && typeof loopMin === 'number' && !isNaN(loopMin)) {
+                $loopTimeElm.text(`${loopMin} min`);
+            }
+
             const prevRiders = parseInt($(`.bus-overview-ridership[route="${route}"]`).text().split(' ')[0]);
             const newRiders = (routeRiderships[route])
 
@@ -1472,34 +1480,38 @@ async function updateRidershipChart() {
 
 function calculateLoopTimes() {
 
-    let loopTimes = {}
+    let loopTimes = {};
+    const routesToCalculate = new Set([
+        ...(typeof activeRoutes !== 'undefined' ? activeRoutes : []),
+        ...(typeof stopLists !== 'undefined' ? Object.keys(stopLists) : [])
+    ]);
 
-    for (const route of activeRoutes) {
+    for (const route of routesToCalculate) {
 
-        let eta = 0
-        const stopList = stopLists[route]
+        let eta = 0;
+        const stopList = (typeof stopLists !== 'undefined') ? stopLists[route] : null;
 
-        if (!stopList) { // for unkwown bus types (e.g. cc, penn station, have to remove adding these to bus data sometime, or add option in dev settings to show unknown bus routes.)
+        if (!stopList || !Array.isArray(stopList) || stopList.length === 0) { // for unknown bus types (e.g. cc, penn station)
             continue;
         }
 
         for (let i = 0; i < stopList.length - 1; i++) {
-            const thisStop = stopList[i]
+            const thisStop = stopList[i];
 
-            let prevStop
+            let prevStop;
             if (i === 0) {
-                prevStop = stopList[stopList.length - 1]
+                prevStop = stopList[stopList.length - 1];
             } else {
-                prevStop = stopList[i - 1]
+                prevStop = stopList[i - 1];
             }
 
-            if (etas[thisStop] && prevStop in etas[thisStop]['from']) { // investigate why I need the first condition
-                eta += etas[thisStop]['from'][prevStop]
+            if (typeof etas !== 'undefined' && etas[thisStop] && etas[thisStop]['from'] && prevStop in etas[thisStop]['from']) {
+                eta += etas[thisStop]['from'][prevStop];
             } else {
                 eta += 300;
             }
 
-            if (waits[thisStop]) {
+            if (typeof waits !== 'undefined' && waits[thisStop]) {
                 eta += waits[thisStop];
             } else {
                 eta += 20;
@@ -1572,6 +1584,9 @@ function updateWaitTimes() {
 
 
 function getActiveBusCount(route) {
+    if (!busesByRoutes || !busesByRoutes[selectedCampus] || !busesByRoutes[selectedCampus][route]) {
+        return 0;
+    }
     return busesByRoutes[selectedCampus][route].length;
 }
 
