@@ -1357,6 +1357,7 @@ $(document).ready(async function() {
                     // updateMarkerPosition returns early and never consumes these values.
                     delete busData[busName].apiAnimationDuration;
                     delete busData[busName].websocketAnimationDuration;
+                    delete busData[busName].simAnimationDuration;
                 }
             }
 

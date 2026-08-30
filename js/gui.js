@@ -279,93 +279,140 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         }
     }
 
-    $('.route-selectors').scrollLeft(0);
+    const $selectorsContainer = $('.route-selectors');
+    $selectorsContainer.scrollLeft(0);
 
     let isDragging = false;
-    let startX, scrollLeft;
-    let velocity = 0;
+    let startX = 0;
+    let initialScrollLeft = 0;
     let lastX = 0;
     let lastTime = 0;
+    let velocity = 0;
     let animationFrame = null;
 
-    $('.route-selectors')
-    .on('mousedown touchstart', function(e) {
-        isDragging = true;
-        startX = e.pageX || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].pageX : 0);
-        scrollLeft = $(this).scrollLeft();
-        lastX = startX;
-        lastTime = Date.now();
-        velocity = 0;
-        
+    function stopSelectorAnimation() {
         if (animationFrame) {
             cancelAnimationFrame(animationFrame);
             animationFrame = null;
         }
-        
-        if (e.type !== 'touchstart') e.preventDefault();
-    })
-    .on('mouseleave mouseup touchend', function() {
-        if (!isDragging) return;
-        isDragging = false;
-        
-        const currentTime = Date.now();
-        const timeDiff = currentTime - lastTime;
-        if (timeDiff > 0) {
-            // Apply inertia only if the last movement wasn't too long ago
-            if (timeDiff < 50) {
-                const container = $(this);
-                const startVelocity = velocity;
-                const startTime = currentTime;
+        $selectorsContainer.stop(true);
+    }
 
-                const distanceMoved = Math.abs(scrollLeft - $(this).scrollLeft());
-                // Inverse relationship for deceleration
-                const deceleration = Math.max(0.1, 1 - (distanceMoved / 500));
-
-                function animate() {
-                    const now = Date.now();
-                    const elapsed = now - startTime;
-                    
-                    const currentVelocity = startVelocity * Math.pow(deceleration, elapsed / 16);
-                    
-                    // Stop animation when velocity is very low
-                    if (Math.abs(currentVelocity) < 0.1) {
-                        cancelAnimationFrame(animationFrame);
-                        animationFrame = null;
-                        return;
-                    }
-                    
-                    container.scrollLeft(container.scrollLeft() - currentVelocity);
-                    animationFrame = requestAnimationFrame(animate);
-                }
-                
-                animate();
-            }
+    $selectorsContainer
+    .off('mousedown mouseleave mouseup mousemove touchstart touchend touchcancel touchmove wheel')
+    .on('mousedown touchstart', function(e) {
+        stopSelectorAnimation();
+        isDragging = true;
+        const pageX = e.pageX || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].pageX : 0);
+        startX = pageX;
+        lastX = pageX;
+        initialScrollLeft = $(this).scrollLeft();
+        lastTime = Date.now();
+        velocity = 0;
+        
+        if (e.type !== 'touchstart') {
+            e.preventDefault();
         }
     })
     .on('mousemove touchmove', function(e) {
         if (!isDragging) return;
         
-        const x = e.pageX || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].pageX : 0);
-        const walk = x - startX; // Calculate the distance moved
+        const pageX = e.pageX || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].pageX : 0);
         const currentTime = Date.now();
-        
-        // Calculate velocity (pixels per millisecond)
         const timeDiff = currentTime - lastTime;
-        if (timeDiff > 0) {  // Avoid division by zero
-            const distance = x - lastX;
-            velocity = distance / timeDiff * 16; // Convert to pixels per frame (assuming 60fps)
+        
+        if (timeDiff > 0) {
+            const distance = pageX - lastX;
+            velocity = (distance / timeDiff) * 16;
+            lastX = pageX;
+            lastTime = currentTime;
         }
         
-        $(this).scrollLeft(scrollLeft - walk);
+        const walk = pageX - startX;
+        $(this).scrollLeft(initialScrollLeft - walk);
         
-        // Update last position and time
-        lastX = x;
-        lastTime = currentTime;
+        if (e.type === 'touchmove') {
+            if (Math.abs(pageX - startX) > 6) {
+                e.preventDefault();
+            }
+        } else {
+            e.preventDefault();
+        }
+    })
+    .on('mouseleave mouseup touchend touchcancel', function() {
+        if (!isDragging) return;
+        isDragging = false;
         
-        e.preventDefault();
+        const container = $(this);
+        const maxScroll = container[0].scrollWidth - container[0].clientWidth;
+        if (maxScroll <= 0) return;
+
+        const currentTime = Date.now();
+        const timeSinceLastMove = currentTime - lastTime;
+        const currentScroll = container.scrollLeft();
+
+        // If the finger/mouse paused for more than 70ms before release, clear velocity
+        if (timeSinceLastMove > 70) {
+            velocity = 0;
+        }
+
+        const totalDragDistance = lastX - startX; // negative = dragged left (scrolled right toward end)
+        const absDragDistance = Math.abs(totalDragDistance);
+        const absVelocity = Math.abs(velocity);
+
+        // Thresholds for snapping to the end/start vs natural momentum
+        const SNAP_VELOCITY_THRESHOLD = 12; // Fast flick (pixels per frame at 60fps)
+        const SNAP_DISTANCE_THRESHOLD = 50; // Must drag at least 50px to qualify for snap-to-end
+        const FLING_MIN_VELOCITY = 2.0;     // Minimum speed for moderate momentum
+
+        // 1. FAST & FAR FLING -> SNAP TO END OR START
+        const isFlickToEnd = totalDragDistance < -SNAP_DISTANCE_THRESHOLD && velocity < -SNAP_VELOCITY_THRESHOLD;
+        const isFlickToStart = totalDragDistance > SNAP_DISTANCE_THRESHOLD && velocity > SNAP_VELOCITY_THRESHOLD;
+        const isNearEnd = currentScroll > (maxScroll - 35) && velocity < 0;
+        const isNearStart = currentScroll < 35 && velocity > 0;
+
+        if (isFlickToEnd || isNearEnd) {
+            container.animate({ scrollLeft: maxScroll }, 220);
+            return;
+        }
+
+        if (isFlickToStart || isNearStart) {
+            container.animate({ scrollLeft: 0 }, 220);
+            return;
+        }
+
+        // 2. MODERATE FLING -> NATURAL MOMENTUM
+        if (absVelocity >= FLING_MIN_VELOCITY) {
+            let currentVelocity = velocity;
+            const friction = 0.92;
+
+            function animateInertia() {
+                if (Math.abs(currentVelocity) < 0.2) {
+                    stopSelectorAnimation();
+                    return;
+                }
+
+                const newScroll = container.scrollLeft() - currentVelocity;
+                container.scrollLeft(newScroll);
+                currentVelocity *= friction;
+
+                if (newScroll <= 0 || newScroll >= maxScroll) {
+                    stopSelectorAnimation();
+                    return;
+                }
+
+                animationFrame = requestAnimationFrame(animateInertia);
+            }
+
+            animateInertia();
+            return;
+        }
+
+        // 3. SHORT / SLOW DRAG -> STAYS EXACTLY WHERE RELEASED
     })
     .on('wheel', function(event) {
         event.preventDefault();
+        stopSelectorAnimation();
         const $el = $(this);
         const newScrollLeft = $el.scrollLeft() + event.originalEvent.deltaY;
         $el.stop().animate({ scrollLeft: newScrollLeft }, 100);

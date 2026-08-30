@@ -30,7 +30,14 @@
     {
       "name": "Open Chat",
       "url": "/?chat",
-      "description": "Ask RUBus about routes, schedules, and live buses"
+      "description": "Ask RUBus about routes, schedules, and live buses",
+      "icons": [
+        {
+          "src": "img/rubus-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
