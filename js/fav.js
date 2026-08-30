@@ -186,7 +186,7 @@ $('.bus-star').click(function() {
                 if (!favRoutes.has(polyline)) {
                     polylines[polyline].setStyle({ opacity: 0});
                 } else {
-                    if (!map.hasLayer(polylines[polyline])) {
+                    if (!polylines[polyline].isAdded || !polylines[polyline].isAdded()) {
                         polylines[polyline].addTo(map);
                     }
                     polylines[polyline].setStyle({ opacity: 1 });
@@ -343,7 +343,10 @@ function toggleFavorites() {
             if (!favRoutes.has(polyline)) {
                 polylines[polyline].setStyle({ opacity: 0});
             } else {
-                if (!map.hasLayer(polylines[polyline])) {
+                if (polylines[polyline].isAdded && !polylines[polyline].isAdded()) {
+                    polylines[polyline].addTo(map);
+                    polylines[polyline].setStyle({ opacity: 1 });
+                } else if (!polylines[polyline].isAdded) {
                     polylines[polyline].setStyle({ opacity: 1 });
                 }
                 visibleBounds.extend(polylines[polyline].getBounds());

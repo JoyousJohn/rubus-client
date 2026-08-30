@@ -1,4 +1,5 @@
 // js/pop-info.js - extracted verbatim from js/map.js
+window.msEtaAbs = window.msEtaAbs || new Map();
 let stoppedForInterval;
 let stoppedForHideTimeout;
 let stoppedOctagonHideTimeout;

@@ -2,6 +2,14 @@
 let speedTimeout = {};
 let showBusSpeeds = true;
 
+function clearBusSpeed(busName){
+    if (speedTimeout[busName]){
+        clearInterval(speedTimeout[busName]);
+        delete speedTimeout[busName];
+    }
+}
+window.clearBusSpeed = clearBusSpeed;
+
 // Method to calculate speed in mph for a specific bus
 async function calculateSpeed(busName) {
 
@@ -112,6 +120,22 @@ async function calculateSpeed(busName) {
     const currentVisualSpeed = busData[busName].visualSpeed;  // Use 0 if speed is not set
     const speedDiff = acceptedSpeed - currentVisualSpeed;
     // if (speedDiff < 1) return
+
+    // Only animate if UI actually shows this bus's speed (popup or route panel)
+    const isSpeedVisible = (typeof popupBusName !== 'undefined' && popupBusName === busName && showBusSpeeds) || (typeof panelRoute !== 'undefined' && panelRoute === busData[busName].route);
+    if (!isSpeedVisible) {
+        busData[busName].speed = acceptedSpeed;
+        busData[busName].visualSpeed = acceptedSpeed;
+        busData[busName].previousLatitude = currentLatitude;
+        busData[busName].previousLongitude = currentLongitude;
+        if (distance > 0.002) {
+            busData[busName].previousSpeedTime = currentTime;
+        }
+        // Ensure no orphaned interval for invisible buses
+        clearInterval(speedTimeout[busName]);
+        delete speedTimeout[busName];
+        return;
+    }
     
     let totalUpdateSeconds = 7;
     if (acceptedSpeed < 10) {
@@ -171,9 +195,7 @@ async function calculateSpeed(busName) {
     // Update the previous data for this bus
     busData[busName].previousLatitude = currentLatitude;
     busData[busName].previousLongitude = currentLongitude;
-    if (distance > 0.002) {
-        busData[busName].previousSpeedTime = currentTime;
-    }
+    busData[busName].previousSpeedTime = currentTime;
     // busData[busName].secondsDiff = currentTime - previousData.previousTime;
 
 }

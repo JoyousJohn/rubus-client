@@ -71,6 +71,7 @@ let waits = {}
 let busLocations = {}
 let busETAs = {}
 let socket = null;
+let rubusSocketGen = 0;
 
 function updateETAs(etasData) {
     etas = etasData[selectedCampus] || {};
@@ -87,12 +88,10 @@ function closeRUBusSocket() {
     if (!socket) {
         return;
     }
-    if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-        socket.close();
-    } else if (socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED) {
-        console.warn("closeRUBusSocket() called on socket already " +
-            (socket.readyState === WebSocket.CLOSING ? "closing" : "closed") + ".");
-    }
+    try { socket.close(); } catch (e) {}
+    socket = null;
+    window.socket = null;
+    rubusSocketGen++;
 }
 
 function openRUBusSocket() {
@@ -100,21 +99,24 @@ function openRUBusSocket() {
         return;
     }
     if (socket) {
+        try { socket.close(); } catch (e) {}
         socket = null;
+        window.socket = null;
     }
 
     // if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
         // socket = new WebSocket('ws://127.0.0.1:5000/ws');
     // } else {
+    const gen = ++rubusSocketGen;
     const ws = new WebSocket('wss://demo.rubus.live/ws');
+    ws._gen = gen;
     // }
 
     // Make it globally accessible for status checking
     window.socket = socket = ws;
 
     ws.addEventListener("open", (event) => {
-        if (socket !== ws) {
-            console.log("Stale RUBus socket fired 'open' after being replaced; closing it.");
+        if (ws._gen !== rubusSocketGen || socket !== ws) {
             ws.close();
             return;
         }
@@ -308,8 +310,7 @@ function openRUBusSocket() {
 
     ws.addEventListener("message", (event) => {
 
-        if (socket !== ws) {
-            console.error("Stale RUBus socket fired 'message'; ignoring and closing it.");
+        if (ws._gen !== rubusSocketGen || socket !== ws) {
             ws.close();
             return;
         }
@@ -329,16 +330,14 @@ function openRUBusSocket() {
     });
 
     ws.addEventListener("close", (event) => {
-        if (socket !== ws) {
-            console.log("Stale RUBus socket closed.");
+        if (ws._gen !== rubusSocketGen || socket !== ws) {
             return;
         }
         // console.log("Passio WebSocket connection closed:", event);
     });
 
     ws.addEventListener("error", (event) => {
-        if (socket !== ws) {
-            console.log("Stale RUBus socket error; ignoring.");
+        if (ws._gen !== rubusSocketGen || socket !== ws) {
             return;
         }
 

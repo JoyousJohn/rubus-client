@@ -8,7 +8,6 @@ const PRECACHE_ASSETS = [
     '/manifest.json',
     '/css/index.css',
     '/css/desktop.css',
-    '/css/theme.css',
     '/img/rubus-icon-192.png',
     '/img/rubus-icon-512.png',
     '/img/rubus-favicon.png',
@@ -41,8 +40,14 @@ const BYPASS_CACHE_PATTERNS = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-                console.warn('[SW] Pre-caching asset failure (continuing):', err);
+            return Promise.allSettled(
+                PRECACHE_ASSETS.map((url) => cache.add(url).catch((err) => {
+                    console.warn('[SW] Pre-cache failed for', url, err);
+                    throw err;
+                }))
+            ).then((results) => {
+                const failed = results.filter(r => r.status === 'rejected');
+                if (failed.length) console.warn('[SW] Pre-cache completed with', failed.length, 'failures');
             });
         }).then(() => self.skipWaiting())
     );

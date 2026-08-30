@@ -517,7 +517,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 removeDistanceLineOnFocus();
                 try {
                     const route = busData[popupBusName].route;
-                    if (polylines[route] && !map.hasLayer(polylines[route])) {
+                    if (polylines[route] && polylines[route].isAdded && !polylines[route].isAdded()) {
                         polylines[route].addTo(map);
                     }
                     if (polylines[route]) {
@@ -531,7 +531,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 showDistanceLineOnFocus(popupBusName);
                 try {
                     const route = busData[popupBusName].route;
-                    if (polylines[route] && map.hasLayer(polylines[route])) {
+                    if (polylines[route] && polylines[route].isAdded && polylines[route].isAdded()) {
                         logPolylineRemoval(route, 'settings-toggle-distances-line-on-focus');
                         polylines[route].removeFrom(map);
                     }
@@ -1424,27 +1424,18 @@ $(function() {
         $('#custom-tile-url-input').val(settings['custom-tile-url']);
     }
 
-    function sanitizeTileUrl(url) {
-        if (!url) return '';
-        url = url.trim();
-
-        // Check if it's a Mapbox API style URL (preview html, wmts, or style link)
-        const mapboxStyleRegex = /mapbox\.com\/styles\/v1\/([^\/]+)\/([^\/?#]+)/i;
-        const match = url.match(mapboxStyleRegex);
-
-        if (match) {
-            const username = match[1];
-            const styleId = match[2];
-            
-            // Extract access token if present
-            const tokenMatch = url.match(/access_token=([^&#]+)/i);
-            const tokenParam = tokenMatch ? `?access_token=${tokenMatch[1]}` : '';
-
-            // Return clean Leaflet raster tile URL
-            return `https://api.mapbox.com/styles/v1/${username}/${styleId}/tiles/256/{z}/{x}/{y}@2x${tokenParam}`;
-        }
-
-        return url;
+    function sanitizeTileUrl(url){
+        if(!url) return '';
+        url=url.trim();
+        const m=url.match(/mapbox\.com\/styles\/v1\/([^\/]+)\/([^\/?#]+)/i);
+        if(m) return `https://api.mapbox.com/styles/v1/${m[1]}/${m[2]}/tiles/256/{z}/{x}/{y}@2x`+ (url.match(/access_token=([^&#]+)/i)?.[0] ? `?${url.match(/access_token=([^&#]+)/i)[0]}` : '');
+        try{
+            const u=new URL(url);
+            if(u.protocol!=='https:') return '';
+            if(!['tiles.rubus.live','api.mapbox.com'].includes(u.hostname)) return '';
+            if(!u.pathname.includes('{z}')||!u.pathname.includes('{x}')||!u.pathname.includes('{y}')) return '';
+            return u.href;
+        }catch(e){ return ''; }
     }
 
     function showTileStatus(message, isError) {

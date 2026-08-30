@@ -104,8 +104,10 @@ function populateBusBreaks(busBreakData, busName) {
             
             // If both consecutive stops in the route were visited, check for missed stops between them
             if (actualStops.has(currentStop) && actualStops.has(nextStop)) {
-                // Find any stops between currentStop and nextStop in the route that were missed
-                for (let j = i + 1; j < expectedStops.indexOf(nextStop); j++) {
+                // Use indexOf with fromIndex to handle duplicate stops (e.g., SAC 3 appears twice)
+                const nextIdx = expectedStops.indexOf(nextStop, i + 1);
+                const end = nextIdx !== -1 ? nextIdx : expectedStops.length;
+                for (let j = i + 1; j < end; j++) {
                     const potentialMissedStop = expectedStops[j];
                     if (!actualStops.has(potentialMissedStop)) {
                         missedStops.push(potentialMissedStop);
@@ -286,7 +288,9 @@ function checkAllBusesForMissedStops() {
                     const nextStop = expectedStops[i + 1];
                     
                     if (actualStops.has(currentStop) && actualStops.has(nextStop)) {
-                        for (let j = i + 1; j < expectedStops.indexOf(nextStop); j++) {
+                        const nextIdx2 = expectedStops.indexOf(nextStop, i + 1);
+                        const end2 = nextIdx2 !== -1 ? nextIdx2 : expectedStops.length;
+                        for (let j = i + 1; j < end2; j++) {
                             const potentialMissedStop = expectedStops[j];
                             if (!actualStops.has(potentialMissedStop)) {
                                 missedStops.push(potentialMissedStop);

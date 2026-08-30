@@ -1,6 +1,7 @@
 const excludedRouteMappings = {};
 
 let tripshotDown = false;
+let pendingForceImmediate = false;
 
 async function immediatelyUpdateBusDataPre() {
     cancelAllAnimations();
@@ -39,7 +40,10 @@ async function immediatelyUpdateBusDataPost() {
 async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFromFetch) {
 
     if (sim) return;
-    if (busFetchInProgress) return;
+    if (busFetchInProgress) {
+        if (forceImmediateUpdate || immediatelyUpdate) pendingForceImmediate = true;
+        return;
+    }
     busFetchInProgress = true;
 
     const url = 'https://demo.rubus.live/buses';
@@ -60,7 +64,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     // Allow immediate updates even on initial load if forceImmediateUpdate is set (app resume scenario)
     if (shouldImmediateUpdate && (!isInitial || forceImmediateUpdate)) {
         immediatelyUpdate = true;
-        immediatelyUpdateBusDataPre();
+        await immediatelyUpdateBusDataPre();
     } else {
         immediatelyUpdate = false;
     }
@@ -205,9 +209,9 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                         populateRouteSelectors(activeRoutes);
                         console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
                         logPolylineRemoval(oldRoute, 'fetchBusData-routeChange');
-                        console.log('Polylines on map before remove:', map.hasLayer(polylines[oldRoute]));
+                        console.log('Polylines on map before remove:', polylines[oldRoute] && polylines[oldRoute].isAdded ? polylines[oldRoute].isAdded() : false);
                         polylines[oldRoute].remove();
-                        console.log('Polylines on map after remove:', map.hasLayer(polylines[oldRoute]));
+                        console.log('Polylines on map after remove:', polylines[oldRoute] && polylines[oldRoute].isAdded ? polylines[oldRoute].isAdded() : false);
                         updatePolylineBoundsIfNeeded();
 
                         if (shownRoute && shownRoute === oldRoute) {
@@ -231,6 +235,10 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 warnInvalidCoords(busName, bus.lat, bus.lng, 'api');
             }
 
+            if (!Array.isArray(busData[busName].previousPositions)) {
+                console.error('[pre] previousPositions missing for', busName, '— initializing');
+                busData[busName].previousPositions = [];
+            }
             let lastPosition;
             try {
                 lastPosition = busData[busName].previousPositions[busData[busName].previousPositions.length - 1];
@@ -412,6 +420,11 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         console.error('Error fetching bus data:', error);
     } finally {
         busFetchInProgress = false;
+        if (pendingForceImmediate) {
+            pendingForceImmediate = false;
+            forceImmediateUpdate = true;
+            setTimeout(() => fetchBusData(true, false), 0);
+        }
     }
 }
 
@@ -429,12 +442,11 @@ function makeBulkOoS(oosBusNames) {
 
         if (bus.route) affectedRoutes.add(bus.route);
 
+        clearBusSpeed(busName);
         if (busMarkers[busName]) {
             busMarkers[busName].remove();
         }
-        if (typeof busLayerManager !== 'undefined') {
-            busLayerManager.removeProxy(busName);
-        }
+        busLayerManager.removeProxy(busName);
         delete busMarkers[busName];
         delete busETAs[busName];
         delete busData[busName];
@@ -514,9 +526,8 @@ function reconcileBusMarkers() {
             console.error('[reconcileBusMarkers] could not create marker for', busName, ':', e);
         }
         if (!busMarkers[busName]) {
-            if (typeof busLayerManager !== 'undefined') {
-                busLayerManager.removeProxy(busName);
-            }
+            busLayerManager.removeProxy(busName);
+            clearBusSpeed(busName);
             delete busETAs[busName];
             delete busData[busName];
         }
@@ -527,13 +538,12 @@ function makeOoS(busName) {
     
     console.log(`[Out of Service][${new Date().toLocaleString('en-US', {timeZone: 'America/New_York', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(',','')}] busName: ${busName}`)
 
+    clearBusSpeed(busName);
     if (busMarkers[busName]) { // investigate why this would occur
         busMarkers[busName].remove();
     }
     // Clean up WebGL proxy
-    if (typeof busLayerManager !== 'undefined') {
-        busLayerManager.removeProxy(busName);
-    }
+    busLayerManager.removeProxy(busName);
     delete busMarkers[busName];
     delete busETAs[busName];
 
@@ -568,9 +578,9 @@ function makeOoS(busName) {
             updatePolylineBoundsIfNeeded();
             if (polylines[route]) {
                 logPolylineRemoval(route, 'makeOoS');
-                console.log('Polylines on map before remove:', map.hasLayer(polylines[route]));
+                console.log('Polylines on map before remove:', polylines[route].isAdded ? polylines[route].isAdded() : false);
                 polylines[route].remove();
-                console.log('Polylines on map after remove:', map.hasLayer(polylines[route]));
+                console.log('Polylines on map after remove:', polylines[route].isAdded ? polylines[route].isAdded() : false);
             }
         } else {
             console.log('Route is none');

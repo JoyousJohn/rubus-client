@@ -323,14 +323,36 @@ $(document).on('click', '.chat-ui-close', function() {
 });
 window.chatHistory = [];
 
+// Helpers for POST-based chat: truncate history to avoid unbounded URLs / PII in logs
+function truncateChatHistory(history) {
+    const MAX_ENTRIES = 20;
+    const MAX_CHARS = 8000;
+    const MAX_CONTENT = 2000;
+    if (!Array.isArray(history)) return [];
+    let truncated = history.slice(-MAX_ENTRIES);
+    truncated = truncated.map(entry => ({
+        role: entry.role,
+        content: typeof entry.content === 'string' && entry.content.length > MAX_CONTENT ? entry.content.slice(0, MAX_CONTENT) + '…' : entry.content
+    }));
+    let totalChars = JSON.stringify(truncated).length;
+    while (truncated.length > 2 && totalChars > MAX_CHARS) {
+        truncated = truncated.slice(2);
+        totalChars = JSON.stringify(truncated).length;
+    }
+    return truncated;
+}
+
 $(document).on('submit', '.chat-ui-input-bar', function(e) {
     e.preventDefault();
 
     $('.chat-recs').hide();
 
     const $input = $(this).find('.chat-ui-input');
-    const msg = $input.val().trim();
+    let msg = $input.val().trim();
     if (!msg) return;
+    // Client-side size limit to avoid DoS and huge payloads
+    const MAX_MSG_LEN = 2000;
+    if (msg.length > MAX_MSG_LEN) msg = msg.slice(0, MAX_MSG_LEN);
     const $messages = $('.chat-ui-messages');
     $messages.append(`<div class="chat-message user">${$('<div>').text(msg).html()}</div>`);
     window.chatHistory.push({ role: 'user', content: msg });
@@ -342,41 +364,36 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     $messages.append($botMsg);
     $messages.scrollTop($messages[0].scrollHeight);
 
-    // Prepare conversation history (excluding the just-added user message)
-    const historyToSend = window.chatHistory.slice(0, -1);
+    // Prepare conversation history (excluding the just-added user message) and truncate
+    const historyToSend = truncateChatHistory(window.chatHistory.slice(0, -1));
 
-    // Build SSE URL with query params
-    const url = 'https://talk.rubus.live/chat/stream'
-        + '?user_query=' + encodeURIComponent(msg)
-        + '&conversation_history=' + encodeURIComponent(JSON.stringify(historyToSend));
-
-    // Close any previous EventSource
+    // Abort any previous streaming request
+    if (window.currentChatController) {
+        try { window.currentChatController.abort(); } catch (err) {}
+        window.currentChatController = null;
+    }
     if (window.currentEventSource) {
-        window.currentEventSource.close();
+        try { window.currentEventSource.close(); } catch (err) {}
+        window.currentEventSource = null;
     }
 
-    // Open SSE connection
-    const evtSource = new EventSource(url);
-    window.currentEventSource = evtSource;
+    const controller = new AbortController();
+    window.currentChatController = controller;
 
     let finalAnswer = null;
     let toolCalls = [];
 
-    evtSource.onmessage = function(event) {
+    function handleChatData(data) {
         try {
-            const data = JSON.parse(event.data);
             if (data.progress && !data.done) {
-                // Show tool progress/description
                 console.log(data);
                 toolCalls.push(data.progress);
                 const $thinkingDiv = $('<div class="chat-message bot loading thinking"></div>').text(data.progress);
                 $thinkingDiv.insertBefore($messages.children().last());
             } else if (data.done) {
                 $('.chat-message.bot.loading.thinking').slideUp();
-                // Show final answer
                 finalAnswer = data.answer;
                 if (settings['toggle-show-thinking']) {
-                    // console.log(data.answer);
                     const $showEntireResponse = $('<div class="text-1p3rem pointer" style="color: #8181f1; margin-left: 1.3rem;">Show raw response & tools</div>').click(function() {
                         const $expandedInfo = $('<div class="expanded-raw-info" style="margin-left: 1.3rem;"></div>');
                         const $respDiv = $('<div class="text-1p3rem" style="white-space: pre-wrap; margin-top: 0.5rem; color: #aaa;"></div>').text('Response content: ' + data.answer);
@@ -396,14 +413,12 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                         $messages.scrollTop($messages[0].scrollHeight);
                     });
                     $messages.append($showEntireResponse);
-                } 
+                }
 
-                // Extract text after assistantFinal
                 let match = null;
                 if (data.answer) {
                     match = data.answer.match(/assistantfinal([\s\S]*)/i);
                     if (!match) {
-                        // Look for tag format: "final:" or "<final>" or "/final" at the start, or preceded by a newline/whitespace
                         const tagMatch = data.answer.match(/(?:^|[\r\n])(?:<final>|final[:\s\-\]\|])([\s\S]*)$/i);
                         if (tagMatch) {
                             match = [null, tagMatch[1]];
@@ -422,16 +437,13 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                         finalAnswer = data.answer || 'There was an issue formatting the response.';
                     }
                 }
-                    
-                
-                // Extract suggestions from finalAnswer
+
                 let suggestions = [];
                 const suggestionsMatch = finalAnswer.match(/<suggestions>([\s\S]*?)<\/suggestions>/i);
                 if (suggestionsMatch) {
                     suggestions = suggestionsMatch[1].split('\n')
                         .map(line => line.replace(/^[•\-\*\s]+/, '').trim())
                         .filter(text => text.length > 0);
-                    // Strip the suggestions section from the final output
                     finalAnswer = finalAnswer.replace(/<suggestions>[\s\S]*?<\/suggestions>/i, '').trim();
                 }
 
@@ -454,20 +466,99 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 }
 
                 window.chatHistory.push({ role: 'assistant', content: finalAnswer });
-                evtSource.close();
+                // Stop streaming after done
+                try { controller.abort(); } catch (e) {}
+                window.currentChatController = null;
             }
             $messages.scrollTop($messages[0].scrollHeight);
         } catch (err) {
-            console.error('Error parsing SSE data:', err, event.data);
+            console.error('Error handling chat data:', err, data);
         }
-    };
+    }
 
-    evtSource.onerror = function(err) {
+    // POST to avoid PII in URL logs and unbounded GET URLs
+    fetch('https://talk.rubus.live/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        body: JSON.stringify({ user_query: msg, conversation_history: historyToSend }),
+        signal: controller.signal
+    }).then(async (response) => {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const contentType = response.headers.get('content-type') || '';
+        // If server returns plain JSON (non-streaming fallback)
+        if (contentType.includes('application/json') && !contentType.includes('text/event-stream')) {
+            const data = await response.json();
+            handleChatData(data.done !== undefined ? data : { done: true, answer: data.answer || data.response || JSON.stringify(data), progress: data.progress });
+            return;
+        }
+        if (!response.body || !response.body.getReader) {
+            // Fallback: read as text and try to parse
+            const text = await response.text();
+            text.split('\n').forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+                let jsonStr = trimmed;
+                if (trimmed.startsWith('data:')) jsonStr = trimmed.slice(5).trim();
+                if (jsonStr.startsWith('{')) {
+                    try { handleChatData(JSON.parse(jsonStr)); } catch (e) {}
+                }
+            });
+            return;
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            // SSE events are delimited by \n\n
+            let idx;
+            while ((idx = buffer.indexOf('\n\n')) !== -1) {
+                const rawEvent = buffer.slice(0, idx);
+                buffer = buffer.slice(idx + 2);
+                const lines = rawEvent.split('\n');
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    let jsonStr = trimmed;
+                    if (trimmed.startsWith('data:')) {
+                        jsonStr = trimmed.slice(5).trim();
+                        // Handle [DONE] sentinel
+                        if (jsonStr === '[DONE]') continue;
+                    }
+                    if (!jsonStr.startsWith('{')) continue;
+                    try {
+                        const data = JSON.parse(jsonStr);
+                        handleChatData(data);
+                        if (data.done) {
+                            try { reader.cancel(); } catch (e) {}
+                            return;
+                        }
+                    } catch (err) {
+                        console.error('Error parsing SSE JSON:', err, jsonStr);
+                    }
+                }
+            }
+        }
+        // Flush any remaining buffered event
+        if (buffer.trim()) {
+            const lines = buffer.split('\n');
+            for (const line of lines) {
+                let jsonStr = line.trim();
+                if (jsonStr.startsWith('data:')) jsonStr = jsonStr.slice(5).trim();
+                if (jsonStr.startsWith('{')) {
+                    try { handleChatData(JSON.parse(jsonStr)); } catch (e) {}
+                }
+            }
+        }
+    }).catch(err => {
+        if (err.name === 'AbortError') return;
         console.error('SSE error:', err);
         $botMsg.text('Sorry, there was a problem connecting to the chatbot.').removeClass('loading');
         $messages.scrollTop($messages[0].scrollHeight);
-        evtSource.close();
-    };
+        window.currentChatController = null;
+    });
 });
 
 $(document).ready(function() {

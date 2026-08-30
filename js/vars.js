@@ -8,6 +8,7 @@ let lastUpdateTime = 0;
 let forceImmediateUpdate = false;
 // Prevent overlapping network fetches
 let busFetchInProgress = false;
+var activeStops = [];
 
 // Current defaults for every setting. Only user overrides are persisted to
 // localStorage (see saveSettings()), so this object is the single source of
@@ -219,13 +220,6 @@ function makeBusesByRoutes() {
     }
     for (const bus in busData) {
         const route = busData[bus].route;
-        // Invariant: every route stored on busData must resolve to a campus.
-        // Validate loudly here rather than letting an undefined campus crash
-        // with an opaque TypeError (which it would below). If this throws,
-        // a bus was stored without running it through normalizeFeedRoute().
-        if (!(route in routesByCampus)) {
-            throw new Error(`[Invariant] bus ${bus} has unrecognized route '${route}' in busData. All routes must go through normalizeFeedRoute() before being stored.`);
-        }
         const campus = routesByCampus[route];
         if (!busesByRoutes[campus][route]) {
             busesByRoutes[campus][route] = [];

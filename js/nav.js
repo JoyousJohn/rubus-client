@@ -1192,7 +1192,7 @@ function resolvePlaceByName(inputName) {
 function findConnectingRoutes(startStopId, endStopId) {
     const connectingRoutes = [];
 
-    const possibleRoutes = ['a', 'b', 'bl', 'c', 'ee', 'f', 'h', 'lx', 'rexl', 'rexb', 'wknd1', 'wknd2'];
+    const possibleRoutes = Object.keys(stopLists).filter(r => Array.isArray(stopLists[r]) && stopLists[r].length);
 
     for (const routeName of possibleRoutes) {
         const routeStops = stopLists[routeName];

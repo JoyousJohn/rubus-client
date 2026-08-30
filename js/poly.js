@@ -361,6 +361,7 @@ window.createMapLibrePolyline = function(coordinates, options) {
     const wrapper = {
         _latlngs: coordinates,
         _mapLibreLayerId: layerId,
+        isAdded: function() { return isAdded && !!(map && map.getLayer && map.getLayer(layerId)); },
         addTo: function(targetMap) {
             ensureAdded();
             return wrapper;
@@ -647,12 +648,12 @@ window.debugPolylineRemovals = function(routeName = null) {
 window.debugPolylineState = function(routeName) {
     console.log(`Polyline state for route: ${routeName}`);
     console.log(`Exists in polylines object:`, !!polylines[routeName]);
-    console.log(`On map:`, polylines[routeName] ? map.hasLayer(polylines[routeName]) : 'N/A');
+    console.log(`On map:`, polylines[routeName] && polylines[routeName].isAdded ? polylines[routeName].isAdded() : (polylines[routeName] ? map.hasLayer(polylines[routeName]) : 'N/A'));
     console.log(`Removal count:`, polylineRemovalCount[routeName] || 0);
     console.log(`Removal history:`, getPolylineRemovalHistory(routeName));
     return {
         exists: !!polylines[routeName],
-        onMap: polylines[routeName] ? map.hasLayer(polylines[routeName]) : false,
+        onMap: polylines[routeName] && polylines[routeName].isAdded ? polylines[routeName].isAdded() : (polylines[routeName] ? map.hasLayer(polylines[routeName]) : false),
         removalCount: polylineRemovalCount[routeName] || 0,
         history: getPolylineRemovalHistory(routeName)
     };
@@ -1192,14 +1193,18 @@ async function precomputeAllRouteBounds() {
 let busStopMarkers = {};
 
 function getNextStopId(route, stopId) {
-    const routeStops = stopLists[route]
-    const nextStopIndex = routeStops.indexOf(stopId) + 1;
-    if (nextStopIndex < routeStops.length) {
-        nextStopId = routeStops[nextStopIndex];
-    } else {
-        nextStopId = routeStops[0]
+    const routeStops = stopLists[route];
+    let idx = routeStops.indexOf(stopId);
+    if (idx === -1) {
+        const asNum = Number(stopId);
+        if (!Number.isNaN(asNum)) idx = routeStops.indexOf(asNum);
+        if (idx === -1) idx = routeStops.indexOf(String(stopId));
     }
-    return nextStopId
+    if (idx === -1) {
+        console.warn(`[getNextStopId] stopId ${stopId} not in route ${route} (${routeStops.length} stops)`);
+        return routeStops[0];
+    }
+    return routeStops[(idx + 1) % routeStops.length];
 }
 
 // Given a route with potentially duplicated stopIds (e.g., SAC NB appears twice),

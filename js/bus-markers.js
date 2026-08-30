@@ -369,21 +369,9 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
         // Skip this animation frame if busName has been removed from animationFrames
         if (!animationFrames[busName]) return;
 
-        // When the "Pause Bus Markers on Pan" dev setting is enabled, skip
-        // per-frame position/rotation updates while the map is being
-        // dragged/pinched. The skipped wall-clock time is accumulated and
-        // excluded from progress so the marker doesn't jump on release.
+        // When the "Pause Bus Markers on Pan" dev setting is enabled, freeze
+        // progress while dragging so markers resume exactly where they left off.
         if (window.isMapDragging && settings && settings['toggle-pause-bus-markers-on-pan']) {
-            if (pausedAt === null) pausedAt = currentTime;
-            return;
-        }
-        // When the "Cull Off-Screen Bus Markers" dev setting is enabled, skip
-        // per-frame position/rotation updates for markers outside the expanded
-        // viewport. The skipped wall-clock time is accumulated (same mechanism
-        // as the pan pause above) so markers resume without jumping. Markers
-        // are checked by their current interpolated position, not their target,
-        // so markers mid-flight into the viewport stay animated.
-        if (busAnimationCullBounds && marker.getLatLng && !busAnimationCullBounds.contains(marker.getLatLng())) {
             if (pausedAt === null) pausedAt = currentTime;
             return;
         }
@@ -394,6 +382,19 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
 
         const elapsedTime = currentTime - startTime - pausedDuration;
         const progress = Math.max(0, Math.min(elapsedTime / duration, 1));
+
+        // When culling is enabled, advance progress but skip DOM/WebGL rendering
+        // for off-screen markers. This lets them complete naturally (progress→1)
+        // so the rAF loop can sleep, while saving per-frame setLatLng cost.
+        const isCulled = busAnimationCullBounds && marker.getLatLng && !busAnimationCullBounds.contains(marker.getLatLng());
+        if (isCulled) {
+            if (progress >= 1) {
+                // Snap to final position even off-screen so pan-back shows correct location
+                try { marker.setLatLng(endLatLng); } catch (e) {}
+                delete animationFrames[busName];
+            }
+            return;
+        }
 
         // Check if the bus marker still exists
         if (!busMarkers[busName]) {

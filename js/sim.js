@@ -1138,6 +1138,10 @@ async function endSim() {
     // that path deep-clones busData, rebuilds busesByRoutes O(N) times, and
     // refreshes the closest-stops/favorites DOM for every sim bus, which is
     // what made exiting the simulator slow.
+    // Clear any per-bus speed intervals so they don't linger after wiping busData
+    for (const b in busData) clearBusSpeed(b);
+    for (const k in speedTimeout) clearInterval(speedTimeout[k]);
+    speedTimeout = {};
     deleteBusMarkers();
     busData = {};
     busETAs = {};
@@ -1145,7 +1149,7 @@ async function endSim() {
 
     // Drop any favorites made on simulated buses (session-only), so they never
     // linger in the favorites list or route selectors after the sim ends.
-    try { window.clearSimFavs(); } catch (e) { console.error('[sim] clearSimFavs failed', e); }
+    window.clearSimFavs();
 
     // Close any popups referencing the removed sim buses
     if (popupBusName || popupStopId) {

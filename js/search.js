@@ -238,18 +238,19 @@ $(document).ready(function() {
             }
         }
         
-        // Add active stops (assume presence; fail fast if missing)
-        for (const stopId of activeStops) {
-            const stop = stopsData[stopId];
-            if (stop) {
-                allOptions.push({
-                    id: stopId,
-                    name: stop.name,
-                    lat: stop.latitude,
-                    lng: stop.longitude,
-                    category: 'stop',
-                    type: 'stop'
-                });
+        if (Array.isArray(activeStops)) {
+            for (const stopId of activeStops) {
+                const stop = stopsData[stopId];
+                if (stop) {
+                    allOptions.push({
+                        id: stopId,
+                        name: stop.name,
+                        lat: stop.latitude,
+                        lng: stop.longitude,
+                        category: 'stop',
+                        type: 'stop'
+                    });
+                }
             }
         }
         
@@ -876,18 +877,19 @@ $(document).ready(function() {
         
         let selectedItems = [];
         
-        // Get active stops data (assume presence; fail fast if missing)
         const activeStopItems = [];
-        for (const stopId of activeStops) {
-            const stop = stopsData[stopId];
-            if (stop) {
-                activeStopItems.push({
-                    id: stopId,
-                    name: stop.name,
-                    category: 'stop',
-                    lat: stop.latitude,
-                    lng: stop.longitude
-                });
+        if (Array.isArray(activeStops)) {
+            for (const stopId of activeStops) {
+                const stop = stopsData[stopId];
+                if (stop) {
+                    activeStopItems.push({
+                        id: stopId,
+                        name: stop.name,
+                        category: 'stop',
+                        lat: stop.latitude,
+                        lng: stop.longitude
+                    });
+                }
             }
         }
         

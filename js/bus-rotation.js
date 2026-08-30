@@ -146,7 +146,9 @@ const calculateRotation = (busName, loc) => {
 
         newRotation = normalizeRotation(bus.rotation) + 45;
     } else {
-        newRotation = normalizeRotation(busData[busName].rotation) + 45;
+        const b = busData[busName];
+        if (!b) return;
+        newRotation = normalizeRotation(b.rotation) + 45;
     }
     return newRotation;
 };
