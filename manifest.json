@@ -20,22 +20,10 @@
       "purpose": "any maskable"
     },
     {
-      "src": "img/rubus-icon-512.png",
-      "sizes": "512x512",
+      "src": "img/rubus-favicon-back-to-college.png",
+      "sizes": "512x512 2048x2048",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "img/rubus-favicon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "img/rubus-favicon-back-to-college.png",
-      "sizes": "2048x2048",
-      "type": "image/png",
-      "purpose": "any"
     }
   ],
   "shortcuts": [
