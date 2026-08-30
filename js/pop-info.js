@@ -449,7 +449,7 @@ function popInfo(busName, resetCampusFontSize) {
 
     $('.bus-info-popup').stop(true, true).show();
     if (typeof hideCenterStops === 'function') hideCenterStops();
-    if (isDesktop) showEscNotice('bus');
+    if (isDesktop && !isTouchDevice) showEscNotice('bus');
 
     // Apply the collected stop-marker ETA tooltips after the popup has painted
     // (next frame), so the per-stop WebGL feature updates don't delay it.

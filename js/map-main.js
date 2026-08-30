@@ -20,6 +20,19 @@ let showETAsInSeconds = false;
 let showETAsInMs = false;
 
 let isDesktop;
+let isTouchDevice;
+
+function checkIsTouchDevice() {
+    return !!(
+        ('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (window.matchMedia && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches))
+    );
+}
+
+isDesktop = $(window).width() > 992;
+isTouchDevice = checkIsTouchDevice();
+
 let currentTileLayerType = 'streets'; // Track the current tile layer type
 
 window.resolveMapTileStyle = function(theme) {

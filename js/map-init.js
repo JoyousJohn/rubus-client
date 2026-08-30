@@ -169,7 +169,7 @@ window.initMap = function() {
     // 'dragstart' (not 'movestart') keeps programmatic pans like panout's
     // fitBounds(), flyTo(), and centerme from triggering the fade.
     map.on('dragstart', function() {
-        if (!isDesktop && settings['toggle-dim-on-pan'] !== false) {
+        if ((!isDesktop || isTouchDevice) && settings['toggle-dim-on-pan'] !== false) {
             $('.bottom, .knight-mover, .info-top-right').css('opacity', '0.4');
         }
     });
@@ -177,17 +177,17 @@ window.initMap = function() {
     map.on('dragstart', function() {
         mapDragged = true;
 
-        if (isDesktop) {
+        if (isDesktop && !isTouchDevice) {
             return;
         }
 
-        if (isTransitioning || isDesktop || isFittingBounds || returningToSavedView) {
+        if (isTransitioning || (isDesktop && !isTouchDevice) || isFittingBounds || returningToSavedView) {
             return; 
 
         } else {
             isTransitioning = true;
 
-            if (popupBusName && !isDesktop) {
+            if (popupBusName && (!isDesktop || isTouchDevice)) {
                 if (settings['toggle-bypass-max-distance']) {
                     map.setMinZoom(bypassMinZoomLevel);
                 } else {
@@ -273,16 +273,18 @@ window.initMap = function() {
     });
 
     isDesktop = $(window).width() > 992;
+    isTouchDevice = checkIsTouchDevice();
 
     $(window).resize(function() {
         isDesktop = $(window).width() > 992;
+        isTouchDevice = checkIsTouchDevice();
         updateNextStopsMaxHeight();
         const escNotice = document.getElementById('escDesktopNotice');
         if (escNotice) {
-            escNotice.style.display = isDesktop ? 'none' : 'block';
+            escNotice.style.display = (isDesktop && !isTouchDevice) ? 'none' : 'block';
         }
         const $settingsInput = $('#settings-search-input');
-        $settingsInput.attr('placeholder', isDesktop ? 'Search settings... (Ctrl + K)' : 'Search settings...');
+        $settingsInput.attr('placeholder', (isDesktop && !isTouchDevice) ? 'Search settings... (Ctrl + K)' : 'Search settings...');
     });
     
     // Only launch fireworks on open for returning users — first-timers get them after campus confirm

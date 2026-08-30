@@ -115,6 +115,8 @@ function hideInfoBoxes(instantly_hide) {
 const shownEscTypes = new Set();
 
 function showEscNotice(type) {
+    if (typeof isDesktop !== 'undefined' && (!isDesktop || (typeof isTouchDevice !== 'undefined' && isTouchDevice))) return;
+
     if (!settings['toggle-always-show-esc-hint']) {
         if (shownEscTypes.has(type)) return;
         shownEscTypes.add(type);

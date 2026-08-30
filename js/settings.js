@@ -1343,7 +1343,7 @@ $(function() {
         }
     }
 
-    if (isDesktop) {
+    if (isDesktop && !isTouchDevice) {
         $searchInput.attr('placeholder', 'Search settings... (Ctrl + K)');
     } else {
         $searchInput.attr('placeholder', 'Search settings...');
@@ -1351,7 +1351,7 @@ $(function() {
 
     const escNotice = document.getElementById('escDesktopNotice');
     if (escNotice) {
-        escNotice.style.display = isDesktop ? 'none' : 'block';
+        escNotice.style.display = (isDesktop && !isTouchDevice) ? 'none' : 'block';
     }
 
     let settingsSearchDebounce = null;

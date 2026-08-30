@@ -2104,7 +2104,7 @@ async function popStopInfo(stopId) {
 
     $('.stop-info-popup').stop(true, true).show();
     if (typeof hideCenterStops === 'function') hideCenterStops();
-    if (typeof isDesktop !== 'undefined' && isDesktop) showEscNotice('stop');
+    if (typeof isDesktop !== 'undefined' && isDesktop && !isTouchDevice) showEscNotice('stop');
 
     $('.stop-info-popup-inner').scrollTop(0);
 

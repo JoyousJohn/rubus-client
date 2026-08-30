@@ -512,8 +512,8 @@ $(document).ready(function() {
 
     // Keyboard shortcut: 's' key to open search on desktop
     $(document).on('keydown', function(e) {
-        // Only trigger on desktop and when 's' key is pressed
-        if (isDesktop && e.key.toLowerCase() === 's') {
+        // Only trigger on desktop without touch and when 's' key is pressed
+        if (isDesktop && !isTouchDevice && e.key.toLowerCase() === 's') {
             // Don't trigger if user is typing in an input field
             if (!$(e.target).is('input, textarea, [contenteditable]')) {
                 e.preventDefault();

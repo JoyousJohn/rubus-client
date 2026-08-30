@@ -290,7 +290,7 @@ function showBuildingInfo(feature) {
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
     if (typeof hideCenterStops === 'function') hideCenterStops();
-    if (typeof isDesktop !== 'undefined' && isDesktop) showEscNotice('building');
+    if (typeof isDesktop !== 'undefined' && isDesktop && !isTouchDevice) showEscNotice('building');
     $('.building-closest-stops-heading').hide(); // hide initially to avoid flicker until list populated
     popupBuildingName = feature.name;
     popupBuildingLatLng = feature.lat + ',' + feature.lng;
