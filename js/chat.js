@@ -415,27 +415,26 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     $messages.append($showEntireResponse);
                 }
 
-                let match = null;
-                if (data.answer) {
-                    match = data.answer.match(/assistantfinal([\s\S]*)/i);
-                    if (!match) {
-                        const tagMatch = data.answer.match(/(?:^|[\r\n])(?:<final>|final[:\s\-\]\|])([\s\S]*)$/i);
-                        if (tagMatch) {
-                            match = [null, tagMatch[1]];
-                        }
-                    }
-                }
-                if (!data.answer) {
-                    console.error("Backend returned null answer. Progress/Error status:", data.progress);
-                }
-                if (match) {
-                    finalAnswer = match[1].trim();
+                let rawText = data.answer || '';
+                if (!rawText && data.progress && data.progress.startsWith('Error:')) {
+                    finalAnswer = data.progress;
+                } else if (!rawText) {
+                    finalAnswer = 'Sorry, I received an empty response.';
                 } else {
-                    if (!data.answer && data.progress && data.progress.startsWith('Error:')) {
-                        finalAnswer = data.progress;
+                    const channelFinalMatch = rawText.match(/(?:<\|channel\|>final<\|message\|>|assistantfinal|assistant:\s*final|<final>)([\s\S]*)/i);
+                    if (channelFinalMatch) {
+                        rawText = channelFinalMatch[1];
                     } else {
-                        finalAnswer = data.answer || 'There was an issue formatting the response.';
+                        rawText = rawText.replace(/<\|channel\|>analysis<\|message\|>[\s\S]*?<\|end\|>/gi, '');
+                        rawText = rawText.replace(/<\|channel\|>[^<]+<\|message\|>/gi, '');
+                        rawText = rawText.replace(/<\|start\|>assistant/gi, '');
+                        rawText = rawText.replace(/<\|end\|>/gi, '');
+                        rawText = rawText.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, '');
+                        rawText = rawText.replace(/<analysis>[\s\S]*?<\/analysis>/gi, '');
+                        rawText = rawText.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
                     }
+                    rawText = rawText.replace(/<\|[^>]+>/g, '');
+                    finalAnswer = rawText.trim() || 'There was an issue formatting the response.';
                 }
 
                 let suggestions = [];
@@ -466,8 +465,6 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 }
 
                 window.chatHistory.push({ role: 'assistant', content: finalAnswer });
-                // Stop streaming after done
-                try { controller.abort(); } catch (e) {}
                 window.currentChatController = null;
             }
             $messages.scrollTop($messages[0].scrollHeight);
@@ -476,14 +473,59 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         }
     }
 
-    // POST to avoid PII in URL logs and unbounded GET URLs
-    fetch('https://talk.rubus.live/chat/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-        body: JSON.stringify({ user_query: msg, conversation_history: historyToSend }),
-        signal: controller.signal
-    }).then(async (response) => {
-        if (!response.ok) throw new Error('HTTP ' + response.status);
+    const selectedModel = (typeof settings !== 'undefined' && settings['chatbot-model']) || 'inclusionai/ling-3.0-flash';
+    const isLocalDev = (typeof window !== 'undefined') && (
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '0.0.0.0'
+    );
+
+    async function sendChatRequest() {
+        const payload = JSON.stringify({ user_query: msg, conversation_history: historyToSend, model: selectedModel });
+
+        // 1. If on localhost, try the local backend first
+        if (isLocalDev) {
+            try {
+                const localResp = await fetch('http://localhost:8000/chat/stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+                    body: payload,
+                    signal: controller.signal
+                });
+                if (localResp.ok) {
+                    return localResp;
+                }
+                console.warn('[Chat] Local backend returned status', localResp.status, '- falling back to talk.rubus.live');
+            } catch (localErr) {
+                if (localErr.name === 'AbortError') throw localErr;
+                console.warn('[Chat] Local backend unavailable at localhost:8000, falling back to talk.rubus.live:', localErr.message);
+            }
+        }
+
+        // 2. Production or fallback to talk.rubus.live
+        const remoteEndpoint = 'https://talk.rubus.live/chat/stream';
+        let remoteResp = await fetch(remoteEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+            body: payload,
+            signal: controller.signal
+        });
+
+        // 3. If remote returns 405 Method Not Allowed or 501, fallback to GET
+        if (remoteResp.status === 405 || remoteResp.status === 501) {
+            const getUrl = `${remoteEndpoint}?user_query=${encodeURIComponent(msg)}&conversation_history=${encodeURIComponent(JSON.stringify(historyToSend))}&model=${encodeURIComponent(selectedModel)}`;
+            remoteResp = await fetch(getUrl, {
+                method: 'GET',
+                headers: { 'Accept': 'text/event-stream' },
+                signal: controller.signal
+            });
+        }
+
+        if (!remoteResp.ok) throw new Error('HTTP ' + remoteResp.status);
+        return remoteResp;
+    }
+
+    sendChatRequest().then(async (response) => {
         const contentType = response.headers.get('content-type') || '';
         // If server returns plain JSON (non-streaming fallback)
         if (contentType.includes('application/json') && !contentType.includes('text/event-stream')) {
@@ -509,7 +551,16 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         const decoder = new TextDecoder();
         let buffer = '';
         while (true) {
-            const { done, value } = await reader.read();
+            let chunk;
+            try {
+                chunk = await reader.read();
+            } catch (readErr) {
+                if (readErr && (readErr.name === 'AbortError' || readErr.message?.includes('aborted'))) {
+                    break;
+                }
+                throw readErr;
+            }
+            const { done, value } = chunk;
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
             // SSE events are delimited by \n\n

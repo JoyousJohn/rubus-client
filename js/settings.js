@@ -1280,10 +1280,11 @@ $(function() {
             const shouldFilterDev = $devWrapper.is(':visible') || isExpanding;
             if (shouldFilterDev) {
                 let devHasMatch = false;
-                $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .settings-my-stats, .force-show-dependent').each(function() {
+                $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-chatbot-model, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .settings-my-stats, .force-show-dependent').each(function() {
                     const $item = $(this);
                     if ($item.hasClass('force-show-dependent')) return; // handled separately below
                     if ($item.parents('.settings-custom-tile-url').length) return; // handled as part of parent section
+                    if ($item.parents('.settings-chatbot-model').length) return; // handled as part of parent section
 
                     const text = $item.text().toLowerCase();
                     if (query === '' || text.includes(query)) {

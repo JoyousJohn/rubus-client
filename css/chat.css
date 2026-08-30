@@ -86,9 +86,47 @@
 .chat-message.bot.loading {
   opacity: 0.7;
   color: var(--theme-color);
-  background: none;
   box-shadow: none;
   margin: 0;
+  background: linear-gradient(
+    90deg,
+    var(--theme-color) 0%,
+    var(--theme-color) 35%,
+    #8181f1 50%,
+    var(--theme-color) 65%,
+    var(--theme-color) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: chatThinkingPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes chatThinkingPulse {
+  0% {
+    background-position: 100% 0;
+    opacity: 0.55;
+  }
+  50% {
+    background-position: 0% 0;
+    opacity: 1;
+  }
+  100% {
+    background-position: -100% 0;
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-message.bot.loading {
+    animation: none;
+    background: none;
+    color: var(--theme-color);
+    -webkit-text-fill-color: currentColor;
+  }
 }
 
 /* Chat UI container */

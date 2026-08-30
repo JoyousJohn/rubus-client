@@ -121,6 +121,7 @@ $(document).ready(function() {
         
         hideInfoBoxes(true);
         $('.knight-mover').hide();
+        $('.bottom').hide();
         $('.search-wrapper').show();
         if (typeof hideCenterStops === 'function') hideCenterStops();
         adjustSearchHeights();
@@ -965,6 +966,9 @@ $(document).ready(function() {
 
 function closeSearch() {
     $('.search-wrapper').hide();
+    if (!$('.settings-panel').is(':visible') && !$('.feedback-wrapper').is(':visible')) {
+        $('.bottom').show();
+    }
     if (typeof showCenterStops === 'function') showCenterStops();
     detachSearchViewportListeners();
     $('.search-wrapper').css({
@@ -977,6 +981,7 @@ function closeSearch() {
 }
 
 function openSearch() {
+    $('.bottom').hide();
     $('.search-wrapper').show();
     if (typeof hideCenterStops === 'function') hideCenterStops();
     adjustSearchHeights();

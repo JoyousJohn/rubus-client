@@ -2246,6 +2246,7 @@ function updateSettings() {
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[raster-sharpness-option="${settings['raster-sharpness']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-marker-renderer-option="${settings['bus-marker-renderer']}"]`).addClass('settings-selected')
+    $(`div.settings-option[chatbot-model-option="${settings['chatbot-model'] || 'inclusionai/ling-3.0-flash'}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-animation-rate-option="${settings['bus-animation-rate']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 
@@ -2361,6 +2362,11 @@ function updateSettings() {
             if (typeof stopLayerManager !== 'undefined') {
                 stopLayerManager.applyRendererMode();
             }
+
+        } else if (settingsOption === 'chatbot-model') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['chatbot-model'] = $(this).attr('chatbot-model-option')
 
         } else if (settingsOption === 'bus-animation-rate') {
             // Low Performance Mode forces the fixed 10Hz rate.

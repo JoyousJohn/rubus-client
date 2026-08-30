@@ -42,6 +42,7 @@ const defaultSettings = {
 
     
     // dev settings
+    'chatbot-model': 'inclusionai/ling-3.0-flash',
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
     // Renamed from 'toggle-pause-passio-polling' when TripShot replaced Passio

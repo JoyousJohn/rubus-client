@@ -446,6 +446,7 @@ function popInfo(busName, resetCampusFontSize) {
     
     $('.building-info-popup').hide();
     unhighlightBuilding();
+    if (typeof closeSearch === 'function') closeSearch();
 
     $('.bus-info-popup').stop(true, true).show();
     if (typeof hideCenterStops === 'function') hideCenterStops();
