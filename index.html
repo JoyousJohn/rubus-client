@@ -675,17 +675,31 @@
                     <div class="info-top-right flex flex-col align-end">
                         <div class="install-pwa pointer none mb-1rem" onclick="$('.install-pwa-wrapper').show();">Install App ➜</div>
                         <script> 
+                        function shouldAutoShowPwaModal() {
+                            const lastShow = localStorage.getItem('last-pwa-modal-show');
+                            if (lastShow) {
+                                const elapsed = Date.now() - parseInt(lastShow);
+                                if (elapsed < 8 * 60 * 60 * 1000) return false;
+                            }
+                            localStorage.setItem('last-pwa-modal-show', Date.now().toString());
+                            return true;
+                        }
+
                         $(document).ready(function(){ if (!isDesktop && 'matchMedia' in window && !new URLSearchParams(window.location.search).has('bus')) {
                             if (!window.matchMedia('(display-mode: standalone)').matches) {
                                 $('.install-pwa').show();
                                 const iPhoneOrAndroid = /iPhone/i.test(navigator.userAgent) ? 'iphone' : 
                                                        /Android/i.test(navigator.userAgent) ? 'android' : 
                                                        null;
+                                const shouldShowModal = shouldAutoShowPwaModal();
+
                                 if (iPhoneOrAndroid && iPhoneOrAndroid === 'iphone') {
                                     $('.install-pic-1 > img').attr('src', 'img/iphone-pwa-1-arrow.png');
                                     $('.install-pic-2 > img').attr('src', 'img/iphone-pwa-2-arrow.png');
                                     $('.pwa-install-head').text('Install iPhone Web App');
-                                    $('.install-pwa-wrapper').show();
+                                    if (shouldShowModal) {
+                                        $('.install-pwa-wrapper').show();
+                                    }
                                     
                                     let loadedImages = 0;
                                     $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
@@ -702,7 +716,9 @@
                                     $('.install-pic-1 > img').attr('src', 'img/android-pwa-1-arrow.png');
                                     $('.install-pic-2 > img').attr('src', 'img/android-pwa-2-arrow.png');
                                     $('.pwa-install-head').text('Install Android Web App');
-                                    $('.install-pwa-wrapper').show();
+                                    if (shouldShowModal) {
+                                        $('.install-pwa-wrapper').show();
+                                    }
                                     
                                     let loadedImages = 0;
                                     $('.install-pic-1 > img, .install-pic-2 > img').on('load', function() {
