@@ -460,7 +460,9 @@ $(document).ready(function() {
             }
 
             const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
-            $elm = $(`<div class="search-result-item flex">${icon}<div>${displayText}</div></div>`);
+            const $elm = $('<div class="search-result-item flex"></div>');
+            if (icon) $elm.append(icon);
+            $elm.append($('<div></div>').text(displayText));
             $elm.click(function() {
                 handleSearchItemSelection(item, {
                     'btn': 'search_result_selected',
@@ -755,11 +757,10 @@ $(document).ready(function() {
                 itemData = item;
             }
             
-            const $recentItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important; position: relative;">
-                ${icon}
-                <div class="recent-text" style="flex: 1; white-space: pre; overflow: hidden;">${displayText}</div>
-                <button class="recent-remove-btn" type="button" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; opacity: 0.7; transition: opacity 0.2s;">×</button>
-            </div>`);
+            const $recentItem = $('<div class="search-result-item flex" style="column-gap: 0.3rem !important; position: relative;"></div>');
+            if (icon) $recentItem.append(icon);
+            $recentItem.append($('<div class="recent-text" style="flex: 1; white-space: pre; overflow: hidden;"></div>').text(displayText));
+            $recentItem.append('<button class="recent-remove-btn" type="button" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; opacity: 0.7; transition: opacity 0.2s;">×</button>');
             
             // Handle click on the main item (not the remove button)
             $recentItem.click(function(e) {
@@ -924,7 +925,9 @@ $(document).ready(function() {
                 icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
             }
             
-            const $recItem = $(`<div class="search-result-item flex" style="column-gap: 0.3rem !important;">${icon}<div>${item.name}</div></div>`);
+            const $recItem = $('<div class="search-result-item flex" style="column-gap: 0.3rem !important;"></div>');
+            if (icon) $recItem.append(icon);
+            $recItem.append($('<div></div>').text(item.name));
             $recItem.click(function() {
                 if (item.category === 'stop') {
                     // Handle stop selection directly

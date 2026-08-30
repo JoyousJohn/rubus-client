@@ -307,3 +307,30 @@ function isRouteFavorite(route) {
 }
 window.favoriteRoutes = favoriteRoutes;
 window.isRouteFavorite = isRouteFavorite;
+
+// Global HTML escape utility for XSS prevention.
+// Escapes &, <, >, ", ' so untrusted strings can be safely interpolated
+// into HTML. Use this whenever inserting feed / API / user content into
+// innerHTML / jQuery html() / template literals that become HTML.
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
+
+// Escape a string for safe use inside a CSS string context (e.g. style="color: X").
+// Only allows hex / rgb / hsl values; anything else falls back to a safe default.
+function escapeCssColor(str) {
+    if (typeof str !== 'string') return '#000';
+    // Allow #fff, #ffffff, rgb(...), rgba(...), hsl(...), hsla(...)
+    if (/^#[0-9a-fA-F]{3,8}$/.test(str.trim())) return str.trim();
+    if (/^rgba?\(.+\)$/.test(str.trim()) && !/[<>"'`;]/.test(str)) return str.trim();
+    if (/^hsla?\(.+\)$/.test(str.trim()) && !/[<>"'`;]/.test(str)) return str.trim();
+    return '#000';
+}
+window.escapeCssColor = escapeCssColor;

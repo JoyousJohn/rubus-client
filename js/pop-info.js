@@ -343,21 +343,22 @@ function popInfo(busName, resetCampusFontSize) {
     $('.info-next-stops').show();
         
     $('.bus-data-extra').empty();
-    let extraDataHtml = `<div class="center mb-0p5rem">Bus ID: ${busName}</div>`;
+    const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    let extraDataHtml = `<div class="center mb-0p5rem">Bus ID: ${esc(busName)}</div>`;
     for (const [key, value] of Object.entries(busData[busName])) {
         // Format all values including arrays
         if (value !== null) {
             let extraDataVal = value
             if (key === 'isKnown') {
                 extraDataVal = value ? 'Yes' : 'No';
-                extraDataHtml += `<div>${key}: <span style="opacity: 0.7; color: ${value ? '#4CAF50' : '#f44336'}">${extraDataVal}</span></div>`;
+                extraDataHtml += `<div>${esc(key)}: <span style="opacity: 0.7; color: ${value ? '#4CAF50' : '#f44336'}">${esc(extraDataVal)}</span></div>`;
                 const validityResult = getBusValidityInfo(busName);
                 const validityText = validityResult.valid ? 'Yes' : `No (${validityResult.reason})`;
-                extraDataHtml += `<div>isValid: <span style="opacity: 0.7; color: ${validityResult.valid ? '#4CAF50' : '#f44336'}">${validityText}</span></div>`;
+                extraDataHtml += `<div>isValid: <span style="opacity: 0.7; color: ${validityResult.valid ? '#4CAF50' : '#f44336'}">${esc(validityText)}</span></div>`;
 
                 const distInfo = distanceFromLine(busName, true);
                 const distText = distInfo.isOffLine ? `true (${distInfo.feet.toLocaleString()} ft away)` : `false (${distInfo.feet.toLocaleString()} ft away)`;
-                extraDataHtml += `<div>distanceFromLine validity: <span style="opacity: 0.7; color: ${distInfo.isOffLine ? '#f44336' : '#4CAF50'}">${distText}</span></div>`;
+                extraDataHtml += `<div>distanceFromLine validity: <span style="opacity: 0.7; color: ${distInfo.isOffLine ? '#f44336' : '#4CAF50'}">${esc(distText)}</span></div>`;
 
                 continue; // Skip processing isKnown again in the normal flow
             } else if (key === 'stopId') {
@@ -365,26 +366,28 @@ function popInfo(busName, resetCampusFontSize) {
                     const formattedStops = [];
                     for (const id of value) {
                         const stopName = stopsData[id] ? stopsData[id].name : 'Unknown';
-                        formattedStops.push(`${id} (${stopName})`);
+                        formattedStops.push(`${esc(id)} (${esc(stopName)})`);
                     }
                     extraDataVal = formattedStops.join(', ');
                 } else {
-                    extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
+                    extraDataVal = esc(extraDataVal) + ' (' + esc(stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
                 }
             } else if (key === 'prevStopId' || key === 'next_stop') {
-                extraDataVal += ' (' + (stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
+                extraDataVal = esc(extraDataVal) + ' (' + esc(stopsData[value] ? stopsData[value].name : 'Unknown') + ')';
             } else if (key === 'route_change' && typeof value === 'object') {
                 // Format route_change object to show readable information
                 const routeChangeData = value;
                 const oldRoute = routeChangeData.old_route || 'Unknown';
                 const changeTime = routeChangeData.route_change_time ? 
                     new Date(routeChangeData.route_change_time).toLocaleString() : 'Unknown time';
-                extraDataVal = `From: ${oldRoute} at ${changeTime}`;
+                extraDataVal = `From: ${esc(oldRoute)} at ${esc(changeTime)}`;
             } else if (typeof value === 'object' && value !== null) {
                 // For any other objects, display as JSON
-                extraDataVal = JSON.stringify(value, null, 2);
+                extraDataVal = esc(JSON.stringify(value, null, 2));
+            } else {
+                extraDataVal = esc(extraDataVal);
             }
-            extraDataHtml += `<div>${key}: <span style="opacity: 0.7">${extraDataVal}</span></div>`;
+            extraDataHtml += `<div>${esc(key)}: <span style="opacity: 0.7">${extraDataVal}</span></div>`;
         }
     }
     $('.bus-data-extra').html(extraDataHtml);
@@ -665,10 +668,11 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
             eta += 'm'
         }
 
-        let stopName = stopsData[sortedStops[i]].name;
+        const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        let stopName = esc(stopsData[sortedStops[i]].name);
         let campusName = '';
         if (selectedCampus === 'nb') {
-            campusName = campusShortNamesMappings[stopsData[sortedStops[i]].campus];
+            campusName = esc(campusShortNamesMappings[stopsData[sortedStops[i]].campus] || '');
         }
 
         if (i === 0 && settings['toggle-show-bus-progress']) {
@@ -697,12 +701,12 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
     $grid.empty();
 
     if (shouldShowClosestStop) {
+        const escClosest = (typeof escapeHtml === 'function' ? escapeHtml : (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
         const $circle = $('<div class="closest-stop-circle closest-stop-bg" style="margin-right: 1rem;"></div>').css('background-color', colorMappings[data.route])
         $grid.append($(`<div class="flex justify-center align-center closest-stop-bg h-100" style="margin-right: -2rem; margin-left: -1rem; border-radius: 0.8rem 0 0 0.8rem;"></div>`).append($circle))
-        $grid.append($(`<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;">
-            <div class="next-stop-closest closest-stop">Closest Stop</div>
-            <div class="next-stop-name flex">${stopsData[closestStopId].name}</div>
-        </div>`).click(() => {
+        const $closestWrap = $('<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;"><div class="next-stop-closest closest-stop">Closest Stop</div><div class="next-stop-name flex"></div></div>');
+        $closestWrap.find('.next-stop-name').text(stopsData[closestStopId].name);
+        $grid.append($closestWrap.click(() => {
             flyToStop(closestStopId, true); // true indicates user interaction
         }));
         $grid.append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
@@ -725,17 +729,18 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
             stopId = stopId[0];
         }
 
-        let stopName = stopsData[stopId].name;
+        const esc2 = (typeof escapeHtml === 'function' ? escapeHtml : (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+        let stopName = esc2(stopsData[stopId].name);
         let campusName = '';
         if (selectedCampus === 'nb') {
-            campusName = campusShortNamesMappings[stopsData[stopId].campus];
+            campusName = esc2(campusShortNamesMappings[stopsData[stopId].campus] || '');
         }
 
         $grid.append($('<div class="next-stop-circle"></div>').css('background-color', colorMappings[data.route]))
-        $grid.append($(`<div class="flex flex-col pointer">
-                <div class="next-stop-campus">${campusName}</div>
-                <div class="next-stop-name flex">${stopName}</div>
-            </div>`).click(() => {
+        const $atStopWrap = $(`<div class="flex flex-col pointer"><div class="next-stop-campus">${campusName}</div><div class="next-stop-name flex">${stopName}</div></div>`);
+        // campusName and stopName are already escaped, so safe to use html; use text for extra safety on rebuild
+        // Rebuild wrapper via html is safe since escaped, but we keep html for simplicity
+        $grid.append($atStopWrap.click(() => {
                 flyToStop(stopId);
             }));
         $grid.append($(`<div class="flex flex-col center pointer">

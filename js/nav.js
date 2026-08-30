@@ -1007,7 +1007,9 @@ function showNavigationAutocomplete(inputElement, query) {
         }
 
         const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
-        const $resultElement = $(`<div class="nav-search-result-item">${icon}<div>${displayText}</div></div>`);
+        const $resultElement = $('<div class="nav-search-result-item"></div>');
+        if (icon) $resultElement.append(icon);
+        $resultElement.append($('<div></div>').text(displayText));
 
         // Use a more robust event handling approach for touchpad compatibility
         const handleSelection = function(e) {

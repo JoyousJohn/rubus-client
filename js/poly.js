@@ -1428,14 +1428,8 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             busContainerStyle = ' style="grid-column: span 3;"';
         }
 
-        const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select"${busContainerStyle}>
-            <div class="flex gap-x-0p5rem">
-                <div class="stop-bus-name">${busData[data.busName].busName}</div>
-                <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
-                <div class="stop-depot ${stopDepotVisibilityClass}">Depot</div>
-            </div>
-            <div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div>
-        </div>`)
+        const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select"${busContainerStyle}><div class="flex gap-x-0p5rem"><div class="stop-bus-name"></div><div class="stop-oos ${stopOoSVisibilityClass}">OOS</div><div class="stop-depot ${stopDepotVisibilityClass}">Depot</div></div><div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div></div>`);
+        $stopBusElm.find('.stop-bus-name').text(busData[data.busName].busName);
         $('.stop-info-buses-grid').append($stopBusElm);
 
         if (visibleRoute && visibleRoute !== data.route) {

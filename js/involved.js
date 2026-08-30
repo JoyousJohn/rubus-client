@@ -22,21 +22,18 @@ $('.events-link').click(function() {
                 }
                 $('.involved-grid').append($imgElm)
 
-                const $eventElm = $(`
-                    <div class="flex flex-col">
-                        <div class="benefits flex gap-x-0p5rem"></div>
-                        <div class="text-1p2rem bold-500 gray818181">${event['org']}</div>
-                        <div class="text-1p5rem lh-1">${event['name']}</div>
-                        <div class="flex justify-between gap-x-1rem">
-                            <div class="no-wrap lh-15">${formatDate(event['start'])}</div>
-                            <div class="align-right">${event['location']}</div>
-                        </div>
-                    </div>
-                `)
+                const $eventElm = $('<div class="flex flex-col"></div>');
+                $eventElm.append('<div class="benefits flex gap-x-0p5rem"></div>');
+                $eventElm.append($('<div class="text-1p2rem bold-500 gray818181"></div>').text(event['org']));
+                $eventElm.append($('<div class="text-1p5rem lh-1"></div>').text(event['name']));
+                const $row = $('<div class="flex justify-between gap-x-1rem"></div>');
+                $row.append($('<div class="no-wrap lh-15"></div>').text(formatDate(event['start'])));
+                $row.append($('<div class="align-right"></div>').text(event['location']));
+                $eventElm.append($row);
 
                 if (event.benefits) {
                     event.benefits.forEach(benefit => {
-                        $eventElm.find('.benefits').append(`<div class="benefit white" style="padding: 0.2rem 0.5rem; border-radius: 0.3rem; background-color: #1cd41c;">${benefit}</div>`)
+                        $eventElm.find('.benefits').append($('<div class="benefit white" style="padding: 0.2rem 0.5rem; border-radius: 0.3rem; background-color: #1cd41c;"></div>').text(benefit))
                     })
                 }
 

@@ -195,10 +195,15 @@ function openRUBusSocket() {
                     immediatelyUpdateStoppedBusRotations(true);
                 }
 
-                const $busLogElm = $(`
-                    <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-                    <div><strong>${busName}</strong> <span style="color: #46dd46;">arrived</span> at ${stopName}</div>
-                `)
+                const _esc = (typeof escapeHtml === 'function' ? escapeHtml : (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+                const $busLogElm = $('<div></div>');
+                $busLogElm.append($('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })));
+                const $arrivedLine = $('<div></div>');
+                $arrivedLine.append($('<strong></strong>').text(busName));
+                $arrivedLine.append(document.createTextNode(' '));
+                $arrivedLine.append($('<span style="color: #46dd46;"></span>').text('arrived'));
+                $arrivedLine.append(document.createTextNode(' at ' + stopName));
+                $busLogElm.append($arrivedLine);
                 $('.bus-log').append($busLogElm);
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
 
@@ -228,11 +233,15 @@ function openRUBusSocket() {
                 }
                 delete busData[busName].overtime
 
-                const $busLogElm = $(`
-                    <div>${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-                    <div><strong>${busName}</strong> <span style="color: #ec5050;">departed</span> ${stopName} after ${stoppedFor} (${stoppedDiff}%)</div>
-                `)
-                $('.bus-log').append($busLogElm);
+                const $busLogElm2 = $('<div></div>');
+                $busLogElm2.append($('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })));
+                const $departLine = $('<div></div>');
+                $departLine.append($('<strong></strong>').text(busName));
+                $departLine.append(document.createTextNode(' '));
+                $departLine.append($('<span style="color: #ec5050;"></span>').text('departed'));
+                $departLine.append(document.createTextNode(' ' + stopName + ' after ' + stoppedFor + ' (' + stoppedDiff + '%)'));
+                $busLogElm2.append($departLine);
+                $('.bus-log').append($busLogElm2);
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
 
                 if (busRotationPoints[busName]) {

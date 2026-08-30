@@ -58,11 +58,9 @@ function populateAllStops() {
                 if (servicingRoutes.length > 0) {
                     campusHasBuses = true;
                 }
-                    const $stopsElm = $(`<div class="pointer incoming-wrapper">
-                        <div class="text-1p3rem center mb-0p5rem">${stopsData[stopId].name}</div>
-                        <div class="incoming-list grid gap-y-0p5rem align-center" style="grid-template-columns: auto 1fr;"></div>
-                    </div>`)
-                    .click(function() {
+                    const $stopsElm = $('<div class="pointer incoming-wrapper"><div class="text-1p3rem center mb-0p5rem"></div><div class="incoming-list grid gap-y-0p5rem align-center" style="grid-template-columns: auto 1fr;"></div></div>');
+                    $stopsElm.find('.text-1p3rem').text(stopsData[stopId].name);
+                    $stopsElm.click(function() {
                         console.log('Stop clicked, closing info panels');
                         clearPanoutFeedback();
                         
@@ -96,7 +94,8 @@ function populateAllStops() {
                         } else {
                             eta = `${eta}s`;
                         }
-                        const $routeChip = $(`<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="background-color: ${colorMappings[busData[busName].route]}; padding: 0.2rem 1rem;">${busData[busName].route.toUpperCase()}</div>`)
+                        const _rc = (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[busData[busName].route] || '#000') : (colorMappings[busData[busName].route] || '#000'));
+                        const $routeChip = $('<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="padding: 0.2rem 1rem;"></div>').css('background-color', _rc).text(busData[busName].route.toUpperCase())
                             .on('click', function(e) {
                                 // Prevent the parent stop click from firing
                                 e.stopPropagation();
@@ -120,13 +119,13 @@ function populateAllStops() {
                                 flyToStop(stopId, true);
                             });
                         $stopsElm.find('.incoming-list').append($routeChip);
-                        $stopsElm.find('.incoming-list').append(`<div class="text-1p6rem bold right">${eta}</div>`);
+                        $stopsElm.find('.incoming-list').append($('<div class="text-1p6rem bold right"></div>').text(eta));
                     }
                 })
             }
         })
         if (campusHasBuses) {
-            const $campusElm = $(`<div class="campus text-1p7rem ml-0p5rem">${campus}</div>`)
+            const $campusElm = $('<div class="campus text-1p7rem ml-0p5rem"></div>').text(campus)
             $('.all-stops-inner').append($campusElm);
             $('.all-stops-inner').append($allStopsGridElm);
         }

@@ -17,20 +17,28 @@ function showContact() {
 }
 
 function popContact() {
-
+    const esc = (typeof escapeHtml === 'function' ? escapeHtml : (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
     Object.keys(contact).forEach(function(key) {
         if (key === 'emails') {
             contact.emails.forEach(function(email) {
-                $('.footer-contact').find('.footer-contact-email-blurb').before(`<div>${email.type}</div>`)
-                $('.footer-contact').find('.footer-contact-email-blurb').before(`<div class="right"><a href="mailto:${email.address}">${email.address}</a></div>`)
+                const $typeDiv = $('<div></div>').text(email.type);
+                $('.footer-contact').find('.footer-contact-email-blurb').before($typeDiv);
+                const $addrLink = $('<a></a>').attr('href', 'mailto:' + email.address).text(email.address);
+                const $addrDiv = $('<div class="right"></div>').append($addrLink);
+                $('.footer-contact').find('.footer-contact-email-blurb').before($addrDiv);
             });
         }
 
         else if (key === 'socials') {
             contact.socials.forEach(function(social) {
-                $('.footer-contact').append(`<div style="line-height: 0.7;">${social.type}<br><span class="gray777777 text-1p2rem">(recommended)</span></div>`)
+                const $socialDiv = $('<div style="line-height: 0.7;"></div>');
+                $socialDiv.append(document.createTextNode(social.type));
+                $socialDiv.append($('<br>'));
+                $socialDiv.append($('<span class="gray777777 text-1p2rem"></span>').text('(recommended)'));
+                $('.footer-contact').append($socialDiv);
                 if (social.type === 'Reddit') {
-                    $('.footer-contact').append(`<div class="right"><a href="https://reddit.com/${social.address}">${social.address}</a></div>`)
+                    const $link = $('<a></a>').attr('href', 'https://reddit.com/' + social.address).text(social.address);
+                    $('.footer-contact').append($('<div class="right"></div>').append($link));
                 }
             });
         }

@@ -148,8 +148,10 @@ function populateBusBreaks(busBreakData, busName) {
                 hour12: true
             });
 
-            breakDiv.append(`<div class="${extraClass}" style="color:#656565;">${formattedTime}</div>`);
-            breakDiv.append(`<div class="${extraClass}" style="color: var(--theme-extra);">${stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name}</div>`);
+            const escBB = (typeof escapeHtml === 'function' ? escapeHtml : (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+            breakDiv.append($('<div></div>').addClass(extraClass).css('color','#656565').text(formattedTime));
+            const _stopLabel = stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name;
+            breakDiv.append($('<div></div>').addClass(extraClass).css('color','var(--theme-extra)').text(_stopLabel));
 
             let durationDiffPercent = Math.round(((breakItem.break_duration - waits[breakItem.stop_id])/breakItem.break_duration * 100));
 
@@ -183,9 +185,9 @@ function populateBusBreaks(busBreakData, busName) {
             // Missed stops are always hidden initially (shown only when "Show All Stops" is clicked)
             const missedStopExtraClass = ' none';
 
-            breakDiv.append(`<div class="${missedStopExtraClass}" style="color:#656565;">--:--</div>`);
-            breakDiv.append(`<div class="${missedStopExtraClass}" style="color: var(--theme-extra); text-decoration: line-through;">${stopName}</div>`);
-            breakDiv.append(`<div class="${missedStopExtraClass}"><div class="bold-500" style="color: #f84949;">Missed</div></div>`);
+            breakDiv.append($('<div></div>').addClass(missedStopExtraClass.trim()).css('color','#656565').text('--:--'));
+            breakDiv.append($('<div></div>').addClass(missedStopExtraClass.trim()).css('color','var(--theme-extra)').css('text-decoration','line-through').text(stopName));
+            breakDiv.append($('<div></div>').addClass(missedStopExtraClass.trim()).append($('<div class="bold-500" style="color: #f84949;"></div>').text('Missed')));
         }
     }
 

@@ -12,8 +12,12 @@ function checkShared() {
         setTimeout(() => { // otherwise Failed to find popup or reach target zoom after multiple attempts
             flyToBus(sharedBusName);
 
-            $('.shared').html(`Shared<span class="bold-500">${busData[sharedBusName].route.toUpperCase()}</span>`)
-            .click(function() {
+            const $shared = $('.shared');
+            $shared.empty();
+            $shared.append(document.createTextNode('Shared'));
+            const $sharedSpan = $('<span class="bold-500"></span>').text(busData[sharedBusName].route.toUpperCase());
+            $shared.append($sharedSpan);
+            $shared.click(function() {
                 if (shownRoute && shownRoute !== busData[sharedBusName].route) {
                     toggleRoute(busData[sharedBusName].route);
                 }
@@ -21,8 +25,8 @@ function checkShared() {
                     flyToBus(sharedBusName);
                 }
             })
-            .css('display', 'flex')
-            .find('span').css('color', colorMappings[busData[sharedBusName].route]);
+            .css('display', 'flex');
+            $shared.find('span').css('color', (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[busData[sharedBusName].route] || '#000') : (colorMappings[busData[sharedBusName].route] || '#000')));
 
         }, 0);
 

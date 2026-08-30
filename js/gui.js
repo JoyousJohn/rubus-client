@@ -893,10 +893,8 @@ function selectedRoute(route) {
     stopLists[route].forEach((stopId, index) => {
 
         $('.route-stops-grid').append('<div class="next-stop-circle"></div>')
-        const $stopElm = $(`<div class="flex flex-col">
-            <div class="route-stop-name">${stopsData[stopId].name}</div>
-            <div class="route-buses-for-stop"></div>
-        </div>`)
+        const $stopElm = $('<div class="flex flex-col"><div class="route-stop-name"></div><div class="route-buses-for-stop"></div></div>');
+        $stopElm.find('.route-stop-name').text(stopsData[stopId].name);
 
         if (!firstCircle) {
             firstCircle = $('.route-stops-grid .next-stop-circle').last();
@@ -975,18 +973,21 @@ function selectedRoute(route) {
 
                     if (busData[busName].at_stop && (Array.isArray(busData[busName].stopId) ? stopId === busData[busName].stopId[0] : stopId === busData[busName].stopId)) {
                         eta = 0;
-                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus('${busName}'); closeRouteMenu(); })();">${busData[busName].busName}</div>`);
+                        const $bn1 = $('<div class="rbfs-bn"></div>').text(busData[busName].busName).click(function(){ flyToBus(busName); closeRouteMenu(); });
+                        $gridElm.append($bn1);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                         return;
                     } else if (busData[busName].at_stop && stopId == busData[busName].stopId[0] && previousStopId == busData[busName].stopId[1]) { // wknd & all special case at sac nb
                         eta = 0;
-                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus('${busName}'); closeRouteMenu(); })();">${busData[busName].busName}</div>`);
+                        const $bn2 = $('<div class="rbfs-bn"></div>').text(busData[busName].busName).click(function(){ flyToBus(busName); closeRouteMenu(); });
+                        $gridElm.append($bn2);
                         $gridElm.append(`<div class="bold">Here</div>`);
                         $gridElm.append(`<div class="align-right">Arrived</div>`);
                         return;
                     } else {
-                        $gridElm.append(`<div class="rbfs-bn" onclick="(function() { flyToBus('${busName}'); closeRouteMenu(); })();">${busData[busName].busName}</div>`);
+                        const $bn3 = $('<div class="rbfs-bn"></div>').text(busData[busName].busName).click(function(){ flyToBus(busName); closeRouteMenu(); });
+                        $gridElm.append($bn3);
                         if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId) {
                             eta = getETAForStop(busName, stopId, previousStopId);
                         } else {

@@ -106,7 +106,11 @@ $('.bus-star').click(function() {
             simFavs.add(currentBusName);
         }
         $(this).find('i').css('color', 'gold').removeClass('icon-star').addClass('icon-star-solid')
-        const $thisFav = $(`<div class="br-1rem" data-fav-name="${currentBusName}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[currentBusName].route]}">${busData[currentBusName].route.toUpperCase()}</span>${busData[currentBusName].busName}</div>`)
+        const _favRoute = busData[currentBusName].route;
+        const _favColor = (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[_favRoute] || '#000') : (colorMappings[_favRoute] || '#000'));
+        const $thisFav = $('<div class="br-1rem"></div>').attr('data-fav-name', currentBusName);
+        $thisFav.append($('<span class="bold text-1p7rem"></span>').css('color', _favColor).text(_favRoute.toUpperCase()));
+        $thisFav.append(document.createTextNode(busData[currentBusName].busName));
         $thisFav.click(function() {
             if (busData[currentBusName]) {
                 const favRoute = busData[currentBusName].route;
@@ -137,7 +141,7 @@ $('.bus-star').click(function() {
         favBuses = favBuses.filter(busName => busName !== currentBusName);
         simFavs.delete(currentBusName);
         $(this).find('i').css('color', 'var(--theme-color)').removeClass('icon-star-solid').addClass('icon-star')
-        $(`div[data-fav-name="${currentBusName}"]`).remove();
+        $('.favs').children().filter(function(){ return $(this).attr('data-fav-name') === currentBusName; }).remove();
         busMarkers[currentBusName].setFavorite(false);
     
         if ($('.favs > div').length === 0) {
@@ -272,7 +276,11 @@ async function populateFavs(popSelectors = true) {
             // console.log(busData[favName])
             // console.log(busMarkers[favName])
 
-            const $thisFav = $(`<div class="br-1rem" data-fav-name="${favName}"><span class="bold text-1p7rem" style="color: ${colorMappings[busData[favName].route]}">${busData[favName].route.toUpperCase()}</span>${busData[favName].busName}</div>`)
+            const _route = busData[favName].route;
+            const _color = (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[_route] || '#000') : (colorMappings[_route] || '#000'));
+            const $thisFav = $('<div class="br-1rem"></div>').attr('data-fav-name', favName);
+            $thisFav.append($('<span class="bold text-1p7rem"></span>').css('color', _color).text(_route.toUpperCase()));
+            $thisFav.append(document.createTextNode(busData[favName].busName));
             $thisFav.click(function() {
                 if (busData[favName]) {
                     const favRoute = busData[favName].route;

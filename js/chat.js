@@ -52,7 +52,11 @@ const readableRouteNames = {
 
 function parseMarkdown(text) {
     if (!text) return '';
-    let processed = text;
+    // Escape all HTML first so raw AI / user text can never inject tags.
+    // Subsequent markdown replacements then wrap the already-escaped text in
+    // the small set of safe tags we generate ourselves.
+    const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    let processed = esc(text);
     
     // Parse Markdown tables
     const lines = processed.split('\n');
@@ -68,6 +72,7 @@ function parseMarkdown(text) {
                 inTable = true;
                 tableHtml = '<div style="overflow-x: auto; width: 100%; margin: 1rem 0;"><table class="chat-ui-table"><thead><tr>';
                 cells.forEach(cell => {
+                    // cell is already escaped (from esc(text)), so no double-escape
                     tableHtml += `<th>${cell}</th>`;
                 });
                 tableHtml += '</tr></thead><tbody>';
@@ -98,9 +103,11 @@ function parseMarkdown(text) {
     }
     processed = newLines.join('\n');
 
-    processed = processed.replace(/^### (.*$)/gim, '<h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.6rem; font-weight: 500;">$1</h3>');
-    processed = processed.replace(/^## (.*$)/gim, '<h2 style="margin: 0.8rem 0 0.4rem 0; font-size: 1.8rem; font-weight: normal;">$1</h2>');
-    processed = processed.replace(/^# (.*$)/gim, '<h1 style="margin: 1.0rem 0 0.5rem 0; font-size: 2.0rem; font-weight: normal;">$1</h1>');
+    // Use replacement functions so captured groups are already escaped and
+    // we don't re-interpret $1 as raw HTML.
+    processed = processed.replace(/^### (.*$)/gim, (m, g1) => `<h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.6rem; font-weight: 500;">${g1}</h3>`);
+    processed = processed.replace(/^## (.*$)/gim, (m, g1) => `<h2 style="margin: 0.8rem 0 0.4rem 0; font-size: 1.8rem; font-weight: normal;">${g1}</h2>`);
+    processed = processed.replace(/^# (.*$)/gim, (m, g1) => `<h1 style="margin: 1.0rem 0 0.5rem 0; font-size: 2.0rem; font-weight: normal;">${g1}</h1>`);
     processed = processed.replace(/^---$/gim, '<hr style="border: 0; margin: 0.4rem 0; opacity: 0;">');
     
     // Strip newlines directly adjacent to block elements to prevent double line breaks
@@ -108,9 +115,9 @@ function parseMarkdown(text) {
     processed = processed.replace(/\n?<\/(h[1-3])>\n?/gi, '</$1>');
     
     processed = processed.replace(/\n\n+/g, '<div style="height: 0.6rem;"></div>');
-    processed = processed.replace(/\*\*(.*?)\*\*/g, '$1');
-    processed = processed.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    processed = processed.replace(/_(.*?)_/g, '<em>$1</em>');
+    processed = processed.replace(/\*\*(.*?)\*\*/g, (m, g1) => g1);
+    processed = processed.replace(/\*(.*?)\*/g, (m, g1) => `<em>${g1}</em>`);
+    processed = processed.replace(/_(.*?)_/g, (m, g1) => `<em>${g1}</em>`);
     return processed;
 }
 
@@ -132,10 +139,12 @@ function getAllStopNames() {
 
 function colorRouteNames(text) {
     if (typeof colorMappings === 'undefined') return text;
+    const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const escColor = (typeof escapeCssColor === 'function') ? escapeCssColor : (c) => c;
     
     const stopNames = getAllStopNames();
     const escapedStops = stopNames.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const stopRegex = new RegExp(`(?<!\\w)(${escapedStops.join('|')})(?!\\w)`, 'gi');
+    const stopRegex = escapedStops.length ? new RegExp(`(?<!\\w)(${escapedStops.join('|')})(?!\\w)`, 'gi') : null;
     
     const readableKeys = Object.keys(readableRouteNames).sort((a, b) => b.length - a.length);
     const readableRegex = new RegExp(`\\b(${readableKeys.join('|')})\\b(?:\\s+(route\\b))?`, 'gi');
@@ -148,31 +157,34 @@ function colorRouteNames(text) {
         return line.replace(/(^|>)([^<]*?)(?=<|$)/g, (match, before, content) => {
             if (!content) return match;
             
-            let processed = content.replace(stopRegex, (name) => {
-                return `<span style="color: #65acf2;">${name}</span>`;
-            });
+            let processed = content;
+            if (stopRegex) {
+                processed = processed.replace(stopRegex, (name) => {
+                    return `<span style="color: #65acf2;">${esc(name)}</span>`;
+                });
+            }
             
             processed = processed.replace(readableRegex, (matchStr, name) => {
-                if (name === name.toLowerCase()) return matchStr;
+                if (name === name.toLowerCase()) return esc(matchStr);
                 const key = readableRouteNames[name.toLowerCase()];
                 const color = colorMappings[key];
-                if (color) return `<strong style="color: ${color}">${matchStr}</strong>`;
-                return matchStr;
+                if (color) return `<strong style="color: ${escColor(color)}">${esc(matchStr)}</strong>`;
+                return esc(matchStr);
             });
             
             processed = processed.replace(routeRegex, (matchStr, name, routeWord) => {
-                if (name === name.toLowerCase()) return matchStr;
+                if (name === name.toLowerCase()) return esc(matchStr);
                 if (name.toLowerCase() === 'all' && !routeWord) {
-                    return matchStr;
+                    return esc(matchStr);
                 }
                 const key = name.toLowerCase();
                 const color = colorMappings[key];
                 if (color) {
                     const uppercasedName = name.toUpperCase();
                     const newMatchStr = matchStr.replace(name, uppercasedName);
-                    return `<strong style="color: ${color}">${newMatchStr}</strong>`;
+                    return `<strong style="color: ${escColor(color)}">${esc(newMatchStr)}</strong>`;
                 }
-                return matchStr;
+                return esc(matchStr);
             });
             
             return before + processed;
@@ -256,9 +268,12 @@ $(document).on('click', '.chat-btn', function() {
   attachChatViewportListeners();
   adjustChatHeights();
 
+    // Clear previous recommendations to prevent unbounded DOM growth
+    $('.chat-recs').empty();
     const shuffled = [...exampleChats].sort(() => 0.5 - Math.random());
     shuffled.forEach(example => {
-        $('.chat-recs').append($(`<div class="p-1rem br-1rem pointer" style="background-color: var(--theme-chat-recs-bg); color: var(--theme-chat-recs-text);">${example.q}</div>`).click(function() {
+        const $rec = $('<div class="p-1rem br-1rem pointer" style="background-color: var(--theme-chat-recs-bg); color: var(--theme-chat-recs-text);"></div>').text(example.q);
+        $('.chat-recs').append($rec.click(function() {
             $('.chat-recs').hide();
             const $messages = $('.chat-ui-messages');
             $messages.append(`<div class="chat-message user">${$('<div>').text(example.q).html()}</div>`);
@@ -354,7 +369,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 // Show tool progress/description
                 console.log(data);
                 toolCalls.push(data.progress);
-                const $thinkingDiv = $(`<div class="chat-message bot loading thinking">${data.progress}</div>`);
+                const $thinkingDiv = $('<div class="chat-message bot loading thinking"></div>').text(data.progress);
                 $thinkingDiv.insertBefore($messages.children().last());
             } else if (data.done) {
                 $('.chat-message.bot.loading.thinking').slideUp();
@@ -364,12 +379,14 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     // console.log(data.answer);
                     const $showEntireResponse = $('<div class="text-1p3rem pointer" style="color: #8181f1; margin-left: 1.3rem;">Show raw response & tools</div>').click(function() {
                         const $expandedInfo = $('<div class="expanded-raw-info" style="margin-left: 1.3rem;"></div>');
-                        $expandedInfo.append(`<div class="text-1p3rem" style="white-space: pre-wrap; margin-top: 0.5rem; color: #aaa;">Response content: ${data.answer}</div>`);
+                        const $respDiv = $('<div class="text-1p3rem" style="white-space: pre-wrap; margin-top: 0.5rem; color: #aaa;"></div>').text('Response content: ' + data.answer);
+                        $expandedInfo.append($respDiv);
                         if (toolCalls.length > 0) {
                             const $toolsList = $('<div class="text-1p3rem" style="color: #8181f1; margin-top: 0.5rem;">Tools called:</div>');
                             const $ul = $('<ul style="margin: 0.25rem 0 0 0; padding-left: 1.5rem;"></ul>');
                             toolCalls.forEach(tool => {
-                                $ul.append(`<li style="color: #aaa;">${tool}</li>`);
+                                const $li = $('<li style="color: #aaa;"></li>').text(tool);
+                                $ul.append($li);
                             });
                             $toolsList.append($ul);
                             $expandedInfo.append($toolsList);
@@ -425,7 +442,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 if (suggestions.length > 0) {
                     const $chipsContainer = $('<div class="chat-suggestions-container flex flex-wrap gap-0p5rem mt-1rem"></div>');
                     suggestions.forEach(question => {
-                        const $chip = $(`<button class="chat-suggestion-chip" type="button">${question}</button>`);
+                        const $chip = $('<button class="chat-suggestion-chip" type="button"></button>').text(question);
                         $chip.on('click', function() {
                             $('.chat-ui-input').val(question);
                             $('.chat-ui-input-bar').trigger('submit');
