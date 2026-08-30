@@ -7,6 +7,8 @@ let dragStartY = 0;
 let dragEndX = 0;
 let dragEndY = 0;
 let isDragging = false;
+let suppressSubpanelClick = false;
+let lastSubpanelDragEndTime = 0;
 let initialScrollLeft = 0;
 
 // Debug counters for gesture analysis
@@ -341,6 +343,8 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
 	if (meetsThreshold) {
 		if (!isDragging || Math.abs(deltaX) > Math.abs(deltaY)) {
         isDragging = true;
+			suppressSubpanelClick = true;
+			lastSubpanelDragEndTime = Date.now();
 			if (horizontalDominant && Math.abs(deltaX) > 12) {
 				ipCounters.preventDefaults += 1;
 				e.preventDefault();
@@ -402,6 +406,11 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 	const totalDx = dragEndX - dragStartX;
 	const totalDy = dragEndY - dragStartY;
 	const totalDuration = Date.now() - touchStartTime;
+	const didDragGesture = isDragging || (dragStartX && (Math.abs(totalDx) > 10 || Math.abs(totalDy) > 15));
+	if (didDragGesture) {
+		suppressSubpanelClick = true;
+		lastSubpanelDragEndTime = Date.now();
+	}
     if (isDragging && dragStartX && dragStartY) {
 		const scaledVelocity = velocityX * 20;
 		console.log('[IP] end -> animate', { dx: totalDx, vScaled: scaledVelocity, handledMoves: ipCounters.handledMoves, totalMoves: ipCounters.moves });
@@ -450,6 +459,8 @@ $('.info-panels-content').on('contextmenu', function(e) {
 $('.info-panels-content').on('mouseleave touchcancel', function(e) {
 	console.log('[IP] pointer cancel/leave');
 	if (isDragging && dragStartX && dragEndX) {
+		suppressSubpanelClick = true;
+		lastSubpanelDragEndTime = Date.now();
 		const totalDx = dragEndX - dragStartX;
 		animateToTargetPanel(velocityX * 20, { dragDeltaX: totalDx });
 	} else if ($('.subpanels-container').hasClass('is-dragging-or-animating') && !animationFrameId) {
@@ -463,6 +474,21 @@ $('.info-panels-content').on('mouseleave touchcancel', function(e) {
 	velocityX = 0;
 	touchStartTime = 0;
 });
+
+// Suppress accidental taps/clicks when swiping between subpanels
+document.addEventListener('click', function(e) {
+	if (suppressSubpanelClick || (lastSubpanelDragEndTime > 0 && Date.now() - lastSubpanelDragEndTime < 350)) {
+		const target = $(e.target);
+		if (target.closest('.info-panels-content').length > 0) {
+			console.log('[IP] click suppressed due to subpanel drag');
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			e.preventDefault();
+			suppressSubpanelClick = false;
+			return false;
+		}
+	}
+}, true);
 
 function navigateToPanel(direction) {
     const newIndex = currentPanelIndex + direction;
