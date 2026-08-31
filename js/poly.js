@@ -1791,15 +1791,15 @@ const stopSwitchConfig = {
                 { label: 'SB', active: true, switch: 2 }
             ]
         },
-        27: { // Werblin North
-            pair: 11,
+        11: { // Werblin North
+            pair: 27,
             directions: [
                 { label: 'NB', active: true, switch: 1 },
                 { label: 'SB', active: false, switch: 2 }
             ]
         },
-        11: { // Werblin South
-            pair: 27,
+        27: { // Werblin South
+            pair: 11,
             directions: [
                 { label: 'NB', active: false, switch: 1 },
                 { label: 'SB', active: true, switch: 2 }
