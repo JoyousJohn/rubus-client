@@ -440,6 +440,12 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         console.error('Error fetching bus data:', error);
     } finally {
         busFetchInProgress = false;
+        // Guarantee the "UPDATING" badge settles. It's normally hidden by
+        // immediatelyUpdateBusDataPost() on the success path; tucking the hide
+        // here means a dropped/aborted/failed immediate fetch can never leave
+        // the badge up (the badge is only shown after this fetch passed the
+        // busFetchInProgress guard, so any failure lands in this finally).
+        $('.updating-buses').stop(true, true).slideUp();
         if (pendingForceImmediate) {
             pendingForceImmediate = false;
             forceImmediateUpdate = true;
