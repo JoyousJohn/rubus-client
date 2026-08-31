@@ -343,3 +343,5 @@ function escapeCssColor(str) {
     return '#000';
 }
 window.escapeCssColor = escapeCssColor;
+
+let originalStopShownRoute; // Preserve map selection before opening stop popup (undefined = no save)

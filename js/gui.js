@@ -4,6 +4,17 @@ let _pendingThemeTimeout
 let selectedCampusRoutes = [];
 
 function populateRouteSelectors(allActiveRoutes, stopId = null) {
+    // Drag/scroll state must be initialized before the selection-highlight block
+    // below calls smoothScrollTo (declaration-before-use; binding is per-invocation,
+    // fresh set created on each populate).
+    const $selectorsContainer = $('.route-selectors');
+    let isDragging = false;
+    let startX = 0;
+    let initialScrollLeft = 0;
+    let lastX = 0;
+    let lastTime = 0;
+    let velocity = 0;
+    let animationFrame = null;
     $('.route-selectors > div').not('.settings-btn, .sim-btn').not('.parking-campus-selector').remove();
 
     if (!allActiveRoutes) return;
@@ -277,16 +288,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         }
     }
 
-    const $selectorsContainer = $('.route-selectors');
     $selectorsContainer.scrollLeft(0);
-
-    let isDragging = false;
-    let startX = 0;
-    let initialScrollLeft = 0;
-    let lastX = 0;
-    let lastTime = 0;
-    let velocity = 0;
-    let animationFrame = null;
 
     function stopSelectorAnimation() {
         if (animationFrame) {
@@ -552,14 +554,13 @@ function toggleRouteSelectors(route, wasSelected = false) {
             const rn = $(this).attr('routeName');
             if (rn !== route) {
                 const rnInService = routeHasInServiceBuses(rn);
-                $(this).css('background-color', 'gray').css('opacity', rnInService ? '1' : '0.5');
+                $(this).css('background-color', 'gray').css('box-shadow', '').css('opacity', rnInService ? '1' : '0.5');
             }
         });
 
         // Always use the route color when selected, regardless of in-service status
         const selectedRouteColor = colorMappings[route];
         $(`.route-selector[routeName="${route}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`).css('opacity', '1')
-        $(`.route-selector[routeName="${shownRoute}"]`).css('box-shadow', '');
         shownRoute = route;
 
         const container = $('.route-selectors');
@@ -747,10 +748,13 @@ async function toggleRoute(route) {
         
         if (!popupStopId) {
             map.fitBounds(polylineBounds);
+            populateRouteSelectors(activeRoutes);
         }
         else {
             // Explicitly show all buses in stop info when unselecting the current route filter
             updateStopBuses(popupStopId, null);
+            // Refresh pills so old route loses box-shadow and all show as unselected
+            populateRouteSelectors(activeRoutes, popupStopId);
         }
 
         clearAllStopEtas();
@@ -785,29 +789,32 @@ async function toggleRoute(route) {
         }
 
 		if (!popupStopId) {
-			
+ 			
             clearPanoutFeedback();
-			
-			const routePolyline = polylines[route];
-			const routeBuses = (busesByRoutes[selectedCampus][route] || []).filter(busName => isBusShownOnMap(busName));
-			let boundsToFit = null;
-			if (routePolyline) {
-				const rb = routePolyline.getBounds();
-				boundsToFit = routeBuses.length
-					? routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(rb.getSouthWest(), rb.getNorthEast()))
-					: rb;
-			} else if (routeBuses.length) {
-				// No polyline exists yet, fit to buses of this route
-				const first = routeBuses[0];
-				boundsToFit = routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(L.latLng(busData[first].lat, busData[first].long), L.latLng(busData[first].lat, busData[first].long)));
-			}
-			if (boundsToFit) {
-				map.fitBounds(boundsToFit, { padding: [10, 10] });
-			}
-			$('.bus-info-popup, .stop-info-popup').hide();
-		}
+ 			
+ 			const routePolyline = polylines[route];
+ 			const routeBuses = (busesByRoutes[selectedCampus][route] || []).filter(busName => isBusShownOnMap(busName));
+ 			let boundsToFit = null;
+ 			if (routePolyline) {
+ 				const rb = routePolyline.getBounds();
+ 				boundsToFit = routeBuses.length
+ 					? routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(rb.getSouthWest(), rb.getNorthEast()))
+ 					: rb;
+ 			} else if (routeBuses.length) {
+ 				// No polyline exists yet, fit to buses of this route
+ 				const first = routeBuses[0];
+ 				boundsToFit = routeBuses.reduce((acc, id) => acc.extend(L.latLng(busData[id].lat, busData[id].long)), L.latLngBounds(L.latLng(busData[first].lat, busData[first].long), L.latLng(busData[first].lat, busData[first].long)));
+ 			}
+ 			if (boundsToFit) {
+ 				map.fitBounds(boundsToFit, { padding: [10, 10] });
+ 			}
+ 			$('.bus-info-popup, .stop-info-popup').hide();
+            populateRouteSelectors(activeRoutes);
+ 		}
         else {
             updateStopBuses(popupStopId, route);
+            // Refresh pills so old route loses box-shadow and new one gains it while stop is open
+            populateRouteSelectors(activeRoutes, popupStopId);
         }
 
         updateTooltips(route);

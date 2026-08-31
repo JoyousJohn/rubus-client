@@ -37,6 +37,41 @@ function hideInfoBoxes(instantly_hide) {
 
         // Restore all route selectors when stop is deselected
         populateRouteSelectors(activeRoutes);
+
+        // Restore map route filter to pre-stop state (pan/drag to close should not leak stop-scoped filter)
+        // Use direct show/hide without fitBounds to avoid locking isTransitioning during drag
+        if (originalStopShownRoute !== undefined) {
+            const routeToRestore = originalStopShownRoute;
+            originalStopShownRoute = undefined;
+            if (routeToRestore) {
+                if (shownRoute !== routeToRestore) {
+                    shownRoute = routeToRestore;
+                    hidePolylinesExcept(routeToRestore);
+                    hideStopsExcept(routeToRestore);
+                    updateStopsOpacity();
+                    for (const m in busMarkers) {
+                        busMarkers[m].setVisibility(!isBusMarkerHiddenByRoute(m));
+                    }
+                    if (!polylines[routeToRestore]) {
+                        addPolylineForRoute(routeToRestore).then(() => {
+                            if (shownRoute === routeToRestore) polylines[routeToRestore].setStyle({ opacity: 1 });
+                        });
+                    } else {
+                        polylines[routeToRestore].setStyle({ opacity: 1 });
+                    }
+                    updateTooltips(routeToRestore);
+                    populateRouteSelectors(activeRoutes);
+                }
+            } else {
+                shownRoute = null;
+                showAllPolylines();
+                showAllBuses();
+                showAllStops();
+                clearAllStopEtas();
+                prunePolylinesWithoutInService();
+                populateRouteSelectors(activeRoutes);
+            }
+        }
         
         $('.settings-btn').show();
         showSimBtnIfEligible();

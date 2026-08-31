@@ -1996,6 +1996,11 @@ async function popStopInfo(stopId) {
         clearAllStopEtas();
     }
 
+    // Save original map filter before opening stop (for restore on close via pan)
+    if (!popupStopId && originalStopShownRoute === undefined) {
+        originalStopShownRoute = shownRoute || null;
+    }
+
     popupStopId = stopId;
 
     // If we just unfocused a bus, check if its route has no in-service buses and prune polylines if needed
