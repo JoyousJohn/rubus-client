@@ -484,7 +484,7 @@ function hideStoppedFor() {
         // Drop the label from the row and clear the inline opacity/transition.
         $stoppedFor.addClass('none').removeClass('overtime').css('opacity', '').css('transition', '');
         $('.info-stopped-for-text').text('');
-        $('.info-stopped-octagon').addClass('none');
+        $('.info-stopped-for .info-stopped-octagon').addClass('none');
         // $name.css('transition', 'none').css('transform', 'none');
         stopOvertimeCounter();
     }, STOPPED_FOR_FADE_MS);
@@ -619,7 +619,7 @@ let overtimeBusId;
 // can't animate from a display:none before-state, so ramp opacity manually
 // with a forced reflow (same technique as hideStoppedFor).
 function showStoppedOctagon() {
-    const $oct = $('.info-stopped-octagon');
+    const $oct = $('.info-stopped-for .info-stopped-octagon');
     clearTimeout(stoppedOctagonHideTimeout);
     stoppedOctagonHideTimeout = null;
     if (!$oct.hasClass('none')) {
@@ -633,7 +633,7 @@ function showStoppedOctagon() {
 
 // Fade the overtime octagon out, then drop it from the layout.
 function hideStoppedOctagon() {
-    const $oct = $('.info-stopped-octagon');
+    const $oct = $('.info-stopped-for .info-stopped-octagon');
     if ($oct.hasClass('none')) return;
     clearTimeout(stoppedOctagonHideTimeout);
     $oct.css('transition', `opacity ${STOPPED_FOR_FADE_MS}ms ease`).css('opacity', 0);

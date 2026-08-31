@@ -826,10 +826,13 @@ html, body {
 }
 
 .info-stopped-for {
-    display: inline-flex;
-    gap: 0.5rem;
     white-space: pre;
     transition: color 300ms ease;
+}
+.info-stopped-for:not(.none) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* Red once the bus is stopped overtime (matches the octagon color). */

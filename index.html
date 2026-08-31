@@ -527,11 +527,14 @@
                                     <div class="info-stopped-octagon"><div class="flex align-center justify-center">!</div></div>
                                     <span>Bus may be exiting service</span>
                                 </div>
-                                <hr class="mt-0p5rem" style="width: calc(100% + 3rem); margin: 0.5rem -1.5rem 0 -1.5rem; align-self: center; border: none; border-top: 1px solid var(--theme-line-bg); opacity: 0.6;">
+                                <hr class="mt-0p5rem" style="width: calc(100% + 3rem); margin: 0.5rem -1.5rem 0.5rem -1.5rem; align-self: center; border: none; border-top: 1px solid var(--theme-line-bg); opacity: 0.6;">
                             </div>
-                            <div class="info-stopped-for none">
-                                <span class="info-stopped-for-text"></span>
-                                <div class="info-stopped-octagon none"><div class="flex align-center justify-center">!</div></div>
+                            <div class="info-stopped-for none text-1p3rem" style="color: var(--theme-extra); opacity: 0.85; line-height: 1;">
+                                <div class="flex align-center gap-0p5rem">
+                                    <span class="info-stopped-for-text"></span>
+                                    <div class="info-stopped-octagon none"><div class="flex align-center justify-center">!</div></div>
+                                </div>
+                                <hr class="mt-0p5rem" style="width: calc(100% + 3rem); margin: 0.5rem -1.5rem 0.5rem -1.5rem; align-self: center; border: none; border-top: 1px solid var(--theme-line-bg); opacity: 0.6;">
                             </div>
                             <div class="info-capacity info-capacity-mid none"></div>
                             <div class="info-quickness-mid"></div>
@@ -828,9 +831,8 @@
                     </div>
 
                 <div class="stop-btns flex gap-x-0p5rem">  
-                    <div class="stop-directions br-1rem align-center pointer flex gap-x-0p5rem" onclick="">
+                    <div class="stop-directions br-1rem align-center pointer" onclick="">
                         <i class="fa-solid fa-diamond-turn-right"></i>
-                        <div class="bold-500 font-1p7rem">NAV</div>
                     </div>
                     <div class="stop-navigate br-1rem align-center pointer" onclick="navToStop();">
                         <i class="fa-solid fa-person-walking"></i>

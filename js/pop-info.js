@@ -909,12 +909,12 @@ function updateGridIncremental(busName, rows, negativeETA, etaLabelsToSet) {
         distanceFromLine(busName);
     }
 
-    if (busData[busName] && busData[busName].atDepot) {
+    if (busData[busName].atDepot) {
         $('.next-stops-grid').hide();
         $('.next-stops-oos-notice').hide();
         $('.info-next-stops').show();
     } else {
-        const isInvalidOrOos = negativeETA || (busData[busName] && (busData[busName].oos || distanceFromLine(busName)));
+        const isInvalidOrOos = negativeETA || (busData[busName].oos || distanceFromLine(busName));
         if (isInvalidOrOos) {
             $('.next-stops-grid').hide();
             $('.next-stops-oos-notice').show();
