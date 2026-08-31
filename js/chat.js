@@ -442,8 +442,39 @@ function closeChat() {
   });
   $('.chat-ui-panel').css('height', '');
   $('.chat-ui-messages').css('height', '');
+  returnToMapIfChatRoute();
 }
 window.closeChat = closeChat;
+
+// If the address bar still points at the chat route (path */chat, hash #chat,
+// or ?chat param), restore the URL so the map can be reached again.
+function returnToMapIfChatRoute() {
+  const params = new URLSearchParams(window.location.search);
+  let changed = false;
+
+  if (params.has('chat')) {
+    params.delete('chat');
+    changed = true;
+  }
+
+  let path = window.location.pathname;
+  if (path.endsWith('/chat')) {
+    path = path.slice(0, -('/chat'.length)) || '/';
+    changed = true;
+  }
+
+  let hash = window.location.hash;
+  if (hash === '#chat') {
+    hash = '';
+    changed = true;
+  }
+
+  if (!changed) return;
+
+  const queryString = params.toString();
+  const newUrl = path + (queryString ? '?' + queryString : '') + hash;
+  history.replaceState(history.state, '', newUrl);
+}
 
 // Close chat UI
 $(document).on('click', '.chat-ui-close', function() {
