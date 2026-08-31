@@ -198,15 +198,15 @@ function openRUBusSocket() {
                 }
 
                 const _esc = (typeof escapeHtml === 'function' ? escapeHtml : (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
-                const $busLogElm = $('<div></div>');
-                $busLogElm.append($('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })));
+                const $time = $('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
                 const $arrivedLine = $('<div></div>');
+                $arrivedLine.append($('<span></span>').text(busRoute.toUpperCase()).css('color', colorMappings[busRoute] || '#000'));
+                $arrivedLine.append(document.createTextNode(' '));
                 $arrivedLine.append($('<strong></strong>').text(busName));
                 $arrivedLine.append(document.createTextNode(' '));
                 $arrivedLine.append($('<span style="color: #46dd46;"></span>').text('arrived'));
                 $arrivedLine.append(document.createTextNode(' at ' + stopName));
-                $busLogElm.append($arrivedLine);
-                $('.bus-log').append($busLogElm);
+                $('.bus-log').append($time).append($arrivedLine);
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
 
             } else if (eventData['event'] === 'departure') {
@@ -235,15 +235,15 @@ function openRUBusSocket() {
                 }
                 delete busData[busName].overtime
 
-                const $busLogElm2 = $('<div></div>');
-                $busLogElm2.append($('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })));
+                const $time2 = $('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
                 const $departLine = $('<div></div>');
+                $departLine.append($('<span></span>').text(busRoute.toUpperCase()).css('color', colorMappings[busRoute] || '#000'));
+                $departLine.append(document.createTextNode(' '));
                 $departLine.append($('<strong></strong>').text(busName));
                 $departLine.append(document.createTextNode(' '));
                 $departLine.append($('<span style="color: #ec5050;"></span>').text('departed'));
                 $departLine.append(document.createTextNode(' ' + stopName + ' after ' + stoppedFor + ' (' + stoppedDiff + '%)'));
-                $busLogElm2.append($departLine);
-                $('.bus-log').append($busLogElm2);
+                $('.bus-log').append($time2).append($departLine);
                 $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
 
                 if (busRotationPoints[busName]) {

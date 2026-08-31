@@ -37,7 +37,7 @@ function updateHistoricalCapacity(busName) {
             createBusRidershipChart(busName);
             currentRidershipChartBusId = busName;
         } else {
-            $('.bus-ridership-wrapper, .bus-history').hide();
+            $('.bus-ridership-wrapper').hide();
         }
     };
                          

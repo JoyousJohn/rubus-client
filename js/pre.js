@@ -184,6 +184,18 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 isNew = true;
                 hasNewOrChangedBuses = true;
 
+                if (!isInitial) {
+                    const $time = $('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                    const $line = $('<div></div>');
+                    $line.append($('<span></span>').text(routeStr.toUpperCase()).css('color', colorMappings[routeStr] || '#000'));
+                    $line.append(document.createTextNode(' '));
+                    $line.append($('<strong></strong>').text(busName));
+                    $line.append(document.createTextNode(' '));
+                    $line.append($('<span style="color: var(--theme-accent);"></span>').text('in service'));
+                    $('.bus-log').append($time).append($line);
+                    $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+                }
+
             } else {
                 if (busData[busName].route !== routeStr) { // Route changed for existing bus...
                     hasNewOrChangedBuses = true;
@@ -450,6 +462,16 @@ function makeBulkOoS(oosBusNames) {
 
         if (bus.route) affectedRoutes.add(bus.route);
 
+        const $time = $('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        const $line = $('<div></div>');
+        $line.append($('<span></span>').text(bus.route.toUpperCase()).css('color', colorMappings[bus.route] || '#000'));
+        $line.append(document.createTextNode(' '));
+        $line.append($('<strong></strong>').text(busName));
+        $line.append(document.createTextNode(' '));
+        $line.append($('<span style="color: var(--theme-accent);"></span>').text('out of service'));
+        $('.bus-log').append($time).append($line);
+        $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+
         clearBusSpeed(busName);
         if (busMarkers[busName]) {
             busMarkers[busName].remove();
@@ -549,6 +571,19 @@ function reconcileBusMarkers() {
 function makeOoS(busName) {
     
     console.log(`[Out of Service][${new Date().toLocaleString('en-US', {timeZone: 'America/New_York', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(',','')}] busName: ${busName}`)
+
+    const _route = busData[busName] ? busData[busName].route : null;
+    const $time = $('<div></div>').text(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    const $line = $('<div></div>');
+    if (_route) {
+        $line.append($('<span></span>').text(_route.toUpperCase()).css('color', colorMappings[_route] || '#000'));
+        $line.append(document.createTextNode(' '));
+    }
+    $line.append($('<strong></strong>').text(busName));
+    $line.append(document.createTextNode(' '));
+    $line.append($('<span style="color: var(--theme-accent);"></span>').text('out of service'));
+    $('.bus-log').append($time).append($line);
+    $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
 
     clearBusSpeed(busName);
     if (busMarkers[busName]) { // investigate why this would occur
