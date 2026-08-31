@@ -165,12 +165,14 @@ function updateOffScreenBusIndicators() {
             latLng: bus.latLng,
             x: edgeX,
             y: edgeY,
+            angleRad: angleRad,
             angleDeg: angleDeg,
             arrowRotation: arrowRotation
         });
     }
 
-    renderOffScreenIndicators(container, indicatorsData);
+    const clusteredData = clusterOffscreenIndicators(indicatorsData, minX, maxX, minY, maxY);
+    renderOffScreenIndicators(container, clusteredData);
 }
 
 function getShortestRotation(currentDeg, targetDeg) {
@@ -183,41 +185,237 @@ function getShortestRotation(currentDeg, targetDeg) {
     return currentDeg + diff;
 }
 
+function clusterOffscreenIndicators(indicators, minX, maxX, minY, maxY) {
+    if (!indicators || indicators.length <= 1) return indicators;
+    const CLUSTER_DIST_X = 128; // top/bottom edges (x delta)
+    const CLUSTER_DIST_Y = 196; // left/right edges (y delta) - larger threshold
+    const CLUSTER_DIST_CORNER = 128; // corner cross-edge
+    const hasBounds = typeof minX === 'number' && typeof maxX === 'number';
+    function isHorizontal(ind) {
+        if (!hasBounds) return false;
+        return ind.y === minY || ind.y === maxY;
+    }
+    function isVertical(ind) {
+        if (!hasBounds) return false;
+        return ind.x === minX || ind.x === maxX;
+    }
+    function cornerFor(ind) {
+        if (!hasBounds) return null;
+        // nearest corner to this edge point
+        const nearTop = Math.abs(ind.y - minY) < Math.abs(ind.y - maxY);
+        const nearLeft = Math.abs(ind.x - minX) < Math.abs(ind.x - maxX);
+        // for edge points, one of these is 0, so corner is (left/right, top/bottom)
+        const cx = nearLeft ? minX : maxX;
+        const cy = nearTop ? minY : maxY;
+        // if ind is on top/bottom, keep its x, use corner y; if on left/right, keep its y, use corner x
+        // but for corner detection we just return the corner itself
+        return { x: cx, y: cy };
+    }
+    const byRoute = {};
+    for (const ind of indicators) {
+        if (!byRoute[ind.route]) byRoute[ind.route] = [];
+        byRoute[ind.route].push(ind);
+    }
+    const clustered = [];
+    for (const route in byRoute) {
+        const list = byRoute[route];
+        const clusters = [];
+        for (const ind of list) {
+            let targetCluster = null;
+            for (const c of clusters) {
+                // anisotropic: use X threshold for horizontal edges (same y) and Y threshold for vertical edges (same x)
+                let shouldMerge = false;
+                for (const m of c.members) {
+                    const dx = Math.abs(ind.x - m.x);
+                    const dy = Math.abs(ind.y - m.y);
+                    const sameY = dy < 1; // same horizontal edge (top/bottom) - y exactly equal
+                    const sameX = dx < 1; // same vertical edge (left/right) - x exactly equal
+                    if (sameX && dy < CLUSTER_DIST_Y) { shouldMerge = true; break; }
+                    if (sameY && dx < CLUSTER_DIST_X) { shouldMerge = true; break; }
+                    // cross-edge near same corner (top+right, etc.) - allow merge if both near same corner
+                    if (hasBounds && !sameX && !sameY) {
+                        const ci = cornerFor(ind);
+                        const cm = cornerFor(m);
+                        if (ci && cm && ci.x === cm.x && ci.y === cm.y) {
+                            const distToCornerI = Math.hypot(ind.x - ci.x, ind.y - ci.y);
+                            const distToCornerM = Math.hypot(m.x - cm.x, m.y - cm.y);
+                            // both within thresholds of same corner
+                            if (distToCornerI < CLUSTER_DIST_CORNER && distToCornerM < CLUSTER_DIST_CORNER) {
+                                // also check they are close to each other across corner (hypot)
+                                if (Math.hypot(dx, dy) < CLUSTER_DIST_CORNER * 1.5) { shouldMerge = true; break; }
+                            }
+                        }
+                    }
+                }
+                if (shouldMerge) {
+                    targetCluster = c;
+                    break;
+                }
+            }
+            if (targetCluster) {
+                targetCluster.members.push(ind);
+                // update centroid - keep pinned to edge; for mixed-corner clusters pin to corner
+                let hasHoriz = false, hasVert = false;
+                for (const m of targetCluster.members) {
+                    if (isHorizontal(m)) hasHoriz = true;
+                    if (isVertical(m)) hasVert = true;
+                }
+                if (hasHoriz && hasVert && hasBounds) {
+                    const corner = cornerFor(targetCluster.members[0]);
+                    targetCluster.x = corner.x;
+                    targetCluster.y = corner.y;
+                } else {
+                    let sx = 0, sy = 0;
+                    for (const m of targetCluster.members) { sx += m.x; sy += m.y; }
+                    targetCluster.x = sx / targetCluster.members.length;
+                    targetCluster.y = sy / targetCluster.members.length;
+                }
+            } else {
+                clusters.push({ x: ind.x, y: ind.y, route: route, members: [ind] });
+            }
+        }
+        for (const c of clusters) {
+            if (c.members.length === 1) {
+                clustered.push(c.members[0]);
+            } else {
+                // circular mean for angle
+                let sinSum = 0, cosSum = 0;
+                let latSum = 0, lngSum = 0;
+                for (const m of c.members) {
+                    const rad = m.angleRad != null ? m.angleRad : m.angleDeg * Math.PI / 180;
+                    sinSum += Math.sin(rad);
+                    cosSum += Math.cos(rad);
+                    if (m.latLng) { latSum += m.latLng.lat; lngSum += m.latLng.lng; }
+                }
+                const avgRad = Math.atan2(sinSum / c.members.length, cosSum / c.members.length);
+                const avgDeg = avgRad * 180 / Math.PI;
+                const avgArrow = avgDeg + 90;
+                const avgLat = latSum / c.members.length;
+                const avgLng = lngSum / c.members.length;
+                let avgLatLng = c.members[0].latLng;
+                if (typeof L !== 'undefined' && L.latLng) avgLatLng = L.latLng(avgLat, avgLng);
+                else if (avgLat && avgLng) avgLatLng = { lat: avgLat, lng: avgLng };
+                clustered.push({
+                    busName: c.members.map(m => m.busName).join(','),
+                    route: route,
+                    latLng: avgLatLng,
+                    x: c.x,
+                    y: c.y,
+                    angleRad: avgRad,
+                    angleDeg: avgDeg,
+                    arrowRotation: avgArrow,
+                    isCluster: true,
+                    count: c.members.length,
+                    members: c.members
+                });
+            }
+        }
+    }
+    // Keep cross-route indicators as separate (already per-route), sort for stable rendering
+    return clustered;
+}
+
 function renderOffScreenIndicators(container, indicators) {
     const existingElements = Array.from(container.children);
     const updatedIds = new Set();
 
     indicators.forEach(ind => {
-        const safeId = ind.busName.replace(/[^a-zA-Z0-9_-]/g, '-');
-        const id = `offscreen-marker-${safeId}`;
+        let id;
+        if (ind.isCluster) {
+            const key = ind.members.map(m => m.busName).sort().join('_').replace(/[^a-zA-Z0-9_-]/g, '-');
+            id = `offscreen-cluster-${ind.route}-${key}`;
+        } else {
+            const safeId = ind.busName.replace(/[^a-zA-Z0-9_-]/g, '-');
+            id = `offscreen-marker-${safeId}`;
+        }
         updatedIds.add(id);
 
         let el = document.getElementById(id);
         const color = (typeof colorMappings !== 'undefined' && colorMappings[ind.route]) ? colorMappings[ind.route] : '#565fe5';
-        const routeLabel = ind.route.toUpperCase();
 
         if (!el) {
             el = document.createElement('div');
             el.id = id;
-            el.className = 'offscreen-bus-marker';
-            el.innerHTML = `
+            el.className = ind.isCluster ? 'offscreen-bus-marker offscreen-bus-marker-cluster' : 'offscreen-bus-marker';
+            if (ind.isCluster) {
+                el.innerHTML = `
+                <i class="fa-solid fa-arrow-up offscreen-bus-marker-arrow"></i>
+                <span class="offscreen-bus-marker-count">${ind.count}</span>
+            `;
+            } else {
+                el.innerHTML = `
                 <i class="fa-solid fa-arrow-up offscreen-bus-marker-arrow"></i>
             `;
+            }
+            // capture current ind for closure - use let binding per iteration
+            const captured = ind;
             el.onclick = function(e) {
                 e.stopPropagation();
                 if (map) {
-                    map.flyTo(ind.latLng, Math.max(map.getZoom(), 15), {
+                    map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
                         animate: true,
                         duration: 0.3
                     });
                 }
                 if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-select-on-tap']) {
                     if (typeof popInfo === 'function') {
-                        popInfo(ind.busName);
+                        const targetBus = captured.isCluster ? captured.members[0].busName : captured.busName;
+                        popInfo(targetBus);
                     }
                 }
             };
             container.appendChild(el);
+        } else {
+            // update cluster count if needed
+            if (ind.isCluster) {
+                el.className = 'offscreen-bus-marker offscreen-bus-marker-cluster';
+                const countEl = el.querySelector('.offscreen-bus-marker-count');
+                if (countEl) countEl.textContent = ind.count;
+                else {
+                    // upgrade single to cluster
+                    el.innerHTML = `
+                <i class="fa-solid fa-arrow-up offscreen-bus-marker-arrow"></i>
+                <span class="offscreen-bus-marker-count">${ind.count}</span>
+            `;
+                }
+                // update click latLng - rebind
+                const captured = ind;
+                el.onclick = function(e) {
+                    e.stopPropagation();
+                    if (map) {
+                        map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
+                            animate: true,
+                            duration: 0.3
+                        });
+                    }
+                    if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-select-on-tap']) {
+                        if (typeof popInfo === 'function') {
+                            popInfo(captured.members[0].busName);
+                        }
+                    }
+                };
+            } else {
+                el.className = 'offscreen-bus-marker';
+                // downgrade cluster to single if needed
+                if (el.querySelector('.offscreen-bus-marker-count')) {
+                    el.innerHTML = `<i class="fa-solid fa-arrow-up offscreen-bus-marker-arrow"></i>`;
+                    const captured = ind;
+                    el.onclick = function(e) {
+                        e.stopPropagation();
+                        if (map) {
+                            map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
+                                animate: true,
+                                duration: 0.3
+                            });
+                        }
+                        if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-select-on-tap']) {
+                            if (typeof popInfo === 'function') {
+                                popInfo(captured.busName);
+                            }
+                        }
+                    };
+                }
+            }
         }
 
         el.style.left = ind.x + 'px';
