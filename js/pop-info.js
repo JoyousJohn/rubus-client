@@ -440,7 +440,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     updateHistoricalCapacity(busName);
 
     if (sourceBusName !== busName) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
-        $('.bus-history').show();
+        // $('.bus-history').show();
         $('.info-quickness-mid').hide();
         getBusBreaks(busName);
         $('.show-more-breaks, .show-all-breaks').show();
