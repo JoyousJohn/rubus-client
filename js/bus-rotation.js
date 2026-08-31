@@ -31,18 +31,36 @@ function getRoutePolylinePoints(route) {
     let points = null;
     if (route && routePointsCache && routePointsCache[route]) {
         points = routePointsCache[route];
-    } else if (route && polylines && polylines[route] && typeof polylines[route].getLatLngs === 'function') {
+    } else if (route && polylines && polylines[route] && polylines[route].getLatLngs === 'function') {
         points = polylines[route].getLatLngs();
     }
     if (!points || !points.length) return null;
     // Flatten multi-segment polylines into a single flat list of [lat, lng].
     if (Array.isArray(points[0])) {
         if (typeof points[0][0] === 'number') {
-            return points;
+            // Already flat [lat,lng] pairs — de-dupe consecutive identical points
+            const deduped = [points[0]];
+            for (let i = 1; i < points.length; i++) {
+                const prev = points[i - 1], curr = points[i];
+                if (Math.abs(prev[0] - curr[0]) < 1e-9 && Math.abs(prev[1] - curr[1]) < 1e-9) continue;
+                deduped.push(curr);
+            }
+            return deduped;
         }
-        return points.flat(1);
+        points = points.flat(1);
     }
-    return points;
+    // De-dupe consecutive identical {lat,lng} objects
+    const deduped = [points[0]];
+    for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1], curr = points[i];
+        const prevLat = Array.isArray(prev) ? prev[0] : prev.lat;
+        const prevLng = Array.isArray(prev) ? prev[1] : (prev.lng !== undefined ? prev.lng : prev.long);
+        const currLat = Array.isArray(curr) ? curr[0] : curr.lat;
+        const currLng = Array.isArray(curr) ? curr[1] : (curr.lng !== undefined ? curr.lng : curr.long);
+        if (Math.abs(Number(prevLat) - Number(currLat)) < 1e-9 && Math.abs(Number(prevLng) - Number(currLng)) < 1e-9) continue;
+        deduped.push(curr);
+    }
+    return deduped;
 }
 
 const calculateRotation = (busName, loc) => {
@@ -82,9 +100,16 @@ const calculateRotation = (busName, loc) => {
                     }
                 }
 
-                const nextIdx = (closestIdx + 1) % polyPoints.length;
+                let nextIdx = (closestIdx + 1) % polyPoints.length;
                 const pt1 = polyPoints[closestIdx];
-                const pt2 = polyPoints[nextIdx];
+                // Skip identical consecutive points (e.g. lx duplicate at 129) so pt1 != pt2
+                let pt2 = polyPoints[nextIdx];
+                let attempts = 0;
+                while (attempts < polyPoints.length && Math.abs(pt2.lng - pt1.lng) < 1e-9 && Math.abs(pt2.lat - pt1.lat) < 1e-9) {
+                    nextIdx = (nextIdx + 1) % polyPoints.length;
+                    pt2 = polyPoints[nextIdx];
+                    attempts++;
+                }
 
                 // Only build the debug layers when the dev toggle is on, or when the
                 // selected-bus facing debug is on for the currently selected bus at a stop
