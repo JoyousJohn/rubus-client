@@ -379,11 +379,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-show-rotation-points':
             settings['toggle-show-rotation-points'] = isChecked;
-            for (const busName in busRotationPoints) {
-                ['pt1', 'pt2', 'line'].forEach(val => {
-                    busRotationPoints[busName][val].setStyle({'opacity': isChecked ? 1 : 0})
-                })
-            }
+            // Debug layers are (re)built/removed in calculateRotation, so
+            // re-run it for every stopped bus to reflect the new state.
+            immediatelyUpdateStoppedBusRotations();
+            break;
+
+        case 'toggle-show-selected-rotation-points':
+            settings['toggle-show-selected-rotation-points'] = isChecked;
+            immediatelyUpdateStoppedBusRotations();
             break;
 
         case 'toggle-show-rubus-ai':

@@ -46,16 +46,6 @@ function getRoutePolylinePoints(route) {
 }
 
 const calculateRotation = (busName, loc) => {
-    // Tear down the previous call's debug layers BEFORE the early return below.
-    // The original only cleaned up inside the stopLines branch, so layers leaked
-    // permanently once a bus left a stop that has rotation points.
-    if (busRotationPoints[busName]) {
-        ['pt1', 'pt2', 'line'].forEach(val => {
-            busRotationPoints[busName][val].remove();
-        });
-        delete busRotationPoints[busName];
-    }
-
     let newRotation;
     if (!pauseRotationUpdating) {
         const bus = busData[busName];
@@ -96,36 +86,49 @@ const calculateRotation = (busName, loc) => {
                 const pt1 = polyPoints[closestIdx];
                 const pt2 = polyPoints[nextIdx];
 
-                // Only build the debug layers when the dev toggle is on; the
-                // bearing calculation above always runs so bus rotation stays correct.
-                if (settings['toggle-show-rotation-points']) {
-                    busRotationPoints[busName] = {}
-
-                    // Add markers for the points
-                    busRotationPoints[busName]['pt1'] = L.circleMarker(pt1, {
-                        radius: 6,
-                        fillColor: "red",
-                        color: "#000",
-                        weight: 0,
-                        opacity: 1,
-                        fillOpacity: 1
-                    }).addTo(map);
-
-                    busRotationPoints[busName]['pt2'] = L.circleMarker(pt2, {
-                        radius: 6,
-                        fillColor: "blue",
-                        color: "#000",
-                        weight: 0,
-                        opacity: 1,
-                        fillOpacity: 1
-                    }).addTo(map);
-
-                    // Add green line between the points
-                    busRotationPoints[busName]['line'] = L.polyline([pt1, pt2], {
-                        color: 'green',
-                        weight: 3,
-                        opacity: 1
-                    }).addTo(map);
+                // Only build the debug layers when the dev toggle is on, or when the
+                // selected-bus facing debug is on for the currently selected bus at a stop
+                // with rotation fix enabled.
+                const shouldShowForSelected = settings['toggle-show-selected-rotation-points'] && popupBusName === busName;
+                const shouldShowDebug = settings['toggle-show-rotation-points'] || shouldShowForSelected;
+                if (shouldShowDebug) {
+                    if (busRotationPoints[busName]) {
+                        busRotationPoints[busName]['pt1'].setLatLng(pt1);
+                        busRotationPoints[busName]['pt2'].setLatLng(pt2);
+                        busRotationPoints[busName]['line'].setLatLngs([pt1, pt2]);
+                    } else {
+                        busRotationPoints[busName] = {};
+                        // Green line between the two facing points. L.polyline here
+                        // is the MapLibre compat wrapper; its setLatLngs() lets us
+                        // move the segment in place on later polls.
+                        busRotationPoints[busName]['line'] = L.polyline([pt1, pt2], {
+                            color: 'green',
+                            weight: 3,
+                            opacity: 1
+                        }).addTo(map);
+                        // Facing points as DOM dot markers (always paint above the
+                        // GL canvas). L.circleMarker maps to an empty L.marker, so
+                        // the dots are built from inline HTML instead.
+                        busRotationPoints[busName]['pt1'] = L.marker(pt1, {
+                            icon: { options: {
+                                className: 'rotation-debug-point',
+                                iconSize: [12, 12],
+                                html: '<div style="width:12px;height:12px;box-sizing:border-box;border-radius:50%;background:#f62929;border:2px solid #000;"></div>'
+                            } }
+                        }).addTo(map);
+                        busRotationPoints[busName]['pt2'] = L.marker(pt2, {
+                            icon: { options: {
+                                className: 'rotation-debug-point',
+                                iconSize: [12, 12],
+                                html: '<div style="width:12px;height:12px;box-sizing:border-box;border-radius:50%;background:#3155c1;border:2px solid #000;"></div>'
+                            } }
+                        }).addTo(map);
+                    }
+                } else if (busRotationPoints[busName]) {
+                    ['pt1', 'pt2', 'line'].forEach(val => {
+                        busRotationPoints[busName][val].remove();
+                    });
+                    delete busRotationPoints[busName];
                 }
 
                 const toRad = deg => deg * Math.PI / 180;
@@ -141,7 +144,13 @@ const calculateRotation = (busName, loc) => {
             }
 
             // Route polyline unavailable; fall back to the GPS rotation.
+            // Keep existing debug layers on transient polyline miss to avoid flicker
             return normalizeRotation(bus.rotation) + 45;
+        } else if (busRotationPoints[busName]) {
+            ['pt1', 'pt2', 'line'].forEach(val => {
+                busRotationPoints[busName][val].remove();
+            });
+            delete busRotationPoints[busName];
         }
 
         newRotation = normalizeRotation(bus.rotation) + 45;

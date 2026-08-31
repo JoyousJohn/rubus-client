@@ -418,6 +418,10 @@ function popInfo(busName, resetCampusFontSize) {
         hideStoppedFor();
     }
 
+    if (settings['toggle-show-selected-rotation-points']) {
+        immediatelyUpdateStoppedBusRotations();
+    }
+
     // console.log('data: ', data)
     // console.log('next_stop' in data)
 

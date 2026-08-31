@@ -104,6 +104,7 @@ const defaultSettings = {
     'toggle-show-closest-stops': true,
     'toggle-show-center-stops': true,
     'toggle-show-etas-in-ms': false,
+    'toggle-show-selected-rotation-points': false,
     'bus-animation-rate': 'off',
     'toggle-always-show-break-overdue': false,
     'toggle-force-show-polylines': false,

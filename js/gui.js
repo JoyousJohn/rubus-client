@@ -2068,6 +2068,7 @@ const toggleSettings = [
     'toggle-offscreen-bus-indicators-select-on-tap',
     'toggle-show-invalid-etas',
     'toggle-show-rotation-points',
+    'toggle-show-selected-rotation-points',
     'toggle-show-rubus-ai',
     'toggle-show-bus-quickness-breakdown',
     'toggle-always-immediate-update',

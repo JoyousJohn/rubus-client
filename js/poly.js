@@ -358,6 +358,30 @@ window.createMapLibrePolyline = function(coordinates, options) {
         isAdded = false;
     }
 
+    // Replace the line's geometry in place (no remove/add churn), so a debug
+    // polyline whose endpoints move each poll doesn't flicker. Coordinates are
+    // normalized exactly like the constructor.
+    function setLatLngs(coordinates) {
+        if (!coordinates || !coordinates.length) return wrapper;
+        geoCoords = coordinates.map(pt => {
+            if (Array.isArray(pt)) {
+                return [Number(pt[1]), Number(pt[0])];
+            } else if (pt && pt.lat !== undefined && pt.lng !== undefined) {
+                return [Number(pt.lng), Number(pt.lat)];
+            }
+            return pt;
+        });
+        if (!removed && map && map.getSource && map.getSource(sourceId)) {
+            map.getSource(sourceId).setData({
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: geoCoords }
+            });
+        } else if (!removed && map) {
+            add();
+        }
+        return wrapper;
+    }
+
     const wrapper = {
         _latlngs: coordinates,
         _mapLibreLayerId: layerId,
@@ -399,6 +423,7 @@ window.createMapLibrePolyline = function(coordinates, options) {
         getLatLngs: function() {
             return coordinates;
         },
+        setLatLngs: setLatLngs,
         getElement: function() {
             return null;
         },

@@ -83,6 +83,9 @@ function hideInfoBoxes(instantly_hide) {
         stopOvertimeCounter();
         const busIdThatWasFocused = popupBusName;
         popupBusName = null;
+        if (settings['toggle-show-selected-rotation-points']) {
+            removeBusRotationPoints(busIdThatWasFocused);
+        }
         $('.info-shared-bus-mid').hide();
 
         // Remove distance line when bus is unfocused
