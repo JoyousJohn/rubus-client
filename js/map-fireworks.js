@@ -109,6 +109,16 @@ $(document).on('keydown', function(e) {
     }
 
     if (e.key === 'Escape') {
+        if ($('.chat-wrapper').is(':visible')) {
+            e.preventDefault();
+            if (typeof closeChat === 'function') {
+                closeChat();
+            } else {
+                $('.chat-ui-close').click();
+            }
+            return;
+        }
+
         hideInfoBoxes();
         $('.settings-panel').fadeOut('fast');
         $('.bottom').fadeIn('fast'); // this is being hidden due to settings-btn click?... Why tho

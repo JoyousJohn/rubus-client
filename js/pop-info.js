@@ -484,9 +484,21 @@ function renderNextStopsGrid(busName) {
     const data = busData[busName];
     const etaLabelsToSet = [];
 
-    if (!('next_stop' in data) || !busETAs[busName] || data.atDepot) { // Hide next stops when bus is at depot
+    if (data.atDepot) { // Hide next stops when at depot without showing OOS exit service notice (since depot bubble is shown)
         $('.next-stops-grid').hide();
         $('.next-stops-grid > div').empty();
+        $('.next-stops-oos-notice').hide();
+        $('.info-next-stops').show();
+        lastNextStopsSignature = null;
+        return { aborted: false, etaLabels: etaLabelsToSet };
+    }
+
+    const isInvalidOrOos = !('next_stop' in data) || !busETAs[busName] || data.oos || distanceFromLine(busName);
+    if (isInvalidOrOos) { // Hide next stops and show OOS notice when bus is off line / OOS
+        $('.next-stops-grid').hide();
+        $('.next-stops-grid > div').empty();
+        $('.next-stops-oos-notice').show();
+        $('.info-next-stops').show();
         lastNextStopsSignature = null;
         return { aborted: false, etaLabels: etaLabelsToSet };
     }
@@ -608,7 +620,7 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
             // the client-side tickdown, so the display is always derived from
             // abs - now rather than from the freshly parsed string.
             if (!window.msEtaAbs) window.msEtaAbs = new Map();
-            const msKey = `${busName}:${sortedStops[i]}`;
+            const msKey = `${busName}:${route}:${i}`;
             if (!window.msEtaAbs.has(msKey)) {
                 window.msEtaAbs.set(msKey, Date.now() + Math.floor(eta) * 1000);
             }
@@ -684,6 +696,7 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
         const isClosest = closestStopId && closestStopId === sortedStops[i] && routesServicing(closestStopId).includes(route);
         rows.push({
             stopId: sortedStops[i],
+            rowIndex: i,
             eta: eta,
             formattedTime: formattedTime,
             stopName: stopName,
@@ -781,7 +794,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
                 flyToStop(row.stopId);
             }));
         $grid.append($(`<div class="flex flex-col center pointer">
-            <div class="next-stop-eta" data-stop-id="${row.stopId}">${row.eta}</div>
+            <div class="next-stop-eta" data-stop-id="${row.stopId}" data-stop-index="${row.rowIndex}">${row.eta}</div>
             <div class="next-stop-time">${row.formattedTime}</div>
         </div>`).click(() => {
             flyToStop(row.stopId);
@@ -809,8 +822,8 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
     }
 
     if (!negativeETA) {
-
-        $('.info-next-stops, .next-stops-grid').show(); // remove .show after adding message saying stops unavailable in the else statement above <-- ??
+        $('.next-stops-oos-notice').hide();
+        $('.info-next-stops, .next-stops-grid').show();
 
         if (popupBusName !== busName) {
             setTimeout(() => { // absolutely no idea why it doesn't reset scroll without a timeout
@@ -824,12 +837,20 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
             const heightDiff = Math.abs(lastRect.top - firstRect.top);
             firstCircle.addClass('connecting-line');
             firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
+            updateNextStopsMaxHeight();
         }, 0);
 
     } else {
-        $('.next-stops-grid').hide(); // For some reason *only* the closest stop at top of next stops remains visible if negative ETA, and only if negative ETA happens while site was open. Investigate why, unsure if this fixes. The closest stop should be part of the element, so I'm confused...
+        $('.next-stops-grid').hide();
+        if (data.atDepot) {
+            $('.next-stops-oos-notice').hide();
+        } else {
+            $('.next-stops-oos-notice').show();
+        }
+        $('.info-next-stops').show();
         setTimeout(() => {
             $('.info-next-stops').scrollTop(0)
+            updateNextStopsMaxHeight();
         }, 0);
     }
 }
@@ -840,7 +861,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
 // excluded; the closest-stop section gets its own handling below.
 function updateGridIncremental(busName, rows, negativeETA, etaLabelsToSet) {
     for (const row of rows) {
-        $(`.next-stop-eta[data-stop-id="${row.stopId}"]:not(.here-eta)`).text(row.eta).siblings('.next-stop-time').text(row.formattedTime);
+        $(`.next-stop-eta[data-stop-index="${row.rowIndex}"]:not(.here-eta)`).text(row.eta).siblings('.next-stop-time').text(row.formattedTime);
         if (!row.skipRow) etaLabelsToSet.push([row.stopId, row.eta]);
 
         if (row.isClosest) {
@@ -859,10 +880,20 @@ function updateGridIncremental(busName, rows, negativeETA, etaLabelsToSet) {
         distanceFromLine(busName);
     }
 
-    if (negativeETA) {
+    if (busData[busName] && busData[busName].atDepot) {
         $('.next-stops-grid').hide();
+        $('.next-stops-oos-notice').hide();
+        $('.info-next-stops').show();
     } else {
-        $('.next-stops-grid').show();
+        const isInvalidOrOos = negativeETA || (busData[busName] && (busData[busName].oos || distanceFromLine(busName)));
+        if (isInvalidOrOos) {
+            $('.next-stops-grid').hide();
+            $('.next-stops-oos-notice').show();
+            $('.info-next-stops').show();
+        } else {
+            $('.next-stops-oos-notice').hide();
+            $('.next-stops-grid').show();
+        }
     }
 }
 
@@ -880,6 +911,18 @@ function updateNextStopsMaxHeight() {
     
     // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom <-- no longer acccrate 8/19
     const maxHeight = window.innerHeight - nextStops.offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight() - overdueBreakHeight;
-    // console.log(maxHeight);
-    nextStops.css('max-height', maxHeight - 75);
+    let targetMaxHeight = maxHeight - 75;
+
+    const $grid = $('.next-stops-grid');
+    if ($grid.is(':visible') && $grid.children().length > 0) {
+        const gridHeight = $grid.outerHeight();
+        const isBorderBox = nextStops.css('box-sizing') === 'border-box';
+        const paddingVertical = (parseFloat(nextStops.css('padding-top')) || 0) + (parseFloat(nextStops.css('padding-bottom')) || 0);
+        const contentGridHeight = gridHeight + (isBorderBox ? paddingVertical : 0);
+        if (contentGridHeight > 0 && contentGridHeight < targetMaxHeight) {
+            targetMaxHeight = contentGridHeight;
+        }
+    }
+
+    nextStops.css('max-height', targetMaxHeight);
 }

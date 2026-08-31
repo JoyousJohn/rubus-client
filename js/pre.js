@@ -1223,7 +1223,10 @@ $(document).ready(async function() {
         }
     }
 
-    await fetchJoinTimes();
+    await Promise.all([
+        fetchJoinTimes(),
+        typeof initRoutePointsCache === 'function' ? initRoutePointsCache(selectedCampus) : Promise.resolve()
+    ]);
 
     async function initBusDataPipeline() {
         await fetchBusData(false, true);

@@ -72,15 +72,24 @@
   align-self: flex-end;
   background: #565fe5;
   color: #fff;
-  border-radius: 1.2rem 1.2rem 0.3rem 1.2rem;
+  border-radius: 2rem 2rem 0.5rem 2rem;
 }
 
 .chat-message.bot {
   align-self: flex-start;
-  /*background: linear-gradient(135deg, #f8f5ff, #e0e0ff);*/
   color: var(--theme-color);
   border-radius: 1.2rem 1.2rem 1.2rem 0.3rem;
   opacity: 1;
+}
+
+.chat-message.bot.thinking {
+  opacity: 0.55;
+  color: var(--theme-color);
+  box-shadow: none;
+  margin: 0;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  animation: none;
 }
 
 .chat-message.bot.loading {

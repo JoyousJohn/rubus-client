@@ -74,7 +74,7 @@
     --theme-bus-icon-inner: #c026d3;
     --theme-satellite-btn: #a855f7;
     --theme-breaks-min-color: #ec4899;
-    --theme-short-stops-color: #a855f7;
+    --theme-short-stops-color: #34d399;
     --theme-chat-recs-bg: #1c112e;
     --theme-chat-recs-text: #fdf2f8;
     --theme-unselected-route-bg: #1c112e;
@@ -103,7 +103,7 @@
     --theme-bus-icon-inner: #f4eae1;
     --theme-satellite-btn: #a0522d;
     --theme-breaks-min-color: #a0522d;
-    --theme-short-stops-color: #70533e;
+    --theme-short-stops-color: #386641;
     --theme-chat-recs-bg: #ebdcd0;
     --theme-chat-recs-text: #3d2b1f;
     --theme-unselected-route-bg: #ebdcd0;
@@ -816,10 +816,43 @@ html, body {
     line-height: 1;
 }
 
+.next-stops-oos-notice {
+    line-height: 1;
+}
+
+.next-stops-oos-notice .info-stopped-octagon {
+    margin-top: 0;
+    flex-shrink: 0;
+    background-color: var(--theme-stop-bus-name);
+}
+
+.next-stops-oos-notice .info-stopped-octagon > div {
+    color: var(--theme-bg);
+}
+
 .info-next-stops {
     /* max-height: 35vh; */
     overflow-y: scroll;
     display: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-border) transparent;
+}
+
+.info-next-stops::-webkit-scrollbar {
+    width: 6px;
+}
+
+.info-next-stops::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.info-next-stops::-webkit-scrollbar-thumb {
+    background-color: var(--theme-border);
+    border-radius: 4px;
+}
+
+.info-next-stops::-webkit-scrollbar-thumb:hover {
+    background-color: var(--theme-extra);
 }
 
 .next-stops-grid > div {

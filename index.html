@@ -515,7 +515,14 @@
                             <div class="bus-oos bus-oos-mid br-0p5rem">Out of Service</div>
                             <div class="bus-depot bus-depot-mid br-0p5rem">At Depot</div>
                         </div>
-                        <div class="info-extra flex justify-center" style="white-space: pre;">
+                        <div class="info-extra flex justify-center">
+                            <div class="next-stops-oos-notice none text-1p3rem flex flex-col align-center" style="color: var(--theme-extra); opacity: 0.85;">
+                                <div class="flex align-center gap-0p5rem">
+                                    <div class="info-stopped-octagon"><div class="flex align-center justify-center">!</div></div>
+                                    <span>Bus may be exiting service</span>
+                                </div>
+                                <hr class="mt-0p5rem" style="width: calc(100% + 3rem); margin: 0.5rem -1.5rem 0 -1.5rem; align-self: center; border: none; border-top: 1px solid var(--theme-line-bg); opacity: 0.6;">
+                            </div>
                             <div class="info-stopped-for none">
                                 <span class="info-stopped-for-text"></span>
                                 <div class="info-stopped-octagon none"><div class="flex align-center justify-center">!</div></div>
@@ -1064,7 +1071,7 @@
             <span class="chat-ui-close flex justify-center align-center select-none absolute">X</span>
           </div>
           <div class="chat-ui-messages flex flex-col gap-1p2rem flex-1 px-1rem">
-            <div class="chat-message bot">RUBus Chat is an expert in Rutgers buses capable of answering complex questions about bus routes, schedules, and more. I also have real-time access to the currently running summer buses which you can explicitly ask about.</div>
+            <div class="chat-message bot">RUBus Chat is an expert in Rutgers buses capable of answering complex questions about bus routes, schedules, and more.</div>
             <div class="chat-recs flex gap-x-1rem text-1p2rem mt-0p5rem" style="overflow-x: scroll; scrollbar-width: none;"></div>
         </div>
           <form class="chat-ui-input-bar flex align-center gap-0p5rem p-1rem" autocomplete="off">

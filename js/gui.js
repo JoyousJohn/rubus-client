@@ -272,9 +272,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
 
                 const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
                 
-                container.animate({
-                    scrollLeft: scrollTo
-                }, 180);
+                smoothScrollTo(scrollTo, 200);
             }
         }
     }
@@ -298,6 +296,35 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         $selectorsContainer.stop(true);
     }
 
+    function smoothScrollTo(target, duration = 220) {
+        stopSelectorAnimation();
+        const containerEl = $selectorsContainer[0];
+        if (!containerEl) return;
+        const maxScroll = containerEl.scrollWidth - containerEl.clientWidth;
+        const clampedTarget = Math.max(0, Math.min(target, maxScroll));
+        const start = containerEl.scrollLeft;
+        const change = clampedTarget - start;
+        if (Math.abs(change) < 0.5) return;
+
+        const startTime = performance.now();
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const t = Math.min(1, elapsed / duration);
+            // Smooth ease-out cubic curve (synced to display refresh rate)
+            const ease = 1 - Math.pow(1 - t, 3);
+            containerEl.scrollLeft = start + change * ease;
+
+            if (t < 1) {
+                animationFrame = requestAnimationFrame(step);
+            } else {
+                containerEl.scrollLeft = clampedTarget;
+                animationFrame = null;
+            }
+        }
+        animationFrame = requestAnimationFrame(step);
+    }
+
     $selectorsContainer
     .off('mousedown mouseleave mouseup mousemove touchstart touchend touchcancel touchmove wheel')
     .on('mousedown touchstart', function(e) {
@@ -306,8 +333,8 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         const pageX = e.pageX || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].pageX : 0);
         startX = pageX;
         lastX = pageX;
-        initialScrollLeft = $(this).scrollLeft();
-        lastTime = Date.now();
+        initialScrollLeft = this.scrollLeft;
+        lastTime = performance.now();
         velocity = 0;
         
         if (e.type !== 'touchstart') {
@@ -318,18 +345,19 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         if (!isDragging) return;
         
         const pageX = e.pageX || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].pageX : 0);
-        const currentTime = Date.now();
+        const currentTime = performance.now();
         const timeDiff = currentTime - lastTime;
         
         if (timeDiff > 0) {
             const distance = pageX - lastX;
-            velocity = (distance / timeDiff) * 16;
+            const instantVelocity = (distance / timeDiff) * 16.667;
+            velocity = velocity ? (velocity * 0.35 + instantVelocity * 0.65) : instantVelocity;
             lastX = pageX;
             lastTime = currentTime;
         }
         
         const walk = pageX - startX;
-        $(this).scrollLeft(initialScrollLeft - walk);
+        this.scrollLeft = initialScrollLeft - walk;
         
         if (e.type === 'touchmove') {
             if (Math.abs(pageX - startX) > 6) {
@@ -343,21 +371,20 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         if (!isDragging) return;
         isDragging = false;
         
-        const container = $(this);
-        const maxScroll = container[0].scrollWidth - container[0].clientWidth;
+        const containerEl = this;
+        const maxScroll = containerEl.scrollWidth - containerEl.clientWidth;
         if (maxScroll <= 0) return;
 
-        const currentTime = Date.now();
+        const currentTime = performance.now();
         const timeSinceLastMove = currentTime - lastTime;
-        const currentScroll = container.scrollLeft();
+        const currentScroll = containerEl.scrollLeft;
 
-        // If the finger/mouse paused for more than 70ms before release, clear velocity
-        if (timeSinceLastMove > 70) {
+        // If the finger/mouse paused for more than 60ms before release, clear velocity
+        if (timeSinceLastMove > 60) {
             velocity = 0;
         }
 
         const totalDragDistance = lastX - startX; // negative = dragged left (scrolled right toward end)
-        const absDragDistance = Math.abs(totalDragDistance);
         const absVelocity = Math.abs(velocity);
 
         // Thresholds for snapping to the end/start vs natural momentum
@@ -365,46 +392,57 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         const SNAP_DISTANCE_THRESHOLD = 50; // Must drag at least 50px to qualify for snap-to-end
         const FLING_MIN_VELOCITY = 2.0;     // Minimum speed for moderate momentum
 
-        // 1. FAST & FAR FLING -> SNAP TO END OR START
+        // 1. FAST & FAR FLING -> SNAP TO END OR START (smooth ease-out rAF)
         const isFlickToEnd = totalDragDistance < -SNAP_DISTANCE_THRESHOLD && velocity < -SNAP_VELOCITY_THRESHOLD;
         const isFlickToStart = totalDragDistance > SNAP_DISTANCE_THRESHOLD && velocity > SNAP_VELOCITY_THRESHOLD;
         const isNearEnd = currentScroll > (maxScroll - 35) && velocity < 0;
         const isNearStart = currentScroll < 35 && velocity > 0;
 
         if (isFlickToEnd || isNearEnd) {
-            container.animate({ scrollLeft: maxScroll }, 220);
+            smoothScrollTo(maxScroll, 220);
             return;
         }
 
         if (isFlickToStart || isNearStart) {
-            container.animate({ scrollLeft: 0 }, 220);
+            smoothScrollTo(0, 220);
             return;
         }
 
-        // 2. MODERATE FLING -> NATURAL MOMENTUM
+        // 2. MODERATE FLING -> NATURAL MOMENTUM (High-precision subpixel float decay)
         if (absVelocity >= FLING_MIN_VELOCITY) {
+            let currentScrollPos = currentScroll;
             let currentVelocity = velocity;
-            const friction = 0.92;
+            let lastFrameTime = performance.now();
 
-            function animateInertia() {
-                if (Math.abs(currentVelocity) < 0.2) {
+            function animateInertia(now) {
+                const dt = Math.min(32, Math.max(1, now - lastFrameTime));
+                lastFrameTime = now;
+                const dtFactor = dt / 16.667;
+
+                if (Math.abs(currentVelocity) < 0.15) {
                     stopSelectorAnimation();
                     return;
                 }
 
-                const newScroll = container.scrollLeft() - currentVelocity;
-                container.scrollLeft(newScroll);
-                currentVelocity *= friction;
+                currentScrollPos -= currentVelocity * dtFactor;
+                currentVelocity *= Math.pow(0.92, dtFactor);
 
-                if (newScroll <= 0 || newScroll >= maxScroll) {
+                if (currentScrollPos <= 0) {
+                    containerEl.scrollLeft = 0;
+                    stopSelectorAnimation();
+                    return;
+                }
+                if (currentScrollPos >= maxScroll) {
+                    containerEl.scrollLeft = maxScroll;
                     stopSelectorAnimation();
                     return;
                 }
 
+                containerEl.scrollLeft = currentScrollPos;
                 animationFrame = requestAnimationFrame(animateInertia);
             }
 
-            animateInertia();
+            animationFrame = requestAnimationFrame(animateInertia);
             return;
         }
 
@@ -413,9 +451,8 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     .on('wheel', function(event) {
         event.preventDefault();
         stopSelectorAnimation();
-        const $el = $(this);
-        const newScrollLeft = $el.scrollLeft() + event.originalEvent.deltaY;
-        $el.stop().animate({ scrollLeft: newScrollLeft }, 100);
+        const newScrollLeft = this.scrollLeft + event.originalEvent.deltaY;
+        smoothScrollTo(newScrollLeft, 120);
     });
 
 }

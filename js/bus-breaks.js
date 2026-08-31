@@ -47,7 +47,7 @@ function populateBusBreaks(busBreakData, busName) {
 
     if (lastBreakMin && lastBreakMin > 120) {
         // Only show if actually overdue (more than 2 hours)
-        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>${Math.floor(lastBreakMin / 60)} HOURS SINCE BREAK</span></div>`).show();
+        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>${Math.floor(lastBreakMin / 60)}h since break</span></div>`).show();
         updateNextStopsMaxHeight();
     } else if (settings['toggle-always-show-break-overdue'] && lastBreakMin !== null) {
         const hours = Math.floor(lastBreakMin / 60);

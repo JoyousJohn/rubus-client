@@ -41,13 +41,32 @@ const exampleChats = [
 const readableRouteNames = {
     'weekend 1': 'wknd1',
     'weekend 2': 'wknd2',
+    'weekend1': 'wknd1',
+    'weekend2': 'wknd2',
+    'wknd 1': 'wknd1',
+    'wknd 2': 'wknd2',
+    'wknd1': 'wknd1',
+    'wknd2': 'wknd2',
     'winter 1': 'winter1',
     'winter 2': 'winter2',
+    'winter1': 'winter1',
+    'winter2': 'winter2',
     'summer 1': 'summer1',
     'summer 2': 'summer2',
+    'summer1': 'summer1',
+    'summer2': 'summer2',
     'all campus': 'all',
     'overnight 1': 'on1',
     'overnight 2': 'on2',
+    'overnight1': 'on1',
+    'overnight2': 'on2',
+    'on 1': 'on1',
+    'on 2': 'on2',
+    'on1': 'on1',
+    'on2': 'on2',
+    'b/l': 'bl',
+    'b-he': 'bhe',
+    'b he': 'bhe',
 };
 
 function parseMarkdown(text) {
@@ -116,8 +135,9 @@ function parseMarkdown(text) {
     
     processed = processed.replace(/\n\n+/g, '<div style="height: 0.6rem;"></div>');
     processed = processed.replace(/\*\*(.*?)\*\*/g, (m, g1) => g1);
+    processed = processed.replace(/__(.*?)__/g, (m, g1) => g1);
     processed = processed.replace(/\*(.*?)\*/g, (m, g1) => `<em>${g1}</em>`);
-    processed = processed.replace(/_(.*?)_/g, (m, g1) => `<em>${g1}</em>`);
+    processed = processed.replace(/(?<!\w)_(.*?)_(?!\w)/g, (m, g1) => `<em>${g1}</em>`);
     return processed;
 }
 
@@ -147,7 +167,8 @@ function colorRouteNames(text) {
     const stopRegex = escapedStops.length ? new RegExp(`(?<!\\w)(${escapedStops.join('|')})(?!\\w)`, 'gi') : null;
     
     const readableKeys = Object.keys(readableRouteNames).sort((a, b) => b.length - a.length);
-    const readableRegex = new RegExp(`\\b(${readableKeys.join('|')})\\b(?:\\s+(route\\b))?`, 'gi');
+    const escapedReadable = readableKeys.map(r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const readableRegex = new RegExp(`(?:(?<=\\s|^|[•\\*\\-]|\\b))(${escapedReadable.join('|')})(?:\\b|(?=\\s|$|:))(?:\\s+(route\\b))?`, 'gi');
     
     const sorted = [...knownRoutes].sort((a, b) => b.length - a.length);
     const escaped = sorted.map(r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
@@ -165,10 +186,9 @@ function colorRouteNames(text) {
             }
             
             processed = processed.replace(readableRegex, (matchStr, name) => {
-                if (name === name.toLowerCase()) return esc(matchStr);
                 const key = readableRouteNames[name.toLowerCase()];
                 const color = colorMappings[key];
-                if (color) return `<strong style="color: ${escColor(color)}">${esc(matchStr)}</strong>`;
+                if (color) return `<span style="color: ${escColor(color)}">${esc(matchStr)}</span>`;
                 return esc(matchStr);
             });
             
@@ -182,7 +202,7 @@ function colorRouteNames(text) {
                 if (color) {
                     const uppercasedName = name.toUpperCase();
                     const newMatchStr = matchStr.replace(name, uppercasedName);
-                    return `<strong style="color: ${escColor(color)}">${esc(newMatchStr)}</strong>`;
+                    return `<span style="color: ${escColor(color)}">${esc(newMatchStr)}</span>`;
                 }
                 return esc(matchStr);
             });
@@ -306,8 +326,7 @@ $(document).on('blur', '.chat-ui-input', function() {
   setTimeout(adjustChatHeights, 50);
 });
 
-// Close chat UI
-$(document).on('click', '.chat-ui-close', function() {
+function closeChat() {
   $('.chat-wrapper').hide();
   detachChatViewportListeners();
   // Clear inline sizing
@@ -320,6 +339,12 @@ $(document).on('click', '.chat-ui-close', function() {
   });
   $('.chat-ui-panel').css('height', '');
   $('.chat-ui-messages').css('height', '');
+}
+window.closeChat = closeChat;
+
+// Close chat UI
+$(document).on('click', '.chat-ui-close', function() {
+  closeChat();
 });
 window.chatHistory = [];
 
@@ -388,10 +413,14 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
             if (data.progress && !data.done) {
                 console.log(data);
                 toolCalls.push(data.progress);
+                // Remove pulse animation from previous thinking steps
+                $('.chat-message.bot.thinking.loading').removeClass('loading');
+                $botMsg.hide();
                 const $thinkingDiv = $('<div class="chat-message bot loading thinking"></div>').text(data.progress);
-                $thinkingDiv.insertBefore($messages.children().last());
+                $thinkingDiv.insertBefore($botMsg);
             } else if (data.done) {
-                $('.chat-message.bot.loading.thinking').slideUp();
+                $('.chat-message.bot.thinking').slideUp();
+                $botMsg.show();
                 finalAnswer = data.answer;
                 if (settings['toggle-show-thinking']) {
                     const $showEntireResponse = $('<div class="text-1p3rem pointer" style="color: #8181f1; margin-left: 1.3rem;">Show raw response & tools</div>').click(function() {

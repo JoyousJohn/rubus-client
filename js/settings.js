@@ -765,8 +765,10 @@ function startMsEtaCountdown() {
         if (!base) return;
         $('.next-stop-eta').each(function() {
             const stopId = $(this).attr('data-stop-id');
-            if (stopId == null) return;
-            const abs = base.get(`${popupBusName}:${stopId}`);
+            const stopIndex = $(this).attr('data-stop-index');
+            if (stopId == null || stopIndex == null) return;
+            const route = busData[popupBusName] ? busData[popupBusName].route : '';
+            const abs = base.get(`${popupBusName}:${route}:${stopIndex}`);
             if (typeof abs !== 'number') return;
             const nextText = `${Math.max(0, abs - Date.now()).toLocaleString('en-US')}ms`;
             if ($(this).text() !== nextText) {
