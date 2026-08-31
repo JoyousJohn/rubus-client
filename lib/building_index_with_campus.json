@@ -10761,14 +10761,6 @@
       "lng": -74.45837306,
       "campus": "busch"
     },
-    "werblin recreation center (sb) (stop)": {
-      "id": "11",
-      "name": "Werblin Recreation Center (SB)",
-      "category": "stop",
-      "lat": 40.518637,
-      "lng": -74.459854,
-      "campus": "busch"
-    },
     "livingston plaza (stop)": {
       "id": "12",
       "name": "Livingston Plaza",
@@ -10928,5 +10920,21 @@
       "lat": 40.51589712284494,
       "lng": -74.4629105112253,
       "campus": "busch"
-    }
+    },
+  "werblin recreation center (nb) (stop)": {
+    "id": "11",
+    "name": "Werblin Recreation Center (NB)",
+    "category": "stop",
+    "lat": 40.518637,
+    "lng": -74.459854,
+    "campus": "busch"
+  },
+  "werblin recreation center (sb) (stop)": {
+    "id": "27",
+    "name": "Werblin Recreation Center (SB)",
+    "category": "stop",
+    "lat": 40.518775,
+    "lng": -74.459971,
+    "campus": "busch"
   }
+}
