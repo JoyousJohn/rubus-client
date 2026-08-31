@@ -3,6 +3,8 @@ const COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'
 let busStatsData = null;
 let stopStatsData = null;
 let userStatsData = null;
+let trendStatsData = null;
+let visitorTrendChart = null;
 let statsLoading = false;
 
 let stopShortNameMap = null;
@@ -91,24 +93,6 @@ function showStats() {
     $('.stats').addClass('footer-selected');
     $('.stats-wrapper').show();
 
-    const $lineCount = $('.stats-js-lines');
-    const $cssCount = $('.stats-css-lines');
-    const $htmlCount = $('.stats-html-lines');
-
-    function lineText(total, label, delta) {
-      if (typeof total === 'undefined') return '';
-      let text = `${total.toLocaleString()} lines of ${label}`;
-      if (typeof delta !== 'undefined' && delta) {
-        const color = delta.startsWith('+') ? '#2ecc71' : '#e74c3c';
-        text += ` (<span style="color:${color}">${delta}</span>)`;
-      }
-      return text;
-    }
-
-    $lineCount.html(lineText(TOTAL_JS_LINES, 'JS', typeof TOTAL_JS_LINES_DELTA !== 'undefined' ? TOTAL_JS_LINES_DELTA : '')).show();
-    $cssCount.html(lineText(TOTAL_CSS_LINES, 'CSS', typeof TOTAL_CSS_LINES_DELTA !== 'undefined' ? TOTAL_CSS_LINES_DELTA : '')).show();
-    $htmlCount.html(lineText(TOTAL_HTML_LINES, 'HTML', typeof TOTAL_HTML_LINES_DELTA !== 'undefined' ? TOTAL_HTML_LINES_DELTA : '')).show();
-
     if (busStatsData) {
         renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
     } else {
@@ -127,12 +111,18 @@ function showStats() {
         $('#stats-loading-user').show();
     }
 
-    if (busStatsData && stopStatsData && userStatsData) {
+    if (trendStatsData) {
+        renderVisitorTrendChart(trendStatsData);
+    } else {
+        $('#stats-loading-trend').show();
+    }
+
+    if (busStatsData && stopStatsData && userStatsData && trendStatsData) {
         return;
     }
 
     statsLoading = true;
-    let remaining = 3;
+    let remaining = 4;
     function onDone() {
         remaining--;
         if (remaining <= 0) statsLoading = false;
@@ -155,6 +145,20 @@ function showStats() {
         if (data) renderPieChart(data, 'user-stats-canvas', 'user-stats-legend');
         onDone();
     }).catch(e => { console.error('Error fetching user stats:', e); onDone(); });
+
+    fetchStatsJson('https://demo.rubus.live/stats/trend?start=today-30d').then(data => {
+        trendStatsData = data;
+        if (data && data.labels && data.points && data.points.length) {
+            renderVisitorTrendChart(data);
+        } else {
+            $('#stats-loading-trend').text('No data available').show();
+        }
+        onDone();
+    }).catch(e => {
+        console.error('Error fetching visitor trend stats:', e);
+        $('#stats-loading-trend').text('No data available').show();
+        onDone();
+    });
 }
 
 const selectedSlices = {};
@@ -290,7 +294,7 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
         if (isSelected) {
             const rounded = Math.round(seg.percentage);
             let pctStr = `${rounded}%`;
-            if (rounded === 0 && seg.percentage > 0) {
+            if (rounded === 0 && (seg.percentage > 0 || (typeof seg.count === 'number' && seg.count > 0))) {
                 pctStr = '<1%';
             }
             let labelText = seg.label || '';
@@ -356,7 +360,7 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
     segments.forEach((seg, i) => {
         const rounded = Math.round(seg.percentage);
         let pctStr = `${rounded}%`;
-        if (rounded === 0 && seg.percentage > 0) {
+        if (rounded === 0 && (seg.percentage > 0 || (typeof seg.count === 'number' && seg.count > 0))) {
             pctStr = '<1%';
         }
         let labelText = seg.label || '';
@@ -383,3 +387,89 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
     const legend = document.getElementById(legendId);
     if (legend) legend.innerHTML = legendHtml;
 }
+
+function renderVisitorTrendChart(trendData) {
+    if (!trendData || !trendData.labels || !trendData.points || !trendData.points.length) return;
+    $('#stats-loading-trend').hide();
+
+    const canvas = document.getElementById('visitor-trend-canvas');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    if (visitorTrendChart) {
+        visitorTrendChart.destroy();
+        visitorTrendChart = null;
+    }
+
+    const ctx = canvas.getContext('2d');
+    const h = canvas.clientHeight || 150;
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, 'rgba(129, 129, 241, 0.35)');
+    gradient.addColorStop(1, 'rgba(129, 129, 241, 0.0)');
+
+    const lastPointIdx = trendData.points.length - 1;
+
+    visitorTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: trendData.labels,
+            datasets: [{
+                label: 'Relative Activity',
+                data: trendData.points,
+                borderColor: '#8181f1',
+                backgroundColor: gradient,
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.35,
+                segment: {
+                    borderDash: ctx => (ctx.p0DataIndex === lastPointIdx - 1 ? [5, 4] : undefined)
+                },
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: '#8181f1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 600
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    displayColors: false,
+                    backgroundColor: 'rgba(20, 20, 25, 0.9)',
+                    titleFont: { size: 11 },
+                    bodyFont: { size: 11 },
+                    padding: 8,
+                    cornerRadius: 6,
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.raw;
+                            const diff = val - 100;
+                            const diffStr = diff >= 0 ? `+${diff}%` : `${diff}%`;
+                            const isLastDay = context.dataIndex === lastPointIdx;
+                            const suffix = isLastDay ? ' (in progress)' : '';
+                            return `Relative Activity: ${val} (${diffStr} vs avg)${suffix}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        maxTicksLimit: 6,
+                        color: 'rgba(150, 150, 150, 0.7)',
+                        font: { size: 10 }
+                    }
+                },
+                y: {
+                    display: false,
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+

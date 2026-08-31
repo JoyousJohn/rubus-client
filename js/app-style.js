@@ -109,7 +109,10 @@ function popRiderInfo(busName) {
         }
 
         stopsToShow.forEach((stopId, index) => {
-            const stopName = stopsData[stopId] ? stopsData[stopId].name : 'Unknown Stop';
+            let stopName = stopsData[stopId] ? stopsData[stopId].name : 'Unknown Stop';
+            if (settings['toggle-show-stop-id'] && stopsData[stopId]) {
+                stopName += ` (#${Array.isArray(stopId) ? stopId[0] : stopId})`;
+            }
 
             // Check if bus is currently at this stop using at_stop property
             const originalStopId = stopId;

@@ -288,13 +288,32 @@ function popInfo(busName, resetCampusFontSize) {
     // Two campuses means the bus shuttles back and forth between them, so use
     // a left-right arrow; otherwise chain the sequence with a right arrow.
     const campusesArrow = servicedCampuses.length === 2 ? ' \u2194 ' : ' \u2192 ';
-    // Crossing into a new campus: prepend a bold approach arrow and leave the
-    // campuses regular weight; otherwise bold the first campus abbreviation.
+    // Center the bolded item so the travel order is visible around it:
+    // half the campuses before it, half after. This reuses the circular
+    // campus order but rotates it so the current/next campus sits in the
+    // middle. Campus is always bold+underline centered; when the bus is
+    // in motion between different campuses (approachingNewCampus), the
+    // arrow pointing into the new campus is also bold+underline.
     let campusesHtml;
     if (serviced.approachingNewCampus && servicedCampuses.length) {
-        campusesHtml = '<b>\u2192</b> ' + servicedCampuses.join(campusesArrow);
+        const k = Math.floor(servicedCampuses.length / 2);
+        const rotated = k ? servicedCampuses.slice(-k).concat(servicedCampuses.slice(0, -k)) : servicedCampuses.slice();
+        if (k === 0) {
+            // Single underline that includes arrow, space and campus so the gap is underlined
+            campusesHtml = `<b><u>\u2192 ${rotated[0]}</u></b>` + (rotated.length > 1 ? campusesArrow + rotated.slice(1).join(campusesArrow) : '');
+        } else {
+            const before = rotated.slice(0, k);
+            const center = rotated[k];
+            const after = rotated.slice(k + 1);
+            const beforeHtml = before.join(campusesArrow);
+            const centerHtml = `<b><u>\u2192 ${center}</u></b>`;
+            const afterHtml = after.join(campusesArrow);
+            campusesHtml = beforeHtml + ' ' + centerHtml + (after.length ? campusesArrow + afterHtml : '');
+        }
     } else {
-        campusesHtml = servicedCampuses.map((seg, i) => i === 0 ? `<b>${seg}</b>` : seg).join(campusesArrow);
+        const k = Math.floor(servicedCampuses.length / 2);
+        const rotated = k ? servicedCampuses.slice(-k).concat(servicedCampuses.slice(0, -k)) : servicedCampuses.slice();
+        campusesHtml = rotated.map((seg, i) => i === k ? `<b><u>${seg}</u></b>` : seg).join(campusesArrow);
     }
     $('.info-campuses-serviced').html(campusesHtml).toggle(servicedCampuses.length > 0);
     $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + data.capacity + '%</span> capacity');
@@ -557,7 +576,8 @@ function renderNextStopsGrid(busName) {
     const signature = JSON.stringify([
         busName, data.route, data.at_stop, String(data.stopId == null ? '' : data.stopId),
         String(closestStopId == null ? '' : closestStopId), shouldShowClosestStop,
-        build.negativeETA, showETAsInSeconds, !!settings['toggle-show-bus-progress'], sortedStops
+        build.negativeETA, showETAsInSeconds, !!settings['toggle-show-bus-progress'],
+        !!settings['toggle-show-stop-id'], sortedStops
     ]);
 
     if (lastNextStopsSignature === signature && $('.next-stops-grid > div').children().length > 0) {
@@ -683,7 +703,11 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
         }
 
         const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-        let stopName = esc(stopsData[sortedStops[i]].name);
+        let rawStopName = stopsData[sortedStops[i]].name;
+        if (settings['toggle-show-stop-id']) {
+            rawStopName += ` (#${sortedStops[i]})`;
+        }
+        let stopName = esc(rawStopName);
         let campusName = '';
         if (selectedCampus === 'nb') {
             campusName = esc(campusShortNamesMappings[stopsData[sortedStops[i]].campus] || '');
@@ -720,7 +744,8 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         const $circle = $('<div class="closest-stop-circle closest-stop-bg" style="margin-right: 1rem;"></div>').css('background-color', colorMappings[data.route])
         $grid.append($(`<div class="flex justify-center align-center closest-stop-bg h-100" style="margin-right: -2rem; margin-left: -1rem; border-radius: 0.8rem 0 0 0.8rem;"></div>`).append($circle))
         const $closestWrap = $('<div class="flex flex-col pointer closest-stop-bg" style="margin-right: -2rem; padding: 1rem 0;"><div class="next-stop-closest closest-stop">Closest Stop</div><div class="next-stop-name flex"></div></div>');
-        $closestWrap.find('.next-stop-name').text(stopsData[closestStopId].name);
+        const closestStopName = stopsData[closestStopId].name + (settings['toggle-show-stop-id'] ? ` (#${closestStopId})` : '');
+        $closestWrap.find('.next-stop-name').text(closestStopName);
         $grid.append($closestWrap.click(() => {
             flyToStop(closestStopId, true); // true indicates user interaction
         }));
@@ -745,7 +770,11 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         }
 
         const esc2 = (typeof escapeHtml === 'function' ? escapeHtml : (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
-        let stopName = esc2(stopsData[stopId].name);
+        let atStopRawName = stopsData[stopId].name;
+        if (settings['toggle-show-stop-id']) {
+            atStopRawName += ` (#${stopId})`;
+        }
+        let stopName = esc2(atStopRawName);
         let campusName = '';
         if (selectedCampus === 'nb') {
             campusName = esc2(campusShortNamesMappings[stopsData[stopId].campus] || '');

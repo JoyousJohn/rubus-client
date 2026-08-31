@@ -321,6 +321,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-show-stop-id':
             settings['toggle-show-stop-id'] = isChecked;
+            if (popupBusName && busData[popupBusName]) {
+                if (typeof lastNextStopsSignature !== 'undefined') lastNextStopsSignature = null;
+                updateNextStops(popupBusName);
+            }
+            if (popupStopId && stopsData[popupStopId]) {
+                const stopName = stopsData[popupStopId].name;
+                $('.info-stop-name-text').text(isChecked ? `${stopName} (#${popupStopId})` : stopName);
+            }
             break;
 
         case 'toggle-show-knight-mover':

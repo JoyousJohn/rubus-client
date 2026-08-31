@@ -35,6 +35,38 @@ function updateChangelogNewBadge() {
     }
 }
 
+function populateChangelogLineCounts() {
+    const $lineCount = $('.stats-js-lines');
+    const $cssCount = $('.stats-css-lines');
+    const $htmlCount = $('.stats-html-lines');
+
+    function lineText(total, label, delta) {
+        if (typeof total === 'undefined' || total == null) return '';
+        let text = `${total.toLocaleString()} lines of ${label}`;
+        if (typeof delta !== 'undefined' && delta) {
+            const color = delta.startsWith('+') ? '#2ecc71' : '#e74c3c';
+            text += ` (<span style="color:${color}">${delta}</span>)`;
+        }
+        return text;
+    }
+
+    const jsVal = typeof TOTAL_JS_LINES !== 'undefined' ? TOTAL_JS_LINES : (typeof window !== 'undefined' && window.TOTAL_JS_LINES !== undefined ? window.TOTAL_JS_LINES : undefined);
+    const jsDelta = typeof TOTAL_JS_LINES_DELTA !== 'undefined' ? TOTAL_JS_LINES_DELTA : (typeof window !== 'undefined' && window.TOTAL_JS_LINES_DELTA !== undefined ? window.TOTAL_JS_LINES_DELTA : '');
+    const cssVal = typeof TOTAL_CSS_LINES !== 'undefined' ? TOTAL_CSS_LINES : (typeof window !== 'undefined' && window.TOTAL_CSS_LINES !== undefined ? window.TOTAL_CSS_LINES : undefined);
+    const cssDelta = typeof TOTAL_CSS_LINES_DELTA !== 'undefined' ? TOTAL_CSS_LINES_DELTA : (typeof window !== 'undefined' && window.TOTAL_CSS_LINES_DELTA !== undefined ? window.TOTAL_CSS_LINES_DELTA : '');
+    const htmlVal = typeof TOTAL_HTML_LINES !== 'undefined' ? TOTAL_HTML_LINES : (typeof window !== 'undefined' && window.TOTAL_HTML_LINES !== undefined ? window.TOTAL_HTML_LINES : undefined);
+    const htmlDelta = typeof TOTAL_HTML_LINES_DELTA !== 'undefined' ? TOTAL_HTML_LINES_DELTA : (typeof window !== 'undefined' && window.TOTAL_HTML_LINES_DELTA !== undefined ? window.TOTAL_HTML_LINES_DELTA : '');
+
+    const jsText = lineText(jsVal, 'JS', jsDelta);
+    if (jsText) $lineCount.html(jsText).show(); else $lineCount.hide();
+
+    const cssText = lineText(cssVal, 'CSS', cssDelta);
+    if (cssText) $cssCount.html(cssText).show(); else $cssCount.hide();
+
+    const htmlText = lineText(htmlVal, 'HTML', htmlDelta);
+    if (htmlText) $htmlCount.html(htmlText).show(); else $htmlCount.hide();
+}
+
 async function getChangelog() {
     sa_event('btn_press', { btn: 'footer_changelog' });
     // Prevent spam clicking
@@ -66,6 +98,7 @@ async function getChangelog() {
 
     // Immediately select changelog and show wrapper
     $('.changelog').addClass('footer-selected');
+    populateChangelogLineCounts();
     $('.changelog-wrapper').show();
 
     // The user has now seen the changelog — drop the "NEW" badge and remember

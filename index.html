@@ -2532,6 +2532,12 @@
                 </div>
 
                 <div class="changelog-wrapper none text-1p4rem">
+                    <hr class="changelog-divider">
+                    <div class="changelog-stats-lines center mb-1p5rem" style="color: var(--theme-extra); font-size: 1.2rem; line-height: 1.6;">
+                        <div class="stats-js-lines"></div>
+                        <div class="stats-css-lines"></div>
+                        <div class="stats-html-lines"></div>
+                    </div>
                     <div class="changelog-list"></div>
                 </div>
 
@@ -2545,7 +2551,15 @@
                 </div>
 
                 <div class="stats-wrapper none text-1p3rem">
-                    <div class="stats-title text-1p5rem center mb-1rem">Viewed Buses</div>
+                    <hr class="changelog-divider">
+                    <div class="stats-title text-1p5rem center mb-1rem">1 Month Users</div>
+                    <div class="stats-chart-area stats-trend-chart-area">
+                        <div id="stats-loading-trend" class="stats-loading-overlay">Loading...</div>
+                        <div class="stats-trend-wrapper">
+                            <canvas id="visitor-trend-canvas" class="visitor-trend-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="stats-title text-1p5rem center mt-2rem mb-1rem">Viewed Buses</div>
                     <div class="stats-chart-area">
                         <div id="stats-loading-bus" class="stats-loading-overlay">Loading...</div>
                         <div class="stats-col-60">
@@ -2575,9 +2589,6 @@
                             <div id="user-stats-legend" class="stats-legend"></div>
                         </div>
                     </div>
-                    <div class="stats-js-lines center mt-2rem" style="color: var(--theme-extra); font-size: 1.2rem;"></div>
-                    <div class="stats-css-lines center" style="color: var(--theme-extra); font-size: 1.2rem;"></div>
-                    <div class="stats-html-lines center" style="color: var(--theme-extra); font-size: 1.2rem;"></div>
                 </div>
 
                 <div class="errors-wrapper none">

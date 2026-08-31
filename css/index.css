@@ -711,13 +711,36 @@ html, body {
 
 .info-campuses-serviced {
     font-size: 1.2rem;
-    color: var(--theme-extra);
     text-align: center;
     opacity: 0.8;
+    /* Left-to-right shimmer to hint travel order - narrow band, single pass */
+    color: transparent;
+    background: linear-gradient(90deg,
+        var(--theme-extra) 45%,
+        var(--theme-color-lighter) 50%,
+        var(--theme-extra) 55%) no-repeat;
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: campusShimmer 7.8s linear infinite;
 }
 
 .info-campuses-serviced b {
     font-weight: 600;
+}
+
+.info-campuses-serviced u {
+    /* keep underline visible when text is clipped */
+    text-decoration-color: var(--theme-extra);
+    text-underline-offset: 2px;
+}
+
+@keyframes campusShimmer {
+    0% { background-position: 100% 0; }
+    61.54% { background-position: 0% 0; }
+    100% { background-position: 0% 0; }
 }
 
 .info-overdue-break {
@@ -2380,6 +2403,13 @@ html[theme="light"] .settings-panel .span-i {
     column-gap: 0.5rem;
 }
 
+.changelog-divider {
+    border: none;
+    border-top: 2px solid var(--theme-line-bg);
+    margin: 1.5rem 0 2rem 0;
+    width: 100%;
+}
+
 .settings-rubus-logo {
     background-image: url('../img/rubus-favicon-back-to-college.png');
     background-repeat: no-repeat;
@@ -2552,6 +2582,25 @@ html[theme="light"] .settings-panel .span-i {
     gap: 0.3rem;
     width: 100%;
 }
+
+.stats-trend-chart-area {
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.5rem 0.8rem;
+    min-height: 160px;
+}
+
+.stats-trend-wrapper {
+    width: 100%;
+    height: 150px;
+    position: relative;
+}
+
+.visitor-trend-canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
 
 .stats-legend-item {
     display: flex;
