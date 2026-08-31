@@ -285,10 +285,19 @@ function setupBuildingClosestStopsSwitcher() {
 }
 
 function showBuildingInfo(feature) {
+    const cameFromSearch = typeof searchReentry !== 'undefined' && searchReentry;
+    searchReentry = false; // one-shot: only the popup directly following a search selection shows the back button
     $('.knight-mover, .campus-switcher').hide();
     hideInfoBoxes(true);
+    searchBackActive = cameFromSearch; // persist for the back-button click handler (set after hideInfoBoxes)
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
+    // Show "Back to search" when this building was opened from a search result
+    if (cameFromSearch) {
+        $('.building-info-back-wrapper').stop(true, true).show().css('display', 'flex');
+    } else {
+        $('.building-info-back-wrapper').stop(true, true).hide();
+    }
     if (typeof hideCenterStops === 'function') hideCenterStops();
     if (typeof isDesktop !== 'undefined' && isDesktop && !isTouchDevice) showEscNotice('building');
     $('.building-closest-stops-heading').hide(); // hide initially to avoid flicker until list populated

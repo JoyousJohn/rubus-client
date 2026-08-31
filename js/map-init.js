@@ -204,9 +204,9 @@ window.initMap = function() {
 
             hideInfoBoxes();
 
-            // If navigation UI is visible, hide it and reset navigation state
-            if ($('.navigate-wrapper').is(':visible')) {
-                $('.navigate-wrapper').fadeOut(200);
+            // If the search shell (search or directions) is visible, close it
+            if (!$('.search-wrapper').hasClass('none')) {
+                hideInfoBoxes(true);
                 clearRouteDisplay();
                 selectedFromBuilding = null;
                 selectedToBuilding = null;

@@ -1097,7 +1097,7 @@ html, body {
     padding: 1rem;
 }
 
-.stop-info-back-wrapper, .bus-info-back-wrapper {
+.stop-info-back-wrapper, .bus-info-back-wrapper, .building-info-back-wrapper {
     font-size: 1.7rem;
     background-color: var(--theme-bg);
     color: var(--theme-color);
@@ -1109,7 +1109,8 @@ html, body {
     align-items: center;
 }
 
-.stop-info-back-wrapper:hover {
+.stop-info-back-wrapper:hover,
+.building-info-back-wrapper:hover {
     background-color: rgb(88, 88, 234);
     color: rgb(242, 242, 242)
 }

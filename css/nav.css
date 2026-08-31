@@ -12,22 +12,19 @@
 }
 
 .navigate-wrapper {
-    position: fixed;
-    top: 0;
-    /* left: 0; */
-    z-index: 403;
-    pointer-events: none;
     font-family: var(--font-family);
     color: var(--theme-color);
     width: 100%;
     font-size: 1.5rem;
-    height: 100%;
-    padding: 1rem;
     box-sizing: border-box;
 }
 
 .navigate-inner {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     row-gap: 1rem;
 }
 

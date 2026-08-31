@@ -1905,6 +1905,9 @@ function updateStopBusesMaxHeight() {
 }
 
 async function popStopInfo(stopId) {
+    const cameFromSearch = typeof searchReentry !== 'undefined' && searchReentry;
+    searchReentry = false; // one-shot: only the popup directly following a search selection shows the back button
+    searchBackActive = cameFromSearch; // persist for the back-button click handler
     // console.log('popStopInfo', stopId);
     
     if (!sim) {
@@ -2129,6 +2132,11 @@ async function popStopInfo(stopId) {
     }
 
     if (sourceBusName && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
+        $('.stop-info-back .flex div').text('BACK');
+        $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
+        $('.stop-info-back-wrapper').css('display', 'flex');
+    } else if (cameFromSearch) {
+        $('.stop-info-back .flex div').text('Back to search');
         $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
         $('.stop-info-back-wrapper').css('display', 'flex');
     } else {

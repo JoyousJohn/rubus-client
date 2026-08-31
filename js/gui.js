@@ -2604,10 +2604,26 @@ $(document).ready(function() {
     // updateSettings();
 
     $('.stop-info-back-wrapper').click(function() {
+        // If we arrived here from a search result, return to search
+        if (typeof searchBackActive !== 'undefined' && searchBackActive && typeof openSearchBack === 'function') {
+            $('.stop-info-popup').hide();
+            $('.stop-info-hide-oos').hide();
+            searchBackActive = false;
+            openSearchBack();
+            return;
+        }
         flyToBus(sourceBusName);
         $('.stop-info-popup').hide();
         $('.stop-info-hide-oos').hide();
         // setting sourceBusName to null breaks stuff
+    });
+
+    $('.building-info-back-wrapper').click(function() {
+        if (typeof searchBackActive !== 'undefined' && searchBackActive && typeof openSearchBack === 'function') {
+            $('.building-info-popup').hide();
+            searchBackActive = false;
+            openSearchBack();
+        }
     });
 
     $('.bus-info-back-wrapper').click(function() {

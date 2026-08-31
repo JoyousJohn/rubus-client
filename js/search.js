@@ -1,6 +1,11 @@
 let buildingIndex;
 let enableSearchButtonGradientFlash = false;
 
+let searchMode = 'search'; // 'search' | 'directions' — module-scoped for updateSearchPlaceholder
+let searchReentry = false; // transient: true for the popup that follows a search result selection
+let searchBackActive = false; // persistent: the currently-visible popup offers a "Back to search" button
+let searchOpenView = null; // { center, zoom } of the map right before the search button was pressed
+
 let searchViewportListenersAttached = false;
 let searchVvpHandler = null;
 
@@ -53,6 +58,9 @@ function detachSearchViewportListeners() {
 
 // Function to update search placeholder with building count
 function updateSearchPlaceholder(buildingCount) {
+    if (searchMode === 'directions') {
+        return;
+    }
     const $searchInput = $('.search-wrapper input');
     if ($searchInput.length === 0) {
         return;
@@ -73,6 +81,25 @@ $(document).ready(function() {
     const $clearBtn = $('.search-clear-btn');
     $input.val('')
 
+    // Return the FINAL custom icon class directly (no FontAwesome swap needed),
+    // so rendering search rows does not trigger the global MutationObserver.
+    function placeIconClass(item) {
+        if (item.category === 'building') {
+            return 'icon icon-building';
+        } else if (item.category === 'parking') {
+            return 'icon icon-parking';
+        } else if (item.category === 'stop') {
+            return 'icon icon-bus-simple';
+        }
+        return '';
+    }
+
+    // Back button in the directions header returns to the search view
+    $('.nav-back-btn').on('click', function() {
+        applySearchMode('search');
+        $('.search-wrapper input').focus();
+    });
+
     // Track press and hold state
     let pressAndHoldTimer = null;
     let isPressAndHold = false;
@@ -85,13 +112,13 @@ $(document).ready(function() {
         isPressAndHold = false;
         pressAndHoldTimer = setTimeout(() => {
             isPressAndHold = true;
-            // Press and hold detected - open navigation wrapper
+            // Press and hold detected - open navigation in the directions tab
             hideInfoBoxes(true);
             $('.knight-mover').hide();
             closeSearch();
 
-            // Open navigation wrapper
-            $('.navigate-wrapper').show();
+            // Open directions tab in the search shell
+            openDirectionsNav();
             window.errorTracker.trackNavigationWrapperShow('Press and hold search button');
             $('#nav-from-input').focus();
 
@@ -122,26 +149,24 @@ $(document).ready(function() {
         hideInfoBoxes(true);
         $('.knight-mover').hide();
         $('.bottom').hide();
-        $('.search-wrapper').show();
+        if (searchMode !== 'search') {
+            setSearchMode('search');
+        }
+        // Remember where the user was on the map before opening search, so the
+        // search bar's back button can return them there (even if a search
+        // selection later flew the camera elsewhere).
+        searchOpenView = { center: map.getCenter(), zoom: map.getZoom() };
+        $('.search-wrapper').removeClass('none');
         if (typeof hideCenterStops === 'function') hideCenterStops();
         adjustSearchHeights();
         attachSearchViewportListeners();
+        // Keep the previously typed query so reopening shows results for the
+        // last search; re-running 'input' repopulates matches (or recs when empty).
         $input.trigger('input').focus();
-        
-        const hasInput = $input.val().trim();
-        
-        if (hasInput) {
-            // Hide recommendations and recent searches when there's input
-            $('.search-recs-wrapper').hide();
-            $('.search-recents-wrapper').hide();
-            $('.search-nav-examples-wrapper').hide();
-        } else {
-            // Populate search recommendations and recent searches when no input
-            populateSearchRecommendations();
-            populateRecentSearches();
-            // Also populate navigation examples
-            populateNavigationExamples();
-        }
+
+        // Fresh search menu: populate recommendations and recent searches
+        populateSearchRecommendations();
+        populateRecentSearches();
 
         sa_event('btn_press', {
             'btn': 'search'
@@ -157,11 +182,28 @@ $(document).ready(function() {
         });
     });
 
+    // Back button returns to the map — restoring the camera to where the user
+    // was before they first pressed the search button.
+    $('.search-back-btn').click(function() {
+        const view = searchOpenView;
+        searchOpenView = null;
+        if (view && typeof map !== 'undefined') {
+            const current = map.getCenter();
+            const moved = Math.abs(current.lat - view.center.lat) > 1e-9 ||
+                          Math.abs(current.lng - view.center.lng) > 1e-9 ||
+                          Math.abs(map.getZoom() - view.zoom) > 1e-9;
+            if (moved) {
+                map.flyTo(view.center, view.zoom, { duration: 0.3 });
+            }
+        }
+        closeSearch();
+    });
+
     // Nudge layout when search input gains focus (keyboard opening)
     // Height adjustment is handled by visualViewport listeners; focus handler scrolls input into view
     $(document).on('focus', '.search-wrapper input', function() {
       setTimeout(() => {
-        const $container = $('.search-wrapper > div');
+        const $container = $('.search-content');
         if ($container.length > 0) {
           $container.scrollTop(0);
         }
@@ -169,56 +211,6 @@ $(document).ready(function() {
     });
     $(document).on('blur', '.search-wrapper input', function() {
       setTimeout(adjustSearchHeights, 50);
-    });
-
-    // Track current rotation for the refresh buttons
-    let currentRotation = 0;
-    let navCurrentRotation = 0;
-    
-    // Refresh button functionality for popular places
-    $('.search-recs-refresh-btn').click(function() {
-        const $btn = $(this);
-        const $icon = $btn.find('i');
-        
-        // Calculate target rotation (current + 360 degrees)
-        const targetRotation = currentRotation + 360;
-        
-        // Set transition and rotate to target
-        $icon.css('transition', 'transform 0.5s ease-in-out');
-        $icon.css('transform', `rotate(${targetRotation}deg)`);
-        
-        // Update current rotation
-        currentRotation = targetRotation;
-        
-        // Refresh the recommendations
-        populateSearchRecommendations();
-        
-        sa_event('btn_press', {
-            'btn': 'search_recommendations_refresh'
-        });
-    });
-
-    // Refresh button functionality for navigation examples
-    $('.search-nav-examples-refresh-btn').click(function() {
-        const $btn = $(this);
-        const $icon = $btn.find('i');
-        
-        // Calculate target rotation (current + 360 degrees)
-        const targetRotation = navCurrentRotation + 360;
-        
-        // Set transition and rotate to target
-        $icon.css('transition', 'transform 0.5s ease-in-out');
-        $icon.css('transform', `rotate(${targetRotation}deg)`);
-        
-        // Update current rotation
-        navCurrentRotation = targetRotation;
-        
-        // Refresh the navigation examples
-        populateNavigationExamples();
-        
-        sa_event('btn_press', {
-            'btn': 'navigation_examples_refresh'
-        });
     });
 
     // Surprise me functionality
@@ -273,9 +265,9 @@ $(document).ready(function() {
     // Show/hide clear button based on input
     function toggleClearButton() {
         if ($input.val().trim()) {
-            $clearBtn.fadeIn();
+            $clearBtn.show();
         } else {
-            $clearBtn.fadeOut('fast');
+            $clearBtn.hide();
         }
     }
 
@@ -301,6 +293,9 @@ $(document).ready(function() {
         'college ave': ['ca'],
         'livingston': ['livi']
     };
+
+    // Precomputed lowercase-abbreviation -> matching place entries (built once)
+    let abbrevMap = new Map();
 
     // Load campus-specific building and stop index and initialize Fuse.js
     function initSearchIndex() {
@@ -353,6 +348,19 @@ $(document).ready(function() {
                     }
                 }
 
+                // Precompute lowercase-abbreviation -> entries for O(1) lookups
+                abbrevMap.clear();
+                for (const item of buildingList) {
+                    const abbrs = item.abbreviations || [];
+                    for (const a of abbrs) {
+                        const key = String(a).toLowerCase();
+                        if (!abbrevMap.has(key)) {
+                            abbrevMap.set(key, []);
+                        }
+                        abbrevMap.get(key).push({ item: item, matchedAbbreviation: a });
+                    }
+                }
+
                 fuse = new Fuse(buildingList, {
                     keys: ['name', 'aliases', 'abbreviations'],
                     threshold: 0.3,
@@ -372,54 +380,13 @@ $(document).ready(function() {
     window.initSearchIndex = initSearchIndex;
     initSearchIndex();
 
-    $('.search-wrapper input').on('input', function() {
-        const query = $(this).val().trim();
-        // Remove schedule-style room suffixes like "AB-101" -> "AB"
-        const sanitizedQuery = query.replace(/-[^\s]*/g, '').replace(/\s+/g, ' ').trim();
-        const queryLower = sanitizedQuery.toLowerCase();
-        const $results = $('.search-results');
-        $results.empty();
-        
-        // Toggle clear button visibility
-        toggleClearButton();
-        
-        // Hide recommendations and recent searches when user starts typing
-        if (sanitizedQuery) {
-            $('.search-recs-wrapper').hide();
-            $('.search-recents-wrapper').hide();
-            $('.search-nav-examples-wrapper').hide();
-            $('.search-surprise-me').hide();
-        } else {
-            $('.search-recs-wrapper').show();
-            $('.search-recents-wrapper').show();
-            $('.search-nav-examples-wrapper').show();
-            $('.search-surprise-me').show();
-            
-            // Repopulate the content when showing (in case it was updated)
-            populateRecentSearches();
-        }
-        
-        if (!fuseReady || !sanitizedQuery) {
-            $('.search-results-wrapper, .search-results').hide();
-            return;
-        }
-        $('.search-results-wrapper, .search-results').show();
-
-        // Extended search: require all tokens to match in any field
+    // Run the existing fuzzy-search matching (exact abbreviation / Fuse tokens)
+    function matchQueryItems(sanitizedQuery, queryLower) {
         const tokens = sanitizedQuery.split(/\s+/).filter(Boolean);
         let results;
-        // Exact abbreviation match takes precedence when a single token exactly matches an abbreviation
         if (tokens.length === 1) {
-            const exactAbbrevMatches = buildingList
-                .map(item => {
-                    const match = (item.abbreviations || []).find(abbr => abbr.toLowerCase() === queryLower);
-                    if (match) {
-                        return { item, matchedAbbreviation: match };
-                    }
-                    return null;
-                })
-                .filter(Boolean);
-
+            // O(1) exact-abbreviation lookup via precomputed map when available
+            const exactAbbrevMatches = (abbrevMap.get(queryLower) || []);
             if (exactAbbrevMatches.length > 0) {
                 results = exactAbbrevMatches;
             } else {
@@ -436,47 +403,157 @@ $(document).ready(function() {
                 }))
             };
             results = fuse.search(extendedQuery);
-            // If any token exactly equals an abbreviation for an item, annotate it
             const tokenSet = new Set(tokens.map(t => t.toLowerCase()));
             results = results.map(r => {
                 const item = r.item || r;
                 const abbrMatch = (item.abbreviations || []).find(a => tokenSet.has(a.toLowerCase()));
                 return abbrMatch ? { ...r, matchedAbbreviation: abbrMatch } : r;
             });
+        } else {
+            results = [];
+        }
+        return results;
+    }
+
+    // Open the from/to form with this place as the destination
+    function onRowDirections(item) {
+        // Set the place as the destination
+        if (item.category === 'stop') {
+            setNavigationFromStop(String(item.id), 'to');
+        } else {
+            setNavigationFromBuilding(item.name, 'to');
         }
 
-        if (results.length === 0) {
+        // Default the origin to the user's current location when available
+        const hasUserLocation = typeof userPosition !== 'undefined' &&
+            Array.isArray(userPosition) && userPosition.length === 2 &&
+            userPosition[0] != null && userPosition[1] != null;
+        if (hasUserLocation) {
+            const closestStop = findClosestStop(userPosition[0], userPosition[1]);
+            if (closestStop && closestStop.id != null && stopsData[closestStop.id]) {
+                setNavigationFromStop(String(closestStop.id), 'from');
+            }
+        }
+
+        openDirectionsNav();
+        const shouldFocusTo = !$('#nav-from-input').val().trim();
+        setTimeout(function() {
+            if (shouldFocusTo) {
+                $('#nav-to-input').focus();
+            } else {
+                $('#nav-from-input').focus();
+            }
+        }, 60);
+
+        sa_event('btn_press', {
+            'btn': 'search_result_directions',
+            'result': item.name,
+            'category': item.category
+        });
+    }
+
+    // Escape user-provided text for safe HTML insertion
+    function escapeHTML(str) {
+        return String(str).replace(/[&<>"']/g, function(c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    // Render fuzzy results into the results list with the given pick handler.
+    // Built as a single HTML string with FINAL custom icon classes so the
+    // MutationObserver / FontAwesome swap never fires per keystroke.
+    function renderResults(results, onPick) {
+        const $results = $('.search-results');
+        const entries = []; // { item, matchedAbbreviation }
+        const MAX_ROWS = 30;
+
+        for (const result of results) {
+            entries.push({
+                item: result.item ? result.item : result,
+                matchedAbbreviation: result.matchedAbbreviation
+            });
+            if (entries.length >= MAX_ROWS) break;
+        }
+
+        if (entries.length === 0) {
             $results.html('<div class="dimgray">No results found.</div>');
             return;
         }
-        results.forEach(result => {
-            const item = result.item ? result.item : result;
-            const matchedAbbreviation = result.matchedAbbreviation;
-            let icon = '';
-            if (item.category === 'building') {
-                icon = '<i class="fa-solid fa-building"></i>';
-            } else if (item.category === 'parking') {
-                icon = '<i class="fa-solid fa-square-parking"></i>';
-            } else if (item.category === 'stop') {
-                icon = '<i class="fa-solid fa-bus-simple"></i>';
-            }
 
-            const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
-            const $elm = $('<div class="search-result-item flex"></div>');
-            if (icon) $elm.append(icon);
-            $elm.append($('<div></div>').text(displayText));
-            $elm.click(function() {
-                handleSearchItemSelection(item, {
-                    'btn': 'search_result_selected',
-                    'result': item.name,
-                    'category': item.category
-                });
-            });
-            $results.append($elm);
+        let html = '';
+        for (let i = 0; i < entries.length; i++) {
+            const entry = entries[i];
+            const item = entry.item;
+            const iconClass = placeIconClass(item);
+            const displayText = entry.matchedAbbreviation ? item.name + ' (' + entry.matchedAbbreviation + ')' : item.name;
+
+            html += '<div class="search-result-item flex" data-result-index="' + i + '">'
+                + (iconClass ? '<i class="' + iconClass + '"></i>' : '')
+                + '<div>' + escapeHTML(displayText) + '</div>'
+                + '<i class="search-result-map-pin icon icon-location-dot"></i>'
+                + '<button class="search-result-directions-btn" type="button" title="Get directions" data-dir-result-index="' + i + '">'
+                + '<i class="icon icon-route"></i><span>Directions</span>'
+                + '</button>'
+                + '</div>';
+        }
+        $results.html(html);
+
+        // Delegate clicks once at the container level.
+        $results.off('.searchResults').on('click.searchResults', '.search-result-directions-btn', function(e) {
+            e.stopPropagation();
+            const idx = $(this).attr('data-dir-result-index');
+            onRowDirections(entries[idx].item);
+        }).on('click.searchResults', '.search-result-item', function() {
+            const idx = $(this).attr('data-result-index');
+            onPick(entries[idx].item);
         });
+    }
+
+    $('.search-wrapper input').on('input', function() {
+        const query = $(this).val().trim();
+        // Remove schedule-style room suffixes like "AB-101" -> "AB"
+        const sanitizedQuery = query.replace(/-[^\s]*/g, '').replace(/\s+/g, ' ').trim();
+        const queryLower = sanitizedQuery.toLowerCase();
+        const $results = $('.search-results');
+
+        // Toggle clear button visibility
+        toggleClearButton();
+
+        $results.empty();
+
+        // Directions mode uses the dedicated from/to inputs; the pill is hidden there.
+        if (searchMode === 'directions') {
+            return;
+        }
+
+        // Hide recommendations and recent searches when user starts typing
+        if (sanitizedQuery) {
+            $('.search-recs-wrapper').hide();
+            $('.search-recents-wrapper').hide();
+            $('.search-surprise-me').hide();
+        } else {
+            $('.search-recs-wrapper').show();
+            $('.search-recents-wrapper').show();
+            $('.search-surprise-me').show();
+            
+            // Repopulate the content when showing (in case it was updated)
+            populateRecentSearches();
+        }
         
-        // Convert FontAwesome icons to custom icons
-        replaceFontAwesomeIcons();
+        if (!fuseReady || !sanitizedQuery) {
+            $('.search-results-wrapper, .search-results').hide();
+            return;
+        }
+        $('.search-results-wrapper, .search-results').show();
+
+        const results = matchQueryItems(sanitizedQuery, queryLower);
+        renderResults(results, function(item) {
+            handleSearchItemSelection(item, {
+                'btn': 'search_result_selected',
+                'result': item.name,
+                'category': item.category
+            });
+        });
 
         if (!buildingsLayer) {
             loadBuildings().then(() => {
@@ -604,6 +681,7 @@ $(document).ready(function() {
     // Helper function to handle search item selection (stop or building)
     function handleSearchItemSelection(item, eventData) {
         closeSearch();
+        searchReentry = item.category === 'stop' || item.category === 'building' || item.category === 'parking';
         
         if (item.category === 'stop') {
             // Handle stop selection
@@ -644,220 +722,74 @@ $(document).ready(function() {
         const $searchRecents = $('.search-recents');
         const $searchRecentsWrapper = $('.search-recents-wrapper');
         $searchRecents.empty();
-        
-        const recentSearches = getRecentSearches();
-        const recentNavigations = getRecentNavigations();
-        
-        // Combine all items and sort by most recent
-        const allRecent = [...recentSearches, ...recentNavigations]
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-        // Dedupe by logical identity, keeping the most recent instance
+        const recentSearches = getRecentSearches();
+        // Only place items (buildings/stops/parking lots) — navigation entries are no longer shown.
+        const uniqueItems = [];
         const seenKeys = new Set();
-        const uniqueRecents = [];
+        const allRecent = recentSearches.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         for (const item of allRecent) {
-            const key = item.type === 'navigation'
-                ? `nav:${item.from}\u2192${item.to}`
-                : `srch:${item.category}:${item.name}`;
+            if (item.type === 'navigation') continue;
+            const key = `srch:${item.category}:${item.name}`;
             if (!seenKeys.has(key)) {
                 seenKeys.add(key);
-                uniqueRecents.push(item);
+                uniqueItems.push(item);
             }
         }
-        
-        if (uniqueRecents.length === 0) {
+
+        if (uniqueItems.length === 0) {
             $searchRecentsWrapper.hide();
             return;
         }
-        
-        // Update Recent heading count directly from the deduped list
-        const $heading = $('.search-recents-wrapper .text-1p4rem.bold-500').first();
-        if ($heading.length) {
-            $heading.html(`Recent <span style="color: var(--theme-hidden-route-col)">(${uniqueRecents.length})</span>`);
-        }
-        
         $searchRecentsWrapper.show();
-        
-        function tryApplyMarquee($text) {
 
-            const el = $text.get(0);
-            const clientWidth = el.clientWidth;
-            const scrollWidth = el.scrollWidth;
+        // Show only the 3 most recent
+        const recentToShow = uniqueItems.slice(0, 3);
+        recentToShow.forEach(item => {
+            const $row = $('<div class="search-result-item flex"></div>');
+            $row.append('<i class="icon icon-clock-rotate-left"></i>');
+            const $name = $('<div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>').text(item.name);
+            $row.append($name);
 
-            const isOverflowing = scrollWidth > clientWidth + 1;
-
-            if (isOverflowing) { // strict width comparison
-                // Immediately wrap the text in a container that applies the fade effect
-                const $wrapper = $('<div class="overflow-fade"></div>');
-                $text.wrap($wrapper);
-
-                // Wait 1.5s before applying the scrolling effect to give user time to read
-                setTimeout(function() {
-                    // Ensure the element still exists in the DOM before modifying it
-                    if (!document.body.contains(el)) return;
-
-                    const original = $text.text();
-                    const gap = 48;
-                    // Speed up a bit by increasing pixels/second
-                    const SPEED_PX_PER_SEC = 50;
-                    const travelPx = scrollWidth + gap;
-                    const travelSeconds = Math.max(4, Math.round(travelPx / SPEED_PX_PER_SEC));
-                    const HOLD_SECONDS = 1.5;
-                    const totalSeconds = travelSeconds + HOLD_SECONDS;
-
-                    // Create a per-instance keyframes with an initial hold period
-                    const holdPercent = Math.min(40, Math.max(5, (HOLD_SECONDS / totalSeconds) * 100));
-                    const animName = `searchMarqueeScrollHold_${Date.now()}_${Math.floor(Math.random()*100000)}`;
-                    const styleEl = document.createElement('style');
-                    styleEl.type = 'text/css';
-                    styleEl.textContent = `@keyframes ${animName} { 0% { transform: translateX(0); } ${holdPercent}% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`;
-                    document.head.appendChild(styleEl);
-
-                    const $marqueeContainer = $('<div class="marquee-container" style="width: 100%;"></div>');
-                    // Prevent marquee text from sliding underneath the remove button
-                    const btnEl = $text.closest('.search-result-item').find('.recent-remove-btn').get(0);
-                    if (btnEl) {
-                        const btnRect = btnEl.getBoundingClientRect();
-                        $marqueeContainer.css('padding-right', Math.ceil(btnRect.width + 12) + 'px');
-                    }
-                    const $track = $('<div class="marquee-track"></div>');
-                    $track.css({
-                        animationName: animName,
-                        animationDuration: `${totalSeconds}s`,
-                        animationTimingFunction: 'linear',
-                        animationIterationCount: 'infinite'
-                    });
-                    const $span1 = $('<span class="marquee-text"></span>').text(original);
-                    const $span2 = $('<span class="marquee-text"></span>').text(original);
-                    $track.append($span1, $span2);
-                    $marqueeContainer.append($track);
-                    $text.replaceWith($marqueeContainer);
-                }, 1500);
-            }
-        }
-
-        function appendRecentItem(item) {
-            let icon = '';
-            let displayText = '';
-            let itemData = {};
-            
-            if (item.type === 'navigation') {
-                // Navigation entry
-                icon = '<i class="fa-solid fa-route" style="color: var(--theme-hidden-route-col)"></i>';
-                displayText = `${item.from} → ${item.to}`;
-                itemData = { type: 'navigation', from: item.from, to: item.to, fromBuilding: item.fromBuilding, toBuilding: item.toBuilding };
-            } else {
-                // Building/parking/stop entry
-                if (item.category === 'building') {
-                    icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
-                } else if (item.category === 'parking') {
-                    icon = '<i class="fa-solid fa-square-parking" style="color: var(--theme-hidden-route-col)"></i>';
-                } else if (item.category === 'stop') {
-                    icon = '<i class="fa-solid fa-bus-simple" style="color: var(--theme-hidden-route-col)"></i>';
-                }
-                displayText = item.name;
-                itemData = item;
-            }
-            
-            const $recentItem = $('<div class="search-result-item flex" style="column-gap: 0.3rem !important; position: relative;"></div>');
-            if (icon) $recentItem.append(icon);
-            $recentItem.append($('<div class="recent-text" style="flex: 1; white-space: pre; overflow: hidden;"></div>').text(displayText));
-            $recentItem.append('<button class="recent-remove-btn" type="button" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; opacity: 0.7; transition: opacity 0.2s;">×</button>');
-            
-            // Handle click on the main item (not the remove button)
-            $recentItem.click(function(e) {
-                if (!$(e.target).hasClass('recent-remove-btn')) {
-                    closeSearch();
-                    
-                    if (item.type === 'navigation') {
-                        // Handle navigation selection - open navigation with the saved route
-                        const toBuildingKey = Object.keys(buildingIndex).find(key => 
-                            buildingIndex[key].name.toLowerCase() === item.to.toLowerCase()
-                        );
-                        openNav(toBuildingKey, item.from);
-                        
-                        sa_event('btn_press', {
-                            'btn': 'recent_navigation_selected',
-                            'from': item.from,
-                            'to': item.to
-                        });
-                    } else {
-                        // Handle stop or building selection
-                        handleSearchItemSelection(item, {
-                            'btn': 'recent_search_selected',
-                            'result': item.name,
-                            'category': item.category
-                        });
-                    }
-                }
+            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="icon icon-route"></i><span>Directions</span></button>');
+            $directions.on('click', function(e) {
+                e.stopPropagation();
+                onRowDirections(item);
             });
-            
-            // Handle remove button click
-            $recentItem.find('.recent-remove-btn').click(function(e) {
-                e.stopPropagation(); // Prevent triggering the main item click
-                
-                if (item.type === 'navigation') {
-                    removeRecentNavigation(item);
-                    sa_event('btn_press', {
-                        'btn': 'recent_navigation_removed',
-                        'from': item.from,
-                        'to': item.to
-                    });
-                } else {
-                    removeRecentSearch(item);
-                    sa_event('btn_press', {
-                        'btn': 'recent_search_removed',
+            $row.append($directions);
+
+            const $remove = $('<button class="recent-remove-btn" type="button" style="background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; line-height: 1; opacity: 0.7; transition: opacity 0.2s; flex-shrink: 0;">×</button>');
+            $row.append($remove);
+
+            $row.click(function(e) {
+                if (!$(e.target).hasClass('recent-remove-btn') && !$(e.target).closest('.search-result-directions-btn').length) {
+                    handleSearchItemSelection(item, {
+                        'btn': 'recent_search_selected',
                         'result': item.name,
                         'category': item.category
                     });
                 }
-                
-                populateRecentSearches(); // Refresh the list
-                // Repopulate navigation examples based on new recent searches count
-                populateNavigationExamples();
             });
-            
+
+            $remove.on('click', function(e) {
+                e.stopPropagation(); // Prevent triggering the main item click
+                removeRecentSearch(item);
+                sa_event('btn_press', {
+                    'btn': 'recent_search_removed',
+                    'result': item.name,
+                    'category': item.category
+                });
+                populateRecentSearches(); // Repopulate the 3 slots with the actual most recent
+            });
+
             // Hover effects for remove button
-            $recentItem.find('.recent-remove-btn').hover(
+            $remove.hover(
                 function() { $(this).css('opacity', '1'); },
                 function() { $(this).css('opacity', '0.7'); }
             );
-            
-            $searchRecents.append($recentItem);
 
-            // After mount, if text overflows, convert to marquee
-            tryApplyMarquee($recentItem.find('.recent-text'));
-        }
-
-        // Reset container styles before measuring/appending
-        $searchRecents.css({ height: '', maxHeight: '', overflowY: '' });
-
-        const total = uniqueRecents.length;
-        const firstCount = Math.min(3, total);
-
-        // Append the first three items
-        for (let i = 0; i < firstCount; i++) {
-            appendRecentItem(uniqueRecents[i]);
-        }
-
-        if (total <= 3) {
-            // No need to set fixed height or scrolling
-            return;
-        }
-
-        // Measure using bounding box rect height for the first three rows
-        (function measureAndLockThreeRowHeight() {
-            const el = $searchRecents.get(0);
-            const rect = el ? el.getBoundingClientRect() : null;
-            const bboxHeight = rect ? rect.height : 0;
-            $searchRecents.css({ height: Math.ceil(bboxHeight) + 'px', overflowY: 'auto' });
-            // Debug log removed
-        })();
-
-        // Append the remaining items
-        for (let i = 3; i < total; i++) {
-            appendRecentItem(uniqueRecents[i]);
-        }
+            $searchRecents.append($row);
+        });
     }
 
     // Populate search recommendations with 3 random popular buildings and active stops
@@ -919,18 +851,26 @@ $(document).ready(function() {
             }));
         }
         
-        // Create recommendation elements
+        // Create recommendation elements — all use the fire icon
+        const $searchRecsWrapper = $('.search-recs-wrapper');
+        if (selectedItems.length === 0) {
+            $searchRecsWrapper.hide();
+            return;
+        }
+        $searchRecsWrapper.show();
         selectedItems.forEach(item => {
-            let icon = '';
-            if (item.category === 'stop') {
-                icon = '<i class="fa-solid fa-bus-simple" style="color: var(--theme-hidden-route-col)"></i>';
-            } else {
-                icon = '<i class="fa-solid fa-building" style="color: var(--theme-hidden-route-col)"></i>';
-            }
-            
-            const $recItem = $('<div class="search-result-item flex" style="column-gap: 0.3rem !important;"></div>');
-            if (icon) $recItem.append(icon);
-            $recItem.append($('<div></div>').text(item.name));
+            const $recItem = $('<div class="search-result-item flex"></div>');
+            $recItem.append('<i class="icon icon-fire-flame-curved"></i>');
+            const $name = $('<div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>').text(item.name);
+            $recItem.append($name);
+
+            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="icon icon-route"></i><span>Directions</span></button>');
+            $directions.on('click', function(e) {
+                e.stopPropagation();
+                onRowDirections(item);
+            });
+            $recItem.append($directions);
+
             $recItem.click(function() {
                 if (item.category === 'stop') {
                     // Handle stop selection directly
@@ -957,15 +897,16 @@ $(document).ready(function() {
             });
             $searchRecs.append($recItem);
         });
-        
-        // Convert FontAwesome icons to custom icons
-        replaceFontAwesomeIcons();
     }
 
 });
 
 function closeSearch() {
-    $('.search-wrapper').hide();
+    $('.search-wrapper').addClass('none');
+    if (searchMode !== 'search') {
+        applySearchMode('search');
+    }
+    $('.navigate-wrapper').addClass('none');
     if (!$('.settings-panel').is(':visible') && !$('.feedback-wrapper').is(':visible')) {
         $('.bottom').show();
     }
@@ -980,10 +921,70 @@ function closeSearch() {
     });
 }
 
-function openSearch() {
+function applySearchMode(mode) {
+    if (searchMode === mode) {
+        return;
+    }
+    searchMode = mode;
+
+    if (mode === 'directions') {
+        $('.search-pill-bar').addClass('none');
+        $('.search-content').addClass('none');
+        $('.navigate-wrapper').removeClass('none');
+        hideNavigationAutocomplete();
+    } else {
+        $('.navigate-wrapper').addClass('none');
+        $('.search-pill-bar').removeClass('none');
+        $('.search-content').removeClass('none');
+        $('.search-wrapper input').attr('placeholder', 'Search {num} buildings & lots');
+        if (window.buildingList && window.buildingList.length) {
+            updateSearchPlaceholder(window.buildingList.length);
+        }
+        // Re-render results if the search input still has a query
+        const searchValue = $('.search-wrapper input').val().trim();
+        if (searchValue) {
+            $('.search-wrapper input').trigger('input');
+        }
+    }
+}
+
+function setSearchMode(mode) {
+    applySearchMode(mode);
+    if (mode === 'directions') {
+        setTimeout(function() {
+            $('#nav-from-input').focus();
+        }, 60);
+    } else {
+        $('.search-wrapper input').trigger('input').focus();
+    }
+}
+
+function openDirectionsNav() {
+    $('.search-wrapper').removeClass('none');
     $('.bottom').hide();
-    $('.search-wrapper').show();
     if (typeof hideCenterStops === 'function') hideCenterStops();
     adjustSearchHeights();
     attachSearchViewportListeners();
+    applySearchMode('directions');
+}
+
+function openSearch() {
+    $('.bottom').hide();
+    $('.search-wrapper').removeClass('none');
+    if (typeof hideCenterStops === 'function') hideCenterStops();
+    adjustSearchHeights();
+    attachSearchViewportListeners();
+}
+
+// Reopen the search menu (used by the "Back to search" button on building/stop popups
+// that were opened from a search result selection).
+function openSearchBack() {
+    searchReentry = false;
+    searchBackActive = false;
+    $('.search-wrapper').removeClass('none');
+    $('.bottom').hide();
+    if (typeof hideCenterStops === 'function') hideCenterStops();
+    adjustSearchHeights();
+    attachSearchViewportListeners();
+    $('.search-wrapper input').trigger('input').focus();
 }

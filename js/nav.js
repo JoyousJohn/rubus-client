@@ -33,7 +33,7 @@ $(document).ready(function() {
         
         // Always set the selected building as the destination
         setNavigationFromBuilding(currentBuildingName, 'to');
-        $('.navigate-wrapper').show();
+        openDirectionsNav();
         window.errorTracker.trackNavigationWrapperShow('Building directions button');
 
         // Focus on the from input for user to enter their starting location
@@ -293,7 +293,7 @@ function openNav(navTo, navFrom) {
         $('#nav-from-input').val(navFrom);
     }
 
-    $('.navigate-wrapper').show();
+    openDirectionsNav();
     window.errorTracker.trackNavigationWrapperShow('openNav function');
     
     // If both inputs are provided, automatically calculate the route
@@ -2386,7 +2386,6 @@ function displayRoute(routeData) {
                 
                 // Close navigation wrapper and hide search
                 closeNavigation();
-                $('.search-wrapper').hide();
                 
                 sa_event('btn_press', {
                     'btn': 'nav_waypoint_building_clicked',
@@ -2414,7 +2413,6 @@ function displayRoute(routeData) {
                 // Show stop info and close navigation
                 popStopInfo(parseInt(stopId));
                 closeNavigation();
-                $('.search-wrapper').hide();
                 
                 sa_event('btn_press', {
                     'btn': 'nav_waypoint_stop_clicked',
@@ -2499,8 +2497,8 @@ function displayRoute(routeData) {
         });
     }
 
-    // Show navigation wrapper if hidden
-    $('.navigate-wrapper').show();
+    // Show directions tab if hidden
+    openDirectionsNav();
     window.errorTracker.trackNavigationWrapperShow('calculateRoute function');
     
     // Ensure directions wrapper uses flex when visible
@@ -2904,11 +2902,19 @@ function closeNavigation() {
         // Hide autocomplete and messages
         hideNavigationAutocomplete();
         $('.nav-message').hide();
-        // Fade out wrapper
-        $('.navigate-wrapper').fadeOut(200);
+        // Close the search shell (returns to map and resets to the search tab)
+        if (typeof closeSearch === 'function') {
+            closeSearch();
+        } else {
+            $('.navigate-wrapper').fadeOut(200);
+        }
     } catch (e) {
         console.error('Error closing navigation:', e);
-        $('.navigate-wrapper').fadeOut(200);
+        if (typeof closeSearch === 'function') {
+            closeSearch();
+        } else {
+            $('.navigate-wrapper').fadeOut(200);
+        }
     }
 }
 
@@ -3021,11 +3027,10 @@ function populateNavigationExamples() {
             // Show clear buttons
             $('#nav-from-clear-btn, #nav-to-clear-btn').fadeIn();
             
-            // Hide autocomplete dropdowns and search wrapper
+            // Hide autocomplete dropdown
             hideNavigationAutocomplete();
-            $('.search-wrapper').hide();
             
-            // Calculate and display the route
+            // Calculate and display the route (opens the directions tab)
             setTimeout(() => {
                 calculateRoute(example.startName, example.endName);
             }, 100);

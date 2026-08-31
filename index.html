@@ -96,13 +96,11 @@
                             reg.update();
                         }
                     });
-                    var refreshing = false;
-                    navigator.serviceWorker.addEventListener('controllerchange', function() {
-                        if (!refreshing) {
-                            refreshing = true;
-                            location.reload();
-                        }
-                    });
+                    // Deliberately NO controllerchange -> location.reload(): a new
+                    // SW installs/activates (skipWaiting + clients.claim in sw.js)
+                    // in the background while the open page keeps running the
+                    // already-loaded code. The update takes effect on the next
+                    // natural reload/restart — no forced reload, no flash.
                 }).catch(function(err) {
                     console.warn('[SW] Registration failed:', err);
                 });
@@ -844,7 +842,7 @@
                         </div>
                     </div>
 
-                <div class="stop-btns flex gap-x-0p5rem">  
+                <div class="stop-btns flex gap-x-0p5rem">
                     <div class="stop-directions br-1rem align-center pointer" onclick="">
                         <i class="fa-solid fa-diamond-turn-right"></i>
                     </div>
@@ -873,7 +871,7 @@
                             
                             // Always set the selected stop as the destination
                             setNavigationFromStop(currentStopId, 'to');
-                            $('.navigate-wrapper').show();
+                            openDirectionsNav();
 
                             // Focus on the from input for user to enter their starting location
                             $('#nav-from-input').focus();
@@ -920,6 +918,15 @@
             </div>
 
             <div class="flex justify-between relative mt-0p5rem">
+
+                <div class="building-info-back-wrapper pointer">
+                    <div class="building-info-back pointer">
+                        <div class="flex align-center gap-x-0p5rem">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <div>Back to search</div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="building-btns flex gap-x-0p5rem">  
                     <div class="building-directions br-1rem align-center pointer" onclick="">
@@ -1108,40 +1115,6 @@
       </div>
     </div>
 
-    <div class="navigate-wrapper none">
-        <div class="navigate-inner flex flex-col" style="pointer-events: none; z-index: 403; font-family: var(--font-family); position: relative;">
-            <div class="navigate-to-from flex flex-col br-1rem" style="background-color: var(--theme-bg); pointer-events: all;">
-                <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
-                    <div class="from-circle center">◯</div>
-                    <div class="nav-from">
-                        <div class="nav-input-wrapper">
-                            <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
-                            <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
-                        </div>
-                        <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
-                    </div>
-                    <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
-                        <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
-                    </div>
-                    <div class="center">⋮</div>
-                    <div style="height: 1px; background-color: var(--theme-color-lighter);"></div>
-                    <div class="center"><i class="fa-solid fa-location-pin"></i></div>
-                    <div class="nav-to">
-                        <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off">
-                        <button class="nav-clear-btn" id="nav-to-clear-btn" type="button">×</button>
-                    </div>
-                    <div class="nav-to-search-results none" style="grid-column: span 3;"></div>
-                </div>
-            </div>
-
-            <div class="nav-directions-wrapper none br-1rem">
-                <div class="nav-directions-inner flex flex-col">
-
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="install-pwa-wrapper none">
         <div class="flex justify-center align-center h-full">
             <div class="install-pwa-iphone flex flex-col gap-y-1rem center align-center">
@@ -1200,50 +1173,63 @@
     </div>
 
     <div class="search-wrapper none">
-        <div>
-            <div class="search-input-wrapper">
-                <input type="text" placeholder="Search {num} buildings & lots">
-                <button class="search-clear-btn" type="button">×</button>
-            </div>
+        <div class="search-pill-bar">
+            <button class="search-back-btn" type="button" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+            <input type="text" placeholder="Search {num} buildings & lots" autocomplete="off">
+            <button class="search-clear-btn" type="button" aria-label="Clear">×</button>
+        </div>
+        <div class="search-content">
             <div class="search-results-wrapper none mt-1rem">
                 <div class="search-results">
                 </div>
             </div>
-            <div class="search-recents-wrapper mt-1rem">
-                <div class="flex align-center ml-0p3rem" style="color: var(--theme-color-lighter)">
-                    <i class="fa-solid fa-clock-rotate-left" style="font-size: 1.4rem;"></i>
-                    <span class="text-1p4rem bold-500 ml-0p5rem">Recent</span>
-                </div>
-                <div class="search-recents mt-0p5rem flex flex-col gap-y-0p5rem text-1p5rem"></div>
+            <div class="search-recents-wrapper">
+                <div class="search-recents flex flex-col gap-y-1rem text-1p5rem"></div>
             </div>
-            <div class="search-nav-examples-wrapper mt-1p5rem">
-                <div class="flex justify-between align-center ml-0p3rem mr-0p3rem">
-                    <div class="flex align-center" style="color: var(--theme-color-lighter)">
-                        <i class="fa-solid fa-rocket" style="font-size: 1.4rem;"></i>
-                        <span class="text-1p4rem bold-500 ml-0p5rem">Navigation examples</span>
+            <div class="search-recs-wrapper mt-1rem">
+                <div class="search-recs flex flex-col gap-y-1rem text-1p5rem"></div>
+            </div>
+            <div class="search-surprise-me mt-1rem">
+                <div class="search-result-item flex text-1p5rem">
+                    <i class="fa-solid fa-party-horn"></i>
+                    <div>Surprise me</div>
+                </div>
+            </div>
+        </div>
+        <div class="navigate-wrapper none">
+            <div class="nav-directions-header flex align-center">
+                <button class="nav-back-btn" type="button" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+                <span>Directions</span>
+            </div>
+            <div class="navigate-inner flex flex-col" style="font-family: var(--font-family); position: relative;">
+                <div class="navigate-to-from flex flex-col br-1rem" style="background-color: var(--theme-bg); pointer-events: all;">
+                    <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
+                        <div class="from-circle center">◯</div>
+                        <div class="nav-from">
+                            <div class="nav-input-wrapper">
+                                <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
+                                <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
+                            </div>
+                            <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
+                        </div>
+                        <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
+                            <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
+                        </div>
+                        <div class="center">⋮</div>
+                        <div style="height: 1px; background-color: var(--theme-color-lighter);"></div>
+                        <div class="center"><i class="fa-solid fa-location-pin"></i></div>
+                        <div class="nav-to">
+                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off">
+                            <button class="nav-clear-btn" id="nav-to-clear-btn" type="button">×</button>
+                        </div>
+                        <div class="nav-to-search-results none" style="grid-column: span 3;"></div>
                     </div>
-                    <button class="search-nav-examples-refresh-btn pointer" type="button" style="background: none; border: none; color: var(--theme-color-lighter); font-size: 1.4rem; padding: 0.25rem; border-radius: 0.25rem;" title="Refresh navigation examples">
-                        <i class="fa-solid fa-rotate-right" style="color: var(--theme-hidden-route-col)"></i>
-                    </button>
                 </div>
-                <div class="search-nav-examples mt-0p5rem flex flex-col gap-y-0p5rem text-1p5rem"></div>
-            </div>
-            <div class="search-recs-wrapper mt-1p5rem">
-                <div class="flex justify-between align-center ml-0p3rem mr-0p3rem">
-                    <div class="flex align-center" style="color: var(--theme-color-lighter)">
-                        <i class="fa-solid fa-fire-flame-curved" style="font-size: 1.4rem;"></i>
-                        <span class="text-1p4rem bold-500 ml-0p5rem">Popular places</span>
+
+                <div class="nav-directions-wrapper none br-1rem">
+                    <div class="nav-directions-inner flex flex-col">
+
                     </div>
-                    <button class="search-recs-refresh-btn pointer" type="button" style="background: none; border: none; color: var(--theme-color-lighter); font-size: 1.4rem; padding: 0.25rem; border-radius: 0.25rem;" title="Refresh popular places">
-                        <i class="fa-solid fa-rotate-right" style="color: var(--theme-hidden-route-col)"></i>
-                    </button>
-                </div>
-                <div class="search-recs mt-0p5rem flex flex-col gap-y-0p5rem text-1p5rem"></div>
-            </div>
-            <div class="search-surprise-me mt-1p5rem mb-0p5rem">
-                <div class="flex align-center ml-0p3rem pointer" style="color: var(--theme-color-lighter);">
-                    <i class="fa-solid fa-party-horn" style="font-size: 1.4rem;"></i>
-                    <span class="text-1p4rem bold-500 ml-0p5rem">Surprise me</span>
                 </div>
             </div>
         </div>

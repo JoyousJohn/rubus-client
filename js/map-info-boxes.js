@@ -1,5 +1,7 @@
 // js/map-info-boxes.js - extracted verbatim from js/map.js
 function hideInfoBoxes(instantly_hide) {
+    searchReentry = false;
+    if (typeof searchBackActive !== 'undefined') searchBackActive = false;
     // console.log('hideInfoBoxes() triggered')
     $('.desktop-esc-notice').hide();
 
