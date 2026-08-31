@@ -65,7 +65,12 @@ function _prPersist(ratio) {
     } catch (e) {}
 }
 
+function _prShouldShowToast() {
+    return !!settings['toggle-adaptive-pixel-ratio'];
+}
+
 function _prToast(text) {
+    if (!_prShouldShowToast()) return;
     const $toast = $('.pixel-ratio-toast');
     if ($toast.length) $toast.text(text).stop(true, true).fadeIn();
 }
@@ -194,7 +199,10 @@ function stopAdaptivePixelRatio() {
 }
 
 document.addEventListener('rubus-map-created', function() {
-    if (typeof settings !== 'undefined' && settings['toggle-adaptive-pixel-ratio']) {
+    const explicit = settings['toggle-adaptive-pixel-ratio'];
+    const lowPerf = settings['toggle-low-performance-mode'];
+    if (explicit || lowPerf) {
         startAdaptivePixelRatio();
+        if (!explicit) _prHideToast();
     }
 });

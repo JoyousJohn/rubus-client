@@ -632,9 +632,9 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
 
             if (isChecked) {
-                if (typeof startAdaptivePixelRatio === 'function') startAdaptivePixelRatio();
+                startAdaptivePixelRatio();
             } else {
-                if (typeof stopAdaptivePixelRatio === 'function') stopAdaptivePixelRatio();
+                stopAdaptivePixelRatio();
             }
             break;
 
@@ -1067,10 +1067,13 @@ function applyLowPerformanceModeState() {
         $('.offscreen-indicators-row').addClass('disabled');
 
         // Turn on adaptive pixel ratio (self-tunes the render DPR down under load).
-        settings['toggle-adaptive-pixel-ratio'] = true;
-        if (typeof startAdaptivePixelRatio === 'function') {
-            startAdaptivePixelRatio();
-        }
+        // Toast is only shown if user explicitly enabled adaptive; lowPerf's
+        // implicit enable keeps the feature running silently.
+        const wasExplicitAdaptive = !!settings['toggle-adaptive-pixel-ratio'];
+        startAdaptivePixelRatio();
+        if (!wasExplicitAdaptive) _prHideToast();
+        // Keep the underlying setting reflecting explicit choice only; UI
+        // checkbox is forced checked/disabled to indicate forced-on.
         $('#toggle-adaptive-pixel-ratio').prop('checked', true).prop('disabled', true);
         $('.adaptive-pixel-ratio-row').addClass('disabled');
 
@@ -1088,11 +1091,20 @@ function applyLowPerformanceModeState() {
         $('#toggle-offscreen-bus-indicators').prop('disabled', false);
         $('.adaptive-pixel-ratio-row').removeClass('disabled');
         $('#toggle-adaptive-pixel-ratio').prop('disabled', false);
+        $('#toggle-adaptive-pixel-ratio').prop('checked', !!settings['toggle-adaptive-pixel-ratio']);
         // Restore the offscreen dependent rows from the (now-current) setting.
         if (settings['toggle-offscreen-bus-indicators']) {
             $('.offscreen-indicators-dependent').removeClass('disabled');
         } else {
             $('.offscreen-indicators-dependent').addClass('disabled');
+        }
+        // If adaptive was only running due to Low Performance Mode (explicit
+        // setting is false), tear it down; otherwise ensure explicit choice
+        // stays active.
+        if (!settings['toggle-adaptive-pixel-ratio']) {
+            stopAdaptivePixelRatio();
+        } else {
+            startAdaptivePixelRatio();
         }
     }
     updateSegFocusNotice();
