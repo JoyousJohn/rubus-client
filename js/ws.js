@@ -152,8 +152,11 @@ class BusWebSocketClient {
             busData[busName]['campus'] = routesByCampus[wsRoute];
             busData[busName].route = wsRoute;
 
-            // makeBusesByRoutes(); // might need this, gotta check by spoofing a on bus
+            makeBusesByRoutes();
             addStopsToMap();
+            if (typeof fetchWhere === 'function' && !sim) {
+                fetchWhere();
+            }
 
             $('.knight-mover').hide();
 

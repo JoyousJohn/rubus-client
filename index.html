@@ -72,6 +72,12 @@
             api_host: 'https://us.i.posthog.com',
             defaults: '2026-01-30',
             person_profiles: 'identified_only',
+            session_recording: {
+                captureCanvas: {
+                    canvasFps: 3,
+                    canvasQuality: '0.2'
+                }
+            }
         })
     </script>
 
@@ -900,9 +906,8 @@
             <div class="flex justify-between relative mt-0p5rem">
 
                 <div class="building-btns flex gap-x-0p5rem">  
-                    <div class="building-directions br-1rem align-center pointer flex gap-x-0p5rem" onclick="">
+                    <div class="building-directions br-1rem align-center pointer" onclick="">
                         <i class="fa-solid fa-diamond-turn-right"></i>
-                        <div class="bold-500 font-1p7rem">NAV</div>
                     </div>
                     <div class="building-navigate br-1rem align-center pointer" onclick="">
                         <i class="fa-solid fa-person-walking"></i>
@@ -1071,7 +1076,7 @@
             <span class="chat-ui-close flex justify-center align-center select-none absolute">X</span>
           </div>
           <div class="chat-ui-messages flex flex-col gap-1p2rem flex-1 px-1rem">
-            <div class="chat-message bot">RUBus Chat is an expert in Rutgers buses capable of answering complex questions about bus routes, schedules, and more.</div>
+            <div class="chat-message bot">Ask me complex questions about bus routes, schedules, navigation, and more.</div>
             <div class="chat-recs flex gap-x-1rem text-1p2rem mt-0p5rem" style="overflow-x: scroll; scrollbar-width: none;"></div>
         </div>
           <form class="chat-ui-input-bar flex align-center gap-0p5rem p-1rem" autocomplete="off">
@@ -1310,6 +1315,24 @@
                         <div class="settings-option" settings-option="gui-scale" gui-scale-option="larger">Larger</div>
                     </div>
                 </div>
+
+                <div class="flex justify-between allow-landscape-row">
+                    <div class="settings-heading flex flex-1 align-center span-i-allow-landscape">Allow Landscape<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-allow-landscape" class="toggle-input">
+                        <label for="toggle-allow-landscape" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="allow-landscape-explain none ml-0p5rem text-1p3rem dimgray">Allow the interface to rotate to landscape mode on phones when rotated horizontally. When disabled, phones stay in portrait layout.</div>
+                <script>
+                $('.span-i-allow-landscape').click(function() {
+                    const $el = $('.allow-landscape-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                </script>
 
                 <!-- Temporarily hidden: Simulator is hidden by default; can be enabled via Developer Settings
                 <div class="flex justify-between hide-sim-row">
@@ -2357,8 +2380,8 @@
                     <div class="settings-chatbot-model">
                         <div class="settings-heading">Chatbot Model</div>
                         <div class="settings-options grid grid-cols-2">
-                            <div class="settings-option" settings-option="chatbot-model" chatbot-model-option="inclusionai/ling-3.0-flash">Ling 3.0 Flash</div>
-                            <div class="settings-option" settings-option="chatbot-model" chatbot-model-option="upstage/solar-pro4">Solar Pro</div>
+                            <div class="settings-option" settings-option="chatbot-model" chatbot-model-option="ling">Ling</div>
+                            <div class="settings-option" settings-option="chatbot-model" chatbot-model-option="solar">Solar</div>
                         </div>
                     </div>
 

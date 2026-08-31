@@ -17,6 +17,8 @@ window.initMap = function() {
         attributionControl: false,
         pitchWithRotate: false,
         touchPitch: false,
+        // Keep the WebGL drawing buffer available for PostHog canvas capture.
+        preserveDrawingBuffer: true,
         // A/B test: native sharpness (DPR 1.354). If FPS regresses vs the
         // pixelRatio:1.0 run, pixel count was the improvement — not the GL
         // context flags below.
@@ -272,11 +274,11 @@ window.initMap = function() {
         $('.bottom, .knight-mover, .info-top-right').css('opacity', '1');
     });
 
-    isDesktop = $(window).width() > 992;
+    isDesktop = $(window).width() > 992 && $(window).height() >= 500 && !checkIsTouchDevice();
     isTouchDevice = checkIsTouchDevice();
 
     $(window).resize(function() {
-        isDesktop = $(window).width() > 992;
+        isDesktop = $(window).width() > 992 && $(window).height() >= 500 && !checkIsTouchDevice();
         isTouchDevice = checkIsTouchDevice();
         updateNextStopsMaxHeight();
         const escNotice = document.getElementById('escDesktopNotice');

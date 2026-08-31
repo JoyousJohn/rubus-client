@@ -282,11 +282,43 @@ function detachChatViewportListeners() {
   chatVvpHandler = null;
 }
 
+function updateChatInitialMessage() {
+    const baseMsg = 'Ask me complex questions about bus routes, schedules, navigation, and more.';
+    let busCount = 0;
+    let routeCount = 0;
+    if (typeof busesByRoutes !== 'undefined' && typeof selectedCampus !== 'undefined' && busesByRoutes[selectedCampus]) {
+        for (const route in busesByRoutes[selectedCampus]) {
+            const buses = busesByRoutes[selectedCampus][route] || [];
+            const validBuses = buses.filter(b => {
+                if (typeof isBusShownOnMap === 'function') return isBusShownOnMap(b);
+                return typeof busData !== 'undefined' && busData[b] && !busData[b].oos && !busData[b].atDepot;
+            });
+            if (validBuses.length > 0) {
+                routeCount++;
+                busCount += validBuses.length;
+            }
+        }
+    }
+    
+    let text = baseMsg;
+    if (busCount > 0 && routeCount > 0) {
+        const busStr = busCount === 1 ? '1 bus' : `${busCount} buses`;
+        const routeStr = routeCount === 1 ? '1 route' : `${routeCount} routes`;
+        text = `${baseMsg} There are currently ${busStr} on ${routeStr} running.`;
+    }
+    
+    const $firstBotMsg = $('.chat-ui-messages .chat-message.bot').first();
+    if ($firstBotMsg.length) {
+        $firstBotMsg.text(text);
+    }
+}
+
 // Show chat UI when chat button is clicked
 $(document).on('click', '.chat-btn', function() {
   $('.chat-wrapper').removeClass('none').show();
   attachChatViewportListeners();
   adjustChatHeights();
+  updateChatInitialMessage();
 
     // Clear previous recommendations to prevent unbounded DOM growth
     $('.chat-recs').empty();
@@ -446,7 +478,21 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
 
                 let rawText = data.answer || '';
                 if (!rawText && data.progress && data.progress.startsWith('Error:')) {
-                    finalAnswer = data.progress;
+                    console.error('[Chat Error]', data.progress);
+                    const errLower = data.progress.toLowerCase();
+                    if (errLower.includes('429') || errLower.includes('rate-limit') || errLower.includes('busy')) {
+                        finalAnswer = 'Sorry, the assistant is temporarily busy due to high demand. Please try again in a moment.';
+                    } else {
+                        finalAnswer = 'Sorry, I encountered an issue processing your request. Please try again shortly.';
+                    }
+                } else if (rawText && rawText.startsWith('Error:')) {
+                    console.error('[Chat Error]', rawText);
+                    const errLower = rawText.toLowerCase();
+                    if (errLower.includes('429') || errLower.includes('rate-limit') || errLower.includes('busy')) {
+                        finalAnswer = 'Sorry, the assistant is temporarily busy due to high demand. Please try again in a moment.';
+                    } else {
+                        finalAnswer = 'Sorry, I encountered an issue processing your request. Please try again shortly.';
+                    }
                 } else if (!rawText) {
                     finalAnswer = 'Sorry, I received an empty response.';
                 } else {
@@ -502,7 +548,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         }
     }
 
-    const selectedModel = (typeof settings !== 'undefined' && settings['chatbot-model']) || 'inclusionai/ling-3.0-flash';
+    const selectedModel = (typeof settings !== 'undefined' && settings['chatbot-model']) || 'ling';
     const isLocalDev = (typeof window !== 'undefined') && (
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1' ||

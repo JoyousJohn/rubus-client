@@ -320,7 +320,7 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
 	ipCounters.moves += 1;
 	const $container = $('.subpanels-container');
     const target = $(e.target);
-	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select').length > 0) {
+	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select, .incoming-wrapper, .incoming-list, .all-stops-grid, .campus-stops-list, .route-stops-grid').length > 0) {
 		ipCounters.ignoredInteractive += 1;
 		console.log('[IP] move ignored: interactive target', { type: e.type, moves: ipCounters.moves, ignoredInteractive: ipCounters.ignoredInteractive });
 		return;
@@ -336,8 +336,8 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
     const deltaY = dragEndY - dragStartY;
 	const touchDuration = Date.now() - touchStartTime;
 	const horizontalDominant = Math.abs(deltaX) > Math.abs(deltaY);
-	const distanceIntent = Math.abs(deltaX) > 20; // quicker flicks
-	const timeAndDistanceIntent = Math.abs(deltaX) > 12; // remove strict time gate for responsiveness
+	const distanceIntent = Math.abs(deltaX) > 25; // quicker flicks
+	const timeAndDistanceIntent = Math.abs(deltaX) > 20; // threshold for intentional horizontal swipe
 	const meetsThreshold = horizontalDominant && (distanceIntent || timeAndDistanceIntent);
 	console.log('[IP] move', { type: e.type, dx: deltaX, dy: deltaY, durationMs: touchDuration, meetsThreshold, isDragging });
 	if (meetsThreshold) {
@@ -394,7 +394,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 		dragEndY = e.clientY;
 	}
     const target = $(e.target);
-    const isInteractive = target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select').length > 0;
+    const isInteractive = target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select, .incoming-wrapper, .incoming-list, .all-stops-grid, .campus-stops-list, .route-stops-grid').length > 0;
     if (isInteractive && !isDragging && (!dragStartX || Math.abs(dragEndX - dragStartX) < 10)) {
 		console.log('[IP] end ignored: interactive area');
         dragStartX = dragStartY = dragEndX = dragEndY = 0;

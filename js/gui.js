@@ -2039,6 +2039,7 @@ const toggleSettings = [
     'toggle-show-dev-options',
     'toggle-show-etas-in-seconds',
     'toggle-dim-on-pan',
+    'toggle-allow-landscape',
     'toggle-show-bus-progress',
     'toggle-show-bus-overtime-timer',
     'toggle-show-bus-names',
@@ -2283,7 +2284,7 @@ function updateSettings() {
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[raster-sharpness-option="${settings['raster-sharpness']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-marker-renderer-option="${settings['bus-marker-renderer']}"]`).addClass('settings-selected')
-    $(`div.settings-option[chatbot-model-option="${settings['chatbot-model'] || 'inclusionai/ling-3.0-flash'}"]`).addClass('settings-selected')
+    $(`div.settings-option[chatbot-model-option="${settings['chatbot-model'] || 'ling'}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-animation-rate-option="${settings['bus-animation-rate']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 

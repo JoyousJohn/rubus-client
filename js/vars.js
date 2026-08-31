@@ -30,6 +30,7 @@ const defaultSettings = {
     'rubus-logo': 'rubus-favicon-back-to-college.png',
     'toggle-show-etas-in-seconds': false,
     'toggle-dim-on-pan': true,
+    'toggle-allow-landscape': false,
     'toggle-select-closest-stop': true,
     'toggle-hide-other-routes': true,
     'toggle-stops-above-buses': false,
@@ -50,7 +51,7 @@ const defaultSettings = {
 
     
     // dev settings
-    'chatbot-model': 'inclusionai/ling-3.0-flash',
+    'chatbot-model': 'ling',
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
     // Renamed from 'toggle-pause-passio-polling' when TripShot replaced Passio

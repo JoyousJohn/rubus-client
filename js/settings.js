@@ -16,6 +16,12 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-allow-landscape':
+            console.log(`Allow Landscape now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-allow-landscape'] = isChecked;
+            applyOrientationLock(isChecked);
+            break;
+
         case 'toggle-select-closest-stop':
             console.log(`Auto select closest stop ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-select-closest-stop'] = isChecked;
@@ -1520,5 +1526,31 @@ $(function() {
         if (e.which === 13) {
             applyCustomTileUrl($(this).val());
         }
+    });
+});
+
+function applyOrientationLock(allow) {
+    const isAllowed = allow !== undefined ? allow : !!(typeof settings !== 'undefined' && settings['toggle-allow-landscape']);
+    const isPhone = window.matchMedia("(max-width: 900px)").matches || /Android|iPhone|iPod|Mobile/i.test(navigator.userAgent);
+    
+    if (isAllowed) {
+        $('body').removeClass('lock-portrait');
+        if (screen.orientation && typeof screen.orientation.unlock === 'function') {
+            try { screen.orientation.unlock(); } catch (e) {}
+        }
+    } else {
+        if (isPhone) {
+            $('body').addClass('lock-portrait');
+            if (screen.orientation && typeof screen.orientation.lock === 'function') {
+                try { screen.orientation.lock('portrait').catch(() => {}); } catch (e) {}
+            }
+        }
+    }
+}
+window.applyOrientationLock = applyOrientationLock;
+$(document).ready(function() {
+    applyOrientationLock();
+    $(window).on('orientationchange resize', function() {
+        applyOrientationLock();
     });
 });

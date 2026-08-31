@@ -1,4 +1,4 @@
-@media (min-width: 992px) {
+@media (min-width: 992px) and (min-height: 500px) {
     .info-popup-wrapper {
         max-width: 30%;
         right: 0;

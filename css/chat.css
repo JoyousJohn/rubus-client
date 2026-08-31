@@ -193,7 +193,7 @@
   flex: 0 0 33vw;
 }
 
-@media (min-width: 992px) {
+@media (min-width: 992px) and (min-height: 500px) {
   .chat-ui-input-bar {
     width: 33%;
     margin-inline: auto;

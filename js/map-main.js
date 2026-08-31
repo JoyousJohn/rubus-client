@@ -30,7 +30,7 @@ function checkIsTouchDevice() {
     );
 }
 
-isDesktop = $(window).width() > 992;
+isDesktop = $(window).width() > 992 && $(window).height() >= 500 && !checkIsTouchDevice();
 isTouchDevice = checkIsTouchDevice();
 
 let currentTileLayerType = 'streets'; // Track the current tile layer type

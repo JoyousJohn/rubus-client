@@ -119,6 +119,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
         let activeBuses = [];
         let pollActiveRoutes = new Set();
+        let hasNewOrChangedBuses = false;
 
         for (const busName in data) {
 
@@ -181,9 +182,11 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 if (sim) return;
 
                 isNew = true;
+                hasNewOrChangedBuses = true;
 
             } else {
                 if (busData[busName].route !== routeStr) { // Route changed for existing bus...
+                    hasNewOrChangedBuses = true;
                     const oldRoute = busData[busName].route;
                     console.log(`[ROUTE CHANGE] Bus ${busName} changed routes: ${oldRoute} → ${routeStr}`);
                     busData[busName]['route_change'] = {
@@ -343,20 +346,21 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             }
         }
 
-        const newRoutes = new Set([...pollActiveRoutes].filter(route => !activeRoutes.has(route)));
-        if (newRoutes.size > 0) {
+        const routesNeedingPolylines = new Set(
+            [...pollActiveRoutes].filter(route =>
+                !polylines[route] &&
+                getCampusRoutes(selectedCampus).includes(route)
+            )
+        );
+
+        if (routesNeedingPolylines.size > 0 && !skipPolylineUpdateFromFetch) {
             await initRoutePointsCache(selectedCampus);
             if (sim) return;
-            if (!skipPolylineUpdateFromFetch) {
-                // Await so the polylines are created before
-                // prunePolylinesWithoutInService below races the same routes
-                // through addPolylineForRoute — otherwise that path wins,
-                // setPolylines adds nothing, and its fit never fires. The
-                // fit itself is suppressed here (fitBounds:false) so the
-                // camera doesn't re-fit once per route; initBusDataPipeline
-                // fits once to the final bounds after all routes load.
-                await setPolylines(newRoutes, { fitBounds: false });
-            }
+            await setPolylines(routesNeedingPolylines, { fitBounds: false });
+        }
+
+        const newRoutes = new Set([...pollActiveRoutes].filter(route => !activeRoutes.has(route)));
+        if (newRoutes.size > 0) {
             newRoutes.forEach(item => activeRoutes.add(item));
             populateRouteSelectors(activeRoutes);
             
@@ -365,6 +369,10 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             }
         }
         prunePolylinesWithoutInService();
+
+        if (hasNewOrChangedBuses && !sim) {
+            fetchWhere();
+        }
 
         if (shouldImmediateUpdate) {
             immediatelyUpdateBusDataPost();
@@ -852,7 +860,6 @@ async function fetchWhere() {
             }
 
             validBusNames.push(busName);
-            activeRoutes.add(busData[busName].route);
         }
 
         if (typeof immediatelyUpdateStoppedBusRotations === 'function') {

@@ -63,7 +63,7 @@ function populateAllStops() {
                     $stopsElm.click(function() {
                         console.log('Stop clicked, closing info panels');
                         clearPanoutFeedback();
-                        
+                        lastUserSelectedPanelIndex = 1;
                         flyToStop(stopId, true); // true indicates user interaction
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
@@ -174,6 +174,12 @@ $('.info-panels').click(function() {
 
     // Populate all stops after positioning is set
     populateAllStops();
+
+    // If any active bus is missing stopId or ETAs, trigger fetchWhere() to compute and refresh
+    const hasBusesNeedingWhere = Object.keys(busData).some(b => !busData[b].stopId || !busETAs || !busETAs[b]);
+    if (hasBusesNeedingWhere && typeof fetchWhere === 'function' && !sim) {
+        fetchWhere();
+    }
 
     // Move route selectors into the route subpanel
     moveRouteSelectorsToSubpanel();
