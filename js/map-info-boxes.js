@@ -113,12 +113,12 @@ function hideInfoBoxes(instantly_hide) {
     }
 
     if (sourceBusName) {
-        $('.stop-info-back').fadeOut(); 
+        $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).hide();
         sourceBusName = null;
     }
 
     if (sourceStopId) {
-        $('.bus-info-back').fadeOut(); 
+        $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).hide();
         sourceStopId = null;
     }
 

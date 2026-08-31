@@ -446,9 +446,10 @@ function popInfo(busName, resetCampusFontSize) {
     }
     
     if (sourceStopId) {
+        $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).show();
         $('.bus-info-back-wrapper').css('display', 'flex');
     } else {
-        $('.bus-info-back-wrapper').hide();
+        $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).hide();
     }
     sourceBusName = busName;
 

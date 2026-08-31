@@ -2129,9 +2129,10 @@ async function popStopInfo(stopId) {
     }
 
     if (sourceBusName && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
+        $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
         $('.stop-info-back-wrapper').css('display', 'flex');
     } else {
-        $('.stop-info-back-wrapper').hide();
+        $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).hide();
     }
 
     $('.stop-info-use-route-selectors-notice').hide();
