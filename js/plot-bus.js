@@ -85,7 +85,7 @@ function plotBus(busName, immediatelyUpdate=false) {
 function selectBusMarker(busName) {
     const isNewFocus = (popupBusName !== busName);
     popupBusName = busName;
-    popInfo(busName, true);
+    popInfo(busName, true, isNewFocus);
 
     if (settings['toggle-hide-other-routes'] && isNewFocus) {
         focusBus(busName);

@@ -159,7 +159,7 @@ if (typeof document.fonts !== 'undefined' && document.fonts.ready) {
 let savedCenter;
 let savedZoom;
 
-function popInfo(busName, resetCampusFontSize) {
+function popInfo(busName, resetCampusFontSize, isNewBus = false) {
 
     const data = busData[busName]
     let dataRoute = data.route
@@ -412,12 +412,13 @@ function popInfo(busName, resetCampusFontSize) {
     }
     $('.bus-data-extra').html(extraDataHtml);
 
+    const isSwitchingBus = isNewBus || (popupBusName && popupBusName !== busName);
     if ('at_stop' in busData[busName] && busData[busName].at_stop === true) {
         startStoppedForTimer(busName)
-    } else if (departingTimeout) {
-        // Keep "Departing..." visible for 3s after leaving stop
+    } else if (departingTimeout && !isSwitchingBus) {
+        // Keep "Departing..." visible for 3s after leaving stop (same bus only)
     } else {
-        hideStoppedFor();
+        hideStoppedFor(isSwitchingBus);
     }
 
     if (settings['toggle-show-selected-rotation-points']) {

@@ -475,7 +475,7 @@ function showDeparting() {
     }, 3000);
 }
 
-function hideStoppedFor() {
+function hideStoppedFor(immediate = false) {
     clearInterval(stoppedForInterval);
     stoppedForInterval = null;
     clearTimeout(stoppedForHideTimeout);
@@ -492,6 +492,14 @@ function hideStoppedFor() {
         return;
     }
     $stoppedFor.removeClass('departing');
+
+    if (immediate) {
+        $stoppedFor.stop(true, true).addClass('none').removeClass('overtime').removeClass('departing').css('opacity', '').css('transition', '');
+        $('.info-stopped-for-text').text('');
+        $('.info-stopped-for .info-stopped-octagon').addClass('none');
+        stopOvertimeCounter();
+        return;
+    }
 
     // Bus-name slide-to-center animation disabled (the name now sits beside the
     // route, not on the stopped label's row); only the label fade-out remains.
