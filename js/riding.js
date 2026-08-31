@@ -100,14 +100,14 @@
 		})();
 		if (navigator.permissions && navigator.permissions.query) {
 			navigator.permissions.query({ name: 'geolocation' }).then((status) => {
-				if (status.state === 'granted' || shared) {
-					startLocationWatchForRiding();
-				}
+                if (status.state === 'granted' || (!isIOSDevice() && shared)) {
+                    startLocationWatchForRiding();
+                }
 				status.onchange = function() {
 					if (this.state === 'granted') startLocationWatchForRiding();
 				};
-			}).catch(() => { if (shared) startLocationWatchForRiding(); });
-		} else if (shared) {
+			}).catch(() => { if (!isIOSDevice() && shared) startLocationWatchForRiding(); });
+		} else if (!isIOSDevice() && shared) {
 			startLocationWatchForRiding();
 		}
 	}

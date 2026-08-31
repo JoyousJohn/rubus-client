@@ -10,6 +10,14 @@ let forceImmediateUpdate = false;
 let busFetchInProgress = false;
 var activeStops = [];
 
+// iOS Safari can expire one-time location permission between visits while
+// localStorage persists. Keep automatic location access from re-prompting on
+// iOS; an explicit Center Me action may still request it.
+function isIOSDevice() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 // Current defaults for every setting. Only user overrides are persisted to
 // localStorage (see saveSettings()), so this object is the single source of
 // truth for default behavior and can be changed freely without old clients

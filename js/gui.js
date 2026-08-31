@@ -2935,7 +2935,7 @@ async function checkIfLocationShared() {
     
     // console.log("(localStorage) Location shared: ", locationShared)
     // console.log("geolocation permission state: ", permissionStatus.state)
-    if (permissionStatus.state === 'granted' || locationShared) {
+    if (permissionStatus.state === 'granted' || (!isIOSDevice() && locationShared)) {
         findNearestStop(true);
     }
 }

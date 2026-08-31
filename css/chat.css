@@ -162,6 +162,25 @@
 .chat-ui-messages {
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-border) transparent;
+}
+
+.chat-ui-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-ui-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-ui-messages::-webkit-scrollbar-thumb {
+  background-color: var(--theme-border);
+  border-radius: 4px;
+}
+
+.chat-ui-messages::-webkit-scrollbar-thumb:hover {
+  background-color: var(--theme-extra);
 }
 
 /* Input bar */
