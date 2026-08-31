@@ -89,7 +89,21 @@
     <script>
         if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    reg.update();
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.visibilityState === 'visible') {
+                            reg.update();
+                        }
+                    });
+                    var refreshing = false;
+                    navigator.serviceWorker.addEventListener('controllerchange', function() {
+                        if (!refreshing) {
+                            refreshing = true;
+                            location.reload();
+                        }
+                    });
+                }).catch(function(err) {
                     console.warn('[SW] Registration failed:', err);
                 });
             });

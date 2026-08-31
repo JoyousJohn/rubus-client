@@ -1,5 +1,5 @@
 // sw.js - Service Worker for RUBus PWA
-const CACHE_NAME = 'rubus-cache-v1';
+const CACHE_NAME = 'rubus-cache-v2';
 
 // Static app shell assets pre-cached for instant launch & offline fallback
 const PRECACHE_ASSETS = [

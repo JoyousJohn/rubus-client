@@ -1380,9 +1380,15 @@ $(document).ready(async function() {
             }
             const now = Date.now();
             if (now - _lastResumeTrigger < 5000) {
+                // TEMP DEBUG: a resume trigger swallowed by the 5s throttle is a
+                // prime suspect for the "buses fly across map" bug — this cycle
+                // gets NO cancelAllAnimations / teleport, so a stale gap animation
+                // registered pre-idle can play out on rAF unfreeze.
+                console.warn('[TEMP-DEBUG][resume] resume trigger throttled: only ' + (now - _lastResumeTrigger) + 'ms since last handled resume. Skipping cancel/teleport this cycle.');
                 return;
             }
             _lastResumeTrigger = now;
+            console.warn('[TEMP-DEBUG][resume] resume handled: cancelling in-flight animations + teleporting next fetch');
             console.log('App resumed - triggering immediate bus update');
             forceImmediateUpdate = true;
 
