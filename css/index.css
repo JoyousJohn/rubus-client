@@ -840,6 +840,14 @@ html, body {
     color: #f62929;
 }
 
+.info-stopped-for.departing .info-stopped-for-text {
+    animation: departingPulse 1.2s ease-in-out infinite;
+}
+@keyframes departingPulse {
+    0%, 100% { color: var(--theme-extra); }
+    50% { color: color-mix(in srgb, var(--theme-extra) 70%, var(--theme-color-lighter) 30%); }
+}
+
 .info-stopped-octagon {
     width: 1.5rem;
     aspect-ratio: 1;

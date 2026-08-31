@@ -414,6 +414,8 @@ function popInfo(busName, resetCampusFontSize) {
 
     if ('at_stop' in busData[busName] && busData[busName].at_stop === true) {
         startStoppedForTimer(busName)
+    } else if (departingTimeout) {
+        // Keep "Departing..." visible for 3s after leaving stop
     } else {
         hideStoppedFor();
     }

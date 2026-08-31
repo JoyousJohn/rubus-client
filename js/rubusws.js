@@ -231,7 +231,7 @@ function openRUBusSocket() {
                 // console.log(`[Departure] Bus ${busName} departed from ${stopName}`)
 
                 if (popupBusName === busName) {
-                    hideStoppedFor();
+                    showDeparting();
                 }
                 delete busData[busName].overtime
 

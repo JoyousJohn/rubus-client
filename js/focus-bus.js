@@ -446,19 +446,52 @@ function forceUnstopBus(busName) {
     }
 }
 
+let departingTimeout = null;
+
+function showDeparting() {
+    clearInterval(stoppedForInterval);
+    stoppedForInterval = null;
+    clearTimeout(stoppedForHideTimeout);
+    stoppedForHideTimeout = null;
+    clearTimeout(departingTimeout);
+
+    const $stoppedFor = $('.info-stopped-for');
+    $stoppedFor.removeClass('none').removeClass('overtime').addClass('departing').css('opacity', '').css('transition', '');
+    $('.info-stopped-for-text').text('Departing...');
+    $('.info-stopped-for .info-stopped-octagon').addClass('none');
+    hideStoppedOctagon();
+    stopOvertimeCounter();
+
+    departingTimeout = setTimeout(() => {
+        departingTimeout = null;
+        const $stoppedFor = $('.info-stopped-for');
+        if ($stoppedFor.hasClass('none')) return;
+        $stoppedFor.slideUp(200, () => {
+            $stoppedFor.addClass('none').removeClass('overtime').removeClass('departing').css('opacity', '').css('transition', '').css('display', '');
+            $('.info-stopped-for-text').text('');
+            $('.info-stopped-for .info-stopped-octagon').addClass('none');
+            stopOvertimeCounter();
+        });
+    }, 3000);
+}
+
 function hideStoppedFor() {
     clearInterval(stoppedForInterval);
     stoppedForInterval = null;
     clearTimeout(stoppedForHideTimeout);
     stoppedForHideTimeout = null;
+    clearTimeout(departingTimeout);
+    departingTimeout = null;
 
     const $stoppedFor = $('.info-stopped-for');
 
     // Nothing to fade out if the label is already hidden.
     if ($stoppedFor.hasClass('none')) {
+        $stoppedFor.removeClass('departing');
         stopOvertimeCounter();
         return;
     }
+    $stoppedFor.removeClass('departing');
 
     // Bus-name slide-to-center animation disabled (the name now sits beside the
     // route, not on the stopped label's row); only the label fade-out remains.
@@ -482,7 +515,7 @@ function hideStoppedFor() {
     stoppedForHideTimeout = setTimeout(() => {
         stoppedForHideTimeout = null;
         // Drop the label from the row and clear the inline opacity/transition.
-        $stoppedFor.addClass('none').removeClass('overtime').css('opacity', '').css('transition', '');
+        $stoppedFor.addClass('none').removeClass('overtime').removeClass('departing').css('opacity', '').css('transition', '');
         $('.info-stopped-for-text').text('');
         $('.info-stopped-for .info-stopped-octagon').addClass('none');
         // $name.css('transition', 'none').css('transform', 'none');
@@ -499,12 +532,14 @@ function startStoppedForTimer(busName) {
         return;
     }
 
-    // Cancel any in-progress fade-out from hideStoppedFor() and reset the
+    // Cancel any in-progress fade-out from hideStoppedFor() or departing and reset the
     // inline opacity/transition it set, so the freshly-shown label is fully
     // visible.
     clearTimeout(stoppedForHideTimeout);
     stoppedForHideTimeout = null;
-    $('.info-stopped-for').css('opacity', '').css('transition', '');
+    clearTimeout(departingTimeout);
+    departingTimeout = null;
+    $('.info-stopped-for').removeClass('departing').css('opacity', '').css('transition', '');
 
     const arrivedDatetime = new Date(busData[busName].timeArrived);
     const now = new Date()//.toISOString();

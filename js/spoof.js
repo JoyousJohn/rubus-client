@@ -162,3 +162,54 @@ function initSpoofing() {
     });
 }
 document.addEventListener('rubus-map-created', initSpoofing);
+
+let spoofToastHideTimeout = null;
+
+function showSpoofEnabledToast() {
+    $('.spoof-toast-wrapper').removeClass('none').show();
+    $('.spoof-toast-enabled').removeClass('none').show();
+    $('.spoof-toast-disabled').addClass('none').hide();
+    clearTimeout(spoofToastHideTimeout);
+    spoofToastHideTimeout = setTimeout(() => {
+        $('.spoof-toast-wrapper').fadeOut(() => {
+            $('.spoof-toast-wrapper').addClass('none');
+        });
+    }, 5000);
+}
+
+function showSpoofDisabledToast() {
+    $('.spoof-toast-enabled').addClass('none').hide();
+    $('.spoof-toast-disabled').removeClass('none').show();
+    $('.spoof-toast-wrapper').removeClass('none').show();
+    clearTimeout(spoofToastHideTimeout);
+    spoofToastHideTimeout = setTimeout(() => {
+        $('.spoof-toast-wrapper').fadeOut(() => {
+            $('.spoof-toast-wrapper').addClass('none');
+            $('.spoof-toast-enabled').removeClass('none').show();
+            $('.spoof-toast-disabled').addClass('none').hide();
+        });
+    }, 3000);
+}
+
+function shouldShowSpoofToast() {
+    const lastShow = localStorage.getItem('last-spoof-toast-show');
+    if (lastShow) {
+        const elapsed = Date.now() - parseInt(lastShow);
+        if (elapsed < 8 * 60 * 60 * 1000) return false;
+    }
+    localStorage.setItem('last-spoof-toast-show', Date.now().toString());
+    return true;
+}
+
+$(document).ready(function() {
+    if (settings['toggle-spoofing'] && shouldShowSpoofToast()) {
+        showSpoofEnabledToast();
+    }
+    $(document).on('click', '.spoof-disable-btn', function() {
+        settings['toggle-spoofing'] = false;
+        spoof = false;
+        $('#toggle-spoofing').prop('checked', false);
+        saveSettings();
+        showSpoofDisabledToast();
+    });
+});
