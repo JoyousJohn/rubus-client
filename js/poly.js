@@ -1070,7 +1070,10 @@ function updateStopsOpacity() {
     const routeKeys = Object.keys(stopLists || {});
 
     for (const route of routeKeys) {
-        const isInService = routeHasInServiceBuses(route);
+        // Stop visibility must use the same validity criteria as route
+        // pruning. A bus that is still present in busData but is off-route
+        // should not keep every stop on that route visible.
+        const isInService = routeHasValidInServiceBuses(route);
         const list = stopLists[route];
         if (!list) continue;
         if (isInService) {

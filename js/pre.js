@@ -504,6 +504,10 @@ function makeBulkOoS(oosBusNames) {
     }
 
     removePreviouslyActiveStops();
+    // Recompute stop visibility after busData/busesByRoutes have been updated.
+    // removePreviouslyActiveStops() only handles route membership; this also
+    // catches routes whose remaining buses are invalid or off-route.
+    updateStopsOpacity();
     populateMeClosestStops();
     populateFavs(false);
 
@@ -600,6 +604,9 @@ function makeOoS(busName) {
     }
 
     removePreviouslyActiveStops();
+    // Recompute stop visibility after deleting the bus so the final serviced
+    // route state is reflected immediately.
+    updateStopsOpacity();
 
     if (popupBusName === busName) {
         console.log("Selected bus went OOS");
