@@ -1018,6 +1018,34 @@ function updateSegFocusNotice() {
 // out, and the bus marker renderer is forced to the MapLibre WebGL mode
 // (recreating markers so the switch takes effect). Enabling bus focusing
 // (when possible) switches Low Performance Mode off.
+
+// LPM forcibly overwrites several user preferences (renderer, animation rate,
+// bus names, offscreen indicators). Snapshot the pre-LPM values in localStorage
+// (a dedicated key, because the settings reconciliation in gui.js deletes any
+// unknown key) so turning LPM off can restore them — even across a reload while
+// LPM was still enabled. The snapshot captures the user's real choices the first
+// time LPM engages, and is cleared when LPM is turned off.
+const LPM_RESTORE_KEY = 'lpm-prev-preferences';
+
+function lpmLoadPreferenceSnapshot() {
+    try {
+        const raw = localStorage.getItem(LPM_RESTORE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === 'object') ? parsed : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function lpmStorePreferenceSnapshot(prefs) {
+    try { localStorage.setItem(LPM_RESTORE_KEY, JSON.stringify(prefs)); } catch (e) {}
+}
+
+function lpmClearPreferenceSnapshot() {
+    try { localStorage.removeItem(LPM_RESTORE_KEY); } catch (e) {}
+}
+
 function applyLowPerformanceModeState() {
     const lowPerfOn = !!(settings && settings['toggle-low-performance-mode']);
     const $focusInput = $('#toggle-hide-other-routes');
@@ -1028,6 +1056,19 @@ function applyLowPerformanceModeState() {
             $focusInput.prop('checked', false).prop('disabled', true);
         }
         $('.bus-focusing-row').addClass('disabled');
+
+        // Snapshot the user's pre-LPM preferences once so the off-branch can
+        // restore them. Reuse an existing snapshot (from an earlier LPM on this
+        // device/session, e.g. after a reload while LPM was still enabled) so it
+        // never captures the already-forced LPM values as "previous".
+        if (!lpmLoadPreferenceSnapshot()) {
+            lpmStorePreferenceSnapshot({
+                'bus-marker-renderer': settings['bus-marker-renderer'],
+                'bus-animation-rate': settings['bus-animation-rate'],
+                'toggle-show-bus-names': settings['toggle-show-bus-names'],
+                'toggle-offscreen-bus-indicators': settings['toggle-offscreen-bus-indicators']
+            });
+        }
 
         // Force the MapLibre WebGL marker renderer over the custom DOM one.
         const rendererChanged = settings['bus-marker-renderer'] !== 'maplibre';
@@ -1082,6 +1123,47 @@ function applyLowPerformanceModeState() {
 
         saveSettings();
     } else {
+        // Restore the user's pre-LPM preferences (snapshot captured on the way
+        // in). This returns the animation rate (and the other forced values) to
+        // what the user actually had, instead of leaving LPM's overrides stuck.
+        const prefs = lpmLoadPreferenceSnapshot();
+        if (prefs) {
+            const hadRenderer = settings['bus-marker-renderer'];
+            if (prefs['bus-marker-renderer'] !== undefined) settings['bus-marker-renderer'] = prefs['bus-marker-renderer'];
+            if (prefs['bus-animation-rate'] !== undefined) settings['bus-animation-rate'] = prefs['bus-animation-rate'];
+            if (prefs['toggle-show-bus-names'] !== undefined) settings['toggle-show-bus-names'] = prefs['toggle-show-bus-names'];
+            if (prefs['toggle-offscreen-bus-indicators'] !== undefined) settings['toggle-offscreen-bus-indicators'] = prefs['toggle-offscreen-bus-indicators'];
+
+            // Re-apply the restored values live (markers/renderer, rate, and the
+            // per-marker/per-badge display toggles).
+            const rendererChanged = hadRenderer !== settings['bus-marker-renderer'];
+            if (rendererChanged && typeof recreateAllBusMarkers === 'function') {
+                recreateAllBusMarkers();
+            }
+            if (rendererChanged && typeof stopLayerManager !== 'undefined') {
+                stopLayerManager.applyRendererMode();
+            }
+            if (typeof applyBusAnimationRate === 'function') {
+                applyBusAnimationRate(settings['bus-animation-rate']);
+            }
+            if (typeof updateBusNameTooltips === 'function') {
+                updateBusNameTooltips();
+            }
+            if (typeof requestOffScreenUpdate === 'function') {
+                requestOffScreenUpdate();
+            }
+
+            // Sync the settings UI to the restored values.
+            $('.settings-bus-marker-renderer .settings-option').removeClass('settings-selected');
+            $(`.settings-bus-marker-renderer .settings-option[bus-marker-renderer-option="${settings['bus-marker-renderer']}"]`).addClass('settings-selected');
+            $('.settings-bus-animation .settings-option').removeClass('settings-selected');
+            $(`.settings-bus-animation .settings-option[bus-animation-rate-option="${settings['bus-animation-rate']}"]`).addClass('settings-selected');
+            $('#toggle-show-bus-names').prop('checked', !!settings['toggle-show-bus-names']);
+            $('#toggle-offscreen-bus-indicators').prop('checked', !!settings['toggle-offscreen-bus-indicators']);
+
+            lpmClearPreferenceSnapshot();
+        }
+
         if ($focusInput.length) {
             $focusInput.prop('disabled', false);
         }

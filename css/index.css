@@ -502,6 +502,44 @@ html, body {
     background-color: orange;
 }
 
+.loading-buses, .updating-buses, .getting-location-popup {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    line-height: 1;
+    vertical-align: middle;
+}
+.loading-text {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+.loading-throbber {
+    display: inline-block;
+    width: 1.05em;
+    height: 1.05em;
+    border: 2px solid rgba(255,255,255,0.28);
+    border-top-color: white;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    vertical-align: middle;
+    animation: loading-throbber-spin 1.4s linear infinite;
+}
+.loading-buses:not(.none), .updating-buses:not(.none), .getting-location-popup:not(.none) {
+    display: inline-flex !important;
+}
+@keyframes loading-throbber-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* keep fa-spin keyframes for any other spinners */
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 .zoom-toast,
 .fps-toast,
 .pixel-ratio-toast {
