@@ -117,6 +117,11 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         routesArray.push('ftbl');
     }
 
+    if (routesArray.includes('helix') && !isRouteFavorite('helix')) {
+        routesArray = routesArray.filter(route => route !== 'helix');
+        routesArray.push('helix');
+    }
+
     // This settings toggle reverses the routes somewhere else
 	if (!settings['toggle-settings-btn-end']) {
 		routesArray.reverse();
