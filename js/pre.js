@@ -1286,7 +1286,13 @@ $(document).ready(async function() {
     async function initBusDataPipeline() {
         await fetchBusData(false, true);
 
-        $('.loading-buses').stop(true, true).fadeOut();
+        $('.loading-buses').stop(true, true).fadeOut(400, function() {
+            // The badge is locked visible by `.loading-buses:not(.none) { display:
+            // inline-flex !important }` (index.css:530), so a plain fadeOut()'s
+            // inline `display:none` is ignored and the badge pops back in. Add the
+            // `none` class once faded so it leaves that selector and stays hidden.
+            $(this).addClass('none');
+        });
 
         document.dispatchEvent(new Event('rubus-bus-data-loaded'));
 
