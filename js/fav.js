@@ -16,6 +16,9 @@ let simFavs = new Set();
 // throwaway simulated bus can never leak into the real favorites list.
 function saveFavs() {
     localStorage.setItem('favs', JSON.stringify(favBuses.filter(name => !simFavs.has(name))));
+    if (typeof window.syncPostHogPersonProfile === 'function') {
+        window.syncPostHogPersonProfile();
+    }
 }
 
 // Called when the simulator ends: purge sim favorites from memory and refresh
@@ -33,6 +36,9 @@ window.clearSimFavs = clearSimFavs;
 // --- Route Favorites ---
 function saveFavoriteRoutes() {
     localStorage.setItem('favoriteRoutes', JSON.stringify(favoriteRoutes));
+    if (typeof window.syncPostHogPersonProfile === 'function') {
+        window.syncPostHogPersonProfile();
+    }
 }
 window.saveFavoriteRoutes = saveFavoriteRoutes;
 

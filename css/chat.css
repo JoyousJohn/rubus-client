@@ -60,15 +60,16 @@
 }
 
 .chat-message {
-  max-width: 65%;
   padding: 0.9rem 1.3rem;
   font-size: 1.5rem;
+  line-height: 1.55;
   word-break: break-word;
   margin: 0.75rem 0;
   white-space: pre-wrap;
 }
 
 .chat-message.user {
+  max-width: 75%;
   align-self: flex-end;
   background: #565fe5;
   color: #fff;
@@ -76,20 +77,88 @@
 }
 
 .chat-message.bot {
+  max-width: 95%;
   align-self: flex-start;
   color: var(--theme-color);
   border-radius: 1.2rem 1.2rem 1.2rem 0.3rem;
   opacity: 1;
 }
 
+.chat-message.bot.loading,
+.chat-message.bot.thinking {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.2rem;
+  margin: 0.35rem 0;
+  white-space: normal;
+}
+
 .chat-message.bot.thinking {
   opacity: 0.55;
   color: var(--theme-color);
   box-shadow: none;
-  margin: 0;
   background: none;
   -webkit-text-fill-color: currentColor;
   animation: none;
+}
+
+.chat-status-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+}
+
+.chat-status-text {
+  flex: 1;
+}
+
+.chat-tps-badge {
+  font-family: monospace;
+  font-size: 1.15rem;
+  opacity: 0.7;
+  white-space: nowrap;
+  margin-left: auto;
+  color: var(--theme-color);
+  -webkit-text-fill-color: currentColor;
+}
+
+.chat-thinking-box {
+  background: rgba(128, 128, 128, 0.09);
+  border-left: 3px solid #8181f1;
+  border-radius: 0.6rem;
+  padding: 0.7rem 1.1rem;
+  margin: 0.4rem 0 0.8rem 0;
+  font-size: 1.25rem;
+  color: var(--theme-color);
+  opacity: 0.85;
+}
+
+.chat-thinking-box .thinking-header {
+  font-weight: 600;
+  color: #8181f1;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-thinking-box .thinking-header:hover {
+  text-decoration: underline;
+}
+
+.chat-thinking-box .thinking-content {
+  margin-top: 0.5rem;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 1.2rem;
+  opacity: 0.8;
+  max-height: 250px;
+  overflow-y: auto;
+  line-height: 1.4;
 }
 
 .chat-message.bot.loading {

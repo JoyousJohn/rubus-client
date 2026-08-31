@@ -1511,6 +1511,20 @@
     "lat": 40.521872348633565,
     "lng": -74.4624206535
   },
+  "hill center": {
+    "id": "3752",
+    "name": "Hill Center for the Mathematical Sciences",
+    "category": "building",
+    "lat": 40.521872348633565,
+    "lng": -74.4624206535
+  },
+  "hill center building": {
+    "id": "3752",
+    "name": "Hill Center for the Mathematical Sciences",
+    "category": "building",
+    "lat": 40.521872348633565,
+    "lng": -74.4624206535
+  },
   "pharmacy/psychology parking deck": {
     "id": "3756",
     "name": "Pharmacy/Psychology Parking Deck",
@@ -2772,6 +2786,41 @@
     "lng": -74.4389753496
   },
   "livingston apartments building b": {
+    "id": "4178",
+    "name": "Livingston Apartments Building B",
+    "category": "building",
+    "lat": 40.52552275407359,
+    "lng": -74.4372872526
+  },
+  "rutgers cinema": {
+    "id": "4178",
+    "name": "Rutgers Cinema",
+    "category": "entertainment",
+    "lat": 40.52552275407359,
+    "lng": -74.4372872526
+  },
+  "cinema": {
+    "id": "4178",
+    "name": "Rutgers Cinema",
+    "category": "entertainment",
+    "lat": 40.52552275407359,
+    "lng": -74.4372872526
+  },
+  "movie theater": {
+    "id": "4178",
+    "name": "Rutgers Cinema",
+    "category": "entertainment",
+    "lat": 40.52552275407359,
+    "lng": -74.4372872526
+  },
+  "livi b": {
+    "id": "4178",
+    "name": "Livingston Apartments Building B",
+    "category": "building",
+    "lat": 40.52552275407359,
+    "lng": -74.4372872526
+  },
+  "livingston b": {
     "id": "4178",
     "name": "Livingston Apartments Building B",
     "category": "building",

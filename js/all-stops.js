@@ -62,6 +62,9 @@ function populateAllStops() {
                     $stopsElm.find('.text-1p3rem').text(stopsData[stopId].name);
                     $stopsElm.click(function() {
                         console.log('Stop clicked, closing info panels');
+                        if (typeof window.cancelInfoPanelAnimation === 'function') {
+                            window.cancelInfoPanelAnimation();
+                        }
                         clearPanoutFeedback();
                         lastUserSelectedPanelIndex = 1;
                         flyToStop(stopId, true); // true indicates user interaction

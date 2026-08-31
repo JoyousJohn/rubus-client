@@ -80,6 +80,9 @@ function cleanupOldMap() {
     // need to delete busData before polylines, otherwise new fetch bus data call would think last bus went OoS and would throw error trying to remove polyline
     deleteAllPolylines();
     hideBikeRacks(); // Clean up bike rack markers when switching campuses
+    if (typeof window.removeBuildingLayer === 'function') {
+        window.removeBuildingLayer();
+    }
 
     returningToSavedView = false;
     savedCenter = null;
@@ -178,6 +181,17 @@ async function campusChanged() {
         $('.sim-btn').hide();
     }
 
+    if (typeof window.updateChatButtonVisibility === 'function') {
+        window.updateChatButtonVisibility();
+    } else if (settings['toggle-show-chat'] && selectedCampus === 'nb') {
+        $('.chat-btn-wrapper').show();
+    } else {
+        $('.chat-btn-wrapper').hide();
+        if (selectedCampus !== 'nb' && $('.chat-wrapper').is(':visible')) {
+            $('.chat-wrapper').hide();
+        }
+    }
+
     if (selectedCampus === 'nb') {
         // checkMinRoutes();
     } else {
@@ -190,6 +204,9 @@ async function campusChanged() {
         cleanupOldMap();
         try {
             await makeNewMap();
+            if (settings['toggle-show-buildings'] && typeof window.loadBuildings === 'function') {
+                await window.loadBuildings();
+            }
         } finally {
             // Keep the UPDATING toast up until the campus buses and polylines
             // have finished fetching/adding, then hide it.

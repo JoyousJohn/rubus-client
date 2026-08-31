@@ -133,7 +133,7 @@ function parseMarkdown(text) {
     processed = processed.replace(/\n?<(h[1-3]|hr)([^>]*)>\n?/gi, '<$1$2>');
     processed = processed.replace(/\n?<\/(h[1-3])>\n?/gi, '</$1>');
     
-    processed = processed.replace(/\n\n+/g, '<div style="height: 0.6rem;"></div>');
+    processed = processed.replace(/\n\n+/g, '<div style="height: 1.1rem;"></div>');
     processed = processed.replace(/\*\*(.*?)\*\*/g, (m, g1) => g1);
     processed = processed.replace(/__(.*?)__/g, (m, g1) => g1);
     processed = processed.replace(/\*(.*?)\*/g, (m, g1) => `<em>${g1}</em>`);
@@ -163,8 +163,21 @@ function colorRouteNames(text) {
     const escColor = (typeof escapeCssColor === 'function') ? escapeCssColor : (c) => c;
     
     const stopNames = getAllStopNames();
-    const escapedStops = stopNames.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const stopRegex = escapedStops.length ? new RegExp(`(?<!\\w)(${escapedStops.join('|')})(?!\\w)`, 'gi') : null;
+    const allStopVariants = [];
+    stopNames.forEach(s => {
+        allStopVariants.push(s);
+        const escaped = esc(s);
+        if (escaped !== s) allStopVariants.push(escaped);
+        const smartApos = s.replace(/'/g, '’');
+        if (smartApos !== s) {
+            allStopVariants.push(smartApos);
+            const smartEscaped = esc(smartApos);
+            if (smartEscaped !== smartApos) allStopVariants.push(smartEscaped);
+        }
+    });
+    allStopVariants.sort((a, b) => b.length - a.length);
+    const escapedStops = allStopVariants.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const stopRegex = escapedStops.length ? new RegExp(`(?<![\\w&])(${escapedStops.join('|')})(?![\\w;])`, 'gi') : null;
     
     const readableKeys = Object.keys(readableRouteNames).sort((a, b) => b.length - a.length);
     const escapedReadable = readableKeys.map(r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
@@ -180,8 +193,8 @@ function colorRouteNames(text) {
             
             let processed = content;
             if (stopRegex) {
-                processed = processed.replace(stopRegex, (name) => {
-                    return `<span style="color: #65acf2;">${esc(name)}</span>`;
+                processed = processed.replace(stopRegex, (matchedStr) => {
+                    return `<span style="color: #65acf2;">${matchedStr}</span>`;
                 });
             }
             
@@ -304,7 +317,7 @@ function updateChatInitialMessage() {
     if (busCount > 0 && routeCount > 0) {
         const busStr = busCount === 1 ? '1 bus' : `${busCount} buses`;
         const routeStr = routeCount === 1 ? '1 route' : `${routeCount} routes`;
-        text = `${baseMsg} There are currently ${busStr} on ${routeStr} running.`;
+        text = `${baseMsg} There are currently ${busStr} running on ${routeStr}.`;
     }
     
     const $firstBotMsg = $('.chat-ui-messages .chat-message.bot').first();
@@ -312,6 +325,23 @@ function updateChatInitialMessage() {
         $firstBotMsg.text(text);
     }
 }
+
+window.updateChatButtonVisibility = function() {
+    const campus = (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
+    const showChat = (typeof settings !== 'undefined' && settings && settings['toggle-show-chat']);
+    if (campus === 'nb' && showChat) {
+        $('.chat-btn-wrapper').show();
+    } else {
+        $('.chat-btn-wrapper').hide();
+        if (campus !== 'nb' && $('.chat-wrapper').is(':visible')) {
+            $('.chat-wrapper').hide();
+        }
+    }
+};
+
+$(function() {
+    window.updateChatButtonVisibility();
+});
 
 // Show chat UI when chat button is clicked
 $(document).on('click', '.chat-btn', function() {
@@ -328,15 +358,18 @@ $(document).on('click', '.chat-btn', function() {
         $('.chat-recs').append($rec.click(function() {
             $('.chat-recs').hide();
             const $messages = $('.chat-ui-messages');
-            $messages.append(`<div class="chat-message user">${$('<div>').text(example.q).html()}</div>`);
+            const $userMsg = $(`<div class="chat-message user">${$('<div>').text(example.q).html()}</div>`);
+            $messages.append($userMsg);
             window.chatHistory.push({ role: 'user', content: example.q });
             const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
             $messages.append($botMsg);
+            scrollChatToBottom($messages, false);
             setTimeout(() => {
                 const processedExample = colorRouteNames(parseMarkdown(example.a));
                 $botMsg.html(processedExample).removeClass('loading');
                 $messages.append($botMsg);
                 window.chatHistory.push({ role: 'assistant', content: example.a });  // Add bot response to history
+                scrollChatToTurnTopOrBottom($messages, $userMsg, false);
             }, 1333);
         }))
     })
@@ -344,13 +377,51 @@ $(document).on('click', '.chat-btn', function() {
     $('.chat-ui-input').focus();
 });
 
+let isUserTouchingChat = false;
+
+$(document).on('touchstart pointerdown', '.chat-ui-messages', function(e) {
+  if (e.pointerType && e.pointerType === 'mouse' && e.button !== 0) return;
+  isUserTouchingChat = true;
+});
+
+$(document).on('touchend touchcancel pointerup pointercancel', function() {
+  isUserTouchingChat = false;
+});
+
+function scrollChatToBottom($messages, force = false) {
+  if (!$messages || !$messages.length) return;
+  if (!force && isUserTouchingChat) {
+    return; // Maintain user's scroll location while finger/pointer is actively on screen
+  }
+  $messages.scrollTop($messages[0].scrollHeight);
+}
+
+function scrollChatToTurnTopOrBottom($messages, $userMsg, force = false) {
+  if (!$messages || !$messages.length) return;
+  if (!force && isUserTouchingChat) {
+    return; // Maintain user's scroll location while finger/pointer is actively on screen
+  }
+  const el = $messages[0];
+  const userMsgTop = ($userMsg && $userMsg.length && $userMsg[0]) ? $userMsg[0].offsetTop : 0;
+  const totalTurnHeight = el.scrollHeight - userMsgTop;
+  const visibleHeight = el.clientHeight;
+
+  if (totalTurnHeight > visibleHeight) {
+    // If the response exceeds available wrapper height, position user's query near the top
+    $messages.scrollTop(Math.max(0, userMsgTop - 8));
+  } else {
+    // If it fits inside the wrapper, scroll to bottom so the full exchange is in view
+    $messages.scrollTop(el.scrollHeight);
+  }
+}
+
 // Nudge layout when input gains focus (keyboard opening)
 // Height adjustment is handled by visualViewport.resize listener; focus handler just scrolls to bottom
 $(document).on('focus', '.chat-ui-input', function() {
   setTimeout(() => {
     const $messages = $('.chat-ui-messages');
     if ($messages.length > 0) {
-      $messages.scrollTop($messages[0].scrollHeight);
+      scrollChatToBottom($messages, true);
     }
   }, 150);
 });
@@ -411,15 +482,51 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     const MAX_MSG_LEN = 2000;
     if (msg.length > MAX_MSG_LEN) msg = msg.slice(0, MAX_MSG_LEN);
     const $messages = $('.chat-ui-messages');
-    $messages.append(`<div class="chat-message user">${$('<div>').text(msg).html()}</div>`);
+    const $userMsg = $(`<div class="chat-message user">${$('<div>').text(msg).html()}</div>`);
+    $messages.append($userMsg);
     window.chatHistory.push({ role: 'user', content: msg });
     $input.val('');
-    $messages.scrollTop($messages[0].scrollHeight);
+    scrollChatToBottom($messages, true);
 
-    // Show loading bot message
-    const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
+    const reqStartTime = performance.now();
+    let totalEstimatedTokens = 0;
+    let tpsInterval = null;
+
+    function estimateTokens(text) {
+        if (!text) return 0;
+        return Math.max(1, Math.ceil(text.length / 3.8));
+    }
+
+    function getLiveTpsString() {
+        const elapsedSec = (performance.now() - reqStartTime) / 1000;
+        if (totalEstimatedTokens === 0) {
+            return `${elapsedSec.toFixed(1)}s`;
+        }
+        if (elapsedSec < 0.15) return '';
+        const tps = (totalEstimatedTokens / elapsedSec).toFixed(1);
+        return `${tps} tps`;
+    }
+
+    function updateActiveTps() {
+        const tpsText = getLiveTpsString();
+        if (tpsText) {
+            $('.chat-tps-badge.active-tps').text(tpsText);
+        }
+    }
+
+    tpsInterval = setInterval(updateActiveTps, 100);
+
+    // Show loading bot message with live status line & right-aligned timer / TPS
+    const $botMsg = $(`
+        <div class="chat-message bot loading">
+            <div class="chat-status-line">
+                <span class="chat-status-text">Thinking...</span>
+                <span class="chat-tps-badge active-tps">0.0s</span>
+            </div>
+        </div>
+    `);
     $messages.append($botMsg);
-    $messages.scrollTop($messages[0].scrollHeight);
+    scrollChatToBottom($messages, false);
 
     // Prepare conversation history (excluding the just-added user message) and truncate
     const historyToSend = truncateChatHistory(window.chatHistory.slice(0, -1));
@@ -439,22 +546,86 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
 
     let finalAnswer = null;
     let toolCalls = [];
+    let streamedThinking = '';
+    let $currentThinkingBox = null;
 
     function handleChatData(data) {
         try {
+            if (data.thinking) {
+                totalEstimatedTokens += estimateTokens(data.thinking);
+                streamedThinking = (streamedThinking ? streamedThinking + '\n\n' : '') + data.thinking;
+                updateActiveTps();
+                if (settings['toggle-show-thinking']) {
+                    if (!$currentThinkingBox) {
+                        $currentThinkingBox = $(`
+                            <div class="chat-thinking-box">
+                                <div class="thinking-header"><i class="fa-solid fa-brain"></i> Thought Process <span class="thinking-toggle" style="font-size: 1rem; margin-left: 0.5rem; opacity: 0.7;">▼</span></div>
+                                <div class="thinking-content"></div>
+                            </div>
+                        `);
+                        $currentThinkingBox.find('.thinking-header').click(function() {
+                            const $content = $(this).siblings('.thinking-content');
+                            const isVis = $content.is(':visible');
+                            $content.slideToggle(150);
+                            $(this).find('.thinking-toggle').text(isVis ? '▶' : '▼');
+                        });
+                        $currentThinkingBox.insertBefore($botMsg);
+                    }
+                    $currentThinkingBox.find('.thinking-content').text(streamedThinking);
+                    scrollChatToBottom($messages, false);
+                }
+            }
+
             if (data.progress && !data.done) {
                 console.log(data);
+                totalEstimatedTokens += estimateTokens(data.progress);
                 toolCalls.push(data.progress);
                 // Remove pulse animation from previous thinking steps
+                $('.chat-tps-badge.active-tps').removeClass('active-tps');
                 $('.chat-message.bot.thinking.loading').removeClass('loading');
                 $botMsg.hide();
-                const $thinkingDiv = $('<div class="chat-message bot loading thinking"></div>').text(data.progress);
+                const safeProgressText = $('<div>').text(data.progress).html();
+                const $thinkingDiv = $(`
+                    <div class="chat-message bot loading thinking">
+                        <div class="chat-status-line">
+                            <span class="chat-status-text">${safeProgressText}</span>
+                            <span class="chat-tps-badge active-tps">${getLiveTpsString()}</span>
+                        </div>
+                    </div>
+                `);
                 $thinkingDiv.insertBefore($botMsg);
             } else if (data.done) {
+                if (tpsInterval) {
+                    clearInterval(tpsInterval);
+                    tpsInterval = null;
+                }
+                if (data.answer) {
+                    totalEstimatedTokens += estimateTokens(data.answer);
+                }
+                $('.chat-tps-badge.active-tps').removeClass('active-tps');
                 $('.chat-message.bot.thinking').slideUp();
                 $botMsg.show();
                 finalAnswer = data.answer;
-                if (settings['toggle-show-thinking']) {
+
+                const thinkingToDisplay = data.thinking || streamedThinking;
+                if (settings['toggle-show-thinking'] && thinkingToDisplay && !$currentThinkingBox) {
+                    $currentThinkingBox = $(`
+                        <div class="chat-thinking-box">
+                            <div class="thinking-header"><i class="fa-solid fa-brain"></i> Thought Process <span class="thinking-toggle" style="font-size: 1rem; margin-left: 0.5rem; opacity: 0.7;">▼</span></div>
+                            <div class="thinking-content"></div>
+                        </div>
+                    `);
+                    $currentThinkingBox.find('.thinking-header').click(function() {
+                        const $content = $(this).siblings('.thinking-content');
+                        const isVis = $content.is(':visible');
+                        $content.slideToggle(150);
+                        $(this).find('.thinking-toggle').text(isVis ? '▶' : '▼');
+                    });
+                    $currentThinkingBox.find('.thinking-content').text(thinkingToDisplay);
+                    $currentThinkingBox.insertBefore($botMsg);
+                }
+
+                if (settings['toggle-show-thinking'] && toolCalls.length > 0) {
                     const $showEntireResponse = $('<div class="text-1p3rem pointer" style="color: #8181f1; margin-left: 1.3rem;">Show raw response & tools</div>').click(function() {
                         const $expandedInfo = $('<div class="expanded-raw-info" style="margin-left: 1.3rem;"></div>');
                         const $respDiv = $('<div class="text-1p3rem" style="white-space: pre-wrap; margin-top: 0.5rem; color: #aaa;"></div>').text('Response content: ' + data.answer);
@@ -471,7 +642,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                         }
                         $expandedInfo.insertAfter($(this));
                         $(this).remove();
-                        $messages.scrollTop($messages[0].scrollHeight);
+                        scrollChatToBottom($messages, false);
                     });
                     $messages.append($showEntireResponse);
                 }
@@ -541,14 +712,17 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
 
                 window.chatHistory.push({ role: 'assistant', content: finalAnswer });
                 window.currentChatController = null;
+                scrollChatToTurnTopOrBottom($messages, $userMsg, false);
+            } else {
+                scrollChatToBottom($messages, false);
             }
-            $messages.scrollTop($messages[0].scrollHeight);
         } catch (err) {
             console.error('Error handling chat data:', err, data);
         }
     }
 
     const selectedModel = (typeof settings !== 'undefined' && settings['chatbot-model']) || 'ling';
+    const selectedProvider = (typeof settings !== 'undefined' && settings['chatbot-provider']) || 'auto';
     const isLocalDev = (typeof window !== 'undefined') && (
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1' ||
@@ -556,7 +730,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     );
 
     async function sendChatRequest() {
-        const payload = JSON.stringify({ user_query: msg, conversation_history: historyToSend, model: selectedModel });
+        const payload = JSON.stringify({ user_query: msg, conversation_history: historyToSend, model: selectedModel, provider: selectedProvider });
 
         // 1. If on localhost, try the local backend first
         if (isLocalDev) {
@@ -679,6 +853,10 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
             }
         }
     }).catch(err => {
+        if (tpsInterval) {
+            clearInterval(tpsInterval);
+            tpsInterval = null;
+        }
         if (err.name === 'AbortError') return;
         console.error('SSE error:', err);
         $botMsg.text('Sorry, there was a problem connecting to the chatbot.').removeClass('loading');

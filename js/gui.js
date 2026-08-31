@@ -2285,6 +2285,7 @@ function updateSettings() {
     $(`div.settings-option[raster-sharpness-option="${settings['raster-sharpness']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-marker-renderer-option="${settings['bus-marker-renderer']}"]`).addClass('settings-selected')
     $(`div.settings-option[chatbot-model-option="${settings['chatbot-model'] || 'ling'}"]`).addClass('settings-selected')
+    $(`div.settings-option[chatbot-provider-option="${settings['chatbot-provider'] || 'auto'}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-animation-rate-option="${settings['bus-animation-rate']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 
@@ -2406,6 +2407,11 @@ function updateSettings() {
             $(this).addClass('settings-selected')
             settings['chatbot-model'] = $(this).attr('chatbot-model-option')
 
+        } else if (settingsOption === 'chatbot-provider') {
+            $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
+            $(this).addClass('settings-selected')
+            settings['chatbot-provider'] = $(this).attr('chatbot-provider-option')
+
         } else if (settingsOption === 'bus-animation-rate') {
             // Low Performance Mode forces the fixed 10Hz rate.
             if (settings && settings['toggle-low-performance-mode'] && $(this).attr('bus-animation-rate-option') !== '10hz') {
@@ -2494,9 +2500,73 @@ function updateSettings() {
         localStorage.setItem('timeJoined', new Date().toISOString());
     }
 
+    // Sync PostHog Person Profile with persistent uid and user settings
+    syncPostHogPersonProfile();
+
     // Dispatch event to notify other components that settings are updated
     document.dispatchEvent(new CustomEvent('rubus-settings-updated'));
 }
+
+function syncPostHogPersonProfile() {
+    if (typeof window.posthog === 'undefined' || typeof window.posthog.identify !== 'function') return;
+
+    const uid = localStorage.getItem('uid');
+    if (!uid) return;
+
+    const timeJoined = localStorage.getItem('timeJoined') || new Date().toISOString();
+    const isPWA = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    const isTouch = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+
+    let favList = [];
+    try {
+        if (typeof favBuses !== 'undefined' && Array.isArray(favBuses)) {
+            favList = favBuses;
+        } else {
+            favList = JSON.parse(localStorage.getItem('favs') || '[]');
+        }
+    } catch (e) {
+        favList = [];
+    }
+
+    let favRouteList = [];
+    try {
+        if (typeof favoriteRoutes !== 'undefined' && Array.isArray(favoriteRoutes)) {
+            favRouteList = favoriteRoutes;
+        } else {
+            favRouteList = JSON.parse(localStorage.getItem('favoriteRoutes') || '[]');
+        }
+    } catch (e) {
+        favRouteList = [];
+    }
+
+    const currentSettings = (typeof settings !== 'undefined') ? settings : {};
+
+    const personProps = {
+        campus: currentSettings['campus'] || 'nb',
+        theme: currentSettings['theme'] || 'system',
+        chat_enabled: !!currentSettings['toggle-show-chat'],
+        chatbot_provider: currentSettings['chatbot-provider'] || 'auto',
+        chatbot_model: currentSettings['chatbot-model'] || 'ling',
+        buildings_enabled: !!currentSettings['toggle-show-buildings'],
+        parking_enabled: !!currentSettings['toggle-show-parking'],
+        bike_racks_enabled: !!currentSettings['toggle-show-bike-racks'],
+        low_performance_mode: !!currentSettings['toggle-low-performance'],
+        spoofing_enabled: !!currentSettings['toggle-spoofing'],
+        favorite_buses: favList,
+        favorite_routes: favRouteList,
+        is_pwa: !!isPWA,
+        is_touch_device: !!isTouch
+    };
+
+    const setOnceProps = {
+        time_joined: timeJoined,
+        initial_campus: currentSettings['campus'] || 'nb',
+        first_seen_date: timeJoined.slice(0, 10)
+    };
+
+    window.posthog.identify(uid, personProps, setOnceProps);
+}
+window.syncPostHogPersonProfile = syncPostHogPersonProfile;
 
 function updateRubusLogo(logoFilename) {
     if (!logoFilename) logoFilename = 'rubus-favicon-back-to-college.png';

@@ -465,13 +465,7 @@ $(document).ready(function() {
         
         // Toggle buildings visibility based on layer presence
         if (buildingsLayer) {
-            map.removeLayer(buildingsLayer);
-            buildingsLayer = null;
-            window.buildingsLayer = null;
-            highlightedBuildingLayer = null;
-            buildingSpatialIndex = null; // Clear spatial index
-            $('.buildings-btn').removeClass('active');
-            
+            removeBuildingLayer();
             settings['toggle-show-buildings'] = false;
             saveSettings();
             
@@ -500,6 +494,26 @@ $(document).ready(function() {
     // Initial button state reflects current layer
     if (buildingsLayer) { $('.buildings-btn').addClass('active'); } else { $('.buildings-btn').removeClass('active'); }
 });
+
+function removeBuildingLayer() {
+    if (buildingsLayer) {
+        if (typeof map !== 'undefined' && map && map.hasLayer(buildingsLayer)) {
+            map.removeLayer(buildingsLayer);
+        }
+        buildingsLayer = null;
+        window.buildingsLayer = null;
+    }
+    if (typeof unhighlightBuilding === 'function') {
+        unhighlightBuilding();
+    }
+    highlightedBuildingLayer = null;
+    buildingSpatialIndex = null;
+    if (typeof clearBuildingLocationCache === 'function') {
+        clearBuildingLocationCache();
+    }
+    $('.building-info-popup').hide();
+    $('.buildings-btn').removeClass('active loading').prop('disabled', false);
+}
 
 // Function to temporarily show buildings layer (for search selections)
 function showBuildingsTemporarily() {
@@ -539,16 +553,9 @@ function highlightBuildingByName(buildingName) {
 
 // Function to restore building layer state from settings
 function restoreBuildingLayerState() {
-    if (settings['toggle-show-buildings'] && !buildingsLayer) {
+    removeBuildingLayer();
+    if (settings['toggle-show-buildings']) {
         loadBuildings();
-    } else if (!settings['toggle-show-buildings'] && buildingsLayer) {
-        // Hide buildings if they're currently shown but setting is false
-        map.removeLayer(buildingsLayer);
-        buildingsLayer = null;
-        window.buildingsLayer = null;
-        highlightedBuildingLayer = null;
-        buildingSpatialIndex = null; // Clear spatial index
-        $('.buildings-btn').removeClass('active');
     }
 }
 
@@ -774,6 +781,7 @@ document.addEventListener('rubus-map-created', function() {
 
 // Make functions globally accessible
 window.loadBuildings = loadBuildings;
+window.removeBuildingLayer = removeBuildingLayer;
 window.showBuildingInfo = showBuildingInfo;
 window.getBuildingAtLocation = getBuildingAtLocation;
 window.getBoundingBox = getBoundingBox;

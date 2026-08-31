@@ -376,4 +376,9 @@
     }
 
 }
-  
+
+@media (max-width: 991px), (max-height: 499px) {
+    .desktop-esc-notice {
+        display: none !important;
+    }
+}

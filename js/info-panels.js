@@ -163,7 +163,9 @@ function animateToTargetPanel(initialVelocity, options) {
 
 	const targetPanel = panelOrder[targetPanelIndex];
 	currentPanelIndex = targetPanelIndex;
-	lastUserSelectedPanelIndex = targetPanelIndex;
+	if (opts.isUserExplicitSelection !== false) {
+		lastUserSelectedPanelIndex = targetPanelIndex;
+	}
 	const targetX = -100 * targetPanelIndex * (window.innerWidth / 100);
 
 	const distance = Math.abs(targetX - startX);
@@ -190,7 +192,7 @@ function animateToTargetPanel(initialVelocity, options) {
 		} else {
 			$container.css('transform', 'translateX(' + targetX + 'px)');
 			$container.removeClass('is-dragging-or-animating');
-			updatePanelPosition(targetPanel, { skipMove: true });
+			updatePanelPosition(targetPanel, { skipMove: true, isUserExplicitSelection: opts.isUserExplicitSelection });
 			animationFrameId = null;
 		}
 	}
@@ -209,7 +211,7 @@ function selectInfoPanel(panel, element, isUserExplicitSelection = true) {
 
 	if (!isCurrentlyAtTarget) {
 		const artificialVelocity = 25;
-		const options = { targetIndex: targetIndex };
+		const options = { targetIndex: targetIndex, isUserExplicitSelection: isUserExplicitSelection };
 		animateToTargetPanel(artificialVelocity, options);
 	}
 	$('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
@@ -226,6 +228,10 @@ function selectInfoPanel(panel, element, isUserExplicitSelection = true) {
 // Handle closing the info panels wrapper
 $('.info-panels-close').click(function() {
 	console.log('Info panels close button clicked');
+	if (animationFrameId) {
+		cancelAnimationFrame(animationFrameId);
+		animationFrameId = null;
+	}
 	$('.info-panels-show-hide-wrapper').hide();
     moveRouteSelectorsToMain();
     $('.bottom').show();
@@ -254,7 +260,9 @@ function updatePanelPosition(panel, options) {
 		throw new Error(`[info-panels] Unknown panel identifier: "${panel}"`);
 	}
 	currentPanelIndex = panelIndex;
-	lastUserSelectedPanelIndex = panelIndex;
+	if (opts.isUserExplicitSelection !== false) {
+		lastUserSelectedPanelIndex = panelIndex;
+	}
 
 	if (opts.skipMove) {
 		return;
@@ -273,6 +281,12 @@ function updatePanelPosition(panel, options) {
 
 let initialTransformX = 0;
 let animationFrameId = null;
+window.cancelInfoPanelAnimation = function() {
+	if (animationFrameId) {
+		cancelAnimationFrame(animationFrameId);
+		animationFrameId = null;
+	}
+};
 
 // Unified pointer event handlers for touch and mouse
 $('.info-panels-content').on('touchstart mousedown', function(e) {

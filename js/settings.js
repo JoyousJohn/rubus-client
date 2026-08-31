@@ -468,10 +468,14 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
         case 'toggle-show-chat':
             settings['toggle-show-chat'] = isChecked;
-            if (isChecked) {
-                $('.chat-btn-wrapper').show();
+            if (typeof window.updateChatButtonVisibility === 'function') {
+                window.updateChatButtonVisibility();
             } else {
-                $('.chat-btn-wrapper').hide();
+                if (isChecked && ((settings && settings['campus']) || 'nb') === 'nb') {
+                    $('.chat-btn-wrapper').show();
+                } else {
+                    $('.chat-btn-wrapper').hide();
+                }
             }
             break;
 
@@ -932,8 +936,12 @@ $(document).ready(function() {
         spoof = true;
     }
 
-    if (settings['toggle-show-chat']) {
+    if (typeof window.updateChatButtonVisibility === 'function') {
+        window.updateChatButtonVisibility();
+    } else if (settings['toggle-show-chat'] && ((settings && settings['campus']) || 'nb') === 'nb') {
         $('.chat-btn-wrapper').show();
+    } else {
+        $('.chat-btn-wrapper').hide();
     }
 
     if (settings['toggle-show-campus-switcher']) {
@@ -1288,11 +1296,12 @@ $(function() {
             const shouldFilterDev = $devWrapper.is(':visible') || isExpanding;
             if (shouldFilterDev) {
                 let devHasMatch = false;
-                $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-chatbot-model, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .settings-my-stats, .force-show-dependent').each(function() {
+                $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-chatbot-model, .settings-chatbot-provider, .settings-reset-settings, .settings-reset-location, .settings-custom-tile-url, .settings-my-stats, .force-show-dependent').each(function() {
                     const $item = $(this);
                     if ($item.hasClass('force-show-dependent')) return; // handled separately below
                     if ($item.parents('.settings-custom-tile-url').length) return; // handled as part of parent section
                     if ($item.parents('.settings-chatbot-model').length) return; // handled as part of parent section
+                    if ($item.parents('.settings-chatbot-provider').length) return; // handled as part of parent section
 
                     const text = $item.text().toLowerCase();
                     if (query === '' || text.includes(query)) {

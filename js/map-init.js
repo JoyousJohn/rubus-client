@@ -281,6 +281,9 @@ window.initMap = function() {
         isDesktop = $(window).width() > 992 && $(window).height() >= 500 && !checkIsTouchDevice();
         isTouchDevice = checkIsTouchDevice();
         updateNextStopsMaxHeight();
+        if (!isDesktop || isTouchDevice) {
+            $('.desktop-esc-notice').hide();
+        }
         const escNotice = document.getElementById('escDesktopNotice');
         if (escNotice) {
             escNotice.style.display = (isDesktop && !isTouchDevice) ? 'none' : 'block';
