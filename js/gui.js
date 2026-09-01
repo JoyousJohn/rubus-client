@@ -2302,6 +2302,7 @@ const toggleSettings = [
     'toggle-show-depot-poly',
     'toggle-pause-stop-eta-updates',
     'toggle-show-zoom-toast',
+    'toggle-show-fps',
     'toggle-hide-sim-popup',
     'toggle-always-show-esc-hint',
     'toggle-pause-bus-markers-on-pan',
