@@ -27,7 +27,7 @@ function plotBus(busName, immediatelyUpdate=false, moved=true) {
             route: route,
             routeColor: routeColor,
             sizeClass: sizeClass,
-            displayName: busData[busName].busName,
+            displayName: (typeof formatElectricBusName === 'function') ? formatElectricBusName(busData[busName].busName) : busData[busName].busName,
             rotation: initialRotation
         }).addTo(map);
 

@@ -183,7 +183,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                     updateTimeToStops([busName]);
                 }
 
-                busData[busName].busName = busName;
+                busData[busName].busName = (typeof formatElectricBusName === 'function') ? formatElectricBusName(busName) : busName;
                 await populateFavs();
 
                 // The simulator may have started while this fetch was in
@@ -198,7 +198,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                     const $line = $('<div></div>');
                     $line.append($('<span></span>').text(routeStr.toUpperCase()).css('color', colorMappings[routeStr] || '#000'));
                     $line.append(document.createTextNode(' '));
-                    $line.append($('<strong></strong>').text(busName));
+                    $line.append($('<strong></strong>').text(busData[busName].busName || busName));
                     $line.append(document.createTextNode(' '));
                     $line.append($('<span style="color: var(--theme-accent);"></span>').text('in service'));
                     $('.bus-log').append($time).append($line);
@@ -206,6 +206,9 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 }
 
             } else {
+                if (typeof isElectricBus === 'function' && isElectricBus(busName)) {
+                    busData[busName].busName = formatElectricBusName(busData[busName].busName || busName);
+                }
                 if (busData[busName].route !== routeStr) { // Route changed for existing bus...
                     hasNewOrChangedBuses = true;
                     const oldRoute = busData[busName].route;

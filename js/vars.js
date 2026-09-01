@@ -362,4 +362,27 @@ function escapeCssColor(str) {
 }
 window.escapeCssColor = escapeCssColor;
 
+// Electric bus helpers. The 5 electric buses (4057, 4058, 4054, 4055, 4056)
+// have the lightning bolt applied and an "E" added to the end of their name in the UI.
+const ELECTRIC_BUS_NAMES = new Set(['4057', '4058', '4054', '4055', '4056']);
+
+function isElectricBus(busName) {
+    if (!busName) return false;
+    const cleanName = String(busName).trim().replace(/E$/, '');
+    return ELECTRIC_BUS_NAMES.has(cleanName);
+}
+
+function formatElectricBusName(busName) {
+    if (!busName) return '';
+    const str = String(busName).trim();
+    if (isElectricBus(str)) {
+        return str.endsWith('E') ? str : (str + 'E');
+    }
+    return str;
+}
+
+window.ELECTRIC_BUS_NAMES = ELECTRIC_BUS_NAMES;
+window.isElectricBus = isElectricBus;
+window.formatElectricBusName = formatElectricBusName;
+
 let originalStopShownRoute; // Preserve map selection before opening stop popup (undefined = no save)

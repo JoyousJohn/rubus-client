@@ -145,7 +145,8 @@ class BusWebSocketClient {
 
             console.log(`New bus in WS: ${data.bus} (${busName}) (${data.route})`);
             busData[busName] = {};
-            busData[busName].busName = data.bus;
+            const rawBusName = data.bus || busName;
+            busData[busName].busName = (typeof formatElectricBusName === 'function') ? formatElectricBusName(rawBusName) : rawBusName;
             busData[busName].previousTime = new Date().getTime() - 5000;
             busData[busName].previousPositions = [[parseFloat(data.latitude), parseFloat(data.longitude)]];
             busData[busName].type = 'ws';
@@ -162,6 +163,8 @@ class BusWebSocketClient {
 
             $('.info-panels-btn-wrapper').show();
 
+        } else if (typeof isElectricBus === 'function' && isElectricBus(busName)) {
+            busData[busName].busName = formatElectricBusName(busData[busName].busName || busName);
         }
 
         const busLat = parseFiniteCoord(data.latitude);

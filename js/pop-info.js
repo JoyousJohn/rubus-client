@@ -249,13 +249,17 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         displayRoute = dataRoute.toUpperCase();
     }
     $('.info-route-mid').text(displayRoute).parent().css('color', colorMappings[data.route])
-    if (data.busName.slice(-1) === "E") {
+    const isElectric = (typeof isElectricBus === 'function' ? (isElectricBus(busName) || isElectricBus(data.busName)) : (['4057', '4058', '4054', '4055', '4056'].includes(String(busName).replace(/E$/, '')) || ['4057', '4058', '4054', '4055', '4056'].includes(String(data.busName).replace(/E$/, '')))) || (data.busName && data.busName.slice(-1) === "E");
+    if (isElectric) {
         $('.info-bolt').show();
     } else {
         $('.info-bolt').hide();
     }
     
-    let busNameElmText = data.busName
+    let busNameElmText = (typeof formatElectricBusName === 'function') ? formatElectricBusName(data.busName) : (isElectric && !String(data.busName).endsWith('E') ? (data.busName + 'E') : data.busName);
+    if (isElectric && data.busName !== busNameElmText) {
+        data.busName = busNameElmText;
+    }
     
     const campusesElement = $('.info-campuses-mid');
     const campusText = campusMappings[data.route];

@@ -355,7 +355,7 @@ async function generateSimBusData(gen) {
             busData[busName].route = routeName;
             busData[busName].type = 'sim';
             busData[busName].campus = routesByCampus[routeName];
-            busData[busName].busName = busName;
+            busData[busName].busName = (typeof formatElectricBusName === 'function') ? formatElectricBusName(busName) : busName;
             busData[busName].rotation = angleDeg;
             busData[busName].capacity = Math.floor(Math.random() * 101); // 0-100
             busData[busName].joined_service = joinedTime;
