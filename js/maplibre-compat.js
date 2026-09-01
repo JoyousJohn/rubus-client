@@ -67,7 +67,20 @@ function initMapLibreCompatibility(mapInstance) {
             } else if (options.duration !== undefined) {
                 console.warn('[L.flyTo] non-numeric duration passed (' + options.duration + '); using default 1200ms.');
             }
-            mapInstance.flyToView({ center: [lng, lat], zoom: zoom !== undefined ? zoom : mapInstance.getZoom(), duration: duration });
+            const flyOpts = { center: [lng, lat], zoom: zoom !== undefined ? zoom : mapInstance.getZoom(), duration: duration };
+            // Leaflet's flyTo offset option is a pixel Point; MapLibre's is
+            // the same — the offset is applied during the animation, so the
+            // target lat/lng lands at center + offset on screen regardless of
+            // the zoom change (unlike computing a shifted center, which only
+            // holds at one zoom).
+            if (options.offset) {
+                let off = options.offset;
+                if (off.x !== undefined && off.y !== undefined) {
+                    off = [off.x, off.y];
+                }
+                flyOpts.offset = off;
+            }
+            mapInstance.flyToView(flyOpts);
         } else if (centerOrOptions && centerOrOptions.center) {
             mapInstance.flyToView(centerOrOptions);
         }

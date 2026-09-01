@@ -33,15 +33,13 @@ function checkIsTouchDevice() {
 isDesktop = $(window).width() > 992 && $(window).height() >= 500 && !checkIsTouchDevice();
 isTouchDevice = checkIsTouchDevice();
 
-// Center a lat/lng in the region of the map that is still visible below the
-// given popup element (bottom card on mobile, right-side column on desktop).
-// Returns a container-pixel point (relative to the map's top-left) at which
-// that lat/lng should be placed so it lands mid-way between the popup's bottom
-// edge and the map's bottom edge. Falls back to the map's true center when no
-// popup is measurable.
-function getCenteredPointBelowPopup(latlng, popupEl) {
+// Compute the container-pixel y (relative to the map's top-left) at which the
+// given lat/lng should land so it sits mid-way between the popup's bottom edge
+// and the map's bottom edge — i.e. centered in the still-visible map area.
+// Falls back to the map's true center (map height / 2) when no popup is
+// measurable.
+function getCenteredYBelowPopup(popupEl) {
     const size = map.getSize();
-    const cx = size.x / 2;
     const cy = size.y / 2;
 
     let bottomY = null;
@@ -58,26 +56,41 @@ function getCenteredPointBelowPopup(latlng, popupEl) {
     }
 
     if (bottomY === null) {
-        return { x: cx, y: cy };
+        return cy;
     }
 
-    const mapPoint = map.latLngToContainerPoint(latlng);
     const pad = Math.min(40, size.y / 8);
-    const targetY = (bottomY + size.y) / 2;
-    const desiredY = Math.min(Math.max(targetY, bottomY + pad), size.y - pad);
-    return { x: mapPoint.x, y: mapPoint.y + (desiredY - cy) };
+    return Math.min(Math.max((bottomY + size.y) / 2, bottomY + pad), size.y - pad);
 }
 
 // Fly so the feature lands centered in the visible map area below the popup.
 // Reads the popup's current bottom edge at fly time, so it must be called
 // after the popup has been shown. Uses the same duration semantics as the
 // other callers (seconds for the compat layer's flyTo).
+//
+// MapLibre's flyTo offset is "of the target center relative to real map
+// container center" (source: camera.ts AnimationOptions) — the target center
+// lands at centerPoint + offset. So to place the feature at screen y =
+// desiredY, the fly center must be offset by (desiredY - cy) relative to the
+// viewport center; the offset is applied during the animation, so it holds
+// regardless of the zoom change.
+//
+// essential:true keeps prefers-reduced-motion from turning user-initiated
+// flights into instant jumps.
 function flyToCenteredBelow(latlng, zoom, popupEl, duration) {
-    const target = getCenteredPointBelowPopup(latlng, popupEl);
-    const dest = map.containerPointToLatLng(target);
-    map.flyTo([dest.lat, dest.lng], zoom, {
+    const size = map.getSize();
+    const cx = size.x / 2;
+    const cy = size.y / 2;
+    const desiredY = getCenteredYBelowPopup(popupEl);
+
+    // Feature should stay horizontally centered and land at desiredY.
+    const offsetY = desiredY - cy;
+
+    map.flyTo([latlng[0], latlng[1]], zoom, {
         animate: true,
-        duration: duration !== undefined ? duration : 0.5
+        duration: duration !== undefined ? duration : 0.5,
+        essential: true,
+        offset: { x: 0, y: offsetY }
     });
 }
 
