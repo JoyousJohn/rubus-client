@@ -135,7 +135,7 @@
     <script defer src="js/pikachu.js"></script>
     <script defer src="js/nav-bike.js"></script>
     <script defer src="js/offscreen-indicators.js"></script>
-    <script defer src="js/riding.js"></script>
+    <!-- DISABLED: Your Bus feature <script defer src="js/riding.js"></script> -->
     <script defer src="js/spoof.js"></script>
     <script defer src="js/poly.js"></script>
     <script defer src="js/center-stops.js"></script>
@@ -245,6 +245,13 @@
 
 </head>
 <body>
+
+    <!-- Shown on phones when "Allow Landscape" is off and the device is rotated
+         to landscape on a platform that can't hard-lock orientation. -->
+    <div id="rotate-device-overlay">
+        <div class="text-1p6rem" style="font-family: var(--font-family); font-weight: 600;">Please rotate your device</div>
+        <div class="mt-0p5rem text-1p3rem dimgray" style="font-family: var(--font-family);">RUBus works best in portrait.</div>
+    </div>
 
     <div class="desktop-esc-notice none">
         <svg class="esc-border-glow">
@@ -527,7 +534,7 @@
                     <div class="bus-info-main">
                         <div class="flex justify-center white text-1p1rem">
                             <div class="info-shared-bus info-shared-bus-mid none">Shared With You</div>
-                            <div class="info-riding">Your Bus</div>
+                            <!-- DISABLED: Your Bus feature <div class="info-riding">Your Bus</div> -->
                         </div>
                         <div class="flex justify-center white text-1p2rem gap-x-0p5rem">
                             <div class="bus-oos bus-oos-mid br-0p5rem">Out of Service</div>

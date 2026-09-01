@@ -321,7 +321,7 @@ window.initMap = function() {
         requestOffScreenUpdate();
     });
 
-    if (typeof initLocationWatchForRiding === 'function') { initLocationWatchForRiding(); }
+    // DISABLED: Your Bus feature // if (typeof initLocationWatchForRiding === 'function') { initLocationWatchForRiding(); }
 
     map.on('zoom zoomend', updateZoomToast);
     updateZoomToast();

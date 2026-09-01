@@ -112,5 +112,5 @@ function selectBusMarker(busName) {
 
     $('.bus-log-wrapper').hide();
 
-    updateRidingBadgeUI();
+    // DISABLED: Your Bus feature // updateRidingBadgeUI();
 }

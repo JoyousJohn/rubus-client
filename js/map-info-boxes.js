@@ -142,7 +142,7 @@ function hideInfoBoxes(instantly_hide) {
         $('.buses-panel-wrapper').slideUp('fast');
     }
 
-    updateRidingBadgeUI();
+    // DISABLED: Your Bus feature // updateRidingBadgeUI();
 
     // Restore the "closest stops" widget once all popups/info boxes are hidden
     // (drag, panout, close).

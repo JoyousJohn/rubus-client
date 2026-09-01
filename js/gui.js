@@ -2518,6 +2518,14 @@ function updateSettings() {
 
     // Dispatch event to notify other components that settings are updated
     document.dispatchEvent(new CustomEvent('rubus-settings-updated'));
+
+    // The portrait lock depends on the "Allow Landscape" setting that was just
+    // loaded above, so re-apply it now that settings are final. (applyOrientationLock
+    // also runs on document.ready in settings.js, but at that point the saved
+    // value may not be loaded yet, which causes a flicker on startup.)
+    if (typeof applyOrientationLock === 'function') {
+        applyOrientationLock();
+    }
 }
 
 function syncPostHogPersonProfile() {

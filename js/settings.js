@@ -1643,34 +1643,62 @@ $(function() {
     });
 });
 
+// Whether the current device is a phone (not a tablet/desktop). Uses User-Agent
+// Client Hints when available, falling back to the UA string. A size guard is
+// added so a tablet whose UA falsely reports "Mobile" can't get orientation-
+// locked. This drives BOTH the native lock and the rotate overlay so they
+// always agree with the "Allow Landscape" toggle.
+function isPhoneDevice() {
+    const uaCH = navigator.userAgentData;
+    const uaMobile = uaCH && typeof uaCH.mobile === 'boolean' ? uaCH.mobile : null;
+    if (uaMobile !== null) {
+        // UA-CH "mobile" can still be true on some tablets; double-check size.
+        const shortSide = Math.min(screen.width, screen.height);
+        return uaMobile && shortSide < 500;
+    }
+    const ua = navigator.userAgent;
+    const uaPhone = /Android.*Mobile|iPhone|iPod/i.test(ua);
+    // iPadOS 13+ reports a Mac UA; catch iPads via touch points so they're NOT
+    // treated as phones.
+    const isIPad = uaPhone === false && /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
+    const shortSide = Math.min(screen.width, screen.height);
+    return uaPhone && !isIPad && shortSide < 500;
+}
+window.isPhoneDevice = isPhoneDevice;
+
+// Apply/remove the portrait lock when "Allow Landscape" is toggled or on load.
 function applyOrientationLock(allow) {
     const isAllowed = allow !== undefined ? allow : !!(typeof settings !== 'undefined' && settings['toggle-allow-landscape']);
-    const isPhone = window.matchMedia("(max-width: 900px)").matches || /Android|iPhone|iPod|Mobile/i.test(navigator.userAgent);
+    const isPhone = isPhoneDevice();
 
     if (isAllowed) {
-        $('html').removeClass('lock-portrait');
+        // Landscape is allowed: hide the overlay and release any native lock.
+        $('#rotate-device-overlay').removeClass('lock-portrait');
         if (screen.orientation && typeof screen.orientation.unlock === 'function') {
             try { screen.orientation.unlock(); } catch (e) {}
         }
-    } else {
-        if (isPhone) {
-            $('html').addClass('lock-portrait');
-
-            // Try the native lock when available (Chrome/Edge on Android; it
-            // needs fullscreen to succeed in most cases). The .lock-portrait
-            // CSS class is the reliable fallback that works everywhere:
-            // .lock-portrait transforms the app to stay in a portrait
-            // layout even while the device is physically rotated.
-            if (screen.orientation && typeof screen.orientation.lock === 'function') {
-                try {
-                    const lockPromise = screen.orientation.lock('portrait');
-                    if (lockPromise && typeof lockPromise.catch === 'function') {
-                        lockPromise.catch(() => {});
-                    }
-                } catch (e) {}
-            }
-        }
+        return;
     }
+
+    // Landscape is NOT allowed, and only phones are constrained.
+    if (!isPhone) return;
+
+    // Native hard-lock: works on Chromium (Android/desktop) in a fullscreen,
+    // installed PWA. The promise is swallowed because it rejects on iOS and in
+    // normal browser tabs where the OS won't let a web page lock orientation.
+    if (screen.orientation && typeof screen.orientation.lock === 'function') {
+        try {
+            const lockPromise = screen.orientation.lock('portrait');
+            if (lockPromise && typeof lockPromise.catch === 'function') {
+                lockPromise.catch(() => {});
+            }
+        } catch (e) {}
+    }
+
+    // Fallback for iOS Safari / non-installed browsers that can't lock: show a
+    // "rotate your device" overlay. It's controlled entirely by the CSS media
+    // query (#rotate-device-overlay), so we only need to arm it here.
+    $('#rotate-device-overlay').addClass('lock-portrait');
 }
 window.applyOrientationLock = applyOrientationLock;
 $(document).ready(function() {

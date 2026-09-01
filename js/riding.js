@@ -1,5 +1,6 @@
-// Riding detection module
+// Riding detection module — TEMPORARILY DISABLED
 // Depends on: jQuery ($), haversine (from map.js), busData, popupBusName
+/* DISABLED: Your Bus feature commented out — restore by removing this block comment
 
 (function(){
 	// State
@@ -196,3 +197,5 @@
 	}
 
 })();
+
+// END DISABLED */

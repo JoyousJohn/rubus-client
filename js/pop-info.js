@@ -496,7 +496,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         focusBus(busName);
     }
 
-    updateRidingBadgeUI();
+    // DISABLED: Your Bus feature // updateRidingBadgeUI();
 }
 
 // Incremental renderer for the next-stops grid. The grid's structure (stop
