@@ -1221,6 +1221,9 @@ async function precomputeAllRouteBounds() {
 let busStopMarkers = {};
 
 function getNextStopId(route, stopId) {
+    if (!route || !stopLists[route] || stopId === null || stopId === undefined || Number.isNaN(Number(stopId))) {
+        return null;
+    }
     const routeStops = stopLists[route];
     let idx = routeStops.indexOf(stopId);
     if (idx === -1) {

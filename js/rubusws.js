@@ -168,9 +168,11 @@ function openRUBusSocket() {
                 busData[busName]['prevStopId'] = busData[busName]['stopId'];
             }
             busData[busName]['stopId'] = stopId;
-            busData[busName]['next_stop'] = getNextStopId(busRoute, stopId);
+            if (stopId !== null && stopId !== undefined && !isNaN(Number(stopId))) {
+                busData[busName]['next_stop'] = getNextStopId(busRoute, Number(stopId));
+            }
 
-            const stopName = stopsData[stopId].name;
+            const stopName = (stopId !== null && stopId !== undefined && stopsData[stopId]) ? stopsData[stopId].name : '';
 
             if (eventData['event'] === 'arrival') {
                 busData[busName]['at_stop'] = true;
@@ -286,11 +288,13 @@ function openRUBusSocket() {
 
                 }
 
-                const busInfo = eventData[busName]
+                const busInfo = eventData[busName];
 
-                busData[busName].at_stop = busInfo.stopped
-                busData[busName].stopId = busInfo.stopId
-                busData[busName].next_stop = getNextStopId(busData[busName].route, parseInt(busInfo.stopId)) // might throw error if busName not yet in busData (if rubus ws broadcasts data before new bus added from passio getData)
+                busData[busName].at_stop = Boolean(busInfo.stopped);
+                busData[busName].stopId = busInfo.stopId;
+                if (busInfo.stopId !== null && busInfo.stopId !== undefined && !isNaN(Number(busInfo.stopId))) {
+                    busData[busName].next_stop = getNextStopId(busData[busName].route, Number(busInfo.stopId));
+                }
                 busData[busName].timeArrived = busInfo.time_arrived;
 
                 // Force-unstopped (dev helper): keep the bus treated as

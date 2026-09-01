@@ -53,11 +53,12 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     const timeSinceLastPoll = currentTime - lastPollTime;
 
     // Determine if we should force immediate update
-    // Priority: explicit caller flag > forced resume flag > long gap since last update > setting toggle
+    // Priority: explicit caller flag > forced resume flag > long gap since last update > background/hidden tab > setting toggle
     const longGapSinceUpdate = (currentTime - (lastUpdateTime || 0)) > (pollDelay + pollDelayBuffer);
-    const shouldImmediateUpdate = Boolean(immediatelyUpdate) || forceImmediateUpdate || longGapSinceUpdate || settings['toggle-always-immediate-update'];
+    const isDocHidden = (typeof document !== 'undefined' && document.visibilityState === 'hidden');
+    const shouldImmediateUpdate = Boolean(immediatelyUpdate) || forceImmediateUpdate || longGapSinceUpdate || isDocHidden || settings['toggle-always-immediate-update'];
     
-    console.log(`[${new Date().toISOString()}] [POLL TRIGGER] timeSinceLastPoll=${timeSinceLastPoll}ms | timeSinceLastMarkerUpdate=${currentTime - (lastUpdateTime || 0)}ms | longGap=${longGapSinceUpdate} (threshold=${pollDelay + pollDelayBuffer}ms) | forceImm=${forceImmediateUpdate} | shouldImmediate=${shouldImmediateUpdate}`);
+    console.log(`[${new Date().toISOString()}] [POLL TRIGGER] timeSinceLastPoll=${timeSinceLastPoll}ms | timeSinceLastMarkerUpdate=${currentTime - (lastUpdateTime || 0)}ms | longGap=${longGapSinceUpdate} (threshold=${pollDelay + pollDelayBuffer}ms) | isHidden=${isDocHidden} | forceImm=${forceImmediateUpdate} | shouldImmediate=${shouldImmediateUpdate}`);
 
     // Allow immediate updates even on initial load if forceImmediateUpdate is set (app resume scenario)
     if (shouldImmediateUpdate && (!isInitial || forceImmediateUpdate)) {
@@ -1433,32 +1434,18 @@ $(document).ready(async function() {
                 }
                 return;
             }
-            const now = Date.now();
-            if (now - _lastResumeTrigger < 5000) {
-                // TEMP DEBUG: a resume trigger swallowed by the 5s throttle is a
-                // prime suspect for the "buses fly across map" bug — this cycle
-                // gets NO cancelAllAnimations / teleport, so a stale gap animation
-                // registered pre-idle can play out on rAF unfreeze.
-                console.warn('[TEMP-DEBUG][resume] resume trigger throttled: only ' + (now - _lastResumeTrigger) + 'ms since last handled resume. Skipping cancel/teleport this cycle.');
-                return;
-            }
-            _lastResumeTrigger = now;
-            console.warn('[TEMP-DEBUG][resume] resume handled: cancelling in-flight animations + teleporting next fetch');
-            console.log('App resumed - triggering immediate bus update');
-            forceImmediateUpdate = true;
 
-            // Cancel all in-progress animations immediately so stale rAF callbacks
-            // don't visually run when the browser unpauses requestAnimationFrame.
-            // This must happen here (not only inside fetchBusData→immediatelyUpdateBusDataPre)
-            // because fetchBusData(true) can be silently dropped by the busFetchInProgress guard.
+            // ALWAYS force immediate updates and cancel all in-flight animations on resume
+            forceImmediateUpdate = true;
             cancelAllAnimations();
 
             // Reset stale timing data for all buses to prevent incorrect animation durations
             const currentTime = new Date().getTime();
             for (const busName in busData) {
                 if (busData[busName]) {
-                    // Reset previousTime to current time to prevent long animation durations
+                    // Reset previousTime and previousMoveTime to current time to prevent long animation durations
                     busData[busName].previousTime = currentTime;
+                    busData[busName].previousMoveTime = currentTime;
 
                     // Reset previousPositions to current position to prevent stale Bézier curve calculations
                     if (busData[busName].lat !== undefined && busData[busName].long !== undefined) {
@@ -1466,13 +1453,21 @@ $(document).ready(async function() {
                     }
 
                     // Clear any stale stored animation durations so they don't carry over
-                    // to the next non-immediate update. The teleport (immediate) path in
-                    // updateMarkerPosition returns early and never consumes these values.
                     delete busData[busName].apiAnimationDuration;
                     delete busData[busName].websocketAnimationDuration;
                     delete busData[busName].simAnimationDuration;
                 }
             }
+
+            const now = Date.now();
+            // Debounce the immediate network fetch with a short window (800ms) to avoid
+            // redundant simultaneous requests when focus + visibilitychange fire together
+            if (now - _lastResumeTrigger < 800) {
+                return;
+            }
+            _lastResumeTrigger = now;
+
+            console.log('App resumed - triggering immediate bus update');
 
             // Kick a fetch right away to avoid waiting for the interval
             busFetchInProgress = false;
@@ -1480,6 +1475,9 @@ $(document).ready(async function() {
         };
 
         const triggerPause = () => {
+            // Cancel all animations immediately when page is blurred or hidden
+            cancelAllAnimations();
+
             if (typeof sim !== 'undefined' && sim) {
                 if (typeof pauseSim === 'function') {
                     pauseSim();

@@ -522,7 +522,7 @@
         }
 
         getLatLng() {
-            return { lat: this._lat, lng: this._lng };
+            return (typeof L !== 'undefined' && L.latLng) ? L.latLng(this._lat, this._lng) : { lat: this._lat, lng: this._lng };
         }
 
         getLngLat() {
@@ -780,7 +780,7 @@
         }
 
         getLatLng() {
-            return { lat: this._lat, lng: this._lng };
+            return (typeof L !== 'undefined' && L.latLng) ? L.latLng(this._lat, this._lng) : { lat: this._lat, lng: this._lng };
         }
 
         getLngLat() {

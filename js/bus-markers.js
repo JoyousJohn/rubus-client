@@ -116,13 +116,26 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
         return;
     }
 
-    // Get current position
-    const startLatLng = marker.getLatLng();
-    const endLatLng = L.latLng(loc.lat, loc.long);
+    // Convert to LatLng objects with .distanceTo() support
+    const startLatLng = (typeof L !== 'undefined' && L.latLng) ? L.latLng(marker.getLatLng()) : marker.getLatLng();
+    const endLatLng = (typeof L !== 'undefined' && L.latLng) ? L.latLng(loc.lat, loc.long) : { lat: loc.lat, lng: loc.long };
     const distToTarget = (startLatLng && typeof startLatLng.distanceTo === 'function') ? startLatLng.distanceTo(endLatLng) : 0;
 
+    // Safety threshold: In a 10s poll, a bus physically cannot travel > 600m (~134 mph).
+    // Any jump > 600m (or update while tab hidden, or stale update gap > 20s) must teleport directly.
+    const isDocHidden = (typeof document !== 'undefined' && document.visibilityState === 'hidden');
+    const isExcessiveDistance = distToTarget > 600;
+    const isStaleGap = (new Date().getTime() - (busData[busName].previousTime || 0)) > 20000;
+    const shouldTeleport = Boolean(immediatelyUpdate) || (typeof forceImmediateUpdate !== 'undefined' && forceImmediateUpdate) || isDocHidden || isExcessiveDistance || isStaleGap;
+
+    // If coordinates did not change and an animation is already in flight towards this target,
+    // let it continue smoothly to its destination without interruption.
+    if (!moved && !shouldTeleport && animationFrames[busName]) {
+        return;
+    }
+
     // If the bus hasn't moved and is already resting at the target position, nothing to animate
-    if (!moved && !immediatelyUpdate && !forceImmediateUpdate && distToTarget < 0.5) {
+    if (!moved && !shouldTeleport && distToTarget < 0.5) {
         return;
     }
 
@@ -192,10 +205,10 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
 	if (previousTargetLatLng && previousTargetLatLng.lat !== undefined && previousTargetLatLng.lng !== undefined) {
 		previousTargetLatLng = L.latLng(previousTargetLatLng.lat, previousTargetLatLng.lng);
 	}
-	const distanceToPreviousTarget = previousTargetLatLng && startLatLng.distanceTo ? startLatLng.distanceTo(previousTargetLatLng) : 0;
-	const distanceFromPreviousToEnd = previousTargetLatLng && previousTargetLatLng.distanceTo ? previousTargetLatLng.distanceTo(endLatLng) : 0;
+	const distanceToPreviousTarget = (previousTargetLatLng && startLatLng && typeof startLatLng.distanceTo === 'function') ? startLatLng.distanceTo(previousTargetLatLng) : 0;
+	const distanceFromPreviousToEnd = (previousTargetLatLng && endLatLng && typeof previousTargetLatLng.distanceTo === 'function') ? previousTargetLatLng.distanceTo(endLatLng) : 0;
 	const totalPathDistance = distanceToPreviousTarget + distanceFromPreviousToEnd;
-	const useTwoSegmentPath = previousTargetLatLng && totalPathDistance > 0 && distanceToPreviousTarget > 1;
+	const useTwoSegmentPath = previousTargetLatLng && totalPathDistance > 0 && distanceToPreviousTarget > 1 && totalPathDistance <= 600;
 
     // Only display the lines if showPath is true
     if (showPath) {
@@ -264,22 +277,10 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
         }
     }
 
-    // If immediatelyUpdate is true, skip animation and set position directly
-    if (immediatelyUpdate) {
-        // TEMP DEBUG: log large teleports (the resume path) so we can correlate
-        // them against the [fly] warnings. Shared with the footer errors menu.
-        const dbgDist = (typeof startLatLng.distanceTo === 'function') ? (startLatLng.distanceTo(endLatLng) || 0) : 0;
-        const dbgGap = Math.round((new Date().getTime() - busData[busName].previousTime) / 1000);
-        if (dbgDist > 800 || dbgGap > 15) {
-            console.warn('[TEMP-DEBUG][teleport] bus=' + busName +
-                ' immediatelyUpdate=true' +
-                ' distM=' + Math.round(dbgDist) +
-                ' gapSec=' + dbgGap +
-                ' forceImmediateUpdate=' + (typeof forceImmediateUpdate !== 'undefined' && forceImmediateUpdate));
-        }
-
+    // If shouldTeleport is true, skip animation and set position directly
+    if (shouldTeleport) {
         if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
-            console.log(`[${new Date().toISOString()}] [ANIM SNAP] bus=${busName} immediatelyUpdate=true | snapped directly to [${endLatLng.lat.toFixed(5)}, ${endLatLng.lng.toFixed(5)}]`);
+            console.log(`[${new Date().toISOString()}] [ANIM SNAP] bus=${busName} shouldTeleport=true (dist=${Math.round(distToTarget)}m, gap=${Math.round((new Date().getTime() - (busData[busName].previousTime || 0)) / 1000)}s, imm=${immediatelyUpdate}, forceImm=${typeof forceImmediateUpdate !== 'undefined' && forceImmediateUpdate}) | snapped directly to [${endLatLng.lat.toFixed(5)}, ${endLatLng.lng.toFixed(5)}]`);
         }
         marker.setLatLng(endLatLng);
 
