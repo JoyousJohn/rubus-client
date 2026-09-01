@@ -590,68 +590,14 @@ function flyToBus(busName) {
     const long = Number(busData[busName].long);
     const loc = { lat, long };
     const targetZoom = 18;
-    
-    // First fly to location and zoom
-    map.flyTo(
-        [loc.lat, loc.long],
-        targetZoom,
-        {
-            animate: true,
-            duration: 0.3
-        }
-    );
-   
+
     selectBusMarker(busName);
-   
-    // Wait for popup to appear and then adjust the map
-    const checkForPopupAndAdjust = () => {
-        const popupElement = document.querySelector('.bus-info-popup');
-        
-        // Check if both popup exists and map has finished zooming
-        if (popupElement && Math.abs(map.getZoom() - targetZoom) < 0.01) {
-            const pixelOffset = popupElement.offsetHeight / 2;
-           
-            const pixelsToLatLngAtZoom = (pixels) => {
-                // Use targetZoom instead of current zoom
-                const metersPerPixel = 40075016.686 * Math.abs(Math.cos(loc.lat * Math.PI / 180))
-                    / Math.pow(2, targetZoom + 8);
-                return (pixels * metersPerPixel) / 111111;
-            };
-           
-            const latOffset = pixelsToLatLngAtZoom(pixelOffset);
-            const newLat = Number(loc.lat) + Number(latOffset);
-           
-            console.log('Zoom level when adjusting:', map.getZoom());
-            console.log('Original lat:', loc.lat);
-            console.log('Pixel offset:', pixelOffset);
-            console.log('Lat offset:', latOffset);
-            console.log('New lat:', newLat);
-           
-            map.flyTo(
-                [newLat, Number(loc.long)],
-                targetZoom,
-                {
-                    animate: true,
-                    duration: 0.5
-                }
-            );
-        } else {
-            // Keep checking until both conditions are met
-            if (!checkForPopupAndAdjust.attempts) {
-                checkForPopupAndAdjust.attempts = 1;
-            } else {
-                checkForPopupAndAdjust.attempts++;
-                if (checkForPopupAndAdjust.attempts > 20) { // Increased max attempts
-                    console.error('Failed to find popup or reach target zoom after multiple attempts');
-                    return;
-                }
-            }
-            setTimeout(checkForPopupAndAdjust, 50);
-        }
-    };
-   
-    // Start checking for popup and zoom level
-    setTimeout(checkForPopupAndAdjust, 50);
+
+    // Center the bus in the map area still visible below the bus info popup.
+    // The popup is shown synchronously by selectBusMarker → popInfo, so its
+    // current bottom edge is measurable here.
+    const popupEl = document.querySelector('.bus-info-popup');
+    flyToCenteredBelow([loc.lat, loc.long], targetZoom, popupEl, 0.3);
 }
 
 

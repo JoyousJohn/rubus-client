@@ -3060,14 +3060,14 @@ function flyToStop(stopId, fromUserInteraction = false) {
     const long = Number(stopData.longitude);
     const loc = { lat, long };
 
-    map.flyTo(
-        [loc.lat, loc.long],
-        15,
-        {
-            animate: true,
-            duration: 0.5
-        }
-    );
+    // Show the popup first (it is a top-anchored card), then center the stop
+    // in the map area that remains visible below it.
+    if (appStyle === 'rider') {
+        popRiderStopInfo(stopId);
+    } else {
+        popStopInfo(Number(stopId));
+    }
+    flyToCenteredBelow([loc.lat, loc.long], 15, document.querySelector('.stop-info-popup'), 0.5);
 
     // Only send analytics event if this was from explicit user interaction
     if (fromUserInteraction) {
@@ -3076,13 +3076,6 @@ function flyToStop(stopId, fromUserInteraction = false) {
             'btn': 'fly_closest_stop',
             'stop_name': stopName
         });
-    }
-
-    if (appStyle === 'rider') {
-        popRiderStopInfo(stopId);
-        return;
-    } else {
-        popStopInfo(Number(stopId));
     }
 }
 

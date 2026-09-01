@@ -133,7 +133,7 @@ function updateSearchPlaceholder(buildingCount) {
 }
 
 $(document).ready(function() {
-    const $input = $('.search-wrapper input');
+    const $input = $('.search-pill-bar input');
     const $clearBtn = $('.search-clear-btn');
     $input.val('')
 
@@ -153,7 +153,7 @@ $(document).ready(function() {
     // Back button in the directions pill bar returns to the search view
     $('.nav-back-btn-styled').on('click', function() {
         applySearchMode('search');
-        $('.search-wrapper input').focus();
+        $input.focus();
     });
 
     // Track press and hold state
@@ -261,7 +261,7 @@ $(document).ready(function() {
 
     // Nudge layout when search input gains focus (keyboard opening)
     // Height adjustment is handled by visualViewport listeners; focus handler scrolls input into view
-    $(document).on('focus', '.search-wrapper input', function() {
+    $(document).on('focus', '.search-pill-bar input', function() {
       setTimeout(() => {
         const $container = $('.search-content');
         if ($container.length > 0) {
@@ -269,7 +269,7 @@ $(document).ready(function() {
         }
       }, 150);
     });
-    $(document).on('blur', '.search-wrapper input', function() {
+    $(document).on('blur', '.search-pill-bar input', function() {
       setTimeout(adjustSearchHeights, 50);
     });
 
@@ -590,7 +590,7 @@ $(document).ready(function() {
     };
     window.renderSearchResults = renderResults;
 
-    $('.search-wrapper input').on('input', function() {
+    $('.search-pill-bar input').on('input', function() {
         const query = $(this).val().trim();
         // Remove schedule-style room suffixes like "AB-101" -> "AB"
         const sanitizedQuery = query.replace(/-[^\s]*/g, '').replace(/\s+/g, ' ').trim();
@@ -743,7 +743,7 @@ $(document).ready(function() {
     function selectBuilding(buildingData) {
         // Show building info and fly to location immediately
         showBuildingInfo(buildingData);
-        map.flyTo([buildingData.lat, buildingData.lng], 17, { duration: 0.3 });
+        flyToCenteredBelow([buildingData.lat, buildingData.lng], 17, document.querySelector('.building-info-popup'), 0.3);
         
         if (!buildingsLayer) {
             loadBuildings().then(() => {
@@ -768,7 +768,7 @@ $(document).ready(function() {
         if (item.category === 'stop') {
             // Handle stop selection
             popStopInfo(Number(item.id));
-            map.flyTo([item.lat, item.lng], 17, { duration: 0.3 });
+            flyToCenteredBelow([item.lat, item.lng], 17, document.querySelector('.stop-info-popup'), 0.3);
             saveRecentSearch(item);
         } else {
             // Handle building selection
@@ -1044,7 +1044,7 @@ function setSearchMode(mode) {
         // Use robust helper (sync + double rAF + fallback) instead of plain setTimeout(60)
         window.focusNavFromInput();
     } else {
-        $('.search-wrapper input').trigger('input').focus();
+        $('.search-pill-bar input').trigger('input').focus();
     }
 }
 
@@ -1084,5 +1084,5 @@ function openSearchBack() {
     if (typeof hideCenterStops === 'function') hideCenterStops();
     adjustSearchHeights();
     attachSearchViewportListeners();
-    $('.search-wrapper input').trigger('input').focus();
+    $('.search-pill-bar input').trigger('input').focus();
 }

@@ -2443,9 +2443,7 @@ function displayRoute(routeData) {
                         
                         // Fly to the building location
                         if (building && building.lat && building.lng) {
-                            map.flyTo([building.lat, building.lng], 18, {
-                                duration: 1.5
-                            });
+                            flyToCenteredBelow([building.lat, building.lng], 18, document.querySelector('.building-info-popup'), 1.5);
                         }
                     });
                 } else {
@@ -2453,9 +2451,7 @@ function displayRoute(routeData) {
                     
                     // Fly to the building location
                     if (building && building.lat && building.lng) {
-                        map.flyTo([building.lat, building.lng], 18, {
-                            duration: 1.5
-                        });
+                        flyToCenteredBelow([building.lat, building.lng], 18, document.querySelector('.building-info-popup'), 1.5);
                     }
                 }
                 
@@ -2477,16 +2473,17 @@ function displayRoute(routeData) {
             if (stopId) {
                 const stop = stopsData[stopId];
                 
+                // Show stop info (top-anchored card), then fly the stop into
+                // the center of the map area that remains visible below it.
+                popStopInfo(parseInt(stopId));
+                
                 // Fly to the stop location
                 if (stop && stop.latitude && stop.longitude) {
                     clearPanoutFeedback();
-                    map.flyTo([stop.latitude, stop.longitude], 18, {
-                        duration: 1.5
-                    });
+                    flyToCenteredBelow([stop.latitude, stop.longitude], 18, document.querySelector('.stop-info-popup'), 1.5);
                 }
                 
-                // Show stop info and close navigation
-                popStopInfo(parseInt(stopId));
+                // Close navigation
                 closeNavigation();
                 
                 sa_event('btn_press', {
