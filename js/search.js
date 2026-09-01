@@ -150,10 +150,32 @@ $(document).ready(function() {
         return '';
     }
 
-    // Back button in the directions pill bar returns to the search view
+    // Back button in the directions pill bar returns to the search view (legacy, now top bar)
     $('.nav-back-btn-styled').on('click', function() {
         applySearchMode('search');
         $input.focus();
+    });
+    // Top bar back button – visible only in navigation mode, returns to search
+    $(document).on('click', '.search-top-back-btn', function() {
+        applySearchMode('search');
+        $input.focus();
+        sa_event('btn_press', { 'btn': 'nav_top_back' });
+    });
+    // Top bar close (X) – visible in both modes, closes search entirely
+    $(document).on('click', '.search-top-close-btn', function() {
+        const view = searchOpenView;
+        searchOpenView = null;
+        if (view && typeof map !== 'undefined') {
+            const current = map.getCenter();
+            const moved = Math.abs(current.lat - view.center.lat) > 1e-9 ||
+                          Math.abs(current.lng - view.center.lng) > 1e-9 ||
+                          Math.abs(map.getZoom() - view.zoom) > 1e-9;
+            if (moved) {
+                map.flyTo(view.center, view.zoom, { duration: 0.3 });
+            }
+        }
+        closeSearch();
+        sa_event('btn_press', { 'btn': 'search_top_close' });
     });
 
     // Track press and hold state
@@ -503,6 +525,30 @@ $(document).ready(function() {
         // }
 
         openDirectionsNav();
+        // If there are recent searches, hide nav-to and show recents in nav-from dropdown instantly
+        let _hasRecents = false;
+        try {
+            const _raw = localStorage.getItem('recentSearches');
+            const _arr = _raw ? JSON.parse(_raw) : [];
+            _hasRecents = Array.isArray(_arr) && _arr.some(it => it && it.type !== 'navigation' && it.name && it.category);
+        } catch(e) { _hasRecents = false; }
+        if (_hasRecents) {
+            if (typeof window.setNavPendingSourceSelection === 'function') {
+                window.setNavPendingSourceSelection(true);
+            } else {
+                window.navPendingSourceSelection = true;
+                $('.nav-dest-row').addClass('none');
+            }
+            // Render recents synchronously before focusing to avoid flash of empty
+            if (typeof window.renderNavFromRecents === 'function') {
+                window.renderNavFromRecents();
+            } else if (typeof window.showNavFromRecents === 'function') {
+                window.showNavFromRecents();
+            }
+        } else {
+            if (typeof window.setNavPendingSourceSelection === 'function') window.setNavPendingSourceSelection(false);
+            else window.navPendingSourceSelection = false;
+        }
         window._suppressNavAutocompleteOnFocus = true;
         window.focusNavFromInput();
         sa_event('btn_press', {
@@ -561,7 +607,7 @@ $(document).ready(function() {
                 + '<div' + (isSelected ? ' class="search-result-selected-name"' : '') + '>' + escapeHTML(displayText) + '</div>'
                 + '<i class="search-result-map-pin icon icon-location-dot"></i>'
                 + '<button class="search-result-directions-btn" type="button" title="Get directions" data-dir-result-index="' + i + '">'
-                + '<i class="icon icon-route"></i><span>Navigate</span>'
+                + '<i class="fa-solid fa-diamond-turn-right"></i><span>Nav</span>'
                 + '</button>'
                 + '</div>';
         }
@@ -830,10 +876,18 @@ $(document).ready(function() {
         recentToShow.forEach(item => {
             const $row = $('<div class="search-result-item flex"></div>');
             $row.append('<i class="icon icon-clock-rotate-left"></i>');
-            const $name = $('<div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>').text(item.name);
-            $row.append($name);
+            const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; overflow:hidden;"></div>');
+            const $nameText = $('<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(item.name);
+            $nameWrap.append($nameText);
+            let _typeIcon = '';
+            if (item.category === 'building') _typeIcon = 'icon-building';
+            else if (item.category === 'parking') _typeIcon = 'icon-parking';
+            else if (item.category === 'stop') _typeIcon = 'icon-bus-simple';
+            if (_typeIcon) $nameWrap.append('<i class="icon ' + _typeIcon + '" style="flex-shrink:0; font-size:1.3rem; opacity:0.9;"></i>');
+            $row.append($nameWrap);
 
-            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="icon icon-route"></i><span>Navigate</span></button>');
+            $row.append('<i class="search-result-map-pin icon icon-location-dot"></i>');
+            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="fa-solid fa-diamond-turn-right"></i><span>Nav</span></button>');
             $directions.on('click', function(e) {
                 e.stopPropagation();
                 onRowDirections(item);
@@ -947,7 +1001,8 @@ $(document).ready(function() {
             const $name = $('<div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>').text(item.name);
             $recItem.append($name);
 
-            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="icon icon-route"></i><span>Navigate</span></button>');
+            $recItem.append('<i class="search-result-map-pin icon icon-location-dot"></i>');
+            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="fa-solid fa-diamond-turn-right"></i><span>Nav</span></button>');
             $directions.on('click', function(e) {
                 e.stopPropagation();
                 onRowDirections(item);
@@ -1010,6 +1065,12 @@ function applySearchMode(mode) {
     }
     searchMode = mode;
     updateSearchHeading();
+    // Top bar back button only visible in navigation mode; close (X) always visible
+    if (mode === 'directions') {
+        $('.search-top-back-btn').css({'visibility':'visible','pointer-events':'auto'});
+    } else {
+        $('.search-top-back-btn').css({'visibility':'hidden','pointer-events':'none'});
+    }
 
     if (mode === 'directions') {
         $('.search-pill-bar').addClass('none');

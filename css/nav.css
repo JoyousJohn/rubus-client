@@ -143,21 +143,25 @@
    list so matches look identical to the main search area. */
 .nav-from-search-results,
 .nav-to-search-results {
-    max-height: 200px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    row-gap: 1.5rem;
+    row-gap: 1.3rem;
     font-size: 1.5rem;
-    margin-left: 0.5rem;
-    margin-top: 0.5rem;
-    padding-left: 2rem;
-    padding-right: 2rem;
+    margin-top: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
 }
 
 .nav-from-search-results.none,
 .nav-to-search-results.none {
     display: none;
+}
+
+.nav-from-search-results .search-result-item,
+.nav-to-search-results .search-result-item {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Highlight state for nav autocomplete rows (shared .search-result-item) */
@@ -193,6 +197,7 @@
     padding-bottom: 0.5rem;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    margin-right: -1rem;
 }
 
 .route-options-container::-webkit-scrollbar {
@@ -211,6 +216,19 @@
     white-space: nowrap;
     border: 2px solid transparent;
     user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.nav-route-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #22c55e;
+    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
 }
 
 .route-option.selected {
