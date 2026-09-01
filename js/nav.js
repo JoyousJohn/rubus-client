@@ -42,6 +42,8 @@ $(document).ready(function() {
         window.errorTracker.trackNavigationWrapperShow('Building directions button');
 
         // Focus on the from input for user to enter their starting location
+        // (programmatic focus — don't pop autocomplete for a pre-filled value).
+        window._suppressNavAutocompleteOnFocus = true;
         $('#nav-from-input').focus();
     });
 
@@ -167,10 +169,12 @@ function setupNavigationInputs() {
         // Remember and hide the directions panel while an input is focused;
         // it's restored once both inputs lose focus. Always hide on focus —
         // the "was visible" flag is only set when the panel is actually shown,
-        // so a stale focus state can't skip the hide.
+        // so a stale focus state can't skip the hide. Must also remove .flex:
+        // it comes after .none in tailwind.css, so leaving it on would override
+        // the hide.
         if (!$('.nav-directions-wrapper').hasClass('none')) {
             navDirectionsWasVisibleBeforeFocus = true;
-            $('.nav-directions-wrapper').addClass('none');
+            $('.nav-directions-wrapper').removeClass('flex').addClass('none');
         }
         navAnyInputFocused = true;
 
@@ -191,19 +195,19 @@ function setupNavigationInputs() {
 
         // Delay hiding to allow clicks on dropdown items
         setTimeout(() => {
-            // If the other nav input has focus now (e.g. user jumped from
-            // source to destination), don't clobber its collapse state.
-            const otherFocused = (input.attr('id') === 'nav-from-input')
-                ? $('#nav-to-input').is(':focus')
-                : $('#nav-from-input').is(':focus');
-            if (otherFocused) {
+            // If either nav input still has focus (e.g. the user jumped from
+            // source to destination, or refocused the same input quickly),
+            // don't restore the directions panel — keep it hidden while any
+            // nav input is focused.
+            const anyNavInputFocused = $('#nav-from-input').is(':focus') || $('#nav-to-input').is(':focus');
+            if (anyNavInputFocused) {
                 navAnyInputFocused = true;
                 return;
             }
             navAnyInputFocused = false;
             hideNavigationAutocomplete();
 
-            // Restore the directions panel if it was visible before focusing.
+            // Restore the directions panel only when neither input is focused.
             if (navDirectionsWasVisibleBeforeFocus) {
                 $('.nav-directions-wrapper').removeClass('none').addClass('flex');
                 navDirectionsWasVisibleBeforeFocus = false;
@@ -1030,14 +1034,9 @@ function showNavigationAutocomplete(inputElement, query) {
         // Right chevron: tapping the row selects the place into the field.
         $resultElement.append('<i class="search-result-map-pin icon icon-chevron-right"></i>');
 
-        // Use a more robust event handling approach for touchpad compatibility
+        // Use click only (like the main search results) so touch scrolling
+        // doesn't trigger selection — click fires only after a tap without scroll.
         const handleSelection = function(e) {
-            // Prevent default only for touch events to avoid interfering with mouse clicks
-            if (e && e.type === 'touchstart') {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-
             // Set the input value programmatically to avoid clearing selection
             isSettingInputProgrammatically = true;
             inputElement.val(item.name);
@@ -1081,15 +1080,8 @@ function showNavigationAutocomplete(inputElement, query) {
             }
         };
 
-        // Attach multiple event handlers for better touchpad support
+        // Attach click for selection (fires after a tap, not during a scroll)
         $resultElement.on('click', handleSelection);
-        $resultElement.on('touchstart', handleSelection);
-        $resultElement.on('pointerdown', function(e) {
-            // For pointer events, handle immediately
-            if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-                handleSelection(e);
-            }
-        });
 
         // After picking a place, both bars come back (the other input is next).
         const restoreBars = function() {
@@ -1097,7 +1089,7 @@ function showNavigationAutocomplete(inputElement, query) {
             $('.search-wrapper').removeClass('nav-source-hidden');
             $('.nav-dest-row').removeClass('none');
         };
-        $resultElement.on('click touchstart pointerdown', restoreBars);
+        $resultElement.on('click', restoreBars);
 
         resultsContainer.append($resultElement);
     });

@@ -11,6 +11,25 @@ let searchVvpHandler = null;
 
 const SEARCH_PLACEHOLDER_TEMPLATE = 'Search {num} buildings & lots';
 
+// Campus key -> display name for the search menu heading
+const SEARCH_CAMPUS_NAMES = {
+    'nb': 'New Brunswick',
+    'camden': 'Camden',
+    'newark': 'Newark'
+};
+
+function updateSearchHeading() {
+    if (searchMode === 'directions') {
+        $('.search-heading-text').text('Navigation');
+        $('.search-heading-icon').removeClass('fa-magnifying-glass').addClass('fa-route');
+        return;
+    }
+    const campusKey = (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
+    const campusName = SEARCH_CAMPUS_NAMES[campusKey] || SEARCH_CAMPUS_NAMES['nb'];
+    $('.search-heading-text').text(`Search ${campusName}`);
+    $('.search-heading-icon').removeClass('fa-route').addClass('fa-magnifying-glass');
+}
+
 function adjustSearchHeights() {
   const isMobile = $(window).width() <= 992;
   if (isMobile && window.visualViewport) {
@@ -120,6 +139,7 @@ $(document).ready(function() {
             // Open directions tab in the search shell
             openDirectionsNav();
             window.errorTracker.trackNavigationWrapperShow('Press and hold search button');
+            window._suppressNavAutocompleteOnFocus = true;
             $('#nav-from-input').focus();
 
             sa_event('btn_press', {
@@ -156,6 +176,7 @@ $(document).ready(function() {
         // search bar's back button can return them there (even if a search
         // selection later flew the camera elsewhere).
         searchOpenView = { center: map.getCenter(), zoom: map.getZoom() };
+        updateSearchHeading();
         $('.search-wrapper').removeClass('none');
         if (typeof hideCenterStops === 'function') hideCenterStops();
         adjustSearchHeights();
@@ -438,6 +459,7 @@ $(document).ready(function() {
         }
 
         openDirectionsNav();
+        window._suppressNavAutocompleteOnFocus = true;
         $('#nav-from-input').focus();
         sa_event('btn_press', {
             'btn': 'search_result_directions',
@@ -942,6 +964,7 @@ function applySearchMode(mode) {
         return;
     }
     searchMode = mode;
+    updateSearchHeading();
 
     if (mode === 'directions') {
         $('.search-pill-bar').addClass('none');
@@ -973,6 +996,7 @@ function setSearchMode(mode) {
     applySearchMode(mode);
     if (mode === 'directions') {
         setTimeout(function() {
+            window._suppressNavAutocompleteOnFocus = true;
             $('#nav-from-input').focus();
         }, 60);
     } else {
@@ -981,6 +1005,7 @@ function setSearchMode(mode) {
 }
 
 function openDirectionsNav() {
+    updateSearchHeading();
     $('.search-wrapper').removeClass('none');
     $('.bottom').hide();
     if (typeof hideCenterStops === 'function') hideCenterStops();
@@ -988,30 +1013,15 @@ function openDirectionsNav() {
     attachSearchViewportListeners();
     applySearchMode('directions');
 
-    // Focus the source field once the two-input directions layout is active.
-    // Retry across a few frames in case a layout/transition settles late
-    // (e.g. the pill bar becoming visible or the keyboard opening on mobile).
-    // Suppress autocomplete here because this focus is programmatic.
-    window._suppressNavAutocompleteOnFocus = true;
-    let attempts = 0;
-    const focusSource = function() {
-        if (attempts >= 5) return;
-        attempts++;
-        const $from = $('#nav-from-input');
-        if ($from.length && $from.is(':visible')) {
-            $from.focus();
-            // If something stole focus right away, try once more shortly after.
-            if (document.activeElement !== $from[0]) {
-                setTimeout(focusSource, 80);
-            }
-        } else {
-            setTimeout(focusSource, 80);
-        }
-    };
-    setTimeout(focusSource, 0);
+    // Callers handle their own focus: the building-directions button focuses
+    // the source input, openNav() focuses the appropriate input, and
+    // calculateRoute() shows the route without refocusing either input.
+    // (Previously this auto-focused the source input, which caused a flash
+    // of refocus after selecting a source result and computing a route.)
 }
 
 function openSearch() {
+    updateSearchHeading();
     $('.bottom').hide();
     $('.search-wrapper').removeClass('none');
     if (typeof hideCenterStops === 'function') hideCenterStops();
@@ -1022,6 +1032,7 @@ function openSearch() {
 // Reopen the search menu (used by the "Back to search" button on building/stop popups
 // that were opened from a search result selection).
 function openSearchBack() {
+    updateSearchHeading();
     searchReentry = false;
     searchBackActive = false;
     $('.search-wrapper').removeClass('none');

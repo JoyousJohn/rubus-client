@@ -147,7 +147,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    row-gap: 1rem;
+    row-gap: 1.5rem;
     font-size: 1.5rem;
     margin-left: 0.5rem;
     margin-top: 0.5rem;

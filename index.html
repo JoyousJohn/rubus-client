@@ -874,6 +874,8 @@
                             openDirectionsNav();
 
                             // Focus on the from input for user to enter their starting location
+                            // (programmatic focus — don't pop autocomplete).
+                            window._suppressNavAutocompleteOnFocus = true;
                             $('#nav-from-input').focus();
                         });
 
@@ -1173,6 +1175,7 @@
     </div>
 
     <div class="search-wrapper none">
+        <div class="settings-main-heading search-main-heading center flex align-center justify-center gap-x-0p5rem"><i class="search-heading-icon fa-solid fa-magnifying-glass" style="opacity: 0.88;"></i><span class="search-heading-text"></span></div>
         <div class="search-pill-bar">
             <button class="search-back-btn" type="button" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
             <input type="text" name="searchQuery" placeholder="Search {num} buildings & lots" autocomplete="search no-suggestions" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
