@@ -876,7 +876,12 @@
                             // Focus on the from input for user to enter their starting location
                             // (programmatic focus — don't pop autocomplete).
                             window._suppressNavAutocompleteOnFocus = true;
-                            $('#nav-from-input').focus();
+                            if (window.focusNavFromInput) window.focusNavFromInput();
+                            else {
+                                setTimeout(() => {
+                                    $('#nav-from-input').focus();
+                                }, 0);
+                            }
                         });
 
                         $('.stop-navigate').click(function() {
@@ -1175,15 +1180,15 @@
     </div>
 
     <div class="search-wrapper none">
-        <div class="settings-main-heading search-main-heading center flex align-center justify-center gap-x-0p5rem"><i class="search-heading-icon fa-solid fa-magnifying-glass" style="opacity: 0.88;"></i><span class="search-heading-text"></span></div>
+        <div class="settings-main-heading search-main-heading center flex align-center justify-center gap-x-0p5rem"><i class="search-heading-icon icon icon-search" style="opacity: 0.88;"></i><span class="search-heading-text"></span></div>
         <div class="search-pill-bar">
             <button class="search-back-btn" type="button" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
-            <input type="text" name="searchQuery" placeholder="Search {num} buildings & lots" autocomplete="search no-suggestions" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+            <input type="text" name="searchQuery" placeholder="Search {num} buildings & lots" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
             <button class="search-clear-btn" type="button" aria-label="Clear">×</button>
         </div>
         <div class="nav-pill-bar nav-pill-bar-style none">
             <button class="nav-back-btn nav-back-btn-styled" type="button" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
-            <input type="text" class="nav-input" id="nav-from-input" placeholder="Source" autocomplete="search no-suggestions" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+            <input type="text" class="nav-input" id="nav-from-input" placeholder="Source" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
             <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
             <div class="nav-from-search-results none"></div>
         </div>
@@ -1211,7 +1216,7 @@
                     <div class="nav-to">
                         <div class="nav-input-wrapper">
                             <button class="nav-dest-pin-btn" type="button" aria-label="Destination"><i class="fa-solid fa-location-dot"></i></button>
-                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="search no-suggestions" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
                             <button class="nav-clear-btn" id="nav-to-clear-btn" type="button">×</button>
                         </div>
                         <div class="nav-to-search-results none"></div>

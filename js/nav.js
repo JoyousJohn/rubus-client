@@ -8,6 +8,45 @@ let NAV_DEBUG = true;
 let navDirectionsWasVisibleBeforeFocus = false;
 let navAnyInputFocused = false;
 
+// Normalized from/to key of the last route that was computed and rendered.
+// Lets us reshow an already-rendered (but hidden) route instead of recomputing.
+let lastComputedRouteKey = null;
+
+// Ensure robust nav-input focus helper exists even if search.js hasn't loaded yet
+// (search.js defines window.focusNavInput with the same logic; keep in sync).
+if (!window.focusNavInput) {
+window.focusNavInput = function(selector) {
+  selector = selector || '#nav-from-input';
+  const el = document.querySelector(selector);
+  if (!el) return;
+  try { el.focus({ preventScroll: false }); } catch (e) {}
+  if (document.activeElement === el) return;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (document.activeElement === el) return;
+      if (el.offsetParent === null || el.disabled) {
+        setTimeout(() => {
+          if (document.activeElement !== el && el.offsetParent !== null && !el.disabled) {
+            try { el.focus({ preventScroll: false }); } catch (e2) {}
+          }
+        }, 70);
+        return;
+      }
+      try { el.focus({ preventScroll: false }); } catch (e2) {}
+      if (document.activeElement !== el) {
+        setTimeout(() => {
+          if (document.activeElement !== el && el.offsetParent !== null && !el.disabled) {
+            try { el.focus({ preventScroll: false }); } catch (e3) {}
+          }
+        }, 70);
+      }
+    });
+  });
+};
+window.focusNavFromInput = function() { return window.focusNavInput('#nav-from-input'); };
+window.focusNavToInput = function() { return window.focusNavInput('#nav-to-input'); };
+}
+
 // Helper function to get pluralized stop count
 function getStopCountText(route) {
     const count = Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1);
@@ -44,7 +83,8 @@ $(document).ready(function() {
         // Focus on the from input for user to enter their starting location
         // (programmatic focus — don't pop autocomplete for a pre-filled value).
         window._suppressNavAutocompleteOnFocus = true;
-        $('#nav-from-input').focus();
+        if (window.focusNavFromInput) window.focusNavFromInput();
+        else $('#nav-from-input').focus();
     });
 
     // Handle navigation input functionality
@@ -93,6 +133,19 @@ function setupNavigationInputs() {
 
     // Initially hide the clear buttons
     $('#nav-from-clear-btn, #nav-to-clear-btn').hide();
+
+    // Helper: hide destination row only when source is focused AND has a value
+    function updateNavDestRowVisibility() {
+        const $fromInput = $('#nav-from-input');
+        const isFocused = $fromInput.is(':focus');
+        const hasValue = $fromInput.val().trim().length > 0;
+        if (isFocused && hasValue) {
+            $('.nav-dest-row').addClass('none');
+        } else {
+            $('.nav-dest-row').removeClass('none');
+        }
+    }
+    window.updateNavDestRowVisibility = updateNavDestRowVisibility;
 
     // Handle input changes
     $('#nav-from-input, #nav-to-input').on('input', function() {
@@ -143,15 +196,7 @@ function setupNavigationInputs() {
             showNavigationAutocomplete(input, value);
         }
 
-        // Typing in the source hides the destination bar while there's actual
-        // input; clearing it back to empty shows the destination again.
-        if (input.attr('id') === 'nav-from-input') {
-            if (value.length > 0) {
-                $('.nav-dest-row').addClass('none');
-            } else {
-                $('.nav-dest-row').removeClass('none');
-            }
-        }
+        updateNavDestRowVisibility();
     });
 
     // Handle focus events to hide dropdowns
@@ -177,16 +222,7 @@ function setupNavigationInputs() {
             $('.nav-directions-wrapper').removeClass('flex').addClass('none');
         }
         navAnyInputFocused = true;
-
-        // Focusing the source only hides the destination bar if the source
-        // already has input; an empty source keeps the destination visible.
-        if (input.attr('id') === 'nav-from-input') {
-            if (value.length > 0) {
-                $('.nav-dest-row').addClass('none');
-            } else {
-                $('.nav-dest-row').removeClass('none');
-            }
-        }
+        updateNavDestRowVisibility();
     });
 
     // Handle blur events to hide dropdowns after a delay
@@ -202,10 +238,12 @@ function setupNavigationInputs() {
             const anyNavInputFocused = $('#nav-from-input').is(':focus') || $('#nav-to-input').is(':focus');
             if (anyNavInputFocused) {
                 navAnyInputFocused = true;
+                updateNavDestRowVisibility();
                 return;
             }
             navAnyInputFocused = false;
             hideNavigationAutocomplete();
+            updateNavDestRowVisibility();
 
             // Restore the directions panel only when neither input is focused.
             if (navDirectionsWasVisibleBeforeFocus) {
@@ -322,9 +360,11 @@ function openNav(navTo, navFrom) {
     } else {
         // Focus on the appropriate input if not both provided
         if (navFrom) {
-            $('#nav-to-input').focus();
+            if (window.focusNavInput) window.focusNavInput('#nav-to-input');
+            else $('#nav-to-input').focus();
         } else {
-            $('#nav-from-input').focus();
+            if (window.focusNavFromInput) window.focusNavFromInput();
+            else $('#nav-from-input').focus();
         }
     }
 }
@@ -647,6 +687,18 @@ function calculateRoute(from, to) {
             return;
         }
 
+        // If this is the same route that's already computed and rendered (just
+        // hidden while an input was focused), reshow it instead of recomputing.
+        const routeKey = `${String(startBuilding.name).trim().toLowerCase()}\u0001${String(endBuilding.name).trim().toLowerCase()}`;
+        const wrapperHasContent = $('.nav-directions-wrapper').children().length > 0;
+        if (lastComputedRouteKey === routeKey && wrapperHasContent) {
+            openDirectionsNav();
+            $('.nav-directions-wrapper').removeClass('none').addClass('flex');
+            navDirectionsWasVisibleBeforeFocus = false;
+            $('.nav-directions-wrapper').scrollTop(0);
+            return;
+        }
+
         // Determine if start/end are bus stops (vs buildings)
         const startIsStop = String(startBuilding.category || '').toLowerCase() === 'stop';
         const endIsStop = String(endBuilding.category || '').toLowerCase() === 'stop';
@@ -957,7 +1009,8 @@ function showNavigationAutocomplete(inputElement, query) {
         // Empty query — no matches to show, so bring both bars back.
         $('.nav-pill-bar').removeClass('nav-collapsed');
         $('.search-wrapper').removeClass('nav-source-hidden');
-        $('.nav-dest-row').removeClass('none');
+        if (window.updateNavDestRowVisibility) window.updateNavDestRowVisibility();
+        else $('.nav-dest-row').removeClass('none');
         return;
     }
 
@@ -1108,7 +1161,8 @@ function hideNavigationAutocomplete() {
     // Restore both bars once the dropdowns hide (uncollapse the source bar).
     $('.nav-pill-bar').removeClass('nav-collapsed');
     $('.search-wrapper').removeClass('nav-source-hidden');
-    $('.nav-dest-row').removeClass('none');
+    if (window.updateNavDestRowVisibility) window.updateNavDestRowVisibility();
+    else $('.nav-dest-row').removeClass('none');
 }
 
 // Highlight/unhighlight autocomplete items
@@ -2528,6 +2582,10 @@ function displayRoute(routeData) {
     // A freshly-calculated route supersedes any focus-hide restore state.
     navDirectionsWasVisibleBeforeFocus = false;
 
+    // Remember this route so a re-selection of the same from/to can reshow
+    // the already-rendered panel instead of recomputing it.
+    lastComputedRouteKey = `${String(startBuilding.name).trim().toLowerCase()}\u0001${String(endBuilding.name).trim().toLowerCase()}`;
+
     // Scroll to top of route content wrapper
     $('.nav-directions-wrapper').scrollTop(0);
     
@@ -2903,6 +2961,7 @@ function updateRouteDisplay(routeData) {
 function clearRouteDisplay() {
     $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
     navDirectionsWasVisibleBeforeFocus = false;
+    lastComputedRouteKey = null;
     showNavigationMessage('Route cleared');
 }
 
@@ -2912,6 +2971,7 @@ function closeNavigation() {
         // Clear route UI
         $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
         navDirectionsWasVisibleBeforeFocus = false;
+        lastComputedRouteKey = null;
         $('.nav-directions-wtrapper').addClass('none').empty();
         // Clear inputs
         isSettingInputProgrammatically = true;

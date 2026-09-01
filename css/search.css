@@ -126,7 +126,7 @@
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 0.25rem 1rem 1rem;
+    padding: 0.25rem 2rem 1rem;
     display: flex;
     flex-direction: column;
 }
@@ -171,7 +171,7 @@
     top: 100%;
     left: 0;
     right: 0;
-    margin-top: 0.5rem;
+    margin-top: 1.5rem;
 }
 
 .nav-pill-bar-style:focus-within {
@@ -290,12 +290,12 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    background: none;
-    border: 1px solid var(--theme-color-lighter);
+    background-color: var(--theme-accent);
+    border: none;
     border-radius: 999px;
-    color: var(--theme-color);
+    color: var(--theme-bg);
     font-size: 1.3rem;
-    padding: 0.45rem 0.8rem;
+    padding: 0.7rem 1rem;
     cursor: pointer;
     flex-shrink: 0;
     line-height: 1;

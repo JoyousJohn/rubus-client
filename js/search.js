@@ -19,15 +19,16 @@ const SEARCH_CAMPUS_NAMES = {
 };
 
 function updateSearchHeading() {
+    const $icon = $('.search-heading-icon');
     if (searchMode === 'directions') {
         $('.search-heading-text').text('Navigation');
-        $('.search-heading-icon').removeClass('fa-magnifying-glass').addClass('fa-route');
+        $icon.removeClass('icon-search fa-magnifying-glass fa-search').addClass('icon-route');
         return;
     }
     const campusKey = (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
     const campusName = SEARCH_CAMPUS_NAMES[campusKey] || SEARCH_CAMPUS_NAMES['nb'];
-    $('.search-heading-text').text(`Search ${campusName}`);
-    $('.search-heading-icon').removeClass('fa-route').addClass('fa-magnifying-glass');
+    $('.search-heading-text').text(`Browse ${campusName}`);
+    $icon.removeClass('icon-route fa-route').addClass('icon-search');
 }
 
 function adjustSearchHeights() {
@@ -74,6 +75,42 @@ function detachSearchViewportListeners() {
   }
   searchVvpHandler = null;
 }
+
+// Robust focus helper for nav inputs — handles display:none -> layout + visualViewport
+// timing + iOS user-gesture expiry. Callers should set _suppressNavAutocompleteOnFocus before invoking.
+window.focusNavInput = function(selector) {
+  selector = selector || '#nav-from-input';
+  const el = document.querySelector(selector);
+  if (!el) return;
+  // Sync attempt preserves user-gesture (keyboard) when called inside click handler
+  try { el.focus({ preventScroll: false }); } catch (e) {}
+  if (document.activeElement === el) return;
+  // Double rAF waits for removeClass('none') + adjustSearchHeights layout to flush
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (document.activeElement === el) return;
+      // If still hidden (offsetParent null) retry after transition delay
+      if (el.offsetParent === null || el.disabled) {
+        setTimeout(() => {
+          if (document.activeElement !== el && el.offsetParent !== null && !el.disabled) {
+            try { el.focus({ preventScroll: false }); } catch (e2) {}
+          }
+        }, 70);
+        return;
+      }
+      try { el.focus({ preventScroll: false }); } catch (e2) {}
+      if (document.activeElement !== el) {
+        setTimeout(() => {
+          if (document.activeElement !== el && el.offsetParent !== null && !el.disabled) {
+            try { el.focus({ preventScroll: false }); } catch (e3) {}
+          }
+        }, 70);
+      }
+    });
+  });
+};
+window.focusNavFromInput = function() { return window.focusNavInput('#nav-from-input'); };
+window.focusNavToInput = function() { return window.focusNavInput('#nav-to-input'); };
 
 // Function to update search placeholder with building count
 function updateSearchPlaceholder(buildingCount) {
@@ -140,7 +177,7 @@ $(document).ready(function() {
             openDirectionsNav();
             window.errorTracker.trackNavigationWrapperShow('Press and hold search button');
             window._suppressNavAutocompleteOnFocus = true;
-            $('#nav-from-input').focus();
+            window.focusNavFromInput();
 
             sa_event('btn_press', {
                 'btn': 'search_press_hold_nav'
@@ -447,20 +484,27 @@ $(document).ready(function() {
             setNavigationFromBuilding(item.name, 'to');
         }
 
-        // Default the origin to the user's current location when available
-        const hasUserLocation = typeof userPosition !== 'undefined' &&
-            Array.isArray(userPosition) && userPosition.length === 2 &&
-            userPosition[0] != null && userPosition[1] != null;
-        if (hasUserLocation) {
-            const closestStop = findClosestStop(userPosition[0], userPosition[1]);
-            if (closestStop && closestStop.id != null && stopsData[closestStop.id]) {
-                setNavigationFromStop(String(closestStop.id), 'from');
-            }
-        }
+        // TEMPORARILY COMMENTED OUT: never auto-populate the source field with
+        // the closest stop to the user's location. This was causing confusing
+        // prefills (e.g. "RWJMS Research Tower") and out-of-bounds users to get
+        // a random closest stop. Intended to be re-enabled later.
+        // const hasUserLocation = typeof userPosition !== 'undefined' &&
+        //     Array.isArray(userPosition) && userPosition.length === 2 &&
+        //     userPosition[0] != null && userPosition[1] != null;
+        // if (hasUserLocation) {
+        //     const closestStop = findClosestStop(userPosition[0], userPosition[1]);
+        //     const distanceMiles = Number.isFinite(closestStop?.distance)
+        //         ? closestStop.distance / 1609.34
+        //         : Infinity;
+        //     const inBounds = distanceMiles <= maxDistanceMiles || settings['toggle-bypass-max-distance'];
+        //     if (inBounds && closestStop && closestStop.id != null && stopsData[closestStop.id]) {
+        //         setNavigationFromStop(String(closestStop.id), 'from');
+        //     }
+        // }
 
         openDirectionsNav();
         window._suppressNavAutocompleteOnFocus = true;
-        $('#nav-from-input').focus();
+        window.focusNavFromInput();
         sa_event('btn_press', {
             'btn': 'search_result_directions',
             'result': item.name,
@@ -517,7 +561,7 @@ $(document).ready(function() {
                 + '<div' + (isSelected ? ' class="search-result-selected-name"' : '') + '>' + escapeHTML(displayText) + '</div>'
                 + '<i class="search-result-map-pin icon icon-location-dot"></i>'
                 + '<button class="search-result-directions-btn" type="button" title="Get directions" data-dir-result-index="' + i + '">'
-                + '<i class="icon icon-route"></i><span>Directions</span>'
+                + '<i class="icon icon-route"></i><span>Navigate</span>'
                 + '</button>'
                 + '</div>';
         }
@@ -789,15 +833,16 @@ $(document).ready(function() {
             const $name = $('<div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>').text(item.name);
             $row.append($name);
 
-            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="icon icon-route"></i><span>Directions</span></button>');
+            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="icon icon-route"></i><span>Navigate</span></button>');
             $directions.on('click', function(e) {
                 e.stopPropagation();
                 onRowDirections(item);
             });
             $row.append($directions);
 
-            const $remove = $('<button class="recent-remove-btn" type="button" style="background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; line-height: 1; opacity: 0.7; transition: opacity 0.2s; flex-shrink: 0;">×</button>');
-            $row.append($remove);
+            // Temporarily disabled: don't show the remove button for recent searches
+            // const $remove = $('<button class="recent-remove-btn" type="button" style="background: none; border: none; color: var(--theme-color); font-size: 1.8rem; cursor: pointer; padding: 0.25rem; line-height: 1; opacity: 0.7; transition: opacity 0.2s; flex-shrink: 0;">×</button>');
+            // $row.append($remove);
 
             $row.click(function(e) {
                 if (!$(e.target).hasClass('recent-remove-btn') && !$(e.target).closest('.search-result-directions-btn').length) {
@@ -809,22 +854,22 @@ $(document).ready(function() {
                 }
             });
 
-            $remove.on('click', function(e) {
-                e.stopPropagation(); // Prevent triggering the main item click
-                removeRecentSearch(item);
-                sa_event('btn_press', {
-                    'btn': 'recent_search_removed',
-                    'result': item.name,
-                    'category': item.category
-                });
-                populateRecentSearches(); // Repopulate the 3 slots with the actual most recent
-            });
+            // $remove.on('click', function(e) {
+            //     e.stopPropagation(); // Prevent triggering the main item click
+            //     removeRecentSearch(item);
+            //     sa_event('btn_press', {
+            //         'btn': 'recent_search_removed',
+            //         'result': item.name,
+            //         'category': item.category
+            //     });
+            //     populateRecentSearches(); // Repopulate the 3 slots with the actual most recent
+            // });
 
-            // Hover effects for remove button
-            $remove.hover(
-                function() { $(this).css('opacity', '1'); },
-                function() { $(this).css('opacity', '0.7'); }
-            );
+            // // Hover effects for remove button
+            // $remove.hover(
+            //     function() { $(this).css('opacity', '1'); },
+            //     function() { $(this).css('opacity', '0.7'); }
+            // );
 
             $searchRecents.append($row);
         });
@@ -902,7 +947,7 @@ $(document).ready(function() {
             const $name = $('<div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>').text(item.name);
             $recItem.append($name);
 
-            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="icon icon-route"></i><span>Directions</span></button>');
+            const $directions = $('<button class="search-result-directions-btn" type="button" title="Get directions"><i class="icon icon-route"></i><span>Navigate</span></button>');
             $directions.on('click', function(e) {
                 e.stopPropagation();
                 onRowDirections(item);
@@ -995,10 +1040,9 @@ function applySearchMode(mode) {
 function setSearchMode(mode) {
     applySearchMode(mode);
     if (mode === 'directions') {
-        setTimeout(function() {
-            window._suppressNavAutocompleteOnFocus = true;
-            $('#nav-from-input').focus();
-        }, 60);
+        window._suppressNavAutocompleteOnFocus = true;
+        // Use robust helper (sync + double rAF + fallback) instead of plain setTimeout(60)
+        window.focusNavFromInput();
     } else {
         $('.search-wrapper input').trigger('input').focus();
     }
