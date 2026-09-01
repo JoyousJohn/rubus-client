@@ -326,7 +326,6 @@ window.initMap = function() {
     map.on('zoom zoomend', updateZoomToast);
     updateZoomToast();
 
-    document.dispatchEvent(new Event('rubus-map-created'));
     if (typeof restoreSettingsPanelState === 'function') {
         restoreSettingsPanelState();
     }

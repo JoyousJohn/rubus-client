@@ -205,8 +205,9 @@ function initMapLibreCompatibility(mapInstance) {
 
     mapInstance.hasLayer = function(layer) {
         if (!layer) return false;
-        if (layer._isOnMap || layer._addedToMap) return true;
+        if (layer.isAdded) return layer.isAdded();
         if (layer._mapLibreLayerId) return !!mapInstance.getLayer(layer._mapLibreLayerId);
+        if (layer._isOnMap || layer._addedToMap) return true;
         if (layer.getElement) {
             const el = layer.getElement();
             return !!(el && el.parentNode);
@@ -224,6 +225,7 @@ function initMapLibreCompatibility(mapInstance) {
         } else {
             if (layer._addedToMap) return mapInstance;
             layer._addedToMap = true;
+            layer._isOnMap = true;
             if (layer.addTo) {
                 layer.addTo(mapInstance);
             }
@@ -237,6 +239,7 @@ function initMapLibreCompatibility(mapInstance) {
             originalRemoveLayer(layerOrId);
         } else if (typeof layerOrId === 'object') {
             layerOrId._addedToMap = false;
+            layerOrId._isOnMap = false;
             if (layerOrId.remove) {
                 layerOrId.remove();
             } else if (layerOrId.removeFrom) {
@@ -672,6 +675,8 @@ if (typeof L !== 'undefined') {
                     const subLayer = {
                         feature: feat,
                         _leaflet_id: geoId + '_' + idx,
+                        _mapLibreLayerId: fillLayerId,
+                        isAdded: function() { return wrapper.isAdded(); },
                         on: function(event, handler) {
                             if (event === 'click' && map) {
                                 map.on('click', fillLayerId, (e) => {
@@ -783,8 +788,16 @@ if (typeof L !== 'undefined') {
             }
 
             const wrapper = {
+                _mapLibreLayerId: fillLayerId,
+                _addedToMap: false,
+                _isOnMap: false,
+                isAdded: function() {
+                    return !!map.getLayer(fillLayerId);
+                },
                 addTo: function(targetMap) {
                     if (!map) return wrapper;
+                    wrapper._addedToMap = true;
+                    wrapper._isOnMap = true;
                     if (!styleLoadBound) {
                         styleLoadBound = true;
                         map.on('style.load', onStyleLoad);
@@ -800,9 +813,24 @@ if (typeof L !== 'undefined') {
                     add();
                     return wrapper;
                 },
-                remove: function() { remove(); return wrapper; },
-                removeFrom: function() { remove(); return wrapper; },
-                clearLayers: function() { remove(); return wrapper; },
+                remove: function() {
+                    wrapper._addedToMap = false;
+                    wrapper._isOnMap = false;
+                    remove();
+                    return wrapper;
+                },
+                removeFrom: function() {
+                    wrapper._addedToMap = false;
+                    wrapper._isOnMap = false;
+                    remove();
+                    return wrapper;
+                },
+                clearLayers: function() {
+                    wrapper._addedToMap = false;
+                    wrapper._isOnMap = false;
+                    remove();
+                    return wrapper;
+                },
                 getLayers: function() { return layersList; },
                 eachLayer: function(fn) { layersList.forEach(fn); return wrapper; },
                 setStyle: function(newStyle) {

@@ -1,6 +1,9 @@
 let buildingsLayer = null;
 let highlightedBuildingLayer = null;
 let buildingSpatialIndex = null; // For O(1) spatial lookups
+let buildingsLoadingPromise = null;
+let buildingsLoadingCampus = null;
+let buildingsLoadGeneration = 0;
 
 function getBuildingColors() {
     const theme = resolveAutoTheme(settings['theme']);
@@ -322,17 +325,21 @@ function showBuildingInfo(feature) {
 }
 
 function loadBuildings() {
-    // Prevent multiple simultaneous calls
-    if ($('.buildings-btn').hasClass('loading')) {
-        return Promise.resolve();
+    const campus = selectedCampus;
+
+    // If currently loading for this campus, return the existing in-flight promise
+    if (buildingsLoadingPromise && buildingsLoadingCampus === campus) {
+        return buildingsLoadingPromise;
     }
 
     if (buildingsLayer) {
         map.removeLayer(buildingsLayer);
         buildingsLayer = null;
+        window.buildingsLayer = null;
     }
 
-    // Disable button and show loading state
+    const currentGen = ++buildingsLoadGeneration;
+    buildingsLoadingCampus = campus;
     $('.buildings-btn').prop('disabled', true).addClass('loading');
 
     // Load campus-specific buildings GeoJSON
@@ -341,11 +348,14 @@ function loadBuildings() {
         'newark': 'lib/buildings-parking_newark.json',
         'camden': 'lib/buildings-parking_camden.json'
     };
-    const buildingsJsonPath = campusToFile[selectedCampus];
+    const buildingsJsonPath = campusToFile[campus];
     
-    return fetch(buildingsJsonPath)
+    buildingsLoadingPromise = fetch(buildingsJsonPath)
         .then(response => response.json())
         .then(data => {
+            if (currentGen !== buildingsLoadGeneration) {
+                return;
+            }
             console.log('🏗️ Loading campus-specific buildings GeoJSON with', data.features?.length || 0, 'features');
             buildingsLayer = L.geoJSON(data, {
                 style: function(feature) {
@@ -446,22 +456,25 @@ function loadBuildings() {
             // Only add to map if buildings setting is enabled AND not in parking-permit mode
             if (settings['toggle-show-buildings'] && !$('body').hasClass('parking-permit-mode')) {
                 console.log('🏗️ Adding buildings layer to map with', buildingsLayer.getLayers().length, 'layers');
-                if (typeof map !== 'undefined' && map) {
-                    buildingsLayer.addTo(map);
-                    $('.buildings-btn').addClass('active');
-                }
+                buildingsLayer.addTo(map);
+                $('.buildings-btn').addClass('active');
             }
+            return buildingsLayer;
         })
         .catch(error => {
-            console.error('Error loading buildings:', error);
-            // Re-enable button on error
-            $('.buildings-btn').prop('disabled', false).removeClass('loading');
+            if (currentGen === buildingsLoadGeneration) {
+                console.error('Error loading buildings:', error);
+            }
             throw error;
         })
         .finally(() => {
-            // Re-enable button after loading completes (success or error)
-            $('.buildings-btn').prop('disabled', false).removeClass('loading');
+            if (currentGen === buildingsLoadGeneration) {
+                buildingsLoadingPromise = null;
+                $('.buildings-btn').prop('disabled', false).removeClass('loading');
+            }
         });
+
+    return buildingsLoadingPromise;
 }
 
 // Add click handler for buildings button
@@ -473,7 +486,7 @@ $(document).ready(function() {
         }
         
         // Toggle buildings visibility based on layer presence
-        if (buildingsLayer) {
+        if (buildingsLayer && map.hasLayer(buildingsLayer)) {
             removeBuildingLayer();
             settings['toggle-show-buildings'] = false;
             saveSettings();
@@ -487,11 +500,15 @@ $(document).ready(function() {
             if ($('.buildings-btn').hasClass('loading')) {
                 return;
             }
-            loadBuildings();
-            
-            // Save state to settings
             settings['toggle-show-buildings'] = true;
             saveSettings();
+
+            if (buildingsLayer) {
+                buildingsLayer.addTo(map);
+                $('.buildings-btn').addClass('active');
+            } else {
+                loadBuildings();
+            }
             
             sa_event('btn_press', {
                 'btn': 'buildings_toggle',
@@ -501,14 +518,19 @@ $(document).ready(function() {
     });
     
     // Initial button state reflects current layer
-    if (buildingsLayer) { $('.buildings-btn').addClass('active'); } else { $('.buildings-btn').removeClass('active'); }
+    if (buildingsLayer && map.hasLayer(buildingsLayer)) {
+        $('.buildings-btn').addClass('active');
+    } else {
+        $('.buildings-btn').removeClass('active');
+    }
 });
 
 function removeBuildingLayer() {
+    buildingsLoadGeneration++;
+    buildingsLoadingPromise = null;
+    buildingsLoadingCampus = null;
     if (buildingsLayer) {
-        if (typeof map !== 'undefined' && map && map.hasLayer(buildingsLayer)) {
-            map.removeLayer(buildingsLayer);
-        }
+        map.removeLayer(buildingsLayer);
         buildingsLayer = null;
         window.buildingsLayer = null;
     }
@@ -517,6 +539,7 @@ function removeBuildingLayer() {
     }
     highlightedBuildingLayer = null;
     buildingSpatialIndex = null;
+    window.buildingSpatialIndex = null;
     if (typeof clearBuildingLocationCache === 'function') {
         clearBuildingLocationCache();
     }
@@ -562,10 +585,19 @@ function highlightBuildingByName(buildingName) {
 
 // Function to restore building layer state from settings
 function restoreBuildingLayerState() {
-    removeBuildingLayer();
-    if (settings['toggle-show-buildings']) {
-        loadBuildings();
+    if (!settings['toggle-show-buildings'] || $('body').hasClass('parking-permit-mode')) {
+        removeBuildingLayer();
+        return;
     }
+    if (buildingsLayer && map.hasLayer(buildingsLayer)) {
+        return;
+    }
+    if (buildingsLayer) {
+        buildingsLayer.addTo(map);
+        $('.buildings-btn').addClass('active');
+        return;
+    }
+    loadBuildings();
 }
 
 // Cache for building lookup results to avoid repeated calculations
@@ -782,6 +814,7 @@ function isPointInPolygon(lat, lng, polygon) {
 
 // Listen for settings update or map creation to restore building state
 document.addEventListener('rubus-settings-updated', function() {
+    if (!window.map) return;
     restoreBuildingLayerState();
 });
 document.addEventListener('rubus-map-created', function() {
