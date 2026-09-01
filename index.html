@@ -1050,24 +1050,51 @@
                                     <div class="live-overview">LIVE</div>
                                 </div>
                                 <div class="buses-overview-grid grid select-none">
-                                        <div class="bus-overview-heading">ROUTE</div>
-                                        <div class="bus-overview-heading">RIDERSHIP</div>
-                                        <div class="bus-overview-heading">LOOP</div>
+                                    <div class="bus-overview-heading bus-overview-heading-route pointer" onclick="toggleOverviewSort('route')">
+                                        <span>ROUTE</span>
+                                        <i class="bus-overview-sort-icon bus-overview-sort-icon-route fa-solid fa-chevron-up none"></i>
                                     </div>
+                                    <div class="bus-overview-heading bus-overview-heading-ridership pointer active" onclick="toggleOverviewSort('ridership')">
+                                        <span>RIDERSHIP</span>
+                                        <i class="bus-overview-sort-icon bus-overview-sort-icon-ridership fa-solid fa-chevron-down"></i>
+                                    </div>
+                                    <div class="bus-overview-heading bus-overview-heading-loop pointer" onclick="toggleOverviewSort('loop')">
+                                        <span>LOOP</span>
+                                        <i class="bus-overview-sort-icon bus-overview-sort-icon-loop fa-solid fa-chevron-up none"></i>
+                                    </div>
+                                    <div class="bus-overview-header-divider"></div>
                                 </div>
                                 <div class="ridership-super-wrapper">
                                     <div class="avg-wait-wrapper">
                                         <div class="avg-wait-title text-1p7rem">Wait Between Buses</div>
                                         <div class="avg-wait-grid grid select-none">
-                                            <div class="avg-wait-heading">ROUTE</div>
-                                            <div class="avg-wait-heading">AVG WAIT</div>
+                                            <div class="avg-wait-heading avg-wait-heading-route pointer active" onclick="toggleAvgWaitSort('route')">
+                                                <span>ROUTE</span>
+                                                <i class="avg-wait-sort-icon avg-wait-sort-icon-route fa-solid fa-chevron-up"></i>
+                                            </div>
+                                            <div class="avg-wait-heading avg-wait-heading-wait pointer" onclick="toggleAvgWaitSort('wait')">
+                                                <span>AVG WAIT</span>
+                                                <i class="avg-wait-sort-icon avg-wait-sort-icon-wait fa-solid fa-chevron-down none"></i>
+                                            </div>
+                                            <div class="avg-wait-header-divider"></div>
                                         </div>
                                     </div>
                                     <div class="bus-service-wrapper">
-                                        <div class="bus-service-title text-1p7rem">Time In Service</div>
+                                        <div class="bus-service-title text-1p7rem">Service Time</div>
                                         <div class="bus-service-grid grid select-none">
-                                            <div class="bus-service-heading">BUS</div>
-                                            <div class="bus-service-heading">IN SERVICE FOR</div>
+                                            <div class="bus-service-heading bus-service-heading-bus pointer" onclick="toggleBusServiceSort('bus')">
+                                                <span>BUS</span>
+                                                <i class="bus-service-sort-icon bus-service-sort-icon-bus fa-solid fa-chevron-down none"></i>
+                                            </div>
+                                            <div class="bus-service-heading bus-service-heading-route pointer" onclick="toggleBusServiceSort('route')">
+                                                <span>ROUTE</span>
+                                                <i class="bus-service-sort-icon bus-service-sort-icon-route fa-solid fa-chevron-down none"></i>
+                                            </div>
+                                            <div class="bus-service-heading bus-service-heading-time pointer active" onclick="toggleBusServiceSort('time')">
+                                                <span>ACTIVE</span>
+                                                <i class="bus-service-sort-icon bus-service-sort-icon-time fa-solid fa-chevron-down"></i>
+                                            </div>
+                                            <div class="bus-service-header-divider"></div>
                                         </div>
                                     </div>
                                     <div class="ridership-chart-wrapper">
@@ -1109,6 +1136,7 @@
             </div>
         </div>
     </div>
+</div>
 
     <div class="chat-wrapper none">
       <div class="chat-modal-parent" style="position: fixed; inset: 0; z-index: 403; pointer-events: all;">

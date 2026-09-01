@@ -1533,8 +1533,22 @@ html, body {
     padding: 0.2rem 1.3rem;
     font-size: 1.3rem;
     color: white;
-    background-color: #2adb2a;
+    background: linear-gradient(90deg, #2adb2a 0%, #20b820 50%, #2adb2a 100%);
+    background-size: 200% 100%;
     border-radius: 0.5rem;
+    animation: live-pulse 4s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+    0% {
+        background-position: 100% 50%;
+    }
+    50% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 100% 50%;
+    }
 }
 
 .wait-times {

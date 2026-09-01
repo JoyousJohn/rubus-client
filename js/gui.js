@@ -1243,6 +1243,41 @@ $('.color-confirm').click(function() {
 })
 
 
+let overviewSortColumn = 'ridership';
+let overviewSortDirection = 'desc';
+
+function updateOverviewSortHeaders(hasRidership = true) {
+    const cols = ['route', 'ridership', 'loop'];
+    const activeColumn = (!hasRidership && overviewSortColumn === 'ridership') ? 'route' : overviewSortColumn;
+    const chevronClass = overviewSortDirection === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down';
+
+    cols.forEach(col => {
+        const $heading = $(`.bus-overview-heading-${col}`);
+        const $icon = $(`.bus-overview-sort-icon-${col}`);
+        if (activeColumn === col) {
+            $heading.addClass('active');
+            $icon.removeClass('none fa-chevron-up fa-chevron-down').addClass(chevronClass);
+        } else {
+            $heading.removeClass('active');
+            $icon.addClass('none');
+        }
+    });
+}
+
+function toggleOverviewSort(column) {
+    if (column === 'ridership' && $('.buses-overview-grid').hasClass('no-ridership')) {
+        return;
+    }
+    if (overviewSortColumn === column) {
+        overviewSortDirection = overviewSortDirection === 'desc' ? 'asc' : 'desc';
+    } else {
+        overviewSortColumn = column;
+        overviewSortDirection = column === 'route' ? 'asc' : (column === 'loop' ? 'asc' : 'desc');
+    }
+    updateBusOverview();
+}
+window.toggleOverviewSort = toggleOverviewSort;
+
 let routeRiderships = {}
 function updateBusOverview(routes) {
 
@@ -1251,13 +1286,13 @@ function updateBusOverview(routes) {
     // Check if busesByRoutes and selectedCampus exist before accessing
     if (!busesByRoutes || !busesByRoutes[selectedCampus]) {
         console.log('No buses data available for campus:', selectedCampus);
-        $('.buses-overview-grid').hide().children().not('.bus-overview-heading').remove();
+        $('.buses-overview-grid').hide().children().not('.bus-overview-heading, .bus-overview-header-divider').remove();
         return;
     }
 
     routes = Object.keys(busesByRoutes[selectedCampus]);
     if (!routes || routes.length === 0) { 
-        $('.buses-overview-grid').hide().children().not('.bus-overview-heading').remove();
+        $('.buses-overview-grid').hide().children().not('.bus-overview-heading, .bus-overview-header-divider').remove();
     } else {
         $('.buses-overview-grid').show();
     }
@@ -1280,7 +1315,46 @@ function updateBusOverview(routes) {
         return { route, ridership: routeRiderships[route] };
     });
 
-    routeData.sort((a, b) => b.ridership - a.ridership);
+    const hasRidership = totalRidership > 0;
+    const $overviewGrid = $('.buses-overview-grid');
+
+    if (hasRidership) {
+        $overviewGrid.removeClass('no-ridership');
+    } else {
+        $overviewGrid.addClass('no-ridership');
+    }
+
+    updateOverviewSortHeaders(hasRidership);
+
+    const sortCol = (!hasRidership && overviewSortColumn === 'ridership') ? 'route' : overviewSortColumn;
+
+    // Sort routes based on selected column and direction
+    routeData.sort((a, b) => {
+        if (sortCol === 'route') {
+            const cmp = String(a.route).localeCompare(String(b.route), undefined, { sensitivity: 'base' });
+            if (cmp !== 0) {
+                return overviewSortDirection === 'asc' ? cmp : -cmp;
+            }
+            return b.ridership - a.ridership;
+        } else if (sortCol === 'loop') {
+            const hasA = typeof loopTimes[a.route] === 'number' && !isNaN(loopTimes[a.route]);
+            const hasB = typeof loopTimes[b.route] === 'number' && !isNaN(loopTimes[b.route]);
+            const valA = hasA ? loopTimes[a.route] : (overviewSortDirection === 'asc' ? Infinity : -Infinity);
+            const valB = hasB ? loopTimes[b.route] : (overviewSortDirection === 'asc' ? Infinity : -Infinity);
+            const diff = valA - valB;
+            if (diff !== 0) {
+                return overviewSortDirection === 'asc' ? diff : -diff;
+            }
+            return String(a.route).localeCompare(String(b.route), undefined, { sensitivity: 'base' });
+        } else {
+            // Ridership
+            const diff = a.ridership - b.ridership;
+            if (diff !== 0) {
+                return overviewSortDirection === 'desc' ? -diff : diff;
+            }
+            return String(a.route).localeCompare(String(b.route), undefined, { sensitivity: 'base' });
+        }
+    });
 
     // Create total row if it doesn't exist (only once at the bottom after all routes)
     let $totalRowExists = $('.buses-overview-grid .bus-overview-name:contains("Total")').length > 0;
@@ -1301,9 +1375,15 @@ function updateBusOverview(routes) {
         const loopTimeDisplay = (typeof loopMin === 'number' && !isNaN(loopMin)) ? `${loopMin} min` : '--';
 
         if ($(`.bus-overview-ridership[route="${route}"]`).length === 0) {
-            const $busName = $(`<div class="bus-overview-name bold">${route.toUpperCase()}</div>`).css('color', colorMappings[route]); // (${busesByRoutes[selectedCampus][route].length})
-            const $busRidership = $(`<div class="bus-overview-ridership" route="${route}">${routeRiderships[route]} riders</div>`);
-            const $loopTime = $(`<div class="bus-overview-loop-time" route="${route}">${loopTimeDisplay}</div>`);
+            const $busName = $(`<div class="bus-overview-name pointer text-1p6rem" route="${route}">${route.toUpperCase()}</div>`).css('color', colorMappings[route]);
+            const $busRidership = $(`<div class="bus-overview-ridership pointer" route="${route}">${routeRiderships[route]} riders</div>`);
+            const $loopTime = $(`<div class="bus-overview-loop-time pointer" route="${route}">${loopTimeDisplay}</div>`);
+            const onRouteClick = function() {
+                $('.info-panels-close').trigger('click');
+                toggleRoute(route);
+            };
+            $busName.add($busRidership).add($loopTime).click(onRouteClick);
+
             const $grid = $('.buses-overview-grid').first();
             // Insert new routes before the total row in correct order
             const $firstTotalElement = $grid.find('.bus-overview-name:contains("Total")').first();
@@ -1362,18 +1442,30 @@ function updateBusOverview(routes) {
         }
     });
 
-    // Reorder routes in DOM based on sorted ridership
+    // Reorder routes in DOM based on sorted routeData
     const $grid = $(`.buses-overview-grid`).first();
     const $firstTotalElement = $grid.find('.bus-overview-name:contains("Total")').first();
 
     routeData.forEach(({route}) => {
-        const $busName = $(`.bus-overview-name:contains(${route.toUpperCase()})`).not('.total-row').first();
+        const $busName = $(`.bus-overview-name[route="${route}"]`).not('.total-row').first();
         const $busRidership = $(`.bus-overview-ridership[route="${route}"]`);
         const $loopTime = $(`.bus-overview-loop-time[route="${route}"]`);
-        $busName.insertBefore($firstTotalElement);
-        $busRidership.insertBefore($firstTotalElement);
-        $loopTime.insertBefore($firstTotalElement);
+        if ($firstTotalElement.length > 0) {
+            $busName.insertBefore($firstTotalElement);
+            $busRidership.insertBefore($firstTotalElement);
+            $loopTime.insertBefore($firstTotalElement);
+        }
     });
+
+    // Ensure Total row is always at the very bottom
+    const $totalName = $grid.find('.bus-overview-name.total-row');
+    const $totalRidership = $grid.find('.bus-overview-ridership.total-row');
+    const $totalLoopTime = $grid.find('.bus-overview-loop-time.total-row');
+    if ($totalName.length && $totalRidership.length && $totalLoopTime.length) {
+        $grid.append($totalName);
+        $grid.append($totalRidership);
+        $grid.append($totalLoopTime);
+    }
 
     updateAverageWaitByRoute();
     updateBusServiceTime();
@@ -1516,6 +1608,7 @@ async function updateRidershipChart() {
         updateRubusResponseTime();
 
         if (!Object.keys(timeRiderships).length) {
+            $('.ridership-chart-wrapper, .ridership-stats-row').hide();
             return; // Don't show chart if no ridership data
         }
 
@@ -1550,6 +1643,14 @@ async function updateRidershipChart() {
         const labels = Object.keys(sortedData);
         const values = Object.values(sortedData);
 
+        const totalRidership = values.reduce((a, b) => a + b, 0);
+        const maxRidership = Math.max(...values, 0);
+
+        if (totalRidership === 0 || maxRidership === 0 || !values.some(v => v > 0)) {
+            $('.ridership-chart-wrapper, .ridership-stats-row').hide();
+            return;
+        }
+
         // Check if chart is initialized before trying to update it
         if (!ridershipChart) {
             console.error('Ridership chart not initialized');
@@ -1560,17 +1661,17 @@ async function updateRidershipChart() {
         ridershipChart.data.datasets[0].data = values;
         ridershipChart.update();
 
-        const totalRidership = values.reduce((a, b) => a + b, 0);
         const averageRidership = Math.round(totalRidership / values.length);
-        const maxRidership = Math.max(...values);
         const peakTime = labels[values.indexOf(maxRidership)];
         
         $('.ridership-avg').text(`AVG: ${averageRidership}`);
         $('.ridership-max').text(`PEAK: ${maxRidership.toLocaleString()} at ${peakTime}`);
+        $('.ridership-chart-wrapper, .ridership-stats-row').show();
         $('.ridership-super-wrapper').show();
         
     } catch (error) {
         console.error('Error fetching ridership:', error);
+        $('.ridership-chart-wrapper, .ridership-stats-row').hide();
         markRubusRequestsFailing();
     }
 }
@@ -1701,12 +1802,45 @@ function calculateAverageWaitByRoute() {
     return waitByRoute;
 }
 
+let avgWaitSortColumn = 'route';
+let avgWaitSortDirection = 'asc';
+
+function updateAvgWaitSortHeaders() {
+    const cols = ['route', 'wait'];
+    const chevronClass = avgWaitSortDirection === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down';
+
+    cols.forEach(col => {
+        const $heading = $(`.avg-wait-heading-${col}`);
+        const $icon = $(`.avg-wait-sort-icon-${col}`);
+        if (avgWaitSortColumn === col) {
+            $heading.addClass('active');
+            $icon.removeClass('none fa-chevron-up fa-chevron-down').addClass(chevronClass);
+        } else {
+            $heading.removeClass('active');
+            $icon.addClass('none');
+        }
+    });
+}
+
+function toggleAvgWaitSort(column) {
+    if (avgWaitSortColumn === column) {
+        avgWaitSortDirection = avgWaitSortDirection === 'desc' ? 'asc' : 'desc';
+    } else {
+        avgWaitSortColumn = column;
+        avgWaitSortDirection = 'asc';
+    }
+    updateAverageWaitByRoute();
+}
+window.toggleAvgWaitSort = toggleAvgWaitSort;
+
 function updateAverageWaitByRoute() {
     const $grid = $('.avg-wait-grid');
     if (!$grid.length) return;
 
-    // Clear previous (keep headings)
-    $grid.children().not('.avg-wait-heading').remove();
+    updateAvgWaitSortHeaders();
+
+    // Clear previous (keep headings and divider)
+    $grid.children().not('.avg-wait-heading, .avg-wait-header-divider').remove();
 
     // Ensure data available
     if (!busesByRoutes || !busesByRoutes[selectedCampus]) {
@@ -1716,8 +1850,7 @@ function updateAverageWaitByRoute() {
 
     const waitByRoute = calculateAverageWaitByRoute();
     const routes = Object.keys(waitByRoute)
-        .filter(r => r !== 'undefined')
-        .sort((a, b) => a.localeCompare(b));
+        .filter(r => r !== 'undefined');
 
     if (routes.length === 0) {
         $('.avg-wait-wrapper').hide();
@@ -1726,25 +1859,79 @@ function updateAverageWaitByRoute() {
         $('.avg-wait-wrapper').show();
     }
 
+    // Sort routes based on selected column and direction
+    routes.sort((a, b) => {
+        if (avgWaitSortColumn === 'route') {
+            const cmp = String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+            if (cmp !== 0) {
+                return avgWaitSortDirection === 'asc' ? cmp : -cmp;
+            }
+            return (waitByRoute[a] || 0) - (waitByRoute[b] || 0);
+        } else {
+            const waitA = waitByRoute[a] || 0;
+            const waitB = waitByRoute[b] || 0;
+            const diff = waitA - waitB;
+            if (diff !== 0) {
+                return avgWaitSortDirection === 'asc' ? diff : -diff;
+            }
+            return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+        }
+    });
+
     routes.forEach(route => {
         const minutes = waitByRoute[route];
         const text = (minutes >= 1) ? `${Math.round(minutes)}m` : `${Math.max(1, Math.round(minutes * 60))}s`;
-        const $name = $(`<div class="avg-wait-name bold pointer">${route.toUpperCase()}</div>`).css('color', colorMappings[route]);
-        const $val = $(`<div class="avg-wait-value">${text}</div>`);
-        $name.click(function() {
+        const $name = $(`<div class="avg-wait-name pointer text-1p6rem">${route.toUpperCase()}</div>`).css('color', colorMappings[route]);
+        const $val = $(`<div class="avg-wait-value pointer text-2rem">${text}</div>`);
+        const onRowClick = function() {
             $('.info-panels-close').trigger('click');
             toggleRoute(route);
-        });
+        };
+        $name.click(onRowClick);
+        $val.click(onRowClick);
         $grid.append($name);
         $grid.append($val);
     });
 }
 
+let busServiceSortColumn = 'time';
+let busServiceSortDirection = 'desc';
+
+function updateBusServiceSortHeaders() {
+    const cols = ['bus', 'route', 'time'];
+    const chevronClass = busServiceSortDirection === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down';
+
+    cols.forEach(col => {
+        const $heading = $(`.bus-service-heading-${col}`);
+        const $icon = $(`.bus-service-sort-icon-${col}`);
+        if (busServiceSortColumn === col) {
+            $heading.addClass('active');
+            $icon.removeClass('none fa-chevron-up fa-chevron-down').addClass(chevronClass);
+        } else {
+            $heading.removeClass('active');
+            $icon.addClass('none');
+        }
+    });
+}
+
+function toggleBusServiceSort(column) {
+    if (busServiceSortColumn === column) {
+        busServiceSortDirection = busServiceSortDirection === 'desc' ? 'asc' : 'desc';
+    } else {
+        busServiceSortColumn = column;
+        busServiceSortDirection = column === 'route' ? 'asc' : 'desc';
+    }
+    updateBusServiceTime();
+}
+window.toggleBusServiceSort = toggleBusServiceSort;
+
 function updateBusServiceTime() {
     const $grid = $('.bus-service-grid');
 
-    // Clear previous (keep headings)
-    $grid.children().not('.bus-service-heading').remove();
+    updateBusServiceSortHeaders();
+
+    // Clear previous (keep headings and divider)
+    $grid.children().not('.bus-service-heading, .bus-service-header-divider').remove();
 
     // Ensure data available
     if (Object.keys(busData).length === 0) {
@@ -1769,14 +1956,39 @@ function updateBusServiceTime() {
         }
     }
 
+    if (busesWithServiceTime.length === 0) {
+        $('.bus-service-wrapper').hide();
+        return;
+    }
+
     $('.bus-service-wrapper').show();
 
-    // Sort buses by time in service (most recent first)
+    // Sort buses based on selected column and direction
     busesWithServiceTime.sort((a, b) => {
-        // Convert to timestamps for proper sorting
-        const timeA = new Date(a.joinedServiceTime).getTime();
-        const timeB = new Date(b.joinedServiceTime).getTime();
-        return timeB - timeA; // Most recent first (descending)
+        if (busServiceSortColumn === 'bus') {
+            const cmp = String(a.busName).localeCompare(String(b.busName), undefined, { numeric: true, sensitivity: 'base' });
+            if (cmp !== 0) {
+                return busServiceSortDirection === 'asc' ? cmp : -cmp;
+            }
+            return String(a.route).localeCompare(String(b.route));
+        } else if (busServiceSortColumn === 'route') {
+            const cmp = String(a.route).localeCompare(String(b.route), undefined, { sensitivity: 'base' });
+            if (cmp !== 0) {
+                return busServiceSortDirection === 'asc' ? cmp : -cmp;
+            }
+            return String(a.busName).localeCompare(String(b.busName), undefined, { numeric: true, sensitivity: 'base' });
+        } else {
+            const timeA = new Date(a.joinedServiceTime).getTime() || 0;
+            const timeB = new Date(b.joinedServiceTime).getTime() || 0;
+            // timeA is joined time. Earlier timeA = longer in service (now - timeA).
+            // For 'desc' (high to low, longest first): timeA < timeB should be negative, so (timeA - timeB).
+            // For 'asc' (low to high, shortest first): timeB < timeA should be negative, so (timeB - timeA).
+            const diff = timeA - timeB;
+            if (diff !== 0) {
+                return busServiceSortDirection === 'desc' ? diff : -diff;
+            }
+            return String(a.busName).localeCompare(String(b.busName), undefined, { numeric: true, sensitivity: 'base' });
+        }
     });
 
     // Calculate current time
@@ -1785,7 +1997,7 @@ function updateBusServiceTime() {
     // Add each bus to the grid
     busesWithServiceTime.forEach(bus => {
         const serviceTime = new Date(bus.joinedServiceTime);
-        const diffMs = now - serviceTime;
+        const diffMs = Math.max(0, now - serviceTime);
         const diffMins = Math.floor(diffMs / 60000);
         const diffHours = Math.floor(diffMins / 60);
         const remainingMins = diffMins % 60;
@@ -1798,16 +2010,21 @@ function updateBusServiceTime() {
             timeInService = `${diffMins}m`;
         }
         
-        const $busName = $(`<div class="bus-service-name pointer"><span class="bold bus-service-route text-1p3rem" style="color: ${colorMappings[bus.route]}">${bus.route.toUpperCase()} <span class="bold-500 text-1p5rem">#</span></span><span class="bus-service-busname text-2rem" style="color: ${colorMappings[bus.route]}">${bus.busName}</span></div>`);
-        const $timeValue = $(`<div class="bus-service-value">${timeInService}</div>`);
-        $busName.click(function() {
+        const routeColor = (typeof colorMappings !== 'undefined' && colorMappings[bus.route]) ? colorMappings[bus.route] : 'var(--theme-color)';
+        const $busCol = $(`<div class="bus-service-busname pointer text-2rem" style="color: ${routeColor}">${bus.busName}</div>`);
+        const $routeCol = $(`<div class="bus-service-route pointer text-1p6rem" style="color: ${routeColor}">${bus.route.toUpperCase()}</div>`);
+        const $timeCol = $(`<div class="bus-service-value pointer text-2rem">${timeInService}</div>`);
+        
+        const onRowClick = function() {
             $('.info-panels-close').trigger('click');
             flyToBus(bus.key);
             selectBusMarker(bus.key);
-        });
+        };
+        $busCol.add($routeCol).add($timeCol).click(onRowClick);
         
-        $grid.append($busName);
-        $grid.append($timeValue);
+        $grid.append($busCol);
+        $grid.append($routeCol);
+        $grid.append($timeCol);
     });
 }
 

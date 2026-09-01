@@ -1,7 +1,7 @@
 /* Ridership Chart and Overview Styles */
 
 .ridership-super-wrapper {
-    display: none;
+    display: block;
 }
 
 .ridership-title {
@@ -12,6 +12,7 @@
 }
 
 .ridership-chart-wrapper {
+    display: none;
     margin-top: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
@@ -19,7 +20,7 @@
 }
 
 .ridership-stats-row {
-    display: flex;
+    display: none;
     justify-content: space-evenly;
     width: 100%;
     margin: 1rem 0 7rem 0;
@@ -42,16 +43,69 @@
     padding: 2rem;
 }
 
+.buses-overview-grid.no-ridership {
+    grid-template-columns: 1fr auto;
+    column-gap: 1.5rem;
+}
+
+.buses-overview-grid.no-ridership .bus-overview-heading-ridership,
+.buses-overview-grid.no-ridership .bus-overview-ridership,
+.buses-overview-grid.no-ridership .total-row {
+    display: none !important;
+}
+
 .bus-overview-heading {
-    /* text-decoration: underline; */
     font-weight: 500;
     color: var(--theme-extra);
     font-size: 1.5rem;
     line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s ease;
+    width: fit-content;
+}
+
+.bus-overview-heading:hover {
+    color: var(--theme-color);
+}
+
+.bus-overview-heading.active {
+    color: var(--theme-color);
+    font-weight: 700;
+}
+
+.bus-overview-sort-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.bus-overview-header-divider {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--theme-line-bg);
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+    width: 67%;
+    justify-self: center;
+}
+
+.bus-overview-name {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.bus-overview-name.total-row {
+    font-weight: bold;
 }
 
 .bus-overview-ridership, .bus-overview-loop-time, .bus-overview-footer:not(.total) {
-    color: var(--theme-color-lighter)
+    color: var(--theme-color-lighter);
+    display: flex;
+    align-items: center;
 }
 
 .total {
@@ -74,12 +128,13 @@
 
 .avg-wait-title {
     text-align: center;
+    margin-bottom: 1.5rem;
 }
 
 .avg-wait-grid {
     display: grid;
     grid-template-columns: 1fr auto;
-    column-gap: 1rem;
+    column-gap: 1.5rem;
     font-size: 2rem;
 }
 
@@ -88,16 +143,50 @@
     font-weight: 500;
     font-size: 1.5rem;
     line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s ease;
+    width: fit-content;
+}
+
+.avg-wait-heading:hover {
+    color: var(--theme-color);
+}
+
+.avg-wait-heading.active {
+    color: var(--theme-color);
+    font-weight: 700;
+}
+
+.avg-wait-sort-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.avg-wait-header-divider {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--theme-line-bg);
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+    width: 67%;
+    justify-self: center;
 }
 
 .avg-wait-name {
     font-weight: 500;
+    display: flex;
+    align-items: center;
 }
 
 .avg-wait-value {
-    text-align: right;
+    text-align: left;
     color: var(--theme-color-lighter);
-    /* font-weight: 500; */
+    display: flex;
+    align-items: center;
 }
 
 /* Bus Service Time Panel */
@@ -110,12 +199,13 @@
 
 .bus-service-title {
     text-align: center;
+    margin-bottom: 1.5rem;
 }
 
 .bus-service-grid {
     display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 1rem;
+    grid-template-columns: auto 1fr auto;
+    column-gap: 1.5rem;
     font-size: 2rem;
 }
 
@@ -124,13 +214,54 @@
     font-weight: 500;
     font-size: 1.5rem;
     line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s ease;
+    width: fit-content;
 }
 
-.bus-service-name {
-    font-weight: 500;
+.bus-service-heading:hover {
+    color: var(--theme-color);
+}
+
+.bus-service-heading.active {
+    color: var(--theme-color);
+    font-weight: 700;
+}
+
+.bus-service-sort-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.bus-service-header-divider {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--theme-line-bg);
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+    width: 67%;
+    justify-self: center;
+}
+
+.bus-service-busname {
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+}
+
+.bus-service-route {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
 }
 
 .bus-service-value {
-    text-align: right;
+    text-align: left;
     color: var(--theme-color-lighter);
+    display: flex;
+    align-items: center;
 }
