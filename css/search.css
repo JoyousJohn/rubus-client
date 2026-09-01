@@ -25,6 +25,11 @@
     border-radius: 999px;
     background-color: var(--theme-extra);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    transition: background-color 0.15s ease;
+}
+
+.search-pill-bar:focus-within {
+    background-color: var(--theme-color);
 }
 
 .search-pill-bar.none,
@@ -45,6 +50,7 @@
     margin-left: -0.25rem;
     line-height: 1;
     flex-shrink: 0;
+    height: 2.8rem;
 }
 
 .search-wrapper input {
@@ -54,6 +60,7 @@
     width: 100%;
     padding: 0.9rem 0;
     font-size: 1.5rem;
+    line-height: 1.2;
     border: none;
     background-color: transparent;
     color: var(--theme-bg);
@@ -141,31 +148,111 @@
     display: none;
 }
 
-.nav-directions-header {
+.nav-pill-bar {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.25rem 1rem 0.75rem;
+    position: relative;
 }
 
-.nav-directions-header span {
+.nav-pill-bar-style {
+    margin: calc(0.5rem + env(safe-area-inset-top, 0px)) 1rem 0.5rem;
+    padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+    border-radius: 999px;
+    background-color: var(--theme-extra);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    transition: background-color 0.15s ease;
+}
+
+/* Source autocomplete results span the pill bar's full width (including its
+   1rem side margins) below the bar, with padding to match the main search. */
+.nav-pill-bar .nav-from-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.5rem;
+}
+
+.nav-pill-bar-style:focus-within {
+    background-color: var(--theme-color);
+}
+
+.nav-pill-bar-style .nav-input {
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    padding: 0.9rem 0;
     font-size: 1.5rem;
-    font-weight: 500;
+    border: none;
+    background-color: transparent;
+    color: var(--theme-bg);
+    caret-color: var(--theme-bg);
+    margin: 0;
+    outline: none;
+    font-family: var(--font-family);
+    transition: opacity 0.2s ease;
 }
 
-.nav-back-btn {
+.nav-pill-bar-style .nav-input::placeholder {
+    color: var(--theme-bg);
+    opacity: 0.65;
+}
+
+.nav-pill-bar-style .nav-clear-btn {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+    color: var(--theme-bg);
+}
+
+.nav-dest-row .nav-clear-btn {
+    color: var(--theme-bg);
+}
+
+.nav-dest-row {
+    margin: 0 1rem;
+    position: relative;
+}
+
+.nav-dest-pin-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     background: none;
     border: none;
-    color: var(--theme-color);
+    color: var(--theme-bg);
     font-size: 1.8rem;
     cursor: pointer;
     padding: 0.5rem;
     margin-left: -0.25rem;
     line-height: 1;
     flex-shrink: 0;
+}
+
+.nav-dest-row .nav-input-wrapper {
+    padding-left: 0.5rem;
+}
+
+.nav-back-btn-styled {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--theme-bg);
+    font-size: 1.8rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-left: -0.25rem;
+    line-height: 1;
+    flex-shrink: 0;
+    height: 2.8rem;
+}
+
+.nav-pill-bar.none {
+    display: none;
 }
 
 .search-results {
@@ -181,6 +268,11 @@
     align-items: center;
     column-gap: 1rem;
     cursor: pointer;
+}
+
+/* Selected (already open) result — bold the name */
+.search-result-item.selected .search-result-selected-name {
+    font-weight: 700;
 }
 
 .search-result-item i {

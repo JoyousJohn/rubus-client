@@ -3,6 +3,11 @@ let NAV_FALLBACK_MIN_PER_STOP = 5;
 
 let NAV_DEBUG = true;
 
+// Whether the directions/route panel was visible before the user focused a
+// nav input — used to restore it once both inputs lose focus.
+let navDirectionsWasVisibleBeforeFocus = false;
+let navAnyInputFocused = false;
+
 // Helper function to get pluralized stop count
 function getStopCountText(route) {
     const count = Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1);
@@ -45,38 +50,6 @@ $(document).ready(function() {
 });
 
 function setupNavigationInputs() {
-    // Swap button functionality
-    $('.nav-swap').click(function() {
-        const fromInput = $('#nav-from-input');
-        const toInput = $('#nav-to-input');
-        const fromValue = fromInput.val();
-        const toValue = toInput.val();
-
-        fromInput.val(toValue);
-        toInput.val(fromValue);
-
-        // Trigger change event to update any dependent logic
-        fromInput.trigger('change');
-        toInput.trigger('change');
-
-        // Swap the selected building variables as well
-        const tempFromBuilding = selectedFromBuilding;
-        const tempToBuilding = selectedToBuilding;
-        selectedFromBuilding = tempToBuilding;
-        selectedToBuilding = tempFromBuilding;
-
-        // Recalculate route if both inputs have values
-        const newFromValue = fromInput.val().trim();
-        const newToValue = toInput.val().trim();
-
-        if (newFromValue && newToValue) {
-            // Run route calculation in background to prevent blocking UI
-            setTimeout(() => {
-            calculateRoute(newFromValue, newToValue);
-            }, 0);
-        }
-    });
-
     // Clear button functionality
     $('#nav-from-clear-btn, #nav-to-clear-btn').click(function() {
         const isFromInput = $(this).attr('id') === 'nav-from-clear-btn';
@@ -161,26 +134,53 @@ function setupNavigationInputs() {
         // Reset autocomplete index when input changes
         currentAutocompleteIndex = -1;
 
-        // Show autocomplete dropdown
-        showNavigationAutocomplete(input, value);
+        // Only show the autocomplete dropdown on real user input — programmatic
+        // value sets (e.g. pre-filling the destination from a search result's
+        // "Directions" button) shouldn't pop results while the input isn't focused.
+        if (!isSettingInputProgrammatically) {
+            showNavigationAutocomplete(input, value);
+        }
+
+        // Typing in the source hides the destination bar while there's actual
+        // input; clearing it back to empty shows the destination again.
+        if (input.attr('id') === 'nav-from-input') {
+            if (value.length > 0) {
+                $('.nav-dest-row').addClass('none');
+            } else {
+                $('.nav-dest-row').removeClass('none');
+            }
+        }
     });
 
     // Handle focus events to hide dropdowns
     $('#nav-from-input, #nav-to-input').on('focus', function() {
         const input = $(this);
         const value = input.val().trim();
-        if (value.length > 0) {
+        // Skip showing results for a programmatic focus (e.g. auto-focusing
+        // the pre-filled destination after pressing "Directions").
+        const suppress = window._suppressNavAutocompleteOnFocus;
+        window._suppressNavAutocompleteOnFocus = false;
+        if (value.length > 0 && !suppress) {
             showNavigationAutocomplete(input, value);
         }
 
-        // Add styling to .from-circle when from-input is focused and has search results
+        // Remember and hide the directions panel while an input is focused;
+        // it's restored once both inputs lose focus. Always hide on focus —
+        // the "was visible" flag is only set when the panel is actually shown,
+        // so a stale focus state can't skip the hide.
+        if (!$('.nav-directions-wrapper').hasClass('none')) {
+            navDirectionsWasVisibleBeforeFocus = true;
+            $('.nav-directions-wrapper').addClass('none');
+        }
+        navAnyInputFocused = true;
+
+        // Focusing the source only hides the destination bar if the source
+        // already has input; an empty source keeps the destination visible.
         if (input.attr('id') === 'nav-from-input') {
-            const hasResults = !$('.nav-from-search-results').hasClass('none');
-            if (hasResults) {
-                $('.from-circle').css({
-                    'align-self': 'start',
-                    'margin-top': '0.7rem'
-                });
+            if (value.length > 0) {
+                $('.nav-dest-row').addClass('none');
+            } else {
+                $('.nav-dest-row').removeClass('none');
             }
         }
     });
@@ -191,21 +191,29 @@ function setupNavigationInputs() {
 
         // Delay hiding to allow clicks on dropdown items
         setTimeout(() => {
+            // If the other nav input has focus now (e.g. user jumped from
+            // source to destination), don't clobber its collapse state.
+            const otherFocused = (input.attr('id') === 'nav-from-input')
+                ? $('#nav-to-input').is(':focus')
+                : $('#nav-from-input').is(':focus');
+            if (otherFocused) {
+                navAnyInputFocused = true;
+                return;
+            }
+            navAnyInputFocused = false;
             hideNavigationAutocomplete();
 
-            // Remove styling from .from-circle when from-input loses focus
-            if (input.attr('id') === 'nav-from-input') {
-                $('.from-circle').css({
-                    'align-self': '',
-                    'margin-top': ''
-                });
+            // Restore the directions panel if it was visible before focusing.
+            if (navDirectionsWasVisibleBeforeFocus) {
+                $('.nav-directions-wrapper').removeClass('none').addClass('flex');
+                navDirectionsWasVisibleBeforeFocus = false;
             }
         }, 200);
     });
 
     // Hide dropdowns when clicking outside
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('.nav-from, .nav-to, .nav-from-search-results, .nav-to-search-results').length) {
+        if (!$(e.target).closest('.nav-from, .nav-to, .nav-pill-bar, .nav-from-search-results, .nav-to-search-results').length) {
             hideNavigationAutocomplete();
         }
     });
@@ -214,7 +222,7 @@ function setupNavigationInputs() {
     $('#nav-from-input, #nav-to-input').on('keydown', function(e) {
         const isFromInput = e.target.id === 'nav-from-input';
         const resultsContainer = isFromInput ? $('.nav-from-search-results') : $('.nav-to-search-results');
-        const resultItems = resultsContainer.find('.nav-search-result-item');
+        const resultItems = resultsContainer.find('.search-result-item');
 
         if (!resultsContainer.hasClass('none') && resultItems.length > 0) {
             switch(e.key) {
@@ -942,6 +950,10 @@ function showNavigationAutocomplete(inputElement, query) {
 
     if (!window.fuseReady || !query.trim()) {
         resultsContainer.addClass('none');
+        // Empty query — no matches to show, so bring both bars back.
+        $('.nav-pill-bar').removeClass('nav-collapsed');
+        $('.search-wrapper').removeClass('nav-source-hidden');
+        $('.nav-dest-row').removeClass('none');
         return;
     }
 
@@ -987,29 +999,36 @@ function showNavigationAutocomplete(inputElement, query) {
     }
 
     if (results.length === 0) {
-        resultsContainer.html('<div class="nav-search-no-results">No buildings found</div>');
+        resultsContainer.html('<div class="dimgray">No results found.</div>');
         resultsContainer.removeClass('none');
         return;
     }
 
-    // Create result elements (limit to 5 results)
+    // Create result elements (limit to 5 results), matching the main search's
+    // .search-result-item row structure so styling is identical.
     const maxResults = 5;
     results.slice(0, maxResults).forEach(result => {
         const item = result.item ? result.item : result;
         const matchedAbbreviation = result.matchedAbbreviation;
         let icon = '';
         if (item.category === 'building') {
-            icon = '<i class="fa-solid fa-building"></i>';
+            icon = '<i class="icon icon-building"></i>';
         } else if (item.category === 'parking') {
-            icon = '<i class="fa-solid fa-square-parking"></i>';
+            icon = '<i class="icon icon-parking"></i>';
         } else if (item.category === 'stop') {
-            icon = '<i class="fa-solid fa-bus-simple"></i>';
+            icon = '<i class="icon icon-bus-simple"></i>';
         }
 
         const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
-        const $resultElement = $('<div class="nav-search-result-item"></div>');
+        // If this result matches the place already set in the active field,
+        // mark it as selected (bold name).
+        const currentValue = inputElement.val().trim().toLowerCase();
+        const isSelected = item.name.toLowerCase() === currentValue;
+        const $resultElement = $('<div class="search-result-item flex' + (isSelected ? ' selected' : '') + '"></div>');
         if (icon) $resultElement.append(icon);
-        $resultElement.append($('<div></div>').text(displayText));
+        $resultElement.append($('<div' + (isSelected ? ' class="search-result-selected-name"' : '') + '></div>').text(displayText));
+        // Right chevron: tapping the row selects the place into the field.
+        $resultElement.append('<i class="search-result-map-pin icon icon-chevron-right"></i>');
 
         // Use a more robust event handling approach for touchpad compatibility
         const handleSelection = function(e) {
@@ -1072,7 +1091,13 @@ function showNavigationAutocomplete(inputElement, query) {
             }
         });
 
-
+        // After picking a place, both bars come back (the other input is next).
+        const restoreBars = function() {
+            $('.nav-pill-bar').removeClass('nav-collapsed');
+            $('.search-wrapper').removeClass('nav-source-hidden');
+            $('.nav-dest-row').removeClass('none');
+        };
+        $resultElement.on('click touchstart pointerdown', restoreBars);
 
         resultsContainer.append($resultElement);
     });
@@ -1081,14 +1106,6 @@ function showNavigationAutocomplete(inputElement, query) {
     replaceFontAwesomeIcons();
 
     resultsContainer.removeClass('none');
-
-    // Add styling to .from-circle when from-input search results are shown
-    if (isFromInput && results.length > 0) {
-        $('.from-circle').css({
-            'align-self': 'start',
-            'margin-top': '0.7rem'
-        });
-    }
 }
 
 // Hide autocomplete dropdowns
@@ -1096,18 +1113,17 @@ function hideNavigationAutocomplete() {
     $('.nav-from-search-results, .nav-to-search-results').addClass('none');
     currentAutocompleteIndex = -1;
 
-    // Remove styling from .from-circle when search results are hidden
-    $('.from-circle').css({
-        'align-self': '',
-        'margin-top': ''
-    });
+    // Restore both bars once the dropdowns hide (uncollapse the source bar).
+    $('.nav-pill-bar').removeClass('nav-collapsed');
+    $('.search-wrapper').removeClass('nav-source-hidden');
+    $('.nav-dest-row').removeClass('none');
 }
 
 // Highlight/unhighlight autocomplete items
 function highlightAutocompleteItem(resultsContainer, index) {
-    resultsContainer.find('.nav-search-result-item').removeClass('highlighted');
+    resultsContainer.find('.search-result-item').removeClass('highlighted');
     if (index >= 0) {
-        resultsContainer.find('.nav-search-result-item').eq(index).addClass('highlighted');
+        resultsContainer.find('.search-result-item').eq(index).addClass('highlighted');
     }
 }
 
@@ -1192,7 +1208,17 @@ function resolvePlaceByName(inputName) {
 function findConnectingRoutes(startStopId, endStopId) {
     const connectingRoutes = [];
 
-    const possibleRoutes = Object.keys(stopLists).filter(r => Array.isArray(stopLists[r]) && stopLists[r].length);
+    // Only consider routes that service the currently selected campus. Stop
+    // IDs are not globally unique across campuses (NB/Camden/Newark all start
+    // at 1), so an unfiltered stop-ID match pulls in routes like CC/CAM that
+    // serve a different campus entirely.
+    const campus = (typeof selectedCampus !== 'undefined') ? selectedCampus : 'nb';
+    const campusRoutes = getCampusRoutes(campus);
+
+    const possibleRoutes = Object.keys(stopLists).filter(r =>
+        Array.isArray(stopLists[r]) && stopLists[r].length &&
+        campusRoutes.includes(r)
+    );
 
     for (const routeName of possibleRoutes) {
         const routeStops = stopLists[routeName];
@@ -1672,18 +1698,19 @@ function distanceToLineSegment(px, py, x1, y1, x2, y2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-// Format a user-facing label for a route, merging WKND/ON variants
+// Format a user-facing label for a route, showing WKND variants on their own
+// (overnight ON routes are no longer in service).
 function formatRouteLabel(routeName) {
     const n = String(routeName || '').toLowerCase();
     const m = n.match(/^(?:wknd|on)(\d+)/);
     if (m) {
         const v = m[1];
-        return `WKND${v}/ON${v}`;
+        return `WKND${v}`;
     }
     return String(routeName || '').toUpperCase();
 }
 
-// Format route label with per-variant colors when WKND/ON are merged
+// Format route label with route color (WKND variants shown on their own)
 function formatRouteLabelColored(routeName) {
     const original = String(routeName || '');
     const n = original.toLowerCase();
@@ -1691,10 +1718,8 @@ function formatRouteLabelColored(routeName) {
     if (m) {
         const v = m[1];
         const wkKey = `wknd${v}`;
-        const onKey = `on${v}`;
         const wkColor = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
-        const onColor = (typeof colorMappings !== 'undefined' && colorMappings[onKey]) ? colorMappings[onKey] : '#111827';
-        return `<span style="color: ${wkColor};">WKND${v}</span>/<span style="color: ${onColor};">ON${v}</span>`;
+        return `<span style="color: ${wkColor};">WKND${v}</span>`;
     }
     const color = (typeof colorMappings !== 'undefined' && colorMappings[n]) ? colorMappings[n] : '#111827';
     return `<span style="color: ${color};">${original.toUpperCase()}</span>`;
@@ -1874,6 +1899,7 @@ function displayRoute(routeData) {
 
     // Clear existing route display and ensure flex when shown
     $('.nav-directions-wrapper').removeClass('none').addClass('flex').empty();
+    navDirectionsWasVisibleBeforeFocus = false;
 
     const directionsContainer = $('.nav-directions-wrapper');
 
@@ -1909,7 +1935,9 @@ function displayRoute(routeData) {
         // Build display entries for base routes first
         routesForDisplay = sortedBase.map(r => ({ route: r, displayName: r.name.toUpperCase() }));
 
-        // Group WKND/ON pairs by variant suffix (e.g., 1, 2) and append at end
+        // Group weekend/overnight variants by suffix (e.g., 1, 2) and append
+        // at end — shown as WKND only (overnight ON routes are no longer in
+        // service, so ON-only variants are dropped).
         if (wkndOnRoutes.length > 0) {
             const getVariant = (name) => {
                 const n = String(name || '').toLowerCase();
@@ -1926,8 +1954,9 @@ function displayRoute(routeData) {
             const variants = Object.keys(groups).sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
             variants.forEach(v => {
                 const pair = groups[v];
-                const representative = pair.wknd || pair.on; // prefer WKND if available
-                const label = `WKND${v}/ON${v}`;
+                // Prefer the WKND route; skip variants that only have ON.
+                const representative = pair.wknd || pair.on;
+                const label = `WKND${v}`;
                 routesForDisplay.push({ route: representative, displayName: label });
             });
         }
@@ -2074,7 +2103,7 @@ function displayRoute(routeData) {
         }
         
         return `
-        <div class="route-header" style="margin-bottom: 1rem; text-align: center;">
+        <div class="route-header nav-directions-header-block" style="margin-bottom: 1rem; text-align: center; display: block;">
             <h3 style="font-size: 1.35rem; font-weight: normal; margin-bottom: 0;">${startBuilding.name} to ${endBuilding.name}</h3>
             <div class="route-summary" style="font-size: 1.2rem; color: var(--theme-color);">
                 ${summary}
@@ -2504,6 +2533,9 @@ function displayRoute(routeData) {
     // Ensure directions wrapper uses flex when visible
     $('.nav-directions-wrapper').removeClass('none').addClass('flex');
 
+    // A freshly-calculated route supersedes any focus-hide restore state.
+    navDirectionsWasVisibleBeforeFocus = false;
+
     // Scroll to top of route content wrapper
     $('.nav-directions-wrapper').scrollTop(0);
     
@@ -2878,6 +2910,7 @@ function updateRouteDisplay(routeData) {
 // Clear the current route display
 function clearRouteDisplay() {
     $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
+    navDirectionsWasVisibleBeforeFocus = false;
     showNavigationMessage('Route cleared');
 }
 
@@ -2886,6 +2919,7 @@ function closeNavigation() {
     try {
         // Clear route UI
         $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
+        navDirectionsWasVisibleBeforeFocus = false;
         $('.nav-directions-wtrapper').addClass('none').empty();
         // Clear inputs
         isSettingInputProgrammatically = true;

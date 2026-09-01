@@ -61,7 +61,7 @@ function updateSearchPlaceholder(buildingCount) {
     if (searchMode === 'directions') {
         return;
     }
-    const $searchInput = $('.search-wrapper input');
+    const $searchInput = $('.search-pill-bar input');
     if ($searchInput.length === 0) {
         return;
     }
@@ -94,8 +94,8 @@ $(document).ready(function() {
         return '';
     }
 
-    // Back button in the directions header returns to the search view
-    $('.nav-back-btn').on('click', function() {
+    // Back button in the directions pill bar returns to the search view
+    $('.nav-back-btn-styled').on('click', function() {
         applySearchMode('search');
         $('.search-wrapper input').focus();
     });
@@ -160,13 +160,15 @@ $(document).ready(function() {
         if (typeof hideCenterStops === 'function') hideCenterStops();
         adjustSearchHeights();
         attachSearchViewportListeners();
-        // Keep the previously typed query so reopening shows results for the
-        // last search; re-running 'input' repopulates matches (or recs when empty).
-        $input.trigger('input').focus();
-
         // Fresh search menu: populate recommendations and recent searches
         populateSearchRecommendations();
         populateRecentSearches();
+
+        // Keep the previously typed query so reopening shows results for the
+        // last search. Repopulating recs/recents above can re-show their
+        // wrappers, so re-running 'input' afterward applies the query's
+        // visibility rules: matches when there's a query, recs when it's empty.
+        $input.trigger('input').focus();
 
         sa_event('btn_press', {
             'btn': 'search'
@@ -436,15 +438,7 @@ $(document).ready(function() {
         }
 
         openDirectionsNav();
-        const shouldFocusTo = !$('#nav-from-input').val().trim();
-        setTimeout(function() {
-            if (shouldFocusTo) {
-                $('#nav-to-input').focus();
-            } else {
-                $('#nav-from-input').focus();
-            }
-        }, 60);
-
+        $('#nav-from-input').focus();
         sa_event('btn_press', {
             'btn': 'search_result_directions',
             'result': item.name,
@@ -487,9 +481,18 @@ $(document).ready(function() {
             const iconClass = placeIconClass(item);
             const displayText = entry.matchedAbbreviation ? item.name + ' (' + entry.matchedAbbreviation + ')' : item.name;
 
-            html += '<div class="search-result-item flex" data-result-index="' + i + '">'
+            // Mark the result as selected if it's the place currently open on
+            // the map (stop popup or building popup).
+            let isSelected = false;
+            if (item.category === 'stop') {
+                isSelected = typeof popupStopId !== 'undefined' && String(popupStopId) === String(item.id);
+            } else if (item.category === 'building') {
+                isSelected = typeof popupBuildingName !== 'undefined' && String(popupBuildingName).toLowerCase() === String(item.name).toLowerCase();
+            }
+
+            html += '<div class="search-result-item flex' + (isSelected ? ' selected' : '') + '" data-result-index="' + i + '">'
                 + (iconClass ? '<i class="' + iconClass + '"></i>' : '')
-                + '<div>' + escapeHTML(displayText) + '</div>'
+                + '<div' + (isSelected ? ' class="search-result-selected-name"' : '') + '>' + escapeHTML(displayText) + '</div>'
                 + '<i class="search-result-map-pin icon icon-location-dot"></i>'
                 + '<button class="search-result-directions-btn" type="button" title="Get directions" data-dir-result-index="' + i + '">'
                 + '<i class="icon icon-route"></i><span>Directions</span>'
@@ -500,7 +503,10 @@ $(document).ready(function() {
 
         // Delegate clicks once at the container level.
         $results.off('.searchResults').on('click.searchResults', '.search-result-directions-btn', function(e) {
-            e.stopPropagation();
+            // The result-row handler is delegated from this same container.
+            // Stop it as well as bubbling, otherwise selecting Directions can
+            // also select the row and interrupt the nav transition/focus.
+            e.stopImmediatePropagation();
             const idx = $(this).attr('data-dir-result-index');
             onRowDirections(entries[idx].item);
         }).on('click.searchResults', '.search-result-item', function() {
@@ -508,6 +514,15 @@ $(document).ready(function() {
             onPick(entries[idx].item);
         });
     }
+
+    // Expose the shared matcher + renderer so the nav from/to autocomplete can
+    // render into the SAME .search-results container with identical styling.
+    window.matchSearchItems = function(query) {
+        const sanitizedQuery = String(query || '').replace(/-[^\s]*/g, '').replace(/\s+/g, ' ').trim();
+        if (!fuseReady || !sanitizedQuery) return [];
+        return matchQueryItems(sanitizedQuery, sanitizedQuery.toLowerCase());
+    };
+    window.renderSearchResults = renderResults;
 
     $('.search-wrapper input').on('input', function() {
         const query = $(this).val().trim();
@@ -538,6 +553,7 @@ $(document).ready(function() {
             
             // Repopulate the content when showing (in case it was updated)
             populateRecentSearches();
+            populateSearchRecommendations();
         }
         
         if (!fuseReady || !sanitizedQuery) {
@@ -929,22 +945,27 @@ function applySearchMode(mode) {
 
     if (mode === 'directions') {
         $('.search-pill-bar').addClass('none');
+        $('.nav-pill-bar').removeClass('none nav-collapsed');
+        $('.search-wrapper').removeClass('nav-source-hidden');
         $('.search-content').addClass('none');
         $('.navigate-wrapper').removeClass('none');
+        $('#nav-from-input').attr('placeholder', 'Enter source');
         hideNavigationAutocomplete();
     } else {
         $('.navigate-wrapper').addClass('none');
         $('.search-pill-bar').removeClass('none');
+        $('.nav-pill-bar').addClass('none').removeClass('nav-collapsed');
+        $('.search-wrapper').removeClass('nav-source-hidden');
         $('.search-content').removeClass('none');
-        $('.search-wrapper input').attr('placeholder', 'Search {num} buildings & lots');
+        $('.search-pill-bar input').attr('placeholder', 'Search {num} buildings & lots');
         if (window.buildingList && window.buildingList.length) {
             updateSearchPlaceholder(window.buildingList.length);
         }
-        // Re-render results if the search input still has a query
-        const searchValue = $('.search-wrapper input').val().trim();
-        if (searchValue) {
-            $('.search-wrapper input').trigger('input');
-        }
+        // Re-render the search view: query results if the input still has a
+        // query, otherwise the empty-state recents/popular sections. The input
+        // handler owns the visibility rules for both. Only the main search
+        // input drives this — the nav from/to inputs are separate.
+        $('.search-pill-bar input').trigger('input');
     }
 }
 
@@ -966,6 +987,28 @@ function openDirectionsNav() {
     adjustSearchHeights();
     attachSearchViewportListeners();
     applySearchMode('directions');
+
+    // Focus the source field once the two-input directions layout is active.
+    // Retry across a few frames in case a layout/transition settles late
+    // (e.g. the pill bar becoming visible or the keyboard opening on mobile).
+    // Suppress autocomplete here because this focus is programmatic.
+    window._suppressNavAutocompleteOnFocus = true;
+    let attempts = 0;
+    const focusSource = function() {
+        if (attempts >= 5) return;
+        attempts++;
+        const $from = $('#nav-from-input');
+        if ($from.length && $from.is(':visible')) {
+            $from.focus();
+            // If something stole focus right away, try once more shortly after.
+            if (document.activeElement !== $from[0]) {
+                setTimeout(focusSource, 80);
+            }
+        } else {
+            setTimeout(focusSource, 80);
+        }
+    };
+    setTimeout(focusSource, 0);
 }
 
 function openSearch() {

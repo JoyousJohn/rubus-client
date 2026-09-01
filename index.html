@@ -1175,8 +1175,14 @@
     <div class="search-wrapper none">
         <div class="search-pill-bar">
             <button class="search-back-btn" type="button" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
-            <input type="text" placeholder="Search {num} buildings & lots" autocomplete="off">
+            <input type="text" name="searchQuery" placeholder="Search {num} buildings & lots" autocomplete="search no-suggestions" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
             <button class="search-clear-btn" type="button" aria-label="Clear">×</button>
+        </div>
+        <div class="nav-pill-bar nav-pill-bar-style none">
+            <button class="nav-back-btn nav-back-btn-styled" type="button" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+            <input type="text" class="nav-input" id="nav-from-input" placeholder="Source" autocomplete="search no-suggestions" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+            <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
+            <div class="nav-from-search-results none"></div>
         </div>
         <div class="search-content">
             <div class="search-results-wrapper none mt-1rem">
@@ -1197,32 +1203,15 @@
             </div>
         </div>
         <div class="navigate-wrapper none">
-            <div class="nav-directions-header flex align-center">
-                <button class="nav-back-btn" type="button" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
-                <span>Directions</span>
-            </div>
             <div class="navigate-inner flex flex-col" style="font-family: var(--font-family); position: relative;">
-                <div class="navigate-to-from flex flex-col br-1rem" style="background-color: var(--theme-bg); pointer-events: all;">
-                    <div class="grid gap-x-1rem gap-y-0p5rem p-1rem align-center" style="grid-template-columns: auto 1fr auto;">
-                        <div class="from-circle center">◯</div>
-                        <div class="nav-from">
-                            <div class="nav-input-wrapper">
-                                <input type="text" class="nav-input" id="nav-from-input" placeholder="Start Location" autocomplete="off">
-                                <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
-                            </div>
-                            <div class="nav-from-search-results none" style="grid-column: span 3;"></div>
-                        </div>
-                        <div class="nav-swap text-2rem flex align-center" style="grid-row: span 3;">
-                            <i class="fa-solid fa-arrow-right-arrow-left" style="transform: rotate(90deg); display: inline-block;"></i>
-                        </div>
-                        <div class="center">⋮</div>
-                        <div style="height: 1px; background-color: var(--theme-color-lighter);"></div>
-                        <div class="center"><i class="fa-solid fa-location-pin"></i></div>
-                        <div class="nav-to">
-                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off">
+                <div class="nav-dest-row">
+                    <div class="nav-to">
+                        <div class="nav-input-wrapper">
+                            <button class="nav-dest-pin-btn" type="button" aria-label="Destination"><i class="fa-solid fa-location-dot"></i></button>
+                            <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="search no-suggestions" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
                             <button class="nav-clear-btn" id="nav-to-clear-btn" type="button">×</button>
                         </div>
-                        <div class="nav-to-search-results none" style="grid-column: span 3;"></div>
+                        <div class="nav-to-search-results none"></div>
                     </div>
                 </div>
 

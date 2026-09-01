@@ -22,6 +22,7 @@
 .icon-route { --icon-mask: url('../img/icons/route.svg'); }
 .icon-bolt { --icon-mask: url('../img/icons/bolt.svg'); }
 .icon-arrow-left { --icon-mask: url('../img/icons/arrow-left.svg'); }
+.icon-chevron-right { --icon-mask: url('../img/icons/chevron-right.svg'); }
 .icon-map-pin { --icon-mask: url('../img/icons/map-pin.svg'); }
 .icon-message { --icon-mask: url('../img/icons/message.svg'); }
 .icon-clock { --icon-mask: url('../img/icons/clock.svg'); }

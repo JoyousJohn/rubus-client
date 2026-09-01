@@ -15,7 +15,9 @@ function hideInfoBoxes(instantly_hide) {
     
     // Hide the out of service hide button when closing popups
     $('.stop-info-hide-oos').hide();
-    $('.search-results').empty().hide();
+    // Don't hide/empty the results list here: the search input handler is the
+    // single source of truth for results visibility, and it re-runs when the
+    // search menu reopens (preserving the last query's matches).
 
     if (popupStopId) {
         // Handle icon changes for rider app style mode
