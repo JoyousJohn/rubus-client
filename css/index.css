@@ -156,6 +156,42 @@ html, body {
     overscroll-behavior-y: none;
 }
 
+/* Keep the app locked to a portrait layout when "Allow Landscape" is
+   disabled on phones. The device may physically rotate to landscape, but the
+   interface stays portrait-sized and centered (rotate-transformed to appear
+   upright), matching the lock-portrait class toggled in settings.js. */
+html.lock-portrait,
+html.lock-portrait body {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+html.lock-portrait body {
+    width: 100vw;
+    height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+@media (orientation: landscape) {
+    html.lock-portrait {
+        /* Simulate a portrait viewport: rotate the app to stay upright while
+           the device is horizontal. The app keeps rendering at its portrait
+           width/height so no layout or touch coordinates change. */
+        transform: rotate(90deg);
+        transform-origin: top left;
+        width: 100dvh;
+        height: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+}
+
 * {
     -webkit-tap-highlight-color: transparent;
 }

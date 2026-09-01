@@ -1646,17 +1646,28 @@ $(function() {
 function applyOrientationLock(allow) {
     const isAllowed = allow !== undefined ? allow : !!(typeof settings !== 'undefined' && settings['toggle-allow-landscape']);
     const isPhone = window.matchMedia("(max-width: 900px)").matches || /Android|iPhone|iPod|Mobile/i.test(navigator.userAgent);
-    
+
     if (isAllowed) {
-        $('body').removeClass('lock-portrait');
+        $('html').removeClass('lock-portrait');
         if (screen.orientation && typeof screen.orientation.unlock === 'function') {
             try { screen.orientation.unlock(); } catch (e) {}
         }
     } else {
         if (isPhone) {
-            $('body').addClass('lock-portrait');
+            $('html').addClass('lock-portrait');
+
+            // Try the native lock when available (Chrome/Edge on Android; it
+            // needs fullscreen to succeed in most cases). The .lock-portrait
+            // CSS class is the reliable fallback that works everywhere:
+            // .lock-portrait transforms the app to stay in a portrait
+            // layout even while the device is physically rotated.
             if (screen.orientation && typeof screen.orientation.lock === 'function') {
-                try { screen.orientation.lock('portrait').catch(() => {}); } catch (e) {}
+                try {
+                    const lockPromise = screen.orientation.lock('portrait');
+                    if (lockPromise && typeof lockPromise.catch === 'function') {
+                        lockPromise.catch(() => {});
+                    }
+                } catch (e) {}
             }
         }
     }
