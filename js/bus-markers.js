@@ -126,6 +126,15 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
         return;
     }
 
+    // Capture previous instantaneous velocity (m/s) so the new animation can smoothly accelerate/decelerate
+    let initialVelocityMs = 0;
+    const prevAnim = animationFrames[busName];
+    if (prevAnim && prevAnim.lastVelocity !== undefined) {
+        initialVelocityMs = prevAnim.lastVelocity;
+    } else if (prevAnim && prevAnim.duration > 0 && prevAnim.totalPathDistance > 0) {
+        initialVelocityMs = prevAnim.totalPathDistance / (prevAnim.duration / 1000);
+    }
+
     // Cancel any existing animation for this bus before starting a new one
     cancelBusAnimation(busName);
     
@@ -348,6 +357,15 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
     } catch (e) {}
     const startTime = performance.now();
 
+    const effectiveTotalDistance = useTwoSegmentPath ? totalPathDistance : (typeof startLatLng.distanceTo === 'function' ? startLatLng.distanceTo(endLatLng) : 0);
+    const avgSpeedMs = (effectiveTotalDistance > 0 && duration > 0) ? (effectiveTotalDistance / (duration / 1000)) : 0;
+
+    // Normalized initial velocity ratio k = v0 / avgSpeed
+    // Clamp k to [0, 2.0] to guarantee progress is strictly monotonically increasing (never moves backwards)
+    let kRatio = avgSpeedMs > 0 ? (initialVelocityMs / avgSpeedMs) : 1.0;
+    kRatio = Math.max(0, Math.min(kRatio, 2.0));
+    const kCoeff = kRatio - 1.0;
+
     // Pause accumulation: while the "Pause Bus Markers on Pan" dev setting is
     // active, elapsed wall-clock time is excluded from animation progress so
     // markers resume exactly where they left off instead of jumping forward.
@@ -414,7 +432,13 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
         }
 
         const elapsedTime = currentTime - startTime - pausedDuration;
-        const progress = Math.max(0, Math.min(elapsedTime / duration, 1));
+        const tau = Math.max(0, Math.min(elapsedTime / duration, 1));
+        // Smooth Cubic Hermite velocity-blended progress curve
+        const progress = (tau >= 1) ? 1 : Math.max(0, Math.min(1, tau + kCoeff * (tau * (1 - tau) * (1 - tau))));
+
+        // Track instantaneous velocity for smooth handoff on future updates
+        const currentSlope = 1 + kCoeff * (1 - 4 * tau + 3 * tau * tau);
+        animateMarker.lastVelocity = avgSpeedMs * Math.max(0, currentSlope);
 
         // When culling is enabled, advance progress but skip DOM/WebGL rendering
         // for off-screen markers. This lets them complete naturally (progress→1)
@@ -513,6 +537,7 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
         }
 
         if (progress >= 1) {
+            animateMarker.lastVelocity = 0;
             if (marker) {
                 marker._idleSince = performance.now();
             }
@@ -532,9 +557,11 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
     animateMarker.startTime = startTime;
     animateMarker.duration = duration;
     animateMarker.durationSource = durationSource;
+    animateMarker.totalPathDistance = effectiveTotalDistance;
+    animateMarker.lastVelocity = initialVelocityMs;
 
     if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
-        console.log(`[${new Date().toISOString()}] [ANIM START] bus=${busName} duration=${Math.round(duration)}ms (src: ${durationSource}) | dist=${Math.round(totalPathDistance || (typeof startLatLng.distanceTo === 'function' ? startLatLng.distanceTo(endLatLng) : 0))}m`);
+        console.log(`[${new Date().toISOString()}] [ANIM START] bus=${busName} duration=${Math.round(duration)}ms (src: ${durationSource}) | dist=${Math.round(effectiveTotalDistance)}m | v0=${(initialVelocityMs * 2.23694).toFixed(1)}mph -> v_avg=${(avgSpeedMs * 2.23694).toFixed(1)}mph (k=${kRatio.toFixed(2)})`);
     }
 
     // Custom DOM-mode markers update a DOM transform and step every rAF
