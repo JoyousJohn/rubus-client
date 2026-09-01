@@ -1666,6 +1666,20 @@ function isPhoneDevice() {
 }
 window.isPhoneDevice = isPhoneDevice;
 
+// True when the device is PHYSICALLY rotated to landscape. Uses the Screen
+// Orientation API, which reports the real device orientation and is NOT
+// affected by the on-screen keyboard (unlike the CSS orientation query, which
+// keys off viewport proportions).
+function isDeviceLandscape() {
+    const type = screen.orientation && screen.orientation.type ? screen.orientation.type : '';
+    if (type) return type.indexOf('landscape') === 0;
+    // Fallback for browsers without the API: window.innerWidth > innerHeight.
+    // This is viewport-based so it can be fooled by the keyboard, but it's only
+    // used where screen.orientation is unavailable.
+    return window.innerWidth > window.innerHeight;
+}
+window.isDeviceLandscape = isDeviceLandscape;
+
 // Apply/remove the portrait lock when "Allow Landscape" is toggled or on load.
 function applyOrientationLock(allow) {
     const isAllowed = allow !== undefined ? allow : !!(typeof settings !== 'undefined' && settings['toggle-allow-landscape']);
@@ -1695,10 +1709,12 @@ function applyOrientationLock(allow) {
         } catch (e) {}
     }
 
-    // Fallback for iOS Safari / non-installed browsers that can't lock: show a
-    // "rotate your device" overlay. It's controlled entirely by the CSS media
-    // query (#rotate-device-overlay), so we only need to arm it here.
+    // Fallback for iOS Safari / non-installed browsers that can't lock: arm the
+    // "rotate your device" overlay, and mark whether the device is physically
+    // in landscape. Toggling the ".landscape" class is what actually shows the
+    // overlay, so the keyboard shrinking the viewport can never trigger it.
     $('#rotate-device-overlay').addClass('lock-portrait');
+    $('#rotate-device-overlay').toggleClass('landscape', isDeviceLandscape());
 }
 window.applyOrientationLock = applyOrientationLock;
 $(document).ready(function() {

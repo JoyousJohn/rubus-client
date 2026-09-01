@@ -175,17 +175,20 @@ html, body {
     padding: 24px;
 }
 
-/* Only show on mobile phones held in landscape when the portrait lock is
-   armed (the ".lock-portrait" class is added by applyOrientationLock only when
-   "Allow Landscape" is off on a phone). Phones are small (500px max height,
-   1000px max width) and use coarse touch with no hover, so tablets, desktops
-   and laptops are excluded by these guards even if resized small. */
-@media (orientation: landscape)
-    and (max-height: 500px)
+/* Only show on mobile phones when the portrait lock is armed AND the device is
+   PHYSICALLY rotated to landscape. The ".lock-portrait" and ".landscape"
+   classes are both toggled by applyOrientationLock() in settings.js. We do NOT
+   use the CSS (orientation: landscape) query here because it is viewport-based:
+   when the on-screen keyboard opens on a portrait phone it shrinks the viewport
+   height below its width, which would falsely trigger "landscape". The JS
+   checks read the true device orientation (screen.orientation.type), which the
+   keyboard never changes. The size/input guards are a safety net so tablets,
+   desktops and laptops are excluded even if the phone detection ever fails. */
+@media (max-height: 500px)
     and (max-width: 1000px)
     and (hover: none)
     and (pointer: coarse) {
-    #rotate-device-overlay.lock-portrait {
+    #rotate-device-overlay.lock-portrait.landscape {
         display: flex;
     }
 }
