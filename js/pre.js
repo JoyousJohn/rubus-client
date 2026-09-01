@@ -4,6 +4,7 @@ let tripshotDown = false;
 let pendingForceImmediate = false;
 
 async function immediatelyUpdateBusDataPre() {
+    console.log(`[${new Date().toISOString()}] [IMMEDIATE PRE] cancelling all animations and graying markers`);
     cancelAllAnimations();
 
     $('.updating-buses').stop(true, true).fadeIn();
@@ -56,10 +57,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     const longGapSinceUpdate = (currentTime - (lastUpdateTime || 0)) > (pollDelay + pollDelayBuffer);
     const shouldImmediateUpdate = Boolean(immediatelyUpdate) || forceImmediateUpdate || longGapSinceUpdate || settings['toggle-always-immediate-update'];
     
-    // Debug logging for immediate update decisions
-    if (shouldImmediateUpdate) {
-        console.log(`Immediate update triggered: immediatelyUpdate=${immediatelyUpdate}, forceImmediateUpdate=${forceImmediateUpdate}, longGap=${longGapSinceUpdate}, timeGap=${currentTime - (lastUpdateTime || 0)}ms`);
-    }
+    console.log(`[${new Date().toISOString()}] [POLL TRIGGER] timeSinceLastPoll=${timeSinceLastPoll}ms | timeSinceLastMarkerUpdate=${currentTime - (lastUpdateTime || 0)}ms | longGap=${longGapSinceUpdate} (threshold=${pollDelay + pollDelayBuffer}ms) | forceImm=${forceImmediateUpdate} | shouldImmediate=${shouldImmediateUpdate}`);
 
     // Allow immediate updates even on initial load if forceImmediateUpdate is set (app resume scenario)
     if (shouldImmediateUpdate && (!isInitial || forceImmediateUpdate)) {
@@ -96,6 +94,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         }
 
         const data = await response.json();
+        console.log(`[${new Date().toISOString()}] [POLL RESP] fetch response received in ${new Date().getTime() - currentTime}ms | buses in payload: ${Object.keys(data || {}).length}`);
 
         if (sim) return; // don't allow race conditions of simming before fetch completed
 
@@ -120,6 +119,15 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         let activeBuses = [];
         let pollActiveRoutes = new Set();
         let hasNewOrChangedBuses = false;
+
+        const priorActiveBuses = (typeof busMarkers !== 'undefined')
+            ? Object.keys(busMarkers).filter(name => isBusShownOnMap(name))
+            : [];
+        const priorIdleBuses = priorActiveBuses.filter(name => !animationFrames[name]);
+        const priorAnimatingBuses = priorActiveBuses.filter(name => !!animationFrames[name]);
+        let pollMovedCount = 0;
+        let pollUnchangedCount = 0;
+        let pollDurations = [];
 
         for (const busName in data) {
 
@@ -270,10 +278,24 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
             if (moved) {
                 const currentTime = new Date().getTime();
-                const timeSinceLastUpdate = currentTime - (busData[busName].previousTime || currentTime);
-                const animationDuration = Math.min(timeSinceLastUpdate, 30000) + 2500;
+                const lastMoveTime = busData[busName].previousMoveTime || busData[busName].previousTime || currentTime;
+                const timeSinceLastMove = currentTime - lastMoveTime;
+
+                // Effective interval between GPS position changes:
+                // Transit GPS feeds broadcast in ~5-12s intervals. If the bus was stationary at a stop
+                // for longer (>15s), clamp to nominal 10s GPS interval so it resumes at normal driving speed.
+                const effectiveInterval = Math.max(5000, Math.min(timeSinceLastMove, 12000));
+                const animationDuration = effectiveInterval + 2500;
 
                 busData[busName].apiAnimationDuration = animationDuration;
+                busData[busName].previousMoveTime = currentTime;
+                busData[busName].previousTime = currentTime;
+                pollMovedCount++;
+                pollDurations.push(animationDuration);
+
+                if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
+                    console.log(`[${new Date().toISOString()}] [BUS MOVED] bus=${busName} route=${routeStr} timeSinceLastMove=${timeSinceLastMove}ms (effectiveInterval=${effectiveInterval}ms) -> apiAnimationDuration=${animationDuration}ms | pos: [${lastPosition[0].toFixed(5)}, ${lastPosition[1].toFixed(5)}] -> [${apiLat.toFixed(5)}, ${apiLng.toFixed(5)}]`);
+                }
                 
                 // Only append finite coordinates to the Bézier history
                 if (coordsAreFinite) {
@@ -283,13 +305,11 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 if (popupBusName === busName && settings['toggle-distances-line-on-focus']) {
                     updateDistanceLinePositionMarker(busName);
                 }
-            }
-
-            // Advance the timing baseline every accepted poll (stationary or
-            // moving) so a later move doesn't inherit a stale duration. Never
-            // advance it from invalid coordinates.
-            if (coordsAreFinite) {
-                busData[busName].previousTime = new Date().getTime();
+            } else {
+                pollUnchangedCount++;
+                if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
+                    console.log(`[${new Date().toISOString()}] [BUS UNCHANGED] bus=${busName} route=${routeStr} coords unchanged at [${apiLat ? apiLat.toFixed(5) : '?'}, ${apiLng ? apiLng.toFixed(5) : '?'}] -> preserving in-flight animation`);
+                }
             }
 
             const apiRotation = parseFiniteCoord(bus.rotation);
@@ -308,7 +328,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
             if (routesByCampus[busData[busName].route] === selectedCampus) {
 
-                plotBus(busName, shouldImmediateUpdate);
+                plotBus(busName, shouldImmediateUpdate, moved);
                 if (shouldImmediateUpdate) {
                     const iconElement = busMarkers[busName].getElement().querySelector('.bus-icon-outer');
                     if (iconElement) {
@@ -356,6 +376,25 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                     delete busData[busName];
                 }
             }
+        }
+
+        if (priorActiveBuses.length > 0) {
+            const idleDurations = priorIdleBuses
+                .map(name => (busMarkers[name] && busMarkers[name]._idleSince) ? (performance.now() - busMarkers[name]._idleSince) : null)
+                .filter(d => d !== null && d >= 0);
+            const avgIdleStr = idleDurations.length > 0
+                ? ` (avg idle wait: ${(idleDurations.reduce((a, b) => a + b, 0) / idleDurations.length / 1000).toFixed(1)}s)`
+                : '';
+            const avgDurStr = pollDurations.length > 0
+                ? `${Math.round(pollDurations.reduce((a, b) => a + b, 0) / pollDurations.length)}ms`
+                : 'N/A';
+            const idlePercent = Math.round((priorIdleBuses.length / priorActiveBuses.length) * 100);
+            console.log(
+                `%c[${new Date().toISOString()}] [FLEET HEALTH] Active on map: ${priorActiveBuses.length} buses | ` +
+                `Status BEFORE this poll: ${priorIdleBuses.length}/${priorActiveBuses.length} (${idlePercent}%) were IDLE/STOPPED${avgIdleStr}, ${priorAnimatingBuses.length} were still animating | ` +
+                `Poll results: ${pollMovedCount} moved (avg duration: ${avgDurStr}), ${pollUnchangedCount} unchanged`,
+                priorIdleBuses.length > 0 ? 'color: #ff9900; font-weight: bold;' : 'color: #00d2ff; font-weight: bold;'
+            );
         }
 
         const routesNeedingPolylines = new Set(
@@ -1199,10 +1238,14 @@ function getMessages() {
 
 
 function cancelAllAnimations() {
+    const active = Object.keys(animationFrames);
+    if (active.length > 0) {
+        console.log(`[${new Date().toISOString()}] [ANIM CANCEL ALL] Cancelled ${active.length} active animations: [${active.join(', ')}]`);
+    }
     Object.keys(animationFrames).forEach(busName => {
         delete animationFrames[busName];
     });
-  }
+}
 
 
 let joined_service = {};

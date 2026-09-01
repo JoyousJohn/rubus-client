@@ -105,16 +105,29 @@ async function generateColoredSvgForColor(color) {
 
 // Function to generate a route-colored Passio marker SVG (cached and synchronous after pre-generation)
 
-const updateMarkerPosition = (busName, immediatelyUpdate) => {
+const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
     const loc = {lat: busData[busName].lat, long: busData[busName].long};
     const marker = busMarkers[busName];
+    if (!marker) return;
 
-    // Cancel any existing animations for this bus (the shared loop drops it from the registry)
-    cancelBusAnimation(busName);
+    // If coordinates did not change and an animation is already in flight towards this target,
+    // let it continue smoothly to its destination without interruption.
+    if (!moved && !immediatelyUpdate && !forceImmediateUpdate && animationFrames[busName]) {
+        return;
+    }
 
     // Get current position
     const startLatLng = marker.getLatLng();
     const endLatLng = L.latLng(loc.lat, loc.long);
+    const distToTarget = (startLatLng && typeof startLatLng.distanceTo === 'function') ? startLatLng.distanceTo(endLatLng) : 0;
+
+    // If the bus hasn't moved and is already resting at the target position, nothing to animate
+    if (!moved && !immediatelyUpdate && !forceImmediateUpdate && distToTarget < 0.5) {
+        return;
+    }
+
+    // Cancel any existing animation for this bus before starting a new one
+    cancelBusAnimation(busName);
     
     let prevLatLng;
     try {
@@ -256,6 +269,9 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
                 ' forceImmediateUpdate=' + (typeof forceImmediateUpdate !== 'undefined' && forceImmediateUpdate));
         }
 
+        if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
+            console.log(`[${new Date().toISOString()}] [ANIM SNAP] bus=${busName} immediatelyUpdate=true | snapped directly to [${endLatLng.lat.toFixed(5)}, ${endLatLng.lng.toFixed(5)}]`);
+        }
         marker.setLatLng(endLatLng);
 
         // Update rotation immediately as well
@@ -297,19 +313,24 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
 
     // Use stored animation duration if available (for consistent timing across update sources)
     let duration;
+    let durationSource = 'fallback';
     if (busData[busName].websocketAnimationDuration) {
         duration = busData[busName].websocketAnimationDuration;
+        durationSource = 'ws';
         // Clear the stored duration after use
         delete busData[busName].websocketAnimationDuration;
         // console.log(`[Animation] Using WebSocket-calculated duration: ${Math.round(duration/1000)}s for bus ${busName}`);
     } else if (busData[busName].apiAnimationDuration) {
         duration = busData[busName].apiAnimationDuration;
+        durationSource = 'api';
         // Clear the stored duration after use
         delete busData[busName].apiAnimationDuration;
         // console.log(`[Animation] Using API-calculated duration: ${Math.round(duration/1000)}s for bus ${busName}`);
     } else {
-        const baseDuration = cappedTimeSinceLastUpdate + 2500;
+        const effectiveInterval = Math.max(5000, Math.min(cappedTimeSinceLastUpdate, 12000));
+        const baseDuration = effectiveInterval + 2500;
         duration = baseDuration;
+        durationSource = `fallback (effectiveInterval=${Math.round(effectiveInterval)}ms + 2500ms)`;
     }
     try {
         if (sim === true && busData[busName] && busData[busName].type === 'sim') {
@@ -492,11 +513,30 @@ const updateMarkerPosition = (busName, immediatelyUpdate) => {
         }
 
         if (progress >= 1) {
+            if (marker) {
+                marker._idleSince = performance.now();
+            }
+            if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
+                console.log(`[${new Date().toISOString()}] [ANIM FINISHED] bus=${busName} completed in ${Math.round(currentTime - startTime)}ms (target: ${Math.round(duration)}ms) — bus is now IDLE waiting for next poll`);
+            }
             // Animation complete, clean up (the shared loop keeps driving remaining buses)
             delete animationFrames[busName];
         }
     };
     
+    if (marker) {
+        marker._idleSince = null;
+    }
+
+    animateMarker.busName = busName;
+    animateMarker.startTime = startTime;
+    animateMarker.duration = duration;
+    animateMarker.durationSource = durationSource;
+
+    if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
+        console.log(`[${new Date().toISOString()}] [ANIM START] bus=${busName} duration=${Math.round(duration)}ms (src: ${durationSource}) | dist=${Math.round(totalPathDistance || (typeof startLatLng.distanceTo === 'function' ? startLatLng.distanceTo(endLatLng) : 0))}m`);
+    }
+
     // Custom DOM-mode markers update a DOM transform and step every rAF
     // frame; WebGL markers flush via the batched setData()/updateData()
     // source patch in bus-layer.js, which rebuilds the worker tile index per

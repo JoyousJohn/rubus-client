@@ -1,6 +1,6 @@
 const initPollDelay = 2000;
 const pollDelay = 5000;
-const pollDelayBuffer = 1000;
+const pollDelayBuffer = 15000;
 let lastPollTime = 0;
 // Timestamp of the last successful marker update/render
 let lastUpdateTime = 0;
@@ -9,6 +9,23 @@ let forceImmediateUpdate = false;
 // Prevent overlapping network fetches
 let busFetchInProgress = false;
 var activeStops = [];
+
+// Diagnostic log filter: limits detailed per-bus logs to keep console concise.
+// Always includes the clicked/focused bus (popupBusName).
+// Can be customized in console, e.g.: window.DEBUG_BUS_FILTER = ['4178', '4180']
+window.DEBUG_BUS_FILTER = [];
+function shouldLogBus(busName) {
+    if (!busName) return false;
+    if (typeof popupBusName !== 'undefined' && popupBusName === busName) return true; // Always log focused/clicked bus!
+    if (window.DEBUG_BUS_FILTER.length === 0) {
+        window.DEBUG_BUS_FILTER.push(busName);
+        console.log(`[RUBUS DEBUG] Auto-tracking bus ${busName} for detailed logs (click any bus to focus & track it, or set window.DEBUG_BUS_FILTER = ['${busName}'])`);
+    } else if (window.DEBUG_BUS_FILTER.length < 3 && !window.DEBUG_BUS_FILTER.includes(busName)) {
+        window.DEBUG_BUS_FILTER.push(busName);
+        console.log(`[RUBUS DEBUG] Auto-tracking bus ${busName} (now tracking: ${window.DEBUG_BUS_FILTER.join(', ')})`);
+    }
+    return window.DEBUG_BUS_FILTER.includes(busName);
+}
 
 // iOS Safari can expire one-time location permission between visits while
 // localStorage persists. Keep automatic location access from re-prompting on

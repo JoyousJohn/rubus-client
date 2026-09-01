@@ -2,7 +2,7 @@
 let selectedMarkerId;
 let pauseUpdateMarkerPositions = false;
 
-function plotBus(busName, immediatelyUpdate=false) {
+function plotBus(busName, immediatelyUpdate=false, moved=true) {
     if (typeof map === 'undefined' || !map) return;
 
     const shouldShow = isBusShownOnMap(busName);
@@ -62,7 +62,7 @@ function plotBus(busName, immediatelyUpdate=false) {
     }
 
     if (!pauseUpdateMarkerPositions) {
-        updateMarkerPosition(busName, immediatelyUpdate || forceImmediateUpdate);
+        updateMarkerPosition(busName, immediatelyUpdate || forceImmediateUpdate, moved);
     }
 
     // Ensure the marker is on the map. addTo() removes + re-appends the
