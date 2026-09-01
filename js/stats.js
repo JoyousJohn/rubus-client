@@ -70,10 +70,17 @@ function fetchStatsJson(url) {
         });
 }
 
+// Overlay text swap between the fetch and render phases so we can tell where
+// the time goes. The pulsing shimmer animation lives on .stats-loading-overlay,
+// so changing the text keeps the animation.
+function setOverlayState(id, state) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = state === 'fetching' ? 'Fetching...' : 'Rendering...';
+}
+
 function showStats() {
     sa_event('btn_press', { btn: 'footer_stats' });
-    if (statsLoading) return;
-
     if ($('.stats-wrapper').is(':visible')) {
         $('.stats-wrapper').hide();
         $('.stats').removeClass('footer-selected');
@@ -96,30 +103,36 @@ function showStats() {
     if (busStatsData) {
         renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
     } else {
+        setOverlayState('stats-loading-bus', 'fetching');
         $('#stats-loading-bus').show();
     }
 
     if (stopStatsData) {
         renderPieChart(stopStatsData, 'stop-stats-canvas', 'stop-stats-legend', { useShortName: true });
     } else {
+        setOverlayState('stats-loading-stop', 'fetching');
         $('#stats-loading-stop').show();
     }
 
     if (userStatsData) {
         renderPieChart(userStatsData, 'user-stats-canvas', 'user-stats-legend');
     } else {
+        setOverlayState('stats-loading-user', 'fetching');
         $('#stats-loading-user').show();
     }
 
     if (trendStatsData) {
         renderVisitorTrendChart(trendStatsData);
     } else {
+        setOverlayState('stats-loading-trend', 'fetching');
         $('#stats-loading-trend').show();
     }
 
     if (busStatsData && stopStatsData && userStatsData && trendStatsData) {
         return;
     }
+
+    if (statsLoading) return;
 
     statsLoading = true;
     let remaining = 4;
@@ -232,9 +245,13 @@ function setupCanvasClickListener(canvasId, options) {
 function renderPieChart(statsData, canvasId, legendId, options = {}) {
     if (!statsData || !statsData.segments || !statsData.segments.length) return;
 
-    if (canvasId === 'stats-canvas') $('#stats-loading-bus').hide();
-    else if (canvasId === 'stop-stats-canvas') $('#stats-loading-stop').hide();
-    else if (canvasId === 'user-stats-canvas') $('#stats-loading-user').hide();
+    const loadingId = (canvasId === 'stats-canvas') ? 'stats-loading-bus' :
+                      (canvasId === 'stop-stats-canvas') ? 'stats-loading-stop' :
+                      (canvasId === 'user-stats-canvas') ? 'stats-loading-user' : null;
+    if (loadingId) {
+        setOverlayState(loadingId, 'rendering');
+        $('#' + loadingId).show();
+    }
 
     setupCanvasClickListener(canvasId, options);
 
@@ -386,14 +403,21 @@ function renderPieChart(statsData, canvasId, legendId, options = {}) {
 
     const legend = document.getElementById(legendId);
     if (legend) legend.innerHTML = legendHtml;
+
+    if (loadingId) $('#' + loadingId).hide();
 }
 
 function renderVisitorTrendChart(trendData) {
     if (!trendData || !trendData.labels || !trendData.points || !trendData.points.length) return;
-    $('#stats-loading-trend').hide();
+
+    setOverlayState('stats-loading-trend', 'rendering');
+    $('#stats-loading-trend').show();
 
     const canvas = document.getElementById('visitor-trend-canvas');
-    if (!canvas || typeof Chart === 'undefined') return;
+    if (!canvas || typeof Chart === 'undefined') {
+        $('#stats-loading-trend').hide();
+        return;
+    }
 
     if (visitorTrendChart) {
         visitorTrendChart.destroy();
@@ -471,5 +495,9 @@ function renderVisitorTrendChart(trendData) {
             }
         }
     });
+
+    // Chart.js draws asynchronously (600ms animation); hide the overlay once
+    // the chart has been created so the animation is visible underneath.
+    $('#stats-loading-trend').hide();
 }
 
