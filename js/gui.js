@@ -138,6 +138,8 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         let routeFormatted = route;
         if (route == 'bl') {
             routeFormatted = 'b/l';
+        } else if (route == 'helix') {
+            routeFormatted = 'hlx';
         }
 
         let $routeElm;
