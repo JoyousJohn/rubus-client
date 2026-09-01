@@ -240,17 +240,39 @@
     }
 
     /**
-     * Render a Duck-style marker sprite to a canvas.
+     * Render a Duck-style marker sprite to a canvas. Matches the DOM duck
+     * marker: just the FA duck glyph (white halo + flipped), no circle.
+     * duckIconCanvas is the recolored duck icon; when null (icon not loaded
+     * yet) a hand-drawn stand-in is used.
      */
-    function renderDuckSprite(color, size) {
+    function renderDuckSprite(color, size, duckIconCanvas) {
         const sizes = { small: 26, medium: 34, big: 42 };
         const s = sizes[size] || 34;
-        const { canvas, ctx } = createHiDPICanvas(s, s);
+        const pad = 4;
+        const { canvas, ctx } = createHiDPICanvas(s + pad * 2, s + pad * 2);
 
-        const cx = s / 2;
-        const cy = s / 2;
+        const cx = (s + pad * 2) / 2;
+        const cy = (s + pad * 2) / 2;
+
+        if (duckIconCanvas) {
+            // White halo matching the DOM text-shadow, then the colored duck.
+            const haloPad = 2;
+            ctx.save();
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = haloPad * 2;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            const iconSize = s * 0.78;
+            // Flip horizontally like the DOM marker (.duck-marker i scaleX(-1)).
+            ctx.translate(cx, cy);
+            ctx.scale(-1, 1);
+            ctx.drawImage(duckIconCanvas, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+            ctx.restore();
+            return canvas;
+        }
+
+        // Fallback: hand-drawn duck until the SVG icon loads.
         const r = s / 2 - 3;
-
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
@@ -934,6 +956,8 @@
             this._labelPillCache = {};   // pillSpriteName → true
             this._busIconImage = null;
             this._busIconLoaded = false;
+            this._duckIconImage = null;
+            this._duckIconLoaded = false;
             this._pendingSpriteQueue = [];
             this._zIndexCounter = 500;   // stable per-bus z-index for DOM mode
             this._sourceId = 'bus-markers-source';
@@ -954,6 +978,8 @@
 
             // Start loading the bus SVG icon (used for passio sprites)
             this._loadBusIcon();
+            // Start loading the duck SVG icon (used for duck sprites)
+            this._loadDuckIcon();
 
             const self = this;
             function setupLayers() {
@@ -1127,6 +1153,48 @@
         }
 
         /**
+         * Load the duck SVG as an Image element for duck sprite rendering.
+         * The duck glyph is the same FA Pro solid duck the settings preview
+         * uses, extracted from the FA Pro webfont the page loads.
+         */
+        async _loadDuckIcon() {
+            try {
+                const response = await fetch('img/duck.svg');
+                const svgText = await response.text();
+                const blob = new Blob([svgText], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.src = url;
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                });
+                this._duckIconImage = img;
+                this._duckIconLoaded = true;
+                URL.revokeObjectURL(url);
+                this._regenerateDuckSprites();
+            } catch (e) {
+                console.warn('[BusLayerManager] Failed to load duck SVG icon:', e);
+            }
+        }
+
+        /**
+         * Regenerate all duck sprites now that the SVG icon is loaded.
+         */
+        _regenerateDuckSprites() {
+            if (!this._duckIconLoaded) return;
+            for (const name in this._spriteCache) {
+                const meta = this._spriteCache[name];
+                if (meta && meta.type === 'duck') {
+                    const duckIconCanvas = createColoredBusIconCanvas(this._duckIconImage, meta.color, 40);
+                    const canvas = renderDuckSprite(meta.color, meta.size, duckIconCanvas);
+                    this._addSpriteToMap(name, canvas);
+                }
+            }
+            this.scheduleBatchUpdate();
+        }
+
+        /**
          * Regenerate all passio sprites now that the SVG icon is loaded.
          */
         _regeneratePassioSprites() {
@@ -1164,7 +1232,11 @@
             } else if (type === 'rider') {
                 canvas = renderRiderSprite(color, size);
             } else if (type === 'duck') {
-                canvas = renderDuckSprite(color, size);
+                let duckIconCanvas = null;
+                if (this._duckIconLoaded) {
+                    duckIconCanvas = createColoredBusIconCanvas(this._duckIconImage, color, 40);
+                }
+                canvas = renderDuckSprite(color, size, duckIconCanvas);
             } else {
                 canvas = renderRubusSprite(color, size, innerColor);
             }
