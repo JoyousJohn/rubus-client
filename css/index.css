@@ -1139,6 +1139,25 @@ html, body {
     overflow-y: scroll;
     max-height: 40vh;
     padding: 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-border) transparent;
+}
+
+.stop-info-popup-inner::-webkit-scrollbar {
+    width: 6px;
+}
+
+.stop-info-popup-inner::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.stop-info-popup-inner::-webkit-scrollbar-thumb {
+    background-color: var(--theme-border);
+    border-radius: 4px;
+}
+
+.stop-info-popup-inner::-webkit-scrollbar-thumb:hover {
+    background-color: var(--theme-extra);
 }
 
 .stop-info-back-wrapper, .bus-info-back-wrapper, .building-info-back-wrapper {
