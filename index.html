@@ -884,6 +884,7 @@
                         
                         <div class="getting-location-popup none mb-1rem"><span class="loading-throbber" aria-hidden="true"></span><span class="loading-text">LOCATING</span></div>
                         <div class="updating-buses none mb-1rem"><span class="loading-throbber" aria-hidden="true"></span><span class="loading-text">UPDATING</span></div>
+                        <div class="refreshing-etas none mb-1rem"><span class="loading-throbber" aria-hidden="true"></span><span class="loading-text">REFRESHING ETAS</span></div>
                         <div class="loading-buses mb-1rem"><span class="loading-throbber" aria-hidden="true"></span><span class="loading-text">LOADING</span></div>
                         <div class="slow-connection none">SLOW CONNECTION</div>
                         <div class="zoom-toast none">ZOOM 14</div>
@@ -1335,7 +1336,6 @@
             <button class="nav-from-pin-btn flex align-center justify-center" type="button" aria-label="From pin" tabindex="-1" style="background:none; border:none; color:var(--theme-bg); font-size:1.8rem; padding:0.5rem; margin-left:-0.25rem; line-height:1; flex-shrink:0; pointer-events:none; height:2.8rem;"><i class="fa-solid fa-location-dot fa-fw"></i></button>
             <input type="text" class="nav-input" id="nav-from-input" placeholder="Source" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
             <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
-            <div class="nav-from-search-results none"></div>
         </div>
         <div class="search-content">
             <div class="search-results-wrapper none mt-1rem">
@@ -1357,6 +1357,14 @@
         </div>
         <div class="navigate-wrapper none">
             <div class="navigate-inner flex flex-col" style="font-family: var(--font-family); position: relative;">
+                <div class="nav-mid-row">
+                    <div class="nav-mid-left">
+                        <button class="route-random-btn" type="button" onclick="randomizeNavLocations()" title="Randomize"><i class="fa-solid fa-party-horn"></i></button>
+                        <button class="route-revert-btn none" type="button" onclick="revertNavLocations()" title="Revert to previous">Revert</button>
+                    </div>
+                    <span class="nav-mid-arrow" title="Direction of travel"><i class="fa-solid fa-arrow-down"></i></span>
+                    <button class="route-swap-btn" type="button" onclick="swapNavLocations()" title="Swap start and destination"><i class="fa-regular fa-arrow-up-arrow-down"></i></button>
+                </div>
                 <div class="nav-dest-row">
                     <div class="nav-to">
                         <div class="nav-input-wrapper">
@@ -1364,9 +1372,12 @@
                             <input type="text" class="nav-input" id="nav-to-input" placeholder="Destination" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
                             <button class="nav-clear-btn" id="nav-to-clear-btn" type="button">×</button>
                         </div>
-                        <div class="nav-to-search-results none"></div>
                     </div>
                 </div>
+
+                <div class="nav-search-results none"></div>
+
+                <div class="nav-route-selector-container"></div>
 
                 <div class="nav-directions-wrapper none br-1rem">
                     <div class="nav-directions-inner flex flex-col">

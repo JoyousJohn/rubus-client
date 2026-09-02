@@ -28,12 +28,8 @@ let navBackActive = false;  // persistent: the currently-visible popup offers "B
 window.navPendingSourceSelection = false;
 function setNavPendingSourceSelection(pending) {
     window.navPendingSourceSelection = !!pending;
-    if (window.navPendingSourceSelection) {
-        $('.nav-dest-row').addClass('none');
-    } else {
-        $('.nav-dest-row').removeClass('none');
-        // Also clear any pending recent results display
-        $('.nav-from-search-results').addClass('none').empty();
+    if (!window.navPendingSourceSelection) {
+        $('.nav-search-results').addClass('none').empty();
     }
 }
 window.setNavPendingSourceSelection = setNavPendingSourceSelection;
@@ -168,7 +164,7 @@ function getNavRecentSearches() {
 }
 
 function renderNavFromRecents() {
-    const $container = $('.nav-from-search-results');
+    const $container = $('.nav-search-results');
     if ($container.length === 0) return false;
     let recents = getNavRecentSearches();
     // Filter out the current destination (nav-to) so we don't offer navigating from same place
@@ -244,7 +240,7 @@ function renderNavFromRecents() {
 }
 
 function renderNavToRecents() {
-    const $container = $('.nav-to-search-results');
+    const $container = $('.nav-search-results');
     if ($container.length === 0) return false;
     let recents = getNavRecentSearches();
     // Filter out the current origin (nav-from) so we don't offer navigating to the same place
@@ -375,6 +371,10 @@ function setupNavigationInputs() {
             selectedToBuilding = null;
             selectedToStop = null;
         }
+
+        if (typeof updateSearchHeading === 'function') {
+            updateSearchHeading();
+        }
         
         sa_event('btn_press', {
             'btn': isFromInput ? 'nav_from_clear' : 'nav_to_clear'
@@ -402,21 +402,10 @@ function setupNavigationInputs() {
     // Initially hide the clear buttons
     $('#nav-from-clear-btn, #nav-to-clear-btn').hide();
 
-    // Helper: hide destination row only when source is focused AND has a value
-    // If a Nav button triggered pending source selection with recents, keep dest hidden
-    // until a source is chosen.
+    // Both bars (source + destination) are always visible in nav mode now, so
+    // this is a no-op kept for callers that toggle visibility elsewhere.
     function updateNavDestRowVisibility() {
-        if (window.navPendingSourceSelection) {
-            $('.nav-dest-row').addClass('none');
-            return;
-        }
-        const $fromInput = $('#nav-from-input');
-        const isFocused = $fromInput.is(':focus');
-        if (isFocused) {
-            $('.nav-dest-row').addClass('none');
-        } else {
-            $('.nav-dest-row').removeClass('none');
-        }
+        $('.nav-dest-row').removeClass('none');
     }
     window.updateNavDestRowVisibility = updateNavDestRowVisibility;
 
@@ -459,6 +448,13 @@ function setupNavigationInputs() {
             }
         }
 
+        // If either input is empty, clear any prior route display and state
+        const curFrom = ($('#nav-from-input').val() || '').trim();
+        const curTo = ($('#nav-to-input').val() || '').trim();
+        if (!curFrom || !curTo) {
+            clearRouteDisplay();
+        }
+
         // Reset autocomplete index when input changes
         currentAutocompleteIndex = -1;
 
@@ -470,6 +466,9 @@ function setupNavigationInputs() {
         }
 
         updateNavDestRowVisibility();
+        if (typeof updateSearchHeading === 'function') {
+            updateSearchHeading();
+        }
     });
 
     // Handle focus events to hide dropdowns
@@ -483,21 +482,15 @@ function setupNavigationInputs() {
         window._suppressNavAutocompleteOnFocus = false;
         if (value.length > 0 && !suppress) {
             showNavigationAutocomplete(input, value);
-        } else if (isFromInputFocus && !suppress && value.length === 0) {
-            const _toHasValue = ($('#nav-to-input').val() || '').trim().length > 0 || (typeof selectedToBuilding !== 'undefined' && selectedToBuilding) || (typeof selectedToStop !== 'undefined' && selectedToStop);
-            if (_toHasValue) {
-                if (!window.navPendingSourceSelection) {
-                    window.navPendingSourceSelection = true;
-                    $('.nav-dest-row').addClass('none');
-                }
+        } else if (value.length === 0) {
+            // Empty input — nothing to match against, so show recent places
+            // regardless of the suppress flag: a real user click into an
+            // empty nav bar should always surface recents for quick picking.
+            if (isFromInputFocus) {
                 if (typeof renderNavFromRecents === 'function') renderNavFromRecents();
-                $('.nav-pill-bar').removeClass('nav-collapsed');
-                $('.search-wrapper').removeClass('nav-source-hidden');
             } else {
-                if (typeof renderNavFromRecents === 'function') renderNavFromRecents();
+                if (typeof renderNavToRecents === 'function') renderNavToRecents();
             }
-        } else if (!isFromInputFocus && !suppress && value.length === 0) {
-            if (typeof renderNavToRecents === 'function') renderNavToRecents();
         }
 
         // Remember current input values to detect unfocus without change
@@ -512,6 +505,9 @@ function setupNavigationInputs() {
         if (!$('.nav-directions-wrapper').hasClass('none')) {
             navDirectionsWasVisibleBeforeFocus = true;
             $('.nav-directions-wrapper').removeClass('flex').addClass('none');
+        }
+        if ($('.nav-route-selector-container').children().length > 0) {
+            $('.nav-route-selector-container').addClass('none');
         }
         navAnyInputFocused = true;
         updateNavDestRowVisibility();
@@ -555,32 +551,28 @@ function setupNavigationInputs() {
             }
             updateNavDestRowVisibility();
 
-            // Restore the directions panel only when neither input is focused.
+            // Restore the directions panel only when neither input is focused and both inputs are non-empty
             if (navDirectionsWasVisibleBeforeFocus) {
-                $('.nav-directions-wrapper').removeClass('none').addClass('flex');
+                if (curFromBlur && curToBlur && $('.nav-directions-wrapper').children().length > 0) {
+                    $('.nav-directions-wrapper').removeClass('none').addClass('flex');
+                    $('.nav-route-selector-container').removeClass('none');
+                }
                 navDirectionsWasVisibleBeforeFocus = false;
             }
         }, 200);
     });
 
-    // Hide dropdowns when clicking outside — reveal dest immediately on whitespace (don't wait for blur 200ms)
+    // Hide dropdowns when clicking outside
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('.nav-from, .nav-to, .nav-pill-bar, .nav-from-search-results, .nav-to-search-results').length) {
+        if (!$(e.target).closest('.nav-from, .nav-to, .nav-pill-bar, .nav-search-results').length) {
             hideNavigationAutocomplete();
-            if (window.navPendingSourceSelection) {
-                window.navPendingSourceSelection = false;
-                $('.nav-dest-row').removeClass('none');
-                $('.nav-pill-bar').removeClass('nav-collapsed');
-                $('.search-wrapper').removeClass('nav-source-hidden');
-                updateNavDestRowVisibility();
-            }
         }
     });
 
     // Handle keyboard navigation for inputs
     $('#nav-from-input, #nav-to-input').on('keydown', function(e) {
         const isFromInput = e.target.id === 'nav-from-input';
-        const resultsContainer = isFromInput ? $('.nav-from-search-results') : $('.nav-to-search-results');
+        const resultsContainer = $('.nav-search-results');
         const resultItems = resultsContainer.find('.search-result-item');
 
         if (!resultsContainer.hasClass('none') && resultItems.length > 0) {
@@ -635,10 +627,9 @@ function setupNavigationInputs() {
             } else if (e.target.id === 'nav-from-input' && fromValue) {
                 // Only move focus to destination input if autocomplete results are visible
                 // (meaning no selection was made via Enter on autocomplete)
-                const fromResultsVisible = !$('.nav-from-search-results').hasClass('none');
-                const toResultsVisible = !$('.nav-to-search-results').hasClass('none');
-                
-                if (!fromResultsVisible && !toResultsVisible) {
+                const unifiedResultsVisible = !$('.nav-search-results').hasClass('none');
+
+                if (!unifiedResultsVisible) {
                     // Move focus to destination input only if no autocomplete selection was made
                     $('#nav-to-input').focus();
                 }
@@ -693,8 +684,8 @@ function swapNavLocations() {
     const toVal = toInput.val().trim();
 
     // Swap input field values
-    fromInput.val(toVal);
-    toInput.val(fromVal);
+    fromInput.val(toVal).toggleClass('has-value', !!toVal);
+    toInput.val(fromVal).toggleClass('has-value', !!fromVal);
 
     // Swap building state
     const tempBuilding = selectedFromBuilding;
@@ -708,6 +699,11 @@ function swapNavLocations() {
 
     // Invalidate cached route key to force recalculation
     lastComputedRouteKey = null;
+
+    // Update .search-heading-text
+    if (typeof updateSearchHeading === 'function') {
+        updateSearchHeading();
+    }
 
     // Update clear buttons visibility
     if (toVal) {
@@ -793,6 +789,9 @@ function randomizeNavLocations() {
     isSettingInputProgrammatically = false;
     $('#nav-from-clear-btn').toggle(!!fromPlace.name);
     $('#nav-to-clear-btn').toggle(!!toPlace.name);
+    if (typeof updateSearchHeading === 'function') {
+        updateSearchHeading();
+    }
     lastComputedRouteKey = null;
     calculateRoute(fromPlace.name, toPlace.name);
     setTimeout(() => { window._suppressRecentSave = false; }, 600);
@@ -833,6 +832,9 @@ function revertNavLocations() {
     isSettingInputProgrammatically = false;
     $('#nav-from-clear-btn').toggle(!!_savedExplicitNav.fromVal);
     $('#nav-to-clear-btn').toggle(!!_savedExplicitNav.toVal);
+    if (typeof updateSearchHeading === 'function') {
+        updateSearchHeading();
+    }
     lastComputedRouteKey = null;
     $('.route-revert-btn').addClass('none');
     const fromName = _savedExplicitNav.fromVal;
@@ -1183,6 +1185,7 @@ function calculateRoute(from, to) {
         if (lastComputedRouteKey && wrapperHasContent && (lastComputedRouteKey === routeKey || lastComputedRouteKey === inputKey)) {
             openDirectionsNav();
             $('.nav-directions-wrapper').removeClass('none').addClass('flex');
+            $('.nav-route-selector-container').removeClass('none');
             navDirectionsWasVisibleBeforeFocus = false;
             $('.nav-directions-wrapper').scrollTop(0);
             // Ensure dest row and pills are visible when reshowing
@@ -1342,6 +1345,7 @@ function calculateRoute(from, to) {
 }
 
 function showNavigationMessage(message) {
+    if (!message || message === 'Route cleared') return;
     // Create or update navigation message display
     let messageEl = $('.nav-message');
     if (messageEl.length === 0) {
@@ -1508,7 +1512,7 @@ function findBuildingFuzzy(searchTerm) {
 // Show autocomplete dropdown for navigation inputs
 function showNavigationAutocomplete(inputElement, query) {
     const isFromInput = inputElement.attr('id') === 'nav-from-input';
-    const resultsContainer = isFromInput ? $('.nav-from-search-results') : $('.nav-to-search-results');
+    const resultsContainer = $('.nav-search-results');
 
     resultsContainer.empty();
     currentAutocompleteIndex = -1;
@@ -1517,11 +1521,6 @@ function showNavigationAutocomplete(inputElement, query) {
         if (!query.trim()) {
             if (isFromInput) {
                 if (typeof renderNavFromRecents === 'function' && renderNavFromRecents()) {
-                    if (window.navPendingSourceSelection) {
-                        $('.nav-pill-bar').removeClass('nav-collapsed');
-                        $('.search-wrapper').removeClass('nav-source-hidden');
-                        $('.nav-dest-row').addClass('none');
-                    }
                     return;
                 }
             } else {
@@ -1531,11 +1530,6 @@ function showNavigationAutocomplete(inputElement, query) {
             }
         }
         resultsContainer.addClass('none');
-        // Empty query — no matches to show, so bring both bars back.
-        $('.nav-pill-bar').removeClass('nav-collapsed');
-        $('.search-wrapper').removeClass('nav-source-hidden');
-        if (window.updateNavDestRowVisibility) window.updateNavDestRowVisibility();
-        else $('.nav-dest-row').removeClass('none');
         return;
     }
 
@@ -1617,10 +1611,9 @@ function showNavigationAutocomplete(inputElement, query) {
         // Use click only (like the main search results) so touch scrolling
         // doesn't trigger selection — click fires only after a tap without scroll.
         const handleSelection = function(e) {
-            // Choosing a source clears the pending-recent state and reveals dest
+            // Choosing a source clears the pending-recent state
             if (isFromInput && window.navPendingSourceSelection) {
                 window.navPendingSourceSelection = false;
-                $('.nav-dest-row').removeClass('none');
             }
             // Set the input value programmatically to avoid clearing selection
             isSettingInputProgrammatically = true;
@@ -1693,14 +1686,9 @@ function showNavigationAutocomplete(inputElement, query) {
 
 // Hide autocomplete dropdowns
 function hideNavigationAutocomplete() {
-    $('.nav-from-search-results, .nav-to-search-results').addClass('none');
+    $('.nav-search-results').addClass('none');
     currentAutocompleteIndex = -1;
-
-    // Restore both bars once the dropdowns hide (uncollapse the source bar).
-    $('.nav-pill-bar').removeClass('nav-collapsed');
-    $('.search-wrapper').removeClass('nav-source-hidden');
     if (window.updateNavDestRowVisibility) window.updateNavDestRowVisibility();
-    else $('.nav-dest-row').removeClass('none');
 }
 
 // Highlight/unhighlight autocomplete items
@@ -2055,8 +2043,8 @@ function getRouteDetails(route, startStopId, endStopId) {
             stops.push({
                 id: stopId,
                 name: stopsData[stopId].name,
-                isBoardingStop: stopId === startStopId,
-                isAlightingStop: stopId === endStopId
+                isBoardingStop: String(stopId) === String(startStopId),
+                isAlightingStop: String(stopId) === String(endStopId)
             });
         }
     }
@@ -2067,6 +2055,195 @@ function getRouteDetails(route, startStopId, endStopId) {
         direction: 'forward',
         totalStops: stops.length
     };
+}
+
+// Compute the bus-leg travel time (minutes) between boarding and alighting
+// stops for a route.
+//
+// stopsInOrder items are objects {id, ...} (from getRouteDetails), so ids are
+// extracted before keying into etas/waits — the raw live feed is keyed by stop
+// ID, not by the display object. When only some legs have data, the measured
+// per-leg average is scaled to all legs so a partially-populated feed doesn't
+// silently undercount. Falls back to stop-count × NAV_FALLBACK_MIN_PER_STOP
+// using FORWARD (wrap-aware) distance, never the shortest-arc opposite direction.
+function computeBusTravelTimeMinutes(route) {
+    if (!route) return 0;
+
+    const stopsInOrder = route.stopsInOrder || [];
+    const ids = stopsInOrder.length
+        ? stopsInOrder.map(s => (s && typeof s === 'object' && 'id' in s) ? s.id : s)
+        : null;
+
+    let legs = 0;
+    if (ids && ids.length > 1) {
+        legs = ids.length - 1;
+    } else if (route.stops && route.stops.length > 0 && typeof route.startIndex === 'number' && typeof route.endIndex === 'number') {
+        legs = calculateForwardDistance(route.startIndex, route.endIndex, route.stops.length);
+    }
+    if (legs <= 0) return 0;
+
+    let etaSum = 0, etaCount = 0, waitSum = 0, waitCount = 0;
+    if (ids && ids.length > 1) {
+        for (let i = 0; i < ids.length - 1; i++) {
+            const fromId = ids[i];
+            const toId = ids[i + 1];
+            const etaVal = (etas && etas[toId] && etas[toId].from && etas[toId].from[fromId])
+                ? etas[toId].from[fromId]
+                : null;
+            if (typeof etaVal === 'number' && etaVal > 0) {
+                etaSum += etaVal;
+                etaCount++;
+            }
+            // Wait time at intermediate stops only (boarding stop has no wait).
+            if (i < ids.length - 2 && waits && typeof waits[toId] === 'number' && waits[toId] > 0) {
+                waitSum += waits[toId];
+                waitCount++;
+            }
+        }
+    }
+
+    if (etaCount > 0 || waitCount > 0) {
+        const avgEta = etaCount > 0 ? etaSum / etaCount : 0;
+        const avgWait = waitCount > 0 ? waitSum / waitCount : 0;
+        const seconds = avgEta * legs + avgWait * Math.max(0, legs - 1);
+        return Math.ceil(seconds / 60);
+    }
+
+    return Math.ceil(legs * NAV_FALLBACK_MIN_PER_STOP);
+}
+
+// Compute door-to-stop walking time (seconds) for the boarding leg from a
+// given walking distance object ({feet}), or 0 when there's no walk.
+function getStartWalkSeconds(startWalkDist) {
+    if (!startWalkDist || startWalkDist.feet <= 30) return 0;
+    return Math.ceil(startWalkDist.feet / 220) * 60; // 220 ft/min ≈ 3 mph
+}
+
+// Build the HTML for the next 3 buses approaching the boarding stop on the
+// selected route. Only buses arriving AFTER the walk to the stop are listed;
+// the wait shown subtracts the walking time (so (0m wait) if you'd have to
+// sprint).
+// Top N buses approaching a given stop for a route, sorted soonest-first.
+// Shared by the boarding ("next buses") list and the alighting ("arrival") list
+// so both show the exact same buses. When fewer than `limit` buses are found on
+// the current loop, merges in the same buses' second loop (first-loop ETA + one
+// full route loop time) so the list always has up to `limit` entries when any
+// qualifying buses exist.
+function getTopApproachingBuses(routeName, stopId, walkSeconds, limit) {
+    if (typeof busesByRoutes === 'undefined' || typeof selectedCampus === 'undefined' ||
+        !busesByRoutes[selectedCampus]) {
+        return [];
+    }
+    const lowerRouteName = String(routeName || '').toLowerCase();
+    const routeKey = busesByRoutes[selectedCampus][lowerRouteName]
+        ? lowerRouteName
+        : Object.keys(busesByRoutes[selectedCampus]).find(k => k.toLowerCase() === lowerRouteName);
+    if (!routeKey || !busesByRoutes[selectedCampus][routeKey]) return [];
+
+    const approaching = [];
+    const loopTimes = (typeof calculateLoopTimes === 'function') ? calculateLoopTimes() : null;
+    const loopTimeSec = (loopTimes && typeof loopTimes[routeKey] === 'number' && isFinite(loopTimes[routeKey]))
+        ? loopTimes[routeKey] * 60
+        : null;
+
+    busesByRoutes[selectedCampus][routeKey].forEach(busName => {
+        try {
+            if (!busData[busName]) return;
+            if (busData[busName].oos || busData[busName].atDepot) return;
+            if (typeof isBusInService === 'function' && !isBusInService(busName)) return;
+            if (typeof isBusShownOnMap === 'function' && !isBusShownOnMap(busName)) return;
+            // ETA to the boarding stop (seconds) on the current loop
+            const eta = (typeof getETAForStop === 'function') ? getETAForStop(busName, stopId) : undefined;
+            if (typeof eta !== 'number' || !isFinite(eta) || eta < 0) return;
+            // This bus's first catchable pass: walk forward loop by loop until the
+            // ETA is late enough that the user can actually reach the stop. A bus
+            // whose current-loop ETA is before the walk time is not "gone" — the
+            // rider just catches it on a later loop.
+            let catchEta = eta;
+            let catchLoop = 1;
+            while (walkSeconds > 0 && catchEta < walkSeconds && loopTimeSec !== null && isFinite(loopTimeSec) && loopTimeSec > 0) {
+                catchEta += loopTimeSec;
+                catchLoop += 1;
+            }
+            if (walkSeconds > 0 && catchEta < walkSeconds) return;
+            approaching.push({ busName, eta: catchEta, loop: catchLoop });
+        } catch (e) {}
+    });
+
+    approaching.sort((a, b) => a.eta - b.eta);
+    return approaching.slice(0, limit);
+}
+
+function getUpcomingBusesHtml(routeName, stopId, walkSeconds) {
+    try {
+        const now = Date.now();
+        const top = getTopApproachingBuses(routeName, stopId, walkSeconds, 3);
+        if (top.length === 0) return '';
+
+        const rows = top.map((b, i) => {
+            const arrivalTime = new Date(now + b.eta * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const waitMin = Math.max(0, Math.ceil((b.eta - walkSeconds) / 60));
+            const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
+            const routeColor = getRouteColor(routeName);
+            return {
+                busName: b.busName,
+                arrivalTime,
+                waitMin,
+                busLabel,
+                routeColor,
+                soonest: i === 0
+            };
+        }).map(b => `
+            <div class="incoming-bus-row" data-bus-name="${b.busName}">
+                <span class="incoming-bus-name" style="color: ${b.routeColor};">${typeof escapeHtml === 'function' ? escapeHtml(b.busLabel) : b.busLabel}</span>
+                <span class="incoming-bus-arrival">arrives ${b.arrivalTime}</span>
+                <span class="incoming-bus-wait ${b.soonest ? 'soonest' : ''}">${b.waitMin > 0 ? `${b.waitMin}m wait` : 'No wait'}</span>
+            </div>
+        `).join('');
+
+        return `
+            <div class="incoming-buses-list">
+                ${rows}
+            </div>
+        `;
+    } catch (e) {
+        console.error('[nav] getUpcomingBusesHtml error:', e);
+        return '';
+    }
+}
+
+// Arrival list shown under the alighting stop-row: the same buses as the
+// boarding list, with two columns: bus name and "<arrival time> arrival time".
+function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSeconds) {
+    try {
+        const top = getTopApproachingBuses(routeName, boardingStopId, walkSeconds, 3);
+        if (top.length === 0) return '';
+
+        const now = Date.now();
+        const rows = top.map(b => {
+            // ETA at the destination/alighting stop
+            const eta = (typeof getETAForStop === 'function') ? getETAForStop(b.busName, alightingStopId) : undefined;
+            const etaSeconds = (typeof eta === 'number' && isFinite(eta)) ? eta : b.eta;
+            const arrivalTime = new Date(now + etaSeconds * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
+            const routeColor = getRouteColor(routeName);
+            return `
+                <div class="destination-bus-row" data-bus-name="${b.busName}">
+                    <span class="destination-bus-name" style="color: ${routeColor};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
+                    <span class="destination-bus-arrival">${arrivalTime} arrival</span>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="destination-buses-list">
+                ${rows}
+            </div>
+        `;
+    } catch (e) {
+        console.error('[nav] getArrivingBusesHtml error:', e);
+        return '';
+    }
 }
 
 async function loadAndDisplayRoadNetwork() {
@@ -2320,18 +2497,25 @@ function formatRouteLabel(routeName) {
 }
 
 // Format route label with route color (WKND variants shown on their own)
+function getRouteColor(routeName) {
+    const n = String(routeName || '').toLowerCase();
+    const m = n.match(/^(?:wknd|on)(\d+)/);
+    if (m) {
+        const wkKey = `wknd${m[1]}`;
+        return (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
+    }
+    return (typeof colorMappings !== 'undefined' && colorMappings[n]) ? colorMappings[n] : '#111827';
+}
+
+// Decorated route label with WKND/ON variant expansion (used in route badges).
 function formatRouteLabelColored(routeName) {
     const original = String(routeName || '');
     const n = original.toLowerCase();
     const m = n.match(/^(?:wknd|on)(\d+)/);
     if (m) {
-        const v = m[1];
-        const wkKey = `wknd${v}`;
-        const wkColor = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
-        return `<span style="color: ${wkColor};">WKND${v}</span>`;
+        return `<span style="color: ${getRouteColor(routeName)};">WKND${m[1]}</span>`;
     }
-    const color = (typeof colorMappings !== 'undefined' && colorMappings[n]) ? colorMappings[n] : '#111827';
-    return `<span style="color: ${color};">${original.toUpperCase()}</span>`;
+    return `<span style="color: ${getRouteColor(routeName)};">${original.toUpperCase()}</span>`;
 }
 
 // Load road names for walking segments and update the UI (non-blocking)
@@ -2455,6 +2639,370 @@ async function loadEndWalkingRoads(endBuilding, endStop) {
     }
 }
 
+// Calculate journey minutes for a candidate route option
+function calculateOptionJourneyMinutes(r, combo, routeData) {
+    let totalMinutes = 0;
+    const startWalk = (combo && combo.startWalkDistance) || (routeData && routeData.startWalkDistance);
+    const endWalk = (combo && combo.endWalkDistance) || (routeData && routeData.endWalkDistance);
+    if (startWalk) {
+        totalMinutes += Math.ceil(startWalk.feet / 220);
+    }
+    if (endWalk) {
+        totalMinutes += Math.ceil(endWalk.feet / 220);
+    }
+
+    const startStop = (combo && combo.startStop) || (routeData && routeData.startStop);
+    const endStop = (combo && combo.endStop) || (routeData && routeData.endStop);
+
+    const effectiveRoute = (startStop && endStop)
+        ? getRouteDetails(r, startStop.id, endStop.id)
+        : r;
+
+    totalMinutes += computeBusTravelTimeMinutes(effectiveRoute);
+
+    // Wait at the boarding stop: the soonest approaching bus you can
+    // actually catch (after the walk there). Skipped only if no live
+    // data exists yet — then the wait is just unknown, not zero.
+    if (startStop && navRouteHasLiveBuses(r.name)) {
+        const walkSeconds = startWalk ? getStartWalkSeconds(startWalk) : 0;
+        const top = getTopApproachingBuses(r.name, startStop.id, walkSeconds, 1);
+        if (top.length > 0) {
+            totalMinutes += Math.max(0, Math.ceil((top[0].eta - walkSeconds) / 60));
+        }
+    }
+
+    return totalMinutes;
+}
+
+// Sort route options: live routes first (sorted ascending by journey time), then inactive routes (sorted ascending)
+function sortRoutesForDisplay(routesForDisplay) {
+    routesForDisplay.sort((a, b) => {
+        const aWkndOn = String(a.displayName || a.route.name || '').toLowerCase().startsWith('wknd') || String(a.displayName || a.route.name || '').toLowerCase().startsWith('on');
+        const bWkndOn = String(b.displayName || b.route.name || '').toLowerCase().startsWith('wknd') || String(b.displayName || b.route.name || '').toLowerCase().startsWith('on');
+        if (a.hasLive && !b.hasLive) return -1;
+        if (!a.hasLive && b.hasLive) return 1;
+        if (!a.hasLive && !b.hasLive && aWkndOn !== bWkndOn) {
+            return aWkndOn ? 1 : -1;
+        }
+        if (a.journeyMinutes !== b.journeyMinutes) {
+            return a.journeyMinutes - b.journeyMinutes;
+        }
+        const stopsA = (a.route.stopsInOrder ? a.route.stopsInOrder.length : a.route.totalStops) || 0;
+        const stopsB = (b.route.stopsInOrder ? b.route.stopsInOrder.length : b.route.totalStops) || 0;
+        return stopsA - stopsB;
+    });
+}
+
+// Build HTML for route selector pills
+function buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex) {
+    if (!routesForDisplay || routesForDisplay.length <= 1) return '';
+    let _lastLiveIdx = -1;
+    for (let i = 0; i < routesForDisplay.length; i++) {
+        if (routesForDisplay[i].hasLive) _lastLiveIdx = i;
+    }
+    const _hasBoth = _lastLiveIdx >= 0 && _lastLiveIdx < routesForDisplay.length - 1;
+
+    const routeOptions = routesForDisplay.map((entry, index) => {
+        const isSelected = index === selectedRouteDisplayIndex;
+        const routeKey = entry.route.name.toLowerCase();
+        const label = entry.displayName;
+
+        let routeColor = '#111827';
+        const m = label.toLowerCase().match(/^(?:wknd|on)(\d+)/);
+        if (m) {
+            const wkKey = `wknd${m[1]}`;
+            routeColor = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
+        } else if (typeof colorMappings !== 'undefined' && colorMappings[routeKey]) {
+            routeColor = colorMappings[routeKey];
+        }
+
+        let backgroundColor = 'var(--theme-unselected-route-bg)';
+        let textColor = 'var(--theme-unselected-route-text)';
+
+        if (isSelected) {
+            backgroundColor = routeColor;
+            textColor = 'white';
+        }
+
+        const selectedClass = isSelected ? 'selected' : '';
+        const style = `background-color: ${backgroundColor}; color: ${textColor};`;
+        const hasLive = entry.hasLive;
+        const liveDotHtml = hasLive ? `<span class="nav-route-live-dot" aria-label="Buses in service" title="Buses in service"></span>` : ``;
+
+        const journeyMinutes = hasLive ? Math.max(1, entry.journeyMinutes) : 0;
+        const timeHtml = (hasLive && journeyMinutes > 0) ? `<span class="route-option-time">${journeyMinutes}m</span>` : ``;
+        const labelHtml = `<span class="route-option-label" style="color: ${isSelected ? 'white' : routeColor}; font-weight: 700;">${label}</span>`;
+
+        const pill = `<div class="route-option ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">${liveDotHtml}${labelHtml}${timeHtml}</div>`;
+        if (_hasBoth && index === _lastLiveIdx) {
+            return pill + `<div class="route-options-divider" aria-hidden="true" style="width:1px; height:2.2rem; background:var(--theme-line-bg); flex-shrink:0; align-self:center; margin:0 0.25rem; opacity:0.9;"></div>`;
+        }
+        return pill;
+    }).join('');
+
+    return `
+        <div class="nav-route-selector" style="margin-bottom: 1rem;">
+            <div class="route-options-container">
+                ${routeOptions}
+            </div>
+        </div>
+    `;
+}
+
+// Bind click handlers to route selector pills
+function bindNavRouteOptionClicks(routesForDisplay) {
+    if (!routesForDisplay || routesForDisplay.length <= 1) return;
+    $('.route-option').off('click').on('click', function() {
+        const newRouteIndex = parseInt($(this).attr('data-route-index'), 10);
+        const curSelected = (navRouteSession && navRouteSession.routeData && typeof navRouteSession.routeData.selectedRouteDisplayIndex === 'number')
+            ? navRouteSession.routeData.selectedRouteDisplayIndex
+            : 0;
+
+        if (newRouteIndex !== curSelected && routesForDisplay[newRouteIndex]) {
+            const newRoute = routesForDisplay[newRouteIndex].route;
+            sa_event('btn_press', {
+                'btn': 'nav_alternate_route',
+                'route': newRoute.name,
+                'from_route': (routesForDisplay[curSelected] && routesForDisplay[curSelected].route) ? routesForDisplay[curSelected].route.name : '',
+                'route_index': newRouteIndex
+            });
+
+            // Update visual selection
+            const defaultBg = 'var(--theme-unselected-route-bg)';
+            const defaultText = 'var(--theme-unselected-route-text)';
+            $('.route-option').each(function() {
+                const rIdx = parseInt($(this).attr('data-route-index'), 10);
+                const rEntry = routesForDisplay[rIdx];
+                let rColor = '#111827';
+                if (rEntry) {
+                    const rm = rEntry.displayName.toLowerCase().match(/^(?:wknd|on)(\d+)/);
+                    if (rm) {
+                        const wkKey = `wknd${rm[1]}`;
+                        rColor = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
+                    } else if (typeof colorMappings !== 'undefined' && colorMappings[rEntry.route.name.toLowerCase()]) {
+                        rColor = colorMappings[rEntry.route.name.toLowerCase()];
+                    }
+                }
+                $(this).removeClass('selected');
+                $(this).attr('style', `background-color: ${defaultBg}; color: ${defaultText};`);
+                $(this).find('.route-option-label').css('color', rColor);
+            });
+            $(this).addClass('selected');
+
+            const selectedRouteName = newRoute.name.toLowerCase();
+            let selectedBg = '#6b7280';
+            const sm = routesForDisplay[newRouteIndex].displayName.toLowerCase().match(/^(?:wknd|on)(\d+)/);
+            if (sm) {
+                const wkKey = `wknd${sm[1]}`;
+                selectedBg = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#6b7280';
+            } else if (typeof colorMappings !== 'undefined' && colorMappings[selectedRouteName]) {
+                selectedBg = colorMappings[selectedRouteName];
+            }
+            $(this).attr('style', `background-color: ${selectedBg}; color: white;`);
+            $(this).find('.route-option-label').css('color', 'white');
+
+            if (navRouteSession && navRouteSession.routeData) {
+                navRouteSession.routeData.selectedRouteDisplayIndex = newRouteIndex;
+            }
+
+            const routeData = navRouteSession ? navRouteSession.routeData : null;
+            if (!routeData) return;
+
+            const newRouteKey = String(newRoute.name || '').toLowerCase();
+            const routeCombosMap = routeData.routeCombosMap || {};
+            const combo = routeCombosMap[newRouteKey];
+
+            const effectiveStartStop = combo && combo.startStop ? combo.startStop : routeData.startStop;
+            const effectiveEndStop = combo && combo.endStop ? combo.endStop : routeData.endStop;
+            const effectiveStartWalk = combo && combo.startWalkDistance ? combo.startWalkDistance : routeData.startWalkDistance;
+            const effectiveEndWalk = combo && combo.endWalkDistance ? combo.endWalkDistance : routeData.endWalkDistance;
+
+            const newRouteDetails = getRouteDetails(newRoute, effectiveStartStop.id, effectiveEndStop.id);
+
+            setTimeout(() => {
+                updateRouteDisplay({
+                    startBuilding: routeData.startBuilding,
+                    endBuilding: routeData.endBuilding,
+                    startStop: effectiveStartStop,
+                    endStop: effectiveEndStop,
+                    route: newRouteDetails,
+                    startWalkDistance: effectiveStartWalk,
+                    endWalkDistance: effectiveEndWalk,
+                    originalInputs: routeData.originalInputs,
+                    startIsStop: routeData.startIsStop,
+                    endIsStop: routeData.endIsStop
+                });
+
+                positionGlobalWaypointConnector();
+
+                if (navRouteSession && navRouteSession.routeData) {
+                    navRouteSession.routeData.route = newRouteDetails;
+                    navRouteSession.routeData.startStop = effectiveStartStop;
+                    navRouteSession.routeData.endStop = effectiveEndStop;
+                    navRouteSession.routeData.startWalkDistance = effectiveStartWalk;
+                    navRouteSession.routeData.endWalkDistance = effectiveEndWalk;
+                    navRouteSession.routeData.restoreRouteName = newRoute.name;
+                    navRouteSession.routeData.selectedRouteDisplayIndex = newRouteIndex;
+                }
+            }, 0);
+        }
+    });
+}
+
+// Render route selector HTML into container and bind events
+function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
+    const $container = $('.nav-route-selector-container');
+    if (!$container.length) return;
+    if (!routesForDisplay || routesForDisplay.length <= 1) {
+        $container.empty().addClass('none');
+        return;
+    }
+    const html = buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex);
+    $container.removeClass('none').html(html);
+    bindNavRouteOptionClicks(routesForDisplay);
+}
+window.renderNavRouteSelector = renderNavRouteSelector;
+
+// Update upcoming and arriving buses display for the currently active route
+function updateNavBusesDisplay() {
+    try {
+        if (!navRouteSession || !navRouteSession.routeData) return;
+        const routeData = navRouteSession.routeData;
+        const route = routeData.route;
+        const startStop = routeData.startStop;
+        const endStop = routeData.endStop;
+        if (!route || !startStop || !endStop) return;
+
+        const walkSeconds = routeData.startWalkDistance ? getStartWalkSeconds(routeData.startWalkDistance) : 0;
+        const upcomingHtml = getUpcomingBusesHtml(route.name, startStop.id, walkSeconds);
+        const arrivingHtml = getArrivingBusesHtml(route.name, startStop.id, endStop.id, walkSeconds);
+
+        const $incomingList = $('.incoming-buses-list');
+        if ($incomingList.length > 0) {
+            if (upcomingHtml) {
+                if ($incomingList[0].outerHTML.trim() !== upcomingHtml.trim()) {
+                    $incomingList.replaceWith(upcomingHtml);
+                }
+            } else {
+                $incomingList.remove();
+            }
+        } else if (upcomingHtml) {
+            $('.waypoint-row.stop-row.boarding').after(upcomingHtml);
+        }
+
+        const $destList = $('.destination-buses-list');
+        if ($destList.length > 0) {
+            if (arrivingHtml) {
+                if ($destList[0].outerHTML.trim() !== arrivingHtml.trim()) {
+                    $destList.replaceWith(arrivingHtml);
+                }
+            } else {
+                $destList.remove();
+            }
+        } else if (arrivingHtml) {
+            $('.waypoint-row.stop-row.alighting').after(arrivingHtml);
+        }
+
+        const isRouteActive = navRouteHasLiveBuses(route.name);
+        if (isRouteActive) {
+            const timeMinutes = computeBusTravelTimeMinutes(route);
+            $('.waypoint-travel-bus .travel-time').text(`${timeMinutes}m`).show();
+        } else {
+            $('.waypoint-travel-bus .travel-time').hide();
+        }
+
+        positionGlobalWaypointConnector();
+    } catch (e) {
+        console.error('[nav] Error in updateNavBusesDisplay:', e);
+    }
+}
+window.updateNavBusesDisplay = updateNavBusesDisplay;
+
+// Remove out-of-service bus from bus lists and move out-of-service routes to out-of-service section
+function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
+    try {
+        if (!navRouteSession || !navRouteSession.routeData) return;
+
+        const isNavOpen = $('.navigate-wrapper').length > 0 && !$('.navigate-wrapper').hasClass('none');
+        if (!isNavOpen) return;
+
+        const wrapper = $('.nav-directions-wrapper');
+        const hasContent = wrapper.children().length > 0;
+        if (!hasContent && !navDirectionsWasVisibleBeforeFocus) return;
+
+        const routeData = navRouteSession.routeData;
+        const currentRoute = routeData.route;
+        if (!currentRoute) return;
+
+        const emptiedList = Array.isArray(emptiedRoutes)
+            ? emptiedRoutes.map(r => String(r).toLowerCase())
+            : [];
+        const oosList = Array.isArray(oosBusNames)
+            ? oosBusNames.map(b => String(b))
+            : [];
+
+        // Instantly remove any OOS bus rows from the DOM
+        if (oosList.length > 0) {
+            oosList.forEach(busName => {
+                $(`.incoming-bus-row[data-bus-name="${busName}"]`).remove();
+                $(`.destination-bus-row[data-bus-name="${busName}"]`).remove();
+            });
+        }
+
+        // Check routes in the navigation result
+        let routesForDisplay = routeData.routesForDisplay || [];
+        if (routesForDisplay.length === 0 && routeData.allRoutes && routeData.allRoutes.length > 0) {
+            routesForDisplay = routeData.allRoutes.map(r => ({
+                route: r,
+                displayName: r.name.toUpperCase(),
+                hasLive: navRouteHasLiveBuses(r.name)
+            }));
+            routeData.routesForDisplay = routesForDisplay;
+        }
+
+        if (routesForDisplay.length > 0) {
+            let statusOrTimeChanged = false;
+            routesForDisplay.forEach(entry => {
+                const rName = String(entry.route.name || '').toLowerCase();
+                const dName = entry.displayName;
+                const isLive = emptiedList.includes(rName) ? false : navRouteHasLiveBuses(rName, dName);
+                const combo = routeData.routeCombosMap && routeData.routeCombosMap[rName];
+                const newJourneyMinutes = isLive ? calculateOptionJourneyMinutes(entry.route, combo, routeData) : 0;
+
+                if (entry.hasLive !== isLive) {
+                    entry.hasLive = isLive;
+                    statusOrTimeChanged = true;
+                }
+                if (isLive && entry.journeyMinutes !== newJourneyMinutes) {
+                    entry.journeyMinutes = newJourneyMinutes;
+                    statusOrTimeChanged = true;
+                }
+            });
+
+            if (statusOrTimeChanged) {
+                // Re-sort: in-service routes on left of divider, out-of-service routes on right of divider
+                sortRoutesForDisplay(routesForDisplay);
+                routeData.routesForDisplay = routesForDisplay;
+
+                // Update selectedRouteDisplayIndex to the currently selected route's new position
+                const currentRouteKey = String(currentRoute.name || '').toLowerCase();
+                const newIndex = routesForDisplay.findIndex(e => String(e.route.name || '').toLowerCase() === currentRouteKey);
+                routeData.selectedRouteDisplayIndex = newIndex >= 0 ? newIndex : 0;
+
+                // Re-render the route selector pills so times, dots, and divider update
+                renderNavRouteSelector(routesForDisplay, routeData.selectedRouteDisplayIndex);
+            }
+        }
+
+        // Update live upcoming/destination buses on the active route
+        updateNavBusesDisplay();
+
+    } catch (e) {
+        console.error('[nav] Error in updateNavOnOutOfService:', e);
+    }
+}
+window.updateNavOnOutOfService = updateNavOnOutOfService;
+
 // Display the calculated route in the navigation UI
 function displayRoute(routeData) {
     let {
@@ -2499,51 +3047,6 @@ function displayRoute(routeData) {
             return n.startsWith('wknd') || n.startsWith('on');
         };
 
-        const calculateOptionJourneyMinutes = (r, combo) => {
-            let totalMinutes = 0;
-            const startWalk = (combo && combo.startWalkDistance) || startWalkDistance;
-            const endWalk = (combo && combo.endWalkDistance) || endWalkDistance;
-            if (startWalk) {
-                totalMinutes += Math.ceil(startWalk.feet / 220);
-            }
-            if (endWalk) {
-                totalMinutes += Math.ceil(endWalk.feet / 220);
-            }
-
-            const effectiveRoute = (combo && combo.startStop && combo.endStop)
-                ? getRouteDetails(r, combo.startStop.id, combo.endStop.id)
-                : r;
-
-            const stopsInOrder = effectiveRoute.stopsInOrder || [];
-            if (stopsInOrder.length > 1) {
-                let totalSeconds = 0;
-                for (let i = 0; i < stopsInOrder.length - 1; i++) {
-                    const fromStopId = stopsInOrder[i];
-                    const toStopId = stopsInOrder[i + 1];
-                    if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
-                        totalSeconds += etas[toStopId].from[fromStopId];
-                    }
-                    if (i < stopsInOrder.length - 2 && waits && waits[toStopId]) {
-                        totalSeconds += waits[toStopId];
-                    }
-                }
-                if (totalSeconds > 0) {
-                    totalMinutes += Math.ceil(totalSeconds / 60);
-                } else {
-                    const stopsToDestination = Math.abs((effectiveRoute.endIndex || 0) - (effectiveRoute.startIndex || 0));
-                    totalMinutes += Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
-                }
-            } else if (effectiveRoute.stops && effectiveRoute.stops.length > 0) {
-                const startIndex = effectiveRoute.startIndex || 0;
-                const endIndex = effectiveRoute.endIndex || 0;
-                const total = effectiveRoute.stops.length;
-                const stopsToDestination = Math.abs(endIndex - startIndex);
-                const circStopsBetween = total > 0 ? Math.min(stopsToDestination, total - stopsToDestination) : stopsToDestination;
-                totalMinutes += Math.ceil(circStopsBetween * NAV_FALLBACK_MIN_PER_STOP);
-            }
-            return totalMinutes;
-        };
-
         const baseRoutes = allRoutes.filter(r => !isExcluded(r.name) && !isWkndOn(r.name));
         const wkndOnRoutes = allRoutes.filter(r => !isExcluded(r.name) && isWkndOn(r.name));
 
@@ -2579,29 +3082,13 @@ function displayRoute(routeData) {
             const combo = routeCombosMap[rKey];
             const hasLive = navRouteHasLiveBuses(entry.route.name, entry.displayName);
             entry.hasLive = hasLive;
-            entry.journeyMinutes = calculateOptionJourneyMinutes(entry.route, combo);
+            entry.journeyMinutes = hasLive ? calculateOptionJourneyMinutes(entry.route, combo, routeData) : 0;
         });
 
         // Sort route options: live routes first (sorted ascending by journey
         // time), then inactive routes (sorted ascending). Inactive WKND/ON
         // variants sort after inactive weekday routes so weekend service
-        // doesn't crowd out the regular out-of-service routes. Live routes
-        // (green dot) always stay left of the divider, WKND or not.
-        routesForDisplay.sort((a, b) => {
-            const aWkndOn = String(a.displayName || a.route.name || '').toLowerCase().startsWith('wknd') || String(a.displayName || a.route.name || '').toLowerCase().startsWith('on');
-            const bWkndOn = String(b.displayName || b.route.name || '').toLowerCase().startsWith('wknd') || String(b.displayName || b.route.name || '').toLowerCase().startsWith('on');
-            if (a.hasLive && !b.hasLive) return -1;
-            if (!a.hasLive && b.hasLive) return 1;
-            if (!a.hasLive && !b.hasLive && aWkndOn !== bWkndOn) {
-                return aWkndOn ? 1 : -1;
-            }
-            if (a.journeyMinutes !== b.journeyMinutes) {
-                return a.journeyMinutes - b.journeyMinutes;
-            }
-            const stopsA = (a.route.stopsInOrder ? a.route.stopsInOrder.length : a.route.totalStops) || 0;
-            const stopsB = (b.route.stopsInOrder ? b.route.stopsInOrder.length : b.route.totalStops) || 0;
-            return stopsA - stopsB;
-        });
+        sortRoutesForDisplay(routesForDisplay);
 
         // Default to the first (lowest time) route, unless restoring a previous
         // view ("Back to nav") — then keep the route pill the user had selected.
@@ -2625,185 +3112,23 @@ function displayRoute(routeData) {
                 route = primaryEntry.route;
             }
         }
-
-        let _lastLiveIdx = -1;
-        for (let i = 0; i < routesForDisplay.length; i++) if (routesForDisplay[i].hasLive) _lastLiveIdx = i;
-        const _hasBoth = _lastLiveIdx >= 0 && _lastLiveIdx < routesForDisplay.length - 1;
-        const routeOptions = routesForDisplay.map((entry, index) => {
-            const isSelected = index === selectedRouteDisplayIndex;
-            const routeKey = entry.route.name.toLowerCase();
-            const label = entry.displayName;
-
-            let routeColor = '#111827';
-            const m = label.toLowerCase().match(/^(?:wknd|on)(\d+)/);
-            if (m) {
-                const wkKey = `wknd${m[1]}`;
-                routeColor = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
-            } else if (typeof colorMappings !== 'undefined' && colorMappings[routeKey]) {
-                routeColor = colorMappings[routeKey];
-            }
-
-            // Get color from colorMappings only for selected route, fallback to CSS variables
-            backgroundColor = 'var(--theme-unselected-route-bg)';
-            textColor = 'var(--theme-unselected-route-text)';
-
-            if (isSelected) {
-                backgroundColor = routeColor;
-                textColor = 'white';
-            }
-
-            const selectedClass = isSelected ? 'selected' : '';
-            const style = `background-color: ${backgroundColor}; color: ${textColor};`;
-            const hasLive = entry.hasLive;
-            const liveDotHtml = hasLive ? `<span class="nav-route-live-dot" aria-label="Buses in service" title="Buses in service"></span>` : ``;
-
-            const journeyMinutes = hasLive ? Math.max(1, entry.journeyMinutes) : 0;
-            const timeHtml = (hasLive && journeyMinutes > 0) ? `<span class="route-option-time">${journeyMinutes}m</span>` : ``;
-            const labelHtml = `<span class="route-option-label" style="color: ${isSelected ? 'white' : routeColor}; font-weight: 700;">${label}</span>`;
-
-            const pill = `<div class="route-option ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">${liveDotHtml}${labelHtml}${timeHtml}</div>`;
-            if (_hasBoth && index === _lastLiveIdx) {
-                return pill + `<div class="route-options-divider" aria-hidden="true" style="width:1px; height:2.2rem; background:var(--theme-line-bg); flex-shrink:0; align-self:center; margin:0 0.25rem; opacity:0.9;"></div>`;
-            }
-            return pill;
-        }).join('');
-
-        routeSelectorHtml = `
-            <div class="nav-route-selector" style="margin-bottom: 1rem;">
-                <div class="route-options-container">
-                    ${routeOptions}
-                </div>
-            </div>
-        `;
+    } else if (allRoutes.length === 1) {
+        routesForDisplay = [{
+            route: allRoutes[0],
+            displayName: allRoutes[0].name.toUpperCase(),
+            hasLive: navRouteHasLiveBuses(allRoutes[0].name)
+        }];
+        selectedRouteDisplayIndex = 0;
     }
 
-    // Create fuzzy match info if applicable
-    let fuzzyMatchHtml = '';
-    if (usedFuzzyMatch.from || usedFuzzyMatch.to) {
-        const fromMatch = usedFuzzyMatch.from ? `"${originalInputs.from}" as "${startBuilding.name}"` : '';
-        const toMatch = usedFuzzyMatch.to ? `"${originalInputs.to}" as "${endBuilding.name}"` : '';
-        const connector = fromMatch && toMatch ? ' and ' : '';
-        fuzzyMatchHtml = `
-            <div class="fuzzy-match-info" style="margin-bottom: 0.5rem; padding: 0.5rem; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.25rem;">
-                <div style="font-size: 1.1rem; color: #1d4ed8;">
-                    Matched ${fromMatch}${connector}${toMatch}
-                </div>
-            </div>
-        `;
-    }
+    routeSelectorHtml = buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex);
 
     // Removed multi-stop info UI per request
 
     // No longer showing alternative routes info since it's clear from the route selector above
 
-    // Create route header
-    const headerHtml = (function() {
-        let steps = [];
-        if (!startIsStop && startWalkDistance) {
-            const startWalkMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
-            steps.push(`Walk ${startWalkMinutes}m`);
-        }
-        steps.push(`Bus <strong>${formatRouteLabelColored(route.name)}</strong>`);
-        if (!endIsStop && endWalkDistance) {
-            const endWalkMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
-            steps.push(`Walk ${endWalkMinutes}m`);
-        }
-        const summary = steps.join(' → ');
-        
-        // Calculate total travel time
-        let totalMinutes = 0;
-        if (startWalkDistance) {
-            totalMinutes += Math.ceil(startWalkDistance.feet / 220); // Walking time to first stop
-        }
-        if (endWalkDistance) {
-            totalMinutes += Math.ceil(endWalkDistance.feet / 220); // Walking time to destination
-        }
-
-        // Add bus travel time using average etas and waits
-        let busTimeMinutes = 0;
-        if (route.stopsInOrder && route.stopsInOrder.length > 1) {
-            let totalSeconds = 0;
-            let etaCount = 0;
-            let waitCount = 0;
-
-            for (let i = 0; i < route.stopsInOrder.length - 1; i++) {
-                const fromStopId = route.stopsInOrder[i];
-                const toStopId = route.stopsInOrder[i + 1];
-
-                // Add travel time from 'from' stop to 'to' stop
-                if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
-                    totalSeconds += etas[toStopId].from[fromStopId];
-                    etaCount++;
-                }
-
-                // Add wait time at the 'to' stop (except for the last stop)
-                if (i < route.stopsInOrder.length - 2 && waits && waits[toStopId]) {
-                    totalSeconds += waits[toStopId];
-                    waitCount++;
-                }
-            }
-
-            if (totalSeconds > 0) {
-                busTimeMinutes = Math.ceil(totalSeconds / 60);
-                totalMinutes += busTimeMinutes;
-            } else {
-                // Fallback: calculate based on route stops array if stopsInOrder is not available or no ETA data
-                const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-                const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
-                busTimeMinutes = estimatedMinutes;
-                totalMinutes += busTimeMinutes;
-            }
-
-        } else if (route.stops && route.stops.length > 0) {
-            // Final fallback: calculate based on route stops array if stopsInOrder is not available
-            const startIndex = route.startIndex || 0;
-            const endIndex = route.endIndex || 0;
-            const total = route.stops.length;
-            const stopsToDestination = Math.abs(endIndex - startIndex);
-            const circStopsBetween = total > 0 ? Math.min(stopsToDestination, total - stopsToDestination) : stopsToDestination;
-            const estimatedMinutes = Math.ceil(circStopsBetween * NAV_FALLBACK_MIN_PER_STOP);
-            busTimeMinutes = estimatedMinutes;
-            totalMinutes += busTimeMinutes;
-        }
-        
-        const isRouteActive = navRouteHasLiveBuses(route.name);
-        const totalTravelTimeHtml = isRouteActive ? `
-            <div class="total-travel-time" style="font-size: 1.4rem; color: var(--theme-color); margin-top: 0.3rem;">
-                Total travel time: <strong>${totalMinutes}m</strong>
-            </div>
-        ` : `
-            <div class="route-inactive-warning">
-                <i class="fa-solid fa-circle-info"></i>
-                <span>No <span style="font-weight: 500;">${formatRouteLabelColored(route.name)}</span> buses running; directions are for future reference.</span>
-            </div>
-        `;
-
-        return `
-        <div class="route-header nav-directions-header-block" style="margin: 1rem 0 3rem 0; display: grid; grid-template-columns: 3.4rem 1fr 3.4rem; align-items: center; gap: 0.75rem; position: relative;">
-            <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:center; justify-content:center;">
-                <div class="route-random-btn" onclick="randomizeNavLocations()" title="Randomize" style="position:static; transform:none; left:auto; top:auto;">
-                    <i class="fa-solid fa-party-horn"></i>
-                </div>
-                <div class="route-revert-btn ${_hasRandomizedSinceSave ? '' : 'none'}" onclick="revertNavLocations()" title="Revert to previous" style="position:static; transform:none; left:auto; top:auto;">Revert</div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; text-align:center; min-width:0; overflow:hidden;">
-                <div class="route-header-source" style="font-size: 1.5rem; font-weight: 500; color: var(--theme-color); line-height: 1.2; max-width:100%; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${startBuilding.name}</div>
-                <div class="route-header-arrow" style="font-size: 1.2rem; color: var(--theme-link); opacity: 0.8; line-height: 1;">
-                    <i class="fa-solid fa-arrow-down"></i>
-                </div>
-                <div class="route-header-destination" style="font-size: 1.5rem; font-weight: 500; color: var(--theme-color); line-height: 1.2; max-width:100%; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${endBuilding.name}</div>
-                ${totalTravelTimeHtml}
-                ${fuzzyMatchHtml}
-            </div>
-            <div style="display:flex; align-items:center; justify-content:center;">
-                <div class="route-swap-btn" onclick="swapNavLocations()" title="Swap start and destination" style="position:static; transform:none; right:auto; top:auto;">
-                    <i class="fa-regular fa-arrow-up-arrow-down"></i>
-                </div>
-            </div>
-            
-        </div>
-        `;
-    })();
+    // Walking segment from start to boarding stop removed (routes no longer show
+    // the old segment-style breakdown; waypoint rows replaced it).
 
     // Create walking segment from start to boarding stop
     const walkingStartHtml = (startIsStop || !startWalkDistance) ? '' : `
@@ -2834,11 +3159,22 @@ function displayRoute(routeData) {
         stopsListHtml = `
             <div class="bus-stops-list">
                 <div class="stops-sequence" style="font-size: 1.2rem;">
-                    ${route.stopsInOrder.map(stop =>
-                        `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold; text-decoration: underline; text-underline-offset: 2px;' : ''}">
-                            ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
-                        </span>`
-                    ).join(' → ')}
+                    ${route.stopsInOrder.map((stop, index, arr) => {
+                        const isFirst = index === 0;
+                        const isLast = index === arr.length - 1;
+                        const isBoarding = isFirst || (startStop && String(stop.id) === String(startStop.id));
+                        const isAlighting = (isLast && !isFirst) || (endStop && String(stop.id) === String(endStop.id));
+                        const isTerminal = isBoarding || isAlighting;
+                        const style = isTerminal
+                            ? 'color: var(--theme-stops-list-text); opacity: 1;'
+                            : 'color: var(--theme-stops-list-text); opacity: 0.8;';
+                        const stopHtml = `<span style="${style}">${stop.name}</span>`;
+                        if (index < arr.length - 1) {
+                            const arrowOpacity = arr.length > 2 ? '0.8' : '1';
+                            return `${stopHtml}<span class="stop-arrow" style="color: var(--theme-stops-list-text); opacity: ${arrowOpacity}; text-decoration: none;"> → </span>`;
+                        }
+                        return stopHtml;
+                    }).join('')}
                 </div>
             </div>
         `;
@@ -2903,7 +3239,7 @@ function displayRoute(routeData) {
             type: 'stop',
             name: startStop.name,
             isBoarding: true,
-            description: hasStartWalk ? `Board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here` : 'Start here'
+            description: hasStartWalk ? `Board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here` : `Start and board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here`
         });
         // Alighting stop
         waypoints.push({
@@ -2954,37 +3290,8 @@ function displayRoute(routeData) {
                 // Boarding stop - about to ride bus
                 travelIcon = 'fa-solid fa-bus';
                 if (isRouteActive) {
-                    // Calculate bus travel time using average etas and waits
-                    let totalSeconds = 0;
-                    const routeStops = route.stopsInOrder || [];
-                    
-                    if (routeStops.length > 1) {
-                        // Sum up travel times between consecutive stops
-                        for (let i = 0; i < routeStops.length - 1; i++) {
-                            const fromStopId = routeStops[i];
-                            const toStopId = routeStops[i + 1];
-                            
-                            // Add travel time from 'from' stop to 'to' stop
-                            if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
-                                totalSeconds += etas[toStopId].from[fromStopId];
-                            }
-                            
-                            // Add wait time at the 'to' stop (except for the last stop)
-                            if (i < routeStops.length - 2 && waits && waits[toStopId]) {
-                                totalSeconds += waits[toStopId];
-                            }
-                        }
-                    }
-                    
-                    if (totalSeconds > 0) {
-                        const timeMinutes = Math.ceil(totalSeconds / 60);
-                        travelTime = `${timeMinutes}m`;
-                    } else {
-                        // Fallback to estimated time if no average data available
-                        const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-                        const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
-                        travelTime = `${estimatedMinutes}m`;
-                    }
+                    const timeMinutes = computeBusTravelTimeMinutes(route);
+                    travelTime = `${timeMinutes}m`;
                 }
             } else if (waypoint.isAlighting && hasEndWalk) {
                 // Alighting stop - about to walk to destination
@@ -3100,6 +3407,8 @@ function displayRoute(routeData) {
                     ${content}
                 </div>
             </div>
+            ${waypoint.isBoarding ? getUpcomingBusesHtml(route.name, startStop.id, hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0) : ''}
+            ${waypoint.isAlighting ? getArrivingBusesHtml(route.name, startStop.id, endStop.id, hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0) : ''}
             ${travelHtml}
         `;
     }).join('');
@@ -3110,8 +3419,6 @@ function displayRoute(routeData) {
     // Create main content wrapper
     const contentWrapperHtml = `
         <div class="route-content-wrapper">
-            ${routeSelectorHtml}
-            ${headerHtml}
             <div class="waypoint-rows-container">
                 ${waypointRows}
                 <div class="waypoint-connector-global"></div>
@@ -3121,6 +3428,40 @@ function displayRoute(routeData) {
 
     // Add content to container
     directionsContainer.html(contentWrapperHtml);
+
+    // Snapshot this route view for the "<- Back to nav" button on waypoint popups.
+    navRouteSession = {
+        routeData: {
+            startBuilding,
+            endBuilding,
+            startStop,
+            endStop,
+            route,
+            allRoutes,
+            routesForDisplay,
+            selectedRouteDisplayIndex,
+            startWalkDistance,
+            endWalkDistance,
+            hasAlternatives: allRoutes.length > 1,
+            alternativeRoutes: allRoutes.length > 1 ? allRoutes.slice(1) : [],
+            usedFuzzyMatch,
+            originalInputs,
+            startIsStop,
+            endIsStop,
+            routeCombosMap,
+            restoreRouteName: (routesForDisplay[selectedRouteDisplayIndex] && routesForDisplay[selectedRouteDisplayIndex].route.name) || route.name
+        },
+        fromVal: $('#nav-from-input').val(),
+        toVal: $('#nav-to-input').val(),
+        scrollTop: 0,
+        selectedFromBuilding,
+        selectedFromStop,
+        selectedToBuilding,
+        selectedToStop
+    };
+
+    // Render the route selector above the directions wrapper (outside the scrolled content)
+    renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex);
 
     directionsContainer.append(`
         <div class="flex justify-center mt-3rem mb-2rem">
@@ -3230,108 +3571,6 @@ function displayRoute(routeData) {
     });
     }
 
-    // Add click handlers for route switching
-    if (routesForDisplay.length > 1) {
-        $('.route-option').click(function() {
-            const newRouteIndex = parseInt($(this).attr('data-route-index'));
-
-            if (newRouteIndex !== selectedRouteDisplayIndex) {
-                // Track alternate route selection
-                const newRoute = routesForDisplay[newRouteIndex].route;
-                sa_event('btn_press', {
-                    'btn': 'nav_alternate_route',
-                    'route': newRoute.name,
-                    'from_route': routesForDisplay[selectedRouteDisplayIndex].route.name,
-                    'route_index': newRouteIndex
-                });
-
-                // Update selected route styling (class and inline styles)
-                const defaultBg = 'var(--theme-unselected-route-bg)';
-                const defaultText = 'var(--theme-unselected-route-text)';
-                $('.route-option').each(function() {
-                    const rIdx = parseInt($(this).attr('data-route-index'));
-                    const rEntry = routesForDisplay[rIdx];
-                    let rColor = '#111827';
-                    if (rEntry) {
-                        const rm = rEntry.displayName.toLowerCase().match(/^(?:wknd|on)(\d+)/);
-                        if (rm) {
-                            const wkKey = `wknd${rm[1]}`;
-                            rColor = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
-                        } else if (typeof colorMappings !== 'undefined' && colorMappings[rEntry.route.name.toLowerCase()]) {
-                            rColor = colorMappings[rEntry.route.name.toLowerCase()];
-                        }
-                    }
-                    $(this).removeClass('selected');
-                    $(this).attr('style', `background-color: ${defaultBg}; color: ${defaultText};`);
-                    $(this).find('.route-option-label').css('color', rColor);
-                });
-                $(this).addClass('selected');
-                // Apply selected colors
-                const selectedRouteName = newRoute.name.toLowerCase();
-                let selectedBg = '#6b7280';
-                const sm = routesForDisplay[newRouteIndex].displayName.toLowerCase().match(/^(?:wknd|on)(\d+)/);
-                if (sm) {
-                    const wkKey = `wknd${sm[1]}`;
-                    selectedBg = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#6b7280';
-                } else if (typeof colorMappings !== 'undefined' && colorMappings[selectedRouteName]) {
-                    selectedBg = colorMappings[selectedRouteName];
-                }
-                $(this).attr('style', `background-color: ${selectedBg}; color: white;`);
-                $(this).find('.route-option-label').css('color', 'white');
-
-                // Track the newly selected route index so we can switch back later
-                selectedRouteDisplayIndex = newRouteIndex;
-
-                // Get the new route details using best combo per route (start/end stops may differ)
-                const newRouteKey = String(newRoute.name || '').toLowerCase();
-                const combo = routeCombosMap[newRouteKey];
-
-                // Fallback to current stops if no combo found (shouldn't happen)
-                const effectiveStartStop = combo && combo.startStop ? combo.startStop : startStop;
-                const effectiveEndStop = combo && combo.endStop ? combo.endStop : endStop;
-                const effectiveStartWalk = combo && combo.startWalkDistance ? combo.startWalkDistance : startWalkDistance;
-                const effectiveEndWalk = combo && combo.endWalkDistance ? combo.endWalkDistance : endWalkDistance;
-
-                // Get detailed route information for the new route with proper stop indices
-                const newRouteDetails = getRouteDetails(newRoute, effectiveStartStop.id, effectiveEndStop.id);
-                
-
-                // Update the route display with new route information
-                
-                // Run route display update in background to prevent blocking UI
-                setTimeout(() => {
-                updateRouteDisplay({
-                    startBuilding,
-                    endBuilding,
-                    startStop: effectiveStartStop,
-                    endStop: effectiveEndStop,
-                    route: newRouteDetails,
-                    startWalkDistance: effectiveStartWalk,
-                    endWalkDistance: effectiveEndWalk,
-                    originalInputs,
-                    startIsStop,
-                    endIsStop
-                });
-
-                // Reposition connector after content updates
-                positionGlobalWaypointConnector();
-
-                // Keep the "Back to nav" snapshot in sync with the newly
-                // selected route pill (same from/to, new route/stops/walks).
-                if (navRouteSession && navRouteSession.routeData) {
-                    navRouteSession.routeData.route = newRouteDetails;
-                    navRouteSession.routeData.startStop = effectiveStartStop;
-                    navRouteSession.routeData.endStop = effectiveEndStop;
-                    navRouteSession.routeData.startWalkDistance = effectiveStartWalk;
-                    navRouteSession.routeData.endWalkDistance = effectiveEndWalk;
-                    navRouteSession.routeData.restoreRouteName = newRoute.name;
-                    navRouteSession.routeData.selectedRouteDisplayIndex = newRouteIndex;
-                }
-                }, 0);
-            }
-        });
-    }
-
     // Show directions tab if hidden
     openDirectionsNav();
     window.errorTracker.trackNavigationWrapperShow('calculateRoute function');
@@ -3348,37 +3587,6 @@ function displayRoute(routeData) {
 
     // Scroll to top of route content wrapper
     $('.nav-directions-wrapper').scrollTop(0);
-
-    // Snapshot this route view for the "<- Back to nav" button on waypoint popups.
-    // Kept current as the user switches route pills (see route-switch handler below).
-    navRouteSession = {
-        routeData: {
-            startBuilding,
-            endBuilding,
-            startStop,
-            endStop,
-            route,
-            allRoutes,
-            startWalkDistance,
-            endWalkDistance,
-            hasAlternatives: allRoutes.length > 1,
-            alternativeRoutes: allRoutes.length > 1 ? allRoutes.slice(1) : [],
-            usedFuzzyMatch,
-            originalInputs,
-            startIsStop,
-            endIsStop,
-            routeCombosMap,
-            restoreRouteName: (routesForDisplay[selectedRouteDisplayIndex] && routesForDisplay[selectedRouteDisplayIndex].route.name) || route.name
-        },
-        fromVal: $('#nav-from-input').val(),
-        toVal: $('#nav-to-input').val(),
-        scrollTop: 0,
-        selectedFromBuilding,
-        selectedFromStop,
-        selectedToBuilding,
-        selectedToStop
-    };
-
 }
 
 // Adjust corner border radii and top border if the attached drawer list is wider/narrower than its parent travel header
@@ -3480,6 +3688,15 @@ $(window).on('resize', function() {
     positionGlobalWaypointConnector();
 });
 
+// Soften the hard edge where scrolled content disappears under the route
+// selector: add a top fade to the directions wrapper while it is scrolled
+// (removed at the top so the resting view is unaffected). The wrapper element
+// persists in index.html; only its children are re-rendered, so this binding
+// survives route switches and re-opens.
+$('.nav-directions-wrapper').on('scroll', function() {
+    $(this).toggleClass('nav-fade-top', this.scrollTop > 4);
+});
+
 // Update route display when switching routes
 function updateRouteDisplay(routeData) {
     const {
@@ -3495,92 +3712,6 @@ function updateRouteDisplay(routeData) {
         endIsStop = false
     } = routeData;
 
-    // Calculate total travel time for the new route
-    let totalMinutes = 0;
-    let walkingTime = 0;
-    let busTime = 0;
-    
-    if (startWalkDistance) {
-        const startWalkMinutes = Math.ceil(startWalkDistance.feet / 220); // Walking time to first stop
-        totalMinutes += startWalkMinutes;
-        walkingTime += startWalkMinutes;
-    }
-    if (endWalkDistance) {
-        const endWalkMinutes = Math.ceil(endWalkDistance.feet / 220); // Walking time to destination
-        totalMinutes += endWalkMinutes;
-        walkingTime += endWalkMinutes;
-    }
-    
-    // Add bus travel time using average etas and waits for the new route
-    if (route.stopsInOrder && route.stopsInOrder.length > 1) {
-        let totalSeconds = 0;
-        let etaCount = 0;
-        let waitCount = 0;
-        
-        for (let i = 0; i < route.stopsInOrder.length - 1; i++) {
-            const fromStopId = route.stopsInOrder[i];
-            const toStopId = route.stopsInOrder[i + 1];
-            
-            // Add travel time from 'from' stop to 'to' stop
-            if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
-                totalSeconds += etas[toStopId].from[fromStopId];
-                etaCount++;
-            }
-            
-            // Add wait time at the 'to' stop (except for the last stop)
-            if (i < route.stopsInOrder.length - 2 && waits && waits[toStopId]) {
-                totalSeconds += waits[toStopId];
-                waitCount++;
-            }
-        }
-        
-        if (totalSeconds > 0) {
-            const busMinutes = Math.ceil(totalSeconds / 60);
-            totalMinutes += busMinutes;
-            busTime = busMinutes;
-        } else {
-            // Fallback: use number of stops * NAV_FALLBACK_MIN_PER_STOP minutes when no ETA data
-            const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-            const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
-            totalMinutes += estimatedMinutes;
-            busTime = estimatedMinutes;
-        }
-    } else if (route.stops && route.stops.length > 0) {
-        // Fallback: calculate based on route stops array if stopsInOrder is not available
-        const startIndex = route.startIndex || 0;
-        const endIndex = route.endIndex || 0;
-        const total = route.stops.length;
-        const stopsToDestination = Math.abs(endIndex - startIndex);
-        const circStopsBetween = total > 0 ? Math.min(stopsToDestination, total - stopsToDestination) : stopsToDestination;
-        const estimatedMinutes = Math.ceil(circStopsBetween * NAV_FALLBACK_MIN_PER_STOP);
-        totalMinutes += estimatedMinutes;
-        busTime = estimatedMinutes;
-    } else {
-        // Final fallback: use route indices directly
-        const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-        const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
-        totalMinutes += estimatedMinutes;
-        busTime = estimatedMinutes;
-    }
-    
-    // Update the total travel time or show inactive reference notice
-    const isRouteActive = navRouteHasLiveBuses(route.name);
-    $('.total-travel-time, .route-inactive-warning').remove();
-    if (isRouteActive) {
-        $('.route-header-destination').after(`
-            <div class="total-travel-time" style="font-size: 1.4rem; color: var(--theme-color); margin-top: 0.3rem;">
-                Total travel time: <strong>${totalMinutes}m</strong>
-            </div>
-        `);
-    } else {
-        $('.route-header-destination').after(`
-            <div class="route-inactive-warning">
-                <i class="fa-solid fa-circle-info"></i>
-                <span>No <span style="font-weight: 500;">${formatRouteLabelColored(route.name)}</span> buses running; directions are for future reference.</span>
-            </div>
-        `);
-    }
-
     const hasStartWalk = !!(startWalkDistance && startWalkDistance.feet > 30 && startStop && startBuilding && (String(startStop.id) !== String(startBuilding.id) || !startIsStop));
     const hasEndWalk = !!(endWalkDistance && endWalkDistance.feet > 30 && endStop && endBuilding && (String(endStop.id) !== String(endBuilding.id) || !endIsStop));
 
@@ -3594,7 +3725,7 @@ function updateRouteDisplay(routeData) {
             type: 'stop',
             name: startStop.name,
             isBoarding: true,
-            description: hasStartWalk ? `Board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here` : 'Start here'
+            description: hasStartWalk ? `Board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here` : `Start and board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here`
         });
         waypoints.push({
             type: 'stop',
@@ -3617,11 +3748,22 @@ function updateRouteDisplay(routeData) {
                 innerStopsListHtml = `
                     <div class="bus-stops-list">
                         <div class="stops-sequence" style="font-size: 1.2rem;">
-                            ${route.stopsInOrder.map(stop =>
-                                `<span style="color: var(--theme-stops-list-text);                     ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold; text-decoration: underline; text-underline-offset: 2px;' : ''}">
-                                    ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
-                                </span>`
-                            ).join(' → ')}
+                            ${route.stopsInOrder.map((stop, index, arr) => {
+                                const isFirst = index === 0;
+                                const isLast = index === arr.length - 1;
+                                const isBoarding = isFirst || (startStop && String(stop.id) === String(startStop.id));
+                                const isAlighting = (isLast && !isFirst) || (endStop && String(stop.id) === String(endStop.id));
+                                const isTerminal = isBoarding || isAlighting;
+                                const style = isTerminal
+                                    ? 'color: var(--theme-stops-list-text); opacity: 1;'
+                                    : 'color: var(--theme-stops-list-text); opacity: 0.8;';
+                                const stopHtml = `<span style="${style}">${stop.name}</span>`;
+                                if (index < arr.length - 1) {
+                                    const arrowOpacity = arr.length > 2 ? '0.8' : '1';
+                                    return `${stopHtml}<span class="stop-arrow" style="color: var(--theme-stops-list-text); opacity: ${arrowOpacity}; text-decoration: none;"> → </span>`;
+                                }
+                                return stopHtml;
+                            }).join('')}
                         </div>
                     </div>
                 `;
@@ -3635,6 +3777,7 @@ function updateRouteDisplay(routeData) {
         // Determine travel segment icon and time for the step to the next waypoint
         let travelIcon = '';
         let travelTime = '';
+        const isRouteActive = navRouteHasLiveBuses(route.name);
         if (index < timelineWaypoints.length - 1) {
             if (index === 0 && hasStartWalk) {
                 // Start building/stop - walking to first stop
@@ -3647,37 +3790,8 @@ function updateRouteDisplay(routeData) {
                 // Boarding stop - about to ride bus
                 travelIcon = 'fa-solid fa-bus';
                 if (isRouteActive) {
-                    // Calculate bus travel time using average etas and waits
-                    let totalSeconds = 0;
-                    const routeStops = route.stopsInOrder || [];
-                    
-                    if (routeStops.length > 1) {
-                        // Sum up travel times between consecutive stops
-                        for (let i = 0; i < routeStops.length - 1; i++) {
-                            const fromStopId = routeStops[i];
-                            const toStopId = routeStops[i + 1];
-                            
-                            // Add travel time from 'from' stop to 'to' stop
-                            if (etas && etas[toStopId] && etas[toStopId].from && etas[toStopId].from[fromStopId]) {
-                                totalSeconds += etas[toStopId].from[fromStopId];
-                            }
-                            
-                            // Add wait time at the 'to' stop (except for the last stop)
-                            if (i < routeStops.length - 2 && waits && waits[toStopId]) {
-                                totalSeconds += waits[toStopId];
-                            }
-                        }
-                    }
-                    
-                    if (totalSeconds > 0) {
-                        const timeMinutes = Math.ceil(totalSeconds / 60);
-                        travelTime = `${timeMinutes}m`;
-                    } else {
-                        // Fallback to estimated time if no average data available
-                        const stopsToDestination = Math.abs(route.endIndex - route.startIndex);
-                        const estimatedMinutes = Math.ceil(stopsToDestination * NAV_FALLBACK_MIN_PER_STOP);
-                        travelTime = `${estimatedMinutes}m`;
-                    }
+                    const timeMinutes = computeBusTravelTimeMinutes(route);
+                    travelTime = `${timeMinutes}m`;
                 }
             } else if (waypoint.isAlighting && hasEndWalk) {
                 // Alighting stop - about to walk to destination
@@ -3793,6 +3907,8 @@ function updateRouteDisplay(routeData) {
                     ${content}
                 </div>
             </div>
+            ${waypoint.isBoarding ? getUpcomingBusesHtml(route.name, startStop.id, hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0) : ''}
+            ${waypoint.isAlighting ? getArrivingBusesHtml(route.name, startStop.id, endStop.id, hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0) : ''}
             ${travelHtml}
         `;
     }).join('');
@@ -3809,11 +3925,22 @@ function updateRouteDisplay(routeData) {
         stopsListHtml = `
             <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem;">
                 <div class="stops-sequence" style="font-size: 1.2rem;">
-                    ${route.stopsInOrder.map(stop =>
-                        `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold; text-decoration: underline; text-underline-offset: 2px;' : ''}">
-                            ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
-                        </span>`
-                    ).join(' → ')}
+                    ${route.stopsInOrder.map((stop, index, arr) => {
+                        const isFirst = index === 0;
+                        const isLast = index === arr.length - 1;
+                        const isBoarding = isFirst || (startStop && String(stop.id) === String(startStop.id));
+                        const isAlighting = (isLast && !isFirst) || (endStop && String(stop.id) === String(endStop.id));
+                        const isTerminal = isBoarding || isAlighting;
+                        const style = isTerminal
+                            ? 'color: var(--theme-stops-list-text); opacity: 1;'
+                            : 'color: var(--theme-stops-list-text); opacity: 0.8;';
+                        const stopHtml = `<span style="${style}">${stop.name}</span>`;
+                        if (index < arr.length - 1) {
+                            const arrowOpacity = arr.length > 2 ? '0.8' : '1';
+                            return `${stopHtml}<span class="stop-arrow" style="color: var(--theme-stops-list-text); opacity: ${arrowOpacity}; text-decoration: none;"> → </span>`;
+                        }
+                        return stopHtml;
+                    }).join('')}
                 </div>
             </div>
         `;
@@ -3853,9 +3980,10 @@ function updateRouteDisplay(routeData) {
 // Clear the current route display
 function clearRouteDisplay() {
     $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
+    $('.nav-route-selector-container').empty();
+    $('.nav-message').remove();
     navDirectionsWasVisibleBeforeFocus = false;
     lastComputedRouteKey = null;
-    showNavigationMessage('Route cleared');
 }
 
 // Reopen the nav menu exactly as it was when a waypoint popup was opened
@@ -3891,6 +4019,9 @@ function openNavBack() {
 
     // Re-render the exact same route view (same route pill, stops, walks).
     displayRoute(s.routeData);
+    if (typeof updateSearchHeading === 'function') {
+        updateSearchHeading();
+    }
 
     // Restore the scroll position the user left from.
     if (s.scrollTop) $('.nav-directions-wrapper').scrollTop(s.scrollTop);
@@ -3902,6 +4033,7 @@ function closeNavigation() {
     try {
         // Clear route UI
         $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
+        $('.nav-route-selector-container').empty();
         navDirectionsWasVisibleBeforeFocus = false;
         lastComputedRouteKey = null;
         $('.nav-directions-wtrapper').addClass('none').empty();
@@ -3917,6 +4049,9 @@ function closeNavigation() {
         selectedToBuilding = null;
         selectedFromStop = null;
         selectedToStop = null;
+        if (typeof updateSearchHeading === 'function') {
+            updateSearchHeading();
+        }
         // Reset pending source state and reveal dest row for next open
         window.navPendingSourceSelection = false;
         $('.nav-dest-row').removeClass('none');

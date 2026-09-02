@@ -293,24 +293,6 @@
     transition: background-color 0.15s ease;
 }
 
-/* Source autocomplete results span the pill bar's full width (including its
-   1rem side margins) below the bar, with padding to match the main search.
-   ── TUNED VALUES — DO NOT CHANGE without visual regression check ──
-   margin-top:0.9rem is the sweet spot between 0.75rem (too high, first nav row
-   ~4px above main search first row) and 1rem (too low, ~4px below). Main first
-   row top = pill margin-bottom 0.5rem + search-content padding-top 0.25rem = 0.75rem,
-   but nav rows have min-height:3.2rem (to match main row with visible Nav pill
-   1.3rem + 2×1rem padding) and row-gap:1.3rem, so optical center needs +0.15rem.
-   Changing this shifts first nav result vs main search by a few pixels. */
-.nav-pill-bar .nav-from-search-results,
-.nav-input-wrapper .nav-to-search-results {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    margin-top: 0.9rem;
-}
-
 .nav-pill-bar-style:focus-within {
     background-color: var(--theme-color);
 }

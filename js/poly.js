@@ -1063,6 +1063,9 @@ function prunePolylinesWithoutInService() {
                     activeRoutesChanged = true;
                     if (appStyle === 'rider') updateRiderRoutes();
                     if (shownRoute === routeName) toggleRoute(routeName);
+                    if (typeof updateNavOnOutOfService === 'function') {
+                        updateNavOnOutOfService([], [routeName]);
+                    }
                 }
             }
         });
