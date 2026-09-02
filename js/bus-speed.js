@@ -177,7 +177,9 @@ async function calculateSpeed(busName) {
         }
 
         if (panelRoute === busData[busName].route) {
-            $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph | ' + busData[busName].capacity + '% full')
+            $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph');
+            $(`.route-bus-capacity[bus-name="${busName}"]`).text(busData[busName].capacity + '% full');
+            updateRouteBusStatus(busName);
         }
         
         if (elapsedMs >= totalUpdateSeconds*1000) {

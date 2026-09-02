@@ -114,6 +114,9 @@ $('.settings-toggle .toggle-input').on('change', function () {
             if ($('.building-info-popup').is(':visible') && window._currentBuildingFeatureForStops) {
                 populateBuildingClosestStopsList(window._currentBuildingFeatureForStops);
             }
+            if (panelRoute && $('.info-panels-show-hide-wrapper').is(':visible')) {
+                selectedRoute(panelRoute);
+            }
             break;
 
         case 'toggle-show-bus-btns':

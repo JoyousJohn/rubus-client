@@ -914,6 +914,70 @@ async function toggleRoute(route) {
 
 }
 
+function getBusStopInfo(busName) {
+    const bus = busData ? busData[busName] : null;
+    if (!bus) return { isStopped: false, stopName: '' };
+
+    // A bus is actively stopped at a stop if and only if bus.at_stop is true
+    const isStopped = Boolean(bus.at_stop) && !forceUnstoppedBuses.has(busName);
+
+    let stopId = null;
+    if (isStopped) {
+        if (bus.stopId != null) {
+            stopId = Array.isArray(bus.stopId) ? bus.stopId[0] : bus.stopId;
+        } else if (bus.next_stop != null) {
+            stopId = bus.next_stop;
+        }
+    } else {
+        if (bus.next_stop != null) {
+            stopId = bus.next_stop;
+        } else if (bus.stopId != null) {
+            stopId = Array.isArray(bus.stopId) ? bus.stopId[0] : bus.stopId;
+        }
+    }
+
+    const stopObj = stopId != null ? (stopsData[stopId] || stopsData[Number(stopId)] || stopsData[String(stopId)]) : null;
+    const stopName = stopObj ? (stopObj.shortName || stopObj.name) : '';
+
+    let etaText = '';
+    if (!isStopped && stopId != null) {
+        const etaVal = getETAForStop(busName, Number(stopId));
+        if (typeof etaVal === 'number' && !isNaN(etaVal)) {
+            const etaMin = Math.max(1, Math.ceil(etaVal / 60));
+            etaText = `${etaMin}m`;
+        }
+    }
+
+    return { isStopped, stopName, stopId, etaText };
+}
+
+function getBusStopStatusIconHtml(isStopped, stopName) {
+    if (!stopName) {
+        return '';
+    }
+    if (isStopped) {
+        return '<div class="route-bus-octagon"><div class="flex align-center justify-center">!</div></div>';
+    } else {
+        return '<i class="fa-solid fa-arrow-right"></i>';
+    }
+}
+
+function updateRouteBusStatus(busName) {
+    if (!panelRoute || !busData[busName] || panelRoute !== busData[busName].route) return;
+    const { isStopped, stopName, etaText } = getBusStopInfo(busName);
+    const iconHtml = getBusStopStatusIconHtml(isStopped, stopName);
+    $(`.route-bus-status-icon[bus-name="${busName}"]`).html(iconHtml);
+    const $stopCol = $(`.route-bus-stop[bus-name="${busName}"]`);
+    $stopCol.empty().attr('title', stopName ? (etaText ? `${stopName} (${etaText})` : stopName) : '');
+    if (stopName) {
+        $stopCol.append(document.createTextNode(stopName));
+        if (etaText) {
+            $stopCol.append($(`<span class="route-bus-eta"></span>`).text(etaText));
+        }
+    }
+}
+window.updateRouteBusStatus = updateRouteBusStatus;
+
 let panelRoute;
 
 function selectedRoute(route) {
@@ -1002,32 +1066,93 @@ function selectedRoute(route) {
     if (typeof updateRouteStarState === 'function') {
         updateRouteStarState(route);
     }
-    $('.route-active-buses').text(busesByRoutes[selectedCampus][route].length === 1 ? '1 bus running' : busesByRoutes[selectedCampus][route].length + ' buses running')
+    const allRouteBuses = (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) || [];
+    const visibleRouteBuses = allRouteBuses.filter(busName => {
+        if (!busData[busName]) return false;
+        if (!settings['toggle-show-out-of-service']) {
+            return isBusShownOnMap(busName);
+        }
+        return true;
+    });
+
+    const routeStops = (stopLists && stopLists[route]) || [];
+    const getBusRouteRank = (busName) => {
+        const bus = busData[busName];
+        if (!bus) return Infinity;
+
+        const isStopped = Boolean(bus.at_stop) && !forceUnstoppedBuses.has(busName);
+        const rawStopId = isStopped ? (bus.stopId ?? bus.next_stop) : (bus.next_stop ?? bus.stopId);
+        const stopId = Array.isArray(rawStopId) ? rawStopId[0] : rawStopId;
+
+        let stopIdx = routeStops.indexOf(Number(stopId));
+        if (stopIdx === -1) {
+            stopIdx = routeStops.indexOf(stopId);
+        }
+        if (stopIdx === -1) {
+            return Infinity;
+        }
+
+        if (isStopped) {
+            return stopIdx;
+        }
+
+        // When en route to next_stop, bus is between (stopIdx - 1) and stopIdx.
+        // If progress is known (0 to 1), use (stopIdx - 1 + progress), bounded.
+        let prog = progressToNextStop(busName);
+        if (typeof prog !== 'number' || isNaN(prog) || prog < 0 || prog > 1) {
+            prog = 0.5;
+        }
+        const prevIdx = (stopIdx - 1 + routeStops.length) % routeStops.length;
+        // If moving from last stop to first stop (wrap-around to stop index 0)
+        if (stopIdx === 0) {
+            return (routeStops.length - 1) + prog;
+        }
+        return prevIdx + prog;
+    };
+
+    visibleRouteBuses.sort((a, b) => {
+        const rankA = getBusRouteRank(a);
+        const rankB = getBusRouteRank(b);
+        if (rankA !== rankB) return rankA - rankB;
+        return (busData[a]?.busName || a).localeCompare(busData[b]?.busName || b);
+    });
+
+    $('.route-active-buses').text(visibleRouteBuses.length === 1 ? '1 bus running' : visibleRouteBuses.length + ' buses running');
 
     $('.active-buses').empty();
-    busesByRoutes[selectedCampus][route].forEach(busName => {
+    visibleRouteBuses.forEach(busName => {
 
-        let speed = ''
-        if ('visualSpeed' in busData[busName]) {
-            speed = parseInt(busData[busName].visualSpeed) + 'mph'
+        let speed = '0mph';
+        if ('visualSpeed' in busData[busName] && !isNaN(parseInt(busData[busName].visualSpeed))) {
+            speed = parseInt(busData[busName].visualSpeed) + 'mph';
         }
-        speed += ' | ' + busData[busName].capacity + '% full'
+        const capacity = (busData[busName].capacity !== undefined && busData[busName].capacity !== null ? busData[busName].capacity : 0) + '% full';
 
-        const $busElm = $(`<div class="flex justify-between">
-            <div class="route-bus-name flex align-center gap-x-0p5rem">${busData[busName].busName}</div>
-            <div class="route-bus-speed" bus-name="${busName}">${speed}</div>
-        </div>`)
+        const { isStopped, stopName, etaText } = getBusStopInfo(busName);
+        const iconHtml = getBusStopStatusIconHtml(isStopped, stopName);
+
+        const $nameCol = $(`<div class="route-bus-name flex align-center gap-x-0p5rem">${busData[busName].busName}</div>`);
+        const $iconCol = $(`<div class="route-bus-status-icon" bus-name="${busName}">${iconHtml}</div>`);
+        const $stopCol = $(`<div class="route-bus-stop" bus-name="${busName}" title="${stopName ? (etaText ? `${stopName} (${etaText})` : stopName) : ''}"></div>`);
+        if (stopName) {
+            $stopCol.append(document.createTextNode(stopName));
+            if (etaText) {
+                $stopCol.append($(`<span class="route-bus-eta"></span>`).text(etaText));
+            }
+        }
+        const $speedCol = $(`<div class="route-bus-speed" bus-name="${busName}">${speed}</div>`);
+        const $capCol = $(`<div class="route-bus-capacity" bus-name="${busName}">${capacity}</div>`);
 
         if (busData[busName].oos) {
-            $busElm.find('.route-bus-name').append(`<div class="bus-oos white br-0p5rem text-1p4rem">OOS</div>`)
+            $nameCol.append(`<div class="bus-oos white br-0p5rem text-1p4rem">OOS</div>`);
         }
 
         if (busData[busName].atDepot) {
-            $busElm.find('.route-bus-name').append(`<div class="bus-depot white br-0p5rem text-1p4rem">Depot</div>`)
+            $nameCol.append(`<div class="bus-depot white br-0p5rem text-1p4rem">Depot</div>`);
         }
         
-        $('.active-buses').append($busElm)
-    })
+        $('.active-buses').append($nameCol, $iconCol, $stopCol, $speedCol, $capCol);
+    });
     // Ensure route selectors are visible and nav buttons are hidden in subpanel
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();

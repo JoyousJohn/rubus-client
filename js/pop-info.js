@@ -230,9 +230,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         if (busStopMarkers[popupStopId]) {
             busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
         }
-        if (typeof stopLayerManager !== 'undefined') {
-            stopLayerManager.setSelected(null);
-        }
+        stopLayerManager.setSelected(null);
         // Release any popup-only marker pin when switching from a stop to a bus.
         if (appStyle !== 'rider') {
             clearTemporaryStopPin();

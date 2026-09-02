@@ -1485,14 +1485,86 @@ html, body {
     color: var(--theme-color-lighter);
 }
 
+.active-buses {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto auto;
+    column-gap: 1rem;
+    row-gap: 0.3rem;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
 .route-bus-name {
     font-size: 1.7rem;
-    color: var(--theme-extra)
+    color: var(--theme-extra);
+    white-space: nowrap;
+}
+
+.route-bus-status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    font-size: 1.3rem;
+    color: var(--theme-color-lighter);
+    margin-left: -0.5rem;
+}
+
+.route-bus-octagon {
+    width: 1.4rem;
+    aspect-ratio: 1;
+    --o: calc(50% * tan(-22.5deg));
+    clip-path: polygon(
+        var(--o) 50%, 50% var(--o),
+        calc(100% - var(--o)) 50%,
+        50% calc(100% - var(--o))
+    );
+    background-color: var(--theme-color-lighter);
+    transform: rotate(90deg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.route-bus-octagon > div {
+    font-size: 1.05rem;
+    transform: rotate(-90deg);
+    font-weight: 900;
+    color: var(--theme-bg);
+    font-family: 'PP Neue Montreal';
+    line-height: 1;
+}
+
+.route-bus-stop {
+    font-size: 1.5rem;
+    color: var(--theme-extra);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.route-bus-eta {
+    font-weight: 600;
+    margin-left: 0.4rem;
+    color: var(--theme-color-lighter);
 }
 
 .route-bus-speed {
     font-size: 1.5rem;
-    color: var(--theme-color-lighter)
+    color: var(--theme-color-lighter);
+    white-space: nowrap;
+    text-align: right;
+    justify-self: end;
+}
+
+.route-bus-capacity {
+    font-size: 1.5rem;
+    color: var(--theme-color-lighter);
+    white-space: nowrap;
+    text-align: right;
+    justify-self: end;
 }
 
 .rbfs-bn {

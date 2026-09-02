@@ -943,6 +943,8 @@ async function fetchWhere() {
                 delete busData[busName]['prevStopId'];
             }
 
+            updateRouteBusStatus(busName);
+
             validBusNames.push(busName);
         }
 
@@ -951,6 +953,11 @@ async function fetchWhere() {
         }
 
         updateTimeToStops(validBusNames);
+        if (panelRoute) {
+            for (const bName of validBusNames) {
+                updateRouteBusStatus(bName);
+            }
+        }
         if (popupStopId) {
             // Preserve any active route filter in the stop info
             updateStopBuses(popupStopId);
@@ -1554,7 +1561,9 @@ async function randomStepBusSpeeds() {
         }
 
         if (panelRoute === busData[busName].route) {
-            $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph | ' + busData[busName].capacity + '% full');
+            $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph');
+            $(`.route-bus-capacity[bus-name="${busName}"]`).text(busData[busName].capacity + '% full');
+            updateRouteBusStatus(busName);
         }
     }
 }

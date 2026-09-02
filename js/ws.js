@@ -182,7 +182,10 @@ class BusWebSocketClient {
         if (isFinite(busCourse)) {
             busData[busName].rotation = busCourse;
         }
-        busData[busName].capacity = data.paxLoad
+        busData[busName].capacity = data.paxLoad;
+        if (panelRoute === busData[busName].route) {
+            $(`.route-bus-capacity[bus-name="${busName}"]`).text(busData[busName].capacity + '% full');
+        }
         
         // Update distance line position marker if this bus is focused
         if (popupBusName === busName && settings['toggle-distances-line-on-focus']) {

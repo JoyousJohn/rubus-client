@@ -177,6 +177,7 @@ function openRUBusSocket() {
             if (eventData['event'] === 'arrival') {
                 busData[busName]['at_stop'] = true;
                 busData[busName]['timeArrived'] = eventData['time_arrived'];
+                updateRouteBusStatus(busName);
                 // console.log(`[l] Bus ${busName} (${busName}) arrived at ${stopName}`)
 
                 if (popupBusName === busName) {
@@ -213,6 +214,7 @@ function openRUBusSocket() {
 
             } else if (eventData['event'] === 'departure') {
                 busData[busName]['at_stop'] = false
+                updateRouteBusStatus(busName);
 
                 let stoppedFor = Math.floor((new Date() - new Date(busData[busName]['timeArrived'])) / 1000);
 
