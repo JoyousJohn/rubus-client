@@ -201,9 +201,60 @@ function shouldShowSpoofToast() {
     return true;
 }
 
+let animationRateToastHideTimeout = null;
+
+function showAnimationRateThrottledToast() {
+    const $wrapper = $('.animation-rate-toast-wrapper');
+    if ($('.spoof-toast-wrapper').is(':visible')) {
+        $wrapper.css('top', '6rem');
+    } else {
+        $wrapper.css('top', '1rem');
+    }
+    $wrapper.removeClass('none').show();
+    $('.animation-rate-toast-enabled').removeClass('none').show();
+    $('.animation-rate-toast-disabled').addClass('none').hide();
+    clearTimeout(animationRateToastHideTimeout);
+    animationRateToastHideTimeout = setTimeout(() => {
+        $wrapper.fadeOut(() => {
+            $wrapper.addClass('none');
+            $wrapper.css('top', '1rem');
+        });
+    }, 10000);
+}
+
+function showAnimationRateRestoredToast() {
+    const $wrapper = $('.animation-rate-toast-wrapper');
+    $wrapper.css('top', '1rem');
+    $('.animation-rate-toast-enabled').addClass('none').hide();
+    $('.animation-rate-toast-disabled').removeClass('none').show();
+    $wrapper.removeClass('none').show();
+    clearTimeout(animationRateToastHideTimeout);
+    animationRateToastHideTimeout = setTimeout(() => {
+        $wrapper.fadeOut(() => {
+            $wrapper.addClass('none');
+            $('.animation-rate-toast-enabled').removeClass('none').show();
+            $('.animation-rate-toast-disabled').addClass('none').hide();
+        });
+    }, 3000);
+}
+
+function shouldShowAnimationRateToast() {
+    const lastShow = localStorage.getItem('last-animation-rate-toast-show');
+    if (lastShow) {
+        const elapsed = Date.now() - parseInt(lastShow);
+        if (elapsed < 8 * 60 * 60 * 1000) return false;
+    }
+    localStorage.setItem('last-animation-rate-toast-show', Date.now().toString());
+    return true;
+}
+
 $(document).ready(function() {
     if (settings['toggle-spoofing'] && shouldShowSpoofToast()) {
         showSpoofEnabledToast();
+    }
+    const isAnimationThrottled = !settings['toggle-low-performance-mode'] && settings['bus-animation-rate'] && settings['bus-animation-rate'] !== 'off';
+    if (isAnimationThrottled && shouldShowAnimationRateToast()) {
+        showAnimationRateThrottledToast();
     }
     $(document).on('click', '.spoof-disable-btn', function() {
         settings['toggle-spoofing'] = false;
@@ -211,5 +262,15 @@ $(document).ready(function() {
         $('#toggle-spoofing').prop('checked', false);
         saveSettings();
         showSpoofDisabledToast();
+    });
+    $(document).on('click', '.animation-rate-disable-btn', function() {
+        settings['bus-animation-rate'] = 'off';
+        $('.settings-bus-animation .settings-option').removeClass('settings-selected');
+        $('.settings-bus-animation .settings-option[bus-animation-rate-option="off"]').addClass('settings-selected');
+        if (typeof applyBusAnimationRate === 'function') {
+            applyBusAnimationRate('off');
+        }
+        saveSettings();
+        showAnimationRateRestoredToast();
     });
 });
