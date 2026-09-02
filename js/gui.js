@@ -583,18 +583,23 @@ function toggleRouteSelectors(route, wasSelected = false) {
         shownRoute = route;
 
         const container = $('.route-selectors');
+        const containerEl = container[0];
 
-        if (container[0].scrollWidth > $(document).width()) {
+        if (containerEl && containerEl.scrollWidth > $(document).width()) {
 
             const element = $(`.route-selector[routeName="${route}"]`);
-            const containerWidth = container.width();
-            const elementWidth = element.outerWidth();
+            if (element.length) {
+                const containerWidth = container.width();
+                const elementWidth = element.outerWidth();
 
-            const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
-            
-            container.animate({
-                scrollLeft: scrollTo
-            }, 180);
+                const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
+                const maxScroll = containerEl.scrollWidth - containerEl.clientWidth;
+                const clampedScrollTo = Math.max(0, Math.min(scrollTo, maxScroll));
+                
+                container.stop(true).animate({
+                    scrollLeft: clampedScrollTo
+                }, 180);
+            }
         }
 
     }
@@ -979,10 +984,11 @@ function selectedRoute(route) {
         const $routesHeaderBtn = $(`.info-panels-header-buttons [data-panel="routes"]`);
         selectInfoPanel('routes', $routesHeaderBtn[0], false);
     } else {
-        // Already in routes: ensure selectors are in subpanel
-        moveRouteSelectorsToSubpanel();
-        // Show all route selectors in subpanel (not filtered by stop selection)
-        populateRouteSelectors(activeRoutes);
+        // Already in routes: ensure selectors are in subpanel if not already there
+        if (!$('#route-selectors-container .bottom').length) {
+            moveRouteSelectorsToSubpanel();
+            populateRouteSelectors(activeRoutes);
+        }
     }
 
     // Now perform route selection after selectors are populated
@@ -2103,6 +2109,8 @@ function updateBusServiceTime() {
 }
 
 function closeRouteMenu() {
+    cancelInfoPanelAnimation();
+    $('.subpanels-container').removeClass('is-dragging-or-animating');
     console.log('closeRouteMenu called');
     console.log('routePanelOpenedFromLongPress:', routePanelOpenedFromLongPress);
     console.log('originalShownRoute:', originalShownRoute);
@@ -2905,6 +2913,12 @@ $(document).ready(function() {
     // updateSettings();
 
     $('.stop-info-back-wrapper').click(function() {
+        // If we arrived here from a navigation waypoint, return to nav
+        if (navBackActive) {
+            navBackActive = false;
+            openNavBack();
+            return;
+        }
         // If we arrived here from a search result, return to search
         if (typeof searchBackActive !== 'undefined' && searchBackActive && typeof openSearchBack === 'function') {
             $('.stop-info-popup').hide();
@@ -2920,6 +2934,12 @@ $(document).ready(function() {
     });
 
     $('.building-info-back-wrapper').click(function() {
+        // If we arrived here from a navigation waypoint, return to nav
+        if (navBackActive) {
+            navBackActive = false;
+            openNavBack();
+            return;
+        }
         if (typeof searchBackActive !== 'undefined' && searchBackActive && typeof openSearchBack === 'function') {
             $('.building-info-popup').hide();
             searchBackActive = false;

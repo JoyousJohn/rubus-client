@@ -290,13 +290,21 @@ function setupBuildingClosestStopsSwitcher() {
 function showBuildingInfo(feature) {
     const cameFromSearch = typeof searchReentry !== 'undefined' && searchReentry;
     searchReentry = false; // one-shot: only the popup directly following a search selection shows the back button
+    const cameFromNav = navReentry;
+    navReentry = false; // one-shot: only the popup directly following a nav waypoint click shows the back button
     $('.knight-mover, .campus-switcher').hide();
     hideInfoBoxes(true);
     searchBackActive = cameFromSearch; // persist for the back-button click handler (set after hideInfoBoxes)
+    navBackActive = cameFromNav;       // persist for the back-button click handler (set after hideInfoBoxes)
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
-    // Show "Back to search" when this building was opened from a search result
-    if (cameFromSearch) {
+    // Show "Back to search"/"Back to nav" when this building was opened from
+    // a search result or a navigation waypoint
+    if (cameFromNav) {
+        $('.building-info-back .flex div').text('Back to nav');
+        $('.building-info-back-wrapper').stop(true, true).show().css('display', 'flex');
+    } else if (cameFromSearch) {
+        $('.building-info-back .flex div').text('Back to search');
         $('.building-info-back-wrapper').stop(true, true).show().css('display', 'flex');
     } else {
         $('.building-info-back-wrapper').stop(true, true).hide();

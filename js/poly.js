@@ -1133,6 +1133,14 @@ function updateStopsOpacity() {
             }
         }
 
+        // Keep a stop pinned for its open popup even when nothing services it
+        // (flown to from search/nav); dim it like an inactive stop.
+        const isPinned = temporarilyShownStopId !== null && String(stopId) === String(temporarilyShownStopId);
+        if (isPinned) {
+            shouldBeOnMap = true;
+            if (!isServiced && !isOOS) opacity = '0.5';
+        }
+
         if (shouldBeOnMap) {
             marker.addTo(map);
             if (el) {
@@ -1206,6 +1214,11 @@ async function precomputeAllRouteBounds() {
 
 
 let busStopMarkers = {};
+
+// Stop currently pinned to the map for an open stop popup even though no
+// in-service bus services it (e.g. flown to from search/nav). Cleared when the
+// user leaves the stop. See clearTemporaryStopPin().
+let temporarilyShownStopId = null;
 
 function getNextStopId(route, stopId) {
     if (!route || !stopLists[route] || stopId === null || stopId === undefined || Number.isNaN(Number(stopId))) {
@@ -1913,7 +1926,10 @@ function updateStopBusesMaxHeight() {
 async function popStopInfo(stopId) {
     const cameFromSearch = typeof searchReentry !== 'undefined' && searchReentry;
     searchReentry = false; // one-shot: only the popup directly following a search selection shows the back button
+    const cameFromNav = navReentry;
+    navReentry = false; // one-shot: only the popup directly following a nav waypoint click shows the back button
     searchBackActive = cameFromSearch; // persist for the back-button click handler
+    navBackActive = cameFromNav;       // persist for the back-button click handler
     // console.log('popStopInfo', stopId);
     
     if (!sim) {
@@ -1960,20 +1976,70 @@ async function popStopInfo(stopId) {
                 busStopMarkers[popupStopId].remove();
             }
         }
+
+        // Release any popup-only marker pin from the previous stop before the
+        // new stop's pin is set below.
+        clearTemporaryStopPin();
     }
 
     console.log('[DEBUG popStopInfo]', { stopId, hasStopData: !!(stopsData && stopsData[stopId]), hasMarker: !!(busStopMarkers && busStopMarkers[stopId]), popupStopId, shownRoute });
-    if (!busStopMarkers[stopId]) {
-        console.error('[DEBUG popStopInfo] Missing busStopMarkers entry for stopId:', stopId, 'existing markers:', Object.keys(busStopMarkers));
+
+    // Fly-to on a stop with no marker in the registry (pruned because no
+    // in-service bus serves it): recreate a marker just for this popup so the
+    // user can see where the stop is. The pin is released when they leave.
+    if (appStyle !== 'rider' && !busStopMarkers[stopId]) {
+        const s = stopsData && stopsData[stopId];
+        if (s) {
+            const marker = L.marker([s.latitude, s.longitude], {
+                icon: L.divIcon({
+                    className: 'custom-stop-icon',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    html: `<div class="marker-wrapper"><img src="img/stop_marker.png" width="18" height="18" stop-marker-id="${stopId}"/><div class="corner-label none" stop-eta="${stopId}">xm</div></div>`
+                }),
+                zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
+            }).addTo(map).on('click', function() {
+                // Don't process stop clicks when in parking permit mode
+                if ($('body').hasClass('parking-permit-mode')) return;
+                sourceStopId = null;
+                sourceBusName = null;
+                clearPanoutFeedback();
+                popStopInfo(stopId);
+                if (!shownRoute) {
+                    showAllBuses();
+                    showAllPolylines();
+                }
+            });
+            marker._temporaryForPopup = true;
+            busStopMarkers[stopId] = marker;
+        }
     }
 
-    // Ensure the newly selected stop marker is added to the map in case it was hidden by the route filter
     if (busStopMarkers[stopId]) {
+        // Ensure the newly selected stop marker is added to the map in case it
+        // was hidden by the route filter or recreated above.
         busStopMarkers[stopId].addTo(map);
+
+        // Pin the stop so poll-based pruning keeps it visible while the popup
+        // is open, dimming it when no in-service bus genuinely serves it.
+        if (appStyle !== 'rider') {
+            temporarilyShownStopId = stopId;
+            const servicedNow = Object.keys(stopLists || {}).some(route =>
+                routeHasValidInServiceBuses(route) && (stopLists[route] || []).map(Number).includes(Number(stopId)));
+            if (!servicedNow) {
+                const el = busStopMarkers[stopId].getElement && busStopMarkers[stopId].getElement();
+                if (el) {
+                    el.style.opacity = '0.5';
+                    el.querySelectorAll('.marker-wrapper, .marker-wrapper img, .corner-label').forEach(c => { c.style.opacity = '0.5'; });
+                }
+            }
+        }
     }
 
     $(`img[stop-marker-id="${stopId}"]`).attr('src', 'img/stop_marker_selected.png');
-    busStopMarkers[stopId].setZIndexOffset(2000);
+    if (busStopMarkers[stopId]) {
+        busStopMarkers[stopId].setZIndexOffset(2000);
+    }
     if (typeof stopLayerManager !== 'undefined') {
         stopLayerManager.setSelected(stopId);
     }
@@ -2141,6 +2207,10 @@ async function popStopInfo(stopId) {
         $('.stop-info-back .flex div').text('BACK');
         $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
         $('.stop-info-back-wrapper').css('display', 'flex');
+    } else if (cameFromNav) {
+        $('.stop-info-back .flex div').text('Back to nav');
+        $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
+        $('.stop-info-back-wrapper').css('display', 'flex');
     } else if (cameFromSearch) {
         $('.stop-info-back .flex div').text('Back to search');
         $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
@@ -2243,6 +2313,36 @@ async function addStopsToMap() {
 
 
 
+// Undo a temporary stop-marker pin when leaving a stop popup. A marker that
+// was recreated just for the popup is removed entirely; a pre-existing marker
+// only drops the pin and lets normal service/filter visibility resume.
+function clearTemporaryStopPin() {
+    if (temporarilyShownStopId === null) return;
+    const stopId = temporarilyShownStopId;
+    temporarilyShownStopId = null;
+    const marker = busStopMarkers[stopId];
+    if (!marker) return;
+    try {
+        if (marker._temporaryForPopup) {
+            if (marker._map || marker._addedToMap) marker.remove();
+            delete busStopMarkers[stopId];
+        } else {
+            // Restore normal z-index/opacity; the next poll's
+            // updateStopsOpacity (or the popup-close route restore) decides
+            // whether this marker stays visible.
+            marker.setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+            const el = marker.getElement && marker.getElement();
+            if (el) {
+                el.style.opacity = '';
+                el.querySelectorAll('.marker-wrapper, .marker-wrapper img, .corner-label').forEach(c => { c.style.opacity = ''; });
+            }
+        }
+    } catch (e) {
+        console.warn('[clearTemporaryStopPin]', e);
+    }
+}
+window.clearTemporaryStopPin = clearTemporaryStopPin;
+
 function removePreviouslyActiveStops() {
     let newActiveStops = [];
 
@@ -2269,7 +2369,9 @@ function removePreviouslyActiveStops() {
     }
 
     for (const stopId in busStopMarkers) {
-        if (!newActiveStops.includes(Number(stopId))) {
+        // Don't prune a stop that's pinned for its open popup.
+        const isPinned = temporarilyShownStopId !== null && String(stopId) === String(temporarilyShownStopId);
+        if (!newActiveStops.includes(Number(stopId)) && !isPinned) {
             map.removeLayer(busStopMarkers[stopId]);
             delete busStopMarkers[stopId];
 

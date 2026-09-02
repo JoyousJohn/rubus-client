@@ -2,6 +2,8 @@
 function hideInfoBoxes(instantly_hide) {
     searchReentry = false;
     if (typeof searchBackActive !== 'undefined') searchBackActive = false;
+    navReentry = false;
+    navBackActive = false;
     // console.log('hideInfoBoxes() triggered')
     $('.desktop-esc-notice').hide();
 
@@ -34,6 +36,12 @@ function hideInfoBoxes(instantly_hide) {
 
         if (typeof stopLayerManager !== 'undefined') {
             stopLayerManager.setSelected(null);
+        }
+
+        // Release any popup-only marker pin (non-rider stops shown for a popup
+        // despite no in-service bus). Runs before the route-filter restore below.
+        if (appStyle !== 'rider' && typeof clearTemporaryStopPin === 'function') {
+            clearTemporaryStopPin();
         }
 
         popupStopId = null;

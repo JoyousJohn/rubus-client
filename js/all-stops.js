@@ -61,12 +61,9 @@ function populateAllStops() {
                     const $stopsElm = $('<div class="pointer incoming-wrapper"><div class="text-1p3rem center mb-0p5rem"></div><div class="incoming-list grid gap-y-0p5rem align-center" style="grid-template-columns: auto 1fr;"></div></div>');
                     $stopsElm.find('.text-1p3rem').text(stopsData[stopId].name);
                     $stopsElm.click(function() {
-                        console.log('Stop clicked, closing info panels');
-                        if (typeof window.cancelInfoPanelAnimation === 'function') {
-                            window.cancelInfoPanelAnimation();
-                        }
+                        cancelInfoPanelAnimation();
+                        $('.subpanels-container').removeClass('is-dragging-or-animating');
                         clearPanoutFeedback();
-                        lastUserSelectedPanelIndex = 1;
                         flyToStop(stopId, true); // true indicates user interaction
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
@@ -100,6 +97,8 @@ function populateAllStops() {
                         const _rc = (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[busData[busName]?.route] || colorMappings[route] || '#000') : (colorMappings[busData[busName]?.route] || colorMappings[route] || '#000'));
                         const $routeChip = $('<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="padding: 0.2rem 1rem;"></div>').css('background-color', _rc).text((busData[busName]?.route || route).toUpperCase())
                             .on('click', function(e) {
+                                cancelInfoPanelAnimation();
+                                $('.subpanels-container').removeClass('is-dragging-or-animating');
                                 // Prevent the parent stop click from firing
                                 e.stopPropagation();
 
@@ -136,7 +135,12 @@ function populateAllStops() {
 }
 
 
-$('.info-panels').click(function() {
+$('.info-panels').click(function(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    window._lastInfoPanelsOpenTime = Date.now();
     const $btn = $(this);
     
     // Clear any existing timeout and restore state

@@ -233,6 +233,10 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         if (typeof stopLayerManager !== 'undefined') {
             stopLayerManager.setSelected(null);
         }
+        // Release any popup-only marker pin when switching from a stop to a bus.
+        if (appStyle !== 'rider') {
+            clearTemporaryStopPin();
+        }
         popupStopId = null;
         thisClosestStopId = null;
         $('.stop-info-popup').hide();

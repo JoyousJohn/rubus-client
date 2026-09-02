@@ -544,7 +544,7 @@
                             <div class="next-stops-oos-notice none text-1p3rem flex flex-col align-center" style="color: var(--theme-extra); opacity: 0.85;">
                                 <div class="flex align-center gap-0p5rem">
                                     <div class="info-stopped-octagon"><div class="flex align-center justify-center">!</div></div>
-                                    <span>Bus may be exiting or just entering service</span>
+                                    <span>Bus may be exiting or just entering service; ETAs will show at next stop</span>
                                 </div>
                                 <hr class="mt-0p5rem" style="width: calc(100% + 3rem); margin: 0.5rem -1.5rem 0.5rem -1.5rem; align-self: center; border: none; border-top: 1px solid var(--theme-line-bg); opacity: 0.6;">
                             </div>
@@ -592,8 +592,8 @@
                         </div>
                         <div class="bus-breaks grid grid-cols-3-auto text-1p4rem gap-x-3rem mt-1rem"></div>
                         <div class="flex justify-evenly w-full">
-                            <div class="show-more-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div.long-break').slideDown(); $('.show-more-breaks').hide();">Show All Breaks</div>
-                            <div class="show-all-breaks text-1p2rem pointer" style="color: #6969bf" onclick="$('.bus-breaks div').slideDown(); $('.show-all-breaks, .show-more-breaks').hide();">Show All Stops (Slow)</div>
+                            <div class="show-more-breaks text-1p2rem pointer" style="color: #6969bf" onclick="showAllBreaksClicked();">Show All Breaks</div>
+                            <div class="show-all-breaks text-1p2rem pointer" style="color: #6969bf" onclick="showAllStopsClicked();">Show All Stops (Slow)</div>
                         </div>
                         <div class="bus-quickness-breakdown-wrapper text-1p2rem none"></div>
                     </div>

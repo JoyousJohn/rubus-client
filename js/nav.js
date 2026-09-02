@@ -14,6 +14,14 @@ let lastComputedRouteKey = null;
 let lastNavFromValueOnFocus = null;
 let lastNavToValueOnFocus = null;
 
+// Route-view snapshot + reentry flags for the "<- Back to nav" button shown on
+// building/stop popups opened from a navigation waypoint. Mirrors the existing
+// searchReentry/searchBackActive pattern, but keeps the full route data so the
+// exact same view (same route pill, stops, walks, inputs) can be re-rendered.
+let navRouteSession = null; // { routeData, fromVal, toVal, scrollTop, selectedFrom/To... }
+let navReentry = false;     // transient: the popup now opening came from a waypoint click
+let navBackActive = false;  // persistent: the currently-visible popup offers "Back to nav"
+
 // Pending source selection after pressing a Nav button with recent searches.
 // While true, the destination (nav-to) row stays hidden and nav-from autocomplete
 // shows recent searches instead of being empty.
@@ -2466,7 +2474,8 @@ function displayRoute(routeData) {
         startIsStop = false,
         endIsStop = false,
         
-        routeCombosMap = {}
+        routeCombosMap = {},
+        restoreRouteName = null
     } = routeData;
 
     // Clear existing route display and ensure flex when shown
@@ -2573,10 +2582,19 @@ function displayRoute(routeData) {
             entry.journeyMinutes = calculateOptionJourneyMinutes(entry.route, combo);
         });
 
-        // Sort route options: live routes first (sorted ascending by journey time), then inactive routes (sorted ascending)
+        // Sort route options: live routes first (sorted ascending by journey
+        // time), then inactive routes (sorted ascending). Inactive WKND/ON
+        // variants sort after inactive weekday routes so weekend service
+        // doesn't crowd out the regular out-of-service routes. Live routes
+        // (green dot) always stay left of the divider, WKND or not.
         routesForDisplay.sort((a, b) => {
+            const aWkndOn = String(a.displayName || a.route.name || '').toLowerCase().startsWith('wknd') || String(a.displayName || a.route.name || '').toLowerCase().startsWith('on');
+            const bWkndOn = String(b.displayName || b.route.name || '').toLowerCase().startsWith('wknd') || String(b.displayName || b.route.name || '').toLowerCase().startsWith('on');
             if (a.hasLive && !b.hasLive) return -1;
             if (!a.hasLive && b.hasLive) return 1;
+            if (!a.hasLive && !b.hasLive && aWkndOn !== bWkndOn) {
+                return aWkndOn ? 1 : -1;
+            }
             if (a.journeyMinutes !== b.journeyMinutes) {
                 return a.journeyMinutes - b.journeyMinutes;
             }
@@ -2585,10 +2603,16 @@ function displayRoute(routeData) {
             return stopsA - stopsB;
         });
 
-        // Default to the first (lowest time) route
+        // Default to the first (lowest time) route, unless restoring a previous
+        // view ("Back to nav") — then keep the route pill the user had selected.
         selectedRouteDisplayIndex = 0;
+        if (restoreRouteName) {
+            const restoreKey = String(restoreRouteName).trim().toLowerCase();
+            const restoreIdx = routesForDisplay.findIndex(e => String(e.route.name).trim().toLowerCase() === restoreKey);
+            if (restoreIdx >= 0) selectedRouteDisplayIndex = restoreIdx;
+        }
         if (routesForDisplay.length > 0) {
-            const primaryEntry = routesForDisplay[0];
+            const primaryEntry = routesForDisplay[selectedRouteDisplayIndex];
             const primaryKey = primaryEntry.route.name.toLowerCase();
             const primaryCombo = routeCombosMap[primaryKey];
             if (primaryCombo) {
@@ -3110,12 +3134,30 @@ function displayRoute(routeData) {
     // Position the single global waypoint connector after render
     positionGlobalWaypointConnector();
 
-    // Add click handlers for waypoint titles
+    // Add click handlers for waypoint titles.
+    // Bound once on document (not per render): the handler only reads DOM
+    // data-* attributes and module globals, so a single delegated listener
+    // serves every re-render without duplicate firings.
+    if (!window._navWaypointClickBound) {
+        window._navWaypointClickBound = true;
     $(document).on('click', '.clickable-waypoint', function() {
         const waypointType = $(this).data('waypoint-type');
         const waypointName = $(this).data('waypoint-name');
         const isBoarding = $(this).data('is-boarding');
         const isAlighting = $(this).data('is-alighting');
+
+        // Capture the live nav view before it's torn down so the popup opened
+        // below can offer "<- Back to nav" and restore this exact view.
+        if (navRouteSession) {
+            navRouteSession.fromVal = $('#nav-from-input').val();
+            navRouteSession.toVal = $('#nav-to-input').val();
+            navRouteSession.scrollTop = $('.nav-directions-wrapper').scrollTop();
+            navRouteSession.selectedFromBuilding = selectedFromBuilding;
+            navRouteSession.selectedFromStop = selectedFromStop;
+            navRouteSession.selectedToBuilding = selectedToBuilding;
+            navRouteSession.selectedToStop = selectedToStop;
+        }
+        navReentry = true;
         
         if (waypointType === 'building') {
             // Find and select the building on the map
@@ -3186,6 +3228,7 @@ function displayRoute(routeData) {
             }
         }
     });
+    }
 
     // Add click handlers for route switching
     if (routesForDisplay.length > 1) {
@@ -3272,6 +3315,18 @@ function displayRoute(routeData) {
 
                 // Reposition connector after content updates
                 positionGlobalWaypointConnector();
+
+                // Keep the "Back to nav" snapshot in sync with the newly
+                // selected route pill (same from/to, new route/stops/walks).
+                if (navRouteSession && navRouteSession.routeData) {
+                    navRouteSession.routeData.route = newRouteDetails;
+                    navRouteSession.routeData.startStop = effectiveStartStop;
+                    navRouteSession.routeData.endStop = effectiveEndStop;
+                    navRouteSession.routeData.startWalkDistance = effectiveStartWalk;
+                    navRouteSession.routeData.endWalkDistance = effectiveEndWalk;
+                    navRouteSession.routeData.restoreRouteName = newRoute.name;
+                    navRouteSession.routeData.selectedRouteDisplayIndex = newRouteIndex;
+                }
                 }, 0);
             }
         });
@@ -3293,7 +3348,37 @@ function displayRoute(routeData) {
 
     // Scroll to top of route content wrapper
     $('.nav-directions-wrapper').scrollTop(0);
-    
+
+    // Snapshot this route view for the "<- Back to nav" button on waypoint popups.
+    // Kept current as the user switches route pills (see route-switch handler below).
+    navRouteSession = {
+        routeData: {
+            startBuilding,
+            endBuilding,
+            startStop,
+            endStop,
+            route,
+            allRoutes,
+            startWalkDistance,
+            endWalkDistance,
+            hasAlternatives: allRoutes.length > 1,
+            alternativeRoutes: allRoutes.length > 1 ? allRoutes.slice(1) : [],
+            usedFuzzyMatch,
+            originalInputs,
+            startIsStop,
+            endIsStop,
+            routeCombosMap,
+            restoreRouteName: (routesForDisplay[selectedRouteDisplayIndex] && routesForDisplay[selectedRouteDisplayIndex].route.name) || route.name
+        },
+        fromVal: $('#nav-from-input').val(),
+        toVal: $('#nav-to-input').val(),
+        scrollTop: 0,
+        selectedFromBuilding,
+        selectedFromStop,
+        selectedToBuilding,
+        selectedToStop
+    };
+
 }
 
 // Adjust corner border radii and top border if the attached drawer list is wider/narrower than its parent travel header
@@ -3772,6 +3857,45 @@ function clearRouteDisplay() {
     lastComputedRouteKey = null;
     showNavigationMessage('Route cleared');
 }
+
+// Reopen the nav menu exactly as it was when a waypoint popup was opened
+// (used by the "<- Back to nav" button on building/stop popups).
+function openNavBack() {
+    navBackActive = false;
+    navReentry = false;
+    const s = navRouteSession;
+    if (!s || !s.routeData) return;
+
+    // Tear down popups (icons, selectors, highlighting) before reopening nav.
+    hideInfoBoxes(true);
+
+    // Restore the from/to inputs exactly as the user left them.
+    isSettingInputProgrammatically = true;
+    $('#nav-from-input').val(s.fromVal || '').toggleClass('has-value', !!s.fromVal);
+    $('#nav-to-input').val(s.toVal || '').toggleClass('has-value', !!s.toVal);
+    isSettingInputProgrammatically = false;
+    if (s.fromVal) $('#nav-from-clear-btn').fadeIn();
+    else $('#nav-from-clear-btn').hide();
+    if (s.toVal) $('#nav-to-clear-btn').fadeIn();
+    else $('#nav-to-clear-btn').hide();
+
+    // Restore the selected place state so future nav edits keep matching.
+    selectedFromBuilding = s.selectedFromBuilding || null;
+    selectedFromStop = s.selectedFromStop || null;
+    selectedToBuilding = s.selectedToBuilding || null;
+    selectedToStop = s.selectedToStop || null;
+
+    // No pending source selection when restoring a completed route.
+    window.navPendingSourceSelection = false;
+    $('.nav-dest-row').removeClass('none');
+
+    // Re-render the exact same route view (same route pill, stops, walks).
+    displayRoute(s.routeData);
+
+    // Restore the scroll position the user left from.
+    if (s.scrollTop) $('.nav-directions-wrapper').scrollTop(s.scrollTop);
+}
+window.openNavBack = openNavBack;
 
 // Fully close and clear navigation UI and state
 function closeNavigation() {

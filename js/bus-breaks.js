@@ -371,13 +371,44 @@ function generateSimBusBreaks(busName) {
     return breaks;
 }
 
-function getBusBreaks(busName) {
+function applyBreaksDisplayMode(showMode) {
+    if (showMode === 'all_stops' || showMode === true) {
+        $('.no-breaks').remove();
+        $('.bus-breaks div').show();
+        $('.show-all-breaks, .show-more-breaks').hide();
+    } else if (showMode === 'all_breaks') {
+        $('.bus-breaks div.long-break').show();
+        $('.show-more-breaks').hide();
+    }
+}
+
+function showAllBreaksClicked() {
+    $('.bus-breaks div.long-break').slideDown();
+    $('.show-more-breaks').hide();
+    const currentBus = (typeof popupBusName !== 'undefined' && popupBusName) ? popupBusName : (typeof sourceBusName !== 'undefined' ? sourceBusName : null);
+    if (currentBus) {
+        getBusBreaks(currentBus, true, 'all_breaks');
+    }
+}
+
+function showAllStopsClicked() {
+    $('.no-breaks').remove();
+    $('.bus-breaks div').slideDown();
+    $('.show-all-breaks, .show-more-breaks').hide();
+    const currentBus = (typeof popupBusName !== 'undefined' && popupBusName) ? popupBusName : (typeof sourceBusName !== 'undefined' ? sourceBusName : null);
+    if (currentBus) {
+        getBusBreaks(currentBus, true, 'all_stops');
+    }
+}
+
+function getBusBreaks(busName, forceRefresh = false, showMode = null) {
     const currentTime = new Date().getTime();
     const THREE_MINUTES = 3 * 60 * 1000;
 
-    if (busBreaksCache[busName] &&
+    if (!forceRefresh && busBreaksCache[busName] &&
         (currentTime - busBreaksCache[busName].timestamp) < THREE_MINUTES) {
         populateBusBreaks(busBreaksCache[busName].data, busName);
+        applyBreaksDisplayMode(showMode);
         return;
     }
 
@@ -388,10 +419,12 @@ function getBusBreaks(busName) {
             timestamp: currentTime
         };
         populateBusBreaks(fakeBreaks, busName);
+        applyBreaksDisplayMode(showMode);
         return;
     }
 
-    fetch(`https://demo.rubus.live/get_breaks?bus_id=${busName}`)
+    const cacheBuster = forceRefresh ? `&_t=${currentTime}` : '';
+    fetch(`https://demo.rubus.live/get_breaks?bus_id=${busName}${cacheBuster}`)
         .then(response => response.json())
         .then(data => {
             busBreaksCache[busName] = {
@@ -399,6 +432,7 @@ function getBusBreaks(busName) {
                 timestamp: currentTime
             };
             populateBusBreaks(data, busName);
+            applyBreaksDisplayMode(showMode);
             updateRubusResponseTime();
         })
         .catch(error => {

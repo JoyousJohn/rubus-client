@@ -130,6 +130,11 @@ function animateToTargetPanel(initialVelocity, options) {
 		animationFrameId = null;
 	}
 
+	if (!$('.info-panels-show-hide-wrapper').is(':visible')) {
+		$('.subpanels-container').removeClass('is-dragging-or-animating');
+		return;
+	}
+
 	const $container = $('.subpanels-container');
 	$container.css('transition', 'none');
 
@@ -598,6 +603,11 @@ function initInfoPanelSliderDrag() {
 	let lastPointerDownClearTimer = null;
 	slider.querySelectorAll('.info-panel-option').forEach(opt => {
 		opt.addEventListener('pointerdown', function(e) {
+			if (window._lastInfoPanelsOpenTime && Date.now() - window._lastInfoPanelsOpenTime < 350) {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				return;
+			}
 			if (e.button !== undefined && e.button !== 0) return;
 			const panel = opt.getAttribute('data-panel');
 			if (!panel) return;
@@ -631,8 +641,12 @@ function initInfoPanelSliderDrag() {
 		});
 		// Fallback click for non-pointer devices / accessibility; suppress if pointer already handled
 		opt.addEventListener('click', function(e) {
+			if (window._lastInfoPanelsOpenTime && Date.now() - window._lastInfoPanelsOpenTime < 350) {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				return;
+			}
 			const panel = opt.getAttribute('data-panel');
-			if (!panel) return;
 			// If pointerdown just handled this panel (within 500ms), ignore duplicate click
 			if (lastPointerDownPanel === panel) {
 				// If an animation is already running to this panel, don't restart
@@ -679,6 +693,7 @@ window.cancelInfoPanelAnimation = function() {
 		cancelAnimationFrame(animationFrameId);
 		animationFrameId = null;
 	}
+	$('.subpanels-container').removeClass('is-dragging-or-animating');
 };
 
 // Unified pointer event handlers for touch and mouse
@@ -860,7 +875,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 			const currentX = getTranslateX($container);
 			const expectedX = -currentPanelIndex * window.innerWidth;
 			if (Math.abs(currentX - expectedX) > 5) {
-				animateToTargetPanel(0, { targetIndex: currentPanelIndex });
+				animateToTargetPanel(0, { targetIndex: currentPanelIndex, isUserExplicitSelection: false });
 			} else {
 				console.log('[IP] end without drag', { isDragging, hasStart: !!dragStartX });
 			}
@@ -891,13 +906,23 @@ $('.info-panels-content').on('contextmenu', function(e) {
 
 $('.info-panels-content').on('mouseleave touchcancel', function(e) {
 	console.log('[IP] pointer cancel/leave');
+	if (!$('.info-panels-show-hide-wrapper').is(':visible')) {
+		$('.subpanels-container').removeClass('is-dragging-or-animating');
+		dragStartX = dragStartY = dragEndX = dragEndY = 0;
+		isDragging = false;
+		lastMoveTime = 0;
+		lastMoveX = 0;
+		velocityX = 0;
+		touchStartTime = 0;
+		return;
+	}
 	if (isDragging && dragStartX && dragEndX) {
 		suppressSubpanelClick = true;
 		lastSubpanelDragEndTime = Date.now();
 		const totalDx = dragEndX - dragStartX;
 		animateToTargetPanel(velocityX * 20, { dragDeltaX: totalDx });
 	} else if ($('.subpanels-container').hasClass('is-dragging-or-animating') && !animationFrameId) {
-		animateToTargetPanel(0);
+		animateToTargetPanel(0, { targetIndex: currentPanelIndex, isUserExplicitSelection: false });
 	}
     dragStartX = 0;
     dragStartY = 0;
