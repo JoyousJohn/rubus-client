@@ -79,6 +79,39 @@ function setOverlayState(id, state) {
     el.textContent = state === 'fetching' ? 'Fetching...' : 'Rendering...';
 }
 
+const STATS_LOCAL_CACHE_KEY = 'rubus_stats_cache_v1';
+const STATS_LOCAL_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+function loadLocalCachedStats() {
+    try {
+        const raw = localStorage.getItem(STATS_LOCAL_CACHE_KEY);
+        if (!raw) return false;
+        const cached = JSON.parse(raw);
+        if (Date.now() - cached.timestamp > STATS_LOCAL_CACHE_TTL_MS) return false;
+        if (cached.bus) busStatsData = cached.bus;
+        if (cached.stop) stopStatsData = cached.stop;
+        if (cached.user) userStatsData = cached.user;
+        if (cached.trend) trendStatsData = cached.trend;
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function saveLocalCachedStats() {
+    try {
+        if (busStatsData && stopStatsData && userStatsData && trendStatsData) {
+            localStorage.setItem(STATS_LOCAL_CACHE_KEY, JSON.stringify({
+                timestamp: Date.now(),
+                bus: busStatsData,
+                stop: stopStatsData,
+                user: userStatsData,
+                trend: trendStatsData
+            }));
+        }
+    } catch (e) {}
+}
+
 function showStats() {
     sa_event('btn_press', { btn: 'footer_stats' });
     if ($('.stats-wrapper').is(':visible')) {
@@ -99,6 +132,10 @@ function showStats() {
 
     $('.stats').addClass('footer-selected');
     $('.stats-wrapper').show();
+
+    if (!busStatsData || !stopStatsData || !userStatsData || !trendStatsData) {
+        loadLocalCachedStats();
+    }
 
     if (busStatsData) {
         renderPieChart(busStatsData, 'stats-canvas', 'stats-legend', { uppercase: true });
@@ -138,7 +175,10 @@ function showStats() {
     let remaining = 4;
     function onDone() {
         remaining--;
-        if (remaining <= 0) statsLoading = false;
+        if (remaining <= 0) {
+            statsLoading = false;
+            saveLocalCachedStats();
+        }
     }
 
     fetchStatsJson('https://demo.rubus.live/stats/view_bus?field=route&start=today-7d').then(data => {

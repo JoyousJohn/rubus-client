@@ -194,7 +194,7 @@ function populateBusBreaks(busBreakData, busName) {
     }
 
 
-    const percentDiff = ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime * 100).toFixed(1);
+    const percentDiff = Math.round((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime * 100);
 
     const timeDiff = Math.round((new Date(busBreakData[busBreakData.length - 1].time_departed.replace(/\.\d+/, '')) - new Date(busBreakData[0].time_arrived.replace(/\.\d+/, ''))) / 1000);
     const breakMinPerHour = (totalBusStopTime / timeDiff * 60).toFixed(1);
