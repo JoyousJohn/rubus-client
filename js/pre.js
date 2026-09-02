@@ -471,6 +471,10 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             updateStopBuses(popupStopId, shownRoute);
         }
 
+        if (typeof updateNavOnOutOfService === 'function') {
+            updateNavOnOutOfService();
+        }
+
         if (activeBuses.length) {
             $('.right-btns').removeClass('right-btns-bottom');
             if (!settings['toggle-show-knight-mover']){
@@ -542,9 +546,11 @@ function makeBulkOoS(oosBusNames) {
     makeBusesByRoutes();
 
     let anyRouteEmptied = false;
+    const emptiedRoutes = [];
     for (const route of affectedRoutes) {
         if (!busesByRoutes[selectedCampus] || !busesByRoutes[selectedCampus][route]) {
             anyRouteEmptied = true;
+            emptiedRoutes.push(route);
             console.log(`[INFO] The last bus for route ${route} went out of service.`)
             activeRoutes.delete(route);
 
@@ -592,6 +598,10 @@ function makeBulkOoS(oosBusNames) {
 
     if (anyRouteEmptied) {
         checkMinRoutes();
+    }
+
+    if (typeof updateNavOnOutOfService === 'function') {
+        updateNavOnOutOfService(oosBusNames, emptiedRoutes);
     }
 }
 
@@ -659,9 +669,11 @@ function makeOoS(busName) {
     console.log("makeOos() busesByRoutes after: ", busesByRoutes)
     console.log("busData after: ", busData)
     
+    const emptiedRoutes = [];
     if (route && (!busesByRoutes[selectedCampus] || !busesByRoutes[selectedCampus][route])) { // for some reason route can be undefined, investigate. // if no more buses, buses by routes will no longer have a campus key. checking if no longer has this key, but can also update the make function to include the campus anyway.
         console.log(`[INFO] The last bus for route ${route} went out of service.`)
         activeRoutes.delete(route);
+        emptiedRoutes.push(route);
         
         // Update rider routes if in rider mode
         if (appStyle === 'rider') {
@@ -723,6 +735,9 @@ function makeOoS(busName) {
         // $('.info-panels-btn-wrapper').hide();
     }
 
+    if (typeof updateNavOnOutOfService === 'function') {
+        updateNavOnOutOfService([busName], emptiedRoutes);
+    }
 }
 
 
@@ -1267,6 +1282,14 @@ async function fetchETAs() {
     // selectedCampus, and switching campus mid-flight would otherwise mix ETAs
     // and waits from different campuses for one poll cycle.
     const campus = selectedCampus;
+    // The caller (resume handler) sets this flag to signal a user-visible pull,
+    // e.g. after long idle when ETAs are stale. Surface an honest indicator
+    // while it runs; the init/campus-switch callers leave it unset so no badge
+    // flashes there.
+    const showIndicator = _etAsRefreshScheduled === true;
+    if (showIndicator) {
+        $('.refreshing-etas').stop(true, true).fadeIn();
+    }
     try {
         const response = await fetch('https://demo.rubus.live/etas');
         if (!response.ok) {
@@ -1299,6 +1322,34 @@ async function fetchETAs() {
     } catch (error) {
         console.error('Error fetching waits:', error);
         markRubusRequestsFailing();
+    }
+
+    // Whether or not the sub-fetches succeeded, treat this as a completed ETA
+    // refresh so the resume gate sees a fresh-enough timestamp when it runs next.
+    lastETAsFetchTime = Date.now();
+
+    // Deterministic re-render once the ETA/waits tables are ready: recompute
+    // busETAs from the (possibly new) tables, then refresh any open stop popup
+    // so it never keeps showing values derived from a stale table (and any new
+    // popup opened between the start of this fetch and its completion gets the
+    // fresh numbers immediately on open). updateStoBuses itself is guarded and
+    // renders missing busETAs as dimmed no-ETA rows, which is the honest state
+    // before the tables are populated.
+    if (typeof busData === 'object' && busData !== null) {
+        Object.keys(busData).forEach(busName => {
+            if (busData[busName] && busData[busName].route) {
+                updateTimeToStops([busName]);
+            }
+        });
+    }
+    if (popupStopId) {
+        updateStopBuses(popupStopId);
+    }
+
+    // Hide the indicator once both fetches settle (success or error) so it
+    // never lingers if a sub-fetch throws.
+    if (typeof $ !== 'undefined') {
+        $('.refreshing-etas').stop(true, true).slideUp();
     }
 
 }
@@ -1470,15 +1521,55 @@ $(document).ready(async function() {
                 }
             }
 
+            // Long-idle resume: the ETA leg-time/waits tables (and the per-bus
+            // busETAs derived from them) may be minutes/hours old. Rather than
+            // show those stale numbers in a freshly-opened stop popup for the
+            // duration of the resume fetch, invalidate now: any popup opened
+            // before the fresh data lands renders honest "no ETA" dimmed rows
+            // instead of outdated values. The refresh that repopulates busETAs
+            // is scheduled below and re-renders the popup when the tables land.
+            if (typeof busETAs === 'object' && busETAs !== null) {
+                Object.keys(busETAs).forEach(busName => {
+                    delete busETAs[busName];
+                });
+            }
+            if (popupStopId) {
+                updateStopBuses(popupStopId);
+            }
+
             const now = Date.now();
             // Debounce the immediate network fetch with a short window (800ms) to avoid
-            // redundant simultaneous requests when focus + visibilitychange fire together
+            // redundant simultaneous requests when focus + visibilitychange fire together.
+            // The ETA-table refresh below is intentionally scheduled outside this gate:
+            // on the first resume in a long time the tables genuinely need re-fetching,
+            // and the stale-busETAs invalidation above must not be double-run.
             if (now - _lastResumeTrigger < 800) {
                 return;
             }
             _lastResumeTrigger = now;
 
             console.log('App resumed - triggering immediate bus update');
+
+            // Re-fetch the ETA/waits tables when they're stale (the app slept for
+            // longer than this threshold), so busETAs are recomputed from fresh
+            // leg-time data instead of a stale schedule. Gate ensures only one such
+            // refresh is in flight (fetchETAs is async and debounce already runs
+            // handleImmediate once, but focus may fire again during the fetch).
+            const ETAS_FRESH_MS = 120000; // 2 minutes — matches longGapSinceUpdate intent
+            if (settings['toggle-pause-tripshot-polling']) {
+                // Even with polling paused, a stale ETA table undermines the popup;
+                // fetch the tables (but never the bus positions).
+                if (Date.now() - (lastETAsFetchTime || 0) > ETAS_FRESH_MS) {
+                    fetchETAs();
+                }
+            } else if (Date.now() - (lastETAsFetchTime || 0) > ETAS_FRESH_MS && !_etAsRefreshScheduled) {
+                _etAsRefreshScheduled = true;
+                // fetchETAs unconditionally re-renders the popup when tables land,
+                // so no further trigger needed here.
+                fetchETAs()
+                    .then(() => { _etAsRefreshScheduled = false; })
+                    .catch(() => { _etAsRefreshScheduled = false; });
+            }
 
             // Kick a fetch right away to avoid waiting for the interval
             busFetchInProgress = false;

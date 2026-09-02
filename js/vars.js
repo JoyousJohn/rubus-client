@@ -9,6 +9,13 @@ let forceImmediateUpdate = false;
 // Prevent overlapping network fetches
 let busFetchInProgress = false;
 var activeStops = [];
+// Timestamp (ms) of the last successful ETA-table fetch. Used to know on resume
+// whether the leg-time/waits tables are stale enough to warrant a refresh before
+// recomputing per-bus busETAs — see fetchETAs() and triggerImmediateResumeUpdate().
+let lastETAsFetchTime = 0;
+// Gate to prevent duplicate resume-time ETA refreshes when focus + a source both
+// fire within the debounce window (mirrors the _lastResumeTrigger logic).
+let _etAsRefreshScheduled = false;
 
 // Diagnostic log filter: limits detailed per-bus logs to keep console concise.
 // Always includes the clicked/focused bus (popupBusName).

@@ -263,7 +263,14 @@ function openRUBusSocket() {
 
             updateTimeToStops([busName]) // updates bus's etas to all stops
 
-            if (popupStopId && busLocations[busName]) { // also check if in busLocations to not show stops if no info. I think updateStopBuses already prevents this but it was still showing 'bus in service since Invalid Date'
+            // Refresh the open stop popup on every arrival/departure event.
+            // busLocations is only ever written by the simulator, so in live mode
+            // the old gate on it meant this never fired and the popup waited for
+            // the next 5s poll. updateStopBuses already guards each bus with
+            // isValid/atDepot/distanceFromLine and renders missing ETAs as a
+            // dimmed row, so there is no ghost-info risk. busETAs were just
+            // recomputed for this bus by updateTimeToStops above.
+            if (popupStopId) {
                 // Preserve any active route filter in the stop info
                 updateStopBuses(popupStopId)
             }
@@ -276,6 +283,7 @@ function openRUBusSocket() {
 
         // Initial connection, recall from visibilityChange
         else {
+            const snapshotBusNames = [];
             for (let busName in eventData) {
                 
                 // console.log(parseInt('13209') in busData.keys())
@@ -307,6 +315,20 @@ function openRUBusSocket() {
                     delete busData[busName].overtime;
                 }
 
+                snapshotBusNames.push(busName);
+
+            }
+
+            // Recompute ETAs for every bus replayed by the snapshot so the
+            // where/at_stop state applied above is immediately reflected in
+            // every ETA surface (stop popup, tooltips, offscreen chips) instead
+            // of waiting for the next poll. updateTimeToStops also handles the
+            // popup re-render (popInfo / updateTooltips).
+            if (snapshotBusNames.length) {
+                updateTimeToStops(snapshotBusNames);
+            }
+            if (popupStopId) {
+                updateStopBuses(popupStopId);
             }
 
             immediatelyUpdateStoppedBusRotations();

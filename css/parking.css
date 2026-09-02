@@ -87,7 +87,8 @@
     display: none !important;
 }
 
-.parking-permit-mode .updating-buses {
+.parking-permit-mode .updating-buses,
+.parking-permit-mode .refreshing-etas {
     display: none !important;
 }
 
