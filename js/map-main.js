@@ -34,24 +34,26 @@ isDesktop = $(window).width() > 992 && $(window).height() >= 500 && !checkIsTouc
 isTouchDevice = checkIsTouchDevice();
 
 // Compute the container-pixel y (relative to the map's top-left) at which the
-// given lat/lng should land so it sits mid-way between the popup's bottom edge
-// and the map's bottom edge — i.e. centered in the still-visible map area.
-// Falls back to the map's true center (map height / 2) when no popup is
-// measurable.
-function getCenteredYBelowPopup(popupEl) {
+// given lat/lng should land so it sits mid-way between the bottom of the popup
+// content (above the popup's bottom action-button row) and the map's bottom
+// edge — i.e. centered in the still-visible map area. The buttons are short,
+// so it's fine for them to sit above the centered space.
+// Falls back to the map's true center (map height / 2) when no content
+// element is measurable.
+function getCenteredYBelowPopup(contentEl) {
     const size = map.getSize();
     const cy = size.y / 2;
 
     let bottomY = null;
-    if (popupEl && popupEl.getBoundingClientRect) {
-        const rect = popupEl.getBoundingClientRect();
+    if (contentEl && contentEl.getBoundingClientRect) {
+        const rect = contentEl.getBoundingClientRect();
         const mapRect = map.getContainer().getBoundingClientRect();
-        const popupBottomInMap = rect.bottom - mapRect.top;
+        const contentBottomInMap = rect.bottom - mapRect.top;
         // Only treat the popup as covering the top when it actually extends
         // into the map area (top-anchored cards); otherwise it's a side
         // column and horizontal offsetting applies instead.
-        if (popupBottomInMap > 0 && popupBottomInMap < size.y) {
-            bottomY = popupBottomInMap;
+        if (contentBottomInMap > 0 && contentBottomInMap < size.y) {
+            bottomY = contentBottomInMap;
         }
     }
 

@@ -534,8 +534,13 @@
     text-decoration: none;
 }
 
-.waypoint-emoji .waypoint-circle i.fa-bus,
-.waypoint-emoji .waypoint-circle i.icon-bus {
+.navigate-wrapper .icon-bus,
+.navigate-wrapper .icon-bus-simple,
+.navigate-wrapper .fa-bus,
+.navigate-wrapper .fa-bus-simple,
+.navigate-wrapper .fa-bus-stop,
+.navigate-wrapper .icon-building,
+.navigate-wrapper .fa-building {
     color: var(--theme-accent);
 }
 

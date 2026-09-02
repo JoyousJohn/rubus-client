@@ -3285,7 +3285,7 @@ function flyToStop(stopId, fromUserInteraction = false) {
     } else {
         popStopInfo(Number(stopId));
     }
-    flyToCenteredBelow([loc.lat, loc.long], 15, document.querySelector('.stop-info-popup'), 0.5);
+    flyToCenteredBelow([loc.lat, loc.long], 15, document.querySelector('.stop-info-popup .stop-info-popup-inner'), 0.5);
 
     // Only send analytics event if this was from explicit user interaction
     if (fromUserInteraction) {

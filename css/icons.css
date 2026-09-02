@@ -55,14 +55,3 @@
 .icon-lg { width: 1.2em; height: 1.2em; }
 .icon-xl { width: 1.5em; height: 1.5em; }
 .icon-2x { width: 2em; height: 2em; }
-
-/* Icon color styling */
-.icon-bus,
-.icon-bus-simple,
-.fa-bus,
-.fa-bus-simple,
-.fa-bus-stop,
-.icon-building,
-.fa-building {
-    color: var(--theme-accent);
-}

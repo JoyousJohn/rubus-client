@@ -172,7 +172,7 @@ window.initMap = function() {
     // fitBounds(), flyTo(), and centerme from triggering the fade.
     map.on('dragstart', function() {
         if ((!isDesktop || isTouchDevice) && settings['toggle-dim-on-pan'] !== false) {
-            $('.bottom, .knight-mover, .info-top-right').css('opacity', '0.4');
+            $('.bottom, .knight-mover, .info-top-right, .dev-build-popup').css('opacity', '0.4');
         }
     });
 
@@ -271,7 +271,7 @@ window.initMap = function() {
     map.on('moveend', function() {
         isTransitioning = false; // Clear the transitioning flag
         $('.panout').css('color', '#5b5b5b');
-        $('.bottom, .knight-mover, .info-top-right').css('opacity', '1');
+        $('.bottom, .knight-mover, .info-top-right, .dev-build-popup').css('opacity', '1');
     });
 
     isDesktop = $(window).width() > 992 && $(window).height() >= 500 && !checkIsTouchDevice();

@@ -606,9 +606,9 @@ function flyToBus(busName) {
 
     // Center the bus in the map area still visible below the bus info popup.
     // The popup is shown synchronously by selectBusMarker → popInfo, so its
-    // current bottom edge is measurable here.
-    const popupEl = document.querySelector('.bus-info-popup');
-    flyToCenteredBelow([loc.lat, loc.long], targetZoom, popupEl, 0.3);
+    // current content bottom (above the action-button row) is measurable here.
+    const contentEl = document.querySelector('.bus-info-popup .info-next-stops');
+    flyToCenteredBelow([loc.lat, loc.long], targetZoom, contentEl, 0.3);
 }
 
 
