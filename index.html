@@ -89,18 +89,113 @@
     <script>
         if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
             window.addEventListener('load', function() {
+                let waitingWorker = null;
+                let updateRequested = false;
+                let refreshing = false;
+                let initialEtag = null;
+
+                function showUpdateToast(worker) {
+                    if (worker) waitingWorker = worker;
+                    const $toast = $('#update-toast');
+                    $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate"></i> Update available');
+                    $toast.find('.update-toast-actions').show();
+                    $toast.find('#update-reload-btn, #update-dismiss-btn').show();
+                    $toast.removeClass('none').stop(true, true).fadeIn();
+                }
+
+                function dismissUpdateToast() {
+                    const $toast = $('#update-toast');
+                    $toast.stop(true, true).fadeOut(function() {
+                        $toast.addClass('none');
+                    });
+                }
+
+                function applyUpdate() {
+                    updateRequested = true;
+                    const $toast = $('#update-toast');
+                    $toast.find('.update-toast-actions').hide();
+                    $toast.find('#update-reload-btn, #update-dismiss-btn').hide();
+                    $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate fa-spin"></i> Updating...');
+                    if (waitingWorker) {
+                        waitingWorker.postMessage({ action: 'skipWaiting' });
+                        // Fallback reload if controllerchange does not fire within 600ms
+                        setTimeout(function() {
+                            if (!refreshing) {
+                                refreshing = true;
+                                window.location.reload();
+                            }
+                        }, 600);
+                    } else {
+                        refreshing = true;
+                        window.location.reload();
+                    }
+                }
+
+                // Prevent map dragging or touch gestures through the toast
+                $(document).on('mousedown mouseup mousemove touchstart touchend touchmove pointerdown pointerup pointermove', '.update-toast-wrapper', function(e) {
+                    e.stopPropagation();
+                });
+
+                $(document).on('click', '#update-reload-btn', function(e) {
+                    e.preventDefault();
+                    applyUpdate();
+                });
+
+                $(document).on('click', '#update-dismiss-btn', function(e) {
+                    e.preventDefault();
+                    dismissUpdateToast();
+                });
+
+                // Only reload when the user explicitly requested the update
+                navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    if (updateRequested && !refreshing) {
+                        refreshing = true;
+                        window.location.reload();
+                    }
+                });
+
+                // Fetch initial deploy ETag of index.html to detect redeploys on app resume
+                fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' }).then(function(res) {
+                    initialEtag = res.headers.get('etag');
+                }).catch(function(err) {
+                    console.warn('[SW] Initial ETag check failed:', err);
+                });
+
                 navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    // Check if an updated worker is already installed and waiting
+                    if (reg.waiting && navigator.serviceWorker.controller) {
+                        showUpdateToast(reg.waiting);
+                    }
+
+                    // Listen for newly installed updates
+                    reg.addEventListener('updatefound', function() {
+                        const newWorker = reg.installing;
+                        if (!newWorker) return;
+                        newWorker.addEventListener('statechange', function() {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showUpdateToast(newWorker);
+                            }
+                        });
+                    });
+
                     reg.update();
+
+                    // Check for updates on visibility change (tab switch or iOS PWA resume from background)
                     document.addEventListener('visibilitychange', function() {
                         if (document.visibilityState === 'visible') {
                             reg.update();
+                            if (initialEtag) {
+                                fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' }).then(function(res) {
+                                    const currentEtag = res.headers.get('etag');
+                                    if (currentEtag && currentEtag !== initialEtag) {
+                                        showUpdateToast();
+                                    }
+                                }).catch(function(err) {
+                                    console.warn('[SW] Resume ETag check failed:', err);
+                                });
+                            }
                         }
                     });
-                    // Deliberately NO controllerchange -> location.reload(): a new
-                    // SW installs/activates (skipWaiting + clients.claim in sw.js)
-                    // in the background while the open page keeps running the
-                    // already-loaded code. The update takes effect on the next
-                    // natural reload/restart — no forced reload, no flash.
                 }).catch(function(err) {
                     console.warn('[SW] Registration failed:', err);
                 });
@@ -523,6 +618,13 @@
 
 
     <div class="feedback-sent w-fit fixed none"><i class="fa-solid fa-circle-check mr-0p5rem"></i>Feedback sent</div>
+    <div id="update-toast" class="update-toast-wrapper none">
+        <span class="update-toast-text"><i class="fa-solid fa-arrows-rotate"></i> Update available</span>
+        <div class="update-toast-actions">
+            <button id="update-reload-btn" class="update-toast-btn pointer" type="button">Refresh</button>
+            <button id="update-dismiss-btn" class="update-toast-dismiss pointer" type="button" aria-label="Dismiss">&times;</button>
+        </div>
+    </div>
 
     <div class="info-popup-wrapper h-100">
 

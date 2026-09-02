@@ -721,6 +721,94 @@ html, body {
     left: 50%;
 }
 
+.update-toast-wrapper {
+    position: fixed;
+    top: calc(1rem + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--theme-bg, #1a1a1a);
+    color: var(--theme-color, #ffffff);
+    border: 1px solid var(--theme-line-bg, rgba(255, 255, 255, 0.2));
+    padding: 0.5rem 1rem 0.5rem 1.2rem;
+    border-radius: 1.5rem;
+    font-family: var(--font-family);
+    font-size: 1.3rem;
+    z-index: 1005;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.8rem;
+    user-select: none;
+    -webkit-user-select: none;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.update-toast-wrapper.none {
+    display: none !important;
+}
+
+.update-toast-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.update-toast-text i {
+    color: var(--theme-accent, #5a87f0);
+}
+
+.update-toast-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+.update-toast-btn {
+    background-color: var(--theme-accent, #5a87f0);
+    color: white;
+    border: none;
+    border-radius: 1.2rem;
+    padding: 0.35rem 0.9rem;
+    font-size: 1.2rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.update-toast-btn:hover {
+    opacity: 0.9;
+}
+
+.update-toast-btn:active {
+    transform: scale(0.96);
+}
+
+.update-toast-dismiss {
+    background: transparent;
+    border: none;
+    color: var(--theme-color-lighter, #a0aec0);
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+}
+
+.update-toast-dismiss:hover {
+    color: var(--theme-color, #ffffff);
+}
+
 
 
 @keyframes pulse {

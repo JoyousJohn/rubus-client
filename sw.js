@@ -1,5 +1,5 @@
 // sw.js - Service Worker for RUBus PWA
-const CACHE_NAME = 'rubus-cache-v2';
+const CACHE_NAME = 'rubus-cache-v3';
 
 // Static app shell assets pre-cached for instant launch & offline fallback
 const PRECACHE_ASSETS = [
@@ -49,7 +49,7 @@ self.addEventListener('install', (event) => {
                 const failed = results.filter(r => r.status === 'rejected');
                 if (failed.length) console.warn('[SW] Pre-cache completed with', failed.length, 'failures');
             });
-        }).then(() => self.skipWaiting())
+        })
     );
 });
 
@@ -61,6 +61,13 @@ self.addEventListener('activate', (event) => {
             );
         }).then(() => self.clients.claim())
     );
+});
+
+// Activate new SW on explicit client request (e.g. user clicked "Refresh" on update toast)
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.action === 'skipWaiting') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -109,8 +116,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // JavaScript files - Network-First with Cache Fallback (guarantees latest deploy updates)
-    if (url.pathname.endsWith('.js') || request.destination === 'script') {
+    // JavaScript and CSS files - Network-First with Cache Fallback (guarantees latest deploy updates and keeps JS/CSS in sync)
+    if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || request.destination === 'script' || request.destination === 'style') {
         event.respondWith(
             fetch(request)
                 .then((networkResponse) => {
@@ -129,7 +136,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Static Assets (Images, CSS, Fonts) - Stale-While-Revalidate / Cache-First
+    // Static Assets (Images, Fonts) - Stale-While-Revalidate / Cache-First
     event.respondWith(
         caches.match(request).then((cachedResponse) => {
             const fetchPromise = fetch(request)
