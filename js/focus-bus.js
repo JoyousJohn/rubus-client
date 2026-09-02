@@ -483,7 +483,7 @@ function showDeparting() {
             $('.info-stopped-for .info-stopped-octagon').addClass('none');
             stopOvertimeCounter();
         });
-    }, 3000);
+    }, 7000);
 }
 
 function hideStoppedFor(immediate = false) {

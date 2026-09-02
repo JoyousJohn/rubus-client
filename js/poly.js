@@ -1464,8 +1464,12 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             busContainerStyle = ' style="grid-column: span 3;"';
         }
 
+        const _displayBusName = (typeof formatElectricBusName === 'function') ? formatElectricBusName(busData[data.busName].busName) : busData[data.busName].busName;
+        const _isElectric = (typeof isElectricBus === 'function') ? (isElectricBus(data.busName) || isElectricBus(busData[data.busName].busName) || String(_displayBusName).endsWith('E')) : String(_displayBusName).endsWith('E');
+        const _boltHtml = _isElectric ? ' <i class="fa-solid fa-bolt" style="font-size: 1.1rem; color: ' + (colorMappings[data.route] || 'currentColor') + ';"></i>' : '';
+        const _esc = typeof escapeHtml === 'function' ? escapeHtml(_displayBusName) : _displayBusName;
         const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select"${busContainerStyle}><div class="flex gap-x-0p5rem"><div class="stop-bus-name"></div><div class="stop-oos ${stopOoSVisibilityClass}">OOS</div><div class="stop-depot ${stopDepotVisibilityClass}">Depot</div></div><div class="stop-octagon ${stopOctaconVisibilityClass}"><div>!</div></div></div>`);
-        $stopBusElm.find('.stop-bus-name').text(busData[data.busName].busName);
+        $stopBusElm.find('.stop-bus-name').html(_esc + _boltHtml);
         $('.stop-info-buses-grid').append($stopBusElm);
 
         if (visibleRoute && visibleRoute !== data.route) {
@@ -1593,9 +1597,13 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $routeCellNext.append(`<div>${data.route.toUpperCase()}</div>`);
             $('.stop-info-buses-grid-next').append($routeCellNext);
 
+            const _displayBusNameNext = (typeof formatElectricBusName === 'function') ? formatElectricBusName(busData[data.busName].busName) : busData[data.busName].busName;
+            const _isElectricNext = (typeof isElectricBus === 'function') ? (isElectricBus(data.busName) || isElectricBus(busData[data.busName].busName) || String(_displayBusNameNext).endsWith('E')) : String(_displayBusNameNext).endsWith('E');
+            const _boltHtmlNext = _isElectricNext ? ` <i class="fa-solid fa-bolt" style="font-size: 1.1rem; color: ${colorMappings[data.route] || 'currentColor'};"></i>` : '';
+            const _escNext = typeof escapeHtml === 'function' ? escapeHtml(_displayBusNameNext) : _displayBusNameNext;
             const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select">
                 <div class="flex gap-x-0p5rem">
-                    <div class="stop-bus-name">${busData[data.busName].busName}</div>
+                    <div class="stop-bus-name">${_escNext}${_boltHtmlNext}</div>
                 </div>
             </div>`)
             $('.stop-info-buses-grid-next').append($stopBusElm);
@@ -1658,9 +1666,13 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $routeCell.append(`<div>${data.route.toUpperCase()}</div>`);
             $('.stop-info-buses-grid-post-cutoff').append($routeCell);
 
+            const _displayBusNamePost = (typeof formatElectricBusName === 'function') ? formatElectricBusName(busData[data.busName].busName) : busData[data.busName].busName;
+            const _isElectricPost = (typeof isElectricBus === 'function') ? (isElectricBus(data.busName) || isElectricBus(busData[data.busName].busName) || String(_displayBusNamePost).endsWith('E')) : String(_displayBusNamePost).endsWith('E');
+            const _boltHtmlPost = _isElectricPost ? ` <i class="fa-solid fa-bolt" style="font-size: 1.1rem; color: ${colorMappings[data.route] || 'currentColor'};"></i>` : '';
+            const _escPost = typeof escapeHtml === 'function' ? escapeHtml(_displayBusNamePost) : _displayBusNamePost;
             const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select">
                 <div class="flex gap-x-0p5rem">
-                    <div class="stop-bus-name">${busData[data.busName].busName}</div>
+                    <div class="stop-bus-name">${_escPost}${_boltHtmlPost}</div>
                 </div>
             </div>`)
             $('.stop-info-buses-grid-post-cutoff').append($stopBusElm);
@@ -1716,9 +1728,13 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 stopOoSVisibilityClass = '';
             }
 
+            const _displayBusNameDef = (typeof formatElectricBusName === 'function') ? formatElectricBusName(busData[data.busName].busName) : busData[data.busName].busName;
+            const _isElectricDef = (typeof isElectricBus === 'function') ? (isElectricBus(data.busName) || isElectricBus(busData[data.busName].busName) || String(_displayBusNameDef).endsWith('E')) : String(_displayBusNameDef).endsWith('E');
+            const _boltHtmlDef = _isElectricDef ? ` <i class="fa-solid fa-bolt" style="font-size: 1.1rem; color: ${colorMappings[data.route] || 'currentColor'};"></i>` : '';
+            const _escDef = typeof escapeHtml === 'function' ? escapeHtml(_displayBusNameDef) : _displayBusNameDef;
             const $stopBusElm = $(`<div class="flex justify-between align-center pointer user-no-select" style="grid-column: 2 / span 3; align-self: center;">
                 <div class="flex gap-x-0p5rem align-center">
-                    <div class="stop-bus-name">${busData[data.busName].busName}</div>
+                    <div class="stop-bus-name">${_escDef}${_boltHtmlDef}</div>
                     <div class="stop-oos ${stopOoSVisibilityClass}">OOS</div>
                     <div class="stop-depot ${stopDepotVisibilityClass}">Depot</div>
                 </div>
