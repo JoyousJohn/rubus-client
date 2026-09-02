@@ -340,6 +340,17 @@ function isBusShownOnMap(busName) {
     return !(busData[busName].oos || busData[busName].atDepot || distanceFromLine(busName));
 }
 
+// True for buses that are genuinely running the route (not out of service,
+// at the depot, or far from the line). Independent of the "show out of
+// service buses" setting so it can be used for things like computing fit
+// bounds, which should always ignore OOS/depot/far-from-line buses even
+// when they are otherwise shown on the map.
+function isBusInService(busName) {
+    if (!busData[busName]) return false;
+    if (sim === true || busData[busName].type === 'sim') return true;
+    return !(busData[busName].oos || busData[busName].atDepot || distanceFromLine(busName));
+}
+
 function isValid(busName) {
     if (!busETAs[busName]) return false;
     if (distanceFromLine(busName)) return false;
