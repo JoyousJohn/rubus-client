@@ -93,7 +93,7 @@
 }
 
 .incoming-wrapper:hover {
-    background-color: rgb(95, 95, 192);
+    background-color: color-mix(in srgb, var(--theme-bg-closest-stop) 88%, var(--theme-color) 12%);
 }
 
 .subpanel-inner {

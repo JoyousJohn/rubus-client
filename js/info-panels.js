@@ -341,6 +341,13 @@ function updatePanelPosition(panel, options) {
 		try { updateInfoPanelIndicator(panel); } catch(e) {}
 	}
 
+	// If a route was already selected on the map before the panels opened,
+	// render its details now that the Routes subpanel is active (the entry
+	// handler highlights the pill but doesn't populate the detail area).
+	if (panel === 'routes') {
+		ensureRouteSubpanelPopulated();
+	}
+
 	if (opts.skipMove) {
 		return;
 	}

@@ -362,7 +362,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             }
  
             if (busName === popupBusName) {
-                $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + bus.capacity + '%</span> capacity');
+                updateBusPopupSpeedOrCapacity(busName);
             }
             } catch (e) {
                 console.error('[fetchBusData] error processing bus', busName, ':', e);
@@ -1548,10 +1548,8 @@ async function randomStepBusSpeeds() {
 
         const randChange = Math.random() < 0.5 ? -1 : 1;
         busData[busName].visualSpeed += randChange;
-        if (popupBusName == busName && showBusSpeeds) {
-            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
-            $('.info-mph-mid').text('mph');
-            $('.info-speed-wrapper').css('visibility', 'visible');
+        if (popupBusName == busName) {
+            updateBusPopupSpeedOrCapacity(busName);
         }
 
         if (panelRoute === busData[busName].route) {

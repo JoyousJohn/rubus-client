@@ -856,13 +856,6 @@ html, body {
     font-size: 1.3rem !important;
 }
 
-.info-capacity {
-    color: var(--theme-extra);
-}
-
-.info-capacity-val {
-    color: var(--theme-color-lighter);
-}
 
 .bus-oos {
     padding: 0.3rem 0.8rem;
@@ -1563,6 +1556,8 @@ html, body {
     background-size: 200% 100%;
     border-radius: 0.5rem;
     animation: live-pulse 4s ease-in-out infinite;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 @keyframes live-pulse {
@@ -1878,6 +1873,16 @@ html, body {
     align-items: center;
     gap: 0.6rem;
     white-space: nowrap;
+}
+
+.info-capacity-percent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 400;
+    font-size: 1.4rem;
+    color: var(--theme-extra);
+    line-height: 1;
 }
 
 .info-speed-wrapper {

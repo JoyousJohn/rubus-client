@@ -1151,6 +1151,28 @@ function selectedRoute(route) {
 
 }
 
+// The map-side selection (shownRoute) and the Routes subpanel's rendered
+// route (panelRoute) are tracked separately. When info panels open (or the
+// Routes tab becomes active) with a route already selected on the map, the
+// pill is highlighted but the detail area stays empty until that route is
+// rendered. This syncs the two. Skipped when the prompt is visible (the
+// user intentionally cleared the detail area inside the routes tab), and
+// just re-shown when the same route was rendered before but its detail
+// area got hidden (e.g. a stop popup hid .route-panel after population).
+function ensureRouteSubpanelPopulated() {
+    if (!shownRoute) return;
+    if ($('#route-selection-prompt').is(':visible')) return;
+    if (!$('.info-panels-show-hide-wrapper').is(':visible')) return;
+    if (!$('.subpanels-container').hasClass('panel-routes')) return;
+    // Same route already rendered for the subpanel — make sure it's showing.
+    if (panelRoute === shownRoute) {
+        $('.route-panel').show();
+        return;
+    }
+    selectedRoute(shownRoute);
+}
+window.ensureRouteSubpanelPopulated = ensureRouteSubpanelPopulated;
+
 
 $('.color-circle').click(function() {
     $('.color-select-route').text(shownRoute.toUpperCase()).css('color', colorMappings[shownRoute]);
@@ -1368,7 +1390,7 @@ function updateBusOverview(routes) {
         }
     });
 
-    // Create total row if it doesn't exist (only once at the bottom after all routes)
+    // Create total row if it doesn't exist, or update its ridership value
     let $totalRowExists = $('.buses-overview-grid .bus-overview-name:contains("Total")').length > 0;
     if (!($totalRowExists)) {
         const $grid = $('.buses-overview-grid').first();
@@ -1380,6 +1402,18 @@ function updateBusOverview(routes) {
         $grid.append($totalName);
         $grid.append($totalRidership);
         $grid.append($totalLoopTime);
+    } else {
+        const $totalRidershipElm = $('.buses-overview-grid .bus-overview-ridership.total-row');
+        const prevTotal = parseInt($totalRidershipElm.text().split(' ')[0]);
+        if (!isNaN(prevTotal) && prevTotal !== totalRidership) {
+            const color = totalRidership > prevTotal ? 'lime' : 'red';
+            $totalRidershipElm.text(`${totalRidership} riding`).css('color', color).css('transition', 'color 0.25s');
+            setTimeout(() => {
+                $totalRidershipElm.css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
+            }, 1000);
+        } else {
+            $totalRidershipElm.text(`${totalRidership} riding`);
+        }
     }
 
     routeData.forEach(({route}) => {
@@ -1434,20 +1468,8 @@ function updateBusOverview(routes) {
                 setTimeout(() => {
                     $(`.bus-overview-ridership[route="${route}"]`).text(`${routeRiderships[route]} riders`).css('color', color).css('transition', 'color 0.25s');
 
-                    const ridersChange = newRiders - prevRiders;
-
-                    // Update total ridership at the same time as route update for real-time appearance
-                    const $totalRidershipElement = $('.buses-overview-grid .bus-overview-name:contains("Total")').next('.bus-overview-ridership');
-                    if ($totalRidershipElement.length > 0) {
-                        const nowTotalRidership = parseInt($totalRidershipElement.text().split(' ')[0]);
-                        $totalRidershipElement.text(`${nowTotalRidership + ridersChange} riding`).css('color', color).css('transition', 'color 0.25s');
-                    }
-
                     setTimeout(() => {
                         $(`.bus-overview-ridership[route="${route}"]`).css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
-
-                        // Fade total color back to normal after route animation completes
-                        $('.buses-overview-grid .bus-overview-name:contains("Total")').next('.bus-overview-ridership').css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
                     }, 1000);
                 }, Math.random() * 5000);
             }
@@ -2310,7 +2332,6 @@ const toggleSettings = [
     'toggle-show-thinking',
     'toggle-show-road-network',
     'toggle-distances-line-on-focus',
-    'toggle-show-capacity',
     'toggle-show-depot-poly',
     'toggle-pause-stop-eta-updates',
     'toggle-show-zoom-toast',

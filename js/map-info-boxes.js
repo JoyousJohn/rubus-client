@@ -91,6 +91,8 @@ function hideInfoBoxes(instantly_hide) {
             removeBusRotationPoints(busIdThatWasFocused);
         }
         $('.info-shared-bus-mid').hide();
+        $('.info-capacity-percent').hide();
+        $('.info-speed-wrapper').css('visibility', 'hidden');
 
         // Remove distance line when bus is unfocused
         removeDistanceLineOnFocus();

@@ -200,6 +200,10 @@ $('.info-panels').click(function() {
         $('#route-selection-prompt').show();
     }
 
+    // If the restored panel is Routes and a route was already selected on the
+    // map, render its details (the pill highlight above is not enough).
+    ensureRouteSubpanelPopulated();
+
     // Show and position route selectors immediately when info panels are opened
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();

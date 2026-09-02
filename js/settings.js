@@ -36,10 +36,8 @@ $('.settings-toggle .toggle-input').on('change', function () {
             console.log(`Show bus speeds now ${isChecked ? 'ON' : 'OFF'}`);
             showBusSpeeds = isChecked;
             settings['toggle-show-bus-speeds'] = isChecked;
-            if (!isChecked) {
-                $('.info-speed-wrapper').hide();
-            } else {
-                $('.info-speed-wrapper').show();
+            if (popupBusName) {
+                updateBusPopupSpeedOrCapacity(popupBusName);
             }
             break;
 
@@ -694,15 +692,6 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
-        case 'toggle-show-capacity':
-            console.log(`Show Capacity is now ${isChecked ? 'ON' : 'OFF'}`);
-            settings['toggle-show-capacity'] = isChecked;
-            if (isChecked) {
-                $('.info-capacity-mid').removeClass('none').show();
-            } else {
-                $('.info-capacity-mid').hide();
-            }
-            break;
 
         case 'toggle-always-show-break-overdue':
             console.log(`Always Show Break Overdue is now ${isChecked ? 'ON' : 'OFF'}`);
@@ -820,11 +809,6 @@ $(document).ready(function() {
         $('.info-speed-wrapper').hide();
     }
 
-    if (!settings['toggle-show-capacity']) {
-        $('.info-capacity-mid').hide();
-    } else {
-        $('.info-capacity-mid').removeClass('none').show();
-    }
 
     if (settings['toggle-show-depot-poly']) {
         // The map may not exist yet — initMap() runs only after the theme /

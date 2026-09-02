@@ -105,11 +105,8 @@ async function calculateSpeed(busName) {
     if (!('visualSpeed' in busData[busName])) {
         busData[busName].speed = acceptedSpeed;
         busData[busName].visualSpeed = acceptedSpeed;
-        if (popupBusName === busName && showBusSpeeds) {
-            console.log(busName + ' New Speed: ' + busData[busName].visualSpeed.toFixed(2))
-            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
-            $('.info-mph-mid').text('mph');
-            $('.info-speed-wrapper').css('visibility', 'visible');
+        if (popupBusName === busName) {
+            updateBusPopupSpeedOrCapacity(busName);
         }
         busData[busName].previousLatitude = currentLatitude;
         busData[busName].previousLongitude = currentLongitude;
@@ -175,11 +172,8 @@ async function calculateSpeed(busName) {
 
         elapsedMs += updateIntervalMs;
         
-        if (popupBusName === busName && showBusSpeeds) {
-            // console.log(busName + ' New Speed: ' + busData[busName].visualSpeed.toFixed(2))
-            $('.info-speed-mid').text(Math.round(busData[busName].visualSpeed));
-            $('.info-mph-mid').text('mph');
-            $('.info-speed-wrapper').css('visibility', 'visible');
+        if (popupBusName === busName) {
+            updateBusPopupSpeedOrCapacity(busName);
         }
 
         if (panelRoute === busData[busName].route) {

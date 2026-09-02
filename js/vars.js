@@ -103,7 +103,6 @@ const defaultSettings = {
     'toggle-show-thinking': false,
     'toggle-show-road-network': false,
     'toggle-distances-line-on-focus': false,
-    'toggle-show-capacity': false,
     'toggle-show-depot-poly': false,
     'toggle-pause-stop-eta-updates': false,
     'toggle-show-zoom-toast': false,

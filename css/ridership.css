@@ -36,7 +36,7 @@
 .buses-overview-grid {
     margin-top: 2rem;
     font-size: 2rem;
-    grid-template-columns: auto 1fr 1fr;
+    grid-template-columns: 1fr auto auto;
     column-gap: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
@@ -67,6 +67,7 @@
     -webkit-tap-highlight-color: transparent;
     transition: color 0.15s ease;
     width: fit-content;
+    white-space: nowrap;
 }
 
 .bus-overview-heading:hover {
@@ -88,7 +89,7 @@
     border-bottom: 1px solid var(--theme-line-bg);
     margin-top: 0.5rem;
     margin-bottom: 0.75rem;
-    width: 67%;
+    width: 100%;
     justify-self: center;
 }
 
@@ -106,6 +107,7 @@
     color: var(--theme-color-lighter);
     display: flex;
     align-items: center;
+    white-space: nowrap;
 }
 
 .total {
@@ -172,7 +174,7 @@
     border-bottom: 1px solid var(--theme-line-bg);
     margin-top: 0.5rem;
     margin-bottom: 0.75rem;
-    width: 67%;
+    width: 100%;
     justify-self: center;
 }
 
@@ -243,7 +245,7 @@
     border-bottom: 1px solid var(--theme-line-bg);
     margin-top: 0.5rem;
     margin-bottom: 0.75rem;
-    width: 67%;
+    width: 100%;
     justify-self: center;
 }
 

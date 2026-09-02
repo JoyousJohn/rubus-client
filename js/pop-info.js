@@ -159,6 +159,28 @@ if (typeof document.fonts !== 'undefined' && document.fonts.ready) {
 let savedCenter;
 let savedZoom;
 
+function updateBusPopupSpeedOrCapacity(busName) {
+    if (popupBusName !== busName) return;
+    const bus = busData[busName];
+    if (!bus) return;
+
+    const cap = bus.capacity;
+    if (cap && cap > 0) {
+        $('.info-capacity-percent').text(cap + '%').removeClass('none').show();
+        $('.info-speed-wrapper').css('visibility', 'hidden');
+    } else {
+        $('.info-capacity-percent').addClass('none').hide();
+        if (showBusSpeeds && !Number.isNaN(parseInt(bus.visualSpeed))) {
+            $('.info-speed-mid').text(Math.round(bus.visualSpeed));
+            $('.info-mph-mid').text('mph');
+            $('.info-speed-wrapper').css('visibility', 'visible');
+        } else {
+            $('.info-speed-wrapper').css('visibility', 'hidden');
+        }
+    }
+}
+window.updateBusPopupSpeedOrCapacity = updateBusPopupSpeedOrCapacity;
+
 function popInfo(busName, resetCampusFontSize, isNewBus = false) {
 
     const data = busData[busName]
@@ -277,14 +299,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
             }  
         }, 0);    
     }
-
-    if (showBusSpeeds && !Number.isNaN(parseInt(data.visualSpeed))) {
-        $('.info-speed-mid').text(parseInt(data.visualSpeed));
-        $('.info-mph-mid').text('mph');
-        $('.info-speed-wrapper').css('visibility', 'visible');
-    } else {
-        $('.info-speed-wrapper').css('visibility', 'hidden');
-    }
+    updateBusPopupSpeedOrCapacity(busName);
     $('.info-name-mid').text(busNameElmText);
     centerBusNameInk();
     const serviced = getBusServicedCampuses(busName);
@@ -320,7 +335,6 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         campusesHtml = rotated.map((seg, i) => i === k ? `<b><u>${seg}</u></b>` : seg).join(campusesArrow);
     }
     $('.info-campuses-serviced').html(campusesHtml).toggle(servicedCampuses.length > 0);
-    $('.info-capacity-mid').html(' | <span class="info-capacity-val">' + data.capacity + '%</span> capacity');
 
     if (busData[busName].oos) {
         $('.bus-oos-mid').show();
