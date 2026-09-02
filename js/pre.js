@@ -1108,6 +1108,7 @@ function updateKnightMoverStatus() {
 function makeActiveRoutes() {
     activeRoutes.clear();
     for (const busName in busData) {
+        if (!settings['toggle-show-out-of-service'] && !isBusShownOnMap(busName)) continue;
         const route = busData[busName].route;
         if (route) activeRoutes.add(route);
     }

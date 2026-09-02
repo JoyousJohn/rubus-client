@@ -935,30 +935,17 @@ function routeHasInServiceBuses(route) {
         return routeBuses && routeBuses.some(busName => 
             busData[busName] && 
             !busData[busName].oos && 
-            !busData[busName].atDepot
-            // isValid(busName) -- temporarily disabled: requires busETAs which
-            // aren't populated until fetchWhere() runs; this caused route selectors
-            // and polylines to flash gray for ~2s on initial load because
-            // prunePolylinesWithoutInService() was called before ETAs were available.
-            // oos + atDepot alone are sufficient to know if a route is active.
+            !busData[busName].atDepot &&
+            !distanceFromLine(busName)
         );
     } catch (e) {
+        console.error('[poly] Error checking routeHasInServiceBuses for route', route, e);
         return false;
     }
 }
 
 function routeHasValidInServiceBuses(route) {
-    try {
-        const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
-        return routeBuses && routeBuses.some(busName => 
-            busData[busName] && 
-            !busData[busName].oos && 
-            !busData[busName].atDepot &&
-            !distanceFromLine(busName)
-        );
-    } catch (e) {
-        return false;
-    }
+    return routeHasInServiceBuses(route);
 }
 
 // Update polylineBounds efficiently - only when polylines actually change
@@ -2268,6 +2255,7 @@ function removePreviouslyActiveStops() {
         }
     } else if (busesByRoutes && busesByRoutes[selectedCampus]) {
         for (const route in busesByRoutes[selectedCampus]) {
+            if (!settings['toggle-show-out-of-service'] && !routeHasInServiceBuses(route)) continue;
             if (route in stopLists) {
                 newActiveStops = [...newActiveStops, ...stopLists[route]];
             }
@@ -2277,7 +2265,7 @@ function removePreviouslyActiveStops() {
     newActiveStops = [...new Set(newActiveStops)];
 
     if (newActiveStops.length === 0 && !isForceShowStopsEnabled()) {
-        newActiveStops = Array.from({ length: Object.keys(stopsData).length }, (_, i) => i + 1);
+        newActiveStops = Object.keys(stopsData || {}).map(Number);
     }
 
     for (const stopId in busStopMarkers) {
@@ -2294,6 +2282,8 @@ function removePreviouslyActiveStops() {
     }
 
     activeStops = newActiveStops;
+
+    addStopsToMap();
 
     if (typeof window.updateCenterStops === 'function') {
         window.updateCenterStops();
