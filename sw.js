@@ -94,7 +94,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Navigation requests (HTML document) - Network-First with Cache Fallback
+// Navigation requests (HTML document) - Network-First with Cache Fallback
     if (request.mode === 'navigate') {
         event.respondWith(
             fetch(request)
@@ -109,7 +109,13 @@ self.addEventListener('fetch', (event) => {
                 })
                 .catch(() => {
                     return caches.match(request).then((cachedResponse) => {
-                        return cachedResponse || caches.match('/index.html') || caches.match('/');
+                        return cachedResponse || caches.match('/index.html').then((htmlResponse) => {
+                            return htmlResponse || caches.match('/').then((rootResponse) => {
+                                // Never resolve respondWith() to undefined — that
+                                // throws "FetchEvent.respondWith received an error".
+                                return rootResponse || Response.error();
+                            });
+                        });
                     });
                 })
         );
@@ -127,18 +133,21 @@ self.addEventListener('fetch', (event) => {
                             cache.put(request, responseClone);
                         });
                     }
-                    return networkResponse;
+return networkResponse;
                 })
                 .catch(() => {
-                    return caches.match(request);
+                    return caches.match(request).then((cachedResponse) => {
+                        return cachedResponse || Response.error();
+                    });
                 })
         );
         return;
     }
 
-    // Static Assets (Images, Fonts) - Stale-While-Revalidate / Cache-First
+// Static Assets (Images, Fonts) - Stale-While-Revalidate / Cache-First
     event.respondWith(
         caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) return cachedResponse;
             const fetchPromise = fetch(request)
                 .then((networkResponse) => {
                     if (networkResponse && networkResponse.status === 200) {
@@ -150,10 +159,12 @@ self.addEventListener('fetch', (event) => {
                     return networkResponse;
                 })
                 .catch(() => {
-                    // Ignore network failure for background revalidation
+                    // No cache entry and no network: resolve to an errored
+                    // response so respondWith() never gets undefined.
+                    return Response.error();
                 });
 
-            return cachedResponse || fetchPromise;
+            return fetchPromise;
         })
     );
 });

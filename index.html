@@ -112,6 +112,7 @@
 
                 function applyUpdate() {
                     updateRequested = true;
+                    if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_refresh' });
                     const $toast = $('#update-toast');
                     $toast.find('.update-toast-actions').hide();
                     $toast.find('#update-reload-btn, #update-dismiss-btn').hide();
@@ -143,6 +144,7 @@
 
                 $(document).on('click', '#update-dismiss-btn', function(e) {
                     e.preventDefault();
+                    if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_dismiss' });
                     dismissUpdateToast();
                 });
 
