@@ -308,6 +308,9 @@ function openRUBusSocket() {
             }
 
             immediatelyUpdateStoppedBusRotations();
+            if (shownRoute && !popupBusName && !popupStopId && typeof updateTooltips === 'function') {
+                updateTooltips(shownRoute);
+            }
 
         }
     }

@@ -2763,11 +2763,11 @@ function displayRoute(routeData) {
                 <div class="route-revert-btn ${_hasRandomizedSinceSave ? '' : 'none'}" onclick="revertNavLocations()" title="Revert to previous" style="position:static; transform:none; left:auto; top:auto;">Revert</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; text-align:center; min-width:0; overflow:hidden;">
-                <div class="route-header-source" style="font-size: 1.5rem; font-weight: 600; color: var(--theme-color); line-height: 1.2; max-width:100%; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${startBuilding.name}</div>
+                <div class="route-header-source" style="font-size: 1.5rem; font-weight: 500; color: var(--theme-color); line-height: 1.2; max-width:100%; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${startBuilding.name}</div>
                 <div class="route-header-arrow" style="font-size: 1.2rem; color: var(--theme-link); opacity: 0.8; line-height: 1;">
                     <i class="fa-solid fa-arrow-down"></i>
                 </div>
-                <div class="route-header-destination" style="font-size: 1.5rem; font-weight: 600; color: var(--theme-color); line-height: 1.2; max-width:100%; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${endBuilding.name}</div>
+                <div class="route-header-destination" style="font-size: 1.5rem; font-weight: 500; color: var(--theme-color); line-height: 1.2; max-width:100%; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${endBuilding.name}</div>
                 ${totalTravelTimeHtml}
                 ${fuzzyMatchHtml}
             </div>

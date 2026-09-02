@@ -711,13 +711,53 @@ function showAllPolylinesFromMap() {
     showAllPolylines();
 }
 
+function isRouteBusAtStop(route, stopId) {
+    const targetStopId = Number(stopId);
+    if (isNaN(targetStopId)) return false;
+
+    const checkBus = (bus) => {
+        if (!bus || !bus.at_stop) return false;
+        if (bus.oos || bus.atDepot) return false;
+
+        const busStopId = bus.stopId;
+        if (busStopId === null || busStopId === undefined) return false;
+
+        const currentStopId = Array.isArray(busStopId) ? busStopId[0] : busStopId;
+        return Number(currentStopId) === targetStopId;
+    };
+
+    const routeBuses = (busesByRoutes && selectedCampus && busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) || [];
+    for (const busName of routeBuses) {
+        if (checkBus(busData && busData[busName])) {
+            return true;
+        }
+    }
+
+    if (typeof busData === 'object' && busData !== null) {
+        for (const busName in busData) {
+            const bus = busData[busName];
+            if (bus && (bus.route === route || (bus.route && bus.route.toLowerCase() === route.toLowerCase())) && checkBus(bus)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 function updateTooltips(route) {
 
-    if (route === 'fav') return;
+    const targetRoute = route || shownRoute;
+    if (!targetRoute || targetRoute === 'fav' || !stopLists || !stopLists[targetRoute]) return;
 
     try {
-        stopLists[route].forEach(stopId => {
-            const [lowestBusName, lowestETA] = getSoonestBus(stopId, route);
+        stopLists[targetRoute].forEach(stopId => {
+            if (isRouteBusAtStop(targetRoute, stopId)) {
+                setStopEtaLabel(stopId, 'Here', true);
+                return;
+            }
+
+            const [lowestBusName, lowestETA] = getSoonestBus(stopId, targetRoute);
 
             if (lowestBusName) {
                 const lowestETAMin = Math.ceil(lowestETA / 60);
@@ -729,7 +769,7 @@ function updateTooltips(route) {
     } catch (error) {
         console.error(busesByRoutes);
         console.error(stopLists);
-        console.error(`Error updating tooltips for route ${route}: ${error}`);
+        console.error(`Error updating tooltips for route ${targetRoute}: ${error}`);
     }
 }
 
