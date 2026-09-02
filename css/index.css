@@ -2171,7 +2171,7 @@ html[theme="light"] .settings-panel .settings-options {
 
 .settings-floating-bar {
     position: fixed;
-    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
     left: 1rem;
     right: 1rem;
     z-index: 1001;
@@ -2182,8 +2182,8 @@ html[theme="light"] .settings-panel .settings-options {
     background-color: var(--theme-bg);
     border: 1px solid var(--theme-line-bg);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border-radius: 2.5rem;
-    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    padding: 2.5rem 1.5rem;
     height: 4rem;
     box-sizing: border-box;
     flex: 1;

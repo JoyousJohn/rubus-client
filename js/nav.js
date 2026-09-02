@@ -2750,7 +2750,7 @@ function displayRoute(routeData) {
         ` : `
             <div class="route-inactive-warning">
                 <i class="fa-solid fa-circle-info"></i>
-                <span>No ${String(route.name).toUpperCase()} buses running; use directions for future reference.</span>
+                <span>No <span style="font-weight: 500;">${formatRouteLabelColored(route.name)}</span> buses running; directions are for future reference.</span>
             </div>
         `;
 
@@ -2922,7 +2922,7 @@ function displayRoute(routeData) {
             if (index === 0 && hasStartWalk) {
                 // Start building/stop - walking to first stop
                 travelIcon = 'fa-solid fa-person-walking';
-                if (isRouteActive && startWalkDistance) {
+                if (startWalkDistance) {
                     const timeMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
                     travelTime = `${timeMinutes}m`;
                 }
@@ -2965,7 +2965,7 @@ function displayRoute(routeData) {
             } else if (waypoint.isAlighting && hasEndWalk) {
                 // Alighting stop - about to walk to destination
                 travelIcon = 'fa-solid fa-person-walking';
-                if (isRouteActive && endWalkDistance) {
+                if (endWalkDistance) {
                     const timeMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
                     travelTime = `${timeMinutes}m`;
                 }
@@ -3491,7 +3491,7 @@ function updateRouteDisplay(routeData) {
         $('.route-header-destination').after(`
             <div class="route-inactive-warning">
                 <i class="fa-solid fa-circle-info"></i>
-                <span>No ${String(route.name).toUpperCase()} buses running; use directions for future reference.</span>
+                <span>No <span style="font-weight: 500;">${formatRouteLabelColored(route.name)}</span> buses running; directions are for future reference.</span>
             </div>
         `);
     }
@@ -3554,7 +3554,7 @@ function updateRouteDisplay(routeData) {
             if (index === 0 && hasStartWalk) {
                 // Start building/stop - walking to first stop
                 travelIcon = 'fa-solid fa-person-walking';
-                if (isRouteActive && startWalkDistance) {
+                if (startWalkDistance) {
                     const timeMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
                     travelTime = `${timeMinutes}m`;
                 }
@@ -3597,7 +3597,7 @@ function updateRouteDisplay(routeData) {
             } else if (waypoint.isAlighting && hasEndWalk) {
                 // Alighting stop - about to walk to destination
                 travelIcon = 'fa-solid fa-person-walking';
-                if (isRouteActive && endWalkDistance) {
+                if (endWalkDistance) {
                     const timeMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
                     travelTime = `${timeMinutes}m`;
                 }
