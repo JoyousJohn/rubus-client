@@ -551,6 +551,24 @@ function startStoppedForTimer(busName) {
         return;
     }
 
+    // Mutual exclusion: don't show "Stopped for" when the OOS/line-invalid
+    // notice would also be visible (renderNextStopsGrid's isInvalidOrOos).
+    // This prevents both notices appearing side-by-side in .info-extra.
+    const dataForGuard = busData[busName];
+    const isInvalidOrOosForGuard = !dataForGuard || !('next_stop' in dataForGuard) || !busETAs[busName] || dataForGuard.oos || dataForGuard.atDepot || distanceFromLine(busName);
+    if (isInvalidOrOosForGuard) {
+        if (dataForGuard && dataForGuard.at_stop === true) {
+            window._lastContradictionWarn = window._lastContradictionWarn || {};
+            const _now = Date.now();
+            if (!window._lastContradictionWarn[busName] || _now - window._lastContradictionWarn[busName] > 30000) {
+                window._lastContradictionWarn[busName] = _now;
+                console.warn(`[bus-info-contradiction] Bus ${busName} at_stop=true but invalid/OOS (next_stop=${dataForGuard.next_stop} oos=${dataForGuard.oos} atDepot=${dataForGuard.atDepot} hasETA=${!!busETAs[busName]} offLine=${distanceFromLine(busName)} offLineDetails=${JSON.stringify(distanceFromLine(busName, true))}) - suppressing "Stopped for" timer for mutual exclusion with "Bus may be exiting..." notice`);
+            }
+        }
+        hideStoppedFor(true);
+        return;
+    }
+
     // Cancel any in-progress fade-out from hideStoppedFor() or departing and reset the
     // inline opacity/transition it set, so the freshly-shown label is fully
     // visible.

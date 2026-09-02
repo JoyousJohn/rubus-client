@@ -94,7 +94,10 @@
 /* Navigation directions header: overrides the shared .route-header grid so
    the title, summary, and time stack vertically and center as a column. */
 .nav-directions-header-block {
-    display: block !important;
+    display: grid !important;
+    grid-template-columns: 3.4rem 1fr 3.4rem;
+    align-items: center;
+    gap: 0.75rem;
     text-align: center;
     margin: 1rem 0 3rem 0;
     position: relative;
@@ -125,6 +128,65 @@
     opacity: 1;
     background-color: var(--theme-link);
     color: var(--theme-bg);
+}
+
+.route-random-btn {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: var(--theme-bg);
+    background-color: var(--theme-color);
+    border-radius: 50%;
+    width: 3.4rem;
+    height: 3.4rem;
+    cursor: pointer;
+    opacity: 0.85;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.route-random-btn:hover {
+    opacity: 1;
+    background-color: var(--theme-link);
+    color: var(--theme-bg);
+}
+
+.route-revert-btn {
+    position: absolute;
+    left: 1rem;
+    margin-left: 1rem;
+    top: calc(50% + 2.2rem);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--theme-bg);
+    background-color: var(--theme-color);
+    border-radius: 1rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+.route-revert-btn:hover {
+    opacity: 1;
+    background-color: var(--theme-link);
+    color: var(--theme-bg);
+}
+
+.route-revert-btn.none {
+    display: none !important;
 }
 
 .route-inactive-warning {
@@ -188,16 +250,18 @@
 }
 
 /* Navigation autocomplete dropdown styling — mirrors the main search results
-   list so matches look identical to the main search area. */
+   list so matches look identical to the main search area.
+   ── TUNED — DO NOT CHANGE: row-gap must stay 1.3rem to match main search
+   .search-results (css/search.css:372). Changing shifts n>0 nav results a few px. */
 .nav-from-search-results,
 .nav-to-search-results {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    row-gap: 1.3rem;
+    row-gap: 1.3rem !important;
     font-size: 1.5rem;
     margin-top: 0;
-    padding-left: 1rem;
+    padding-left: 1.5rem;
     padding-right: 1rem;
 }
 
@@ -206,10 +270,42 @@
     display: none;
 }
 
+.nav-from-search-results .search-result-item div:nth-child(2),
+.nav-to-search-results .search-result-item div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .nav-from-search-results .search-result-item,
 .nav-to-search-results .search-result-item {
     width: 100%;
     box-sizing: border-box;
+    min-height: 3.2rem;
+    position: relative;
+}
+
+.nav-from-search-results .search-result-item i:last-child,
+.nav-to-search-results .search-result-item i:last-child {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Hidden Nav placeholder (kept for row-height parity with main search's visible Nav pill)
+   must not occupy horizontal space or it pushes the chevron off the viewport edge. */
+.nav-from-search-results .search-result-item .search-result-directions-btn[aria-hidden="true"],
+.nav-to-search-results .search-result-item .search-result-directions-btn[aria-hidden="true"] {
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
 /* Highlight state for nav autocomplete rows (shared .search-result-item) */
@@ -540,13 +636,17 @@
 .navigate-wrapper .fa-bus-simple,
 .navigate-wrapper .fa-bus-stop,
 .navigate-wrapper .icon-building,
-.navigate-wrapper .fa-building {
+.navigate-wrapper .fa-building,
+.navigate-wrapper .icon-person-walking,
+.navigate-wrapper .fa-person-walking,
+.navigate-wrapper .icon-person-shelter,
+.navigate-wrapper .fa-person-shelter {
     color: var(--theme-accent);
 }
 
 .waypoint-circle {
-    width: 20px;
-    height: 20px;
+    width: 2rem;
+    height: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -558,6 +658,7 @@
     margin-right: 1rem;
     margin-top: 0.2rem;
     position: relative;
+    transition: background-color 0.2s ease;
     z-index: 2;
     user-select: none;
     -webkit-user-select: none;
@@ -600,7 +701,7 @@
 
 .waypoint-connector-global {
     position: absolute;
-    width: 2px;
+    width: 0.2rem;
     background-color: var(--theme-color);
     z-index: 1;
 }

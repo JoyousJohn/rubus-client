@@ -21,15 +21,44 @@ const SEARCH_CAMPUS_NAMES = {
 function updateSearchHeading() {
     const $icon = $('.search-heading-icon');
     if (searchMode === 'directions') {
-        $('.search-heading-text').text('Navigation');
+        let destName = ($('#nav-to-input').val() || '').trim();
+        if (!destName && selectedToBuilding && buildingIndex[selectedToBuilding]) destName = buildingIndex[selectedToBuilding].name;
+        if (!destName && selectedToStop && stopsData[selectedToStop]) destName = stopsData[selectedToStop].name;
+        if (destName) $('.search-heading-text').text(`Navigating to ${destName}`);
+        else $('.search-heading-text').text('Navigation');
         $icon.removeClass('icon-search fa-magnifying-glass fa-search').addClass('icon-route');
+        requestAnimationFrame(() => fitSearchHeadingText());
         return;
     }
     const campusKey = (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
     const campusName = SEARCH_CAMPUS_NAMES[campusKey] || SEARCH_CAMPUS_NAMES['nb'];
     $('.search-heading-text').text(`Browse ${campusName}`);
     $icon.removeClass('icon-route fa-route').addClass('icon-search');
+    requestAnimationFrame(() => fitSearchHeadingText());
 }
+
+function fitSearchHeadingText() {
+    const heading = document.querySelector('.search-top-bar .search-main-heading');
+    const textEl = document.querySelector('.search-heading-text');
+    if (!heading || !textEl) return;
+    // Reset to stylesheet size first — allow 2 lines before shrinking
+    textEl.style.fontSize = '';
+    let size = parseFloat(getComputedStyle(textEl).fontSize);
+    const minSize = 10;
+    let attempts = 0;
+    // Only shrink if wrapped 2-line height still overflows heading's fixed 2.8rem.
+    // scrollWidth is ignored here — with white-space:normal + word-break:break-word
+    // the text will wrap to 2 lines (line-clamp) and use heading's full width
+    // inside search-top-bar's 1rem left/right padding (safe space), so single-line
+    // width overflow should not force shrink if it can wrap to 2 lines and still fit.
+    while (size > minSize && attempts < 20 && textEl.scrollHeight > heading.clientHeight) {
+        size -= 0.5;
+        textEl.style.fontSize = size + 'px';
+        attempts++;
+    }
+}
+
+$(window).on('resize', () => requestAnimationFrame(() => fitSearchHeadingText()));
 
 function adjustSearchHeights() {
   const isMobile = $(window).width() <= 992;
@@ -533,21 +562,16 @@ $(document).ready(function() {
             _hasRecents = Array.isArray(_arr) && _arr.some(it => it && it.type !== 'navigation' && it.name && it.category);
         } catch(e) { _hasRecents = false; }
         if (_hasRecents) {
-            if (typeof window.setNavPendingSourceSelection === 'function') {
-                window.setNavPendingSourceSelection(true);
-            } else {
-                window.navPendingSourceSelection = true;
-                $('.nav-dest-row').addClass('none');
-            }
-            // Render recents synchronously before focusing to avoid flash of empty
-            if (typeof window.renderNavFromRecents === 'function') {
-                window.renderNavFromRecents();
-            } else if (typeof window.showNavFromRecents === 'function') {
-                window.showNavFromRecents();
-            }
+            selectedFromBuilding = null;
+            selectedFromStop = null;
+            isSettingInputProgrammatically = true;
+            $('#nav-from-input').val('').trigger('input');
+            isSettingInputProgrammatically = false;
+            $('#nav-from-clear-btn').hide();
+            setNavPendingSourceSelection(true);
+            renderNavFromRecents();
         } else {
-            if (typeof window.setNavPendingSourceSelection === 'function') window.setNavPendingSourceSelection(false);
-            else window.navPendingSourceSelection = false;
+            setNavPendingSourceSelection(false);
         }
         window._suppressNavAutocompleteOnFocus = true;
         window.focusNavFromInput();
@@ -657,10 +681,12 @@ $(document).ready(function() {
         if (sanitizedQuery) {
             $('.search-recs-wrapper').hide();
             $('.search-recents-wrapper').hide();
+            $('.search-recent-navigations-wrapper').hide();
             $('.search-surprise-me').hide();
         } else {
             $('.search-recs-wrapper').show();
             $('.search-recents-wrapper').show();
+            $('.search-recent-navigations-wrapper').show();
             $('.search-surprise-me').show();
             
             // Repopulate the content when showing (in case it was updated)
@@ -730,6 +756,7 @@ $(document).ready(function() {
 
     // Recent searches functionality
     function saveRecentSearch(searchItem) {
+        if (window._suppressRecentSave) return;
         const recentSearches = getRecentSearches();
         
         // Add timestamp to search item
@@ -758,6 +785,7 @@ $(document).ready(function() {
     }
     
     function saveRecentNavigation(fromBuilding, toBuilding) {
+        if (window._suppressRecentSave) return;
         const recentNavigations = getRecentNavigations();
         
         // Create navigation entry
@@ -928,6 +956,76 @@ $(document).ready(function() {
 
             $searchRecents.append($row);
         });
+
+        // Recent navigations (up to 3, shown under recent searches, before popular results)
+        let $navWrapper = $('.search-recent-navigations-wrapper');
+        if (!$navWrapper.length) {
+            $navWrapper = $('<div class="search-recent-navigations-wrapper"><div class="search-recent-navigations flex flex-col gap-y-1rem text-1p5rem"></div></div>');
+            const $recsWrapper = $('.search-recs-wrapper');
+            if ($recsWrapper.length) $recsWrapper.before($navWrapper);
+            else $searchRecentsWrapper.after($navWrapper);
+        }
+        const $navList = $navWrapper.find('.search-recent-navigations');
+        $navList.addClass('text-1p5rem');
+        $navList.empty();
+        const recentNavigations = getRecentNavigations();
+        const sortedNavs = recentNavigations.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        const seenNavKeys = new Set();
+        const uniqueNavs = [];
+        for (const nav of sortedNavs) {
+            if (!nav || !nav.from || !nav.to) continue;
+            const key = `nav:${String(nav.from).toLowerCase()}->${String(nav.to).toLowerCase()}`;
+            if (!seenNavKeys.has(key)) { seenNavKeys.add(key); uniqueNavs.push(nav); }
+        }
+        const navsToShow = uniqueNavs.slice(0, 3);
+        if (navsToShow.length === 0) {
+            $navWrapper.hide();
+        } else {
+            $navWrapper.show();
+            navsToShow.forEach(nav => {
+                const fromName = (nav.fromBuilding && nav.fromBuilding.name) ? nav.fromBuilding.name : nav.from;
+                const toName = (nav.toBuilding && nav.toBuilding.name) ? nav.toBuilding.name : nav.to;
+                const $row = $('<div class="search-result-item flex"></div>');
+                $row.append('<i class="icon icon-clock-rotate-left"></i>');
+                const $name = $('<div style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(`${fromName} → ${toName}`);
+                $row.append($name);
+                const $remove = $('<button class="recent-nav-remove-btn" type="button" style="background:none; border:none; color:var(--theme-color); font-size:1.8rem; cursor:pointer; padding:0.25rem; line-height:1; opacity:0.7; flex-shrink:0; margin-left:auto;">×</button>');
+                $remove.on('click', function(e) {
+                    e.stopPropagation();
+                    removeRecentNavigation(nav);
+                    populateRecentSearches();
+                    sa_event('btn_press', { btn: 'recent_navigation_removed', result: `${fromName} -> ${toName}` });
+                });
+                $row.append($remove);
+                $row.css('cursor', 'pointer');
+                $row.click(function(e) {
+                    if ($(e.target).closest('.recent-nav-remove-btn').length) return;
+                    setNavPendingSourceSelection(false);
+                    const fromData = nav.fromBuilding || { name: nav.from, category: 'building' };
+                    const toData = nav.toBuilding || { name: nav.to, category: 'building' };
+                    const fromIsStop = String(fromData.category || '').toLowerCase() === 'stop' && fromData.id;
+                    const toIsStop = String(toData.category || '').toLowerCase() === 'stop' && toData.id;
+                    if (fromIsStop) {
+                        setNavigationFromStop(String(fromData.id), 'from');
+                    } else if (fromData.name) {
+                        setNavigationFromBuilding(fromData.name, 'from');
+                    }
+                    if (toIsStop) {
+                        setNavigationFromStop(String(toData.id), 'to');
+                    } else if (toData.name) {
+                        setNavigationFromBuilding(toData.name, 'to');
+                    }
+                    openDirectionsNav();
+                    setTimeout(() => {
+                        const fName = fromData.name || nav.from;
+                        const tName = toData.name || nav.to;
+                        calculateRoute(fName, tName);
+                    }, 60);
+                    sa_event('btn_press', { btn: 'recent_navigation_selected', result: `${fromName} -> ${toName}` });
+                });
+                $navList.append($row);
+            });
+        }
     }
 
     // Populate search recommendations with 3 random popular buildings and active stops

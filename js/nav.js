@@ -109,6 +109,7 @@ function navRouteHasLiveBuses(routeName, displayName) {
 
 // Helper to save a place to recent searches (buildings, stops, parking)
 function saveRecentSearch(searchItem) {
+    if (window._suppressRecentSave) return;
     if (!searchItem || !searchItem.name) return;
     if (typeof window.saveRecentSearch === 'function' && window.saveRecentSearch !== saveRecentSearch) {
         window.saveRecentSearch(searchItem);
@@ -200,8 +201,8 @@ function renderNavFromRecents() {
         } else {
             $row.append('<i class="icon icon-location-dot" style="flex-shrink:0; font-size:1.3rem; opacity:0.9;"></i>');
         }
-        // Hidden Nav pill to match search-row height without changing row-gap
-        $row.append('<span class="search-result-directions-btn" aria-hidden="true" style="visibility:hidden; pointer-events:none; margin-left:auto; padding:1rem; font-size:1.3rem; border:1px solid transparent; height:auto; gap:0.4rem; display:flex; align-items:center;"><i class="fa-solid fa-diamond-turn-right"></i>Nav</span>');
+        // TUNED — DO NOT CHANGE: 3.2rem matches main search row with visible Nav pill (see css/search.css). Keeps nav recents gap identical.
+        $row.css('min-height', '3.2rem');
         $row.on('click', function(e) {
             // Use existing helpers to set source; they handle selected* vars and route calc
             if (item.category === 'stop' && item.id) {
@@ -275,8 +276,8 @@ function renderNavToRecents() {
         } else {
             $row.append('<i class="icon icon-location-dot" style="flex-shrink:0; font-size:1.3rem; opacity:0.9;"></i>');
         }
-        // Hidden Nav pill to match search-row height without changing row-gap
-        $row.append('<span class="search-result-directions-btn" aria-hidden="true" style="visibility:hidden; pointer-events:none; margin-left:auto; padding:1rem; font-size:1.3rem; border:1px solid transparent; height:auto; gap:0.4rem; display:flex; align-items:center;"><i class="fa-solid fa-diamond-turn-right"></i>Nav</span>');
+        // TUNED — DO NOT CHANGE: 3.2rem matches main search row with visible Nav pill (see css/search.css). Keeps nav recents gap identical.
+        $row.css('min-height', '3.2rem');
         $row.on('click', function(e) {
             // Use existing helpers to set destination; they handle selected* vars and route calc
             if (item.category === 'stop' && item.id) {
@@ -403,8 +404,7 @@ function setupNavigationInputs() {
         }
         const $fromInput = $('#nav-from-input');
         const isFocused = $fromInput.is(':focus');
-        const hasValue = $fromInput.val().trim().length > 0;
-        if (isFocused && hasValue) {
+        if (isFocused) {
             $('.nav-dest-row').addClass('none');
         } else {
             $('.nav-dest-row').removeClass('none');
@@ -555,10 +555,17 @@ function setupNavigationInputs() {
         }, 200);
     });
 
-    // Hide dropdowns when clicking outside
+    // Hide dropdowns when clicking outside — reveal dest immediately on whitespace (don't wait for blur 200ms)
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.nav-from, .nav-to, .nav-pill-bar, .nav-from-search-results, .nav-to-search-results').length) {
             hideNavigationAutocomplete();
+            if (window.navPendingSourceSelection) {
+                window.navPendingSourceSelection = false;
+                $('.nav-dest-row').removeClass('none');
+                $('.nav-pill-bar').removeClass('nav-collapsed');
+                $('.search-wrapper').removeClass('nav-source-hidden');
+                updateNavDestRowVisibility();
+            }
         }
     });
 
@@ -718,6 +725,125 @@ function swapNavLocations() {
     }
 }
 window.swapNavLocations = swapNavLocations;
+
+let _savedExplicitNav = null;
+let _hasRandomizedSinceSave = false;
+
+function randomizeNavLocations() {
+    if (!_hasRandomizedSinceSave) {
+        _savedExplicitNav = {
+            fromBuilding: selectedFromBuilding,
+            fromStop: selectedFromStop,
+            toBuilding: selectedToBuilding,
+            toStop: selectedToStop,
+            fromVal: $('#nav-from-input').val(),
+            toVal: $('#nav-to-input').val()
+        };
+        _hasRandomizedSinceSave = true;
+    }
+    $('.route-revert-btn').removeClass('none');
+    const buildingNames = Object.keys(typeof buildingIndex !== 'undefined' ? buildingIndex : {});
+    const stopIds = Object.keys(typeof stopsData !== 'undefined' ? stopsData : {});
+    const allPlaces = [];
+    for (const key of buildingNames) {
+        const b = buildingIndex[key];
+        if (b && b.name) allPlaces.push({ name: b.name, category: b.category || 'building', lat: b.lat, lng: b.lng, id: b.id });
+    }
+    for (const id of stopIds) {
+        const s = stopsData[id];
+        if (s && s.name) allPlaces.push({ name: s.name, category: 'stop', lat: s.latitude, lng: s.longitude, id: id });
+    }
+    if (allPlaces.length < 2) return;
+    let fromPlace = allPlaces[Math.floor(Math.random() * allPlaces.length)];
+    let toPlace;
+    let attempts = 0;
+    do {
+        toPlace = allPlaces[Math.floor(Math.random() * allPlaces.length)];
+        attempts++;
+    } while (toPlace.name === fromPlace.name && attempts < 20);
+    if (!toPlace || toPlace.name === fromPlace.name) return;
+    window._suppressRecentSave = true;
+    isSettingInputProgrammatically = true;
+    if (fromPlace.category === 'stop') {
+        selectedFromStop = String(fromPlace.id);
+        selectedFromBuilding = null;
+        $('#nav-from-input').val(fromPlace.name);
+    } else {
+        selectedFromBuilding = fromPlace.name.toLowerCase();
+        selectedFromStop = null;
+        $('#nav-from-input').val(fromPlace.name);
+    }
+    if (toPlace.category === 'stop') {
+        selectedToStop = String(toPlace.id);
+        selectedToBuilding = null;
+        $('#nav-to-input').val(toPlace.name);
+    } else {
+        selectedToBuilding = toPlace.name.toLowerCase();
+        selectedToStop = null;
+        $('#nav-to-input').val(toPlace.name);
+    }
+    isSettingInputProgrammatically = false;
+    $('#nav-from-clear-btn').toggle(!!fromPlace.name);
+    $('#nav-to-clear-btn').toggle(!!toPlace.name);
+    lastComputedRouteKey = null;
+    calculateRoute(fromPlace.name, toPlace.name);
+    setTimeout(() => { window._suppressRecentSave = false; }, 600);
+    sa_event('btn_press', { btn: 'randomize_nav', from: fromPlace.name, to: toPlace.name });
+}
+window.randomizeNavLocations = randomizeNavLocations;
+
+function revertNavLocations() {
+    if (!_savedExplicitNav) return;
+    window._suppressRecentSave = true;
+    isSettingInputProgrammatically = true;
+    if (_savedExplicitNav.fromStop) {
+        selectedFromStop = _savedExplicitNav.fromStop;
+        selectedFromBuilding = null;
+        $('#nav-from-input').val(_savedExplicitNav.fromVal);
+    } else if (_savedExplicitNav.fromBuilding) {
+        selectedFromBuilding = _savedExplicitNav.fromBuilding;
+        selectedFromStop = null;
+        $('#nav-from-input').val(_savedExplicitNav.fromVal);
+    } else {
+        selectedFromBuilding = null;
+        selectedFromStop = null;
+        $('#nav-from-input').val(_savedExplicitNav.fromVal || '');
+    }
+    if (_savedExplicitNav.toStop) {
+        selectedToStop = _savedExplicitNav.toStop;
+        selectedToBuilding = null;
+        $('#nav-to-input').val(_savedExplicitNav.toVal);
+    } else if (_savedExplicitNav.toBuilding) {
+        selectedToBuilding = _savedExplicitNav.toBuilding;
+        selectedToStop = null;
+        $('#nav-to-input').val(_savedExplicitNav.toVal);
+    } else {
+        selectedToBuilding = null;
+        selectedToStop = null;
+        $('#nav-to-input').val(_savedExplicitNav.toVal || '');
+    }
+    isSettingInputProgrammatically = false;
+    $('#nav-from-clear-btn').toggle(!!_savedExplicitNav.fromVal);
+    $('#nav-to-clear-btn').toggle(!!_savedExplicitNav.toVal);
+    lastComputedRouteKey = null;
+    $('.route-revert-btn').addClass('none');
+    const fromName = _savedExplicitNav.fromVal;
+    const toName = _savedExplicitNav.toVal;
+    _savedExplicitNav = null;
+    _hasRandomizedSinceSave = false;
+    if (fromName && toName) {
+        calculateRoute(fromName, toName);
+    } else if (fromName) {
+        if (window.focusNavInput) window.focusNavInput('#nav-to-input');
+        else $('#nav-to-input').focus();
+    } else if (toName) {
+        if (window.focusNavFromInput) window.focusNavFromInput();
+        else $('#nav-from-input').focus();
+    }
+    setTimeout(() => { window._suppressRecentSave = false; }, 600);
+    sa_event('btn_press', { btn: 'revert_nav', from: fromName, to: toName });
+}
+window.revertNavLocations = revertNavLocations;
 
 // Find the best combination of start and end stops for routing
 function findBestRouteCombination(startStops, endStops, startBuilding, endBuilding, startIsStop, endIsStop) {
@@ -2476,6 +2602,9 @@ function displayRoute(routeData) {
             }
         }
 
+        let _lastLiveIdx = -1;
+        for (let i = 0; i < routesForDisplay.length; i++) if (routesForDisplay[i].hasLive) _lastLiveIdx = i;
+        const _hasBoth = _lastLiveIdx >= 0 && _lastLiveIdx < routesForDisplay.length - 1;
         const routeOptions = routesForDisplay.map((entry, index) => {
             const isSelected = index === selectedRouteDisplayIndex;
             const routeKey = entry.route.name.toLowerCase();
@@ -2508,9 +2637,11 @@ function displayRoute(routeData) {
             const timeHtml = (hasLive && journeyMinutes > 0) ? `<span class="route-option-time">${journeyMinutes}m</span>` : ``;
             const labelHtml = `<span class="route-option-label" style="color: ${isSelected ? 'white' : routeColor}; font-weight: 700;">${label}</span>`;
 
-            return `<div class="route-option ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">
-                ${liveDotHtml}${labelHtml}${timeHtml}
-            </div>`;
+            const pill = `<div class="route-option ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">${liveDotHtml}${labelHtml}${timeHtml}</div>`;
+            if (_hasBoth && index === _lastLiveIdx) {
+                return pill + `<div class="route-options-divider" aria-hidden="true" style="width:1px; height:2.2rem; background:var(--theme-line-bg); flex-shrink:0; align-self:center; margin:0 0.25rem; opacity:0.9;"></div>`;
+            }
+            return pill;
         }).join('');
 
         routeSelectorHtml = `
@@ -2619,22 +2750,32 @@ function displayRoute(routeData) {
         ` : `
             <div class="route-inactive-warning">
                 <i class="fa-solid fa-circle-info"></i>
-                <span>No buses on this route are running and these directions are just to be used for reference.</span>
+                <span>No ${String(route.name).toUpperCase()} buses running; use directions for future reference.</span>
             </div>
         `;
 
         return `
-        <div class="route-header nav-directions-header-block" style="margin: 1rem 0 3rem 0; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.35rem; position: relative;">
-            <div class="route-header-source" style="font-size: 1.5rem; font-weight: 600; color: var(--theme-color); line-height: 1.2;">${startBuilding.name}</div>
-            <div class="route-header-arrow" style="font-size: 1.2rem; color: var(--theme-link); opacity: 0.8; line-height: 1;">
-                <i class="fa-solid fa-arrow-down"></i>
+        <div class="route-header nav-directions-header-block" style="margin: 1rem 0 3rem 0; display: grid; grid-template-columns: 3.4rem 1fr 3.4rem; align-items: center; gap: 0.75rem; position: relative;">
+            <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:center; justify-content:center;">
+                <div class="route-random-btn" onclick="randomizeNavLocations()" title="Randomize" style="position:static; transform:none; left:auto; top:auto;">
+                    <i class="fa-solid fa-party-horn"></i>
+                </div>
+                <div class="route-revert-btn ${_hasRandomizedSinceSave ? '' : 'none'}" onclick="revertNavLocations()" title="Revert to previous" style="position:static; transform:none; left:auto; top:auto;">Revert</div>
             </div>
-            <div class="route-header-destination" style="font-size: 1.5rem; font-weight: 600; color: var(--theme-color); line-height: 1.2;">${endBuilding.name}</div>
-            ${totalTravelTimeHtml}
-            <div class="route-swap-btn" onclick="swapNavLocations()" title="Swap start and destination">
-                <i class="fa-regular fa-arrow-up-arrow-down"></i>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; text-align:center; min-width:0; overflow:hidden;">
+                <div class="route-header-source" style="font-size: 1.5rem; font-weight: 600; color: var(--theme-color); line-height: 1.2; max-width:100%; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${startBuilding.name}</div>
+                <div class="route-header-arrow" style="font-size: 1.2rem; color: var(--theme-link); opacity: 0.8; line-height: 1;">
+                    <i class="fa-solid fa-arrow-down"></i>
+                </div>
+                <div class="route-header-destination" style="font-size: 1.5rem; font-weight: 600; color: var(--theme-color); line-height: 1.2; max-width:100%; overflow-wrap:break-word; word-break:break-word; white-space:normal;">${endBuilding.name}</div>
+                ${totalTravelTimeHtml}
+                ${fuzzyMatchHtml}
             </div>
-            ${fuzzyMatchHtml}
+            <div style="display:flex; align-items:center; justify-content:center;">
+                <div class="route-swap-btn" onclick="swapNavLocations()" title="Swap start and destination" style="position:static; transform:none; right:auto; top:auto;">
+                    <i class="fa-regular fa-arrow-up-arrow-down"></i>
+                </div>
+            </div>
             
         </div>
         `;
@@ -2670,7 +2811,7 @@ function displayRoute(routeData) {
             <div class="bus-stops-list">
                 <div class="stops-sequence" style="font-size: 1.2rem;">
                     ${route.stopsInOrder.map(stop =>
-                        `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold;' : ''}">
+                        `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold; text-decoration: underline; text-underline-offset: 2px;' : ''}">
                             ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
                         </span>`
                     ).join(' → ')}
@@ -2745,7 +2886,7 @@ function displayRoute(routeData) {
             type: 'stop',
             name: endStop.name,
             isAlighting: true,
-            description: hasEndWalk ? 'Exit bus here' : 'End here'
+            description: hasEndWalk ? 'Exit bus here' : (endIsStop ? 'Depart bus and end here' : 'End here')
         });
         // End point (if walking from alighting stop to destination)
         if (hasEndWalk) {
@@ -2787,7 +2928,7 @@ function displayRoute(routeData) {
                 }
             } else if (waypoint.isBoarding) {
                 // Boarding stop - about to ride bus
-                travelIcon = 'fa-mosaic fa-solid fa-bus';
+                travelIcon = 'fa-solid fa-bus';
                 if (isRouteActive) {
                     // Calculate bus travel time using average etas and waits
                     let totalSeconds = 0;
@@ -2837,7 +2978,7 @@ function displayRoute(routeData) {
         } else if (index === timelineWaypoints.length - 1) {
             waypointIcon = 'fa-solid fa-flag-checkered';
         } else {
-            waypointIcon = 'fa-solid fa-bus';
+            waypointIcon = 'fa-solid fa-person-shelter';
         }
 
         let travelHtml = '';
@@ -2872,7 +3013,7 @@ function displayRoute(routeData) {
                     <div class="waypoint-emoji waypoint-travel-bus">
                         <div class="waypoint-travel-header">
                             <div class="waypoint-circle">
-                                <i class="fa-mosaic fa-solid fa-bus"></i>
+                                <i class="fa-solid fa-bus"></i>
                             </div>
                             <span class="route-badge" style="font-size: 1.4rem; font-weight: bold;">${formatRouteLabelColored(route.name)}</span>
                             ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
@@ -3350,7 +3491,7 @@ function updateRouteDisplay(routeData) {
         $('.route-header-destination').after(`
             <div class="route-inactive-warning">
                 <i class="fa-solid fa-circle-info"></i>
-                <span>No buses on this route are running and these directions are just to be used for reference.</span>
+                <span>No ${String(route.name).toUpperCase()} buses running; use directions for future reference.</span>
             </div>
         `);
     }
@@ -3374,7 +3515,7 @@ function updateRouteDisplay(routeData) {
             type: 'stop',
             name: endStop.name,
             isAlighting: true,
-            description: hasEndWalk ? 'Exit bus here' : 'End here'
+            description: hasEndWalk ? 'Exit bus here' : (endIsStop ? 'Depart bus and end here' : 'End here')
         });
         if (hasEndWalk) {
             waypoints.push({ type: endIsStop ? 'stop' : 'building', name: endBuilding.name, description: 'End here' });
@@ -3392,7 +3533,7 @@ function updateRouteDisplay(routeData) {
                     <div class="bus-stops-list">
                         <div class="stops-sequence" style="font-size: 1.2rem;">
                             ${route.stopsInOrder.map(stop =>
-                                `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold;' : ''}">
+                                `<span style="color: var(--theme-stops-list-text);                     ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold; text-decoration: underline; text-underline-offset: 2px;' : ''}">
                                     ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
                                 </span>`
                             ).join(' → ')}
@@ -3419,7 +3560,7 @@ function updateRouteDisplay(routeData) {
                 }
             } else if (waypoint.isBoarding) {
                 // Boarding stop - about to ride bus
-                travelIcon = 'fa-mosaic fa-solid fa-bus';
+                travelIcon = 'fa-solid fa-bus';
                 if (isRouteActive) {
                     // Calculate bus travel time using average etas and waits
                     let totalSeconds = 0;
@@ -3469,7 +3610,7 @@ function updateRouteDisplay(routeData) {
         } else if (index === timelineWaypoints.length - 1) {
             waypointIcon = 'fa-solid fa-flag-checkered';
         } else {
-            waypointIcon = 'fa-solid fa-bus';
+            waypointIcon = 'fa-solid fa-person-shelter';
         }
 
         let travelHtml = '';
@@ -3504,7 +3645,7 @@ function updateRouteDisplay(routeData) {
                     <div class="waypoint-emoji waypoint-travel-bus">
                         <div class="waypoint-travel-header">
                             <div class="waypoint-circle">
-                                <i class="fa-mosaic fa-solid fa-bus"></i>
+                                <i class="fa-solid fa-bus"></i>
                             </div>
                             <span class="route-badge" style="font-size: 1.4rem; font-weight: bold;">${formatRouteLabelColored(route.name)}</span>
                             ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
@@ -3584,7 +3725,7 @@ function updateRouteDisplay(routeData) {
             <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem;">
                 <div class="stops-sequence" style="font-size: 1.2rem;">
                     ${route.stopsInOrder.map(stop =>
-                        `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold;' : ''}">
+                        `<span style="color: var(--theme-stops-list-text); ${stop.id === startStop.id || stop.id === endStop.id ? 'font-weight: bold; text-decoration: underline; text-underline-offset: 2px;' : ''}">
                             ${stop.name}${stop.id === startStop.id ? ' (board)' : stop.id === endStop.id ? ' (get off)' : ''}
                         </span>`
                     ).join(' → ')}

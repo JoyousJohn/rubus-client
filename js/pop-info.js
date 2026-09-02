@@ -531,6 +531,20 @@ function renderNextStopsGrid(busName) {
         $('.next-stops-oos-notice').show();
         $('.info-next-stops').show();
         lastNextStopsSignature = null;
+        // Mutual exclusion: OOS notice and "Stopped for" share .info-extra flex row.
+        // If OOS is visible, the bus cannot be validly at a stop, so hide any
+        // stale stopped timer that was started before invalidity was detected
+        // (popInfo:420 vs renderNextStopsGrid async race / WS arrival race).
+        const wasStoppedVisible = !$('.info-stopped-for').hasClass('none');
+        if (typeof hideStoppedFor === 'function') hideStoppedFor(true); else $('.info-stopped-for').addClass('none');
+        if (data.at_stop === true || wasStoppedVisible) {
+            window._lastContradictionWarn = window._lastContradictionWarn || {};
+            const _now = Date.now();
+            if (!window._lastContradictionWarn[busName] || _now - window._lastContradictionWarn[busName] > 30000) {
+                window._lastContradictionWarn[busName] = _now;
+                console.warn(`[bus-info-contradiction] renderNextStopsGrid: Bus ${busName} at_stop=${data.at_stop} but isInvalidOrOos=true (next_stop=${data.next_stop} oos=${data.oos} hasETA=${!!busETAs[busName]} offLine=${distanceFromLine(busName)} offLineDetails=${JSON.stringify(distanceFromLine(busName, true))}) - hid "Stopped for" for mutual exclusion`);
+            }
+        }
         return { aborted: false, etaLabels: etaLabelsToSet };
     }
 
@@ -887,6 +901,16 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
             $('.next-stops-oos-notice').hide();
         } else {
             $('.next-stops-oos-notice').show();
+            const wasStoppedVisible = !$('.info-stopped-for').hasClass('none');
+            if (typeof hideStoppedFor === 'function') hideStoppedFor(true); else $('.info-stopped-for').addClass('none');
+            if (data.at_stop === true || wasStoppedVisible) {
+                window._lastContradictionWarn = window._lastContradictionWarn || {};
+                const _now = Date.now();
+                if (!window._lastContradictionWarn[busName] || _now - window._lastContradictionWarn[busName] > 30000) {
+                    window._lastContradictionWarn[busName] = _now;
+                    console.warn(`[bus-info-contradiction] rebuildGrid negativeETA: Bus ${busName} at_stop=${data.at_stop} negativeETA=${negativeETA} - hid "Stopped for" for mutual exclusion`);
+                }
+            }
         }
         $('.info-next-stops').show();
         setTimeout(() => {
@@ -931,6 +955,16 @@ function updateGridIncremental(busName, rows, negativeETA, etaLabelsToSet) {
             $('.next-stops-grid').hide();
             $('.next-stops-oos-notice').show();
             $('.info-next-stops').show();
+            const wasStoppedVisible = !$('.info-stopped-for').hasClass('none');
+            if (typeof hideStoppedFor === 'function') hideStoppedFor(true); else $('.info-stopped-for').addClass('none');
+            if (busData[busName].at_stop === true || wasStoppedVisible) {
+                window._lastContradictionWarn = window._lastContradictionWarn || {};
+                const _now = Date.now();
+                if (!window._lastContradictionWarn[busName] || _now - window._lastContradictionWarn[busName] > 30000) {
+                    window._lastContradictionWarn[busName] = _now;
+                    console.warn(`[bus-info-contradiction] updateGridIncremental: Bus ${busName} at_stop=${busData[busName].at_stop} isInvalidOrOos=${isInvalidOrOos} negativeETA=${negativeETA} oos=${busData[busName].oos} offLine=${distanceFromLine(busName)} offLineDetails=${JSON.stringify(distanceFromLine(busName, true))} - hid "Stopped for" for mutual exclusion`);
+                }
+            }
         } else {
             $('.next-stops-oos-notice').hide();
             $('.next-stops-grid').show();

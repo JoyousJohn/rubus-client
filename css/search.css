@@ -10,10 +10,22 @@
     overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .search-wrapper.none {
     display: none;
+}
+
+.search-wrapper input,
+.search-wrapper textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .search-top-bar {
@@ -22,7 +34,7 @@
     justify-content: space-between;
     padding: calc(0.5rem + env(safe-area-inset-top, 0px)) 1rem 0.5rem;
     margin: 1rem 0;
-    gap: 0.5rem;
+    gap: 1.5rem;
     flex-shrink: 0;
 }
 
@@ -53,6 +65,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: visible;
 }
 
 .search-top-bar .search-main-heading .search-heading-text,
@@ -60,6 +73,20 @@
     line-height: 1;
     display: flex;
     align-items: center;
+}
+
+.search-heading-text {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .search-pin-btn,
@@ -162,6 +189,10 @@
     line-height: 1;
     opacity: 0.7;
     transition: opacity 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .search-clear-btn {
@@ -198,6 +229,37 @@
     flex-direction: column;
 }
 
+.search-recent-navigations-wrapper {
+    border-top: 1px solid var(--theme-line-bg);
+    border-bottom: 1px solid var(--theme-line-bg);
+    padding: 1rem 0;
+    margin: 1rem 0 0 0;
+}
+
+.search-recent-navigations-wrapper + .search-recs-wrapper {
+    margin-top: 1rem !important;
+}
+
+.search-surprise-me {
+    border-top: 1px solid var(--theme-line-bg);
+    padding-top: 1rem;
+}
+
+/* ── TUNED — DO NOT CHANGE ──
+   3.2rem = visible Nav pill height (1.3rem font + 2×1rem padding + 1px border)
+   in main search recents. Nav recents & Surprise Me have no visible Nav pill,
+   so without this their rows are ~1.5rem and 1rem row-gap looks ~1.7rem short.
+   min-height forces same visual row height so gap-y:1rem / row-gap:1.3rem
+   appears identical between sections. Changing breaks vertical rhythm. */
+.search-surprise-me .search-result-item,
+.search-recent-navigations .search-result-item {
+    min-height: 3.2rem;
+}
+
+.recent-nav-remove-btn:hover {
+    opacity: 1 !important;
+}
+
 .navigate-wrapper {
     flex: 1;
     min-height: 0;
@@ -232,13 +294,21 @@
 }
 
 /* Source autocomplete results span the pill bar's full width (including its
-   1rem side margins) below the bar, with padding to match the main search. */
-.nav-pill-bar .nav-from-search-results {
+   1rem side margins) below the bar, with padding to match the main search.
+   ── TUNED VALUES — DO NOT CHANGE without visual regression check ──
+   margin-top:0.9rem is the sweet spot between 0.75rem (too high, first nav row
+   ~4px above main search first row) and 1rem (too low, ~4px below). Main first
+   row top = pill margin-bottom 0.5rem + search-content padding-top 0.25rem = 0.75rem,
+   but nav rows have min-height:3.2rem (to match main row with visible Nav pill
+   1.3rem + 2×1rem padding) and row-gap:1.3rem, so optical center needs +0.15rem.
+   Changing this shifts first nav result vs main search by a few pixels. */
+.nav-pill-bar .nav-from-search-results,
+.nav-input-wrapper .nav-to-search-results {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    margin-top: 1.5rem;
+    margin-top: 0.9rem;
 }
 
 .nav-pill-bar-style:focus-within {
@@ -302,6 +372,30 @@
     height: 2.8rem;
     box-sizing: border-box;
     width: auto;
+}
+
+/* Align nav from/to inputs without explicit per-icon sizes:
+   - normalize left inset (was -0.25rem on from only) so both pills' inputs start at same x
+   - keep icon itself at intrinsic/fa-fw size, center via grid — no fixed width on <i>
+   - also apply same 2.8rem box to search pin so it doesn't shift when entering nav mode (flag not yet visible) */
+.search-pin-btn,
+.nav-from-pin-btn,
+.nav-dest-pin-btn {
+    display: grid !important;
+    place-items: center !important;
+    width: 2.8rem !important;
+    min-width: 2.8rem !important;
+    max-width: 2.8rem !important;
+    height: 2.8rem !important;
+    box-sizing: border-box !important;
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+.search-pill-bar,
+.nav-pill-bar-style,
+.nav-input-wrapper {
+    padding-left: 0.75rem !important;
 }
 
 .nav-dest-row .nav-input-wrapper {
