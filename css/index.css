@@ -567,6 +567,13 @@ html, body {
 .loading-buses:not(.none), .updating-buses:not(.none), .getting-location-popup:not(.none) {
     display: inline-flex !important;
 }
+/* jQuery .fadeIn()/.show() reveal these by setting an inline display:block,
+   which drops the flex gap/centering from the shared badge rule. Re-assert
+   the flex layout while jQuery has shown them (inline display remains "block"
+   until .slideUp()/.fadeOut() finishes and sets it back to none). */
+.updating-buses[style*="display: block"], .getting-location-popup[style*="display: block"] {
+    display: inline-flex !important;
+}
 @keyframes loading-throbber-spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
