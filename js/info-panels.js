@@ -334,7 +334,7 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
 	ipCounters.moves += 1;
 	const $container = $('.subpanels-container');
     const target = $(e.target);
-	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select, .incoming-wrapper, .incoming-list, .all-stops-grid, .campus-stops-list, .route-stops-grid').length > 0) {
+	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select').length > 0) {
 		ipCounters.ignoredInteractive += 1;
 		console.log('[IP] move ignored: interactive target', { type: e.type, moves: ipCounters.moves, ignoredInteractive: ipCounters.ignoredInteractive });
 		return;
