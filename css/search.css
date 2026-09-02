@@ -21,6 +21,7 @@
     align-items: center;
     justify-content: space-between;
     padding: calc(0.5rem + env(safe-area-inset-top, 0px)) 1rem 0.5rem;
+    margin: 1rem 0;
     gap: 0.5rem;
     flex-shrink: 0;
 }

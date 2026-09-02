@@ -782,8 +782,9 @@ $(document).ready(function() {
         localStorage.setItem('recentNavigations', JSON.stringify(recent));
     }
     
-    // Make saveRecentNavigation globally accessible
+    // Make saveRecentNavigation and saveRecentSearch globally accessible
     window.saveRecentNavigation = saveRecentNavigation;
+    window.saveRecentSearch = saveRecentSearch;
     
     // Helper function to handle building selection with immediate response and highlighting
     function selectBuilding(buildingData) {

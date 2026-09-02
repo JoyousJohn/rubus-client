@@ -96,6 +96,54 @@
 .nav-directions-header-block {
     display: block !important;
     text-align: center;
+    margin: 1rem 0 3rem 0;
+    position: relative;
+}
+
+.route-swap-btn {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: var(--theme-bg);
+    background-color: var(--theme-color);
+    border-radius: 50%;
+    width: 3.4rem;
+    height: 3.4rem;
+    cursor: pointer;
+    opacity: 0.85;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.route-swap-btn:hover {
+    opacity: 1;
+    background-color: var(--theme-link);
+    color: var(--theme-bg);
+}
+
+.route-inactive-warning {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font-size: 1.2rem;
+    color: var(--theme-extra);
+    margin-top: 0.6rem;
+    max-width: 85%;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.route-inactive-warning i {
+    color: var(--theme-link);
+    font-size: 1.3rem;
+    flex-shrink: 0;
 }
 
 /* Navigation directions wrapper styling */
@@ -206,7 +254,7 @@
 
 .route-option {
     flex-shrink: 0;
-    padding: 0.5rem 1rem;
+    padding: 1rem 1.5rem;
     border-radius: 4rem;
     font-weight: 600;
     font-size: 1.2rem;
@@ -229,6 +277,13 @@
     display: inline-block;
     flex-shrink: 0;
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+}
+
+.route-option-time {
+    font-size: 1.1rem;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-left: 0.2rem;
 }
 
 .route-option.selected {
@@ -288,8 +343,7 @@
     left: 50%;
     transform: translateX(-50%);
     width: 2px;
-    height: 2rem;
-    background-color: #d1d5db;
+    background-color: var(--theme-color);
     z-index: 1;
 }
 
@@ -303,39 +357,205 @@
 .waypoint-row {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 3rem;
     position: relative;
     gap: 0.75rem;
+    background-color: var(--theme-bg-closest-stop);
+    border-radius: 1rem;
+    padding: 1rem;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color 0.2s ease;
 }
 
-.waypoint-circle {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: var(--theme-color);
-    box-sizing: border-box;
-    flex-shrink: 0;
-    margin-right: 1rem;
-    margin-top: 0.4rem;
+.waypoint-row:hover {
+    background-color: color-mix(in srgb, var(--theme-bg-closest-stop) 88%, var(--theme-color) 12%);
+}
+
+.waypoint-row:hover .waypoint-circle {
+    background-color: color-mix(in srgb, var(--theme-bg-closest-stop) 88%, var(--theme-color) 12%);
+}
+
+.waypoint-emoji {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0 0.6rem;
     position: relative;
     z-index: 2;
 }
 
-.waypoint-circle.building-circle {
-    background-color: var(--theme-color);
+.waypoint-emoji:not(.waypoint-travel-bus):not(.waypoint-travel-walk) {
+    background-color: var(--theme-stops-list-bg);
+    border-radius: 1.5rem;
+    padding: 0.4rem 0.8rem 0.4rem 0.4rem;
+    box-sizing: border-box;
+    width: fit-content;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.waypoint-circle.stop-circle {
-    background-color: var(--theme-color);
+.waypoint-emoji .waypoint-circle {
+    background-color: var(--theme-stops-list-bg);
+    margin-right: 0;
+    margin-top: 0;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.waypoint-circle.boarding-circle {
-    background-color: var(--theme-color);
+.waypoint-emoji .travel-time {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--theme-stops-list-text);
+    background-color: transparent;
+    padding: 0 0.25rem;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.waypoint-circle.alighting-circle {
-    background-color: var(--theme-color);
-    border: 2px solid var(--theme-extra);
+.waypoint-emoji.waypoint-travel-bus,
+.waypoint-emoji.waypoint-travel-walk {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    margin: 0 1rem 0 0.6rem;
+}
+
+.waypoint-travel-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.waypoint-travel-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    background-color: var(--theme-stops-list-bg);
+    border: 1px solid var(--theme-link);
+    border-radius: 1.5rem;
+    padding: 0.4rem 0.8rem 0.4rem 0.4rem;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.waypoint-travel-bus .waypoint-travel-header,
+.waypoint-travel-walk .waypoint-travel-header {
+    border-bottom-right-radius: 0;
+}
+
+.waypoint-travel-bus .waypoint-travel-header.header-corner-rounded,
+.waypoint-travel-walk .waypoint-travel-header.header-corner-rounded {
+    border-bottom-right-radius: 1.5rem;
+}
+
+.walking-roads-list.list-top-right-square,
+.bus-stops-list.list-top-right-square {
+    border-top-right-radius: 0;
+    border-top: none;
+}
+
+.walking-roads-list.list-border-top,
+.bus-stops-list.list-border-top {
+    border-top: 1px solid var(--theme-link);
+}
+
+.waypoint-travel-bus .stops-info,
+.waypoint-travel-walk .walking-info {
+    font-size: 1.3rem;
+    color: var(--theme-stops-list-text);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.waypoint-travel-bus .bus-stops-list-wrapper,
+.waypoint-travel-walk .walking-roads-wrapper {
+    margin-left: 0;
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.bus-stops-list,
+.walking-roads-list {
+    margin-left: 3rem;
+    background-color: color-mix(in srgb, var(--theme-link) 25%, var(--theme-bg));
+    border-radius: 0 1.5rem 1.5rem 1.5rem;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--theme-link);
+    border-top: none;
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: calc(100% - 3rem);
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.bus-stops-list .stops-sequence span,
+.walking-roads-list .roads-sequence span {
+    color: var(--theme-stops-list-text);
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.roads-sequence {
+    font-size: 1.1rem;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.google-maps-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 4rem;
+    font-weight: 600;
+    font-size: 1.2rem;
+    background-color: var(--theme-link);
+    color: var(--theme-bg);
+    border: 1px solid var(--theme-link);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.google-maps-link:hover {
+    filter: brightness(0.92);
+    text-decoration: none;
+}
+
+.waypoint-emoji .waypoint-circle i.fa-bus,
+.waypoint-emoji .waypoint-circle i.icon-bus {
+    color: var(--theme-accent);
+}
+
+.waypoint-circle {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    color: var(--theme-color);
+    background-color: var(--theme-bg-closest-stop);
+    box-sizing: border-box;
+    flex-shrink: 0;
+    margin-right: 1rem;
+    margin-top: 0.2rem;
+    position: relative;
+    z-index: 2;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .waypoint-content {
@@ -366,6 +586,9 @@
 
 .waypoint-rows-container {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    row-gap: 5rem;
 }
 
 .waypoint-connector { display: none; }
@@ -373,8 +596,21 @@
 .waypoint-connector-global {
     position: absolute;
     width: 2px;
-    background-color: #d1d5db;
+    background-color: var(--theme-color);
     z-index: 1;
+}
+
+.waypoint-connector-arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 7px solid var(--theme-color);
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 .connector-text {
@@ -387,4 +623,17 @@
     white-space: nowrap;
     background-color: var(--theme-bg);
     padding: 0.125rem 0.5rem;
+}
+
+.nav-close-btn {
+    background-color: var(--theme-link);
+    color: var(--theme-bg);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    border: 1px solid var(--theme-link);
+}
+
+.nav-close-btn:hover {
+    filter: brightness(0.92);
 }
