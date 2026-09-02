@@ -21,11 +21,67 @@ const SEARCH_CAMPUS_NAMES = {
 function updateSearchHeading() {
     const $icon = $('.search-heading-icon');
     if (searchMode === 'directions') {
-        let destName = ($('#nav-to-input').val() || '').trim();
-        if (!destName && selectedToBuilding && buildingIndex[selectedToBuilding]) destName = buildingIndex[selectedToBuilding].name;
-        if (!destName && selectedToStop && stopsData[selectedToStop]) destName = stopsData[selectedToStop].name;
-        if (destName) $('.search-heading-text').text(`Navigating to ${destName}`);
-        else $('.search-heading-text').text('Navigation');
+        const getNavPlaceName = (type) => {
+            const isFrom = type === 'from';
+            const inputSelector = isFrom ? '#nav-from-input' : '#nav-to-input';
+            const selectedBuilding = isFrom ? (typeof selectedFromBuilding !== 'undefined' ? selectedFromBuilding : null)
+                                            : (typeof selectedToBuilding !== 'undefined' ? selectedToBuilding : null);
+            const selectedStop = isFrom ? (typeof selectedFromStop !== 'undefined' ? selectedFromStop : null)
+                                        : (typeof selectedToStop !== 'undefined' ? selectedToStop : null);
+
+            const rawVal = ($(inputSelector).val() || '').trim();
+            if (!rawVal) {
+                // If input element is not in DOM, fall back to selected state
+                if ($(inputSelector).length === 0) {
+                    if (selectedBuilding && typeof buildingIndex !== 'undefined' && buildingIndex[selectedBuilding]) {
+                        return buildingIndex[selectedBuilding].name;
+                    }
+                    if (selectedStop && typeof stopsData !== 'undefined' && stopsData[selectedStop]) {
+                        return stopsData[selectedStop].name;
+                    }
+                }
+                return '';
+            }
+
+            if (selectedBuilding && typeof buildingIndex !== 'undefined' && buildingIndex[selectedBuilding]) {
+                return buildingIndex[selectedBuilding].name;
+            }
+            if (selectedStop && typeof stopsData !== 'undefined' && stopsData[selectedStop]) {
+                return stopsData[selectedStop].name;
+            }
+            if (typeof resolvePlaceByName === 'function') {
+                const place = resolvePlaceByName(rawVal);
+                if (place && place.name) {
+                    return place.name;
+                }
+            }
+            const norm = rawVal.toLowerCase();
+            if (typeof buildingIndex !== 'undefined' && buildingIndex[norm]) {
+                return buildingIndex[norm].name;
+            }
+            if (typeof stopsData !== 'undefined') {
+                for (const stopId in stopsData) {
+                    if (stopsData[stopId] && stopsData[stopId].name && stopsData[stopId].name.toLowerCase() === norm) {
+                        return stopsData[stopId].name;
+                    }
+                }
+            }
+            return rawVal;
+        };
+
+        const destName = getNavPlaceName('to');
+        const fromName = getNavPlaceName('from');
+
+        if (destName && !fromName) {
+            $('.search-heading-text').text(`Navigating to ${destName}`);
+        } else if (fromName && !destName) {
+            $('.search-heading-text').text(`Navigating from ${fromName}`);
+        } else if (destName) {
+            $('.search-heading-text').text(`Navigating to ${destName}`);
+        } else {
+            $('.search-heading-text').text('Navigation');
+        }
+
         $icon.removeClass('icon-search fa-magnifying-glass fa-search').addClass('icon-route');
         requestAnimationFrame(() => fitSearchHeadingText());
         return;
@@ -36,6 +92,7 @@ function updateSearchHeading() {
     $icon.removeClass('icon-route fa-route').addClass('icon-search');
     requestAnimationFrame(() => fitSearchHeadingText());
 }
+window.updateSearchHeading = updateSearchHeading;
 
 function fitSearchHeadingText() {
     const heading = document.querySelector('.search-top-bar .search-main-heading');
