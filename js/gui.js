@@ -8,6 +8,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     // below calls smoothScrollTo (declaration-before-use; binding is per-invocation,
     // fresh set created on each populate).
     const $selectorsContainer = $('.route-selectors');
+    const previousScrollLeft = $selectorsContainer.scrollLeft();
     let isDragging = false;
     let startX = 0;
     let initialScrollLeft = 0;
@@ -266,6 +267,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     $('.route-selectors').append($('.sim-btn'));
 
     // Apply selection styling to the currently selected route if it exists in the filtered routes
+    let didCenterScroll = false;
     if (shownRoute) {
         // Use the existing toggleRouteSelectors logic to select the route
         $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
@@ -291,11 +293,21 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
                 const scrollTo = element.position().left - (containerWidth / 2) + (elementWidth / 2) + container.scrollLeft();
                 
                 smoothScrollTo(scrollTo, 200);
+                didCenterScroll = true;
             }
         }
     }
 
-    $selectorsContainer.scrollLeft(0);
+    if (!didCenterScroll) {
+        const containerEl = $selectorsContainer[0];
+        if (containerEl) {
+            const maxScroll = containerEl.scrollWidth - containerEl.clientWidth;
+            const clamped = Math.max(0, Math.min(previousScrollLeft, maxScroll));
+            if (Math.abs(containerEl.scrollLeft - clamped) > 0.5) {
+                $selectorsContainer.scrollLeft(clamped);
+            }
+        }
+    }
 
     function stopSelectorAnimation() {
         if (animationFrame) {
