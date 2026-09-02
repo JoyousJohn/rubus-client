@@ -55,6 +55,14 @@ function plotBus(busName, immediatelyUpdate=false, moved=true) {
     // updates. isBusShownOnMap is O(1) for buses far outside the route bounds
     // thanks to the distanceFromLine fast-path.
     if (!shouldShow) {
+        // DEBUG: log the visibility decision for the invalid bus so we can
+        // confirm whether a negative-ETA bus is ever being hidden here (it
+        // should only hide via oos/atDepot/offLine, never ETA).
+        if ((typeof busData !== 'undefined' && busData[busName] && busData[busName].oos) ||
+            (typeof busData !== 'undefined' && busData[busName] && busData[busName].atDepot) ||
+            (typeof distanceFromLine === 'function' && distanceFromLine(busName))) {
+            console.warn(`[plotBus-hide] bus=${busName} hidden. oos=${busData[busName]?.oos} atDepot=${busData[busName]?.atDepot} offLine=${distanceFromLine(busName)} occDetails=${JSON.stringify(distanceFromLine(busName, true))} hasETA=${!!busETAs?.[busName]} negETA=${(busETAs?.[busName] ? Object.values(busETAs[busName]).some(v => typeof v === 'number' && v < 0) : 'n/a')} route=${busData[busName]?.route} shownRoute=${shownRoute}`);
+        }
         if (busMarkers[busName]) {
             busMarkers[busName].remove();
         }

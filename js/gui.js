@@ -3522,7 +3522,10 @@ function flyToClosestStop() {
         // Check if we're already at closest stop and haven't moved since
         if ($btn.hasClass('btn-feedback-active')) {
             const stopData = stopsData[closestStopId];
-            const currentCenter = map.getCenter();
+            // map.getCenter() returns a plain {lat,lng} under the MapLibre compat
+            // layer — wrap it in L.latLng to get .distanceTo (same pattern as
+            // centerme.js).
+            const currentCenter = L.latLng(map.getCenter());
             const stopLatLng = L.latLng(stopData.latitude, stopData.longitude);
             const distance = currentCenter.distanceTo(stopLatLng);
 
