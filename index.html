@@ -95,10 +95,30 @@
                 let initialEtag = null;
                 let successToastTimer = null;
 
-                function showUpdatedSuccessToast() {
+                function prefetchPendingBuild() {
+                    $.ajax({
+                        url: 'https://api.github.com/repos/JoyousJohn/rubus-client/commits?per_page=1',
+                        type: 'GET',
+                        success: function(data, textStatus, jqXHR) {
+                            const linkHeader = jqXHR.getResponseHeader('Link');
+                            if (linkHeader) {
+                                const match = linkHeader.match(/page=(\d+)>; rel="last"/);
+                                if (match) {
+                                    const lastPage = parseInt(match[1], 10);
+                                    if (!isNaN(lastPage)) {
+                                        localStorage.setItem('rubus-pending-build', lastPage.toString());
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                function showUpdatedSuccessToast(buildNum) {
                     if (successToastTimer) clearTimeout(successToastTimer);
                     const $toast = $('#update-toast');
-                    $toast.find('.update-toast-text').html('<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Updated to latest version');
+                    const text = buildNum ? `Installed update v${buildNum}` : 'Installed update';
+                    $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> ${text}`);
                     $toast.find('.update-toast-actions').hide();
                     $toast.removeClass('none').stop(true, true).fadeIn();
                     successToastTimer = setTimeout(function() {
@@ -111,6 +131,7 @@
                 function showUpdateToast(worker) {
                     if (successToastTimer) clearTimeout(successToastTimer);
                     if (worker) waitingWorker = worker;
+                    prefetchPendingBuild();
                     const $toast = $('#update-toast');
                     $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate"></i> Update available');
                     $toast.find('.update-toast-actions').show();
@@ -156,7 +177,13 @@
                 // Check if page reloaded from user-initiated update
                 if (sessionStorage.getItem('rubus-just-updated')) {
                     sessionStorage.removeItem('rubus-just-updated');
-                    showUpdatedSuccessToast();
+                    const pendingBuild = localStorage.getItem('rubus-pending-build');
+                    if (pendingBuild) {
+                        localStorage.removeItem('rubus-pending-build');
+                        showUpdatedSuccessToast(pendingBuild);
+                    } else {
+                        showUpdatedSuccessToast();
+                    }
                 }
 
                 // Prevent map dragging or touch gestures through the toast
@@ -200,7 +227,13 @@
                             const lastShow = localStorage.getItem('last-update-toast-show');
                             const eightHours = 8 * 60 * 60 * 1000;
                             if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
-                                showUpdatedSuccessToast();
+                                const pendingBuild = localStorage.getItem('rubus-pending-build');
+                                if (pendingBuild) {
+                                    localStorage.removeItem('rubus-pending-build');
+                                    showUpdatedSuccessToast(pendingBuild);
+                                } else {
+                                    showUpdatedSuccessToast();
+                                }
                                 localStorage.setItem('last-update-toast-show', Date.now().toString());
                             }
                         }

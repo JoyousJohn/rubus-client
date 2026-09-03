@@ -3753,7 +3753,12 @@ async function getBuildNumber() {
             // Show the changelog "NEW" badge only when the build has advanced
             // past the one the user last opened the changelog on.
             updateChangelogNewBadge();
-            // $('.build-number').text('- V' + (lastPage - 473) + ' | Build' + lastPage + ' (' + commitDate + ')');
+
+            // If the update confirmation toast is currently visible showing the generic label, update it in-place
+            const $toast = $('#update-toast');
+            if ($toast.length && $toast.is(':visible') && $toast.find('.update-toast-text').text().trim() === 'Installed update') {
+                $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Installed update v${lastPage}`);
+            }
         }
     });
 }
