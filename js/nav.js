@@ -71,14 +71,27 @@ window.focusNavToInput = function() { return window.focusNavInput('#nav-to-input
 
 // Helper function to get pluralized stop count
 function getStopCountText(route) {
-    const count = Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1);
+    if (!route) return 'stops';
+    let count = 0;
+    if (route.isTransfer) {
+        const c1 = route.leg1 && route.leg1.routeDetails && route.leg1.routeDetails.stopsInOrder ? Math.max(0, route.leg1.routeDetails.stopsInOrder.length - 1) : 0;
+        const c2 = route.leg2 && route.leg2.routeDetails && route.leg2.routeDetails.stopsInOrder ? Math.max(0, route.leg2.routeDetails.stopsInOrder.length - 1) : 0;
+        count = c1 + c2;
+    } else {
+        count = Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1);
+    }
     return count === 1 ? 'stop' : 'stops';
 }
 
 // Whether a nav route has in-service buses (green dot helper)
-// Checks WKND grouped entries against both wknd/on variants.
+// Checks WKND grouped entries against both wknd/on variants and transfer routes.
 function navRouteHasLiveBuses(routeName, displayName) {
     try {
+        const rn = String(routeName || '').toLowerCase();
+        if (rn.includes('-')) {
+            const parts = rn.split('-');
+            return navRouteHasLiveBuses(parts[0]) && navRouteHasLiveBuses(parts[1]);
+        }
         const hasLiveViaFn = (key) => {
             if (typeof routeHasInServiceBuses === 'function') {
                 return routeHasInServiceBuses(key);
@@ -934,13 +947,71 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
                     score: 0
                 });
             }
+
+            // Also check for transfer route combinations between startStop and endStop
+            const transferRoutes = findTransferRoutes(startStop.id, endStop.id);
+            for (const t of transferRoutes) {
+                const transferScore = calculateTransferRouteScore(t, totalWalkingFeet, startStop, endStop);
+                const transferKey = `${t.route1Name}-${t.route2Name}`.toLowerCase();
+                const transferDisplayName = `${t.route1Name.toUpperCase()} → ${t.route2Name.toUpperCase()}`;
+
+                const transferRouteObj = {
+                    name: transferKey,
+                    displayName: transferDisplayName,
+                    isTransfer: true,
+                    transferStop: t.transferStop,
+                    leg1: {
+                        route: { name: t.route1Name, stops: t.route1Stops },
+                        startStop: startStop,
+                        transferStop: t.transferStop,
+                        startIndex: t.leg1StartIndex,
+                        endIndex: t.leg1TransferIndex,
+                        stops: t.route1Stops
+                    },
+                    leg2: {
+                        route: { name: t.route2Name, stops: t.route2Stops },
+                        transferStop: t.transferStop,
+                        endStop: endStop,
+                        startIndex: t.leg2TransferIndex,
+                        endIndex: t.leg2EndIndex,
+                        stops: t.route2Stops
+                    }
+                };
+
+                routeOptions.push({
+                    isTransfer: true,
+                    name: transferKey,
+                    displayName: transferDisplayName,
+                    startStop,
+                    transferStop: t.transferStop,
+                    endStop,
+                    connectingRoutes: [transferRouteObj],
+                    startWalkDistance,
+                    endWalkDistance,
+                    totalWalkingFeet,
+                    score: transferScore,
+                    leg1: transferRouteObj.leg1,
+                    leg2: transferRouteObj.leg2
+                });
+
+                allEvaluatedCombinations.push({
+                    startStop: startStop.name,
+                    endStop: endStop.name,
+                    status: 'valid_transfer',
+                    routes: 1,
+                    routeNames: [`${transferDisplayName} (via ${t.transferStop.name})`],
+                    walkingFeet: totalWalkingFeet,
+                    score: transferScore,
+                    chosen: false
+                });
+            }
         }
     }
 
     // Sort by score (best first) and return top options
     const sortedOptions = routeOptions
         .sort((a, b) => b.score - a.score)
-        .slice(0, 5); // Return top 5 options
+        .slice(0, 10); // Return top 10 options
 
     // Find the best combination for each route type
     const bestByRoute = {};
@@ -962,10 +1033,11 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
         Object.keys(bestByRoute).sort().forEach(routeName => {
             const best = bestByRoute[routeName];
             const combo = best.combination;
-            console.log(`   ${routeName.toUpperCase()}: ${combo.startStop.name} → ${combo.endStop.name}`);
+            const rLabel = best.route && best.route.displayName ? best.route.displayName : routeName.toUpperCase();
+            console.log(`   ${rLabel}: ${combo.startStop.name} → ${combo.endStop.name}`);
             console.log(`      Walking: ${combo.totalWalkingFeet} ft (${combo.startWalkDistance?.feet || 0} + ${combo.endWalkDistance?.feet || 0})`);
             console.log(`      Score: ${combo.score.toFixed(2)}`);
-            console.log(`      Other routes available: ${combo.connectingRoutes.map(r => r.name).join(', ')}`);
+            console.log(`      Other routes available: ${combo.connectingRoutes.map(r => r.displayName || r.name).join(', ')}`);
             console.log('');
         });
     }
@@ -975,11 +1047,12 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
         sortedOptions[0].chosen = true;
         
         if (NAV_DEBUG) {
+            const chosenRouteLabel = sortedOptions[0].connectingRoutes[0]?.displayName || sortedOptions[0].connectingRoutes[0]?.name || 'Route';
             console.log(`🎯 Overall best combination selected:`);
             console.log(`   ${sortedOptions[0].startStop.name} → ${sortedOptions[0].endStop.name}`);
             console.log(`   Walking: ${sortedOptions[0].totalWalkingFeet} ft`);
             console.log(`   Score: ${sortedOptions[0].score.toFixed(2)}`);
-            console.log(`   Routes: ${sortedOptions[0].connectingRoutes.map(r => r.name).join(', ')}`);
+            console.log(`   Routes: ${sortedOptions[0].connectingRoutes.map(r => r.displayName || r.name).join(', ')}`);
         }
 
         // Update the allEvaluatedCombinations to mark chosen ones
@@ -995,7 +1068,10 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
                 if (combo.startStop === best.combination.startStop.name &&
                     combo.endStop === best.combination.endStop.name) {
                     combo.bestForRoute = combo.bestForRoute || [];
-                    combo.bestForRoute.push(routeName.toUpperCase());
+                    const label = best.route && best.route.displayName ? best.route.displayName : routeName.toUpperCase();
+                    if (!combo.bestForRoute.includes(label)) {
+                        combo.bestForRoute.push(label);
+                    }
                 }
             });
         });
@@ -1120,6 +1196,50 @@ function calculateRouteScore(routes, totalWalkingFeet, startStop, endStop) {
         scoreBreakdown.push(`+20 (regular routes)`);
     } else {
         scoreBreakdown.push(`+0 (weekend/overnight only)`);
+    }
+
+    return score;
+}
+
+// Calculate a score for a transfer route combination (higher is better)
+function calculateTransferRouteScore(t, totalWalkingFeet, startStop, endStop) {
+    let score = 0;
+
+    // Direct distance to destination bonus
+    const endStopDistance = endStop.distance || 0;
+    const directDistanceBonus = Math.max(0, 1000 - endStopDistance) * 0.1;
+    if (directDistanceBonus > 0) {
+        score += directDistanceBonus;
+    }
+
+    // Walking penalty
+    const walkingPenalty = totalWalkingFeet * 0.05;
+    score -= walkingPenalty;
+
+    // Bus travel time penalty across both legs (10 points per stop)
+    const busTimePenalty = t.totalStops * 10;
+    score -= busTimePenalty;
+
+    // Moderate transfer penalty (fixed friction cost of switching buses vs single bus)
+    // 25 points = equivalent to ~500 ft of walking.
+    // If transferring saves >500 ft of walking, the transfer route easily wins.
+    score -= 25;
+
+    // Walking distance bonus
+    const walkingDistanceBonus = Math.max(0, 2000 - totalWalkingFeet) * 0.01;
+    if (walkingDistanceBonus > 0) {
+        score += walkingDistanceBonus;
+    }
+
+    // Regular routes preference
+    const n1 = String(t.route1Name || '').toLowerCase();
+    const n2 = String(t.route2Name || '').toLowerCase();
+    const isWknd1 = n1.startsWith('wknd') || n1.startsWith('on') || n1.includes('winter') || n1.includes('summer');
+    const isWknd2 = n2.startsWith('wknd') || n2.startsWith('on') || n2.includes('winter') || n2.includes('summer');
+    if (!isWknd1 && !isWknd2) {
+        score += 20;
+    } else {
+        score -= 50;
     }
 
     return score;
@@ -1257,7 +1377,25 @@ function calculateRoute(from, to) {
 
         // Get detailed route information for the primary route
         const primaryRoute = filteredRankedRoutes[0];
-        const routeDetails = getRouteDetails(primaryRoute, startStop.id, endStop.id);
+        let routeDetails;
+        if (primaryRoute.isTransfer) {
+            const tStop = bestRoute.transferStop || primaryRoute.transferStop;
+            routeDetails = {
+                ...primaryRoute,
+                isTransfer: true,
+                transferStop: tStop,
+                leg1: {
+                    ...primaryRoute.leg1,
+                    routeDetails: getRouteDetails(primaryRoute.leg1.route, startStop.id, tStop.id)
+                },
+                leg2: {
+                    ...primaryRoute.leg2,
+                    routeDetails: getRouteDetails(primaryRoute.leg2.route, tStop.id, endStop.id)
+                }
+            };
+        } else {
+            routeDetails = getRouteDetails(primaryRoute, startStop.id, endStop.id);
+        }
 
         // Build a map of best combination per route for alternate options (route -> start/end stops and walking)
         const routeCombosMap = {};
@@ -1270,10 +1408,14 @@ function calculateRoute(from, to) {
             const key = String(routeObj.name || '').toLowerCase();
             routeCombosMap[key] = {
                 startStop: combo.startStop,
+                transferStop: combo.transferStop,
                 endStop: combo.endStop,
                 startWalkDistance: combo.startWalkDistance,
                 endWalkDistance: combo.endWalkDistance,
-                totalWalkingFeet: combo.totalWalkingFeet
+                totalWalkingFeet: combo.totalWalkingFeet,
+                isTransfer: !!combo.isTransfer,
+                leg1: combo.leg1,
+                leg2: combo.leg2
             };
             allRoutesAcrossBestCombos.push(routeObj);
         });
@@ -1321,6 +1463,7 @@ function calculateRoute(from, to) {
             startBuilding,
             endBuilding,
             startStop,
+            transferStop: (primaryRoute.isTransfer ? (bestRoute.transferStop || primaryRoute.transferStop) : null),
             endStop,
             route: routeDetails,
             allRoutes: dedupedRoutes,
@@ -1812,6 +1955,108 @@ function findConnectingRoutes(startStopId, endStopId) {
     return connectingRoutes;
 }
 
+// Find multi-bus transfer routes that connect two stops via an intermediate transfer stop
+function findTransferRoutes(startStopId, endStopId) {
+    const campus = (typeof selectedCampus !== 'undefined') ? selectedCampus : 'nb';
+    const campusRoutes = getCampusRoutes(campus);
+
+    const s1 = parseInt(startStopId);
+    const e = parseInt(endStopId);
+    if (isNaN(s1) || isNaN(e) || s1 === e) return [];
+
+    const possibleRoutes = Object.keys(stopLists).filter(r =>
+        Array.isArray(stopLists[r]) && stopLists[r].length &&
+        campusRoutes.includes(r)
+    );
+
+    const transfers = [];
+    const seenPairs = new Set();
+
+    for (const r1 of possibleRoutes) {
+        const stops1 = stopLists[r1];
+        const idx1_start = stops1.indexOf(s1);
+        if (idx1_start === -1) continue;
+
+        // Skip if r1 already directly reaches endStopId (direct route already available on r1)
+        if (stops1.indexOf(e) !== -1) continue;
+
+        for (const r2 of possibleRoutes) {
+            if (r1 === r2) continue;
+            const stops2 = stopLists[r2];
+            const idx2_end = stops2.indexOf(e);
+            if (idx2_end === -1) continue;
+
+            // Skip if r2 already directly reaches startStopId (rider could just board r2 directly)
+            if (stops2.indexOf(s1) !== -1) continue;
+
+            const pairKey = `${r1}-${r2}`;
+            if (seenPairs.has(pairKey)) continue;
+
+            // Find all shared transfer stops between r1 and r2
+            let bestTransfer = null;
+            let minStops = Infinity;
+
+            for (const tId of stops1) {
+                if (tId === s1 || tId === e) continue;
+                const idx1_t = stops1.indexOf(tId);
+                const idx2_t = stops2.indexOf(tId);
+                if (idx2_t === -1) continue;
+
+                // Calculate forward distance on both routes
+                const fwd1 = calculateForwardDistance(idx1_start, idx1_t, stops1.length);
+                const fwd2 = calculateForwardDistance(idx2_t, idx2_end, stops2.length);
+
+                if (fwd1 <= 0 || fwd2 <= 0) continue;
+                if (fwd1 >= stops1.length || fwd2 >= stops2.length) continue;
+
+                const totalStops = fwd1 + fwd2;
+                if (totalStops < minStops || (totalStops === minStops && fwd2 < (bestTransfer ? bestTransfer.fwd2 : Infinity))) {
+                    minStops = totalStops;
+                    bestTransfer = {
+                        transferStopId: tId,
+                        fwd1,
+                        fwd2,
+                        totalStops,
+                        idx1_start,
+                        idx1_t,
+                        idx2_t,
+                        idx2_end
+                    };
+                }
+            }
+
+            if (bestTransfer && minStops <= 14) {
+                const tStop = stopsData[bestTransfer.transferStopId];
+                if (tStop) {
+                    seenPairs.add(pairKey);
+                    transfers.push({
+                        route1Name: r1,
+                        route2Name: r2,
+                        route1Stops: stops1,
+                        route2Stops: stops2,
+                        transferStop: {
+                            id: bestTransfer.transferStopId,
+                            name: tStop.name,
+                            latitude: tStop.latitude,
+                            longitude: tStop.longitude,
+                            campus: tStop.campus
+                        },
+                        leg1StartIndex: bestTransfer.idx1_start,
+                        leg1TransferIndex: bestTransfer.idx1_t,
+                        leg2TransferIndex: bestTransfer.idx2_t,
+                        leg2EndIndex: bestTransfer.idx2_end,
+                        fwd1: bestTransfer.fwd1,
+                        fwd2: bestTransfer.fwd2,
+                        totalStops: bestTransfer.totalStops
+                    });
+                }
+            }
+        }
+    }
+
+    return transfers;
+}
+
 // Calculate walking distance between two points (simple straight-line distance)
 function calculateWalkingDistance(lat1, lng1, lat2, lng2) {
     const distance = calculateDistance(lat1, lng1, lat2, lng2);
@@ -2022,12 +2267,24 @@ function selectBestRoute(routes, startStop, endStop) {
 
 // Get detailed route information including stop names and order
 function getRouteDetails(route, startStopId, endStopId) {
+    if (!route) return null;
+    if (route.isTransfer) {
+        return route;
+    }
     const stops = [];
-    const startIndex = route.startIndex;
-    const endIndex = route.endIndex;
-
     const total = (route.stops || []).length;
     if (total === 0) {
+        return { ...route, stopsInOrder: stops, direction: 'forward', totalStops: 0 };
+    }
+
+    const startIndex = (typeof startStopId !== 'undefined' && startStopId !== null)
+        ? (route.stops || []).indexOf(parseInt(startStopId))
+        : (typeof route.startIndex === 'number' ? route.startIndex : -1);
+    const endIndex = (typeof endStopId !== 'undefined' && endStopId !== null)
+        ? (route.stops || []).indexOf(parseInt(endStopId))
+        : (typeof route.endIndex === 'number' ? route.endIndex : -1);
+
+    if (startIndex === -1 || endIndex === -1) {
         return { ...route, stopsInOrder: stops, direction: 'forward', totalStops: 0 };
     }
 
@@ -2068,6 +2325,11 @@ function getRouteDetails(route, startStopId, endStopId) {
 // using FORWARD (wrap-aware) distance, never the shortest-arc opposite direction.
 function computeBusTravelTimeMinutes(route) {
     if (!route) return 0;
+    if (route.isTransfer) {
+        const t1 = route.leg1 && route.leg1.routeDetails ? computeBusTravelTimeMinutes(route.leg1.routeDetails) : 0;
+        const t2 = route.leg2 && route.leg2.routeDetails ? computeBusTravelTimeMinutes(route.leg2.routeDetails) : 0;
+        return t1 + t2;
+    }
 
     const stopsInOrder = route.stopsInOrder || [];
     const ids = stopsInOrder.length
@@ -2242,6 +2504,130 @@ function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSe
         `;
     } catch (e) {
         console.error('[nav] getArrivingBusesHtml error:', e);
+        return '';
+    }
+}
+
+// Calculate the arrival ETA (seconds from now) of approaching bus `b` at `destStopId`.
+function getBusArrivalETAAtStop(b, destStopId, routeName, fallbackMin) {
+    if (!b) return 0;
+    let eta = (typeof getETAForStop === 'function') ? getETAForStop(b.busName, destStopId) : undefined;
+    const loopTimes = (typeof calculateLoopTimes === 'function') ? calculateLoopTimes() : null;
+    const lower = String(routeName || '').toLowerCase();
+    const loopTimeSec = (loopTimes && typeof loopTimes[lower] === 'number' && isFinite(loopTimes[lower]))
+        ? loopTimes[lower] * 60
+        : null;
+
+    if (typeof eta === 'number' && isFinite(eta) && eta >= 0) {
+        if (b.loop && b.loop > 1 && loopTimeSec) {
+            eta += (b.loop - 1) * loopTimeSec;
+        }
+        if (eta < b.eta && loopTimeSec) {
+            eta += loopTimeSec;
+        }
+        return eta;
+    }
+    return (b.eta || 0) + (Math.max(1, fallbackMin || 5) * 60);
+}
+
+// Build the HTML for the transfer stop containing BOTH:
+// 1. Destination buses list (Leg 1): 3 soonest buses from Leg 1 approaching the transfer stop,
+//    tappable to select which Leg 1 bus the user is taking (earliest/soonest selected by default).
+// 2. Incoming buses list (Leg 2): 3 soonest buses departing the transfer stop towards the alighting stop,
+//    filtered to only include buses arriving at or after the selected Leg 1 bus reaches the transfer stop.
+function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transferStopId, walkSeconds, selectedBusName, leg1TravelMin) {
+    try {
+        const topLeg1 = getTopApproachingBuses(leg1RouteName, startStopId, walkSeconds, 3);
+        const topLeg2Fallback = getTopApproachingBuses(leg2RouteName, transferStopId, walkSeconds + ((leg1TravelMin || 5) * 60), 3);
+        if (topLeg1.length === 0 && topLeg2Fallback.length === 0) return '';
+
+        const now = Date.now();
+        const leg1Color = getRouteColor(leg1RouteName);
+        const leg2Color = getRouteColor(leg2RouteName);
+
+        let destListHtml = '';
+        let selectedArrivalSec = walkSeconds + ((leg1TravelMin || 5) * 60);
+
+        if (topLeg1.length > 0) {
+            let selectedIndex = 0;
+            if (selectedBusName) {
+                const idx = topLeg1.findIndex(b => b.busName === selectedBusName);
+                if (idx >= 0) selectedIndex = idx;
+            }
+            selectedArrivalSec = getBusArrivalETAAtStop(topLeg1[selectedIndex], transferStopId, leg1RouteName, leg1TravelMin);
+
+            const destRows = topLeg1.map((b, i) => {
+                const isSelected = i === selectedIndex;
+                const etaTransfer = getBusArrivalETAAtStop(b, transferStopId, leg1RouteName, leg1TravelMin);
+                const arrivalTime = new Date(now + etaTransfer * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
+                return `
+                    <div class="destination-bus-row selectable-transfer-bus ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-eta-transfer="${etaTransfer}" title="Tap to select this bus">
+                        <span class="transfer-bus-radio">
+                            <i class="fa-solid ${isSelected ? 'fa-circle-dot' : 'fa-circle'}"></i>
+                        </span>
+                        <span class="destination-bus-name" style="color: ${leg1Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
+                        <span class="destination-bus-arrival">${arrivalTime} arrival</span>
+                    </div>
+                `;
+            }).join('');
+
+            destListHtml = `
+                <div class="destination-buses-list transfer-destination-buses-list">
+                    ${destRows}
+                </div>
+            `;
+        }
+
+        // Connecting Leg 2 buses arriving AT OR AFTER selectedArrivalSec
+        const topLeg2 = getTopApproachingBuses(leg2RouteName, transferStopId, selectedArrivalSec, 3);
+        let incomingRows = '';
+        if (topLeg2.length > 0) {
+            incomingRows = topLeg2.map((b, i) => {
+                const arrivalTime = new Date(now + b.eta * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                const waitMin = Math.max(0, Math.ceil((b.eta - selectedArrivalSec) / 60));
+                const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
+                return `
+                    <div class="incoming-bus-row" data-bus-name="${b.busName}">
+                        <span class="incoming-bus-name" style="color: ${leg2Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
+                        <span class="incoming-bus-arrival">arrives ${arrivalTime}</span>
+                        <span class="incoming-bus-wait ${i === 0 ? 'soonest' : ''}">${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}</span>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            incomingRows = `<div style="grid-column: span 3; font-size: 1.3rem; opacity: 0.7; font-style: italic; white-space: nowrap;">No connecting buses</div>`;
+        }
+
+        const incomingListHtml = `
+            <div class="incoming-buses-list transfer-incoming-buses-list">
+                ${incomingRows}
+            </div>
+        `;
+
+        if (destListHtml && incomingListHtml) {
+            return `
+                <div class="transfer-buses-container">
+                    ${destListHtml}
+                    ${incomingListHtml}
+                </div>
+            `;
+        } else if (destListHtml) {
+            return `
+                <div class="transfer-buses-container">
+                    ${destListHtml}
+                </div>
+            `;
+        } else if (incomingListHtml) {
+            return `
+                <div class="transfer-buses-container">
+                    ${incomingListHtml}
+                </div>
+            `;
+        }
+        return '';
+    } catch (e) {
+        console.error('[nav] getTransferBusesHtml error:', e);
         return '';
     }
 }
@@ -2488,6 +2874,10 @@ function distanceToLineSegment(px, py, x1, y1, x2, y2) {
 // (overnight ON routes are no longer in service).
 function formatRouteLabel(routeName) {
     const n = String(routeName || '').toLowerCase();
+    if (n.includes('-')) {
+        const parts = n.split('-');
+        return `${formatRouteLabel(parts[0])} → ${formatRouteLabel(parts[1])}`;
+    }
     const m = n.match(/^(?:wknd|on)(\d+)/);
     if (m) {
         const v = m[1];
@@ -2499,6 +2889,9 @@ function formatRouteLabel(routeName) {
 // Format route label with route color (WKND variants shown on their own)
 function getRouteColor(routeName) {
     const n = String(routeName || '').toLowerCase();
+    if (n.includes('-')) {
+        return getRouteColor(n.split('-')[0]);
+    }
     const m = n.match(/^(?:wknd|on)(\d+)/);
     if (m) {
         const wkKey = `wknd${m[1]}`;
@@ -2511,6 +2904,10 @@ function getRouteColor(routeName) {
 function formatRouteLabelColored(routeName) {
     const original = String(routeName || '');
     const n = original.toLowerCase();
+    if (n.includes('-')) {
+        const parts = n.split('-');
+        return `${formatRouteLabelColored(parts[0])} <span style="opacity: 0.7; font-size: 0.9em; margin: 0 0.2rem;">→</span> ${formatRouteLabelColored(parts[1])}`;
+    }
     const m = n.match(/^(?:wknd|on)(\d+)/);
     if (m) {
         return `<span style="color: ${getRouteColor(routeName)};">WKND${m[1]}</span>`;
@@ -2651,6 +3048,50 @@ function calculateOptionJourneyMinutes(r, combo, routeData) {
         totalMinutes += Math.ceil(endWalk.feet / 220);
     }
 
+    if (r.isTransfer || (combo && combo.isTransfer)) {
+        const leg1 = (combo && combo.leg1) || r.leg1;
+        const leg2 = (combo && combo.leg2) || r.leg2;
+        const startStop = (combo && combo.startStop) || (leg1 && leg1.startStop) || (routeData && routeData.startStop);
+        const transferStop = (combo && combo.transferStop) || (leg1 && leg1.transferStop) || (leg2 && leg2.transferStop) || r.transferStop;
+        const endStop = (combo && combo.endStop) || (leg2 && leg2.endStop) || (routeData && routeData.endStop);
+
+        if (leg1 && leg2 && startStop && transferStop && endStop) {
+            const leg1Details = leg1.routeDetails || getRouteDetails(leg1.route, startStop.id, transferStop.id);
+            const leg1TravelMinutes = computeBusTravelTimeMinutes(leg1Details);
+            totalMinutes += leg1TravelMinutes;
+
+            let leg1WaitMinutes = 0;
+            const startWalkSec = startWalk ? getStartWalkSeconds(startWalk) : 0;
+            if (navRouteHasLiveBuses(leg1.route.name)) {
+                const top1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 1);
+                if (top1.length > 0) {
+                    leg1WaitMinutes = Math.max(0, Math.ceil((top1[0].eta - startWalkSec) / 60));
+                    totalMinutes += leg1WaitMinutes;
+                }
+            }
+
+            const leg2Details = leg2.routeDetails || getRouteDetails(leg2.route, transferStop.id, endStop.id);
+            const leg2TravelMinutes = computeBusTravelTimeMinutes(leg2Details);
+            totalMinutes += leg2TravelMinutes;
+
+            const arriveAtTransferSec = startWalkSec + (leg1WaitMinutes * 60) + (leg1TravelMinutes * 60);
+            if (navRouteHasLiveBuses(leg2.route.name)) {
+                const minTransferSec = arriveAtTransferSec + 120; // 2 min transfer buffer
+                const top2 = getTopApproachingBuses(leg2.route.name, transferStop.id, minTransferSec, 1);
+                if (top2.length > 0) {
+                    const leg2WaitMinutes = Math.max(2, Math.ceil((top2[0].eta - arriveAtTransferSec) / 60));
+                    totalMinutes += leg2WaitMinutes;
+                } else {
+                    totalMinutes += 5;
+                }
+            } else {
+                totalMinutes += 5;
+            }
+
+            return totalMinutes;
+        }
+    }
+
     const startStop = (combo && combo.startStop) || (routeData && routeData.startStop);
     const endStop = (combo && combo.endStop) || (routeData && routeData.endStop);
 
@@ -2687,9 +3128,15 @@ function sortRoutesForDisplay(routesForDisplay) {
         if (a.journeyMinutes !== b.journeyMinutes) {
             return a.journeyMinutes - b.journeyMinutes;
         }
-        const stopsA = (a.route.stopsInOrder ? a.route.stopsInOrder.length : a.route.totalStops) || 0;
-        const stopsB = (b.route.stopsInOrder ? b.route.stopsInOrder.length : b.route.totalStops) || 0;
-        return stopsA - stopsB;
+        const getStops = (entry) => {
+            if (entry.route && entry.route.isTransfer) {
+                const s1 = (entry.route.leg1?.routeDetails?.stopsInOrder?.length) || (entry.route.leg1?.stops?.length) || 0;
+                const s2 = (entry.route.leg2?.routeDetails?.stopsInOrder?.length) || (entry.route.leg2?.stops?.length) || 0;
+                return s1 + s2;
+            }
+            return (entry.route.stopsInOrder ? entry.route.stopsInOrder.length : entry.route.totalStops) || 0;
+        };
+        return getStops(a) - getStops(b);
     });
 }
 
@@ -2704,34 +3151,56 @@ function buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex) {
 
     const routeOptions = routesForDisplay.map((entry, index) => {
         const isSelected = index === selectedRouteDisplayIndex;
-        const routeKey = entry.route.name.toLowerCase();
+        const route = entry.route;
+        const isTransfer = !!(route.isTransfer || entry.isTransfer);
+        const routeKey = route.name.toLowerCase();
         const label = entry.displayName;
 
-        let routeColor = '#111827';
-        const m = label.toLowerCase().match(/^(?:wknd|on)(\d+)/);
-        if (m) {
-            const wkKey = `wknd${m[1]}`;
-            routeColor = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
-        } else if (typeof colorMappings !== 'undefined' && colorMappings[routeKey]) {
-            routeColor = colorMappings[routeKey];
-        }
+        let style = '';
+        let labelHtml = '';
 
-        let backgroundColor = 'var(--theme-unselected-route-bg)';
-        let textColor = 'var(--theme-unselected-route-text)';
+        if (isTransfer) {
+            const l1 = (route.leg1 && route.leg1.route && route.leg1.route.name) || route.name.split('-')[0] || '';
+            const l2 = (route.leg2 && route.leg2.route && route.leg2.route.name) || route.name.split('-')[1] || '';
+            const color1 = getRouteColor(l1);
+            const color2 = getRouteColor(l2);
 
-        if (isSelected) {
-            backgroundColor = routeColor;
-            textColor = 'white';
+            if (isSelected) {
+                const gradientBg = (color1 !== color2) ? `linear-gradient(135deg, ${color1}, ${color2})` : color1;
+                style = `background: ${gradientBg}; color: white;`;
+                labelHtml = `<span class="route-option-label" style="color: white; font-weight: 700;">${l1.toUpperCase()}<span style="margin: 0 0.25rem; font-size: 0.9em; opacity: 0.9;">→</span>${l2.toUpperCase()}</span>`;
+            } else {
+                style = `background-color: var(--theme-unselected-route-bg); color: var(--theme-unselected-route-text);`;
+                labelHtml = `<span class="route-option-label"><span style="color: ${color1}; font-weight: 700;">${l1.toUpperCase()}</span><span style="color: var(--theme-stops-list-text); opacity: 0.7; margin: 0 0.25rem; font-size: 0.9em;">→</span><span style="color: ${color2}; font-weight: 700;">${l2.toUpperCase()}</span></span>`;
+            }
+        } else {
+            let routeColor = '#111827';
+            const m = label.toLowerCase().match(/^(?:wknd|on)(\d+)/);
+            if (m) {
+                const wkKey = `wknd${m[1]}`;
+                routeColor = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#111827';
+            } else if (typeof colorMappings !== 'undefined' && colorMappings[routeKey]) {
+                routeColor = colorMappings[routeKey];
+            }
+
+            let backgroundColor = 'var(--theme-unselected-route-bg)';
+            let textColor = 'var(--theme-unselected-route-text)';
+
+            if (isSelected) {
+                backgroundColor = routeColor;
+                textColor = 'white';
+            }
+
+            style = `background-color: ${backgroundColor}; color: ${textColor};`;
+            labelHtml = `<span class="route-option-label" style="color: ${isSelected ? 'white' : routeColor}; font-weight: 700;">${label}</span>`;
         }
 
         const selectedClass = isSelected ? 'selected' : '';
-        const style = `background-color: ${backgroundColor}; color: ${textColor};`;
         const hasLive = entry.hasLive;
         const liveDotHtml = hasLive ? `<span class="nav-route-live-dot" aria-label="Buses in service" title="Buses in service"></span>` : ``;
 
         const journeyMinutes = hasLive ? Math.max(1, entry.journeyMinutes) : 0;
         const timeHtml = (hasLive && journeyMinutes > 0) ? `<span class="route-option-time">${journeyMinutes}m</span>` : ``;
-        const labelHtml = `<span class="route-option-label" style="color: ${isSelected ? 'white' : routeColor}; font-weight: 700;">${label}</span>`;
 
         const pill = `<div class="route-option ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">${liveDotHtml}${labelHtml}${timeHtml}</div>`;
         if (_hasBoth && index === _lastLiveIdx) {
@@ -2767,14 +3236,23 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 'route_index': newRouteIndex
             });
 
-            // Update visual selection
+            // Update visual selection across all pills
             const defaultBg = 'var(--theme-unselected-route-bg)';
             const defaultText = 'var(--theme-unselected-route-text)';
             $('.route-option').each(function() {
                 const rIdx = parseInt($(this).attr('data-route-index'), 10);
                 const rEntry = routesForDisplay[rIdx];
-                let rColor = '#111827';
-                if (rEntry) {
+                $(this).removeClass('selected');
+                $(this).attr('style', `background-color: ${defaultBg}; color: ${defaultText};`);
+
+                if (rEntry && (rEntry.isTransfer || (rEntry.route && rEntry.route.isTransfer))) {
+                    const l1 = (rEntry.route.leg1 && rEntry.route.leg1.route && rEntry.route.leg1.route.name) || rEntry.route.name.split('-')[0] || '';
+                    const l2 = (rEntry.route.leg2 && rEntry.route.leg2.route && rEntry.route.leg2.route.name) || rEntry.route.name.split('-')[1] || '';
+                    const c1 = getRouteColor(l1);
+                    const c2 = getRouteColor(l2);
+                    $(this).find('.route-option-label').html(`<span style="color: ${c1}; font-weight: 700;">${l1.toUpperCase()}</span><span style="color: var(--theme-stops-list-text); opacity: 0.7; margin: 0 0.25rem; font-size: 0.9em;">→</span><span style="color: ${c2}; font-weight: 700;">${l2.toUpperCase()}</span>`);
+                } else if (rEntry) {
+                    let rColor = '#111827';
                     const rm = rEntry.displayName.toLowerCase().match(/^(?:wknd|on)(\d+)/);
                     if (rm) {
                         const wkKey = `wknd${rm[1]}`;
@@ -2782,24 +3260,33 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                     } else if (typeof colorMappings !== 'undefined' && colorMappings[rEntry.route.name.toLowerCase()]) {
                         rColor = colorMappings[rEntry.route.name.toLowerCase()];
                     }
+                    $(this).find('.route-option-label').css('color', rColor);
                 }
-                $(this).removeClass('selected');
-                $(this).attr('style', `background-color: ${defaultBg}; color: ${defaultText};`);
-                $(this).find('.route-option-label').css('color', rColor);
             });
             $(this).addClass('selected');
 
-            const selectedRouteName = newRoute.name.toLowerCase();
-            let selectedBg = '#6b7280';
-            const sm = routesForDisplay[newRouteIndex].displayName.toLowerCase().match(/^(?:wknd|on)(\d+)/);
-            if (sm) {
-                const wkKey = `wknd${sm[1]}`;
-                selectedBg = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#6b7280';
-            } else if (typeof colorMappings !== 'undefined' && colorMappings[selectedRouteName]) {
-                selectedBg = colorMappings[selectedRouteName];
+            // Style newly selected pill
+            if (newRoute.isTransfer) {
+                const l1 = (newRoute.leg1 && newRoute.leg1.route && newRoute.leg1.route.name) || newRoute.name.split('-')[0] || '';
+                const l2 = (newRoute.leg2 && newRoute.leg2.route && newRoute.leg2.route.name) || newRoute.name.split('-')[1] || '';
+                const c1 = getRouteColor(l1);
+                const c2 = getRouteColor(l2);
+                const selectedBg = (c1 !== c2) ? `linear-gradient(135deg, ${c1}, ${c2})` : c1;
+                $(this).attr('style', `background: ${selectedBg}; color: white;`);
+                $(this).find('.route-option-label').html(`<span style="color: white; font-weight: 700;">${l1.toUpperCase()}<span style="margin: 0 0.25rem; font-size: 0.9em; opacity: 0.9;">→</span>${l2.toUpperCase()}</span>`);
+            } else {
+                const selectedRouteName = newRoute.name.toLowerCase();
+                let selectedBg = '#6b7280';
+                const sm = routesForDisplay[newRouteIndex].displayName.toLowerCase().match(/^(?:wknd|on)(\d+)/);
+                if (sm) {
+                    const wkKey = `wknd${sm[1]}`;
+                    selectedBg = (typeof colorMappings !== 'undefined' && colorMappings[wkKey]) ? colorMappings[wkKey] : '#6b7280';
+                } else if (typeof colorMappings !== 'undefined' && colorMappings[selectedRouteName]) {
+                    selectedBg = colorMappings[selectedRouteName];
+                }
+                $(this).attr('style', `background-color: ${selectedBg}; color: white;`);
+                $(this).find('.route-option-label').css('color', 'white');
             }
-            $(this).attr('style', `background-color: ${selectedBg}; color: white;`);
-            $(this).find('.route-option-label').css('color', 'white');
 
             if (navRouteSession && navRouteSession.routeData) {
                 navRouteSession.routeData.selectedRouteDisplayIndex = newRouteIndex;
@@ -2817,13 +3304,34 @@ function bindNavRouteOptionClicks(routesForDisplay) {
             const effectiveStartWalk = combo && combo.startWalkDistance ? combo.startWalkDistance : routeData.startWalkDistance;
             const effectiveEndWalk = combo && combo.endWalkDistance ? combo.endWalkDistance : routeData.endWalkDistance;
 
-            const newRouteDetails = getRouteDetails(newRoute, effectiveStartStop.id, effectiveEndStop.id);
+            let newRouteDetails;
+            if (newRoute.isTransfer || (combo && combo.isTransfer)) {
+                const leg1Route = (combo && combo.leg1 && combo.leg1.route) || newRoute.leg1.route;
+                const leg2Route = (combo && combo.leg2 && combo.leg2.route) || newRoute.leg2.route;
+                const transferStop = (combo && combo.transferStop) || newRoute.transferStop;
+                newRouteDetails = {
+                    ...newRoute,
+                    isTransfer: true,
+                    transferStop: transferStop,
+                    leg1: {
+                        ...(combo && combo.leg1 ? combo.leg1 : newRoute.leg1),
+                        routeDetails: getRouteDetails(leg1Route, effectiveStartStop.id, transferStop.id)
+                    },
+                    leg2: {
+                        ...(combo && combo.leg2 ? combo.leg2 : newRoute.leg2),
+                        routeDetails: getRouteDetails(leg2Route, transferStop.id, effectiveEndStop.id)
+                    }
+                };
+            } else {
+                newRouteDetails = getRouteDetails(newRoute, effectiveStartStop.id, effectiveEndStop.id);
+            }
 
             setTimeout(() => {
                 updateRouteDisplay({
                     startBuilding: routeData.startBuilding,
                     endBuilding: routeData.endBuilding,
                     startStop: effectiveStartStop,
+                    transferStop: (combo && combo.transferStop) || (newRouteDetails && newRouteDetails.transferStop),
                     endStop: effectiveEndStop,
                     route: newRouteDetails,
                     startWalkDistance: effectiveStartWalk,
@@ -2838,11 +3346,13 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 if (navRouteSession && navRouteSession.routeData) {
                     navRouteSession.routeData.route = newRouteDetails;
                     navRouteSession.routeData.startStop = effectiveStartStop;
+                    navRouteSession.routeData.transferStop = (combo && combo.transferStop) || (newRouteDetails && newRouteDetails.transferStop);
                     navRouteSession.routeData.endStop = effectiveEndStop;
                     navRouteSession.routeData.startWalkDistance = effectiveStartWalk;
                     navRouteSession.routeData.endWalkDistance = effectiveEndWalk;
                     navRouteSession.routeData.restoreRouteName = newRoute.name;
                     navRouteSession.routeData.selectedRouteDisplayIndex = newRouteIndex;
+                    navRouteSession.routeData.selectedTransferLeg1BusName = null;
                 }
             }, 0);
         }
@@ -2874,6 +3384,94 @@ function updateNavBusesDisplay() {
         if (!route || !startStop || !endStop) return;
 
         const walkSeconds = routeData.startWalkDistance ? getStartWalkSeconds(routeData.startWalkDistance) : 0;
+
+        if (route.isTransfer && route.leg1 && route.leg2) {
+            const transferStop = route.transferStop || routeData.transferStop;
+            const leg1TravelMin = computeBusTravelTimeMinutes(route.leg1.routeDetails || route.leg1);
+            const leg2TravelMin = computeBusTravelTimeMinutes(route.leg2.routeDetails || route.leg2);
+
+            const topLeg1 = getTopApproachingBuses(route.leg1.route.name, startStop.id, walkSeconds, 3);
+            let selectedLeg1BusName = routeData.selectedTransferLeg1BusName || null;
+            if (topLeg1.length > 0) {
+                if (!selectedLeg1BusName || !topLeg1.some(b => b.busName === selectedLeg1BusName)) {
+                    selectedLeg1BusName = topLeg1[0].busName;
+                    routeData.selectedTransferLeg1BusName = selectedLeg1BusName;
+                }
+            } else {
+                selectedLeg1BusName = null;
+                routeData.selectedTransferLeg1BusName = null;
+            }
+
+            const upcomingHtml = getUpcomingBusesHtml(route.leg1.route.name, startStop.id, walkSeconds);
+            const transferBusesHtml = transferStop ? getTransferBusesHtml(
+                route.leg1.route.name,
+                route.leg2.route.name,
+                startStop.id,
+                transferStop.id,
+                walkSeconds,
+                selectedLeg1BusName,
+                leg1TravelMin
+            ) : '';
+
+            // Selected Leg 1 arrival ETA for alighting stop
+            let selectedArrivalSec = walkSeconds + (leg1TravelMin * 60);
+            if (topLeg1.length > 0) {
+                const selBus = topLeg1.find(b => b.busName === selectedLeg1BusName) || topLeg1[0];
+                selectedArrivalSec = getBusArrivalETAAtStop(selBus, transferStop.id, route.leg1.route.name, leg1TravelMin);
+            }
+
+            const arrivingHtml = transferStop ? getArrivingBusesHtml(route.leg2.route.name, transferStop.id, endStop.id, selectedArrivalSec) : '';
+
+            // Update boarding stop incoming list
+            const $incomingList = $('.waypoint-row.stop-row.boarding + .incoming-buses-list');
+            if ($incomingList.length > 0) {
+                if (upcomingHtml) {
+                    if ($incomingList[0].outerHTML.trim() !== upcomingHtml.trim()) $incomingList.replaceWith(upcomingHtml);
+                } else {
+                    $incomingList.remove();
+                }
+            } else if (upcomingHtml) {
+                $('.waypoint-row.stop-row.boarding').after(upcomingHtml);
+            }
+
+            // Update transfer stop buses container
+            const $transferBuses = $('.waypoint-row.stop-row.transfer').next('.transfer-buses-container, .incoming-buses-list');
+            if ($transferBuses.length > 0) {
+                if (transferBusesHtml) {
+                    if ($transferBuses[0].outerHTML.trim() !== transferBusesHtml.trim()) $transferBuses.replaceWith(transferBusesHtml);
+                } else {
+                    $transferBuses.remove();
+                }
+            } else if (transferBusesHtml) {
+                $('.waypoint-row.stop-row.transfer').after(transferBusesHtml);
+            }
+
+            // Update alighting stop destination list
+            const $destList = $('.waypoint-row.stop-row.alighting + .destination-buses-list');
+            if ($destList.length > 0) {
+                if (arrivingHtml) {
+                    if ($destList[0].outerHTML.trim() !== arrivingHtml.trim()) $destList.replaceWith(arrivingHtml);
+                } else {
+                    $destList.remove();
+                }
+            } else if (arrivingHtml) {
+                $('.waypoint-row.stop-row.alighting').after(arrivingHtml);
+            }
+
+            if (navRouteHasLiveBuses(route.leg1.route.name)) {
+                $('.waypoint-travel-bus[data-leg="1"] .travel-time').text(`${leg1TravelMin}m`).show();
+            } else {
+                $('.waypoint-travel-bus[data-leg="1"] .travel-time').hide();
+            }
+            if (navRouteHasLiveBuses(route.leg2.route.name)) {
+                $('.waypoint-travel-bus[data-leg="2"] .travel-time').text(`${leg2TravelMin}m`).show();
+            } else {
+                $('.waypoint-travel-bus[data-leg="2"] .travel-time').hide();
+            }
+            positionGlobalWaypointConnector();
+            return;
+        }
+
         const upcomingHtml = getUpcomingBusesHtml(route.name, startStop.id, walkSeconds);
         const arrivingHtml = getArrivingBusesHtml(route.name, startStop.id, endStop.id, walkSeconds);
 
@@ -3003,6 +3601,299 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
 }
 window.updateNavOnOutOfService = updateNavOnOutOfService;
 
+// Unified generator for timeline waypoint rows HTML (handles both single-bus and multi-bus transfer routes)
+function renderTimelineWaypointsHtml(data) {
+    const {
+        startBuilding,
+        endBuilding,
+        startStop,
+        endStop,
+        route,
+        startWalkDistance,
+        endWalkDistance,
+        startIsStop = false,
+        endIsStop = false
+    } = data;
+
+    const isTransfer = !!(route && route.isTransfer);
+    const leg1 = isTransfer ? route.leg1 : null;
+    const leg2 = isTransfer ? route.leg2 : null;
+    const transferStop = isTransfer ? (route.transferStop || (leg1 && leg1.transferStop) || (leg2 && leg2.transferStop) || data.transferStop) : null;
+
+    const hasStartWalk = !!(startWalkDistance && startWalkDistance.feet > 30 && startStop && startBuilding && (String(startStop.id) !== String(startBuilding.id) || !startIsStop));
+    const hasEndWalk = !!(endWalkDistance && endWalkDistance.feet > 30 && endStop && endBuilding && (String(endStop.id) !== String(endBuilding.id) || !endIsStop));
+
+    const startWalkSec = hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0;
+
+    // Build timeline waypoints
+    const timelineWaypoints = [];
+    if (hasStartWalk) {
+        timelineWaypoints.push({
+            type: startIsStop ? 'stop' : 'building',
+            name: startBuilding.name,
+            role: 'start_building',
+            description: 'Start here'
+        });
+    }
+
+    if (isTransfer && leg1 && leg2 && transferStop) {
+        timelineWaypoints.push({
+            type: 'stop',
+            name: startStop.name,
+            stopId: startStop.id,
+            role: 'boarding',
+            isBoarding: true,
+            leg: leg1,
+            description: hasStartWalk
+                ? `Board <strong style="font-weight: 700;">${formatRouteLabelColored(leg1.route.name)}</strong> bus here`
+                : `Start and board <strong style="font-weight: 700;">${formatRouteLabelColored(leg1.route.name)}</strong> bus here`
+        });
+        timelineWaypoints.push({
+            type: 'stop',
+            name: transferStop.name,
+            stopId: transferStop.id,
+            role: 'transfer',
+            isTransfer: true,
+            leg1: leg1,
+            leg2: leg2,
+            description: `Transfer to <strong style="font-weight: 700;">${formatRouteLabelColored(leg2.route.name)}</strong> bus here`
+        });
+        timelineWaypoints.push({
+            type: 'stop',
+            name: endStop.name,
+            stopId: endStop.id,
+            role: 'alighting',
+            isAlighting: true,
+            leg: leg2,
+            description: hasEndWalk ? 'Exit bus here' : (endIsStop ? 'Depart bus and end here' : 'End here')
+        });
+    } else {
+        timelineWaypoints.push({
+            type: 'stop',
+            name: startStop.name,
+            stopId: startStop.id,
+            role: 'boarding',
+            isBoarding: true,
+            description: hasStartWalk
+                ? `Board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here`
+                : `Start and board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here`
+        });
+        timelineWaypoints.push({
+            type: 'stop',
+            name: endStop.name,
+            stopId: endStop.id,
+            role: 'alighting',
+            isAlighting: true,
+            description: hasEndWalk ? 'Exit bus here' : (endIsStop ? 'Depart bus and end here' : 'End here')
+        });
+    }
+
+    if (hasEndWalk) {
+        timelineWaypoints.push({
+            type: endIsStop ? 'stop' : 'building',
+            name: endBuilding.name,
+            role: 'end_building',
+            description: 'End here'
+        });
+    }
+
+    // Helper for stop sequence HTML
+    const buildStopsSeqHtml = (rtDetails, sId, eId) => {
+        if (!rtDetails || !rtDetails.stopsInOrder || rtDetails.stopsInOrder.length === 0) return '';
+        return `
+            <div class="bus-stops-list">
+                <div class="stops-sequence" style="font-size: 1.2rem;">
+                    ${rtDetails.stopsInOrder.map((stop, index, arr) => {
+                        const isFirst = index === 0;
+                        const isLast = index === arr.length - 1;
+                        const isBoarding = isFirst || (sId && String(stop.id) === String(sId));
+                        const isAlighting = (isLast && !isFirst) || (eId && String(stop.id) === String(eId));
+                        const isTerminal = isBoarding || isAlighting;
+                        const style = isTerminal
+                            ? 'color: var(--theme-stops-list-text); opacity: 1;'
+                            : 'color: var(--theme-stops-list-text); opacity: 0.8;';
+                        const stopHtml = `<span style="${style}">${stop.name}</span>`;
+                        if (index < arr.length - 1) {
+                            const arrowOpacity = arr.length > 2 ? '0.8' : '1';
+                            return `${stopHtml}<span class="stop-arrow" style="color: var(--theme-stops-list-text); opacity: ${arrowOpacity}; text-decoration: none;"> → </span>`;
+                        }
+                        return stopHtml;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    };
+
+    // Calculate times for transfer legs
+    let leg1TravelMin = 0;
+    let leg2TravelMin = 0;
+    let arriveAtTransferSec = 0;
+    if (isTransfer && leg1 && leg2) {
+        leg1TravelMin = computeBusTravelTimeMinutes(leg1.routeDetails || leg1);
+        leg2TravelMin = computeBusTravelTimeMinutes(leg2.routeDetails || leg2);
+        arriveAtTransferSec = startWalkSec + (leg1TravelMin * 60);
+    }
+
+    return timelineWaypoints.map((waypoint, index) => {
+        let waypointIcon = 'fa-solid fa-person-shelter';
+        let circleClass = `${waypoint.type}-circle`;
+        let rowClass = `${waypoint.type}-row`;
+
+        if (waypoint.role === 'start_building') {
+            waypointIcon = 'fa-solid fa-location-dot';
+        } else if (waypoint.role === 'boarding') {
+            circleClass += ' boarding-circle';
+            rowClass += ' boarding';
+        } else if (waypoint.role === 'transfer') {
+            waypointIcon = 'fa-solid fa-right-left';
+            circleClass += ' transfer-circle';
+            rowClass += ' transfer';
+        } else if (waypoint.role === 'alighting') {
+            circleClass += ' alighting-circle';
+            rowClass += ' alighting';
+        } else if (waypoint.role === 'end_building') {
+            waypointIcon = 'fa-solid fa-flag-checkered';
+        }
+
+        // Upcoming/arriving bus rows
+        let busesHtml = '';
+        if (waypoint.role === 'boarding') {
+            const rName = isTransfer ? leg1.route.name : route.name;
+            busesHtml = getUpcomingBusesHtml(rName, startStop.id, startWalkSec);
+        } else if (waypoint.role === 'transfer') {
+            busesHtml = getTransferBusesHtml(
+                leg1.route.name,
+                leg2.route.name,
+                startStop.id,
+                transferStop.id,
+                startWalkSec,
+                data.selectedTransferLeg1BusName,
+                leg1TravelMin
+            );
+        } else if (waypoint.role === 'alighting') {
+            if (isTransfer) {
+                const topLeg1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 3);
+                let selectedArrivalSec = arriveAtTransferSec;
+                if (topLeg1.length > 0) {
+                    let selBus = topLeg1[0];
+                    if (data.selectedTransferLeg1BusName) {
+                        const found = topLeg1.find(b => b.busName === data.selectedTransferLeg1BusName);
+                        if (found) selBus = found;
+                    }
+                    selectedArrivalSec = getBusArrivalETAAtStop(selBus, transferStop.id, leg1.route.name, leg1TravelMin);
+                }
+                busesHtml = getArrivingBusesHtml(leg2.route.name, transferStop.id, endStop.id, selectedArrivalSec);
+            } else {
+                busesHtml = getArrivingBusesHtml(route.name, startStop.id, endStop.id, startWalkSec);
+            }
+        }
+
+        // Travel segment below this waypoint
+        let travelHtml = '';
+        if (index < timelineWaypoints.length - 1) {
+            if (waypoint.role === 'start_building') {
+                const mapsBtn = (startBuilding && startStop) ? getWalkingMapsButtonHtml(startBuilding.lat, startBuilding.lng, startStop.latitude, startStop.longitude) : '';
+                const walkMin = Math.ceil((startWalkDistance?.feet || 0) / 220);
+                travelHtml = `
+                    <div class="waypoint-emoji waypoint-travel-walk">
+                        <div class="waypoint-travel-row">
+                            <div class="waypoint-travel-header">
+                                <div class="waypoint-circle"><i class="fa-solid fa-person-walking"></i></div>
+                                <span class="travel-time">${walkMin}m</span>
+                                <span class="walking-info">Walk ${Math.round(startWalkDistance ? startWalkDistance.feet : 0).toLocaleString()} ft to boarding stop</span>
+                            </div>
+                            ${mapsBtn}
+                        </div>
+                        <div class="walking-roads-wrapper">
+                            <div class="walking-roads-list" id="start-walking-roads">
+                                <div class="roads-sequence" style="font-size: 1.1rem;">
+                                    <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (waypoint.role === 'boarding') {
+                const activeRoute = isTransfer ? leg1.route : route;
+                const activeDetails = isTransfer ? (leg1.routeDetails || leg1) : route;
+                const rName = activeRoute.name;
+                const isLive = navRouteHasLiveBuses(rName);
+                const travelMin = isTransfer ? leg1TravelMin : computeBusTravelTimeMinutes(activeDetails);
+                const stopsCount = Math.max(0, (activeDetails && activeDetails.stopsInOrder ? activeDetails.stopsInOrder.length : (activeDetails.totalStops || (activeDetails.stops ? activeDetails.stops.length : 0))) - 1);
+                const stopsSeq = isTransfer ? buildStopsSeqHtml(leg1.routeDetails, startStop.id, transferStop.id) : (route.stopsInOrder ? buildStopsSeqHtml(route, startStop.id, endStop.id) : '');
+
+                travelHtml = `
+                    <div class="waypoint-emoji waypoint-travel-bus" data-leg="1">
+                        <div class="waypoint-travel-header">
+                            <div class="waypoint-circle"><i class="fa-solid fa-bus"></i></div>
+                            <span class="route-badge" style="font-size: 1.4rem; font-weight: bold;">${formatRouteLabelColored(rName)}</span>
+                            ${isLive ? `<span class="travel-time">${travelMin}m</span>` : ''}
+                            <span class="stops-info">Take bus for ${stopsCount} ${getStopCountText(activeDetails)}</span>
+                        </div>
+                        ${stopsSeq ? `<div class="bus-stops-list-wrapper">${stopsSeq}</div>` : ''}
+                    </div>
+                `;
+            } else if (waypoint.role === 'transfer') {
+                const rName = leg2.route.name;
+                const isLive = navRouteHasLiveBuses(rName);
+                const activeDetails = leg2.routeDetails || leg2;
+                const stopsCount = Math.max(0, (activeDetails && activeDetails.stopsInOrder ? activeDetails.stopsInOrder.length : (activeDetails.totalStops || (activeDetails.stops ? activeDetails.stops.length : 0))) - 1);
+                const stopsSeq = buildStopsSeqHtml(leg2.routeDetails, transferStop.id, endStop.id);
+
+                travelHtml = `
+                    <div class="waypoint-emoji waypoint-travel-bus" data-leg="2">
+                        <div class="waypoint-travel-header">
+                            <div class="waypoint-circle"><i class="fa-solid fa-bus"></i></div>
+                            <span class="route-badge" style="font-size: 1.4rem; font-weight: bold;">${formatRouteLabelColored(rName)}</span>
+                            ${isLive ? `<span class="travel-time">${leg2TravelMin}m</span>` : ''}
+                            <span class="stops-info">Take bus for ${stopsCount} ${getStopCountText(activeDetails)}</span>
+                        </div>
+                        ${stopsSeq ? `<div class="bus-stops-list-wrapper">${stopsSeq}</div>` : ''}
+                    </div>
+                `;
+            } else if (waypoint.role === 'alighting' && hasEndWalk) {
+                const mapsBtn = (endStop && endBuilding) ? getWalkingMapsButtonHtml(endStop.latitude, endStop.longitude, endBuilding.lat, endBuilding.lng) : '';
+                const walkMin = Math.ceil((endWalkDistance?.feet || 0) / 220);
+                travelHtml = `
+                    <div class="waypoint-emoji waypoint-travel-walk">
+                        <div class="waypoint-travel-row">
+                            <div class="waypoint-travel-header">
+                                <div class="waypoint-circle"><i class="fa-solid fa-person-walking"></i></div>
+                                <span class="travel-time">${walkMin}m</span>
+                                <span class="walking-info">Walk ${Math.round(endWalkDistance ? endWalkDistance.feet : 0).toLocaleString()} ft to destination</span>
+                            </div>
+                            ${mapsBtn}
+                        </div>
+                        <div class="walking-roads-wrapper">
+                            <div class="walking-roads-list" id="end-walking-roads">
+                                <div class="roads-sequence" style="font-size: 1.1rem;">
+                                    <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        return `
+            <div class="waypoint-row clickable-waypoint ${rowClass}" data-waypoint-index="${index}" data-waypoint-type="${waypoint.type}" data-waypoint-name="${waypoint.name}" data-is-boarding="${waypoint.isBoarding || false}" data-is-transfer="${waypoint.isTransfer || false}" data-is-alighting="${waypoint.isAlighting || false}">
+                <div class="waypoint-circle ${circleClass}">
+                    <i class="${waypointIcon}"></i>
+                </div>
+                <div class="waypoint-content" style="margin-left: 0.75rem;">
+                    <div class="waypoint-header">
+                        <h4 class="waypoint-title" style="user-select: none;">${waypoint.name} <i class="fa-duotone fa-solid fa-right" style="--fa-primary-color: var(--theme-link); --fa-secondary-color: color-mix(in srgb, var(--theme-link) 70%, white);"></i></h4>
+                        ${waypoint.description ? `<div class="waypoint-description">${waypoint.description}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+            ${busesHtml}
+            ${travelHtml}
+        `;
+    }).join('');
+}
+
 // Display the calculated route in the navigation UI
 function displayRoute(routeData) {
     let {
@@ -3038,8 +3929,13 @@ function displayRoute(routeData) {
     let routesForDisplay = [];
     let selectedRouteDisplayIndex = 0;
     if (allRoutes.length > 1) {
-        const isExcluded = (name) => {
+        const isExcluded = (r) => {
+            const name = typeof r === 'string' ? r : (r && r.name ? r.name : '');
             const n = String(name || '').toLowerCase();
+            if (n.includes('-')) {
+                const parts = n.split('-');
+                return parts.some(p => p.includes('winter') || p.includes('summer') || p === 'all');
+            }
             return n.includes('winter') || n.includes('summer') || n === 'all';
         };
         const isWkndOn = (name) => {
@@ -3047,11 +3943,15 @@ function displayRoute(routeData) {
             return n.startsWith('wknd') || n.startsWith('on');
         };
 
-        const baseRoutes = allRoutes.filter(r => !isExcluded(r.name) && !isWkndOn(r.name));
-        const wkndOnRoutes = allRoutes.filter(r => !isExcluded(r.name) && isWkndOn(r.name));
+        const baseRoutes = allRoutes.filter(r => !isExcluded(r) && (r.isTransfer || !isWkndOn(r.name)));
+        const wkndOnRoutes = allRoutes.filter(r => !r.isTransfer && !isExcluded(r) && isWkndOn(r.name));
 
         // Build display entries for base routes
-        routesForDisplay = baseRoutes.map(r => ({ route: r, displayName: r.name.toUpperCase() }));
+        routesForDisplay = baseRoutes.map(r => ({
+            route: r,
+            displayName: r.displayName || r.name.toUpperCase(),
+            isTransfer: !!r.isTransfer
+        }));
 
         // Group weekend/overnight variants by suffix (e.g., 1, 2)
         if (wkndOnRoutes.length > 0) {
@@ -3072,7 +3972,7 @@ function displayRoute(routeData) {
                 const pair = groups[v];
                 const representative = pair.wknd || pair.on;
                 const label = `WKND${v}`;
-                routesForDisplay.push({ route: representative, displayName: label });
+                routesForDisplay.push({ route: representative, displayName: label, isTransfer: false });
             });
         }
 
@@ -3103,11 +4003,34 @@ function displayRoute(routeData) {
             const primaryKey = primaryEntry.route.name.toLowerCase();
             const primaryCombo = routeCombosMap[primaryKey];
             if (primaryCombo) {
-                route = getRouteDetails(primaryEntry.route, primaryCombo.startStop.id, primaryCombo.endStop.id);
-                startStop = primaryCombo.startStop;
-                endStop = primaryCombo.endStop;
-                startWalkDistance = primaryCombo.startWalkDistance;
-                endWalkDistance = primaryCombo.endWalkDistance;
+                if (primaryEntry.route.isTransfer || primaryCombo.isTransfer) {
+                    startStop = primaryCombo.startStop;
+                    const transferStop = primaryCombo.transferStop;
+                    endStop = primaryCombo.endStop;
+                    startWalkDistance = primaryCombo.startWalkDistance;
+                    endWalkDistance = primaryCombo.endWalkDistance;
+                    const leg1Route = (primaryCombo.leg1 && primaryCombo.leg1.route) || primaryEntry.route.leg1.route;
+                    const leg2Route = (primaryCombo.leg2 && primaryCombo.leg2.route) || primaryEntry.route.leg2.route;
+                    route = {
+                        ...primaryEntry.route,
+                        isTransfer: true,
+                        transferStop: transferStop,
+                        leg1: {
+                            ...(primaryCombo.leg1 || primaryEntry.route.leg1),
+                            routeDetails: getRouteDetails(leg1Route, startStop.id, transferStop.id)
+                        },
+                        leg2: {
+                            ...(primaryCombo.leg2 || primaryEntry.route.leg2),
+                            routeDetails: getRouteDetails(leg2Route, transferStop.id, endStop.id)
+                        }
+                    };
+                } else {
+                    route = getRouteDetails(primaryEntry.route, primaryCombo.startStop.id, primaryCombo.endStop.id);
+                    startStop = primaryCombo.startStop;
+                    endStop = primaryCombo.endStop;
+                    startWalkDistance = primaryCombo.startWalkDistance;
+                    endWalkDistance = primaryCombo.endWalkDistance;
+                }
             } else {
                 route = primaryEntry.route;
             }
@@ -3115,7 +4038,8 @@ function displayRoute(routeData) {
     } else if (allRoutes.length === 1) {
         routesForDisplay = [{
             route: allRoutes[0],
-            displayName: allRoutes[0].name.toUpperCase(),
+            displayName: allRoutes[0].displayName || allRoutes[0].name.toUpperCase(),
+            isTransfer: !!allRoutes[0].isTransfer,
             hasLive: navRouteHasLiveBuses(allRoutes[0].name)
         }];
         selectedRouteDisplayIndex = 0;
@@ -3128,299 +4052,22 @@ function displayRoute(routeData) {
     // No longer showing alternative routes info since it's clear from the route selector above
 
     // Walking segment from start to boarding stop removed (routes no longer show
-    // the old segment-style breakdown; waypoint rows replaced it).
-
-    // Create walking segment from start to boarding stop
-    const walkingStartHtml = (startIsStop || !startWalkDistance) ? '' : `
-        <div class="route-segment walking-segment" id="walking-start-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #eff6ff; border-radius: 0.5rem;">
-            <div class="segment-icon" style="margin-bottom: 0.5rem;">
-                <span style="color: #2563eb;">🚶</span>
-                <span class="segment-type" style="font-weight: 500;">Walk to Bus Stop</span>
-            </div>
-            <div class="segment-details">
-                <div class="segment-distance" style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem;">
-                    ${startWalkDistance ? startWalkDistance.feet : 0} ft
-                </div>
-                <div class="segment-description">
-                    Walk from <strong>${startBuilding.name}</strong> to <strong>${startStop.name}</strong>
-                </div>
-                <div class="walking-roads-list" style="margin-top: 0.75rem;">
-                    <div class="roads-sequence" style="font-size: 1.1rem;">
-                        <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Create bus segment with detailed stop information
-    let stopsListHtml = '';
-    if (route.stopsInOrder && route.stopsInOrder.length > 0) {
-        stopsListHtml = `
-            <div class="bus-stops-list">
-                <div class="stops-sequence" style="font-size: 1.2rem;">
-                    ${route.stopsInOrder.map((stop, index, arr) => {
-                        const isFirst = index === 0;
-                        const isLast = index === arr.length - 1;
-                        const isBoarding = isFirst || (startStop && String(stop.id) === String(startStop.id));
-                        const isAlighting = (isLast && !isFirst) || (endStop && String(stop.id) === String(endStop.id));
-                        const isTerminal = isBoarding || isAlighting;
-                        const style = isTerminal
-                            ? 'color: var(--theme-stops-list-text); opacity: 1;'
-                            : 'color: var(--theme-stops-list-text); opacity: 0.8;';
-                        const stopHtml = `<span style="${style}">${stop.name}</span>`;
-                        if (index < arr.length - 1) {
-                            const arrowOpacity = arr.length > 2 ? '0.8' : '1';
-                            return `${stopHtml}<span class="stop-arrow" style="color: var(--theme-stops-list-text); opacity: ${arrowOpacity}; text-decoration: none;"> → </span>`;
-                        }
-                        return stopHtml;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    const busHtml = `
-        <div class="route-segment bus-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #f0fdf4; border-radius: 0.5rem;">
-            <div class="segment-icon" style="margin-bottom: 0.5rem;">
-                <span style="color: #16a34a;">🚌</span>
-                <span class="segment-type" style="font-weight: 500;">Take Bus <span style="font-weight: 700;">${formatRouteLabelColored(route.name)}</span></span>
-            </div>
-            <div class="segment-details">
-                <div class="segment-description" style="margin-bottom: 0.5rem;">
-                    Board at <strong>${startStop.name}</strong>
-                </div>
-                <div class="segment-description" style="margin-bottom: 0.5rem;">
-                    Get off at <strong>${endStop.name}</strong>
-                </div>
-                <div class="bus-route-info" style="font-size: 0.75rem; color: #6b7280;">
-                    Take bus ${formatRouteLabelColored(route.name)} for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} ${getStopCountText(route)}
-                </div>
-                ${stopsListHtml}
-            </div>
-        </div>
-    `;
-
-    // Create walking segment from alighting stop to destination
-    const walkingEndHtml = (endIsStop || !endWalkDistance) ? '' : `
-        <div class="route-segment walking-segment" id="walking-end-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #eff6ff; border-radius: 0.5rem;">
-            <div class="segment-icon" style="margin-bottom: 0.5rem;">
-                <span style="color: #2563eb;">🚶</span>
-                <span class="segment-type" style="font-weight: 500;">Walk to Destination</span>
-            </div>
-            <div class="segment-details">
-                <div class="segment-distance" style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem;">
-                    ${endWalkDistance ? endWalkDistance.feet : 0} ft
-                </div>
-                <div class="segment-description">
-                    Walk from <strong>${endStop.name}</strong> to <strong>${endBuilding.name}</strong>
-                </div>
-                <div class="walking-roads-list" style="margin-top: 0.75rem;">
-                    <div class="roads-sequence" style="font-size: 1.1rem;">
-                        <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    const hasStartWalk = !!(startWalkDistance && startWalkDistance.feet > 30 && startStop && startBuilding && (String(startStop.id) !== String(startBuilding.id) || !startIsStop));
-    const hasEndWalk = !!(endWalkDistance && endWalkDistance.feet > 30 && endStop && endBuilding && (String(endStop.id) !== String(endBuilding.id) || !endIsStop));
-
-    // Create unified waypoint rows with key waypoints
-    const timelineWaypoints = (function() {
-        const waypoints = [];
-        // Start point (if walking to a separate boarding stop)
-        if (hasStartWalk) {
-            waypoints.push({ type: startIsStop ? 'stop' : 'building', name: startBuilding.name, description: 'Start here' });
-        }
-        // Boarding stop
-        waypoints.push({
-            type: 'stop',
-            name: startStop.name,
-            isBoarding: true,
-            description: hasStartWalk ? `Board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here` : `Start and board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here`
-        });
-        // Alighting stop
-        waypoints.push({
-            type: 'stop',
-            name: endStop.name,
-            isAlighting: true,
-            description: hasEndWalk ? 'Exit bus here' : (endIsStop ? 'Depart bus and end here' : 'End here')
-        });
-        // End point (if walking from alighting stop to destination)
-        if (hasEndWalk) {
-            waypoints.push({ type: endIsStop ? 'stop' : 'building', name: endBuilding.name, description: 'End here' });
-        }
-        return waypoints;
-    })();
-
-    // Create unified waypoint rows combining circle and content
-    const waypointRows = timelineWaypoints.map((waypoint, index) => {
-        let content = '';
-        let connectorText = '';
-
-        if (index === 0 && hasStartWalk) {
-            content = '';
-            connectorText = index < timelineWaypoints.length - 1 ? 'Walk to stop' : '';
-        } else if (waypoint.isBoarding) {
-            content = '';
-            connectorText = index < timelineWaypoints.length - 1 ? 'Take bus' : '';
-        } else if (waypoint.isAlighting) {
-            content = '';
-            connectorText = index < timelineWaypoints.length - 1 ? 'Walk to destination' : '';
-        } else if (index === timelineWaypoints.length - 1) {
-            content = '';
-        }
-
-        // Determine travel segment icon and time for the step to the next waypoint
-        let travelIcon = '';
-        let travelTime = '';
-        const isRouteActive = navRouteHasLiveBuses(route.name);
-
-        if (index < timelineWaypoints.length - 1) {
-            if (index === 0 && hasStartWalk) {
-                // Start building/stop - walking to first stop
-                travelIcon = 'fa-solid fa-person-walking';
-                if (startWalkDistance) {
-                    const timeMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
-                    travelTime = `${timeMinutes}m`;
-                }
-            } else if (waypoint.isBoarding) {
-                // Boarding stop - about to ride bus
-                travelIcon = 'fa-solid fa-bus';
-                if (isRouteActive) {
-                    const timeMinutes = computeBusTravelTimeMinutes(route);
-                    travelTime = `${timeMinutes}m`;
-                }
-            } else if (waypoint.isAlighting && hasEndWalk) {
-                // Alighting stop - about to walk to destination
-                travelIcon = 'fa-solid fa-person-walking';
-                if (endWalkDistance) {
-                    const timeMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
-                    travelTime = `${timeMinutes}m`;
-                }
-            }
-        }
-
-        let waypointIcon = '';
-        if (index === 0) {
-            waypointIcon = 'fa-solid fa-location-dot';
-        } else if (index === timelineWaypoints.length - 1) {
-            waypointIcon = 'fa-solid fa-flag-checkered';
-        } else {
-            waypointIcon = 'fa-solid fa-person-shelter';
-        }
-
-        let travelHtml = '';
-        if (travelIcon) {
-            if (index === 0 && hasStartWalk) {
-                const mapsButtonHtml = (startBuilding && startStop) ? getWalkingMapsButtonHtml(startBuilding.lat, startBuilding.lng, startStop.latitude, startStop.longitude) : '';
-                travelHtml = `
-                    <div class="waypoint-emoji waypoint-travel-walk">
-                        <div class="waypoint-travel-row">
-                            <div class="waypoint-travel-header">
-                                <div class="waypoint-circle">
-                                    <i class="${travelIcon}"></i>
-                                </div>
-                                ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
-                                <span class="walking-info">
-                                    Walk ${startWalkDistance ? Math.round(startWalkDistance.feet).toLocaleString() : 0} ft to boarding stop
-                                </span>
-                            </div>
-                            ${mapsButtonHtml}
-                        </div>
-                        <div class="walking-roads-wrapper">
-                            <div class="walking-roads-list" id="start-walking-roads">
-                                <div class="roads-sequence" style="font-size: 1.1rem;">
-                                    <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (waypoint.isBoarding) {
-                travelHtml = `
-                    <div class="waypoint-emoji waypoint-travel-bus">
-                        <div class="waypoint-travel-header">
-                            <div class="waypoint-circle">
-                                <i class="fa-solid fa-bus"></i>
-                            </div>
-                            <span class="route-badge" style="font-size: 1.4rem; font-weight: bold;">${formatRouteLabelColored(route.name)}</span>
-                            ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
-                            <span class="stops-info">
-                                Take bus for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} ${getStopCountText(route)}
-                            </span>
-                        </div>
-                        ${stopsListHtml ? `<div class="bus-stops-list-wrapper">${stopsListHtml}</div>` : ''}
-                    </div>
-                `;
-            } else if (waypoint.isAlighting && hasEndWalk) {
-                const mapsButtonHtml = (endStop && endBuilding) ? getWalkingMapsButtonHtml(endStop.latitude, endStop.longitude, endBuilding.lat, endBuilding.lng) : '';
-                travelHtml = `
-                    <div class="waypoint-emoji waypoint-travel-walk">
-                        <div class="waypoint-travel-row">
-                            <div class="waypoint-travel-header">
-                                <div class="waypoint-circle">
-                                    <i class="${travelIcon}"></i>
-                                </div>
-                                ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
-                                <span class="walking-info">
-                                    Walk ${endWalkDistance ? Math.round(endWalkDistance.feet).toLocaleString() : 0} ft to destination
-                                </span>
-                            </div>
-                            ${mapsButtonHtml}
-                        </div>
-                        ${endWalkDistance ? `
-                            <div class="walking-roads-wrapper">
-                                <div class="walking-roads-list" id="end-walking-roads">
-                                    <div class="roads-sequence" style="font-size: 1.1rem;">
-                                        <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            } else {
-                travelHtml = `
-                    <div class="waypoint-emoji">
-                        <div class="waypoint-circle">
-                            <i class="${travelIcon}"></i>
-                        </div>
-                        ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
-                    </div>
-                `;
-            }
-        }
-
-        return `
-            <div class="waypoint-row clickable-waypoint ${waypoint.type}-row ${waypoint.isBoarding ? 'boarding' : ''} ${waypoint.isAlighting ? 'alighting' : ''}" data-waypoint-index="${index}" data-waypoint-type="${waypoint.type}" data-waypoint-name="${waypoint.name}" data-is-boarding="${waypoint.isBoarding || false}" data-is-alighting="${waypoint.isAlighting || false}">
-                <div class="waypoint-circle ${waypoint.type}-circle ${waypoint.isBoarding ? 'boarding-circle' : ''} ${waypoint.isAlighting ? 'alighting-circle' : ''}">
-                    <i class="${waypointIcon}"></i>
-                </div>
-                <div class="waypoint-content" style="margin-left: 0.75rem;">
-                    <div class="waypoint-header">
-                        <h4 class="waypoint-title" style="user-select: none;">${waypoint.name} <i class="fa-duotone fa-solid fa-right" style="--fa-primary-color: var(--theme-link); --fa-secondary-color: color-mix(in srgb, var(--theme-link) 70%, white);"></i></h4>
-                        ${waypoint.description ? `<div class="waypoint-description">${waypoint.description}</div>` : ''}
-                    </div>
-                    ${content}
-                </div>
-            </div>
-            ${waypoint.isBoarding ? getUpcomingBusesHtml(route.name, startStop.id, hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0) : ''}
-            ${waypoint.isAlighting ? getArrivingBusesHtml(route.name, startStop.id, endStop.id, hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0) : ''}
-            ${travelHtml}
-        `;
-    }).join('');
-
-    // After rendering, adjust emoji connector heights
-    // REMOVED: moved to positionEmojiConnectors() and invoked after DOM render
-    
     // Create main content wrapper
     const contentWrapperHtml = `
         <div class="route-content-wrapper">
             <div class="waypoint-rows-container">
-                ${waypointRows}
+                ${renderTimelineWaypointsHtml({
+                    startBuilding,
+                    endBuilding,
+                    startStop,
+                    transferStop: route.transferStop || routeData.transferStop,
+                    endStop,
+                    route,
+                    startWalkDistance,
+                    endWalkDistance,
+                    startIsStop,
+                    endIsStop
+                })}
                 <div class="waypoint-connector-global"></div>
             </div>
         </div>
@@ -3435,6 +4082,7 @@ function displayRoute(routeData) {
             startBuilding,
             endBuilding,
             startStop,
+            transferStop: route.transferStop || routeData.transferStop,
             endStop,
             route,
             allRoutes,
@@ -3474,6 +4122,22 @@ function displayRoute(routeData) {
 
     // Position the single global waypoint connector after render
     positionGlobalWaypointConnector();
+
+    // Add click handlers for selectable transfer destination bus rows.
+    // Tapping a Leg 1 bus selects it and updates the Leg 2 incoming buses list.
+    if (!window._navTransferBusClickBound) {
+        window._navTransferBusClickBound = true;
+        $(document).on('click', '.selectable-transfer-bus', function(e) {
+            e.stopPropagation();
+            const busName = $(this).data('bus-name');
+            if (!busName) return;
+
+            if (navRouteSession && navRouteSession.routeData) {
+                navRouteSession.routeData.selectedTransferLeg1BusName = String(busName);
+                updateNavBusesDisplay();
+            }
+        });
+    }
 
     // Add click handlers for waypoint titles.
     // Bound once on document (not per render): the handler only reads DOM
@@ -3712,269 +4376,26 @@ function updateRouteDisplay(routeData) {
         endIsStop = false
     } = routeData;
 
-    const hasStartWalk = !!(startWalkDistance && startWalkDistance.feet > 30 && startStop && startBuilding && (String(startStop.id) !== String(startBuilding.id) || !startIsStop));
-    const hasEndWalk = !!(endWalkDistance && endWalkDistance.feet > 30 && endStop && endBuilding && (String(endStop.id) !== String(endBuilding.id) || !endIsStop));
-
-    // Update waypoint rows (the UI built in displayRoute) with new route data
-    const timelineWaypoints = (function() {
-        const waypoints = [];
-        if (hasStartWalk) {
-            waypoints.push({ type: startIsStop ? 'stop' : 'building', name: startBuilding.name, description: 'Start here' });
-        }
-        waypoints.push({
-            type: 'stop',
-            name: startStop.name,
-            isBoarding: true,
-            description: hasStartWalk ? `Board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here` : `Start and board <strong style="font-weight: 700;">${formatRouteLabelColored(route.name)}</strong> bus here`
-        });
-        waypoints.push({
-            type: 'stop',
-            name: endStop.name,
-            isAlighting: true,
-            description: hasEndWalk ? 'Exit bus here' : (endIsStop ? 'Depart bus and end here' : 'End here')
-        });
-        if (hasEndWalk) {
-            waypoints.push({ type: endIsStop ? 'stop' : 'building', name: endBuilding.name, description: 'End here' });
-        }
-        return waypoints;
-    })();
-
-    const updatedWaypointRows = timelineWaypoints.map((waypoint, index) => {
-        let content = '';
-
-        let innerStopsListHtml = '';
-        if (waypoint.isBoarding) {
-            if (route.stopsInOrder && route.stopsInOrder.length > 0) {
-                innerStopsListHtml = `
-                    <div class="bus-stops-list">
-                        <div class="stops-sequence" style="font-size: 1.2rem;">
-                            ${route.stopsInOrder.map((stop, index, arr) => {
-                                const isFirst = index === 0;
-                                const isLast = index === arr.length - 1;
-                                const isBoarding = isFirst || (startStop && String(stop.id) === String(startStop.id));
-                                const isAlighting = (isLast && !isFirst) || (endStop && String(stop.id) === String(endStop.id));
-                                const isTerminal = isBoarding || isAlighting;
-                                const style = isTerminal
-                                    ? 'color: var(--theme-stops-list-text); opacity: 1;'
-                                    : 'color: var(--theme-stops-list-text); opacity: 0.8;';
-                                const stopHtml = `<span style="${style}">${stop.name}</span>`;
-                                if (index < arr.length - 1) {
-                                    const arrowOpacity = arr.length > 2 ? '0.8' : '1';
-                                    return `${stopHtml}<span class="stop-arrow" style="color: var(--theme-stops-list-text); opacity: ${arrowOpacity}; text-decoration: none;"> → </span>`;
-                                }
-                                return stopHtml;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            content = '';
-        } else if (waypoint.isAlighting) {
-            content = '';
-        }
-
-        // Determine travel segment icon and time for the step to the next waypoint
-        let travelIcon = '';
-        let travelTime = '';
-        const isRouteActive = navRouteHasLiveBuses(route.name);
-        if (index < timelineWaypoints.length - 1) {
-            if (index === 0 && hasStartWalk) {
-                // Start building/stop - walking to first stop
-                travelIcon = 'fa-solid fa-person-walking';
-                if (startWalkDistance) {
-                    const timeMinutes = Math.ceil(startWalkDistance.feet / 220); // 220 ft/min = ~3 mph
-                    travelTime = `${timeMinutes}m`;
-                }
-            } else if (waypoint.isBoarding) {
-                // Boarding stop - about to ride bus
-                travelIcon = 'fa-solid fa-bus';
-                if (isRouteActive) {
-                    const timeMinutes = computeBusTravelTimeMinutes(route);
-                    travelTime = `${timeMinutes}m`;
-                }
-            } else if (waypoint.isAlighting && hasEndWalk) {
-                // Alighting stop - about to walk to destination
-                travelIcon = 'fa-solid fa-person-walking';
-                if (endWalkDistance) {
-                    const timeMinutes = Math.ceil(endWalkDistance.feet / 220); // 220 ft/min = ~3 mph
-                    travelTime = `${timeMinutes}m`;
-                }
-            }
-        }
-
-        let waypointIcon = '';
-        if (index === 0) {
-            waypointIcon = 'fa-solid fa-location-dot';
-        } else if (index === timelineWaypoints.length - 1) {
-            waypointIcon = 'fa-solid fa-flag-checkered';
-        } else {
-            waypointIcon = 'fa-solid fa-person-shelter';
-        }
-
-        let travelHtml = '';
-        if (travelIcon) {
-            if (index === 0 && hasStartWalk) {
-                const mapsButtonHtml = (startBuilding && startStop) ? getWalkingMapsButtonHtml(startBuilding.lat, startBuilding.lng, startStop.latitude, startStop.longitude) : '';
-                travelHtml = `
-                    <div class="waypoint-emoji waypoint-travel-walk">
-                        <div class="waypoint-travel-row">
-                            <div class="waypoint-travel-header">
-                                <div class="waypoint-circle">
-                                    <i class="${travelIcon}"></i>
-                                </div>
-                                ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
-                                <span class="walking-info">
-                                    Walk ${startWalkDistance ? Math.round(startWalkDistance.feet).toLocaleString() : 0} ft to boarding stop
-                                </span>
-                            </div>
-                            ${mapsButtonHtml}
-                        </div>
-                        <div class="walking-roads-wrapper">
-                            <div class="walking-roads-list" id="start-walking-roads">
-                                <div class="roads-sequence" style="font-size: 1.1rem;">
-                                    <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (waypoint.isBoarding) {
-                travelHtml = `
-                    <div class="waypoint-emoji waypoint-travel-bus">
-                        <div class="waypoint-travel-header">
-                            <div class="waypoint-circle">
-                                <i class="fa-solid fa-bus"></i>
-                            </div>
-                            <span class="route-badge" style="font-size: 1.4rem; font-weight: bold;">${formatRouteLabelColored(route.name)}</span>
-                            ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
-                            <span class="stops-info">
-                                Take bus for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} ${getStopCountText(route)}
-                            </span>
-                        </div>
-                        ${innerStopsListHtml ? `<div class="bus-stops-list-wrapper">${innerStopsListHtml}</div>` : ''}
-                    </div>
-                `;
-            } else if (waypoint.isAlighting && hasEndWalk) {
-                const mapsButtonHtml = (endStop && endBuilding) ? getWalkingMapsButtonHtml(endStop.latitude, endStop.longitude, endBuilding.lat, endBuilding.lng) : '';
-                travelHtml = `
-                    <div class="waypoint-emoji waypoint-travel-walk">
-                        <div class="waypoint-travel-row">
-                            <div class="waypoint-travel-header">
-                                <div class="waypoint-circle">
-                                    <i class="${travelIcon}"></i>
-                                </div>
-                                ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
-                                <span class="walking-info">
-                                    Walk ${endWalkDistance ? Math.round(endWalkDistance.feet).toLocaleString() : 0} ft to destination
-                                </span>
-                            </div>
-                            ${mapsButtonHtml}
-                        </div>
-                        ${endWalkDistance ? `
-                            <div class="walking-roads-wrapper">
-                                <div class="walking-roads-list" id="end-walking-roads">
-                                    <div class="roads-sequence" style="font-size: 1.1rem;">
-                                        <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            } else {
-                travelHtml = `
-                    <div class="waypoint-emoji">
-                        <div class="waypoint-circle">
-                            <i class="${travelIcon}"></i>
-                        </div>
-                        ${travelTime ? `<span class="travel-time">${travelTime}</span>` : ''}
-                    </div>
-                `;
-            }
-        }
-
-        return `
-            <div class="waypoint-row clickable-waypoint ${waypoint.type}-row ${waypoint.isBoarding ? 'boarding' : ''} ${waypoint.isAlighting ? 'alighting' : ''}" data-waypoint-index="${index}" data-waypoint-type="${waypoint.type}" data-waypoint-name="${waypoint.name}" data-is-boarding="${waypoint.isBoarding || false}" data-is-alighting="${waypoint.isAlighting || false}">
-                <div class="waypoint-circle ${waypoint.type}-circle ${waypoint.isBoarding ? 'boarding-circle' : ''} ${waypoint.isAlighting ? 'alighting-circle' : ''}">
-                    <i class="${waypointIcon}"></i>
-                </div>
-                <div class="waypoint-content" style="margin-left: 0.75rem;">
-                    <div class="waypoint-header">
-                        <h4 class="waypoint-title" style="user-select: none;">${waypoint.name} <i class="fa-duotone fa-solid fa-right" style="--fa-primary-color: var(--theme-link); --fa-secondary-color: color-mix(in srgb, var(--theme-link) 70%, white);"></i></h4>
-                        ${waypoint.description ? `<div class="waypoint-description">${waypoint.description}</div>` : ''}
-                    </div>
-                    ${content}
-                </div>
-            </div>
-            ${waypoint.isBoarding ? getUpcomingBusesHtml(route.name, startStop.id, hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0) : ''}
-            ${waypoint.isAlighting ? getArrivingBusesHtml(route.name, startStop.id, endStop.id, hasStartWalk ? getStartWalkSeconds(startWalkDistance) : 0) : ''}
-            ${travelHtml}
-        `;
-    }).join('');
-
     const rowsContainer = $('.waypoint-rows-container');
     if (rowsContainer.length > 0) {
-        rowsContainer.html(`${updatedWaypointRows}<div class="waypoint-connector-global"></div>`);
+        rowsContainer.html(`${renderTimelineWaypointsHtml({
+            startBuilding,
+            endBuilding,
+            startStop,
+            transferStop: route.transferStop || routeData.transferStop,
+            endStop,
+            route,
+            startWalkDistance,
+            endWalkDistance,
+            startIsStop,
+            endIsStop,
+            selectedTransferLeg1BusName: (navRouteSession && navRouteSession.routeData && navRouteSession.routeData.selectedTransferLeg1BusName) || null
+        })}<div class="waypoint-connector-global"></div>`);
         positionGlobalWaypointConnector();
     }
 
-    // Create updated bus segment
-    let stopsListHtml = '';
-    if (route.stopsInOrder && route.stopsInOrder.length > 2) {
-        stopsListHtml = `
-            <div class="bus-stops-list" style="margin-top: 0.75rem; padding: 0.5rem; background-color: var(--theme-stops-list-bg); border-radius: 0.25rem;">
-                <div class="stops-sequence" style="font-size: 1.2rem;">
-                    ${route.stopsInOrder.map((stop, index, arr) => {
-                        const isFirst = index === 0;
-                        const isLast = index === arr.length - 1;
-                        const isBoarding = isFirst || (startStop && String(stop.id) === String(startStop.id));
-                        const isAlighting = (isLast && !isFirst) || (endStop && String(stop.id) === String(endStop.id));
-                        const isTerminal = isBoarding || isAlighting;
-                        const style = isTerminal
-                            ? 'color: var(--theme-stops-list-text); opacity: 1;'
-                            : 'color: var(--theme-stops-list-text); opacity: 0.8;';
-                        const stopHtml = `<span style="${style}">${stop.name}</span>`;
-                        if (index < arr.length - 1) {
-                            const arrowOpacity = arr.length > 2 ? '0.8' : '1';
-                            return `${stopHtml}<span class="stop-arrow" style="color: var(--theme-stops-list-text); opacity: ${arrowOpacity}; text-decoration: none;"> → </span>`;
-                        }
-                        return stopHtml;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    const updatedBusHtml = `
-        <div class="route-segment bus-segment" style="margin-bottom: 1rem; padding: 0.75rem; background-color: #f0fdf4; border-radius: 0.5rem;">
-            <div class="segment-icon" style="margin-bottom: 0.5rem;">
-                <span style="color: #16a34a;">🚌</span>
-                <span class="segment-type" style="font-weight: 500;">Take Bus <span style="font-weight: 700; color: ${typeof colorMappings !== 'undefined' && colorMappings[route.name.toLowerCase()] ? colorMappings[route.name.toLowerCase()] : '#111827'};">${formatRouteLabel(route.name)}</span></span>
-            </div>
-            <div class="segment-details">
-                <div class="segment-description" style="margin-bottom: 0.5rem;">
-                    Board at <strong>${startStop.name}</strong>
-                </div>
-                <div class="segment-description" style="margin-bottom: 0.5rem;">
-                    Get off at <strong>${endStop.name}</strong>
-                </div>
-                <div class="bus-route-info" style="font-size: 0.75rem; color: #6b7280;">
-                    Take bus ${formatRouteLabelColored(route.name)} for ${Math.max(0, (route.stopsInOrder ? route.stopsInOrder.length : route.totalStops) - 1)} ${getStopCountText(route)}
-                </div>
-                ${stopsListHtml}
-            </div>
-        </div>
-    `;
-
-    // Update the bus segment
-    $('.bus-segment').replaceWith(updatedBusHtml);
-
     // Load road names for walking segments when route is updated
     loadWalkingRoadNames(startBuilding, endBuilding, startStop, endStop, startIsStop, endIsStop);
-
-
-    // showNavigationMessage(`Switched to ${formatRouteLabel(route.name)} route`);
 }
 
 // Clear the current route display
