@@ -934,12 +934,21 @@ async function addPolylineForRoute(routeName) {
 function routeHasInServiceBuses(route) {
     try {
         const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
-        return routeBuses && routeBuses.some(busName => 
-            busData[busName] && 
-            !busData[busName].oos && 
-            !busData[busName].atDepot &&
-            !distanceFromLine(busName)
-        );
+        return routeBuses && routeBuses.some(busName => {
+            const b = busData[busName];
+            if (!b) return false;
+            // A bus with no position yet (new API entry before lat/long are
+            // set) must not count as in-service: distanceFromLine() returns
+            // false for missing coords, and !undefined === true, which
+            // previously false-positived depot/OOS buses as in-service when
+            // addStopsToMap() ran before fields were initialized (sim-exit
+            // helix case: 2 stops instead of all 29).
+            if (b.lat === undefined || b.long === undefined) return false;
+            if (b.oos) return false;
+            if (b.atDepot) return false;
+            if (distanceFromLine(busName)) return false;
+            return true;
+        });
     } catch (e) {
         console.error('[poly] Error checking routeHasInServiceBuses for route', route, e);
         return false;
@@ -2263,9 +2272,15 @@ async function addStopsToMap() {
         }
     }
 
-    if (!activeStops.length && !isForceShowStopsEnabled()) {
-        console.log('no buses running, showing all stops');
-        activeStops = Object.keys(stopsData || {}).map(Number);
+    if (!activeStops.length) {
+        const hasBuses = busesByRoutes[selectedCampus] && Object.keys(busesByRoutes[selectedCampus]).length > 0;
+        // Show all when no in-service routes and not force-showing a specific set.
+        // When force-show is enabled but there are truly no buses, still fallback to all
+        // (sim exit with 0 buses should show every stop with 0.5 opacity).
+        if (!isForceShowStopsEnabled() || !hasBuses) {
+            console.log('no buses running, showing all stops');
+            activeStops = Object.keys(stopsData || {}).map(Number);
+        }
     }
 
     checkIfLocationShared();
@@ -2373,8 +2388,11 @@ function removePreviouslyActiveStops() {
 
     newActiveStops = [...new Set(newActiveStops)];
 
-    if (newActiveStops.length === 0 && !isForceShowStopsEnabled()) {
-        newActiveStops = Object.keys(stopsData || {}).map(Number);
+    if (newActiveStops.length === 0) {
+        const hasBuses = busesByRoutes[selectedCampus] && Object.keys(busesByRoutes[selectedCampus]).length > 0;
+        if (!isForceShowStopsEnabled() || !hasBuses) {
+            newActiveStops = Object.keys(stopsData || {}).map(Number);
+        }
     }
 
     for (const stopId in busStopMarkers) {

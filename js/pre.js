@@ -171,6 +171,26 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                     busData[busName].joined_service = new Date();
                 }
 
+                // Initialize position/status BEFORE deleteAllStops/addStopsToMap:
+                // routeHasInServiceBuses() treats missing lat/long/oos/atDepot as
+                // in-service (!undefined === true, distanceFromLine === false),
+                // so calling addStopsToMap() before these are set falsely marks
+                // a depot/OOS bus (e.g. helix) as in-service and narrows stops
+                // to just its route instead of falling back to ALL stops.
+                // This is why sim-exit (non-initial fetch) ended with 2 stops
+                // while initial load (addStopsToMap deferred to makeNewMap,
+                // after fields are set) correctly showed all 29.
+                if (isFinite(initLat) && isFinite(initLng)) {
+                    busData[busName].lat = initLat;
+                    busData[busName].long = initLng;
+                }
+                busData[busName].oos = false;
+                try {
+                    busData[busName].atDepot = isAtDepot(bus.lng, bus.lat);
+                } catch (e) {
+                    busData[busName].atDepot = false;
+                }
+
                 // All stops are shown so no buses, and if this is the first bus, we need to hide all stops first before showing stops for this route
                 if (Object.keys(busData).length === 1) {
                     console.log("Is first bus, deleting all stops")
