@@ -24,8 +24,30 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     row-gap: 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-border) transparent;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.navigate-inner::-webkit-scrollbar {
+    width: 6px;
+}
+
+.navigate-inner::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.navigate-inner::-webkit-scrollbar-thumb {
+    background-color: var(--theme-border);
+    border-radius: 4px;
+}
+
+.navigate-inner::-webkit-scrollbar-thumb:hover {
+    background-color: var(--theme-extra);
 }
 
 /* Navigation input containers */
@@ -254,35 +276,87 @@
 
 /* Navigation directions wrapper styling */
 .nav-directions-wrapper {
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--theme-border) transparent;
-    flex: 1;
+    overflow: visible;
+    flex: none;
     background-color: var(--theme-bg);
     flex-direction: column;
     pointer-events: all;
+    padding-bottom: 3rem;
 }
 
-.nav-directions-wrapper::-webkit-scrollbar {
-    width: 6px;
-}
-
-.nav-directions-wrapper::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.nav-directions-wrapper::-webkit-scrollbar-thumb {
-    background-color: var(--theme-border);
-    border-radius: 4px;
-}
-
-.nav-directions-wrapper::-webkit-scrollbar-thumb:hover {
-    background-color: var(--theme-extra);
-}
-
-/* Route selector rendered above the directions wrapper (outside the scroll area) */
+/* Route selector rendered above the directions wrapper (sticky at top when scrolling) */
 .nav-route-selector-container {
-    margin-left: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--theme-bg);
+    margin-left: 0;
+    padding: 0.5rem 0 0.5rem 1rem;
+    box-sizing: border-box;
+    width: 100%;
+    transition: box-shadow 0.15s ease;
+}
+
+.nav-route-selector-container.nav-stuck {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* 3-column route trip stats bar (walk time, wait time, bus travel time) */
+.nav-route-stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin: 0.6rem 1.5rem;
+    padding: 0.5rem 0.8rem;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.nav-route-stats-bar.none {
+    display: none !important;
+}
+
+.nav-route-stat-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    color: var(--theme-color);
+    flex: 1;
+}
+
+.nav-route-stat-col:not(:last-child) {
+    border-right: 1px solid var(--theme-line-bg);
+}
+
+.nav-route-stat-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.nav-route-stat-col i,
+.nav-route-stat-col svg {
+    font-size: 1.4rem;
+    color: var(--theme-accent);
+}
+
+.nav-route-stat-val {
+    font-size: 1.7rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.nav-route-stat-sub {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--theme-color);
+    opacity: 0.75;
+    text-align: center;
+    white-space: nowrap;
+    line-height: 1.2;
 }
 
 /* Transfer and walking info text banners between route selector and directions wrapper */

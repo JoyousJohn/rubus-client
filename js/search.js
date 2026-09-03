@@ -316,15 +316,25 @@ $(document).ready(function() {
         hideInfoBoxes(true);
         $('.knight-mover').hide();
         $('.bottom').hide();
-        if (searchMode !== 'search') {
-            setSearchMode('search');
-        }
         // Remember where the user was on the map before opening search, so the
         // search bar's back button can return them there (even if a search
         // selection later flew the camera elsewhere).
-        searchOpenView = { center: map.getCenter(), zoom: map.getZoom() };
+        searchOpenView = (typeof map !== 'undefined' && map && typeof map.getCenter === 'function')
+            ? { center: map.getCenter(), zoom: map.getZoom() }
+            : null;
         updateSearchHeading();
         $('.search-wrapper').removeClass('none');
+        if (searchMode === 'directions') {
+            $('.navigate-wrapper').removeClass('none');
+            $('.nav-pill-bar').removeClass('none');
+            $('.search-pill-bar, .search-content').addClass('none');
+            $('.search-top-back-btn').css({'visibility':'visible','pointer-events':'auto'});
+        } else {
+            $('.search-top-back-btn').css({'visibility':'hidden','pointer-events':'none'});
+            $('.search-pill-bar, .search-content').removeClass('none');
+            $('.nav-pill-bar, .navigate-wrapper').addClass('none');
+            $('.search-pill-bar input').trigger('input');
+        }
         if (typeof hideCenterStops === 'function') hideCenterStops();
         adjustSearchHeights();
         attachSearchViewportListeners();
@@ -1206,10 +1216,9 @@ $(document).ready(function() {
 
 function closeSearch() {
     $('.search-wrapper').addClass('none');
-    if (searchMode !== 'search') {
-        applySearchMode('search');
+    if (searchMode !== 'directions') {
+        $('.navigate-wrapper').addClass('none');
     }
-    $('.navigate-wrapper').addClass('none');
     if (!$('.settings-panel').is(':visible') && !$('.feedback-wrapper').is(':visible')) {
         $('.bottom').show();
     }

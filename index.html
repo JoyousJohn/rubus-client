@@ -1419,11 +1419,6 @@
             <input type="text" name="searchQuery" placeholder="Search {num} buildings & lots" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
             <button class="search-clear-btn" type="button" aria-label="Clear">×</button>
         </div>
-        <div class="nav-pill-bar nav-pill-bar-style none">
-            <button class="nav-from-pin-btn flex align-center justify-center" type="button" aria-label="From pin" tabindex="-1" style="background:none; border:none; color:var(--theme-bg); font-size:1.8rem; padding:0.5rem; margin-left:-0.25rem; line-height:1; flex-shrink:0; pointer-events:none; height:2.8rem;"><i class="fa-solid fa-location-dot fa-fw"></i></button>
-            <input type="text" class="nav-input" id="nav-from-input" placeholder="Source" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
-            <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
-        </div>
         <div class="search-content">
             <div class="search-results-wrapper none mt-1rem">
                 <div class="search-results">
@@ -1444,6 +1439,11 @@
         </div>
         <div class="navigate-wrapper none">
             <div class="navigate-inner flex flex-col" style="font-family: var(--font-family); position: relative;">
+                <div class="nav-pill-bar nav-pill-bar-style none">
+                    <button class="nav-from-pin-btn flex align-center justify-center" type="button" aria-label="From pin" tabindex="-1" style="background:none; border:none; color:var(--theme-bg); font-size:1.8rem; padding:0.5rem; margin-left:-0.25rem; line-height:1; flex-shrink:0; pointer-events:none; height:2.8rem;"><i class="fa-solid fa-location-dot fa-fw"></i></button>
+                    <input type="text" class="nav-input" id="nav-from-input" placeholder="Source" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+                    <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
+                </div>
                 <div class="nav-mid-row">
                     <div class="nav-mid-left"></div>
                     <div class="nav-mid-center">
@@ -1469,19 +1469,39 @@
 
                 <div class="nav-route-selector-container"></div>
 
-                <div class="nav-transfer-info-banner none">
-                    <i class="fa-solid fa-circle-info"></i>
-                    <span>This route contains a transfer; arriving to the transfer stop late may make this path slower than a direct route.</span>
-                </div>
-
-                <div class="nav-walk-warning-banner none">
-                    <i class="fa-solid fa-circle-info"></i>
-                    <span>Although this path may be faster than other routes, it may contain substantially more walking.</span>
-                </div>
-
                 <div class="nav-directions-wrapper none br-1rem">
-                    <div class="nav-directions-inner flex flex-col">
+                    <div class="nav-route-stats-bar none">
+                        <div class="nav-route-stat-col" id="nav-stat-walk" title="Total walking time and distance">
+                            <div class="nav-route-stat-top">
+                                <i class="fa-solid fa-person-walking"></i>
+                                <span class="nav-route-stat-val">--</span>
+                            </div>
+                            <span class="nav-route-stat-sub">--</span>
+                        </div>
+                        <div class="nav-route-stat-col" id="nav-stat-wait" title="Estimated wait time for soonest bus">
+                            <div class="nav-route-stat-top">
+                                <i class="fa-solid fa-person-shelter"></i>
+                                <span class="nav-route-stat-val">--</span>
+                            </div>
+                            <span class="nav-route-stat-sub">Shortest wait</span>
+                        </div>
+                        <div class="nav-route-stat-col" id="nav-stat-bus" title="Total bus travel time and stops">
+                            <div class="nav-route-stat-top">
+                                <i class="fa-solid fa-bus"></i>
+                                <span class="nav-route-stat-val">--</span>
+                            </div>
+                            <span class="nav-route-stat-sub">--</span>
+                        </div>
+                    </div>
 
+                    <div class="nav-transfer-info-banner none">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>This route contains a transfer; arriving to the transfer stop late may make this path slower than a direct route.</span>
+                    </div>
+
+                    <div class="nav-walk-warning-banner none">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Although this path may be faster than other routes, it may contain substantially more walking.</span>
                     </div>
                 </div>
             </div>

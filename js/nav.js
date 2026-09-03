@@ -585,6 +585,7 @@ function setupNavigationInputs() {
             $('.nav-route-selector-container').addClass('none');
         }
         $('.nav-transfer-info-banner, .nav-walk-warning-banner').addClass('none');
+        $('.navigate-inner').scrollTop(0);
         navAnyInputFocused = true;
         updateNavDestRowVisibility();
     });
@@ -1439,6 +1440,7 @@ function calculateRoute(from, to) {
             }
             navDirectionsWasVisibleBeforeFocus = false;
             $('.nav-directions-wrapper').scrollTop(0);
+            $('.navigate-inner').scrollTop(0);
             // Ensure dest row and pills are visible when reshowing
             $('.nav-dest-row').removeClass('none');
             $('.nav-pill-bar').removeClass('nav-collapsed');
@@ -2035,12 +2037,13 @@ function resolvePlaceByName(inputName) {
     const normalized = String(inputName).trim().toLowerCase();
 
     // Exact building match (by normalized key)
-    if (buildingIndex[normalized]) {
+    if (typeof buildingIndex !== 'undefined' && buildingIndex && buildingIndex[normalized]) {
         return buildingIndex[normalized];
     }
 
     // Exact stop match (case-insensitive by name)
-    for (const stopId in stopsData) {
+    if (typeof stopsData !== 'undefined' && stopsData) {
+        for (const stopId in stopsData) {
         const stop = stopsData[stopId];
         if (String(stop.name || '').trim().toLowerCase() === normalized) {
             return {
@@ -2052,6 +2055,7 @@ function resolvePlaceByName(inputName) {
             };
         }
     }
+}
 
     // Fuzzy building match via Fuse.js
     const fuzzyBuilding = findBuildingFuzzy(inputName);
@@ -3328,6 +3332,82 @@ function calculateOptionJourneyMinutes(r, combo, routeData) {
     return totalMinutes;
 }
 
+// Filter transfer route options: only show transfer options that have a shorter
+// total time than the slowest direct route, or considerably less walking (saves >= 4 min walk).
+function filterTransferRoutesForDisplay(routesForDisplay, routeCombosMap, routeData) {
+    if (!routesForDisplay || routesForDisplay.length <= 1) return routesForDisplay;
+
+    const getTotalMinutes = (entry) => {
+        if (typeof entry.journeyMinutes === 'number' && entry.journeyMinutes > 0) {
+            return entry.journeyMinutes;
+        }
+        const rKey = entry.route && entry.route.name && String(entry.route.name).toLowerCase();
+        const combo = routeCombosMap && routeCombosMap[rKey];
+        return calculateOptionJourneyMinutes(entry.route, combo, routeData) || 0;
+    };
+
+    const getWalkMinutes = (entry) => {
+        if (typeof entry.walkMinutes === 'number' && entry.walkMinutes > 0) {
+            return entry.walkMinutes;
+        }
+        const rKey = entry.route && entry.route.name && String(entry.route.name).toLowerCase();
+        const combo = routeCombosMap && routeCombosMap[rKey];
+        return calculateOptionWalkMinutes(entry.route, combo, routeData) || 0;
+    };
+
+    const isTransferEntry = (entry) => {
+        return !!(entry.isTransfer || (entry.route && (entry.route.isTransfer || (entry.route.leg1 && entry.route.leg2))));
+    };
+
+    const directRoutes = routesForDisplay.filter(e => !isTransferEntry(e));
+    const transferRoutes = routesForDisplay.filter(e => isTransferEntry(e));
+
+    // If there are no direct routes or no transfer routes, nothing to filter
+    if (directRoutes.length === 0 || transferRoutes.length === 0) {
+        return routesForDisplay;
+    }
+
+    // Determine direct routes to compare against (prefer live direct routes if any exist)
+    const liveDirectRoutes = directRoutes.filter(e => e.hasLive);
+    const comparisonDirects = liveDirectRoutes.length > 0 ? liveDirectRoutes : directRoutes;
+
+    // Slowest direct route's total time (max total time among direct routes)
+    const directTotalTimes = comparisonDirects.map(getTotalMinutes);
+    const slowestDirectTotalTime = Math.max(...directTotalTimes);
+
+    // Minimum walking time among direct routes
+    const directWalkTimes = comparisonDirects.map(getWalkMinutes);
+    const minDirectWalk = Math.min(...directWalkTimes);
+
+    // 1. Transfer routes with significantly less walking (always kept, independent of travel time)
+    const lowWalkingTransfers = transferRoutes.filter(t => (minDirectWalk - getWalkMinutes(t) >= 4));
+
+    // 2. Remaining transfer routes
+    const otherTransfers = transferRoutes.filter(t => !lowWalkingTransfers.includes(t));
+
+    // Faster than the slowest direct route (always kept)
+    const fasterTransfers = otherTransfers.filter(t => {
+        const tTime = getTotalMinutes(t);
+        return tTime > 0 && slowestDirectTotalTime > 0 && tTime < slowestDirectTotalTime;
+    });
+
+    // Slower than the slowest direct route (show a maximum of ONE more slower transfer option after the slowest direct route)
+    const slowerTransfers = otherTransfers
+        .filter(t => !fasterTransfers.includes(t))
+        .sort((a, b) => getTotalMinutes(a) - getTotalMinutes(b));
+
+    const maxOneSlowerTransfer = slowerTransfers.slice(0, 1);
+
+    const eligibleTransfers = new Set([
+        ...lowWalkingTransfers,
+        ...fasterTransfers,
+        ...maxOneSlowerTransfer
+    ]);
+
+    return routesForDisplay.filter(e => !isTransferEntry(e) || eligibleTransfers.has(e));
+}
+window.filterTransferRoutesForDisplay = filterTransferRoutesForDisplay;
+
 // Sort route options: live routes first (sorted ascending by journey time), then inactive routes (sorted ascending)
 function sortRoutesForDisplay(routesForDisplay) {
     routesForDisplay.sort((a, b) => {
@@ -3416,20 +3496,7 @@ function buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex) {
         const journeyMinutes = hasLive ? Math.max(1, entry.journeyMinutes) : 0;
         const timeHtml = (hasLive && journeyMinutes > 0) ? `<span class="route-option-time">${journeyMinutes}m</span>` : ``;
 
-        let walkMinutes = (typeof entry.walkMinutes === 'number') ? entry.walkMinutes : 0;
-        if (!walkMinutes && typeof calculateOptionWalkMinutes === 'function') {
-            const rd = (navRouteSession && navRouteSession.routeData) || null;
-            const rKey = entry.route && entry.route.name && entry.route.name.toLowerCase();
-            const combo = rd && rd.routeCombosMap && rd.routeCombosMap[rKey];
-            walkMinutes = calculateOptionWalkMinutes(entry.route, combo, rd);
-        }
-
-        let walkHtml = '';
-        if (walkMinutes > 10) {
-            walkHtml = `<span class="route-option-walk">(<i class="fa-solid fa-person-walking"></i><span class="route-option-walk-time">${walkMinutes}m</span>)</span>`;
-        }
-
-        const pill = `<div class="route-option ${transferClass} ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">${liveDotHtml}${labelHtml}${timeHtml}${walkHtml}</div>`;
+        const pill = `<div class="route-option ${transferClass} ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">${liveDotHtml}${labelHtml}${timeHtml}</div>`;
         if (_hasBoth && index === _lastLiveIdx) {
             return pill + `<div class="route-options-divider" aria-hidden="true" style="width:1px; height:2.2rem; background:var(--theme-line-bg); flex-shrink:0; align-self:center; margin:0 0.25rem; opacity:0.9;"></div>`;
         }
@@ -3596,11 +3663,40 @@ function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
         $container.empty().addClass('none');
         return;
     }
+
+    // Preserve horizontal scroll position across live ETA re-renders
+    const $existingScroller = $container.find('.route-options-container');
+    const prevScrollLeft = $existingScroller.length ? $existingScroller.scrollLeft() : 0;
+
     const html = buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex);
     $container.removeClass('none').html(html);
     bindNavRouteOptionClicks(routesForDisplay);
     if (typeof replaceFontAwesomeIcons === 'function') {
         replaceFontAwesomeIcons();
+    }
+
+    // Restore horizontal scroll position
+    const $newScroller = $container.find('.route-options-container');
+    if ($newScroller.length) {
+        if (prevScrollLeft > 0) {
+            $newScroller.scrollLeft(prevScrollLeft);
+        }
+        // Ensure the currently selected route pill remains visible without jarring shifts
+        const $selected = $newScroller.find('.route-option.selected');
+        if ($selected.length) {
+            const scrollerEl = $newScroller[0];
+            const selEl = $selected[0];
+            const selLeft = selEl.offsetLeft;
+            const selRight = selLeft + selEl.offsetWidth;
+            const viewLeft = scrollerEl.scrollLeft;
+            const viewRight = viewLeft + scrollerEl.clientWidth;
+
+            if (selLeft < viewLeft) {
+                scrollerEl.scrollLeft = Math.max(0, selLeft - 12);
+            } else if (selRight > viewRight) {
+                scrollerEl.scrollLeft = selRight - scrollerEl.clientWidth + 12;
+            }
+        }
     }
 }
 window.renderNavRouteSelector = renderNavRouteSelector;
@@ -3753,6 +3849,10 @@ function updateNavBusesDisplay() {
             $('.waypoint-travel-bus .travel-time').hide();
         }
 
+        if (typeof updateNavInfoBanners === 'function') {
+            updateNavInfoBanners(route);
+        }
+
         positionGlobalWaypointConnector();
     } catch (e) {
         console.error('[nav] Error in updateNavBusesDisplay:', e);
@@ -3803,7 +3903,8 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
         }
 
         if (routesForDisplay.length > 0) {
-            let statusOrTimeChanged = false;
+            let statusChanged = false;
+            let timeChanged = false;
             routesForDisplay.forEach(entry => {
                 const rName = String(entry.route.name || '').toLowerCase();
                 const dName = entry.displayName;
@@ -3814,25 +3915,29 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
 
                 if (entry.hasLive !== isLive) {
                     entry.hasLive = isLive;
-                    statusOrTimeChanged = true;
+                    statusChanged = true;
                 }
                 if (isLive && entry.journeyMinutes !== newJourneyMinutes) {
                     entry.journeyMinutes = newJourneyMinutes;
-                    statusOrTimeChanged = true;
+                    timeChanged = true;
                 }
             });
 
-            if (statusOrTimeChanged) {
-                // Re-sort: in-service routes on left of divider, out-of-service routes on right of divider
-                sortRoutesForDisplay(routesForDisplay);
-                routeData.routesForDisplay = routesForDisplay;
+            if (statusChanged || timeChanged) {
+                // Only re-sort across the divider if a route's operational status changed (in-service vs out-of-service).
+                // During routine ETA fluctuations, maintain stable pill order to avoid UI thrashing and mis-taps.
+                if (statusChanged) {
+                    routesForDisplay = filterTransferRoutesForDisplay(routesForDisplay, routeData.routeCombosMap, routeData);
+                    sortRoutesForDisplay(routesForDisplay);
+                    routeData.routesForDisplay = routesForDisplay;
+                }
 
-                // Update selectedRouteDisplayIndex to the currently selected route's new position
+                // Update selectedRouteDisplayIndex to the currently selected route's position
                 const currentRouteKey = String(currentRoute.name || '').toLowerCase();
                 const newIndex = routesForDisplay.findIndex(e => String(e.route.name || '').toLowerCase() === currentRouteKey);
                 routeData.selectedRouteDisplayIndex = newIndex >= 0 ? newIndex : 0;
 
-                // Re-render the route selector pills so times, dots, and divider update
+                // Re-render the route selector pills so times, dots, and divider update with preserved scroll
                 renderNavRouteSelector(routesForDisplay, routeData.selectedRouteDisplayIndex);
                 if (typeof updateNavInfoBanners === 'function') {
                     updateNavInfoBanners(currentRoute, routeData.selectedRouteDisplayIndex, routesForDisplay);
@@ -4235,6 +4340,10 @@ function displayRoute(routeData) {
             entry.walkMinutes = calculateOptionWalkMinutes(entry.route, combo, routeData);
         });
 
+        // Filter transfer routes: only show transfer options that have a shorter
+        // total time than the slowest direct route, or considerably less walking.
+        routesForDisplay = filterTransferRoutesForDisplay(routesForDisplay, routeCombosMap, routeData);
+
         // Sort route options: live routes first (sorted ascending by journey
         // time), then inactive routes (sorted ascending). Inactive WKND/ON
         // variants sort after inactive weekday routes so weekend service
@@ -4309,6 +4418,37 @@ function displayRoute(routeData) {
     // Walking segment from start to boarding stop removed (routes no longer show
     // Create main content wrapper
     const contentWrapperHtml = `
+        <div class="nav-route-stats-bar none">
+            <div class="nav-route-stat-col" id="nav-stat-walk" title="Total walking time and distance">
+                <div class="nav-route-stat-top">
+                    <i class="fa-solid fa-person-walking"></i>
+                    <span class="nav-route-stat-val">--</span>
+                </div>
+                <span class="nav-route-stat-sub">--</span>
+            </div>
+            <div class="nav-route-stat-col" id="nav-stat-wait" title="Estimated wait time for soonest bus">
+                <div class="nav-route-stat-top">
+                    <i class="fa-solid fa-person-shelter"></i>
+                    <span class="nav-route-stat-val">--</span>
+                </div>
+                <span class="nav-route-stat-sub">Shortest wait</span>
+            </div>
+            <div class="nav-route-stat-col" id="nav-stat-bus" title="Total bus travel time and stops">
+                <div class="nav-route-stat-top">
+                    <i class="fa-solid fa-bus"></i>
+                    <span class="nav-route-stat-val">--</span>
+                </div>
+                <span class="nav-route-stat-sub">--</span>
+            </div>
+        </div>
+        <div class="nav-transfer-info-banner none">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>This route contains a transfer; arriving to the transfer stop late may make this path slower than a direct route.</span>
+        </div>
+        <div class="nav-walk-warning-banner none">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Although this path may be faster than other routes, it may contain substantially more walking.</span>
+        </div>
         <div class="route-content-wrapper">
             <div class="waypoint-rows-container">
                 ${renderTimelineWaypointsHtml({
@@ -4420,7 +4560,7 @@ function displayRoute(routeData) {
         if (navRouteSession) {
             navRouteSession.fromVal = $('#nav-from-input').val();
             navRouteSession.toVal = $('#nav-to-input').val();
-            navRouteSession.scrollTop = $('.nav-directions-wrapper').scrollTop();
+            navRouteSession.scrollTop = $('.navigate-inner').scrollTop() || $('.nav-directions-wrapper').scrollTop();
             navRouteSession.selectedFromBuilding = selectedFromBuilding;
             navRouteSession.selectedFromStop = selectedFromStop;
             navRouteSession.selectedToBuilding = selectedToBuilding;
@@ -4515,6 +4655,7 @@ function displayRoute(routeData) {
 
     // Scroll to top of route content wrapper
     $('.nav-directions-wrapper').scrollTop(0);
+    $('.navigate-inner').scrollTop(0);
 }
 
 // Adjust corner border radii and top border if the attached drawer list is wider/narrower than its parent travel header
@@ -4621,11 +4762,161 @@ $(window).on('resize', function() {
 // (removed at the top so the resting view is unaffected). The wrapper element
 // persists in index.html; only its children are re-rendered, so this binding
 // survives route switches and re-opens.
+$('.navigate-inner').on('scroll', function() {
+    const isStuck = this.scrollTop > 80;
+    $('.nav-route-selector-container').toggleClass('nav-stuck', isStuck);
+});
+
 $('.nav-directions-wrapper').on('scroll', function() {
     $(this).toggleClass('nav-fade-top', this.scrollTop > 4);
 });
 
-// Toggle the transfer info banner and the substantially-more-walking warning banner
+// Compute total walk time, total wait time (lowest wait for soonest bus), and total bus travel time
+function computeRouteTripStats(r, combo, routeData) {
+    const rd = routeData || (navRouteSession && navRouteSession.routeData) || null;
+    const startWalk = (combo && combo.startWalkDistance) || (rd && rd.startWalkDistance) || (r && r.startWalkDistance);
+    const endWalk = (combo && combo.endWalkDistance) || (rd && rd.endWalkDistance) || (r && r.endWalkDistance);
+
+    let walkMinutes = calculateOptionWalkMinutes(r, combo, rd);
+    let totalFeet = 0;
+    if (startWalk && typeof startWalk.feet === 'number') {
+        totalFeet += startWalk.feet;
+    }
+    if (endWalk && typeof endWalk.feet === 'number') {
+        totalFeet += endWalk.feet;
+    }
+    if (totalFeet === 0) {
+        totalFeet = (combo && combo.totalWalkingFeet) || (r && r.totalWalkingFeet) || 0;
+    }
+
+    const roundedFeet = totalFeet <= 300 ? Math.round(totalFeet) : Math.ceil(totalFeet / 100) * 100;
+    let walkDistanceText = '';
+    if (roundedFeet >= 5280) {
+        walkDistanceText = `${(roundedFeet / 5280).toFixed(1)} mi`;
+    } else {
+        walkDistanceText = `${roundedFeet.toLocaleString()} ft`;
+    }
+
+    let waitMinutes = 0;
+    let hasLiveWait = false;
+    let busMinutes = 0;
+    let totalStops = 0;
+
+    const isTransfer = !!(r && (r.isTransfer || (combo && combo.isTransfer) || (r.leg1 && r.leg2)));
+
+    if (isTransfer) {
+        const leg1 = (combo && combo.leg1) || (r && r.leg1);
+        const leg2 = (combo && combo.leg2) || (r && r.leg2);
+        const startStop = (combo && combo.startStop) || (leg1 && leg1.startStop) || (rd && rd.startStop) || (r && r.startStop);
+        const transferStop = (combo && combo.transferStop) || (leg1 && leg1.transferStop) || (leg2 && leg2.transferStop) || (r && r.transferStop) || (rd && rd.transferStop);
+        const endStop = (combo && combo.endStop) || (leg2 && leg2.endStop) || (rd && rd.endStop) || (r && r.endStop);
+
+        if (leg1 && leg2 && startStop && transferStop && endStop) {
+            const startStopId = startStop.id || startStop;
+            const transferStopId = transferStop.id || transferStop;
+            const endStopId = endStop.id || endStop;
+
+            const leg1Route = leg1.route || leg1;
+            const leg1Details = leg1.routeDetails || (typeof getRouteDetails === 'function' ? getRouteDetails(leg1Route, startStopId, transferStopId) : leg1);
+            const leg1TravelMinutes = computeBusTravelTimeMinutes(leg1Details);
+
+            const leg2Route = leg2.route || leg2;
+            const leg2Details = leg2.routeDetails || (typeof getRouteDetails === 'function' ? getRouteDetails(leg2Route, transferStopId, endStopId) : leg2);
+            const leg2TravelMinutes = computeBusTravelTimeMinutes(leg2Details);
+            busMinutes = leg1TravelMinutes + leg2TravelMinutes;
+
+            // Stops on Leg 1 (boarding stop -> transfer stop)
+            let c1 = 0;
+            const c1Arr = (leg1Details && leg1Details.stopsInOrder) ||
+                          (leg1 && leg1.routeDetails && leg1.routeDetails.stopsInOrder) ||
+                          (leg1Route && leg1Route.stopsInOrder) || [];
+            if (c1Arr.length > 0) {
+                c1 = Math.max(0, c1Arr.length - 1);
+            } else if (leg1 && typeof leg1.startIndex === 'number' && typeof leg1.endIndex === 'number' && (leg1.stops || leg1Route.stops)) {
+                const s1 = leg1.stops || leg1Route.stops;
+                c1 = (leg1.endIndex - leg1.startIndex + s1.length) % s1.length;
+            } else if (leg1Details && typeof leg1Details.totalStops === 'number' && leg1Details.totalStops > 0) {
+                c1 = Math.max(0, leg1Details.totalStops - 1);
+            }
+
+            // Stops on Leg 2 (transfer stop -> destination stop)
+            let c2 = 0;
+            const c2Arr = (leg2Details && leg2Details.stopsInOrder) ||
+                          (leg2 && leg2.routeDetails && leg2.routeDetails.stopsInOrder) ||
+                          (leg2Route && leg2Route.stopsInOrder) || [];
+            if (c2Arr.length > 0) {
+                c2 = Math.max(0, c2Arr.length - 1);
+            } else if (leg2 && typeof leg2.startIndex === 'number' && typeof leg2.endIndex === 'number' && (leg2.stops || leg2Route.stops)) {
+                const s2 = leg2.stops || leg2Route.stops;
+                c2 = (leg2.endIndex - leg2.startIndex + s2.length) % s2.length;
+            } else if (leg2Details && typeof leg2Details.totalStops === 'number' && leg2Details.totalStops > 0) {
+                c2 = Math.max(0, leg2Details.totalStops - 1);
+            }
+
+            totalStops = c1 + c2;
+
+            const startWalkSec = startWalk ? getStartWalkSeconds(startWalk) : 0;
+            let leg1Wait = 0;
+            let leg1Live = false;
+            if (leg1.route && navRouteHasLiveBuses(leg1.route.name)) {
+                const top1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 1);
+                if (top1.length > 0) {
+                    leg1Wait = Math.max(0, Math.ceil((top1[0].eta - startWalkSec) / 60));
+                    leg1Live = true;
+                }
+            }
+
+            let leg2Wait = 0;
+            let leg2Live = false;
+            const arriveAtTransferSec = startWalkSec + (leg1Wait * 60) + (leg1TravelMinutes * 60);
+            if (leg2.route && navRouteHasLiveBuses(leg2.route.name)) {
+                const minTransferSec = arriveAtTransferSec + 120; // 2 min buffer
+                const top2 = getTopApproachingBuses(leg2.route.name, transferStop.id, minTransferSec, 1);
+                if (top2.length > 0) {
+                    leg2Wait = Math.max(2, Math.ceil((top2[0].eta - arriveAtTransferSec) / 60));
+                    leg2Live = true;
+                }
+            }
+
+            waitMinutes = leg1Wait + leg2Wait;
+            hasLiveWait = leg1Live || leg2Live;
+        }
+    } else if (r) {
+        const startStop = (combo && combo.startStop) || (rd && rd.startStop) || (r && r.startStop);
+        const endStop = (combo && combo.endStop) || (rd && rd.endStop) || (r && r.endStop);
+        const effectiveRoute = (startStop && endStop && typeof getRouteDetails === 'function')
+            ? getRouteDetails(r, startStop.id, endStop.id)
+            : r;
+        busMinutes = computeBusTravelTimeMinutes(effectiveRoute);
+        const stopsArr = (effectiveRoute && effectiveRoute.stopsInOrder && effectiveRoute.stopsInOrder.length > 0)
+            ? effectiveRoute.stopsInOrder
+            : ((r && r.stopsInOrder && r.stopsInOrder.length > 0) ? r.stopsInOrder : ((effectiveRoute && effectiveRoute.stops) || (r && r.stops) || []));
+        totalStops = stopsArr.length > 0 ? stopsArr.length - 1 : Math.max(0, ((effectiveRoute && effectiveRoute.totalStops) || (r && r.totalStops) || 1) - 1);
+
+        if (startStop && r.name && navRouteHasLiveBuses(r.name)) {
+            const walkSeconds = startWalk ? getStartWalkSeconds(startWalk) : 0;
+            const top = getTopApproachingBuses(r.name, startStop.id, walkSeconds, 1);
+            if (top.length > 0) {
+                waitMinutes = Math.max(0, Math.ceil((top[0].eta - walkSeconds) / 60));
+                hasLiveWait = true;
+            }
+        }
+    }
+
+    const busStopsText = `${totalStops} ${totalStops === 1 ? 'stop' : 'stops'}`;
+
+    return {
+        walkMinutes,
+        walkDistanceText,
+        waitMinutes,
+        hasLiveWait,
+        busMinutes,
+        busStopsText
+    };
+}
+window.computeRouteTripStats = computeRouteTripStats;
+
+// Toggle the 3-column stats bar, transfer info banner, and substantially-more-walking warning banner
 function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
     const rd = (navRouteSession && navRouteSession.routeData) || null;
     const curRoute = route || (rd && rd.route) || null;
@@ -4636,15 +4927,121 @@ function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
 
     const directionsVisible = !$('.nav-directions-wrapper').hasClass('none');
 
-    // 1. Transfer banner ("This route contains a transfer; arriving to the transfer stop late may make this path slower than a direct route.")
+    // 1. 3-column route trip stats bar (walk time, wait time, bus travel time)
+    if (curRoute && directionsVisible) {
+        const rKey = curRoute && curRoute.name && String(curRoute.name).toLowerCase();
+        const combo = (rd && rd.routeCombosMap && rd.routeCombosMap[rKey]) || null;
+        const stats = computeRouteTripStats(curRoute, combo, rd);
+
+        $('#nav-stat-walk .nav-route-stat-val').text(`${stats.walkMinutes}m`);
+        $('#nav-stat-walk .nav-route-stat-sub').text(stats.walkDistanceText);
+
+        $('#nav-stat-wait .nav-route-stat-val').text(stats.hasLiveWait ? `${stats.waitMinutes}m` : '--');
+        $('#nav-stat-wait .nav-route-stat-sub').text('Shortest wait');
+
+        $('#nav-stat-bus .nav-route-stat-val').text(`${stats.busMinutes}m`);
+        $('#nav-stat-bus .nav-route-stat-sub').text(stats.busStopsText);
+
+        $('.nav-route-stats-bar').removeClass('none');
+    } else {
+        $('.nav-route-stats-bar').addClass('none');
+    }
+
+    // 2. Transfer banner ("This route contains a transfer; arriving to the transfer stop late may make this path slower than a direct route.")
+    // Only show if missing the soonest buses via the transfer option would actually make taking the backup buses slower than taking the quickest direct route.
+    let showTransferWarning = false;
     const hasTransfer = !!(curRoute && (curRoute.isTransfer || (curRoute.leg1 && curRoute.leg2)));
-    if (hasTransfer && directionsVisible) {
+    if (hasTransfer && directionsVisible && curRoutes && curRoutes.length > 0) {
+        const isTransferEntry = (e) => !!(e.isTransfer || (e.route && (e.route.isTransfer || (e.route.leg1 && e.route.leg2))));
+        const directRoutes = curRoutes.filter(e => !isTransferEntry(e));
+
+        if (directRoutes.length > 0) {
+            const liveDirects = directRoutes.filter(e => e.hasLive);
+            const comparisonDirects = liveDirects.length > 0 ? liveDirects : directRoutes;
+
+            const getEntryTotalTime = (e) => {
+                if (typeof e.journeyMinutes === 'number' && e.journeyMinutes > 0) return e.journeyMinutes;
+                const rKey = e.route && e.route.name && String(e.route.name).toLowerCase();
+                const combo = rd && rd.routeCombosMap && rd.routeCombosMap[rKey];
+                return calculateOptionJourneyMinutes(e.route, combo, rd) || 0;
+            };
+
+            const quickestDirectTotalTime = Math.min(...comparisonDirects.map(getEntryTotalTime));
+            if (quickestDirectTotalTime > 0) {
+                const rKey = curRoute && curRoute.name && String(curRoute.name).toLowerCase();
+                const combo = (rd && rd.routeCombosMap && rd.routeCombosMap[rKey]) || null;
+                const leg1 = (combo && combo.leg1) || curRoute.leg1;
+                const leg2 = (combo && combo.leg2) || curRoute.leg2;
+                const startStop = (combo && combo.startStop) || (leg1 && leg1.startStop) || (rd && rd.startStop) || curRoute.startStop;
+                const transferStop = (combo && combo.transferStop) || (leg1 && leg1.transferStop) || (leg2 && leg2.transferStop) || curRoute.transferStop || (rd && rd.transferStop);
+                const endStop = (combo && combo.endStop) || (leg2 && leg2.endStop) || (rd && rd.endStop) || curRoute.endStop;
+                const startWalk = (combo && combo.startWalkDistance) || (rd && rd.startWalkDistance) || curRoute.startWalkDistance;
+
+                const walkMinutes = calculateOptionWalkMinutes(curRoute, combo, rd);
+                const startWalkSec = startWalk ? getStartWalkSeconds(startWalk) : 0;
+
+                const startStopId = startStop ? (startStop.id || startStop) : null;
+                const transferStopId = transferStop ? (transferStop.id || transferStop) : null;
+                const endStopId = endStop ? (endStop.id || endStop) : null;
+
+                const leg1Route = (leg1 && leg1.route) || leg1;
+                const leg1Details = (leg1 && leg1.routeDetails) || (startStopId && transferStopId && typeof getRouteDetails === 'function' ? getRouteDetails(leg1Route, startStopId, transferStopId) : leg1);
+                const leg1TravelMin = computeBusTravelTimeMinutes(leg1Details);
+
+                const leg2Route = (leg2 && leg2.route) || leg2;
+                const leg2Details = (leg2 && leg2.routeDetails) || (transferStopId && endStopId && typeof getRouteDetails === 'function' ? getRouteDetails(leg2Route, transferStopId, endStopId) : leg2);
+                const leg2TravelMin = computeBusTravelTimeMinutes(leg2Details);
+
+                let leg1WaitSoonest = 0;
+                let leg1WaitBackup = 0;
+
+                if (leg1Route && leg1Route.name && navRouteHasLiveBuses(leg1Route.name)) {
+                    const top1 = getTopApproachingBuses(leg1Route.name, startStopId, startWalkSec, 3);
+                    if (top1.length > 0) {
+                        leg1WaitSoonest = Math.max(0, Math.ceil((top1[0].eta - startWalkSec) / 60));
+                        if (top1.length > 1) {
+                            leg1WaitBackup = Math.max(0, Math.ceil((top1[1].eta - startWalkSec) / 60));
+                        } else {
+                            leg1WaitBackup = leg1WaitSoonest + 12; // estimated loop headway
+                        }
+                    }
+                }
+
+                const arriveAtTransferSec = startWalkSec + (leg1WaitSoonest * 60) + (leg1TravelMin * 60);
+                let leg2WaitSoonest = 0;
+                let leg2WaitBackup = 0;
+
+                if (leg2Route && leg2Route.name && navRouteHasLiveBuses(leg2Route.name)) {
+                    const minTransferSec = arriveAtTransferSec + 120; // 2 min buffer
+                    const top2 = getTopApproachingBuses(leg2Route.name, transferStopId, minTransferSec, 3);
+                    if (top2.length > 0) {
+                        leg2WaitSoonest = Math.max(2, Math.ceil((top2[0].eta - arriveAtTransferSec) / 60));
+                        if (top2.length > 1) {
+                            leg2WaitBackup = Math.max(2, Math.ceil((top2[1].eta - arriveAtTransferSec) / 60));
+                        } else {
+                            leg2WaitBackup = leg2WaitSoonest + 12; // estimated loop headway
+                        }
+                    }
+                }
+
+                const timeWithLeg2Backup = walkMinutes + leg1WaitSoonest + leg1TravelMin + leg2WaitBackup + leg2TravelMin;
+                const timeWithLeg1Backup = walkMinutes + leg1WaitBackup + leg1TravelMin + leg2WaitSoonest + leg2TravelMin;
+                const backupTransferTime = Math.max(timeWithLeg2Backup, timeWithLeg1Backup);
+
+                if (backupTransferTime > quickestDirectTotalTime) {
+                    showTransferWarning = true;
+                }
+            }
+        }
+    }
+
+    if (showTransferWarning) {
         $('.nav-transfer-info-banner').removeClass('none');
     } else {
         $('.nav-transfer-info-banner').addClass('none');
     }
 
-    // 2. Substantially more walking banner ("Although this path may be faster than other routes, it may contain substantially more walking.")
+    // 3. Substantially more walking banner ("Although this path may be faster than other routes, it may contain substantially more walking.")
     let hasSubstantiallyMoreWalking = false;
     if (curRoutes && curRoutes.length > 1 && directionsVisible) {
         const curEntry = curRoutes[curIndex] || curRoutes.find(e => e.route && curRoute && e.route.name === curRoute.name);
@@ -4751,8 +5148,9 @@ function updateRouteDisplay(routeData) {
 // Clear the current route display
 function clearRouteDisplay() {
     $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
-    $('.nav-route-selector-container').empty();
-    $('.nav-transfer-info-banner, .nav-walk-warning-banner').addClass('none');
+    $('.nav-route-selector-container').empty().removeClass('nav-stuck');
+    $('.nav-route-stats-bar, .nav-transfer-info-banner, .nav-walk-warning-banner').addClass('none');
+    $('.navigate-inner').scrollTop(0);
     $('.nav-message').remove();
     navDirectionsWasVisibleBeforeFocus = false;
     lastComputedRouteKey = null;
@@ -4796,7 +5194,10 @@ function openNavBack() {
     }
 
     // Restore the scroll position the user left from.
-    if (s.scrollTop) $('.nav-directions-wrapper').scrollTop(s.scrollTop);
+    if (s.scrollTop) {
+        $('.navigate-inner').scrollTop(s.scrollTop);
+        $('.nav-directions-wrapper').scrollTop(s.scrollTop);
+    }
 }
 window.openNavBack = openNavBack;
 
@@ -4805,8 +5206,9 @@ function closeNavigation() {
     try {
         // Clear route UI
         $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
-        $('.nav-route-selector-container').empty();
-        $('.nav-transfer-info-banner, .nav-walk-warning-banner').addClass('none');
+        $('.nav-route-selector-container').empty().removeClass('nav-stuck');
+        $('.nav-route-stats-bar, .nav-transfer-info-banner, .nav-walk-warning-banner').addClass('none');
+        $('.navigate-inner').scrollTop(0);
         navDirectionsWasVisibleBeforeFocus = false;
         lastComputedRouteKey = null;
         $('.nav-directions-wtrapper').addClass('none').empty();
@@ -4832,6 +5234,9 @@ function closeNavigation() {
         hideNavigationAutocomplete();
         $('.nav-message').hide();
         // Close the search shell (returns to map and resets to the search tab)
+        if (typeof applySearchMode === 'function') {
+            applySearchMode('search');
+        }
         if (typeof closeSearch === 'function') {
             closeSearch();
         } else {
