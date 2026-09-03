@@ -545,10 +545,13 @@ if (typeof L !== 'undefined') {
                     // marker layer so stops/buses always render above buildings —
                     // even when buildings are hidden and re-enabled after markers
                     // already exist (without an anchor, addLayer appends on top).
-                    const baseAnchor = ['stop-markers-layer', 'stop-markers-labels',
-                        'bus-markers-layer', 'bus-markers-labels',
-                        'bus-markers-glow', 'bus-markers-selected', 'bus-markers-selected-labels',
-                        'stop-markers-selected', 'stop-markers-selected-labels'].find(function(id) {
+                    // Must respect "Show stops above buses" toggle: building must
+                    // stay BELOW bus markers regardless of bus/stop stacking.
+                    const stopsAbove = !!(typeof settings !== 'undefined' && settings && settings['toggle-stops-above-buses']);
+                    const lowestOrder = stopsAbove
+                        ? ['bus-markers-layer', 'bus-markers-labels', 'bus-markers-glow', 'bus-markers-selected', 'bus-markers-selected-labels', 'stop-markers-layer', 'stop-markers-labels', 'stop-markers-selected', 'stop-markers-selected-labels']
+                        : ['stop-markers-layer', 'stop-markers-labels', 'stop-markers-selected', 'stop-markers-selected-labels', 'bus-markers-layer', 'bus-markers-labels', 'bus-markers-glow', 'bus-markers-selected', 'bus-markers-selected-labels'];
+                    const baseAnchor = lowestOrder.find(function(id) {
                         return map.getLayer(id);
                     });
                     if (!map.getLayer(fillLayerId)) {

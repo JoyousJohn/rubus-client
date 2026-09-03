@@ -78,6 +78,42 @@ window.initMap = function() {
                 ? (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : (map.getLayer('bus-markers-glow') ? 'bus-markers-glow' : (map.getLayer('stop-markers-layer') ? 'stop-markers-layer' : null)))
                 : (map.getLayer('stop-markers-layer') ? 'stop-markers-layer' : (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : (map.getLayer('bus-markers-glow') ? 'bus-markers-glow' : null)));
             if (lowestMarkerId) {
+                // Building features must always stay below bus markers regardless
+                // of the stop/bus stacking toggle. Without this, toggling
+                // "Show stops above buses" moves stops to the top but leaves
+                // previously-inserted building fill/line/highlight layers (which
+                // were anchored below the old lowest marker) above the bus
+                // markers when stops are on top.
+                // Buildings must be bottommost, then polylines, then markers.
+                try {
+                    let styleLayers = (map.getStyle && map.getStyle().layers) || [];
+                    const buildingIds = styleLayers.filter(l => /^fill_geojson_/.test(l.id) || /^line_geojson_/.test(l.id) || /^hlfill_geojson_/.test(l.id) || /^hlline_geojson_/.test(l.id)).map(l => l.id);
+                    // Determine anchor for buildings: just below the bottommost
+                    // polyline so buildings end up below polylines, which are
+                    // themselves just below the lowest marker. If no polylines
+                    // exist, anchor directly before the lowest marker.
+                    let buildingAnchor = lowestMarkerId;
+                    const polyIds = [];
+                    for (const r in polylines) {
+                        const lid = polylines[r] && polylines[r]._mapLibreLayerId;
+                        if (lid && map.getLayer(lid)) polyIds.push(lid);
+                    }
+                    if (polyIds.length) {
+                        const idx = styleLayers.findIndex(l => polyIds.includes(l.id));
+                        if (idx >= 0) buildingAnchor = styleLayers[idx].id;
+                    }
+                    for (const bid of buildingIds) {
+                        if (!map.getLayer(bid) || !map.getLayer(buildingAnchor)) continue;
+                        // Only move if building is currently above its anchor
+                        // (i.e., incorrectly above bus/polyline). This avoids
+                        // scrambling an already-correct building block order.
+                        styleLayers = (map.getStyle && map.getStyle().layers) || [];
+                        const bIdx = styleLayers.findIndex(l => l.id === bid);
+                        const aIdx = styleLayers.findIndex(l => l.id === buildingAnchor);
+                        if (bIdx !== -1 && aIdx !== -1 && bIdx < aIdx) continue;
+                        map.moveLayer(bid, buildingAnchor);
+                    }
+                } catch (e) {}
                 for (const route in polylines) {
                     const poly = polylines[route];
                     const lid = poly && poly._mapLibreLayerId;
