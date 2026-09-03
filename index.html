@@ -94,6 +94,8 @@
                 let updateRequested = false;
                 let refreshing = false;
                 let successToastTimer = null;
+                let updateTimeoutTimer = null;
+                let pendingTargetBuild = null;
 
                 function prefetchPendingBuild() {
                     $.ajax({
@@ -115,6 +117,9 @@
                 }
 
                 function showUpdatedSuccessToast(buildNum) {
+                    localStorage.removeItem('rubus-update-failed-at');
+                    localStorage.removeItem('rubus-update-failed-build');
+                    sessionStorage.removeItem('rubus-dismissed-build');
                     if (successToastTimer) clearTimeout(successToastTimer);
                     const $toast = $('#update-toast');
                     const text = buildNum ? `Installed update v${buildNum}` : 'Installed update';
@@ -128,9 +133,64 @@
                     }, 3500);
                 }
 
-                function showUpdateToast(worker) {
+                function isUpdateBlockedByCooldown(targetBuild) {
+                    const failedAt = localStorage.getItem('rubus-update-failed-at');
+                    const failedBuild = localStorage.getItem('rubus-update-failed-build');
+                    const oneHour = 60 * 60 * 1000;
+                    if (failedAt && (Date.now() - parseInt(failedAt, 10) < oneHour)) {
+                        // If a new hotfix build is detected, bypass the 1-hour cooldown immediately
+                        if (targetBuild && failedBuild && targetBuild !== failedBuild) {
+                            return false;
+                        }
+                        return true;
+                    }
+                    // Check if user dismissed update during this browser session
+                    const dismissedBuild = sessionStorage.getItem('rubus-dismissed-build');
+                    if (dismissedBuild) {
+                        if (targetBuild && targetBuild !== dismissedBuild) {
+                            sessionStorage.removeItem('rubus-dismissed-build');
+                            return false;
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+
+                function showUpdateFailedToast() {
+                    updateRequested = false;
+                    if (updateTimeoutTimer) {
+                        clearTimeout(updateTimeoutTimer);
+                        updateTimeoutTimer = null;
+                    }
+                    sessionStorage.removeItem('rubus-just-updated');
+                    localStorage.setItem('rubus-update-failed-at', Date.now().toString());
+                    if (pendingTargetBuild) {
+                        localStorage.setItem('rubus-update-failed-build', pendingTargetBuild);
+                    }
                     if (successToastTimer) clearTimeout(successToastTimer);
-                    if (worker) waitingWorker = worker;
+                    const $toast = $('#update-toast');
+                    $toast.find('.update-toast-text').html('<i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Update failed');
+                    $toast.find('.update-toast-actions').hide();
+                    $toast.removeClass('none').stop(true, true).fadeIn();
+                    successToastTimer = setTimeout(function() {
+                        dismissUpdateToast();
+                    }, 2000);
+                }
+
+                function showUpdateToast(worker, targetBuild) {
+                    if (targetBuild) pendingTargetBuild = targetBuild;
+                    if (isUpdateBlockedByCooldown(targetBuild || pendingTargetBuild)) {
+                        return;
+                    }
+                    if (successToastTimer) clearTimeout(successToastTimer);
+                    if (worker) {
+                        waitingWorker = worker;
+                        worker.addEventListener('statechange', function() {
+                            if (worker.state === 'redundant' && updateRequested) {
+                                showUpdateFailedToast();
+                            }
+                        });
+                    }
                     prefetchPendingBuild();
                     const $toast = $('#update-toast');
                     $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate"></i> Update available');
@@ -139,8 +199,21 @@
                     $toast.removeClass('none').stop(true, true).fadeIn();
                 }
 
+                function detectTargetBuildAndShow(worker) {
+                    fetch('/index.html', { method: 'GET', cache: 'no-cache' }).then(function(res) {
+                        return res.text();
+                    }).then(function(html) {
+                        const match = html.match(/name="rubus-build" content="([^"]*)"/);
+                        const remoteBuild = (match && match[1] && match[1] !== '__BUILD_HASH__') ? match[1] : null;
+                        showUpdateToast(worker, remoteBuild);
+                    }).catch(function() {
+                        showUpdateToast(worker, null);
+                    });
+                }
+
                 function dismissUpdateToast() {
                     if (successToastTimer) clearTimeout(successToastTimer);
+                    if (updateTimeoutTimer) clearTimeout(updateTimeoutTimer);
                     const $toast = $('#update-toast');
                     $toast.stop(true, true).fadeOut(function() {
                         $toast.addClass('none');
@@ -152,7 +225,7 @@
                     sessionStorage.setItem('rubus-just-updated', '1');
                     localStorage.setItem('last-update-toast-show', Date.now().toString());
                     const curBuild = $('meta[name="rubus-build"]').attr('content');
-                    if (curBuild) {
+                    if (curBuild && curBuild !== '__BUILD_HASH__') {
                         localStorage.setItem('rubus-app-build', curBuild);
                     }
                     if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_refresh' });
@@ -161,19 +234,26 @@
                     $toast.find('.update-toast-actions').hide();
                     $toast.find('#update-reload-btn, #update-dismiss-btn').hide();
                     $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate fa-spin"></i> Updating...');
+
+                    // Tell waiting worker to take over
                     if (waitingWorker) {
                         waitingWorker.postMessage({ action: 'skipWaiting' });
-                        // Fallback reload if controllerchange does not fire within 600ms
-                        setTimeout(function() {
-                            if (!refreshing) {
-                                refreshing = true;
-                                window.location.reload();
-                            }
-                        }, 600);
-                    } else {
-                        refreshing = true;
-                        window.location.reload();
                     }
+                    navigator.serviceWorker.getRegistration().then(function(reg) {
+                        if (reg && reg.waiting) {
+                            reg.waiting.postMessage({ action: 'skipWaiting' });
+                        }
+                    }).catch(function() {
+                        showUpdateFailedToast();
+                    });
+
+                    // Timeout safety net: if controllerchange does not fire within 3500ms, fail cleanly
+                    if (updateTimeoutTimer) clearTimeout(updateTimeoutTimer);
+                    updateTimeoutTimer = setTimeout(function() {
+                        if (!refreshing) {
+                            showUpdateFailedToast();
+                        }
+                    }, 3500);
                 }
 
                 // Check if page reloaded from user-initiated update
@@ -209,14 +289,16 @@
                 $(document).on('click', '#update-dismiss-btn', function(e) {
                     e.preventDefault();
                     if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_dismiss' });
+                    sessionStorage.setItem('rubus-dismissed-build', pendingTargetBuild || '1');
                     dismissUpdateToast();
                 });
 
                 // Only reload when the user explicitly requested the update
                 navigator.serviceWorker.addEventListener('controllerchange', function() {
                     if (updateRequested && !refreshing) {
+                        if (updateTimeoutTimer) clearTimeout(updateTimeoutTimer);
                         refreshing = true;
-                        window.location.reload();
+                        window.location.replace(window.location.href);
                     }
                 });
 
@@ -245,7 +327,7 @@
                 navigator.serviceWorker.register('/sw.js').then(function(reg) {
                     // Check if an updated worker is already installed and waiting
                     if (reg.waiting && navigator.serviceWorker.controller) {
-                        showUpdateToast(reg.waiting);
+                        detectTargetBuildAndShow(reg.waiting);
                     }
 
                     // Listen for newly installed updates
@@ -254,7 +336,9 @@
                         if (!newWorker) return;
                         newWorker.addEventListener('statechange', function() {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                showUpdateToast(newWorker);
+                                detectTargetBuildAndShow(newWorker);
+                            } else if (newWorker.state === 'redundant' && updateRequested) {
+                                showUpdateFailedToast();
                             }
                         });
                     });
@@ -271,7 +355,7 @@
                                 }).then(function(html) {
                                     const match = html.match(/name="rubus-build" content="([^"]*)"/);
                                     if (match && match[1] && match[1] !== '__BUILD_HASH__' && match[1] !== currentBuild) {
-                                        showUpdateToast();
+                                        showUpdateToast(reg ? reg.waiting : null, match[1]);
                                     }
                                 }).catch(function(err) {
                                     console.warn('[SW] Resume build check failed:', err);

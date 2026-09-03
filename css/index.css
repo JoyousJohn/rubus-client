@@ -729,7 +729,7 @@ html, body {
     background-color: var(--theme-bg, #1a1a1a);
     color: var(--theme-color, #ffffff);
     border: 1px solid var(--theme-line-bg, rgba(255, 255, 255, 0.2));
-    padding: 0.5rem 1rem 0.5rem 1.2rem;
+    padding: 0.5rem 1.2rem;
     border-radius: 1.5rem;
     font-family: var(--font-family);
     font-size: 1.3rem;
@@ -748,19 +748,30 @@ html, body {
     text-align: center;
 }
 
+.update-toast-wrapper:has(.update-toast-actions:not([style*="display: none"])) {
+    padding: 0.5rem 0.9rem 0.5rem 1.2rem;
+}
+
 .update-toast-wrapper.none {
     display: none !important;
 }
 
 .update-toast-text {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 0.55rem;
     font-weight: 500;
+    line-height: 1.2;
 }
 
 .update-toast-text i {
     color: var(--theme-accent, #5a87f0);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: 0;
 }
 
 .update-toast-actions {

@@ -94,19 +94,25 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-// Navigation requests (HTML document) - Network-First with Cache Fallback
+// Navigation requests (HTML document) - Network-First with 2.5s timeout & Cache Fallback
     if (request.mode === 'navigate') {
+        const fetchPromise = fetch(request)
+            .then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(request, responseClone);
+                    });
+                }
+                return networkResponse;
+            });
+
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Navigation network timeout')), 2500);
+        });
+
         event.respondWith(
-            fetch(request)
-                .then((networkResponse) => {
-                    if (networkResponse && networkResponse.status === 200) {
-                        const responseClone = networkResponse.clone();
-                        caches.open(CACHE_NAME).then((cache) => {
-                            cache.put(request, responseClone);
-                        });
-                    }
-                    return networkResponse;
-                })
+            Promise.race([fetchPromise, timeoutPromise])
                 .catch(() => {
                     return caches.match(request).then((cachedResponse) => {
                         return cachedResponse || caches.match('/index.html').then((htmlResponse) => {
