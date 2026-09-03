@@ -130,7 +130,7 @@
      * innerColor overrides the inner dot color (e.g. gold for favorites); when
      * omitted it resolves the active theme's --theme-bus-icon-inner.
      */
-    function renderRubusSprite(color, size, innerColor) {
+    function renderRubusSprite(color, size, innerColor, outerBorderColor) {
         const dimensions = {
             small: { outer: 20, inner: 8 },
             medium: { outer: 27, inner: 13 },
@@ -145,19 +145,23 @@
         const cy = s / 2;
         const R = dim.outer / 2;
 
-        // Outer ring: the 1.5px black border sits OUTSIDE the color fill.
-        drawRubusTeardrop(ctx, cx, cy, R + 1.5, 3);
-        ctx.fillStyle = '#000000';
+        // Outer ring: 2px border sits OUTSIDE the color fill. Dark style uses
+        // white border for contrast on dark tiles (matches DOM .dark-marker
+        // 2px solid white); default rubus uses black.
+        const outerBorder = outerBorderColor || '#000000';
+        const outerW = outerBorder === '#ffffff' ? 2 : 1.5;
+        drawRubusTeardrop(ctx, cx, cy, R + outerW, 3);
+        ctx.fillStyle = outerBorder;
         ctx.fill();
         drawRubusTeardrop(ctx, cx, cy, R, 1.5);
         ctx.fillStyle = color;
         ctx.fill();
 
-        // Inner circle dot: 1.5px black border outside the theme-color fill.
+        // Inner circle dot: 1.5px border outside the theme-color fill.
         const innerR = dim.inner / 2;
         ctx.beginPath();
         ctx.arc(cx, cy, innerR + 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = outerBorder === '#ffffff' ? '#ffffff' : '#000000';
         ctx.fill();
         ctx.beginPath();
         ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
@@ -248,22 +252,44 @@
     function renderDuckSprite(color, size, duckIconCanvas) {
         const sizes = { small: 26, medium: 34, big: 42 };
         const s = sizes[size] || 34;
-        const pad = 4;
+        const pad = 6;
         const { canvas, ctx } = createHiDPICanvas(s + pad * 2, s + pad * 2);
 
         const cx = (s + pad * 2) / 2;
         const cy = (s + pad * 2) / 2;
 
         if (duckIconCanvas) {
-            // White halo matching the DOM text-shadow, then the colored duck.
-            const haloPad = 2;
-            ctx.save();
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = haloPad * 2;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
             const iconSize = s * 0.78;
-            // Flip horizontally like the DOM marker (.duck-marker i scaleX(-1)).
+            // Build a white silhouette of the duck for the solid 1px border.
+            // DOM uses 8-direction 1px text-shadow for a crisp halo; shadowBlur
+            // is blurry and was missing at small s, so replicate with 8 offsets.
+            const w = duckIconCanvas.width;
+            const h = duckIconCanvas.height;
+            const whiteCanvas = document.createElement('canvas');
+            whiteCanvas.width = w;
+            whiteCanvas.height = h;
+            const wctx = whiteCanvas.getContext('2d');
+            wctx.drawImage(duckIconCanvas, 0, 0);
+            wctx.globalCompositeOperation = 'source-in';
+            wctx.fillStyle = '#ffffff';
+            wctx.fillRect(0, 0, w, h);
+
+            // Draw 8-direction white halo then colored duck on top (flipped)
+            const drawHalo = (dx, dy) => {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(-1, 1);
+                ctx.drawImage(whiteCanvas, -iconSize / 2 + dx, -iconSize / 2 + dy, iconSize, iconSize);
+                ctx.restore();
+            };
+            // 8 neighbors at 1.5px (scaled by DPR via createHiDPICanvas) for
+            // crisp coverage matching CSS text-shadow 1px
+            const o = 1.5;
+            for (const [dx, dy] of [[-o,-o],[o,-o],[-o,o],[o,o],[-o,0],[o,0],[0,-o],[0,o]]) {
+                drawHalo(dx, dy);
+            }
+
+            ctx.save();
             ctx.translate(cx, cy);
             ctx.scale(-1, 1);
             ctx.drawImage(duckIconCanvas, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
@@ -321,7 +347,7 @@
         let s;
         let drawGlow;
 
-        if (type === 'rubus') {
+        if (type === 'rubus' || type === 'dark') {
             const dimensions = { small: { outer: 20 }, medium: { outer: 27 }, big: { outer: 35 } };
             const dim = dimensions[size] || dimensions.medium;
             s = dim.outer + 8 + pad * 2;
@@ -453,6 +479,18 @@
                 duck.className = 'fa-solid fa-duck';
                 duck.style.color = routeColor;
                 this._rotationEl.appendChild(duck);
+            } else if (markerType === 'dark') {
+                // Dark style: teardrop with solid white 2px border (matches
+                // settings preview and webgl sprite white border for contrast)
+                this._rotationEl = document.createElement('div');
+                this._rotationEl.className = 'bus-icon-outer';
+                this._rotationEl.style.backgroundColor = routeColor;
+                this._rotationEl.style.border = '2px solid white';
+                this._rotationEl.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.15)';
+                const inner = document.createElement('div');
+                inner.className = 'bus-icon-inner';
+                inner.style.border = '2px solid white';
+                this._rotationEl.appendChild(inner);
             } else {
                 // RUBus default
                 this._rotationEl = document.createElement('div');
@@ -719,6 +757,15 @@
                 this._rotationEl.style.backgroundColor = routeColor;
             } else if (markerType === 'duck') {
                 this._rotationEl.className = 'duck-marker ' + (options.sizeClass || 'medium-marker');
+            } else if (markerType === 'dark') {
+                this._rotationEl.className = 'bus-icon-outer';
+                this._rotationEl.style.backgroundColor = routeColor;
+                this._rotationEl.style.border = '2px solid white';
+                this._rotationEl.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.15)';
+                const inner = document.createElement('div');
+                inner.className = 'bus-icon-inner';
+                inner.style.border = '2px solid white';
+                this._rotationEl.appendChild(inner);
             } else {
                 this._rotationEl.className = 'bus-icon-outer';
                 this._rotationEl.style.backgroundColor = routeColor;
@@ -1237,6 +1284,11 @@
                     duckIconCanvas = createColoredBusIconCanvas(this._duckIconImage, color, 40);
                 }
                 canvas = renderDuckSprite(color, size, duckIconCanvas);
+            } else if (type === 'dark') {
+                // Dark style: RUBus teardrop with solid white 2px border (matches
+                // DOM .dark-marker / settings preview which uses white border
+                // for contrast on dark tiles). Inner border also white.
+                canvas = renderRubusSprite(color, size, innerColor, '#ffffff');
             } else {
                 canvas = renderRubusSprite(color, size, innerColor);
             }
