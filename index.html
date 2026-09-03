@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="rubus-build" content="__BUILD_HASH__">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>RUBus - Accurate Bus Tracking</title>
@@ -92,7 +93,6 @@
                 let waitingWorker = null;
                 let updateRequested = false;
                 let refreshing = false;
-                let initialEtag = null;
                 let successToastTimer = null;
 
                 function prefetchPendingBuild() {
@@ -151,8 +151,9 @@
                     updateRequested = true;
                     sessionStorage.setItem('rubus-just-updated', '1');
                     localStorage.setItem('last-update-toast-show', Date.now().toString());
-                    if (initialEtag) {
-                        localStorage.setItem('rubus-app-etag', initialEtag);
+                    const curBuild = $('meta[name="rubus-build"]').attr('content');
+                    if (curBuild) {
+                        localStorage.setItem('rubus-app-build', curBuild);
                     }
                     if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_refresh' });
                     const $toast = $('#update-toast');
@@ -217,31 +218,27 @@
                     }
                 });
 
-                // Fetch initial deploy ETag of index.html to detect redeploys on app resume or cold launch
-                fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' }).then(function(res) {
-                    initialEtag = res.headers.get('etag') || res.headers.get('last-modified');
-                    if (initialEtag) {
-                        const storedEtag = localStorage.getItem('rubus-app-etag');
-                        if (storedEtag && storedEtag !== initialEtag) {
-                            // Deployed version changed since last session (check 8-hour cooldown)
-                            const lastShow = localStorage.getItem('last-update-toast-show');
-                            const eightHours = 8 * 60 * 60 * 1000;
-                            if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
-                                const pendingBuild = localStorage.getItem('rubus-pending-build');
-                                if (pendingBuild) {
-                                    localStorage.removeItem('rubus-pending-build');
-                                    showUpdatedSuccessToast(pendingBuild);
-                                } else {
-                                    showUpdatedSuccessToast();
-                                }
-                                localStorage.setItem('last-update-toast-show', Date.now().toString());
+                // Detect redeploys on cold launch or manual reload via embedded build commit
+                const currentBuild = $('meta[name="rubus-build"]').attr('content');
+                if (currentBuild && currentBuild !== '__BUILD_HASH__') {
+                    const storedBuild = localStorage.getItem('rubus-app-build');
+                    if (storedBuild && storedBuild !== currentBuild) {
+                        // Deployed version changed since last session (check 8-hour cooldown)
+                        const lastShow = localStorage.getItem('last-update-toast-show');
+                        const eightHours = 8 * 60 * 60 * 1000;
+                        if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
+                            const pendingBuild = localStorage.getItem('rubus-pending-build');
+                            if (pendingBuild) {
+                                localStorage.removeItem('rubus-pending-build');
+                                showUpdatedSuccessToast(pendingBuild);
+                            } else {
+                                showUpdatedSuccessToast();
                             }
+                            localStorage.setItem('last-update-toast-show', Date.now().toString());
                         }
-                        localStorage.setItem('rubus-app-etag', initialEtag);
                     }
-                }).catch(function(err) {
-                    console.warn('[SW] Initial ETag check failed:', err);
-                });
+                    localStorage.setItem('rubus-app-build', currentBuild);
+                }
 
                 navigator.serviceWorker.register('/sw.js').then(function(reg) {
                     // Check if an updated worker is already installed and waiting
@@ -266,14 +263,16 @@
                     document.addEventListener('visibilitychange', function() {
                         if (document.visibilityState === 'visible') {
                             reg.update();
-                            if (initialEtag) {
-                                fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' }).then(function(res) {
-                                    const currentEtag = res.headers.get('etag');
-                                    if (currentEtag && currentEtag !== initialEtag) {
+                            if (currentBuild && currentBuild !== '__BUILD_HASH__') {
+                                fetch('/index.html', { method: 'GET', cache: 'no-cache' }).then(function(res) {
+                                    return res.text();
+                                }).then(function(html) {
+                                    const match = html.match(/name="rubus-build" content="([^"]*)"/);
+                                    if (match && match[1] && match[1] !== '__BUILD_HASH__' && match[1] !== currentBuild) {
                                         showUpdateToast();
                                     }
                                 }).catch(function(err) {
-                                    console.warn('[SW] Resume ETag check failed:', err);
+                                    console.warn('[SW] Resume build check failed:', err);
                                 });
                             }
                         }
