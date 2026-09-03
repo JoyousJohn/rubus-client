@@ -115,7 +115,9 @@ function applyForceShowStops() {
                     html: `<div class="marker-wrapper"><img src="img/stop_marker.png" width="18" height="18" stop-marker-id="${id}"/><div class="corner-label none" stop-eta="${id}">xm</div></div>`
                 }),
                 zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
-            }).addTo(map).on('click', function() {
+            }).addTo(map).on('click', function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                if (e && e.originalEvent && e.originalEvent.stopPropagation) e.originalEvent.stopPropagation();
                 if ($('body').hasClass('parking-permit-mode')) return;
                 sourceStopId = null;
                 sourceBusName = null;
@@ -2001,7 +2003,9 @@ async function popStopInfo(stopId) {
                     html: `<div class="marker-wrapper"><img src="img/stop_marker.png" width="18" height="18" stop-marker-id="${stopId}"/><div class="corner-label none" stop-eta="${stopId}">xm</div></div>`
                 }),
                 zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
-            }).addTo(map).on('click', function() {
+            }).addTo(map).on('click', function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                if (e && e.originalEvent && e.originalEvent.stopPropagation) e.originalEvent.stopPropagation();
                 // Don't process stop clicks when in parking permit mode
                 if ($('body').hasClass('parking-permit-mode')) return;
                 sourceStopId = null;
@@ -2292,7 +2296,9 @@ async function addStopsToMap() {
                 zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
             })
             .addTo(map)
-            .on('click', function() {
+            .on('click', function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                if (e && e.originalEvent && e.originalEvent.stopPropagation) e.originalEvent.stopPropagation();
                 // Don't process stop clicks when in parking permit mode
                 if ($('body').hasClass('parking-permit-mode')) {
                     return;

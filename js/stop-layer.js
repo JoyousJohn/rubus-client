@@ -139,6 +139,10 @@
             const origEvent = e.originalEvent || e;
             if (this._lastClickEvent === origEvent) return;
             this._lastClickEvent = origEvent;
+            // Prevent spoof.js map click from teleporting when spoofing is enabled:
+            // selecting a stop must behave like buses/buildings (no teleport).
+            if (origEvent && origEvent.stopPropagation) origEvent.stopPropagation();
+            if (e.originalEvent && e.originalEvent.stopPropagation) e.originalEvent.stopPropagation();
             // Mirror DOM z-order hit-testing: when "Show Stops Above Buses" is
             // off, buses are above stops, so a bus glyph under the cursor wins
             // over the stop click.

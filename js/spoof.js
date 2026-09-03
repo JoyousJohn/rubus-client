@@ -107,21 +107,17 @@ function initSpoofing() {
             }
         }
 
-        // Bus selection click (new bus) must not teleport. Only allow if bus
-        // already selected (tap within already-selected feature).
+        // Any bus/stop selection must not teleport while spoofing is enabled.
+        // This mirrors building handling (first tap selects, second tap
+        // teleport is handled inside buildings.js for buildings; for stops/buses
+        // we just select and never spoof-teleport from the marker hit.
+        // The generic map click is still allowed to teleport on empty map.
         if (busHit) {
-            if (busHit !== popupBusName) {
-                return;
-            }
-            // Same bus second tap: allowed -> fall through to spoof at tap location
+            return;
         }
 
-        // Stop selection click (new stop) must not teleport. Only allow if stop
-        // already selected.
         if (stopHit) {
-            if (stopHit !== String(popupStopId)) {
-                return;
-            }
+            return;
         }
 
         // Building case already returned above; empty map falls through.
