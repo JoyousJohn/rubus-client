@@ -44,6 +44,7 @@
     /* transition: transform 0.3s ease; */ /* Disabled to prevent interference with JS positioning */
     /* Initial positioning handled by JavaScript */
     transform: translateX(-100vw); /* Start at stops panel to avoid initial animation */
+    will-change: transform;
 }
 
 .subpanel {
@@ -178,7 +179,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.9rem 0.5rem;
+    padding: 1.3rem 0.5rem;
     border-radius: 1.5rem;
     cursor: pointer;
     transition: color 0.3s ease;
@@ -203,11 +204,13 @@
     height: calc(100% + 6px);
     border-radius: 1.5rem;
     z-index: 0;
-    transition: left 0.3s ease, width 0.3s ease, top 0.3s ease, height 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s ease, width 0.3s ease, top 0.3s ease, height 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
     background-color: #a0522d;
     box-shadow: 0 0 10px rgba(160, 82, 45, 0.4);
     left: calc(1 * (100% / 3) - 3px);
     width: calc(100% / 3 + 6px);
+    transform: translateX(0);
+    will-change: transform;
 }
 
 [theme="light"] .info-panel-indicator {

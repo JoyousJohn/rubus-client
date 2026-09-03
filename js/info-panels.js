@@ -11,27 +11,50 @@ let suppressSubpanelClick = false;
 let lastSubpanelDragEndTime = 0;
 let initialScrollLeft = 0;
 
-// Debug counters for gesture analysis
-let ipCounters = {
-	starts: 0,
-	moves: 0,
-	handledMoves: 0,
-	ignoredInteractive: 0,
-	verticalSkips: 0,
-	preventDefaults: 0,
-	dragBegins: 0,
-	ends: 0
-};
-
 // Helper function to get the current X translation from a CSS transform matrix
+// (covers translateX / translate3d / matrix — used for container + indicator)
 function getTranslateX($element) {
-	const transformMatrix = $element.css('transform');
+	const el = $element && $element[0] ? $element[0] : $element;
+	if (!el) return 0;
+	// Fast path: inline style we set ourselves (translateX(Npx) / translate3d)
+	try {
+		const inline = el.style && el.style.transform;
+		if (inline && inline !== 'none') {
+			const m = /translate(?:3d|X)\(\s*(-?\d+\.?\d*)px/.exec(inline);
+			if (m) return parseFloat(m[1]);
+		}
+	} catch(e) {}
+	const transformMatrix = $element.css ? $element.css('transform') : getComputedStyle(el).transform;
 	if (transformMatrix && transformMatrix !== 'none') {
 		const matrixValues = transformMatrix.match(/matrix.*\((.+)\)/)[1].split(', ');
 		return parseFloat(matrixValues[4]);
 	}
 	return 0;
 }
+
+// Compositor-friendly writes: transform-only, no layout properties.
+// Container + indicator are promoted via will-change in CSS.
+function setContainerX($container, x) {
+	$container.css('transform', 'translate3d(' + x + 'px, 0, 0)');
+}
+function setIndicatorX($indicator, x) {
+	$indicator.css('transform', 'translateX(' + x + 'px)');
+}
+function getIndicatorX($indicator) {
+	if (!$indicator || !$indicator.length) return 0;
+	return getTranslateX($indicator);
+}
+// Measure slider option width once per gesture/animation — NOT per move frame.
+function measureInfoSlider() {
+	const slider = document.querySelector('.info-panel-slider');
+	if (!slider) return { slider: null, indicator: null, optionWidth: 0, count: panelOrder.length };
+	const indicator = slider.querySelector('.info-panel-indicator');
+	const count = slider.querySelectorAll('.info-panel-option').length || panelOrder.length;
+	const w = slider.getBoundingClientRect().width;
+	return { slider, indicator, optionWidth: count ? w / count : 0, count };
+}
+const INFO_INDICATOR_TRANSITION = 'transform 0.3s ease, width 0.3s ease, top 0.3s ease, height 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+const INFO_INDICATOR_NO_TRANSITION = 'background-color 0.3s ease, box-shadow 0.3s ease';
 
 // Velocity tracking for momentum-based animation
 let velocityX = 0;
@@ -47,9 +70,30 @@ const panelOrder = ['routes', 'stops', 'network'];
 let currentPanelIndex = 1; // Default to stops panel (middle position)
 let lastUserSelectedPanelIndex = 1; // Track user's last explicitly selected panel
 
-// Register custom easing function for smooth momentum
+// Persist the last explicitly selected subpanel across reloads/sessions.
+// Stored as the panel name (not the index) so reorderings stay valid.
+const INFO_PANEL_STORAGE_KEY = 'rubus_info_panel_last_subpanel';
+function readPersistedSubpanelIndex() {
+	try {
+		const idx = panelOrder.indexOf(localStorage.getItem(INFO_PANEL_STORAGE_KEY));
+		if (idx !== -1) return idx;
+	} catch(e) {}
+	return 1;
+}
+function setLastUserSelectedPanelIndex(idx) {
+	lastUserSelectedPanelIndex = idx;
+	try { localStorage.setItem(INFO_PANEL_STORAGE_KEY, panelOrder[idx]); } catch(e) {}
+}
+// Restore persisted selection (if any) so the next open lands on it
+try {
+	lastUserSelectedPanelIndex = readPersistedSubpanelIndex();
+	currentPanelIndex = lastUserSelectedPanelIndex;
+} catch(e) {}
+
+// Register custom easing function for smooth momentum (easeOutCubic —
+// gentle stop without the abrupt start of the old 1.5 exponent)
 $.easing.momentum = function (x) {
-	return 1 - Math.pow(1 - x, 1.5);
+	return 1 - Math.pow(1 - x, 3);
 };
 
 // Function to move route selectors into the route subpanel
@@ -103,15 +147,7 @@ function restorePanelPosition() {
 	currentPanelIndex = panelIndex;
 
 	// Update header button styling to match the restored panel (slider indicator)
-	if (typeof updateInfoPanelIndicator === 'function') {
-		updateInfoPanelIndicator(currentPanel);
-	} else {
-		$('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
-		const $targetHeaderBtn = $(`.info-panels-header-buttons [data-panel="${currentPanel}"]`);
-		if ($targetHeaderBtn.length) {
-			$targetHeaderBtn.addClass('all-stops-selected-menu');
-		}
-	}
+	updateInfoPanelIndicator(currentPanel);
 
 	// Re-enable transitions after positioning is complete (only if not dragging)
 	setTimeout(() => {
@@ -174,39 +210,45 @@ function animateToTargetPanel(initialVelocity, options) {
 	const startPanelIndex = currentPanelIndex;
 	currentPanelIndex = targetPanelIndex;
 	if (opts.isUserExplicitSelection !== false) {
-		lastUserSelectedPanelIndex = targetPanelIndex;
+		setLastUserSelectedPanelIndex(targetPanelIndex);
 	}
 	const targetX = -100 * targetPanelIndex * (window.innerWidth / 100);
 
 	const distance = Math.abs(targetX - startX);
 	const velocityMagnitude = Math.abs(initialVelocity);
-	const baseDuration = 125;
-	const velocityDuration = Math.min(velocityMagnitude * 3, 200);
+	const baseDuration = 160;
+	const velocityDuration = Math.min(velocityMagnitude * 3, 280);
 	let totalDuration = Math.max(baseDuration, velocityDuration);
-	// For explicit clicks (targetIndex defined), match slider indicator — faster than default 300ms
+	// For explicit clicks (targetIndex defined), fixed duration matching the
+	// indicator's CSS transition so both arrive together.
 	if (opts.targetIndex !== undefined) {
-		totalDuration = 180;
+		totalDuration = 220;
 	}
 
-	// Sync slider indicator with container — drive both via same RAF progress (percentage)
+	// Sync slider indicator with container — drive both via the same rAF
+	// progress using transform-only writes (no `left`, no per-frame width).
 	const $slider = $('.info-panel-slider');
 	const $indicator = $('.info-panel-indicator');
 	let hasIndicatorSync = $slider.length && $indicator.length;
-	let startIndicatorLeft = 0;
-	let targetIndicatorLeft = 0;
+	let startIndicatorX = 0;
+	let targetIndicatorX = 0;
 	if (hasIndicatorSync) {
 		try {
-			const sliderWidth = $slider[0].getBoundingClientRect().width;
-			const count = panelOrder.length;
-			const optionWidth = sliderWidth / count;
+			const m = measureInfoSlider();
+			const count = m.count;
+			const optionWidth = m.optionWidth;
 			// Start from current visual position (handles mid-drag snap)
-			startIndicatorLeft = $indicator[0].offsetLeft;
-			// If offsetLeft is 0 but CSS is calc (initial load), fallback to computed
-			if ($indicator.css('left').includes('calc') || startIndicatorLeft === 0) {
-				// Use startPanelIndex for fallback
-				startIndicatorLeft = startPanelIndex * optionWidth - 3;
+			startIndicatorX = getIndicatorX($indicator);
+			if (!optionWidth) {
+				hasIndicatorSync = false;
+			} else {
+				// First run still uses the CSS calc() fallback — snap base to px model
+				const leftCss = $indicator.css('left') || '';
+				if (leftCss.includes('calc') || (startIndicatorX === 0 && targetX !== 0 && startPanelIndex !== 0)) {
+					startIndicatorX = startPanelIndex * optionWidth;
+				}
+				targetIndicatorX = targetPanelIndex * optionWidth;
 			}
-			targetIndicatorLeft = targetPanelIndex * optionWidth - 3;
 			// Update selected state immediately (color), but drive position via JS
 			$slider.find('.info-panel-option').removeClass('selected all-stops-selected-menu');
 			const $targetOpt = $slider.find(`[data-panel="${targetPanel}"]`);
@@ -221,25 +263,14 @@ function animateToTargetPanel(initialVelocity, options) {
 					$indicator.css({ backgroundColor: themeIndicatorColorMap[resolved].bg, boxShadow: themeIndicatorColorMap[resolved].shadow });
 				}
 			} catch(e) {}
-			// Disable CSS transition — we will drive left via JS for perfect sync
+			// Disable CSS transition — we will drive transform via JS for perfect sync
 			$indicator.css('transition', 'none');
-			// Ensure indicator starts at start position (in case it was at intermediate drag pos, this is already correct)
-			// For click from non-drag, this sets it to old position before animating to new
-			if (opts.targetIndex !== undefined) {
-				$indicator.css('left', startIndicatorLeft + 'px');
-				$indicator.css('width', `calc(100% / ${count} + 6px)`);
-			}
+			$indicator.css('left', '-3px');
+			$indicator.css('width', `calc(100% / ${count} + 6px)`);
+			setIndicatorX($indicator, startIndicatorX);
 		} catch(e) { hasIndicatorSync = false; }
 	} else {
-		if (typeof updateInfoPanelIndicator === 'function') {
-			updateInfoPanelIndicator(targetPanel);
-		} else {
-			const targetElement = $(`.info-panels-header-buttons [data-panel="${targetPanel}"]`);
-			$('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
-			if (targetElement.length) {
-				targetElement.addClass('all-stops-selected-menu');
-			}
-		}
+		updateInfoPanelIndicator(targetPanel);
 	}
 
 	const startTime = performance.now();
@@ -248,22 +279,20 @@ function animateToTargetPanel(initialVelocity, options) {
 		let progress = Math.min(elapsedTime / totalDuration, 1);
 		progress = $.easing.momentum(progress);
 		const newX = startX + (targetX - startX) * progress;
-		$container.css('transform', 'translateX(' + newX + 'px)');
+		setContainerX($container, newX);
 		if (hasIndicatorSync) {
-			const newLeft = startIndicatorLeft + (targetIndicatorLeft - startIndicatorLeft) * progress;
-			$indicator.css('left', newLeft + 'px');
-			// Keep indicator correctly sized during JS drive
-			$indicator.css('width', `calc(100% / ${panelOrder.length} + 6px)`);
+			const newLeft = startIndicatorX + (targetIndicatorX - startIndicatorX) * progress;
+			setIndicatorX($indicator, newLeft);
 		}
 		if (elapsedTime < totalDuration) {
 			animationFrameId = requestAnimationFrame(frame);
 		} else {
-			$container.css('transform', 'translateX(' + targetX + 'px)');
+			setContainerX($container, targetX);
 			$container.removeClass('is-dragging-or-animating');
 			if (hasIndicatorSync) {
-				$indicator.css('left', targetIndicatorLeft + 'px');
-				// Restore CSS transition for future drags/hovers
-				$indicator.css('transition', 'left 0.3s ease, width 0.3s ease, top 0.3s ease, height 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease');
+				setIndicatorX($indicator, targetIndicatorX);
+				// Restore CSS transition for future hover/theme changes
+				$indicator.css('transition', INFO_INDICATOR_TRANSITION);
 			}
 			updatePanelPosition(targetPanel, { skipMove: true, isUserExplicitSelection: opts.isUserExplicitSelection });
 			animationFrameId = null;
@@ -286,25 +315,21 @@ function selectInfoPanel(panel, element, isUserExplicitSelection = true) {
 		const artificialVelocity = 25;
 		const options = { targetIndex: targetIndex, isUserExplicitSelection: isUserExplicitSelection };
 		animateToTargetPanel(artificialVelocity, options);
-	}
-	if (typeof updateInfoPanelIndicator === 'function') {
-		updateInfoPanelIndicator(panel);
+		// NOTE: do NOT call updateInfoPanelIndicator here — the rAF loop above
+		// owns the indicator's transform until it completes. A second driver
+		// snapping `left` via CSS transition in the same frame is what caused
+		// the visible jerk/flicker.
 	} else {
-		$('.all-stops-selected-menu').removeClass('all-stops-selected-menu');
-		const targetBtn = element || $(`.info-panels-header-buttons [data-panel="${panel}"]`)[0];
-		if (targetBtn) {
-			$(targetBtn).addClass('all-stops-selected-menu');
-		}
+		updateInfoPanelIndicator(panel);
 	}
 	// Only update user's last selected panel if this is an explicit user action
 	if (isUserExplicitSelection) {
-		lastUserSelectedPanelIndex = targetIndex;
+		setLastUserSelectedPanelIndex(targetIndex);
 	}
 }
 
 // Handle closing the info panels wrapper
 $('.info-panels-close').click(function() {
-	console.log('Info panels close button clicked');
 	if (animationFrameId) {
 		cancelAnimationFrame(animationFrameId);
 		animationFrameId = null;
@@ -338,13 +363,11 @@ function updatePanelPosition(panel, options) {
 	}
 	currentPanelIndex = panelIndex;
 	if (opts.isUserExplicitSelection !== false) {
-		lastUserSelectedPanelIndex = panelIndex;
+		setLastUserSelectedPanelIndex(panelIndex);
 	}
 
 	// Sync slider indicator with panel (keep legacy class for compat)
-	if (typeof updateInfoPanelIndicator === 'function') {
-		try { updateInfoPanelIndicator(panel); } catch(e) {}
-	}
+	updateInfoPanelIndicator(panel);
 
 	// If a route was already selected on the map before the panels opened,
 	// render its details now that the Routes subpanel is active (the entry
@@ -387,11 +410,16 @@ function updateInfoPanelIndicator(panel) {
 	const count = options.length;
 	if (index < 0 || count === 0) return;
 
-	// Position indicator like campus-slider (horizontal row)
-	indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
+	// Position indicator with transform (compositor-only). Base left stays at
+	// -3px so the +6px bleed is symmetric; translateX carries the index offset.
+	// Never animate `left` per-frame — that forces layout on every tick.
+	indicator.style.left = '-3px';
 	indicator.style.width = `calc(100% / ${count} + 6px)`;
 	indicator.style.top = '-3px';
 	indicator.style.height = 'calc(100% + 6px)';
+	const optionWidth = slider.getBoundingClientRect().width / count;
+	indicator.style.transition = INFO_INDICATOR_TRANSITION;
+	indicator.style.transform = `translateX(${index * optionWidth}px)`;
 
 	slider.querySelectorAll('.info-panel-option').forEach(opt => {
 		opt.classList.remove('selected');
@@ -434,18 +462,16 @@ function initInfoPanelSliderDrag() {
 	}
 	function applyPopup() {
 		if (indicator.style.top === '-6px') return;
-		indicator.style.transition = 'top 0.1s ease, height 0.1s ease, left 0.1s ease, width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+		indicator.style.transition = 'top 0.1s ease, height 0.1s ease, transform 0.1s ease, width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease';
 		indicator.style.top = '-6px';
 		indicator.style.height = 'calc(100% + 12px)';
-		const curLeft = indicator.offsetLeft;
 		const curW = indicator.offsetWidth;
-		indicator.style.left = (curLeft - 3) + 'px';
 		indicator.style.width = (curW + 6) + 'px';
 	}
 	function snapToClosest(clientX) {
 		const closest = getClosestPanel(clientX);
 		if (closest) {
-			indicator.style.transition = 'left 0.2s ease, width 0.2s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+			indicator.style.transition = 'transform 0.2s ease, width 0.2s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
 			indicator.style.top = '-3px';
 			indicator.style.height = 'calc(100% + 6px)';
 			const panel = closest.getAttribute('data-panel');
@@ -459,7 +485,7 @@ function initInfoPanelSliderDrag() {
 		lastClosestPanel = null;
 	}
 	function shrinkBack() {
-		indicator.style.transition = 'left 0.2s ease, width 0.2s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
+		indicator.style.transition = 'transform 0.2s ease, width 0.2s ease, top 0.15s ease, height 0.15s ease, background-color 0.3s ease, box-shadow 0.3s ease';
 		indicator.style.top = '-3px';
 		indicator.style.height = 'calc(100% + 6px)';
 		try { updateInfoPanelIndicator(panelOrder[currentPanelIndex]); } catch(e) {}
@@ -485,6 +511,20 @@ function initInfoPanelSliderDrag() {
 		} catch(e) {}
 	}
 
+	// Cached per-gesture metrics (measured once on pointerdown, not per move)
+	let cachedOptionWidth = 0;
+	let cachedSliderLeft = 0;
+	let sliderDragFrame = 0;
+	let pendingClientX = 0;
+	function cacheSliderMetrics() {
+		try {
+			const rect = slider.getBoundingClientRect();
+			cachedSliderLeft = rect.left;
+			const n = slider.querySelectorAll('.info-panel-option').length || 3;
+			cachedOptionWidth = n ? rect.width / n : 0;
+		} catch(err) {}
+	}
+
 	slider.addEventListener('pointerdown', function(e) {
 		// Only left button / touch — if target is an option, per-option handler already handled selection/drag
 		if (e.target.closest('.info-panel-option')) return;
@@ -493,6 +533,7 @@ function initInfoPanelSliderDrag() {
 		didDrag = false;
 		startX = e.clientX;
 		lastClosestPanel = null;
+		cacheSliderMetrics();
 		try { slider.setPointerCapture(e.pointerId); } catch(err) {}
 		clearTimeout(holdTimer);
 		holdTimer = setTimeout(function() {
@@ -513,31 +554,19 @@ function initInfoPanelSliderDrag() {
 		} catch(err) {}
 	});
 
-	slider.addEventListener('pointermove', function(e) {
-		if (!dragging) return;
-		const dx = e.clientX - startX;
-		if (Math.abs(dx) > 5) {
-			if (!didDrag) {
-				clearTimeout(holdTimer);
-				applyPopup();
-				indicator.style.transition = 'background-color 0.3s ease, box-shadow 0.3s ease';
-			}
-			didDrag = true;
-		}
-		if (!didDrag) return;
+	// Cached per-gesture metrics declared above (cacheSliderMetrics)
 
-		const opts = slider.querySelectorAll('.info-panel-option');
-		const first = opts[0];
-		const last = opts[opts.length - 1];
-		const minLeft = first.offsetLeft - 6;
-		const maxLeft = last.offsetLeft - 6;
-		const rect = slider.getBoundingClientRect();
+	function paintSliderDrag() {
+		sliderDragFrame = 0;
+		const count = (typeof panelOrder !== 'undefined' ? panelOrder.length : 3);
+		const maxX = Math.max(0, (count - 1) * cachedOptionWidth);
 		const halfW = indicator.offsetWidth / 2;
-		let newLeft = (e.clientX - rect.left) - halfW;
-		newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
-		indicator.style.left = newLeft + 'px';
+		let newX = (pendingClientX - cachedSliderLeft) - halfW;
+		// Base left is -3px, so shift travel window by +3 to keep symmetric bleed
+		newX = Math.max(0, Math.min(maxX, newX + 3));
+		indicator.style.transform = `translateX(${newX}px)`;
 
-		const closest = getClosestPanel(e.clientX);
+		const closest = getClosestPanel(pendingClientX);
 		if (closest) {
 			const panel = closest.getAttribute('data-panel');
 			if (panel !== lastClosestPanel) {
@@ -548,34 +577,48 @@ function initInfoPanelSliderDrag() {
 				});
 				closest.classList.add('selected');
 				closest.classList.add('all-stops-selected-menu');
-				// live theme color already set, no need to change
 			}
 		}
 
-		// Mirror drag on main container — percentage, not same pixels
-		// Slider is not 100% wide, so 10px slider drag != 10px container drag.
-		// Map indicator's percentage across its travel (minLeft→maxLeft) to
-		// container's percentage across its travel (0→-(n-1)*W).
+		// Mirror drag on main container — percentage, not same pixels.
 		try {
 			const $container = $('.subpanels-container');
-			if ($container.length) {
-				const totalTravel = maxLeft - minLeft;
-				let indicatorProgress = 0;
-				if (totalTravel > 0) {
-					indicatorProgress = (newLeft - minLeft) / totalTravel;
-				}
-				indicatorProgress = Math.max(0, Math.min(1, indicatorProgress));
-				const panelCount = (typeof panelOrder !== 'undefined' ? panelOrder.length : 3);
-				const targetX = -indicatorProgress * (panelCount - 1) * window.innerWidth;
-				$container.css('transform', 'translateX(' + targetX + 'px)');
+			if ($container.length && maxX > 0) {
+				const indicatorProgress = Math.max(0, Math.min(1, newX / maxX));
+				const targetX = -indicatorProgress * (count - 1) * window.innerWidth;
+				setContainerX($container, targetX);
 			}
 		} catch(err) {}
+	}
+
+	slider.addEventListener('pointermove', function(e) {
+		if (!dragging) return;
+		const dx = e.clientX - startX;
+		if (Math.abs(dx) > 5) {
+			if (!didDrag) {
+				clearTimeout(holdTimer);
+				applyPopup();
+				indicator.style.transition = INFO_INDICATOR_NO_TRANSITION;
+			}
+			didDrag = true;
+		}
+		if (!didDrag) return;
+
+		// Light handler: store coords, paint on rAF (transform-only)
+		pendingClientX = e.clientX;
+		if (!sliderDragFrame) {
+			sliderDragFrame = requestAnimationFrame(paintSliderDrag);
+		}
 	});
 
 	function endDrag(e) {
 		if (!dragging) return;
 		dragging = false;
 		clearTimeout(holdTimer);
+		if (sliderDragFrame) {
+			cancelAnimationFrame(sliderDragFrame);
+			sliderDragFrame = 0;
+		}
 		if (didDrag) {
 			snapToClosest(e.clientX);
 			e.preventDefault();
@@ -627,17 +670,18 @@ function initInfoPanelSliderDrag() {
 				});
 				opt.classList.add('selected', 'all-stops-selected-menu');
 			} catch(err) {}
-			// Prepare for potential drag — reuse slider's dragging state
-			if (!dragging) {
-				dragging = true;
-				didDrag = false;
-				startX = e.clientX;
-				lastClosestPanel = panel;
-				try { slider.setPointerCapture(e.pointerId); } catch(err) {}
-				clearTimeout(holdTimer);
-			} else {
-				lastClosestPanel = panel;
-			}
+		// Prepare for potential drag — reuse slider's dragging state
+		if (!dragging) {
+			dragging = true;
+			didDrag = false;
+			startX = e.clientX;
+			lastClosestPanel = panel;
+			try { cacheSliderMetrics(); } catch(err) {}
+			try { slider.setPointerCapture(e.pointerId); } catch(err) {}
+			clearTimeout(holdTimer);
+		} else {
+			lastClosestPanel = panel;
+		}
 		});
 		// Fallback click for non-pointer devices / accessibility; suppress if pointer already handled
 		opt.addEventListener('click', function(e) {
@@ -688,6 +732,46 @@ $(function() {
 
 let initialTransformX = 0;
 let animationFrameId = null;
+// rAF-throttled content-drag paint state — the touchmove/mousemove handler
+// only stores coordinates; all DOM writes happen here, once per frame,
+// using cached layout (no getBoundingClientRect/offsetLeft per move).
+let contentDragFrame = 0;
+let pendingContainerX = null;
+let pendingIndicatorX = null;
+let pendingClosestIdx = -1;
+let lastAppliedClosestIdx = -1;
+let cachedViewportW = 0;
+let cachedContentOptionWidth = 0;
+let dragHasIndicator = false;
+let $dragSlider = null;
+let $dragIndicator = null;
+
+function flushContentDrag() {
+	contentDragFrame = 0;
+	if (pendingContainerX === null) return;
+	const $container = $('.subpanels-container');
+	if ($container.length) {
+		setContainerX($container, pendingContainerX);
+	}
+	if (dragHasIndicator && $dragIndicator && $dragIndicator.length && pendingIndicatorX !== null) {
+		$dragIndicator.css('transition', 'none');
+		setIndicatorX($dragIndicator, pendingIndicatorX);
+	}
+	if (pendingClosestIdx !== lastAppliedClosestIdx && $dragSlider && $dragSlider.length) {
+		lastAppliedClosestIdx = pendingClosestIdx;
+		const closestPanel = panelOrder[pendingClosestIdx];
+		if (closestPanel) {
+			$dragSlider.find('.info-panel-option').removeClass('selected all-stops-selected-menu');
+			$dragSlider.find(`[data-panel="${closestPanel}"]`).addClass('selected all-stops-selected-menu');
+		}
+	}
+	pendingContainerX = null;
+}
+function scheduleContentDragFrame() {
+	if (!contentDragFrame) {
+		contentDragFrame = requestAnimationFrame(flushContentDrag);
+	}
+}
 window.cancelInfoPanelAnimation = function() {
 	if (animationFrameId) {
 		cancelAnimationFrame(animationFrameId);
@@ -702,21 +786,19 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 		cancelAnimationFrame(animationFrameId);
 		animationFrameId = null;
 	}
+	if (contentDragFrame) {
+		cancelAnimationFrame(contentDragFrame);
+		contentDragFrame = null;
+		pendingContainerX = null;
+	}
 	const $container = $('.subpanels-container');
 	$container.stop(true).addClass('is-dragging-or-animating');
 	// Ensure no CSS transition interferes with JS-driven drag
 	$container.css('transition', 'none');
 
-	ipCounters.starts += 1;
 	const isTouch = e.type === 'touchstart';
-	const sx = isTouch ? e.originalEvent.touches[0].clientX : e.clientX;
-	const sy = isTouch ? e.originalEvent.touches[0].clientY : e.clientY;
-	const currentX = getTranslateX($container);
-	console.log('[IP] start', { type: e.type, x: sx, y: sy, currentX, starts: ipCounters.starts });
-
 	if (!isTouch) {
 		if (Date.now() - lastTouchEndTime < 400) {
-			console.log('[IP] mousedown suppressed due to recent touch');
 			return;
 		}
 	}
@@ -730,6 +812,23 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 	dragEndX = dragStartX;
 	dragEndY = dragStartY;
 	initialTransformX = getTranslateX($container);
+	// Cache layout once per gesture — reused for every move frame
+	cachedViewportW = window.innerWidth;
+	lastAppliedClosestIdx = currentPanelIndex;
+	pendingClosestIdx = currentPanelIndex;
+	pendingIndicatorX = null;
+	try {
+		$dragSlider = $('.info-panel-slider');
+		$dragIndicator = $('.info-panel-indicator');
+		dragHasIndicator = $dragSlider.length > 0 && $dragIndicator.length > 0;
+		cachedContentOptionWidth = 0;
+		if (dragHasIndicator) {
+			const w = $dragSlider[0].getBoundingClientRect().width;
+			const n = $dragSlider[0].querySelectorAll('.info-panel-option').length || panelOrder.length;
+			cachedContentOptionWidth = n ? w / n : 0;
+			$dragIndicator.css({ 'transition': 'none', 'left': '-3px' });
+		}
+	} catch(err) { dragHasIndicator = false; }
 	velocityX = 0;
 	lastMoveTime = 0;
 	lastMoveX = dragStartX;
@@ -739,12 +838,8 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 
 $('.info-panels-content').on('touchmove mousemove', function(e) {
     if (!dragStartX || !dragStartY) return;
-	ipCounters.moves += 1;
-	const $container = $('.subpanels-container');
     const target = $(e.target);
 	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select').length > 0) {
-		ipCounters.ignoredInteractive += 1;
-		console.log('[IP] move ignored: interactive target', { type: e.type, moves: ipCounters.moves, ignoredInteractive: ipCounters.ignoredInteractive });
 		return;
 	}
     if (e.type === 'touchmove') {
@@ -756,21 +851,17 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
     }
     const deltaX = dragEndX - dragStartX;
     const deltaY = dragEndY - dragStartY;
-	const touchDuration = Date.now() - touchStartTime;
 	const horizontalDominant = Math.abs(deltaX) > Math.abs(deltaY);
 	const distanceIntent = Math.abs(deltaX) > 25; // quicker flicks
 	const timeAndDistanceIntent = Math.abs(deltaX) > 20; // threshold for intentional horizontal swipe
 	const meetsThreshold = horizontalDominant && (distanceIntent || timeAndDistanceIntent);
-	console.log('[IP] move', { type: e.type, dx: deltaX, dy: deltaY, durationMs: touchDuration, meetsThreshold, isDragging });
 	if (meetsThreshold) {
 		if (!isDragging || Math.abs(deltaX) > Math.abs(deltaY)) {
         isDragging = true;
 			suppressSubpanelClick = true;
 			lastSubpanelDragEndTime = Date.now();
 			if (horizontalDominant && Math.abs(deltaX) > 12) {
-				ipCounters.preventDefaults += 1;
 				e.preventDefault();
-				console.log('[IP] preventDefault on move', { preventDefaults: ipCounters.preventDefaults });
 			}
 			const currentTime = Date.now();
 			if (lastMoveTime > 0) {
@@ -778,57 +869,46 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
 				const positionDelta = dragEndX - lastMoveX;
 				if (timeDelta > 0) {
 					velocityX = positionDelta / timeDelta;
-					console.log('[IP] velocity update', { vPxPerMs: velocityX, dt: timeDelta, dx: positionDelta });
 				}
-			}
-			if (ipCounters.handledMoves === 0) {
-				ipCounters.dragBegins += 1;
-				console.log('[IP] drag begin', { dragBegins: ipCounters.dragBegins });
 			}
 			lastMoveTime = currentTime;
 			lastMoveX = dragEndX;
+			// Store only — the rAF painter does all DOM writes with cached layout
 			const newTransformX = initialTransformX + deltaX;
-			$container.css('transform', 'translateX(' + newTransformX + 'px)');
-			// Sync slider indicator with main drag — percentage (opposite direction, same progress)
-			try {
-				const $slider = $('.info-panel-slider');
-				const $indicator = $('.info-panel-indicator');
-				if ($slider.length && $indicator.length) {
-					const opts = $slider[0].querySelectorAll('.info-panel-option');
-					if (opts.length) {
-						const first = opts[0];
-						const last = opts[opts.length - 1];
-						const minLeft = first.offsetLeft - 3;
-						const maxLeft = last.offsetLeft - 3;
-						const totalTravel = maxLeft - minLeft;
-						const panelCount = panelOrder.length;
-						const containerProgress = Math.max(0, Math.min(1, -newTransformX / ((panelCount - 1) * window.innerWidth)));
-						const newIndicatorLeft = minLeft + containerProgress * totalTravel;
-						$indicator.css('transition', 'none');
-						$indicator.css('left', newIndicatorLeft + 'px');
-						const closestIdx = Math.round(containerProgress * (panelCount - 1));
-						const closestPanel = panelOrder[closestIdx];
-						if (closestPanel) {
-							$slider.find('.info-panel-option').removeClass('selected all-stops-selected-menu');
-							$slider.find(`[data-panel="${closestPanel}"]`).addClass('selected all-stops-selected-menu');
-						}
-					}
-				}
-			} catch(e) {}
-			ipCounters.handledMoves += 1;
+			pendingContainerX = newTransformX;
+			const panelCount = panelOrder.length;
+			const span = (panelCount - 1) * (cachedViewportW || window.innerWidth);
+			const containerProgress = span > 0 ? Math.max(0, Math.min(1, -newTransformX / span)) : 0;
+			if (dragHasIndicator && cachedContentOptionWidth > 0) {
+				pendingIndicatorX = containerProgress * (panelCount - 1) * cachedContentOptionWidth;
+			} else {
+				pendingIndicatorX = null;
+			}
+			pendingClosestIdx = Math.max(0, Math.min(panelCount - 1, Math.round(containerProgress * (panelCount - 1))));
+			scheduleContentDragFrame();
 		}
 	} else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 15) {
-		ipCounters.verticalSkips += 1;
-		console.log('[IP] move treated as vertical scroll', { dx: deltaX, dy: deltaY, verticalSkips: ipCounters.verticalSkips });
 		isDragging = false;
 		return;
     }
 });
 
 $('.info-panels-content').on('touchend mouseup', function(e) {
-	ipCounters.ends += 1;
+	if (contentDragFrame) {
+		// Flush the last painted position so the snap animation starts from it
+		cancelAnimationFrame(contentDragFrame);
+		contentDragFrame = 0;
+		if (pendingContainerX !== null) {
+			const $c = $('.subpanels-container');
+			if ($c.length) setContainerX($c, pendingContainerX);
+			if (dragHasIndicator && $dragIndicator && $dragIndicator.length && pendingIndicatorX !== null) {
+				$dragIndicator.css('transition', 'none');
+				setIndicatorX($dragIndicator, pendingIndicatorX);
+			}
+			pendingContainerX = null;
+		}
+	}
 	if (e.type === 'mouseup' && Date.now() - lastTouchEndTime < 400) {
-		console.log('[IP] mouseup suppressed due to recent touch');
 		return;
 	}
 	if (e.type === 'touchend') {
@@ -844,7 +924,6 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
     const target = $(e.target);
     const isInteractive = target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select, .incoming-wrapper, .incoming-list, .all-stops-grid, .campus-stops-list, .route-stops-grid').length > 0;
     if (isInteractive && !isDragging && (!dragStartX || Math.abs(dragEndX - dragStartX) < 10)) {
-		console.log('[IP] end ignored: interactive area');
         dragStartX = dragStartY = dragEndX = dragEndY = 0;
         isDragging = false;
 		lastMoveTime = 0;
@@ -861,14 +940,12 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 	}
     if (isDragging && dragStartX && dragStartY) {
 		const scaledVelocity = velocityX * 20;
-		console.log('[IP] end -> animate', { dx: totalDx, vScaled: scaledVelocity, handledMoves: ipCounters.handledMoves, totalMoves: ipCounters.moves });
 		animateToTargetPanel(scaledVelocity, { dragDeltaX: totalDx });
 	} else {
 		// Flick fallback: animate based on displacement even if drag never crossed move threshold
 		const horizontalDominant = Math.abs(totalDx) > Math.abs(totalDy);
 		if (isDragging && horizontalDominant && Math.abs(totalDx) > 20) {
 			const vScaled = totalDuration > 0 ? (totalDx / totalDuration) * 20 : 0;
-			console.log('[IP] end -> flick animate', { dx: totalDx, vScaled: vScaled, durationMs: totalDuration });
 			animateToTargetPanel(vScaled, { dragDeltaX: totalDx });
 		} else {
 			const $container = $('.subpanels-container');
@@ -876,36 +953,31 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 			const expectedX = -currentPanelIndex * window.innerWidth;
 			if (Math.abs(currentX - expectedX) > 5) {
 				animateToTargetPanel(0, { targetIndex: currentPanelIndex, isUserExplicitSelection: false });
-			} else {
-				console.log('[IP] end without drag', { isDragging, hasStart: !!dragStartX });
 			}
 		}
 	}
-	console.log('[IP] gesture summary', JSON.stringify(ipCounters));
-	// reset counters for next gesture
-	ipCounters.moves = 0;
-	ipCounters.handledMoves = 0;
-	ipCounters.ignoredInteractive = 0;
-	ipCounters.verticalSkips = 0;
-	ipCounters.preventDefaults = 0;
-
+	// reset gesture state
     dragStartX = 0;
     dragStartY = 0;
     isDragging = false;
 	lastMoveTime = 0;
 	lastMoveX = 0;
 	touchStartTime = 0;
+	pendingIndicatorX = null;
 });
 
 $('.info-panels-content').on('contextmenu', function(e) {
     if (dragStartX) {
-		console.log('[IP] contextmenu prevented during drag');
         e.preventDefault();
     }
 });
 
 $('.info-panels-content').on('mouseleave touchcancel', function(e) {
-	console.log('[IP] pointer cancel/leave');
+	if (contentDragFrame) {
+		cancelAnimationFrame(contentDragFrame);
+		contentDragFrame = 0;
+		pendingContainerX = null;
+	}
 	if (!$('.info-panels-show-hide-wrapper').is(':visible')) {
 		$('.subpanels-container').removeClass('is-dragging-or-animating');
 		dragStartX = dragStartY = dragEndX = dragEndY = 0;
@@ -938,7 +1010,6 @@ document.addEventListener('click', function(e) {
 	if (suppressSubpanelClick || (lastSubpanelDragEndTime > 0 && Date.now() - lastSubpanelDragEndTime < 350)) {
 		const target = $(e.target);
 		if (target.closest('.info-panels-content').length > 0) {
-			console.log('[IP] click suppressed due to subpanel drag');
 			e.stopPropagation();
 			e.stopImmediatePropagation();
 			e.preventDefault();
@@ -968,16 +1039,9 @@ $(window).on('resize', function() {
 			'transition': 'none',
 			'transform': 'translateX(' + targetX + 'px)'
 		});
+		// Recompute transform-based indicator (optionWidth changed)
+		try { updateInfoPanelIndicator(panelOrder[currentPanelIndex]); } catch(e) {}
 	}
 });
-
-// Monitor for multiple animation calls
-let animationCallCount = 0;
-const originalAnimateToTargetPanel = animateToTargetPanel;
-animateToTargetPanel = function(velocity, options) {
-	animationCallCount++;
-	console.log('[IP] animateToTargetPanel called', { count: animationCallCount, velocity, options });
-	return originalAnimateToTargetPanel(velocity, options);
-};
 
 // Non-passive touchmove listener removed - was causing interference

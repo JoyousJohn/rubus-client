@@ -157,6 +157,7 @@
                     }
                     if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_refresh' });
                     const $toast = $('#update-toast');
+                    $toast.stop(true, true).show().css('opacity', 1);
                     $toast.find('.update-toast-actions').hide();
                     $toast.find('#update-reload-btn, #update-dismiss-btn').hide();
                     $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate fa-spin"></i> Updating...');
@@ -192,15 +193,16 @@
                     e.stopPropagation();
                 });
 
-                // Tap on success toast dismisses it immediately
+                // Tap on success toast dismisses it immediately (never while actively updating)
                 $(document).on('click', '#update-toast', function(e) {
-                    if ($('#update-toast .update-toast-actions').is(':hidden')) {
+                    if (!updateRequested && $('#update-toast .update-toast-actions').is(':hidden')) {
                         dismissUpdateToast();
                     }
                 });
 
                 $(document).on('click', '#update-reload-btn', function(e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     applyUpdate();
                 });
 
@@ -1241,8 +1243,8 @@
                     <div class="subpanel buses-panel">
                         <div class="subpanel-inner">
                             <div class="buses-panel-wrapper justify-center">
-                                <div class="ridership-title">Network Overview</div>
-                                <div class="flex justify-center">
+                                <div class="flex align-center justify-between" style="margin-top: 2rem;">
+                                    <div class="ridership-title" style="margin-top: 0; text-align: left;">Bus Network</div>
                                     <div class="live-overview">LIVE</div>
                                 </div>
                                 <div class="buses-overview-grid grid select-none">
@@ -1259,6 +1261,14 @@
                                         <i class="bus-overview-sort-icon bus-overview-sort-icon-loop fa-solid fa-chevron-up none"></i>
                                     </div>
                                     <div class="bus-overview-header-divider"></div>
+                                </div>
+                                <div class="ridership-chart-wrapper">
+                                    <!-- <div class="ridership-title">Ridership Today</div> -->
+                                    <canvas id="ridership-chart" width="400" height="200"></canvas>
+                                </div>
+                                <div class="ridership-stats-row">
+                                    <div class="ridership-avg"></div>
+                                    <div class="ridership-max"></div>
                                 </div>
                                 <div class="ridership-super-wrapper">
                                     <div class="avg-wait-wrapper">
@@ -1292,14 +1302,6 @@
                                             </div>
                                             <div class="bus-service-header-divider"></div>
                                         </div>
-                                    </div>
-                                    <div class="ridership-chart-wrapper">
-                                        <!-- <div class="ridership-title">Ridership Today</div> -->
-                                        <canvas id="ridership-chart" width="400" height="200"></canvas>
-                                    </div>
-                                    <div class="ridership-stats-row">
-                                        <div class="ridership-avg"></div>
-                                        <div class="ridership-max"></div>
                                     </div>
                                 </div>
                             </div>
