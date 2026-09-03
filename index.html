@@ -93,8 +93,23 @@
                 let updateRequested = false;
                 let refreshing = false;
                 let initialEtag = null;
+                let successToastTimer = null;
+
+                function showUpdatedSuccessToast() {
+                    if (successToastTimer) clearTimeout(successToastTimer);
+                    const $toast = $('#update-toast');
+                    $toast.find('.update-toast-text').html('<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Updated to latest version');
+                    $toast.find('.update-toast-actions').hide();
+                    $toast.removeClass('none').stop(true, true).fadeIn();
+                    successToastTimer = setTimeout(function() {
+                        $toast.stop(true, true).fadeOut(function() {
+                            $toast.addClass('none');
+                        });
+                    }, 3500);
+                }
 
                 function showUpdateToast(worker) {
+                    if (successToastTimer) clearTimeout(successToastTimer);
                     if (worker) waitingWorker = worker;
                     const $toast = $('#update-toast');
                     $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate"></i> Update available');
@@ -104,6 +119,7 @@
                 }
 
                 function dismissUpdateToast() {
+                    if (successToastTimer) clearTimeout(successToastTimer);
                     const $toast = $('#update-toast');
                     $toast.stop(true, true).fadeOut(function() {
                         $toast.addClass('none');
@@ -112,6 +128,11 @@
 
                 function applyUpdate() {
                     updateRequested = true;
+                    sessionStorage.setItem('rubus-just-updated', '1');
+                    localStorage.setItem('last-update-toast-show', Date.now().toString());
+                    if (initialEtag) {
+                        localStorage.setItem('rubus-app-etag', initialEtag);
+                    }
                     if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_refresh' });
                     const $toast = $('#update-toast');
                     $toast.find('.update-toast-actions').hide();
@@ -132,9 +153,22 @@
                     }
                 }
 
+                // Check if page reloaded from user-initiated update
+                if (sessionStorage.getItem('rubus-just-updated')) {
+                    sessionStorage.removeItem('rubus-just-updated');
+                    showUpdatedSuccessToast();
+                }
+
                 // Prevent map dragging or touch gestures through the toast
                 $(document).on('mousedown mouseup mousemove touchstart touchend touchmove pointerdown pointerup pointermove', '.update-toast-wrapper', function(e) {
                     e.stopPropagation();
+                });
+
+                // Tap on success toast dismisses it immediately
+                $(document).on('click', '#update-toast', function(e) {
+                    if ($('#update-toast .update-toast-actions').is(':hidden')) {
+                        dismissUpdateToast();
+                    }
                 });
 
                 $(document).on('click', '#update-reload-btn', function(e) {
@@ -156,9 +190,22 @@
                     }
                 });
 
-                // Fetch initial deploy ETag of index.html to detect redeploys on app resume
+                // Fetch initial deploy ETag of index.html to detect redeploys on app resume or cold launch
                 fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' }).then(function(res) {
-                    initialEtag = res.headers.get('etag');
+                    initialEtag = res.headers.get('etag') || res.headers.get('last-modified');
+                    if (initialEtag) {
+                        const storedEtag = localStorage.getItem('rubus-app-etag');
+                        if (storedEtag && storedEtag !== initialEtag) {
+                            // Deployed version changed since last session (check 8-hour cooldown)
+                            const lastShow = localStorage.getItem('last-update-toast-show');
+                            const eightHours = 8 * 60 * 60 * 1000;
+                            if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
+                                showUpdatedSuccessToast();
+                                localStorage.setItem('last-update-toast-show', Date.now().toString());
+                            }
+                        }
+                        localStorage.setItem('rubus-app-etag', initialEtag);
+                    }
                 }).catch(function(err) {
                     console.warn('[SW] Initial ETag check failed:', err);
                 });
