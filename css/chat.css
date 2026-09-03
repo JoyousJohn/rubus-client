@@ -84,6 +84,16 @@
   opacity: 1;
 }
 
+.chat-message.bot ul.chat-md-list {
+  margin: 0.5rem 0;
+  padding-left: 1.6rem;
+  white-space: normal;
+}
+
+.chat-message.bot strong {
+  font-weight: 700;
+}
+
 .chat-message.bot.loading,
 .chat-message.bot.thinking {
   max-width: 100%;

@@ -122,6 +122,25 @@ function parseMarkdown(text) {
     }
     processed = newLines.join('\n');
 
+    // Unordered lists: consecutive lines starting with -, *, or • become a
+    // <ul>. (• is accepted for backward compat with older plain-text answers.)
+    // Requires whitespace after the marker so *italic* text never matches.
+    const listLines = processed.split('\n');
+    let inList = false;
+    const listOut = [];
+    for (const ln of listLines) {
+        const lm = ln.match(/^\s*([-*•])\s+(.*)$/);
+        if (lm) {
+            if (!inList) { inList = true; listOut.push('<ul class="chat-md-list">'); }
+            listOut.push(`<li>${lm[2]}</li>`);
+        } else {
+            if (inList) { inList = false; listOut.push('</ul>'); }
+            listOut.push(ln);
+        }
+    }
+    if (inList) listOut.push('</ul>');
+    processed = listOut.join('\n');
+
     // Use replacement functions so captured groups are already escaped and
     // we don't re-interpret $1 as raw HTML.
     processed = processed.replace(/^### (.*$)/gim, (m, g1) => `<h3 style="margin: 1.5rem 0 0.5rem 0; font-size: 1.6rem; font-weight: 500;">${g1}</h3>`);
@@ -134,8 +153,8 @@ function parseMarkdown(text) {
     processed = processed.replace(/\n?<\/(h[1-3])>\n?/gi, '</$1>');
     
     processed = processed.replace(/\n\n+/g, '<div style="height: 1.1rem;"></div>');
-    processed = processed.replace(/\*\*(.*?)\*\*/g, (m, g1) => g1);
-    processed = processed.replace(/__(.*?)__/g, (m, g1) => g1);
+    processed = processed.replace(/\*\*(.*?)\*\*/g, (m, g1) => `<strong>${g1}</strong>`);
+    processed = processed.replace(/__(.*?)__/g, (m, g1) => `<strong>${g1}</strong>`);
     processed = processed.replace(/\*(.*?)\*/g, (m, g1) => `<em>${g1}</em>`);
     processed = processed.replace(/(?<!\w)_(.*?)_(?!\w)/g, (m, g1) => `<em>${g1}</em>`);
     return processed;
@@ -192,6 +211,17 @@ function colorRouteNames(text) {
             if (!content) return match;
             
             let processed = content;
+            // "Weekend 1/2" (also Overnight/Winter/Summer) shorthand: color
+            // each digit with its own route color (1 -> route 1, 2 -> route 2).
+            processed = processed.replace(/\b(weekend|overnight|winter|summer)\s+1\s*\/\s*2\b/gi, (m, base) => {
+                const key1 = readableRouteNames[base.toLowerCase() + ' 1'];
+                const key2 = readableRouteNames[base.toLowerCase() + ' 2'];
+                const c1 = key1 ? colorMappings[key1] : null;
+                const c2 = key2 ? colorMappings[key2] : null;
+                const d1 = c1 ? `<span style="color: ${escColor(c1)}">1</span>` : '1';
+                const d2 = c2 ? `<span style="color: ${escColor(c2)}">2</span>` : '2';
+                return `${esc(base)} ${d1}/${d2}`;
+            });
             if (stopRegex) {
                 processed = processed.replace(stopRegex, (matchedStr) => {
                     return `<span style="color: #65acf2;">${matchedStr}</span>`;
@@ -513,6 +543,8 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     const MAX_MSG_LEN = 2000;
     if (msg.length > MAX_MSG_LEN) msg = msg.slice(0, MAX_MSG_LEN);
     const $messages = $('.chat-ui-messages');
+    // Prior suggestion chips are one-shot: hide them once a new message goes out.
+    $messages.find('.chat-suggestions-container').fadeOut(150, function() { $(this).remove(); });
     const $userMsg = $(`<div class="chat-message user">${$('<div>').text(msg).html()}</div>`);
     $messages.append($userMsg);
     window.chatHistory.push({ role: 'user', content: msg });
