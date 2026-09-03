@@ -962,7 +962,10 @@
                         <i class="fa-solid fa-person-walking"></i>
                     </div>
                     <script>
-                        $('.stop-directions').click(function() {
+                        $('.stop-directions').click(function(e) {
+                            if (e) {
+                                e.stopPropagation();
+                            }
                             // Check if we have a stop selected - needed?
                             // if (!popupStopId) {
                             //     showNavigationMessage('No stop selected. Please click on a stop first.');
@@ -984,6 +987,10 @@
                             // Always set the selected stop as the destination
                             setNavigationFromStop(currentStopId, 'to');
                             openDirectionsNav();
+
+                            if (typeof prepareNavFromWithRecents === 'function') {
+                                prepareNavFromWithRecents();
+                            }
 
                             // Focus on the from input for user to enter their starting location
                             // (programmatic focus — don't pop autocomplete).
@@ -1358,12 +1365,15 @@
         <div class="navigate-wrapper none">
             <div class="navigate-inner flex flex-col" style="font-family: var(--font-family); position: relative;">
                 <div class="nav-mid-row">
-                    <div class="nav-mid-left">
-                        <button class="route-random-btn" type="button" onclick="randomizeNavLocations()" title="Randomize"><i class="fa-solid fa-party-horn"></i></button>
-                        <button class="route-revert-btn none" type="button" onclick="revertNavLocations()" title="Revert to previous">Revert</button>
+                    <div class="nav-mid-left"></div>
+                    <div class="nav-mid-center">
+                        <span class="nav-mid-arrow" title="Direction of travel"><i class="fa-solid fa-arrow-down"></i></span>
+                        <button class="route-swap-btn" type="button" onclick="swapNavLocations(event)" title="Swap start and destination"><i class="fa-regular fa-arrow-up-arrow-down"></i></button>
                     </div>
-                    <span class="nav-mid-arrow" title="Direction of travel"><i class="fa-solid fa-arrow-down"></i></span>
-                    <button class="route-swap-btn" type="button" onclick="swapNavLocations()" title="Swap start and destination"><i class="fa-regular fa-arrow-up-arrow-down"></i></button>
+                    <div class="nav-mid-right">
+                        <button class="route-revert-btn none" type="button" onclick="revertNavLocations()" title="Revert to previous">Revert</button>
+                        <button class="route-random-btn" type="button" onclick="randomizeNavLocations(event)" title="Randomize"><i class="fa-solid fa-party-horn"></i></button>
+                    </div>
                 </div>
                 <div class="nav-dest-row">
                     <div class="nav-to">
@@ -1378,6 +1388,16 @@
                 <div class="nav-search-results none"></div>
 
                 <div class="nav-route-selector-container"></div>
+
+                <div class="nav-transfer-info-banner none">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>This route contains a transfer; arriving to the transfer stop late may make this path slower than a direct route.</span>
+                </div>
+
+                <div class="nav-walk-warning-banner none">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Although this path may be faster than other routes, it may contain substantially more walking.</span>
+                </div>
 
                 <div class="nav-directions-wrapper none br-1rem">
                     <div class="nav-directions-inner flex flex-col">

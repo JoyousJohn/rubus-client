@@ -112,8 +112,7 @@ function navRouteHasLiveBuses(routeName, displayName) {
             const v = dn.replace('WKND', '').trim();
             if (v) {
                 const wk = `wknd${v}`.toLowerCase();
-                const on = `on${v}`.toLowerCase();
-                if (hasLiveViaFn(wk) || hasLiveViaFn(on)) return true;
+                if (hasLiveViaFn(wk)) return true;
             }
             // Fallback to the underlying routeName if variant check found nothing
             if (routeName && hasLiveViaFn(String(routeName).toLowerCase())) return true;
@@ -221,13 +220,13 @@ function renderNavFromRecents() {
         // TUNED — DO NOT CHANGE: 3.2rem matches main search row with visible Nav pill (see css/search.css). Keeps nav recents gap identical.
         $row.css('min-height', '3.2rem');
         $row.on('click', function(e) {
+            if (e && e.stopPropagation) e.stopPropagation();
             // Use existing helpers to set source; they handle selected* vars and route calc
             if (item.category === 'stop' && item.id) {
                 setNavigationFromStop(String(item.id), 'from');
             } else {
                 setNavigationFromBuilding(item.name, 'from');
             }
-            $container.addClass('none').empty();
             // Reveal destination row and clear pending flag
             window.navPendingSourceSelection = false;
             $('.nav-dest-row').removeClass('none');
@@ -237,12 +236,15 @@ function renderNavFromRecents() {
             // If dest already filled, don't focus it – just blur source and let route calc show results
             const _toHasValue = ($('#nav-to-input').val() || '').trim().length > 0 || (typeof selectedToBuilding !== 'undefined' && selectedToBuilding) || (typeof selectedToStop !== 'undefined' && selectedToStop);
             if (_toHasValue) {
+                $container.addClass('none').empty();
                 try { $('#nav-from-input').blur(); } catch(e){}
                 try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch(e){}
             } else {
-                window._suppressNavAutocompleteOnFocus = true;
+                window._navSwitchingInputs = true;
+                setTimeout(() => { window._navSwitchingInputs = false; }, 350);
                 if (window.focusNavToInput) window.focusNavToInput();
                 else $('#nav-to-input').focus();
+                renderNavToRecents();
             }
         });
         $container.append($row);
@@ -296,23 +298,26 @@ function renderNavToRecents() {
         // TUNED — DO NOT CHANGE: 3.2rem matches main search row with visible Nav pill (see css/search.css). Keeps nav recents gap identical.
         $row.css('min-height', '3.2rem');
         $row.on('click', function(e) {
+            if (e && e.stopPropagation) e.stopPropagation();
             // Use existing helpers to set destination; they handle selected* vars and route calc
             if (item.category === 'stop' && item.id) {
                 setNavigationFromStop(String(item.id), 'to');
             } else {
                 setNavigationFromBuilding(item.name, 'to');
             }
-            $container.addClass('none').empty();
             sa_event('btn_press', { 'btn': 'nav_to_recent_selected', 'result': item.name, 'category': item.category });
             // If origin already filled, don't focus it – just blur dest and let route calc show results
             const _fromHasValue = ($('#nav-from-input').val() || '').trim().length > 0 || (typeof selectedFromBuilding !== 'undefined' && selectedFromBuilding) || (typeof selectedFromStop !== 'undefined' && selectedFromStop);
             if (_fromHasValue) {
+                $container.addClass('none').empty();
                 try { $('#nav-to-input').blur(); } catch(e){}
                 try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch(e){}
             } else {
-                window._suppressNavAutocompleteOnFocus = true;
+                window._navSwitchingInputs = true;
+                setTimeout(() => { window._navSwitchingInputs = false; }, 350);
                 if (window.focusNavFromInput) window.focusNavFromInput();
                 else $('#nav-from-input').focus();
+                renderNavFromRecents();
             }
         });
         $container.append($row);
@@ -330,8 +335,33 @@ window.showNavFromRecents = function() {
     return renderNavFromRecents();
 };
 
+function prepareNavFromWithRecents() {
+    let _hasRecents = false;
+    try {
+        const _raw = localStorage.getItem('recentSearches');
+        const _arr = _raw ? JSON.parse(_raw) : [];
+        _hasRecents = Array.isArray(_arr) && _arr.some(it => it && it.type !== 'navigation' && it.name && it.category);
+    } catch(e) { _hasRecents = false; }
+    if (_hasRecents) {
+        selectedFromBuilding = null;
+        selectedFromStop = null;
+        isSettingInputProgrammatically = true;
+        $('#nav-from-input').val('').trigger('input');
+        isSettingInputProgrammatically = false;
+        $('#nav-from-clear-btn').hide();
+        setNavPendingSourceSelection(true);
+        renderNavFromRecents();
+    } else {
+        setNavPendingSourceSelection(false);
+    }
+}
+window.prepareNavFromWithRecents = prepareNavFromWithRecents;
+
 $(document).ready(function() {
-    $('.building-directions').click(function() {
+    $('.building-directions').click(function(e) {
+        if (e) {
+            e.stopPropagation();
+        }
 
         // Check if we have a building selected BEFORE calling hideInfoBoxes - needed?
         // if (!popupBuildingName) {
@@ -356,6 +386,8 @@ $(document).ready(function() {
         setNavigationFromBuilding(currentBuildingName, 'to');
         openDirectionsNav();
         window.errorTracker.trackNavigationWrapperShow('Building directions button');
+
+        prepareNavFromWithRecents();
 
         // Focus on the from input for user to enter their starting location
         // (programmatic focus — don't pop autocomplete for a pre-filled value).
@@ -484,8 +516,38 @@ function setupNavigationInputs() {
         }
     });
 
+    let lastFocusedNavInput = null;
+    let _navResultsInteractionActive = false;
+
+    // Prevent blurring the active nav input when clicking/tapping in .nav-search-results
+    // (such as row gaps or padding), so results stay open and input remains focused.
+    $(document).on('mousedown', '.nav-search-results', function(e) {
+        if (!$(e.target).closest('button, input, select, textarea').length) {
+            e.preventDefault();
+            if (lastFocusedNavInput && document.activeElement !== lastFocusedNavInput) {
+                try { lastFocusedNavInput.focus(); } catch (err) {}
+            }
+        }
+    });
+
+    $(document).on('touchstart pointerdown', '.nav-search-results', function(e) {
+        if (!$(e.target).closest('.search-result-item').length) {
+            _navResultsInteractionActive = true;
+            setTimeout(() => { _navResultsInteractionActive = false; }, 400);
+        }
+    });
+
+    $(document).on('click', '.nav-search-results', function(e) {
+        if (!$(e.target).closest('.search-result-item').length) {
+            if (lastFocusedNavInput && document.activeElement !== lastFocusedNavInput) {
+                try { lastFocusedNavInput.focus(); } catch (err) {}
+            }
+        }
+    });
+
     // Handle focus events to hide dropdowns
     $('#nav-from-input, #nav-to-input').on('focus', function() {
+        lastFocusedNavInput = this;
         const input = $(this);
         const value = input.val().trim();
         const isFromInputFocus = input.attr('id') === 'nav-from-input';
@@ -522,6 +584,7 @@ function setupNavigationInputs() {
         if ($('.nav-route-selector-container').children().length > 0) {
             $('.nav-route-selector-container').addClass('none');
         }
+        $('.nav-transfer-info-banner, .nav-walk-warning-banner').addClass('none');
         navAnyInputFocused = true;
         updateNavDestRowVisibility();
     });
@@ -532,6 +595,19 @@ function setupNavigationInputs() {
 
         // Delay hiding to allow clicks on dropdown items
         setTimeout(() => {
+            if (window._navSwitchingInputs) {
+                return;
+            }
+            if (_navResultsInteractionActive) {
+                _navResultsInteractionActive = false;
+                navAnyInputFocused = true;
+                if (lastFocusedNavInput && document.activeElement !== lastFocusedNavInput) {
+                    try { lastFocusedNavInput.focus(); } catch (err) {}
+                }
+                updateNavDestRowVisibility();
+                return;
+            }
+
             // If either nav input still has focus (e.g. the user jumped from
             // source to destination, or refocused the same input quickly),
             // don't restore the directions panel — keep it hidden while any
@@ -569,6 +645,12 @@ function setupNavigationInputs() {
                 if (curFromBlur && curToBlur && $('.nav-directions-wrapper').children().length > 0) {
                     $('.nav-directions-wrapper').removeClass('none').addClass('flex');
                     $('.nav-route-selector-container').removeClass('none');
+                    if (typeof updateNavInfoBanners === 'function') {
+                        updateNavInfoBanners();
+                    } else if (typeof updateNavTransferInfoBanner === 'function') {
+                        const curRoute = navRouteSession && navRouteSession.routeData && navRouteSession.routeData.route;
+                        updateNavTransferInfoBanner(curRoute);
+                    }
                 }
                 navDirectionsWasVisibleBeforeFocus = false;
             }
@@ -577,7 +659,8 @@ function setupNavigationInputs() {
 
     // Hide dropdowns when clicking outside
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('.nav-from, .nav-to, .nav-pill-bar, .nav-search-results').length) {
+        if (!e.target || !e.target.isConnected) return;
+        if (!$(e.target).closest('.nav-from, .nav-to, .nav-pill-bar, .nav-search-results, .nav-mid-row, .nav-dest-row, .route-swap-btn').length) {
             hideNavigationAutocomplete();
         }
     });
@@ -690,7 +773,26 @@ function openNav(navTo, navFrom) {
     }
 }
 
-function swapNavLocations() {
+function triggerNavButtonFeedback($btn) {
+    if (!$btn || !$btn.length) return;
+    $btn.addClass('nav-btn-active');
+    const existingTimer = $btn.data('_feedbackTimer');
+    if (existingTimer) clearTimeout(existingTimer);
+    const t = setTimeout(() => {
+        $btn.removeClass('nav-btn-active');
+        $btn.removeData('_feedbackTimer');
+    }, 250);
+    $btn.data('_feedbackTimer', t);
+}
+window.triggerNavButtonFeedback = triggerNavButtonFeedback;
+
+function swapNavLocations(e) {
+    if (!e && window.event) e = window.event;
+    if (e && e.stopPropagation) {
+        e.stopPropagation();
+    }
+    triggerNavButtonFeedback($('.route-swap-btn, .route-swap-button'));
+
     const fromInput = $('#nav-from-input');
     const toInput = $('#nav-to-input');
     const fromVal = fromInput.val().trim();
@@ -733,12 +835,29 @@ function swapNavLocations() {
     // Recalculate route if both locations are available
     if (toVal && fromVal) {
         calculateRoute(toVal, fromVal);
-    } else if (toVal) {
-        if (window.focusNavInput) window.focusNavInput('#nav-to-input');
-        else $('#nav-to-input').focus();
-    } else if (fromVal) {
-        if (window.focusNavFromInput) window.focusNavFromInput();
-        else $('#nav-from-input').focus();
+    } else {
+        if (typeof clearRouteDisplay === 'function') {
+            clearRouteDisplay();
+        }
+        if (toVal) {
+            // toVal was non-empty before swap -> now in fromInput.
+            // fromVal was empty before swap -> now in toInput.
+            // The empty input is toInput (#nav-to-input).
+            setNavPendingSourceSelection(false);
+            renderNavToRecents();
+            window._suppressNavAutocompleteOnFocus = true;
+            if (window.focusNavInput) window.focusNavInput('#nav-to-input');
+            else $('#nav-to-input').focus();
+        } else if (fromVal) {
+            // fromVal was non-empty before swap -> now in toInput.
+            // toVal was empty before swap -> now in fromInput.
+            // The empty input is fromInput (#nav-from-input).
+            setNavPendingSourceSelection(true);
+            renderNavFromRecents();
+            window._suppressNavAutocompleteOnFocus = true;
+            if (window.focusNavFromInput) window.focusNavFromInput();
+            else $('#nav-from-input').focus();
+        }
     }
 }
 window.swapNavLocations = swapNavLocations;
@@ -746,7 +865,13 @@ window.swapNavLocations = swapNavLocations;
 let _savedExplicitNav = null;
 let _hasRandomizedSinceSave = false;
 
-function randomizeNavLocations() {
+function randomizeNavLocations(e) {
+    if (!e && window.event) e = window.event;
+    if (e && e.stopPropagation) {
+        e.stopPropagation();
+    }
+    triggerNavButtonFeedback($('.route-random-btn'));
+
     if (!_hasRandomizedSinceSave) {
         _savedExplicitNav = {
             fromBuilding: selectedFromBuilding,
@@ -1186,16 +1311,16 @@ function calculateRouteScore(routes, totalWalkingFeet, startStop, endStop) {
         scoreBreakdown.push(`+${walkingDistanceBonus.toFixed(1)} (walking distance bonus)`);
     }
 
-    // Prefer non-weekend/overnight routes for general use
+    // Prefer non-weekend routes for general use
     const hasRegularRoutes = routes.some(r => {
         const name = String(r.name || '').toLowerCase();
-        return !name.startsWith('wknd') && !name.startsWith('on');
+        return !name.startsWith('wknd');
     });
     if (hasRegularRoutes) {
         score += 20;
         scoreBreakdown.push(`+20 (regular routes)`);
     } else {
-        scoreBreakdown.push(`+0 (weekend/overnight only)`);
+        scoreBreakdown.push(`+0 (weekend only)`);
     }
 
     return score;
@@ -1234,8 +1359,8 @@ function calculateTransferRouteScore(t, totalWalkingFeet, startStop, endStop) {
     // Regular routes preference
     const n1 = String(t.route1Name || '').toLowerCase();
     const n2 = String(t.route2Name || '').toLowerCase();
-    const isWknd1 = n1.startsWith('wknd') || n1.startsWith('on') || n1.includes('winter') || n1.includes('summer');
-    const isWknd2 = n2.startsWith('wknd') || n2.startsWith('on') || n2.includes('winter') || n2.includes('summer');
+    const isWknd1 = n1.startsWith('wknd') || n1.includes('winter') || n1.includes('summer');
+    const isWknd2 = n2.startsWith('wknd') || n2.includes('winter') || n2.includes('summer');
     if (!isWknd1 && !isWknd2) {
         score += 20;
     } else {
@@ -1306,6 +1431,12 @@ function calculateRoute(from, to) {
             openDirectionsNav();
             $('.nav-directions-wrapper').removeClass('none').addClass('flex');
             $('.nav-route-selector-container').removeClass('none');
+            if (typeof updateNavInfoBanners === 'function') {
+                updateNavInfoBanners();
+            } else if (typeof updateNavTransferInfoBanner === 'function') {
+                const curRoute = navRouteSession && navRouteSession.routeData && navRouteSession.routeData.route;
+                updateNavTransferInfoBanner(curRoute);
+            }
             navDirectionsWasVisibleBeforeFocus = false;
             $('.nav-directions-wrapper').scrollTop(0);
             // Ensure dest row and pills are visible when reshowing
@@ -1358,10 +1489,10 @@ function calculateRoute(from, to) {
         const WALKING_CUTOFF_FEET = 2000;
         let filteredRankedRoutes = rankedRoutes;
         if (rankedRoutes.length > 1 && totalWalkingFeet > WALKING_CUTOFF_FEET) {
-            // Keep only non-WKND/ON routes when walking is too high; if that empties, keep original top
+            // Keep only non-WKND routes when walking is too high; if that empties, keep original top
             const nonWeekend = rankedRoutes.filter(r => {
                 const n = String(r.name || '').toLowerCase();
-                return !(n.startsWith('wknd') || n.startsWith('on'));
+                return !n.startsWith('wknd');
             });
             filteredRankedRoutes = nonWeekend.length > 0 ? nonWeekend : rankedRoutes;
         }
@@ -1754,6 +1885,7 @@ function showNavigationAutocomplete(inputElement, query) {
         // Use click only (like the main search results) so touch scrolling
         // doesn't trigger selection — click fires only after a tap without scroll.
         const handleSelection = function(e) {
+            if (e && e.stopPropagation) e.stopPropagation();
             // Choosing a source clears the pending-recent state
             if (isFromInput && window.navPendingSourceSelection) {
                 window.navPendingSourceSelection = false;
@@ -1765,9 +1897,6 @@ function showNavigationAutocomplete(inputElement, query) {
 
             // Save selected item to recent searches
             saveRecentSearch(item);
-
-            // Hide results immediately for better UX (before route calculation)
-            resultsContainer.addClass('none');
 
             // Set the selected place variable (may be building or stop by name)
             if (isFromInput) {
@@ -1791,6 +1920,8 @@ function showNavigationAutocomplete(inputElement, query) {
             const fromValue = $('#nav-from-input').val().trim();
             const toValue = $('#nav-to-input').val().trim();
             if (fromValue && toValue) {
+                // Hide results immediately for better UX (before route calculation)
+                resultsContainer.addClass('none');
                 const fromPlace = resolvePlaceByName(fromValue);
                 const toPlace = resolvePlaceByName(toValue);
                 if (fromPlace && toPlace) {
@@ -1798,9 +1929,21 @@ function showNavigationAutocomplete(inputElement, query) {
                     try { inputElement.blur(); } catch (err) { /* ignore */ }
                     // Run route calculation in background to prevent blocking UI
                     setTimeout(() => {
-                    calculateRoute(fromValue, toValue);
+                        calculateRoute(fromValue, toValue);
                     }, 0);
                 }
+            } else if (isFromInput && !toValue) {
+                window._navSwitchingInputs = true;
+                setTimeout(() => { window._navSwitchingInputs = false; }, 350);
+                if (window.focusNavToInput) window.focusNavToInput();
+                else $('#nav-to-input').focus();
+                renderNavToRecents();
+            } else if (!isFromInput && !fromValue) {
+                window._navSwitchingInputs = true;
+                setTimeout(() => { window._navSwitchingInputs = false; }, 350);
+                if (window.focusNavFromInput) window.focusNavFromInput();
+                else $('#nav-from-input').focus();
+                renderNavFromRecents();
             }
         };
 
@@ -1930,10 +2073,12 @@ function findConnectingRoutes(startStopId, endStopId) {
     const campus = (typeof selectedCampus !== 'undefined') ? selectedCampus : 'nb';
     const campusRoutes = getCampusRoutes(campus);
 
-    const possibleRoutes = Object.keys(stopLists).filter(r =>
-        Array.isArray(stopLists[r]) && stopLists[r].length &&
-        campusRoutes.includes(r)
-    );
+    const possibleRoutes = Object.keys(stopLists).filter(r => {
+        const lower = String(r || '').toLowerCase();
+        return Array.isArray(stopLists[r]) && stopLists[r].length &&
+            campusRoutes.includes(r) &&
+            lower !== 'on1' && lower !== 'on2' && !lower.startsWith('on');
+    });
 
     for (const routeName of possibleRoutes) {
         const routeStops = stopLists[routeName];
@@ -1964,10 +2109,12 @@ function findTransferRoutes(startStopId, endStopId) {
     const e = parseInt(endStopId);
     if (isNaN(s1) || isNaN(e) || s1 === e) return [];
 
-    const possibleRoutes = Object.keys(stopLists).filter(r =>
-        Array.isArray(stopLists[r]) && stopLists[r].length &&
-        campusRoutes.includes(r)
-    );
+    const possibleRoutes = Object.keys(stopLists).filter(r => {
+        const lower = String(r || '').toLowerCase();
+        return Array.isArray(stopLists[r]) && stopLists[r].length &&
+            campusRoutes.includes(r) &&
+            lower !== 'on1' && lower !== 'on2' && !lower.startsWith('on');
+    });
 
     const transfers = [];
     const seenPairs = new Set();
@@ -1982,6 +2129,12 @@ function findTransferRoutes(startStopId, endStopId) {
 
         for (const r2 of possibleRoutes) {
             if (r1 === r2) continue;
+
+            // Weekend routes (wknd1 and wknd2) can only transfer with each other (when weekend buses run, no other routes run)
+            const isWknd1 = String(r1).toLowerCase().startsWith('wknd');
+            const isWknd2 = String(r2).toLowerCase().startsWith('wknd');
+            if (isWknd1 !== isWknd2) continue;
+
             const stops2 = stopLists[r2];
             const idx2_end = stops2.indexOf(e);
             if (idx2_end === -1) continue;
@@ -2220,11 +2373,15 @@ async function getWalkingPathRoadNames(startCoord, endCoord) {
 
 // Select the best route from available options based on various criteria
 function selectBestRoute(routes, startStop, endStop) {
-    if (routes.length === 0) return [];
-    if (routes.length === 1) return [routes[0]];
+    const validRoutes = (routes || []).filter(r => {
+        const n = String(r.name || '').toLowerCase();
+        return n !== 'on1' && n !== 'on2' && !n.startsWith('on');
+    });
+    if (validRoutes.length === 0) return [];
+    if (validRoutes.length === 1) return [validRoutes[0]];
 
     // Score routes based on multiple criteria (treat routes as circular)
-    const scoredRoutes = routes.map(route => {
+    const scoredRoutes = validRoutes.map(route => {
         let score = 0;
 
         // Prefer routes with fewer stops between start and end (circular distance, less strict)
@@ -2247,9 +2404,9 @@ function selectBestRoute(routes, startStop, endStop) {
             score += 3;
         }
 
-        // Strongly deprioritize weekend/overnight variants so they are not chosen by default
+        // Strongly deprioritize weekend variants so they are not chosen by default
         const n = String(route.name || '').toLowerCase();
-        if (n.startsWith('wknd') || n.startsWith('on')) {
+        if (n.startsWith('wknd')) {
             score -= 10000; // effectively never optimal unless only choices
         }
 
@@ -2402,12 +2559,19 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit) {
         : Object.keys(busesByRoutes[selectedCampus]).find(k => k.toLowerCase() === lowerRouteName);
     if (!routeKey || !busesByRoutes[selectedCampus][routeKey]) return [];
 
-    const approaching = [];
+    const targetLimit = (typeof limit === 'number' && limit > 0) ? limit : 3;
     const loopTimes = (typeof calculateLoopTimes === 'function') ? calculateLoopTimes() : null;
-    const loopTimeSec = (loopTimes && typeof loopTimes[routeKey] === 'number' && isFinite(loopTimes[routeKey]))
+    let loopTimeSec = (loopTimes && typeof loopTimes[routeKey] === 'number' && isFinite(loopTimes[routeKey]) && loopTimes[routeKey] > 0)
         ? loopTimes[routeKey] * 60
         : null;
+    if (!loopTimeSec && typeof NAV_FALLBACK_MIN_PER_STOP === 'number') {
+        const stopList = (typeof stopLists !== 'undefined') ? stopLists[routeKey] : null;
+        const numStops = (stopList && stopList.length) ? stopList.length : 8;
+        loopTimeSec = numStops * NAV_FALLBACK_MIN_PER_STOP * 60;
+    }
+    if (!loopTimeSec || loopTimeSec <= 0) loopTimeSec = 20 * 60;
 
+    const firstPasses = [];
     busesByRoutes[selectedCampus][routeKey].forEach(busName => {
         try {
             if (!busData[busName]) return;
@@ -2423,17 +2587,35 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit) {
             // rider just catches it on a later loop.
             let catchEta = eta;
             let catchLoop = 1;
-            while (walkSeconds > 0 && catchEta < walkSeconds && loopTimeSec !== null && isFinite(loopTimeSec) && loopTimeSec > 0) {
+            while (walkSeconds > 0 && catchEta < walkSeconds && loopTimeSec > 0) {
                 catchEta += loopTimeSec;
                 catchLoop += 1;
             }
             if (walkSeconds > 0 && catchEta < walkSeconds) return;
-            approaching.push({ busName, eta: catchEta, loop: catchLoop });
+            firstPasses.push({ busName, eta: catchEta, loop: catchLoop });
         } catch (e) {}
     });
 
-    approaching.sort((a, b) => a.eta - b.eta);
-    return approaching.slice(0, limit);
+    if (firstPasses.length === 0) return [];
+
+    // Collect candidate passes: include subsequent loops for each bus so that
+    // if fewer physical buses exist than targetLimit (e.g. 2 buses in service),
+    // their next loop times are eligible and can populate the list up to targetLimit.
+    const candidates = [...firstPasses];
+    if (loopTimeSec > 0) {
+        for (let nextLoop = 1; nextLoop < targetLimit; nextLoop++) {
+            firstPasses.forEach(b => {
+                candidates.push({
+                    busName: b.busName,
+                    eta: b.eta + (nextLoop * loopTimeSec),
+                    loop: b.loop + nextLoop
+                });
+            });
+        }
+    }
+
+    candidates.sort((a, b) => a.eta - b.eta);
+    return candidates.slice(0, targetLimit);
 }
 
 function getUpcomingBusesHtml(routeName, stopId, walkSeconds) {
@@ -2484,8 +2666,7 @@ function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSe
         const now = Date.now();
         const rows = top.map(b => {
             // ETA at the destination/alighting stop
-            const eta = (typeof getETAForStop === 'function') ? getETAForStop(b.busName, alightingStopId) : undefined;
-            const etaSeconds = (typeof eta === 'number' && isFinite(eta)) ? eta : b.eta;
+            const etaSeconds = getBusArrivalETAAtStop(b, alightingStopId, routeName, 5);
             const arrivalTime = new Date(now + etaSeconds * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
             const routeColor = getRouteColor(routeName);
@@ -2514,15 +2695,21 @@ function getBusArrivalETAAtStop(b, destStopId, routeName, fallbackMin) {
     let eta = (typeof getETAForStop === 'function') ? getETAForStop(b.busName, destStopId) : undefined;
     const loopTimes = (typeof calculateLoopTimes === 'function') ? calculateLoopTimes() : null;
     const lower = String(routeName || '').toLowerCase();
-    const loopTimeSec = (loopTimes && typeof loopTimes[lower] === 'number' && isFinite(loopTimes[lower]))
+    let loopTimeSec = (loopTimes && typeof loopTimes[lower] === 'number' && isFinite(loopTimes[lower]) && loopTimes[lower] > 0)
         ? loopTimes[lower] * 60
         : null;
+    if (!loopTimeSec && typeof NAV_FALLBACK_MIN_PER_STOP === 'number') {
+        const stopList = (typeof stopLists !== 'undefined') ? stopLists[lower] : null;
+        const numStops = (stopList && stopList.length) ? stopList.length : 8;
+        loopTimeSec = numStops * NAV_FALLBACK_MIN_PER_STOP * 60;
+    }
+    if (!loopTimeSec || loopTimeSec <= 0) loopTimeSec = 20 * 60;
 
     if (typeof eta === 'number' && isFinite(eta) && eta >= 0) {
         if (b.loop && b.loop > 1 && loopTimeSec) {
             eta += (b.loop - 1) * loopTimeSec;
         }
-        if (eta < b.eta && loopTimeSec) {
+        while (eta < b.eta && loopTimeSec > 0) {
             eta += loopTimeSec;
         }
         return eta;
@@ -2535,11 +2722,20 @@ function getBusArrivalETAAtStop(b, destStopId, routeName, fallbackMin) {
 //    tappable to select which Leg 1 bus the user is taking (earliest/soonest selected by default).
 // 2. Incoming buses list (Leg 2): 3 soonest buses departing the transfer stop towards the alighting stop,
 //    filtered to only include buses arriving at or after the selected Leg 1 bus reaches the transfer stop.
-function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transferStopId, walkSeconds, selectedBusName, leg1TravelMin) {
+function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transferStopId, walkSeconds, selectedBusName, leg1TravelMin, selectedBusIndex) {
     try {
+        // For a route option requiring a transfer, BOTH routes must be in service.
+        // If either route is not in service (e.g. options to the right of the vertical line),
+        // the transfer cannot be made and we don't know when it should occur, so hide both lists.
+        if (typeof navRouteHasLiveBuses === 'function') {
+            if (!navRouteHasLiveBuses(leg1RouteName) || !navRouteHasLiveBuses(leg2RouteName)) {
+                return '';
+            }
+        }
+
         const topLeg1 = getTopApproachingBuses(leg1RouteName, startStopId, walkSeconds, 3);
         const topLeg2Fallback = getTopApproachingBuses(leg2RouteName, transferStopId, walkSeconds + ((leg1TravelMin || 5) * 60), 3);
-        if (topLeg1.length === 0 && topLeg2Fallback.length === 0) return '';
+        if (topLeg1.length === 0 || topLeg2Fallback.length === 0) return '';
 
         const now = Date.now();
         const leg1Color = getRouteColor(leg1RouteName);
@@ -2550,22 +2746,27 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
 
         if (topLeg1.length > 0) {
             let selectedIndex = 0;
-            if (selectedBusName) {
+            if (typeof selectedBusIndex === 'number' && selectedBusIndex >= 0 && selectedBusIndex < topLeg1.length) {
+                selectedIndex = selectedBusIndex;
+            } else if (selectedBusName) {
                 const idx = topLeg1.findIndex(b => b.busName === selectedBusName);
                 if (idx >= 0) selectedIndex = idx;
             }
             selectedArrivalSec = getBusArrivalETAAtStop(topLeg1[selectedIndex], transferStopId, leg1RouteName, leg1TravelMin);
 
+            const showRadio = topLeg1.length > 1;
             const destRows = topLeg1.map((b, i) => {
                 const isSelected = i === selectedIndex;
                 const etaTransfer = getBusArrivalETAAtStop(b, transferStopId, leg1RouteName, leg1TravelMin);
                 const arrivalTime = new Date(now + etaTransfer * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                 const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
-                return `
-                    <div class="destination-bus-row selectable-transfer-bus ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-eta-transfer="${etaTransfer}" title="Tap to select this bus">
+                const radioHtml = showRadio ? `
                         <span class="transfer-bus-radio">
                             <i class="fa-solid ${isSelected ? 'fa-circle-dot' : 'fa-circle'}"></i>
-                        </span>
+                        </span>` : '';
+                return `
+                    <div class="destination-bus-row ${showRadio ? 'selectable-transfer-bus' : ''} ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${i}" data-eta-transfer="${etaTransfer}" ${showRadio ? 'title="Tap to select this bus"' : ''}>
+                        ${radioHtml}
                         <span class="destination-bus-name" style="color: ${leg1Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
                         <span class="destination-bus-arrival">${arrivalTime} arrival</span>
                     </div>
@@ -2573,7 +2774,7 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
             }).join('');
 
             destListHtml = `
-                <div class="destination-buses-list transfer-destination-buses-list">
+                <div class="destination-buses-list transfer-destination-buses-list ${showRadio ? 'has-radio' : ''}">
                     ${destRows}
                 </div>
             `;
@@ -2581,23 +2782,20 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
 
         // Connecting Leg 2 buses arriving AT OR AFTER selectedArrivalSec
         const topLeg2 = getTopApproachingBuses(leg2RouteName, transferStopId, selectedArrivalSec, 3);
-        let incomingRows = '';
-        if (topLeg2.length > 0) {
-            incomingRows = topLeg2.map((b, i) => {
-                const arrivalTime = new Date(now + b.eta * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                const waitMin = Math.max(0, Math.ceil((b.eta - selectedArrivalSec) / 60));
-                const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
-                return `
-                    <div class="incoming-bus-row" data-bus-name="${b.busName}">
-                        <span class="incoming-bus-name" style="color: ${leg2Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
-                        <span class="incoming-bus-arrival">arrives ${arrivalTime}</span>
-                        <span class="incoming-bus-wait ${i === 0 ? 'soonest' : ''}">${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}</span>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            incomingRows = `<div style="grid-column: span 3; font-size: 1.3rem; opacity: 0.7; font-style: italic; white-space: nowrap;">No connecting buses</div>`;
-        }
+        if (topLeg2.length === 0) return '';
+
+        let incomingRows = topLeg2.map((b, i) => {
+            const arrivalTime = new Date(now + b.eta * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const waitMin = Math.max(0, Math.ceil((b.eta - selectedArrivalSec) / 60));
+            const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
+            return `
+                <div class="incoming-bus-row" data-bus-name="${b.busName}">
+                    <span class="incoming-bus-name" style="color: ${leg2Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
+                    <span class="incoming-bus-arrival">arrives ${arrivalTime}</span>
+                    <span class="incoming-bus-wait ${i === 0 ? 'soonest' : ''}">${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}</span>
+                </div>
+            `;
+        }).join('');
 
         const incomingListHtml = `
             <div class="incoming-buses-list transfer-incoming-buses-list">
@@ -2605,27 +2803,20 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
             </div>
         `;
 
-        if (destListHtml && incomingListHtml) {
-            return `
-                <div class="transfer-buses-container">
+        if (!destListHtml || !incomingListHtml) return '';
+
+        return `
+            <div class="transfer-buses-container">
+                <div class="transfer-top-bus-wrapper">
                     ${destListHtml}
-                    ${incomingListHtml}
+                    <div class="transfer-buses-connector">
+                        <div class="transfer-connector-line"></div>
+                        <div class="transfer-connector-triangle"></div>
+                    </div>
                 </div>
-            `;
-        } else if (destListHtml) {
-            return `
-                <div class="transfer-buses-container">
-                    ${destListHtml}
-                </div>
-            `;
-        } else if (incomingListHtml) {
-            return `
-                <div class="transfer-buses-container">
-                    ${incomingListHtml}
-                </div>
-            `;
-        }
-        return '';
+                ${incomingListHtml}
+            </div>
+        `;
     } catch (e) {
         console.error('[nav] getTransferBusesHtml error:', e);
         return '';
@@ -3036,6 +3227,28 @@ async function loadEndWalkingRoads(endBuilding, endStop) {
     }
 }
 
+// Calculate total walking minutes for a candidate route option
+function calculateOptionWalkMinutes(r, combo, routeData) {
+    let minutes = 0;
+    const startWalk = (combo && combo.startWalkDistance) || (r && r.startWalkDistance) || (routeData && routeData.startWalkDistance);
+    const endWalk = (combo && combo.endWalkDistance) || (r && r.endWalkDistance) || (routeData && routeData.endWalkDistance);
+    if (startWalk && typeof startWalk.feet === 'number') {
+        minutes += Math.ceil(startWalk.feet / 220);
+    }
+    if (endWalk && typeof endWalk.feet === 'number') {
+        minutes += Math.ceil(endWalk.feet / 220);
+    }
+    if (minutes === 0) {
+        const totalFeet = (combo && typeof combo.totalWalkingFeet === 'number' && combo.totalWalkingFeet) ||
+                          (r && typeof r.totalWalkingFeet === 'number' && r.totalWalkingFeet) || 0;
+        if (totalFeet > 0) {
+            minutes = Math.ceil(totalFeet / 220);
+        }
+    }
+    return minutes;
+}
+window.calculateOptionWalkMinutes = calculateOptionWalkMinutes;
+
 // Calculate journey minutes for a candidate route option
 function calculateOptionJourneyMinutes(r, combo, routeData) {
     let totalMinutes = 0;
@@ -3118,12 +3331,12 @@ function calculateOptionJourneyMinutes(r, combo, routeData) {
 // Sort route options: live routes first (sorted ascending by journey time), then inactive routes (sorted ascending)
 function sortRoutesForDisplay(routesForDisplay) {
     routesForDisplay.sort((a, b) => {
-        const aWkndOn = String(a.displayName || a.route.name || '').toLowerCase().startsWith('wknd') || String(a.displayName || a.route.name || '').toLowerCase().startsWith('on');
-        const bWkndOn = String(b.displayName || b.route.name || '').toLowerCase().startsWith('wknd') || String(b.displayName || b.route.name || '').toLowerCase().startsWith('on');
+        const aWknd = String(a.displayName || a.route.name || '').toLowerCase().startsWith('wknd');
+        const bWknd = String(b.displayName || b.route.name || '').toLowerCase().startsWith('wknd');
         if (a.hasLive && !b.hasLive) return -1;
         if (!a.hasLive && b.hasLive) return 1;
-        if (!a.hasLive && !b.hasLive && aWkndOn !== bWkndOn) {
-            return aWkndOn ? 1 : -1;
+        if (!a.hasLive && !b.hasLive && aWknd !== bWknd) {
+            return aWknd ? 1 : -1;
         }
         if (a.journeyMinutes !== b.journeyMinutes) {
             return a.journeyMinutes - b.journeyMinutes;
@@ -3167,10 +3380,10 @@ function buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex) {
 
             if (isSelected) {
                 const gradientBg = (color1 !== color2) ? `linear-gradient(135deg, ${color1}, ${color2})` : color1;
-                style = `background: ${gradientBg}; color: white;`;
+                style = `background: ${gradientBg}; color: white; border-color: transparent !important;`;
                 labelHtml = `<span class="route-option-label" style="color: white; font-weight: 700;">${l1.toUpperCase()}<span style="margin: 0 0.25rem; font-size: 0.9em; opacity: 0.9;">→</span>${l2.toUpperCase()}</span>`;
             } else {
-                style = `background-color: var(--theme-unselected-route-bg); color: var(--theme-unselected-route-text);`;
+                style = `background-color: var(--theme-unselected-route-bg); color: var(--theme-unselected-route-text); border-color: transparent !important;`;
                 labelHtml = `<span class="route-option-label"><span style="color: ${color1}; font-weight: 700;">${l1.toUpperCase()}</span><span style="color: var(--theme-stops-list-text); opacity: 0.7; margin: 0 0.25rem; font-size: 0.9em;">→</span><span style="color: ${color2}; font-weight: 700;">${l2.toUpperCase()}</span></span>`;
             }
         } else {
@@ -3196,13 +3409,27 @@ function buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex) {
         }
 
         const selectedClass = isSelected ? 'selected' : '';
+        const transferClass = isTransfer ? 'transfer-route' : '';
         const hasLive = entry.hasLive;
         const liveDotHtml = hasLive ? `<span class="nav-route-live-dot" aria-label="Buses in service" title="Buses in service"></span>` : ``;
 
         const journeyMinutes = hasLive ? Math.max(1, entry.journeyMinutes) : 0;
         const timeHtml = (hasLive && journeyMinutes > 0) ? `<span class="route-option-time">${journeyMinutes}m</span>` : ``;
 
-        const pill = `<div class="route-option ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">${liveDotHtml}${labelHtml}${timeHtml}</div>`;
+        let walkMinutes = (typeof entry.walkMinutes === 'number') ? entry.walkMinutes : 0;
+        if (!walkMinutes && typeof calculateOptionWalkMinutes === 'function') {
+            const rd = (navRouteSession && navRouteSession.routeData) || null;
+            const rKey = entry.route && entry.route.name && entry.route.name.toLowerCase();
+            const combo = rd && rd.routeCombosMap && rd.routeCombosMap[rKey];
+            walkMinutes = calculateOptionWalkMinutes(entry.route, combo, rd);
+        }
+
+        let walkHtml = '';
+        if (walkMinutes > 10) {
+            walkHtml = `<span class="route-option-walk">(<i class="fa-solid fa-person-walking"></i><span class="route-option-walk-time">${walkMinutes}m</span>)</span>`;
+        }
+
+        const pill = `<div class="route-option ${transferClass} ${selectedClass} br-1rem" data-route-index="${index}" style="${style}">${liveDotHtml}${labelHtml}${timeHtml}${walkHtml}</div>`;
         if (_hasBoth && index === _lastLiveIdx) {
             return pill + `<div class="route-options-divider" aria-hidden="true" style="width:1px; height:2.2rem; background:var(--theme-line-bg); flex-shrink:0; align-self:center; margin:0 0.25rem; opacity:0.9;"></div>`;
         }
@@ -3243,7 +3470,9 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 const rIdx = parseInt($(this).attr('data-route-index'), 10);
                 const rEntry = routesForDisplay[rIdx];
                 $(this).removeClass('selected');
-                $(this).attr('style', `background-color: ${defaultBg}; color: ${defaultText};`);
+                const isItemTransfer = rEntry && (rEntry.isTransfer || (rEntry.route && rEntry.route.isTransfer));
+                const itemBorder = isItemTransfer ? 'border-color: transparent !important;' : '';
+                $(this).attr('style', `background-color: ${defaultBg}; color: ${defaultText}; ${itemBorder}`);
 
                 if (rEntry && (rEntry.isTransfer || (rEntry.route && rEntry.route.isTransfer))) {
                     const l1 = (rEntry.route.leg1 && rEntry.route.leg1.route && rEntry.route.leg1.route.name) || rEntry.route.name.split('-')[0] || '';
@@ -3272,7 +3501,7 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 const c1 = getRouteColor(l1);
                 const c2 = getRouteColor(l2);
                 const selectedBg = (c1 !== c2) ? `linear-gradient(135deg, ${c1}, ${c2})` : c1;
-                $(this).attr('style', `background: ${selectedBg}; color: white;`);
+                $(this).attr('style', `background: ${selectedBg}; color: white; border-color: transparent !important;`);
                 $(this).find('.route-option-label').html(`<span style="color: white; font-weight: 700;">${l1.toUpperCase()}<span style="margin: 0 0.25rem; font-size: 0.9em; opacity: 0.9;">→</span>${l2.toUpperCase()}</span>`);
             } else {
                 const selectedRouteName = newRoute.name.toLowerCase();
@@ -3370,6 +3599,9 @@ function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
     const html = buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex);
     $container.removeClass('none').html(html);
     bindNavRouteOptionClicks(routesForDisplay);
+    if (typeof replaceFontAwesomeIcons === 'function') {
+        replaceFontAwesomeIcons();
+    }
 }
 window.renderNavRouteSelector = renderNavRouteSelector;
 
@@ -3392,14 +3624,25 @@ function updateNavBusesDisplay() {
 
             const topLeg1 = getTopApproachingBuses(route.leg1.route.name, startStop.id, walkSeconds, 3);
             let selectedLeg1BusName = routeData.selectedTransferLeg1BusName || null;
+            let selectedLeg1BusIndex = (typeof routeData.selectedTransferLeg1BusIndex === 'number') ? routeData.selectedTransferLeg1BusIndex : null;
             if (topLeg1.length > 0) {
-                if (!selectedLeg1BusName || !topLeg1.some(b => b.busName === selectedLeg1BusName)) {
+                if (selectedLeg1BusIndex !== null && selectedLeg1BusIndex >= 0 && selectedLeg1BusIndex < topLeg1.length) {
+                    selectedLeg1BusName = topLeg1[selectedLeg1BusIndex].busName;
+                    routeData.selectedTransferLeg1BusName = selectedLeg1BusName;
+                } else if (selectedLeg1BusName && topLeg1.some(b => b.busName === selectedLeg1BusName)) {
+                    selectedLeg1BusIndex = topLeg1.findIndex(b => b.busName === selectedLeg1BusName);
+                    routeData.selectedTransferLeg1BusIndex = selectedLeg1BusIndex;
+                } else {
+                    selectedLeg1BusIndex = 0;
                     selectedLeg1BusName = topLeg1[0].busName;
+                    routeData.selectedTransferLeg1BusIndex = 0;
                     routeData.selectedTransferLeg1BusName = selectedLeg1BusName;
                 }
             } else {
                 selectedLeg1BusName = null;
+                selectedLeg1BusIndex = null;
                 routeData.selectedTransferLeg1BusName = null;
+                routeData.selectedTransferLeg1BusIndex = null;
             }
 
             const upcomingHtml = getUpcomingBusesHtml(route.leg1.route.name, startStop.id, walkSeconds);
@@ -3410,13 +3653,14 @@ function updateNavBusesDisplay() {
                 transferStop.id,
                 walkSeconds,
                 selectedLeg1BusName,
-                leg1TravelMin
+                leg1TravelMin,
+                selectedLeg1BusIndex
             ) : '';
 
             // Selected Leg 1 arrival ETA for alighting stop
             let selectedArrivalSec = walkSeconds + (leg1TravelMin * 60);
             if (topLeg1.length > 0) {
-                const selBus = topLeg1.find(b => b.busName === selectedLeg1BusName) || topLeg1[0];
+                const selBus = (selectedLeg1BusIndex !== null && topLeg1[selectedLeg1BusIndex]) || topLeg1[0];
                 selectedArrivalSec = getBusArrivalETAAtStop(selBus, transferStop.id, route.leg1.route.name, leg1TravelMin);
             }
 
@@ -3566,6 +3810,7 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
                 const isLive = emptiedList.includes(rName) ? false : navRouteHasLiveBuses(rName, dName);
                 const combo = routeData.routeCombosMap && routeData.routeCombosMap[rName];
                 const newJourneyMinutes = isLive ? calculateOptionJourneyMinutes(entry.route, combo, routeData) : 0;
+                entry.walkMinutes = calculateOptionWalkMinutes(entry.route, combo, routeData);
 
                 if (entry.hasLive !== isLive) {
                     entry.hasLive = isLive;
@@ -3589,6 +3834,9 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
 
                 // Re-render the route selector pills so times, dots, and divider update
                 renderNavRouteSelector(routesForDisplay, routeData.selectedRouteDisplayIndex);
+                if (typeof updateNavInfoBanners === 'function') {
+                    updateNavInfoBanners(currentRoute, routeData.selectedRouteDisplayIndex, routesForDisplay);
+                }
             }
         }
 
@@ -3768,7 +4016,8 @@ function renderTimelineWaypointsHtml(data) {
                 transferStop.id,
                 startWalkSec,
                 data.selectedTransferLeg1BusName,
-                leg1TravelMin
+                leg1TravelMin,
+                data.selectedTransferLeg1BusIndex
             );
         } else if (waypoint.role === 'alighting') {
             if (isTransfer) {
@@ -3776,7 +4025,10 @@ function renderTimelineWaypointsHtml(data) {
                 let selectedArrivalSec = arriveAtTransferSec;
                 if (topLeg1.length > 0) {
                     let selBus = topLeg1[0];
-                    if (data.selectedTransferLeg1BusName) {
+                    const selIdx = data.selectedTransferLeg1BusIndex;
+                    if (typeof selIdx === 'number' && selIdx >= 0 && selIdx < topLeg1.length) {
+                        selBus = topLeg1[selIdx];
+                    } else if (data.selectedTransferLeg1BusName) {
                         const found = topLeg1.find(b => b.busName === data.selectedTransferLeg1BusName);
                         if (found) selBus = found;
                     }
@@ -3925,7 +4177,7 @@ function displayRoute(routeData) {
 
     // Create route selector header if there are multiple routes
     let routeSelectorHtml = '';
-    // Prepare routes for display: exclude winter/summer/all; group WKND/ON together and place at end
+    // Prepare routes for display: exclude winter/summer/all/on; group WKND together and place at end
     let routesForDisplay = [];
     let selectedRouteDisplayIndex = 0;
     if (allRoutes.length > 1) {
@@ -3934,17 +4186,17 @@ function displayRoute(routeData) {
             const n = String(name || '').toLowerCase();
             if (n.includes('-')) {
                 const parts = n.split('-');
-                return parts.some(p => p.includes('winter') || p.includes('summer') || p === 'all');
+                return parts.some(p => p.includes('winter') || p.includes('summer') || p === 'all' || p === 'on1' || p === 'on2' || p.startsWith('on'));
             }
-            return n.includes('winter') || n.includes('summer') || n === 'all';
+            return n.includes('winter') || n.includes('summer') || n === 'all' || n === 'on1' || n === 'on2' || n.startsWith('on');
         };
-        const isWkndOn = (name) => {
+        const isWknd = (name) => {
             const n = String(name || '').toLowerCase();
-            return n.startsWith('wknd') || n.startsWith('on');
+            return n.startsWith('wknd');
         };
 
-        const baseRoutes = allRoutes.filter(r => !isExcluded(r) && (r.isTransfer || !isWkndOn(r.name)));
-        const wkndOnRoutes = allRoutes.filter(r => !r.isTransfer && !isExcluded(r) && isWkndOn(r.name));
+        const baseRoutes = allRoutes.filter(r => !isExcluded(r) && (r.isTransfer || !isWknd(r.name)));
+        const wkndRoutes = allRoutes.filter(r => !r.isTransfer && !isExcluded(r) && isWknd(r.name));
 
         // Build display entries for base routes
         routesForDisplay = baseRoutes.map(r => ({
@@ -3953,26 +4205,23 @@ function displayRoute(routeData) {
             isTransfer: !!r.isTransfer
         }));
 
-        // Group weekend/overnight variants by suffix (e.g., 1, 2)
-        if (wkndOnRoutes.length > 0) {
+        // Group weekend variants by suffix (e.g., 1, 2)
+        if (wkndRoutes.length > 0) {
             const getVariant = (name) => {
                 const n = String(name || '').toLowerCase();
-                const m = n.match(/(?:wknd|on)(\d+)/);
+                const m = n.match(/wknd(\d+)/);
                 return m ? m[1] : '';
             };
             const groups = {};
-            wkndOnRoutes.forEach(r => {
+            wkndRoutes.forEach(r => {
                 const v = getVariant(r.name);
-                if (!groups[v]) groups[v] = { wknd: null, on: null };
-                if (r.name.toLowerCase().startsWith('wknd')) groups[v].wknd = r;
-                if (r.name.toLowerCase().startsWith('on')) groups[v].on = r;
+                if (!groups[v]) groups[v] = r;
             });
             const variants = Object.keys(groups).sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
             variants.forEach(v => {
-                const pair = groups[v];
-                const representative = pair.wknd || pair.on;
+                const r = groups[v];
                 const label = `WKND${v}`;
-                routesForDisplay.push({ route: representative, displayName: label, isTransfer: false });
+                routesForDisplay.push({ route: r, displayName: label, isTransfer: false });
             });
         }
 
@@ -3983,6 +4232,7 @@ function displayRoute(routeData) {
             const hasLive = navRouteHasLiveBuses(entry.route.name, entry.displayName);
             entry.hasLive = hasLive;
             entry.journeyMinutes = hasLive ? calculateOptionJourneyMinutes(entry.route, combo, routeData) : 0;
+            entry.walkMinutes = calculateOptionWalkMinutes(entry.route, combo, routeData);
         });
 
         // Sort route options: live routes first (sorted ascending by journey
@@ -4036,13 +4286,18 @@ function displayRoute(routeData) {
             }
         }
     } else if (allRoutes.length === 1) {
-        routesForDisplay = [{
-            route: allRoutes[0],
-            displayName: allRoutes[0].displayName || allRoutes[0].name.toUpperCase(),
-            isTransfer: !!allRoutes[0].isTransfer,
-            hasLive: navRouteHasLiveBuses(allRoutes[0].name)
-        }];
-        selectedRouteDisplayIndex = 0;
+        const rName = String((allRoutes[0] && allRoutes[0].name) || '').toLowerCase();
+        if (rName !== 'on1' && rName !== 'on2' && !rName.startsWith('on')) {
+            routesForDisplay = [{
+                route: allRoutes[0],
+                displayName: allRoutes[0].displayName || allRoutes[0].name.toUpperCase(),
+                isTransfer: !!allRoutes[0].isTransfer,
+                hasLive: navRouteHasLiveBuses(allRoutes[0].name),
+                journeyMinutes: navRouteHasLiveBuses(allRoutes[0].name) ? calculateOptionJourneyMinutes(allRoutes[0], null, routeData) : 0,
+                walkMinutes: calculateOptionWalkMinutes(allRoutes[0], null, routeData)
+            }];
+            selectedRouteDisplayIndex = 0;
+        }
     }
 
     routeSelectorHtml = buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex);
@@ -4111,6 +4366,13 @@ function displayRoute(routeData) {
     // Render the route selector above the directions wrapper (outside the scrolled content)
     renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex);
 
+    // Update transfer and walk info banners
+    if (typeof updateNavInfoBanners === 'function') {
+        updateNavInfoBanners(route, selectedRouteDisplayIndex, routesForDisplay);
+    } else if (typeof updateNavTransferInfoBanner === 'function') {
+        updateNavTransferInfoBanner(route);
+    }
+
     directionsContainer.append(`
         <div class="flex justify-center mt-3rem mb-2rem">
             <div class="nav-close-btn py-1rem px-2rem br-4rem text-1p6rem bold-600 w-min" onclick="closeNavigation()">CLOSE</div>
@@ -4130,10 +4392,12 @@ function displayRoute(routeData) {
         $(document).on('click', '.selectable-transfer-bus', function(e) {
             e.stopPropagation();
             const busName = $(this).data('bus-name');
-            if (!busName) return;
+            const busIndex = $(this).data('bus-index');
+            if (!busName && typeof busIndex === 'undefined') return;
 
             if (navRouteSession && navRouteSession.routeData) {
                 navRouteSession.routeData.selectedTransferLeg1BusName = String(busName);
+                navRouteSession.routeData.selectedTransferLeg1BusIndex = (typeof busIndex !== 'undefined') ? parseInt(busIndex, 10) : 0;
                 updateNavBusesDisplay();
             }
         });
@@ -4361,6 +4625,89 @@ $('.nav-directions-wrapper').on('scroll', function() {
     $(this).toggleClass('nav-fade-top', this.scrollTop > 4);
 });
 
+// Toggle the transfer info banner and the substantially-more-walking warning banner
+function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
+    const rd = (navRouteSession && navRouteSession.routeData) || null;
+    const curRoute = route || (rd && rd.route) || null;
+    const curRoutes = routesForDisplay || (rd && rd.routesForDisplay) || null;
+    const curIndex = (typeof selectedIndex === 'number')
+        ? selectedIndex
+        : ((rd && typeof rd.selectedRouteDisplayIndex === 'number') ? rd.selectedRouteDisplayIndex : 0);
+
+    const directionsVisible = !$('.nav-directions-wrapper').hasClass('none');
+
+    // 1. Transfer banner ("This route contains a transfer; arriving to the transfer stop late may make this path slower than a direct route.")
+    const hasTransfer = !!(curRoute && (curRoute.isTransfer || (curRoute.leg1 && curRoute.leg2)));
+    if (hasTransfer && directionsVisible) {
+        $('.nav-transfer-info-banner').removeClass('none');
+    } else {
+        $('.nav-transfer-info-banner').addClass('none');
+    }
+
+    // 2. Substantially more walking banner ("Although this path may be faster than other routes, it may contain substantially more walking.")
+    let hasSubstantiallyMoreWalking = false;
+    if (curRoutes && curRoutes.length > 1 && directionsVisible) {
+        const curEntry = curRoutes[curIndex] || curRoutes.find(e => e.route && curRoute && e.route.name === curRoute.name);
+        if (curEntry) {
+            let curWalk = (typeof curEntry.walkMinutes === 'number') ? curEntry.walkMinutes : 0;
+            if (!curWalk && typeof calculateOptionWalkMinutes === 'function') {
+                const rKey = curEntry.route && curEntry.route.name && curEntry.route.name.toLowerCase();
+                const combo = rd && rd.routeCombosMap && rd.routeCombosMap[rKey];
+                curWalk = calculateOptionWalkMinutes(curEntry.route, combo, rd);
+            }
+
+            const isWeekendNavRoute = (entry) => {
+                if (!entry) return false;
+                const dName = String(entry.displayName || '').toLowerCase();
+                if (dName.startsWith('wknd') || dName.startsWith('on') || dName.includes('weekend')) return true;
+                const r = entry.route;
+                if (r) {
+                    const rName = String(r.name || '').toLowerCase();
+                    if (rName.startsWith('wknd') || rName.startsWith('on') || rName.includes('weekend')) return true;
+                    if (r.isTransfer) {
+                        const l1 = String((r.leg1 && r.leg1.route && r.leg1.route.name) || '').toLowerCase();
+                        const l2 = String((r.leg2 && r.leg2.route && r.leg2.route.name) || '').toLowerCase();
+                        if (l1.startsWith('wknd') || l1.startsWith('on') || l2.startsWith('wknd') || l2.startsWith('on')) return true;
+                    }
+                }
+                return false;
+            };
+
+            // Exclude weekend route walking times from the comparison times
+            const otherWalks = curRoutes
+                .filter(e => e !== curEntry && !isWeekendNavRoute(e))
+                .map(e => {
+                    let w = (typeof e.walkMinutes === 'number') ? e.walkMinutes : 0;
+                    if (!w && typeof calculateOptionWalkMinutes === 'function') {
+                        const rKey = e.route && e.route.name && e.route.name.toLowerCase();
+                        const combo = rd && rd.routeCombosMap && rd.routeCombosMap[rKey];
+                        w = calculateOptionWalkMinutes(e.route, combo, rd);
+                    }
+                    return w;
+                });
+
+            if (otherWalks.length > 0) {
+                const minOtherWalk = Math.min(...otherWalks);
+                // Substantially more: at least 5 minutes more walking, at least 1.5x, and total walk >= 7 minutes
+                if (curWalk - minOtherWalk >= 5 && curWalk >= minOtherWalk * 1.5 && curWalk >= 7) {
+                    hasSubstantiallyMoreWalking = true;
+                }
+            }
+        }
+    }
+
+    if (hasSubstantiallyMoreWalking && directionsVisible) {
+        $('.nav-walk-warning-banner').removeClass('none');
+    } else {
+        $('.nav-walk-warning-banner').addClass('none');
+    }
+}
+window.updateNavInfoBanners = updateNavInfoBanners;
+function updateNavTransferInfoBanner(route) {
+    updateNavInfoBanners(route);
+}
+window.updateNavTransferInfoBanner = updateNavTransferInfoBanner;
+
 // Update route display when switching routes
 function updateRouteDisplay(routeData) {
     const {
@@ -4396,12 +4743,16 @@ function updateRouteDisplay(routeData) {
 
     // Load road names for walking segments when route is updated
     loadWalkingRoadNames(startBuilding, endBuilding, startStop, endStop, startIsStop, endIsStop);
+
+    // Update transfer and walk info banners
+    updateNavInfoBanners(route);
 }
 
 // Clear the current route display
 function clearRouteDisplay() {
     $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
     $('.nav-route-selector-container').empty();
+    $('.nav-transfer-info-banner, .nav-walk-warning-banner').addClass('none');
     $('.nav-message').remove();
     navDirectionsWasVisibleBeforeFocus = false;
     lastComputedRouteKey = null;
@@ -4455,6 +4806,7 @@ function closeNavigation() {
         // Clear route UI
         $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
         $('.nav-route-selector-container').empty();
+        $('.nav-transfer-info-banner, .nav-walk-warning-banner').addClass('none');
         navDirectionsWasVisibleBeforeFocus = false;
         lastComputedRouteKey = null;
         $('.nav-directions-wtrapper').addClass('none').empty();

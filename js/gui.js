@@ -3616,7 +3616,15 @@ function populateMeClosestStops() {
             if (building && building.name) {
                 // Show building info, and also mention the road if available
                 if (nearestAddress && nearestAddress.name) {
-                    $currentLocationDiv.text(`You're at ${building.name}<br><span style="font-size: 0.8em; opacity: 0.8;">(near ${nearestAddress.name})</span>`);
+                    // Avoid redundant "(near X)" when building name already contains the street (e.g. "allison road classroom building arc" near "allison road")
+                    if (building.name.toLowerCase().includes(nearestAddress.name.toLowerCase())) {
+                        $currentLocationDiv.text(`You're at ${building.name}`);
+                    } else {
+                        $currentLocationDiv.empty()
+                            .append(document.createTextNode(`You're at ${building.name}`))
+                            .append($('<br>'))
+                            .append($('<span>').css({ 'font-size': '0.8em', opacity: 0.8 }).text(`(near ${nearestAddress.name})`));
+                    }
                 } else {
                     $currentLocationDiv.text(`You're at ${building.name}`);
                 }

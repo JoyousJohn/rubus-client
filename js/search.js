@@ -82,14 +82,16 @@ function updateSearchHeading() {
             $('.search-heading-text').text('Navigation');
         }
 
-        $icon.removeClass('icon-search fa-magnifying-glass fa-search').addClass('icon-route');
+        $icon.removeClass('icon-search fa-magnifying-glass fa-search icon-route fa-route')
+             .addClass('icon-diamond-turn-right fa-solid fa-diamond-turn-right');
         requestAnimationFrame(() => fitSearchHeadingText());
         return;
     }
     const campusKey = (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
     const campusName = SEARCH_CAMPUS_NAMES[campusKey] || SEARCH_CAMPUS_NAMES['nb'];
     $('.search-heading-text').text(`Browse ${campusName}`);
-    $icon.removeClass('icon-route fa-route').addClass('icon-search');
+    $icon.removeClass('icon-route fa-route icon-diamond-turn-right fa-diamond-turn-right')
+         .addClass('icon-search');
     requestAnimationFrame(() => fitSearchHeadingText());
 }
 window.updateSearchHeading = updateSearchHeading;
@@ -612,23 +614,27 @@ $(document).ready(function() {
 
         openDirectionsNav();
         // If there are recent searches, hide nav-to and show recents in nav-from dropdown instantly
-        let _hasRecents = false;
-        try {
-            const _raw = localStorage.getItem('recentSearches');
-            const _arr = _raw ? JSON.parse(_raw) : [];
-            _hasRecents = Array.isArray(_arr) && _arr.some(it => it && it.type !== 'navigation' && it.name && it.category);
-        } catch(e) { _hasRecents = false; }
-        if (_hasRecents) {
-            selectedFromBuilding = null;
-            selectedFromStop = null;
-            isSettingInputProgrammatically = true;
-            $('#nav-from-input').val('').trigger('input');
-            isSettingInputProgrammatically = false;
-            $('#nav-from-clear-btn').hide();
-            setNavPendingSourceSelection(true);
-            renderNavFromRecents();
+        if (typeof prepareNavFromWithRecents === 'function') {
+            prepareNavFromWithRecents();
         } else {
-            setNavPendingSourceSelection(false);
+            let _hasRecents = false;
+            try {
+                const _raw = localStorage.getItem('recentSearches');
+                const _arr = _raw ? JSON.parse(_raw) : [];
+                _hasRecents = Array.isArray(_arr) && _arr.some(it => it && it.type !== 'navigation' && it.name && it.category);
+            } catch(e) { _hasRecents = false; }
+            if (_hasRecents) {
+                selectedFromBuilding = null;
+                selectedFromStop = null;
+                isSettingInputProgrammatically = true;
+                $('#nav-from-input').val('').trigger('input');
+                isSettingInputProgrammatically = false;
+                $('#nav-from-clear-btn').hide();
+                setNavPendingSourceSelection(true);
+                renderNavFromRecents();
+            } else {
+                setNavPendingSourceSelection(false);
+            }
         }
         window._suppressNavAutocompleteOnFocus = true;
         window.focusNavFromInput();
@@ -961,15 +967,15 @@ $(document).ready(function() {
         const recentToShow = uniqueItems.slice(0, 3);
         recentToShow.forEach(item => {
             const $row = $('<div class="search-result-item flex"></div>');
-            $row.append('<i class="icon icon-clock-rotate-left"></i>');
-            const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; overflow:hidden;"></div>');
-            const $nameText = $('<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(item.name);
-            $nameWrap.append($nameText);
             let _typeIcon = '';
             if (item.category === 'building') _typeIcon = 'icon-building';
             else if (item.category === 'parking') _typeIcon = 'icon-parking';
             else if (item.category === 'stop') _typeIcon = 'icon-bus-simple';
-            if (_typeIcon) $nameWrap.append('<i class="icon ' + _typeIcon + '" style="flex-shrink:0; font-size:1.3rem; opacity:0.9;"></i>');
+            if (_typeIcon) $row.append('<i class="icon ' + _typeIcon + '"></i>');
+            const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; overflow:hidden;"></div>');
+            const $nameText = $('<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(item.name);
+            $nameWrap.append($nameText);
+            $nameWrap.append('<i class="icon icon-clock-rotate-left" style="flex-shrink:0; font-size:1.3rem; opacity:0.9;"></i>');
             $row.append($nameWrap);
 
             $row.append('<i class="search-result-map-pin icon icon-location-dot"></i>');
@@ -1043,9 +1049,12 @@ $(document).ready(function() {
                 const fromName = (nav.fromBuilding && nav.fromBuilding.name) ? nav.fromBuilding.name : nav.from;
                 const toName = (nav.toBuilding && nav.toBuilding.name) ? nav.toBuilding.name : nav.to;
                 const $row = $('<div class="search-result-item flex"></div>');
-                $row.append('<i class="icon icon-clock-rotate-left"></i>');
-                const $name = $('<div style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(`${fromName} → ${toName}`);
-                $row.append($name);
+                $row.append('<i class="icon icon-route fa-solid fa-route"></i>');
+                const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; overflow:hidden;"></div>');
+                const $nameText = $('<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(`${fromName} → ${toName}`);
+                $nameWrap.append($nameText);
+                $nameWrap.append('<i class="icon icon-clock-rotate-left" style="flex-shrink:0; font-size:1.3rem; opacity:0.9;"></i>');
+                $row.append($nameWrap);
                 const $remove = $('<button class="recent-nav-remove-btn" type="button" style="background:none; border:none; color:var(--theme-color); font-size:1.8rem; cursor:pointer; padding:0.25rem; line-height:1; opacity:0.7; flex-shrink:0; margin-left:auto;">×</button>');
                 $remove.on('click', function(e) {
                     e.stopPropagation();

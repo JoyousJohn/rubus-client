@@ -91,12 +91,12 @@
     background-color: transparent;
 }
 
-/* Row between the source and destination nav bars: a 3-column grid with the
-   randomize + revert pair (left), a centered down-arrow showing direction of
-   travel (middle), and the swap/switch button (right). No absolute positioning. */
+/* Row between the source and destination nav bars: a 3-column grid with
+   empty space (left), centered down-arrow + swap button (middle),
+   and revert + randomize buttons (right). No absolute positioning. */
 .nav-mid-row {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 0.75rem;
     margin: 0 1rem;
@@ -106,20 +106,33 @@
 }
 
 .nav-mid-row .nav-mid-left {
+    min-width: 0;
+}
+
+.nav-mid-row .nav-mid-center {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
+    justify-self: center;
+    gap: 0.6rem;
+}
+
+.nav-mid-row .nav-mid-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    justify-self: end;
     gap: 0.5rem;
     min-width: 0;
 }
 
-.nav-mid-row .nav-mid-left .route-revert-btn {
+.nav-mid-row .nav-mid-right .route-revert-btn {
     position: static;
     transform: none;
     top: auto;
     left: auto;
     margin: 0;
-    border: none;
+    border: 2px solid var(--theme-link);
 }
 
 .nav-mid-row .route-swap-btn {
@@ -128,7 +141,6 @@
     top: auto;
     right: auto;
     left: auto;
-    justify-self: end;
     margin: 0;
 }
 
@@ -136,7 +148,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    justify-self: center;
     font-size: 2.3rem;
     color: var(--theme-link);
     opacity: 0.85;
@@ -146,10 +157,11 @@
     -webkit-user-select: none;
 }
 
-.route-swap-btn {
+.route-swap-btn,
+.route-swap-button {
     font-size: 1.5rem;
-    color: var(--theme-bg);
-    background-color: var(--theme-color);
+    color: var(--theme-link);
+    background-color: var(--theme-bg);
     border-radius: 50%;
     width: 3.4rem;
     height: 3.4rem;
@@ -161,19 +173,29 @@
     justify-content: center;
     transition: all 0.2s ease;
     box-sizing: border-box;
-    border: none;
+    border: 2px solid var(--theme-link);
 }
 
-.route-swap-btn:hover {
+.route-swap-btn:hover,
+.route-swap-button:hover {
     opacity: 1;
-    background-color: var(--theme-link);
-    color: var(--theme-bg);
+    background-color: var(--theme-bg);
+    color: var(--theme-link);
+}
+
+.route-swap-btn:active,
+.route-swap-button:active,
+.route-swap-btn.nav-btn-active,
+.route-swap-button.nav-btn-active {
+    background-color: var(--theme-link) !important;
+    color: var(--theme-bg) !important;
+    transform: scale(0.92);
 }
 
 .route-random-btn {
     font-size: 1.5rem;
-    color: var(--theme-bg);
-    background-color: var(--theme-color);
+    color: var(--theme-link);
+    background-color: var(--theme-bg);
     border-radius: 50%;
     width: 3.4rem;
     height: 3.4rem;
@@ -185,26 +207,29 @@
     justify-content: center;
     transition: all 0.2s ease;
     box-sizing: border-box;
-    border: none;
+    border: 2px solid var(--theme-link);
 }
 
 .route-random-btn:hover {
     opacity: 1;
-    background-color: var(--theme-link);
-    color: var(--theme-bg);
+    background-color: var(--theme-bg);
+    color: var(--theme-link);
+}
+
+.route-random-btn:active,
+.route-random-btn.nav-btn-active {
+    background-color: var(--theme-link) !important;
+    color: var(--theme-bg) !important;
+    transform: scale(0.92);
 }
 
 .route-revert-btn {
-    position: absolute;
-    left: 1rem;
-    margin-left: 1rem;
-    top: calc(50% + 2.2rem);
     font-size: 1.1rem;
     font-weight: 600;
-    color: var(--theme-bg);
-    background-color: var(--theme-color);
-    border-radius: 1rem;
-    padding: 0.4rem 0.8rem;
+    color: var(--theme-link);
+    background-color: var(--theme-bg);
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
     cursor: pointer;
     opacity: 0.85;
     display: flex;
@@ -214,12 +239,13 @@
     box-sizing: border-box;
     white-space: nowrap;
     z-index: 1;
+    border: 2px solid var(--theme-link);
 }
 
 .route-revert-btn:hover {
     opacity: 1;
-    background-color: var(--theme-link);
-    color: var(--theme-bg);
+    background-color: var(--theme-bg);
+    color: var(--theme-link);
 }
 
 .route-revert-btn.none {
@@ -257,6 +283,39 @@
 /* Route selector rendered above the directions wrapper (outside the scroll area) */
 .nav-route-selector-container {
     margin-left: 1rem;
+}
+
+/* Transfer and walking info text banners between route selector and directions wrapper */
+.nav-transfer-info-banner,
+.nav-walk-warning-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin: 0.6rem 1.5rem;
+    font-size: 1.25rem;
+    line-height: 1.35;
+    font-weight: 500;
+    color: var(--theme-color);
+    opacity: 0.85;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.nav-transfer-info-banner i,
+.nav-walk-warning-banner i {
+    font-size: 1.3rem;
+    opacity: 0.85;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+}
+
+.nav-transfer-info-banner.none,
+.nav-walk-warning-banner.none {
+    display: none !important;
+}
+
+.nav-transfer-info-banner:not(.none) + .nav-walk-warning-banner:not(.none) {
+    margin-top: 0.2rem;
 }
 
 /* Fade the top of the directions content as it scrolls up under the route
@@ -409,9 +468,30 @@
     margin-left: 0.2rem;
 }
 
+.route-option-walk {
+    display: inline-flex;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    opacity: 0.9;
+    white-space: nowrap;
+}
+
+.route-option-walk i,
+.route-option-walk svg {
+    font-size: 1.05rem;
+    margin-left: 0.15rem;
+    margin-right: 0.2rem;
+}
+
 .route-option.selected {
     border-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.route-option.transfer-route,
+.route-option.transfer-route.selected {
+    border-color: transparent !important;
 }
 
 
@@ -562,19 +642,38 @@
     -webkit-user-select: none;
 }
 
-.waypoint-emoji.waypoint-travel-bus,
-.waypoint-emoji.waypoint-travel-walk {
+.waypoint-emoji.waypoint-travel-bus {
     flex-direction: column;
     align-items: flex-start;
     gap: 0;
     margin: 0 1rem 0 0.6rem;
 }
 
+.waypoint-emoji.waypoint-travel-walk {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    margin: 0 -1rem 0 0.6rem;
+    padding-right: 1rem;
+    max-width: calc(100% + 0.4rem);
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.waypoint-emoji.waypoint-travel-walk::-webkit-scrollbar {
+    display: none;
+}
+
 .waypoint-travel-row {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    width: max-content;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -583,7 +682,9 @@
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    white-space: nowrap;
     background-color: var(--theme-stops-list-bg);
     border: 1px solid var(--theme-link);
     border-radius: 1.5rem;
@@ -620,13 +721,20 @@
     color: var(--theme-stops-list-text);
     user-select: none;
     -webkit-user-select: none;
+    white-space: nowrap;
 }
 
-.waypoint-travel-bus .bus-stops-list-wrapper,
-.waypoint-travel-walk .walking-roads-wrapper {
+.waypoint-travel-bus .bus-stops-list-wrapper {
     margin-left: 0;
     width: fit-content;
     max-width: 100%;
+    box-sizing: border-box;
+}
+
+.waypoint-travel-walk .walking-roads-wrapper {
+    margin-left: 0;
+    width: fit-content;
+    max-width: calc(100% - 1rem);
     box-sizing: border-box;
 }
 
@@ -700,20 +808,17 @@
 }
 
 .incoming-bus-arrival {
-    opacity: 0.85;
     min-width: 4.2rem;
 }
 
 .incoming-bus-wait {
     font-weight: 700;
-    opacity: 0.7;
     text-align: left;
     min-width: 2.5rem;
 }
 
 .incoming-bus-wait.soonest {
     text-decoration: underline;
-    opacity: 1;
 }
 
 /* Arrival list shown under the alighting stop-row */
@@ -749,23 +854,31 @@
 }
 
 .destination-bus-arrival {
-    opacity: 0.85;
     text-align: left;
 }
 
-.destination-bus-row:first-child .destination-bus-arrival,
-.destination-bus-arrival:first-of-type {
+/* Bus list row opacities: row 1 is 1.0, other rows (2nd and 3rd) are 0.8 */
+.incoming-bus-row:first-child,
+.destination-bus-row:first-child,
+.incoming-bus-row:first-child > *,
+.destination-bus-row:first-child > * {
     opacity: 1;
 }
 
-/* Transfer stop dual bus lists container (Leg 1 arrival selection on left, Leg 2 departure on right) */
+.incoming-bus-row:not(:first-child),
+.destination-bus-row:not(:first-child),
+.incoming-bus-row:not(:first-child) > *,
+.destination-bus-row:not(:first-child) > * {
+    opacity: 0.8;
+}
+
+/* Transfer stop dual bus lists container (Leg 1 arrival selection on top, Leg 2 departure underneath) */
 .transfer-buses-container {
     margin-left: 4.5rem;
     margin-top: -5rem;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: flex-start;
-    gap: 0.6rem;
     width: fit-content;
     max-width: calc(100% - 4.5rem);
     box-sizing: border-box;
@@ -773,8 +886,7 @@
     -webkit-user-select: none;
 }
 
-.transfer-buses-container .destination-buses-list,
-.transfer-buses-container .incoming-buses-list {
+.transfer-buses-container .destination-buses-list {
     margin-left: 0;
     margin-top: 0;
     padding: 1rem;
@@ -786,12 +898,73 @@
     width: min-content;
 }
 
+.transfer-buses-container .incoming-buses-list {
+    margin-left: 0;
+    margin-top: 0;
+    padding: 1rem;
+    background-color: color-mix(in srgb, var(--theme-link) 15%, var(--theme-bg));
+    border: 1px solid var(--theme-accent);
+    border-radius: 2rem;
+    box-sizing: border-box;
+    width: min-content;
+}
+
+.transfer-top-bus-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: min-content;
+}
+
+/* Vertical connector between transfer arrival and departure lists */
+.transfer-buses-connector {
+    position: relative;
+    width: 100%;
+    align-self: stretch;
+    height: 2.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.transfer-connector-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    background-color: var(--theme-accent);
+    opacity: 0.5;
+}
+
+.transfer-connector-triangle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid var(--theme-accent);
+    z-index: 1;
+    opacity: 1;
+}
+
 .transfer-destination-buses-list {
     display: grid;
-    grid-template-columns: min-content min-content min-content;
-    column-gap: 0.8rem;
+    grid-template-columns: repeat(2, min-content);
+    column-gap: 1rem;
     row-gap: 0.4rem;
     align-items: center;
+}
+
+.transfer-destination-buses-list.has-radio,
+.transfer-destination-buses-list:has(.transfer-bus-radio) {
+    grid-template-columns: min-content min-content min-content;
+    column-gap: 0.8rem;
 }
 
 .transfer-destination-buses-list .destination-bus-row.selectable-transfer-bus {
@@ -821,13 +994,11 @@
 }
 
 .transfer-destination-buses-list .destination-bus-row.selectable-transfer-bus:not(.selected) .destination-bus-arrival {
-    opacity: 0.85;
     font-weight: normal;
 }
 
 .transfer-destination-buses-list .destination-bus-row.selectable-transfer-bus.selected .destination-bus-arrival {
     font-weight: 700;
-    opacity: 1;
 }
 
 .transfer-incoming-buses-list {
@@ -858,6 +1029,7 @@
     text-decoration: none;
     transition: all 0.2s ease;
     white-space: nowrap;
+    flex-shrink: 0;
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
@@ -875,6 +1047,10 @@
 .navigate-wrapper .fa-bus-stop,
 .navigate-wrapper .icon-building,
 .navigate-wrapper .fa-building,
+.navigate-wrapper .icon-parking,
+.navigate-wrapper .fa-parking,
+.navigate-wrapper .fa-square-parking,
+.navigate-wrapper .fa-square-p,
 .navigate-wrapper .icon-person-walking,
 .navigate-wrapper .fa-person-walking,
 .navigate-wrapper .icon-person-shelter,
