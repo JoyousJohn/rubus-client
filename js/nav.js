@@ -4464,6 +4464,7 @@ function updateNavBusesDisplay() {
         const routeData = session.routeData;
         const route = routeData.route;
         const startStop = routeData.startStop;
+        const endStop = routeData.endStop;
         if (!route) return;
 
         if (route.isWalk) {

@@ -321,6 +321,7 @@
     align-items: center;
     gap: 0.5rem;
     position: relative;
+    flex: none;
 }
 
 .nav-pill-bar-style {
@@ -374,6 +375,7 @@
 .nav-dest-row {
     margin: 0 1rem;
     position: relative;
+    flex: none;
 }
 
 .nav-dest-pin-btn {
