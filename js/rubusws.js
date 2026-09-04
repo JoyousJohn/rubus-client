@@ -72,6 +72,11 @@ let busLocations = {}
 let busETAs = {}
 let socket = null;
 let rubusSocketGen = 0;
+// Grace timer for 'live updates' failure marking: a raw WS error fires for
+// transient resume/connect races (zombie pre-idle socket, radio not ready)
+// that recover on the immediate reconnect, so only surface the banner if no
+// successful open lands within the window.
+let liveUpdatesFailureTimer = null;
 
 function updateETAs(etasData) {
     etas = etasData[selectedCampus] || {};
@@ -121,6 +126,12 @@ function openRUBusSocket() {
             return;
         }
         // console.log("RUBus WebSocket connection opened");
+        // A successful open cancels any pending transient-error mark: the
+        // connection recovered inside the grace window, so there is no outage.
+        if (liveUpdatesFailureTimer) {
+            clearTimeout(liveUpdatesFailureTimer);
+            liveUpdatesFailureTimer = null;
+        }
         // Update response time to indicate WebSocket is active
         clearServerFailure('live updates');
         updateRubusResponseTime();
@@ -409,7 +420,21 @@ function openRUBusSocket() {
         console.error("Original event:", originalEventExtracted);
         // Surface live-update failures in the notification banner, but don't
         // mark RUBus as fully failing on WebSocket errors - HTTP polling still works.
-        markServerFailure('live updates');
+        // Debounced: a single error is usually a transient resume/connect race
+        // that the immediate reconnect heals, so only mark if no open lands
+        // within the grace window (and this socket is still the current one).
+        if (!liveUpdatesFailureTimer) {
+            liveUpdatesFailureTimer = setTimeout(() => {
+                liveUpdatesFailureTimer = null;
+                if (ws._gen !== rubusSocketGen || socket !== ws) {
+                    return;
+                }
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    return;
+                }
+                markServerFailure('live updates');
+            }, 5000);
+        }
     });
 
 }
