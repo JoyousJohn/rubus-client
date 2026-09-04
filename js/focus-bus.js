@@ -325,7 +325,7 @@ function distanceFromLine(busName, returnDetails = false) {
     if (minDist === Infinity) return returnDetails ? { isOffLine: false, feet: 0 } : false;
     
     const distanceFeet = minDist * 3.28084;
-    const isOffLine = distanceFeet > 500;
+    const isOffLine = distanceFeet > 333;
 
     if (returnDetails) {
         return { isOffLine: isOffLine, feet: Math.round(distanceFeet) };
