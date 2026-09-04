@@ -619,17 +619,17 @@ function renderNextStopsGrid(busName) {
     const signature = JSON.stringify([
         busName, data.route, data.at_stop, String(data.stopId == null ? '' : data.stopId),
         String(closestStopId == null ? '' : closestStopId), shouldShowClosestStop,
-        build.negativeETA, showETAsInSeconds, !!settings['toggle-show-bus-progress'],
+        build.negativeETA, build.hasNegativeETA, showETAsInSeconds, !!settings['toggle-show-bus-progress'],
         !!settings['toggle-show-stop-id'], sortedStops
     ]);
 
     if (lastNextStopsSignature === signature && $('.next-stops-grid > div').children().length > 0) {
-        updateGridIncremental(busName, build.rows, build.negativeETA, etaLabelsToSet);
+        updateGridIncremental(busName, build.rows, build.negativeETA, build.hasNegativeETA, etaLabelsToSet);
         return { aborted: false, etaLabels: etaLabelsToSet };
     }
 
     lastNextStopsSignature = signature;
-    rebuildGrid(busName, data, build.rows, shouldShowClosestStop, closestStopIsNextStop, build.negativeETA, etaLabelsToSet);
+    rebuildGrid(busName, data, build.rows, shouldShowClosestStop, closestStopIsNextStop, build.negativeETA, build.hasNegativeETA, etaLabelsToSet);
     return { aborted: false, etaLabels: etaLabelsToSet };
 }
 
@@ -641,6 +641,10 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
     const route = data.route;
     const rows = [];
     let negativeETA = false;
+    // Raw negative-ETA occurrence, independent of the show-invalid-etas dev
+    // setting below: drives the "exiting/entering service" notice even when
+    // the grid itself is allowed to render.
+    let hasNegativeETA = false;
 
     for (let i = 0; i < sortedStops.length; i++) {
 
@@ -668,9 +672,12 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
             eta = Math.round(((etaSecs || 0) + 10) / secondsDivisor); // Turns out our ETAs are so accurate that they've been exactly 20 seconds too late, i.e. the exact buffer time I was adding! Wow!
         }
 
-        if (eta < 0 && !settings['toggle-show-invalid-etas']) {
-            negativeETA = true;
-            break;
+        if (eta < 0) {
+            hasNegativeETA = true;
+            if (!settings['toggle-show-invalid-etas']) {
+                negativeETA = true;
+                break;
+            }
         }
 
         const currentTime = new Date();
@@ -774,11 +781,11 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
         });
     }
 
-    return { aborted: false, rows: rows, negativeETA: negativeETA };
+    return { aborted: false, rows: rows, negativeETA: negativeETA, hasNegativeETA: hasNegativeETA };
 }
 
 // Full DOM rebuild path (first render or structural change).
-function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNextStop, negativeETA, etaLabelsToSet) {
+function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNextStop, negativeETA, hasNegativeETA, etaLabelsToSet) {
     const $grid = $('.next-stops-grid > div');
     $grid.empty();
 
@@ -894,7 +901,10 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
     }
 
     if (!negativeETA) {
-        $('.next-stops-oos-notice').hide();
+        // The show-invalid-etas dev setting can keep the grid visible despite
+        // negative ETAs, but the entering/exiting-service notice still applies.
+        if (hasNegativeETA) $('.next-stops-oos-notice').show();
+        else $('.next-stops-oos-notice').hide();
         $('.info-next-stops, .next-stops-grid').show();
 
         if (popupBusName !== busName) {
@@ -941,7 +951,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
 // so update just the ETA/time strings (the connecting line stays put — no
 // flash). The `.here-eta` rows ("Here" current-stop label) are static and
 // excluded; the closest-stop section gets its own handling below.
-function updateGridIncremental(busName, rows, negativeETA, etaLabelsToSet) {
+function updateGridIncremental(busName, rows, negativeETA, hasNegativeETA, etaLabelsToSet) {
     for (const row of rows) {
         $(`.next-stop-eta[data-stop-index="${row.rowIndex}"]:not(.here-eta)`).text(row.eta).siblings('.next-stop-time').text(row.formattedTime);
         if (!row.skipRow) etaLabelsToSet.push([row.stopId, row.eta]);
@@ -983,7 +993,10 @@ function updateGridIncremental(busName, rows, negativeETA, etaLabelsToSet) {
                 }
             }
         } else {
-            $('.next-stops-oos-notice').hide();
+            // Grid stays visible here (dev setting may allow negative ETAs),
+            // but the entering/exiting-service notice still applies.
+            if (hasNegativeETA) $('.next-stops-oos-notice').show();
+            else $('.next-stops-oos-notice').hide();
             $('.next-stops-grid').show();
         }
     }
