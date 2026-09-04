@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
     <meta name="rubus-build" content="__BUILD_HASH__">
+    <meta name="rubus-build-num" content="__BUILD_NUM__">
+    <meta name="rubus-build-date" content="__BUILD_DATE__">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>RUBus - Accurate Bus Tracking</title>
@@ -97,39 +99,25 @@
                 let updateTimeoutTimer = null;
                 let pendingTargetBuild = null;
 
-                function prefetchPendingBuild() {
-                    $.ajax({
-                        url: 'https://api.github.com/repos/JoyousJohn/rubus-client/commits?per_page=1',
-                        type: 'GET',
-                        success: function(data, textStatus, jqXHR) {
-                            const linkHeader = jqXHR.getResponseHeader('Link');
-                            if (linkHeader) {
-                                const match = linkHeader.match(/page=(\d+)>; rel="last"/);
-                                if (match) {
-                                    const lastPage = parseInt(match[1], 10);
-                                    if (!isNaN(lastPage)) {
-                                        localStorage.setItem('rubus-pending-build', lastPage.toString());
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-
                 function showUpdatedSuccessToast(buildNum) {
                     localStorage.removeItem('rubus-update-failed-at');
                     localStorage.removeItem('rubus-update-failed-build');
                     sessionStorage.removeItem('rubus-dismissed-build');
+                    const curBuild = $('meta[name="rubus-build"]').attr('content');
+                    if (curBuild && curBuild !== '__BUILD_HASH__') {
+                        localStorage.setItem('rubus-announced-build', curBuild);
+                    }
+                    localStorage.setItem('last-update-toast-show', Date.now().toString());
                     if (successToastTimer) clearTimeout(successToastTimer);
                     const $toast = $('#update-toast');
-                    const text = buildNum ? `Installed update v${buildNum}` : 'Installed update';
+                    const metaBuildNum = $('meta[name="rubus-build-num"]').attr('content');
+                    const finalBuildNum = (metaBuildNum && metaBuildNum !== '__BUILD_NUM__') ? metaBuildNum : buildNum;
+                    const text = finalBuildNum ? `Installed update v${finalBuildNum}` : 'Installed update';
                     $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> ${text}`);
                     $toast.find('.update-toast-actions').hide();
-                    $toast.removeClass('none').stop(true, true).fadeIn();
+                    $toast.removeClass('none').css({ display: 'flex', opacity: 0 }).stop(true, true).animate({ opacity: 1 }, 350);
                     successToastTimer = setTimeout(function() {
-                        $toast.stop(true, true).fadeOut(function() {
-                            $toast.addClass('none');
-                        });
+                        dismissUpdateToast();
                     }, 3500);
                 }
 
@@ -171,7 +159,7 @@
                     const $toast = $('#update-toast');
                     $toast.find('.update-toast-text').html('<i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Update failed');
                     $toast.find('.update-toast-actions').hide();
-                    $toast.removeClass('none').stop(true, true).fadeIn();
+                    $toast.removeClass('none').css({ display: 'flex', opacity: 0 }).stop(true, true).animate({ opacity: 1 }, 350);
                     successToastTimer = setTimeout(function() {
                         dismissUpdateToast();
                     }, 2000);
@@ -191,12 +179,11 @@
                             }
                         });
                     }
-                    prefetchPendingBuild();
                     const $toast = $('#update-toast');
                     $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate"></i> Update available');
                     $toast.find('.update-toast-actions').show();
                     $toast.find('#update-reload-btn, #update-dismiss-btn').show();
-                    $toast.removeClass('none').stop(true, true).fadeIn();
+                    $toast.removeClass('none').css({ display: 'flex', opacity: 0 }).stop(true, true).animate({ opacity: 1 }, 350);
                 }
 
                 function detectTargetBuildAndShow(worker) {
@@ -215,8 +202,8 @@
                     if (successToastTimer) clearTimeout(successToastTimer);
                     if (updateTimeoutTimer) clearTimeout(updateTimeoutTimer);
                     const $toast = $('#update-toast');
-                    $toast.stop(true, true).fadeOut(function() {
-                        $toast.addClass('none');
+                    $toast.stop(true, true).animate({ opacity: 0 }, 250, function() {
+                        $toast.addClass('none').css('display', '');
                     });
                 }
 
@@ -235,11 +222,19 @@
                     $toast.find('#update-reload-btn, #update-dismiss-btn').hide();
                     $toast.find('.update-toast-text').html('<i class="fa-solid fa-arrows-rotate fa-spin"></i> Updating...');
 
-                    // Tell waiting worker to take over
-                    if (waitingWorker) {
-                        waitingWorker.postMessage({ action: 'skipWaiting' });
-                    }
+                    // Prefer installing worker over waiting worker to collapse any in-flight download
                     navigator.serviceWorker.getRegistration().then(function(reg) {
+                        if (reg && reg.installing) {
+                            reg.installing.addEventListener('statechange', function() {
+                                if (reg.installing.state === 'installed') {
+                                    reg.installing.postMessage({ action: 'skipWaiting' });
+                                }
+                            });
+                            return;
+                        }
+                        if (waitingWorker) {
+                            waitingWorker.postMessage({ action: 'skipWaiting' });
+                        }
                         if (reg && reg.waiting) {
                             reg.waiting.postMessage({ action: 'skipWaiting' });
                         }
@@ -259,13 +254,7 @@
                 // Check if page reloaded from user-initiated update
                 if (sessionStorage.getItem('rubus-just-updated')) {
                     sessionStorage.removeItem('rubus-just-updated');
-                    const pendingBuild = localStorage.getItem('rubus-pending-build');
-                    if (pendingBuild) {
-                        localStorage.removeItem('rubus-pending-build');
-                        showUpdatedSuccessToast(pendingBuild);
-                    } else {
-                        showUpdatedSuccessToast();
-                    }
+                    showUpdatedSuccessToast();
                 }
 
                 // Prevent map dragging or touch gestures through the toast
@@ -302,27 +291,28 @@
                     }
                 });
 
-                // Detect redeploys on cold launch or manual reload via embedded build commit
-                const currentBuild = $('meta[name="rubus-build"]').attr('content');
-                if (currentBuild && currentBuild !== '__BUILD_HASH__') {
-                    const storedBuild = localStorage.getItem('rubus-app-build');
-                    if (storedBuild && storedBuild !== currentBuild) {
-                        // Deployed version changed since last session (check 8-hour cooldown)
+                // Check and show deferred update toast after 8-hour cooldown expires
+                function checkAndShowDeferredUpdateToast() {
+                    const currentBuild = $('meta[name="rubus-build"]').attr('content');
+                    if (!currentBuild || currentBuild === '__BUILD_HASH__') return;
+
+                    const announcedBuild = localStorage.getItem('rubus-announced-build');
+                    // On first visit ever, initialize announcedBuild so first-time users aren't greeted with an update toast
+                    if (!announcedBuild) {
+                        localStorage.setItem('rubus-announced-build', currentBuild);
+                        return;
+                    }
+
+                    if (announcedBuild !== currentBuild) {
                         const lastShow = localStorage.getItem('last-update-toast-show');
                         const eightHours = 8 * 60 * 60 * 1000;
                         if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
-                            const pendingBuild = localStorage.getItem('rubus-pending-build');
-                            if (pendingBuild) {
-                                localStorage.removeItem('rubus-pending-build');
-                                showUpdatedSuccessToast(pendingBuild);
-                            } else {
-                                showUpdatedSuccessToast();
-                            }
-                            localStorage.setItem('last-update-toast-show', Date.now().toString());
+                            showUpdatedSuccessToast();
                         }
                     }
-                    localStorage.setItem('rubus-app-build', currentBuild);
                 }
+
+                checkAndShowDeferredUpdateToast();
 
                 navigator.serviceWorker.register('/sw.js').then(function(reg) {
                     // Check if an updated worker is already installed and waiting
@@ -348,7 +338,9 @@
                     // Check for updates on visibility change (tab switch or iOS PWA resume from background)
                     document.addEventListener('visibilitychange', function() {
                         if (document.visibilityState === 'visible') {
+                            checkAndShowDeferredUpdateToast();
                             reg.update();
+                            const currentBuild = $('meta[name="rubus-build"]').attr('content');
                             if (currentBuild && currentBuild !== '__BUILD_HASH__') {
                                 fetch('/index.html', { method: 'GET', cache: 'no-cache' }).then(function(res) {
                                     return res.text();

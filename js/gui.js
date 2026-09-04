@@ -3824,6 +3824,24 @@ async function getBuildNumber() {
     // The build number is constant per deploy; fetch it once no matter how many
     // times this is called.
     if (currentBuildNumber !== null) return;
+
+    const metaBuildNum = $('meta[name="rubus-build-num"]').attr('content');
+    const metaBuildDate = $('meta[name="rubus-build-date"]').attr('content');
+
+    if (metaBuildNum && metaBuildNum !== '__BUILD_NUM__') {
+        const lastPage = parseInt(metaBuildNum, 10);
+        currentBuildNumber = lastPage;
+        const dateStr = (metaBuildDate && metaBuildDate !== '__BUILD_DATE__') ? ` (${metaBuildDate})` : '';
+        $('.build-number').html(`Alpha ${lastPage - 473} <span style="color:var(--theme-extra)">//</span> b${lastPage.toLocaleString()}${dateStr}`);
+        updateChangelogNewBadge();
+
+        const $toast = $('#update-toast');
+        if ($toast.length && $toast.is(':visible') && $toast.find('.update-toast-text').text().trim() === 'Installed update') {
+            $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Installed update v${lastPage}`);
+        }
+        return;
+    }
+
     $.ajax({
         url: 'https://api.github.com/repos/JoyousJohn/rubus-client/commits?per_page=1', // &page = 1
         type: 'GET',
@@ -3835,17 +3853,22 @@ async function getBuildNumber() {
             commitDate = month + '/' + day;
 
             const linkHeader = jqXHR.getResponseHeader('Link'); // Get the 'Link' header
-            const lastPage = parseInt(linkHeader.match(/page=(\d+)>; rel="last"/)[1]);
-            currentBuildNumber = lastPage;
-            $('.build-number').html(`Alpha ${lastPage - 473} <span style="color:var(--theme-extra)">//</span> b${lastPage.toLocaleString()} (${commitDate})`);
-            // Show the changelog "NEW" badge only when the build has advanced
-            // past the one the user last opened the changelog on.
-            updateChangelogNewBadge();
+            if (linkHeader) {
+                const match = linkHeader.match(/page=(\d+)>; rel="last"/);
+                if (match) {
+                    const lastPage = parseInt(match[1], 10);
+                    currentBuildNumber = lastPage;
+                    $('.build-number').html(`Alpha ${lastPage - 473} <span style="color:var(--theme-extra)">//</span> b${lastPage.toLocaleString()} (${commitDate})`);
+                    // Show the changelog "NEW" badge only when the build has advanced
+                    // past the one the user last opened the changelog on.
+                    updateChangelogNewBadge();
 
-            // If the update confirmation toast is currently visible showing the generic label, update it in-place
-            const $toast = $('#update-toast');
-            if ($toast.length && $toast.is(':visible') && $toast.find('.update-toast-text').text().trim() === 'Installed update') {
-                $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Installed update v${lastPage}`);
+                    // If the update confirmation toast is currently visible showing the generic label, update it in-place
+                    const $toast = $('#update-toast');
+                    if ($toast.length && $toast.is(':visible') && $toast.find('.update-toast-text').text().trim() === 'Installed update') {
+                        $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Installed update v${lastPage}`);
+                    }
+                }
             }
         }
     });
