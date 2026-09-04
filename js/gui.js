@@ -1674,6 +1674,7 @@ function updateBusOverview(routes) {
 
     updateAverageWaitByRoute();
     updateBusServiceTime();
+    updateRouteChangesMenu();
 }
 
 
@@ -1702,6 +1703,7 @@ function busesOverview() {
     updateWaitTimes();
     updateAverageWaitByRoute();
     updateBusServiceTime();
+    updateRouteChangesMenu();
 }
 
 let ridershipChart;
@@ -2229,6 +2231,75 @@ function updateBusServiceTime() {
         
         $grid.append($busCol);
         $grid.append($routeCol);
+        $grid.append($timeCol);
+    });
+}
+
+// Route Changes menu (network subpanel, under Service Time): fleet-wide list
+// of the day's bus route reassignments, newest first. Served by
+// GET /get_all_route_changes (rubus-server), fed by back's route_change hook
+// events. Cached 60s; hidden when empty/unreachable.
+let routeChangesCache = { data: null, timestamp: 0 };
+const ROUTE_CHANGES_CACHE_MS = 60 * 1000;
+
+function updateRouteChangesMenu() {
+    const now = Date.now();
+    if (routeChangesCache.data && (now - routeChangesCache.timestamp) < ROUTE_CHANGES_CACHE_MS) {
+        renderRouteChangesMenu(routeChangesCache.data);
+        return;
+    }
+    fetch('https://demo.rubus.live/get_all_route_changes')
+        .then(response => response.json())
+        .then(data => {
+            routeChangesCache = { data: data || {}, timestamp: Date.now() };
+            renderRouteChangesMenu(routeChangesCache.data);
+        })
+        .catch(error => {
+            console.warn('Route changes fetch failed:', error);
+            $('.route-changes-wrapper').hide();
+        });
+}
+
+function renderRouteChangesMenu(allChanges) {
+    const $grid = $('.route-changes-grid');
+    const $wrapper = $('.route-changes-wrapper');
+    if (!$grid.length) return;
+    $grid.children().not('.route-changes-heading, .route-changes-header-divider').remove();
+
+    const rows = [];
+    for (const busName in (allChanges || {})) {
+        for (const change of (allChanges[busName] || [])) {
+            rows.push({ busName, oldRoute: change.old_route, newRoute: change.new_route, time: change.time });
+        }
+    }
+    if (rows.length === 0) {
+        $wrapper.hide();
+        return;
+    }
+    rows.sort((a, b) => new Date(b.time) - new Date(a.time));
+    $wrapper.show();
+
+    rows.slice(0, 30).forEach(row => {
+        const busLabel = (busData[row.busName] && busData[row.busName].busName)
+            ? busData[row.busName].busName : row.busName;
+        const routeColor = (row.newRoute && colorMappings[row.newRoute])
+            ? colorMappings[row.newRoute] : 'var(--theme-color)';
+        const changeTime = new Date(row.time);
+        const timeStr = isNaN(changeTime)
+            ? ''
+            : changeTime.toLocaleString('en-US', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        const $busCol = $('<div class="route-changes-bus pointer text-2rem"></div>').css('color', routeColor).text(busLabel);
+        const $changeCol = $('<div class="route-changes-change pointer text-1p6rem"></div>').css('color', routeColor)
+            .text(`${String(row.oldRoute || '?').toUpperCase()} → ${String(row.newRoute || '?').toUpperCase()}`);
+        const $timeCol = $('<div class="route-changes-time pointer text-2rem"></div>').text(timeStr);
+        const onRowClick = function() {
+            $('.info-panels-close').trigger('click');
+            flyToBus(row.busName);
+            selectBusMarker(row.busName);
+        };
+        $busCol.add($changeCol).add($timeCol).click(onRowClick);
+        $grid.append($busCol);
+        $grid.append($changeCol);
         $grid.append($timeCol);
     });
 }

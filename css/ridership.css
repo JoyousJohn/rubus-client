@@ -271,3 +271,65 @@
     display: flex;
     align-items: center;
 }
+
+/* Bus Route Changes Panel */
+.route-changes-wrapper {
+    margin-top: 2rem;
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    padding: 2rem;
+}
+
+.route-changes-title {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.route-changes-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    column-gap: 1.5rem;
+    font-size: 2rem;
+}
+
+.route-changes-heading {
+    color: var(--theme-extra);
+    font-weight: 500;
+    font-size: 1.5rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.route-changes-header-divider {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--theme-line-bg);
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+    width: 100%;
+    justify-self: center;
+}
+
+.route-changes-bus {
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+}
+
+.route-changes-change {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.route-changes-time {
+    text-align: left;
+    color: var(--theme-color-lighter);
+    display: flex;
+    align-items: center;
+}
