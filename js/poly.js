@@ -1581,10 +1581,12 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         if (busData[data.busName]?.atDepot) {
             $('.stop-bus-route').last().css('color', 'gray');
             $('.stop-bus-eta').last().css('color', 'gray');
+            $stopBusElm.find('.fa-bolt, .icon-bolt').css('color', 'gray');
             $('.stop-info-buses-grid').children().slice(-4).removeClass('pointer');
         } else if (visibleRoute && visibleRoute !== data.route) {
             $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
             $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
+            $stopBusElm.find('.fa-bolt, .icon-bolt').css('color', 'var(--theme-hidden-route-col)');
             $('.stop-info-buses-grid').children().slice(-4).removeClass('pointer');
         } else if (visibleRoute) {
             $('.stop-bus-route').last().css('color', colorMappings[data.route]);
@@ -1679,10 +1681,12 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
             if (busData[data.busName]?.atDepot) {
                 $('.stop-bus-route').last().css('color', 'gray');
+                $stopBusElm.find('.fa-bolt, .icon-bolt').css('color', 'gray');
                 $('.stop-info-buses-grid-next').children().slice(-4).removeClass('pointer');
             } else if (visibleRoute && visibleRoute !== data.route) {
                 $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
                 $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
+                $stopBusElm.find('.fa-bolt, .icon-bolt').css('color', 'var(--theme-hidden-route-col)');
                 $('.stop-info-buses-grid-next').children().slice(-4).removeClass('pointer');
             } else if (visibleRoute) {
                 $('.stop-bus-route').last().css('color', colorMappings[data.route]);
@@ -1741,6 +1745,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             if (visibleRoute && visibleRoute !== data.route) {
                 $('.stop-bus-route').last().css('color', 'var(--theme-hidden-route-col)');
                 $('.stop-bus-eta').last().css('color', 'var(--theme-hidden-route-col)');
+                $stopBusElm.find('.fa-bolt, .icon-bolt').css('color', 'var(--theme-hidden-route-col)');
                 $('.stop-info-buses-grid-post-cutoff').children().slice(-4).removeClass('pointer');
             } else if (visibleRoute) {
                 $('.stop-bus-route').last().css('color', colorMappings[data.route]);
@@ -1799,6 +1804,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             $('.stop-info-buses-grid-deferred').append($stopBusElm);
 
             $('.stop-bus-route').last().css('color', 'gray');
+            $stopBusElm.find('.fa-bolt, .icon-bolt').css('color', 'gray');
             const $deferredItems = $('.stop-info-buses-grid-deferred').children().slice(-2);
             $deferredItems.addClass('pointer').click(function() {
                 sourceStopId = stopId;
