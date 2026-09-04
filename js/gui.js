@@ -123,6 +123,11 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         routesArray.push('helix');
     }
 
+    if (routesArray.includes('kbs') && !isRouteFavorite('kbs')) {
+        routesArray = routesArray.filter(route => route !== 'kbs');
+        routesArray.push('kbs');
+    }
+
     // This settings toggle reverses the routes somewhere else
 	if (!settings['toggle-settings-btn-end']) {
 		routesArray.reverse();
@@ -2639,7 +2644,7 @@ const defaultColorMappings = {
     'summer2': '#2bd6ec',
     'commencement': 'LightSalmon',
     'helix': '#db6464',
-    'kbs': '#009688',
+    'kbs': '#64b374',
     'sim': '#ff6b6b',
 
     'psx': 'LightSalmon',

@@ -39,6 +39,7 @@ async function addForceShowPolyline(routeName) {
         weight: 4,
         opacity: 1,
         smoothFactor: 1,
+        underOtherPolylines: routeName === 'helix' || routeName === 'kbs',
     };
     const polyline = L.polyline(coordinates, polylineOptions);
     polyline.addTo(map);
@@ -306,6 +307,19 @@ window.createMapLibrePolyline = function(coordinates, options) {
                     if (map.getLayer('stop-markers-layer')) beforeId = 'stop-markers-layer';
                     else if (map.getLayer('bus-markers-layer')) beforeId = 'bus-markers-layer';
                     else if (map.getLayer('bus-markers-glow')) beforeId = 'bus-markers-glow';
+                }
+                if (options.underOtherPolylines && typeof polylines !== 'undefined' && polylines) {
+                    // Stack beneath every existing route polyline. MapLibre
+                    // renders layers in stack order, so "least relevant" routes
+                    // (helix, kbs) added later must anchor below the first
+                    // (bottom-most) established polyline layer instead of on top.
+                    for (const rName of Object.keys(polylines)) {
+                        const pLayer = polylines[rName];
+                        if (pLayer && pLayer._mapLibreLayerId && pLayer._mapLibreLayerId !== layerId && map.getLayer(pLayer._mapLibreLayerId)) {
+                            beforeId = pLayer._mapLibreLayerId;
+                            break;
+                        }
+                    }
                 }
                 map.addLayer({
                     id: layerId,
@@ -744,6 +758,14 @@ async function setPolylines(activeRoutes, opts = {}) {
         }
     }
 
+    // Stack the least-relevant routes (helix, kbs) beneath every other
+    // polyline: MapLibre renders later-added layers on top, so they must be
+    // created first (with the underOtherPolylines anchor option as backup).
+    routesToSet = [
+        ...routesToSet.filter(r => r === 'helix' || r === 'kbs'),
+        ...routesToSet.filter(r => r !== 'helix' && r !== 'kbs'),
+    ];
+
     // Fetch all route geometry in parallel, then create every polyline in one
     // synchronous burst so routes appear together instead of one-per-frame
     // (mirrors makeBulkOoS's once-not-per-bus pattern).
@@ -792,6 +814,7 @@ async function setPolylines(activeRoutes, opts = {}) {
             weight: 4,
             opacity: targetOpacity,
             smoothFactor: 1,
+            underOtherPolylines: routeName === 'helix' || routeName === 'kbs',
         });
 
         polyline.addTo(map);
@@ -913,6 +936,7 @@ async function addPolylineForRoute(routeName) {
             weight: 4,
             opacity: targetOpacity,
             smoothFactor: 1,
+            underOtherPolylines: routeName === 'helix' || routeName === 'kbs',
         };
 
         const polyline = L.polyline(coordinates, polylineOptions);
@@ -1350,7 +1374,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             if (busData[busName]['at_stop'] && busStopId === stopId) {
                 entry.eta = 0;
             } else if (busETAs[busName]) {
-                if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && stopId === 3) { // special case: show both VIA paths
+                if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && Number(stopId) === 3) { // special case: show both VIA paths
                     const viaMap = busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
                     if (viaMap && Object.keys(viaMap).length) {
                         const approachPrev = busData[busName] && busData[busName]['prevStopId'];

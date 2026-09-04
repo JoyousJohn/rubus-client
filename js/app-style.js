@@ -219,7 +219,7 @@ function popRiderStopInfo(stopId) {
             busesByRoutes[selectedCampus][route].forEach(busName => {
                 if (isValid(busName)) {
                     // Handle special case for stop #3 on certain routes
-                    if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3) {
+                    if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && Number(stopId) === 3) {
                         // For stop #3 on these routes, we need to handle the special case
                         const viaMap = busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
                         if (viaMap && Object.keys(viaMap).length) {

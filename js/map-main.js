@@ -61,8 +61,28 @@ function getCenteredYBelowPopup(contentEl) {
         return cy;
     }
 
+    // Lower boundary of the free space: the map bottom edge, minus the route
+    // selectors row when it's an actual bottom-anchored overlay over the map
+    // (mobile). The other .bottom buttons float to the sides and don't block
+    // the vertical strip, so only the selectors row is subtracted. On desktop
+    // the row is a top-anchored column (or nested inside a subpanel when open),
+    // which doesn't cut into the gap below the popup, so it's ignored.
+    let lowerEdge = size.y;
+    const $routeSelectors = $('.route-selectors');
+    if ($routeSelectors.length && $routeSelectors.is(':visible')) {
+            const rsRect = $routeSelectors[0].getBoundingClientRect();
+            const mapRect = map.getContainer().getBoundingClientRect();
+            const rsTop = rsRect.top - mapRect.top;
+            const rsBottom = rsRect.bottom - mapRect.top;
+            // Bottom-anchored: the row's bottom hugs the map's bottom edge and
+            // its top sits below the popup, so it eats into the free band.
+            if (rsTop > bottomY && rsBottom >= 0 && (size.y - rsBottom) < 24) {
+                lowerEdge = rsTop;
+            }
+    }
+
     const pad = Math.min(40, size.y / 8);
-    return Math.min(Math.max((bottomY + size.y) / 2, bottomY + pad), size.y - pad);
+    return Math.min(Math.max((bottomY + lowerEdge) / 2, bottomY + pad), lowerEdge - pad);
 }
 
 // Fly so the feature lands centered in the visible map area below the popup.

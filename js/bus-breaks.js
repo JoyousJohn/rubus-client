@@ -149,7 +149,7 @@ function revealBreaksClicked() {
 function populateBusBreaks(busBreakData, busName) {
     const MAX_INITIAL_BREAKS = 7; // Maximum number of breaks shown initially
 
-    if (!busBreakData || busBreakData.error) {
+    if (!busBreakData || busBreakData.error || (Array.isArray(busBreakData) && busBreakData.length === 0)) {
         $('.bus-breaks').empty();
         if (busName) delete frequentSkipperBuses[busName];
         // $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);

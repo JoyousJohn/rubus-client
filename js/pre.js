@@ -962,18 +962,23 @@ function updateTimeToStops(busNames) {
 
 async function fetchWhere() {
     if (sim) return;
+    let busLocations;
     try {
         const response = await fetch('https://demo.rubus.live/where');
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        const data = await response.json();
-        const busLocations = data;
-        // console.log('Bus locations fetched:', busLocations);
+        busLocations = await response.json();
+    } catch (error) {
+        console.error('Error fetching bus locations:', error);
+        markRubusRequestsFailing();
+        markServerFailure('bus positions');
+        return;
+    }
 
-        updateRubusResponseTime();
+    updateRubusResponseTime();
 
-        const validBusNames = []
+    const validBusNames = []
         for (const busName in busLocations) {
 
             // if (!(busName in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
@@ -1026,12 +1031,6 @@ async function fetchWhere() {
         if ($('.info-panels-show-hide-wrapper').is(':visible')) {
             populateAllStops();
         }
-
-    } catch (error) {
-        console.error('Error fetching bus locations:', error);
-        markRubusRequestsFailing();
-        markServerFailure('bus positions');
-    }
 
 }
 
