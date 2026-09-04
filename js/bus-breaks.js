@@ -1,4 +1,71 @@
 // js/bus-breaks.js - extracted verbatim from js/map.js
+
+// Build chronological (oldest-first) display list with missed stops interleaved
+// in route order. Tracks a cursor into the (possibly circular, possibly
+// duplicate-containing) expectedStops loop so each consecutive pair of actual
+// visits resolves to the minimal forward walk; intermediates are missed.
+function buildChronBreakList(expectedStops, breakDataChron) {
+    const chronList = [];
+    const missedStops = [];
+    if (!breakDataChron || breakDataChron.length === 0) {
+        return { chronList, missedStops };
+    }
+    if (!expectedStops || expectedStops.length === 0) {
+        for (const breakItem of breakDataChron) {
+            chronList.push({ breakItem, isMissed: false });
+        }
+        return { chronList, missedStops };
+    }
+    const routeLen = expectedStops.length;
+    chronList.push({ breakItem: breakDataChron[0], isMissed: false });
+    let cursorIdx = expectedStops.indexOf(breakDataChron[0].stop_id);
+
+    for (let k = 1; k < breakDataChron.length; k++) {
+        const currItem = breakDataChron[k];
+        const prevItem = breakDataChron[k - 1];
+        const currId = currItem.stop_id;
+        const prevId = prevItem.stop_id;
+
+        // Duplicate consecutive record for the same visit: no travel, no miss.
+        if (currId === prevId) {
+            chronList.push({ breakItem: currItem, isMissed: false });
+            continue;
+        }
+        // Lost sync (unknown/detour stop): show actual, try to resync on curr.
+        if (cursorIdx === -1) {
+            chronList.push({ breakItem: currItem, isMissed: false });
+            cursorIdx = expectedStops.indexOf(currId);
+            continue;
+        }
+        if (expectedStops.indexOf(currId) === -1) {
+            chronList.push({ breakItem: currItem, isMissed: false });
+            cursorIdx = -1;
+            continue;
+        }
+        // Minimal forward walk from cursor to curr (handles wrap + duplicates).
+        let foundOffset = -1;
+        for (let offset = 1; offset <= routeLen; offset++) {
+            if (expectedStops[(cursorIdx + offset) % routeLen] === currId) {
+                foundOffset = offset;
+                break;
+            }
+        }
+        if (foundOffset === -1) {
+            chronList.push({ breakItem: currItem, isMissed: false });
+            cursorIdx = expectedStops.indexOf(currId);
+            continue;
+        }
+        for (let o = 1; o < foundOffset; o++) {
+            const missedId = expectedStops[(cursorIdx + o) % routeLen];
+            chronList.push({ stopId: missedId, isMissed: true });
+            missedStops.push(missedId);
+        }
+        chronList.push({ breakItem: currItem, isMissed: false });
+        cursorIdx = (cursorIdx + foundOffset) % routeLen;
+    }
+    return { chronList, missedStops };
+}
+
 function populateBusBreaks(busBreakData, busName) {
     const MAX_INITIAL_BREAKS = 7; // Maximum number of breaks shown initially
 
@@ -81,50 +148,13 @@ function populateBusBreaks(busBreakData, busName) {
     let totalBusBreakTime = 0;
     let totalBusStopTime = 0;
 
-    const reversedData = [...busBreakData].reverse();
-    const actualStops = new Set(reversedData.map(breakItem => breakItem.stop_id));
+    // busBreakData is oldest-first; detect gaps per consecutive pair and
+    // interleave misses in route order, then display most-recent-first.
+    const { chronList, missedStops } = buildChronBreakList(expectedStops, busBreakData);
+    const allStopsToShow = [...chronList].reverse();
 
-    // Create combined list of actual stops + missed stops in chronological order
-    const allStopsToShow = [];
-
-    // Add all actual stops in chronological order (most recent first)
-    for (const breakItem of reversedData) {
-        allStopsToShow.push({ breakItem, isMissed: false });
-    }
-
-    // Add missed stops if we have route data
-    if (expectedStops && expectedStops.length > 0 && actualStops.size > 0) {
-        // Find missed stops by looking at the route sequence
-        const missedStops = [];
-        
-        // Go through the route sequence and find gaps between consecutive actual stops
-        for (let i = 0; i < expectedStops.length - 1; i++) {
-            const currentStop = expectedStops[i];
-            const nextStop = expectedStops[i + 1];
-            
-            // If both consecutive stops in the route were visited, check for missed stops between them
-            if (actualStops.has(currentStop) && actualStops.has(nextStop)) {
-                // Use indexOf with fromIndex to handle duplicate stops (e.g., SAC 3 appears twice)
-                const nextIdx = expectedStops.indexOf(nextStop, i + 1);
-                const end = nextIdx !== -1 ? nextIdx : expectedStops.length;
-                for (let j = i + 1; j < end; j++) {
-                    const potentialMissedStop = expectedStops[j];
-                    if (!actualStops.has(potentialMissedStop)) {
-                        missedStops.push(potentialMissedStop);
-                    }
-                }
-            }
-        }
-        
-        // Log if bus missed stops
-        if (missedStops.length > 0) {
-            console.log(`Bus ${busName} (${busData[busName]?.busName}) missed ${missedStops.length} stops:`, missedStops.map(stopId => stopsData[stopId]?.name || stopId));
-        }
-        
-        // Add missed stops to the list (these will be hidden initially and shown when "Show All Stops" is clicked)
-        for (const missedStopId of missedStops) {
-            allStopsToShow.push({ stopId: missedStopId, isMissed: true });
-        }
+    if (missedStops.length > 0) {
+        console.log(`Bus ${busName} (${busData[busName]?.busName}) missed ${missedStops.length} stops:`, missedStops.map(stopId => stopsData[stopId]?.name || stopId));
     }
 
     for (const stopData of allStopsToShow) {
@@ -182,7 +212,7 @@ function populateBusBreaks(busBreakData, busName) {
         } else {
             // Handle missed stops - these should always be hidden initially
             const stopId = stopData.stopId;
-            const stopName = stopsData[stopId].shortName || stopsData[stopId].name;
+            const stopName = stopsData[stopId]?.shortName || stopsData[stopId]?.name || ('Stop ' + stopId);
 
             // Missed stops are always hidden initially (shown only when "Show All Stops" is clicked)
             const missedStopExtraClass = ' none';
@@ -227,8 +257,11 @@ function populateBusBreaks(busBreakData, busName) {
         $('.show-more-breaks').hide();
     }
     
-    // Show "Show All Stops" button if there are more stops than just the long breaks shown
-    if (breakCount !== busBreakData.length) {
+    // Show "Show All Stops" button if anything is hidden: short stops,
+    // long breaks beyond the initial limit, or missed stops.
+    const hiddenShortStops = busBreakData.filter(breakItem => breakItem.break_duration <= 180).length;
+    const hiddenLongBeyondLimit = Math.max(0, busBreakData.filter(breakItem => breakItem.break_duration > 180).length - MAX_INITIAL_BREAKS);
+    if (hiddenShortStops > 0 || hiddenLongBeyondLimit > 0 || missedStops.length > 0) {
         $('.show-all-breaks').show();
     } else {
         $('.show-all-breaks').hide();
@@ -278,26 +311,8 @@ function checkAllBusesForMissedStops() {
             // Get actual stops from bus break data
             if (busBreaksCache[busName] && busBreaksCache[busName].data && !busBreaksCache[busName].data.error) {
                 const busBreakData = busBreaksCache[busName].data;
-                const actualStops = new Set(busBreakData.map(breakItem => breakItem.stop_id));
-                
-                // Find missed stops using the same logic as populateBusBreaks
-                const missedStops = [];
-                
-                for (let i = 0; i < expectedStops.length - 1; i++) {
-                    const currentStop = expectedStops[i];
-                    const nextStop = expectedStops[i + 1];
-                    
-                    if (actualStops.has(currentStop) && actualStops.has(nextStop)) {
-                        const nextIdx2 = expectedStops.indexOf(nextStop, i + 1);
-                        const end2 = nextIdx2 !== -1 ? nextIdx2 : expectedStops.length;
-                        for (let j = i + 1; j < end2; j++) {
-                            const potentialMissedStop = expectedStops[j];
-                            if (!actualStops.has(potentialMissedStop)) {
-                                missedStops.push(potentialMissedStop);
-                            }
-                        }
-                    }
-                }
+                // Same per-gap logic as populateBusBreaks (handles loops + duplicates).
+                const { missedStops } = buildChronBreakList(expectedStops, busBreakData);
                 
                 if (missedStops.length > 0) {
                     busesWithMissedStops++;
