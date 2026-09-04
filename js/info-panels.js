@@ -90,6 +90,20 @@ try {
 	currentPanelIndex = lastUserSelectedPanelIndex;
 } catch(e) {}
 
+// Width of a single visible info subpanel. On mobile this equals the
+// viewport width; on desktop the wrapper is pinned left (like settings)
+// so we must measure the actual content width instead of window.innerWidth.
+function getInfoPanelWidth() {
+	try {
+		const el = document.querySelector('.info-panels-content');
+		if (el) {
+			const w = el.getBoundingClientRect().width;
+			if (w > 0) return w;
+		}
+	} catch(e) {}
+	return window.innerWidth;
+}
+
 // Register custom easing function for smooth momentum (easeOutCubic —
 // gentle stop without the abrupt start of the old 1.5 exponent)
 $.easing.momentum = function (x) {
@@ -118,7 +132,7 @@ function moveRouteSelectorsToMain() {
 function restorePanelPosition() {
 	const currentPanel = panelOrder[lastUserSelectedPanelIndex];
 	const panelIndex = lastUserSelectedPanelIndex;
-	const targetX = -100 * panelIndex * (window.innerWidth / 100);
+	const targetX = -panelIndex * getInfoPanelWidth();
 
 	// Ensure all subpanel wrappers are visible and enforce DOM order
 	const $container = $('.subpanels-container');
@@ -130,8 +144,8 @@ function restorePanelPosition() {
 	$container.append($route, $stops, $network);
 
 	// Set widths BEFORE transform
-	$container.width(3 * window.innerWidth);
-	$allSubpanels.width(window.innerWidth);
+	$container.width(3 * getInfoPanelWidth());
+	$allSubpanels.width(getInfoPanelWidth());
 
 	// Disable transitions and apply transform
 	$container.css({
@@ -182,7 +196,7 @@ function animateToTargetPanel(initialVelocity, options) {
 	const DISPLACEMENT_INTENT_THRESHOLD = 40; // px of finger travel to indicate intent
 
 	if (opts.targetIndex === undefined) {
-		const visualProgress = -startX / window.innerWidth;
+		const visualProgress = -startX / getInfoPanelWidth();
 		const hasVelocityIntent = Math.abs(initialVelocity) > VELOCITY_INTENT_THRESHOLD;
 		const hasDisplacementIntent = typeof opts.dragDeltaX === 'number' && Math.abs(opts.dragDeltaX) > DISPLACEMENT_INTENT_THRESHOLD;
 		if (hasVelocityIntent || hasDisplacementIntent) {
@@ -212,7 +226,7 @@ function animateToTargetPanel(initialVelocity, options) {
 	if (opts.isUserExplicitSelection !== false) {
 		setLastUserSelectedPanelIndex(targetPanelIndex);
 	}
-	const targetX = -100 * targetPanelIndex * (window.innerWidth / 100);
+	const targetX = -targetPanelIndex * getInfoPanelWidth();
 
 	const distance = Math.abs(targetX - startX);
 	const velocityMagnitude = Math.abs(initialVelocity);
@@ -308,7 +322,7 @@ function selectInfoPanel(panel, element, isUserExplicitSelection = true) {
 	}
 	const $container = $('.subpanels-container');
 	const currentX = getTranslateX($container);
-	const targetX = -targetIndex * window.innerWidth;
+	const targetX = -targetIndex * getInfoPanelWidth();
 	const isCurrentlyAtTarget = (currentPanelIndex === targetIndex && Math.abs(currentX - targetX) < 2 && !animationFrameId);
 
 	if (!isCurrentlyAtTarget) {
@@ -379,7 +393,7 @@ function updatePanelPosition(panel, options) {
 	if (opts.skipMove) {
 		return;
 	}
-	const targetX = -100 * panelIndex * (window.innerWidth / 100);
+	const targetX = -panelIndex * getInfoPanelWidth();
 	$container.css({
 		'transition': 'none',
 		'transform': 'translateX(' + targetX + 'px)'
@@ -496,7 +510,7 @@ function initInfoPanelSliderDrag() {
 				// No panel animation pending (background tap) — snap container back to current panel
 				const curPanel = (typeof panelOrder !== 'undefined' && typeof currentPanelIndex !== 'undefined') ? panelOrder[currentPanelIndex] : 'stops';
 				const idx = (typeof panelOrder !== 'undefined' ? panelOrder.indexOf(curPanel) : 1);
-				const tx = -idx * window.innerWidth;
+				const tx = -idx * getInfoPanelWidth();
 				$container.css({ 'transition': 'none', 'transform': 'translateX(' + tx + 'px)' });
 				setTimeout(() => {
 					if (!$container.hasClass('is-dragging-or-animating') || (typeof animationFrameId !== 'undefined' && animationFrameId)) return;
@@ -585,7 +599,7 @@ function initInfoPanelSliderDrag() {
 			const $container = $('.subpanels-container');
 			if ($container.length && maxX > 0) {
 				const indicatorProgress = Math.max(0, Math.min(1, newX / maxX));
-				const targetX = -indicatorProgress * (count - 1) * window.innerWidth;
+				const targetX = -indicatorProgress * (count - 1) * getInfoPanelWidth();
 				setContainerX($container, targetX);
 			}
 		} catch(err) {}
@@ -813,7 +827,7 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 	dragEndY = dragStartY;
 	initialTransformX = getTranslateX($container);
 	// Cache layout once per gesture — reused for every move frame
-	cachedViewportW = window.innerWidth;
+	cachedViewportW = getInfoPanelWidth();
 	lastAppliedClosestIdx = currentPanelIndex;
 	pendingClosestIdx = currentPanelIndex;
 	pendingIndicatorX = null;
@@ -877,7 +891,7 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
 			const newTransformX = initialTransformX + deltaX;
 			pendingContainerX = newTransformX;
 			const panelCount = panelOrder.length;
-			const span = (panelCount - 1) * (cachedViewportW || window.innerWidth);
+			const span = (panelCount - 1) * (cachedViewportW || getInfoPanelWidth());
 			const containerProgress = span > 0 ? Math.max(0, Math.min(1, -newTransformX / span)) : 0;
 			if (dragHasIndicator && cachedContentOptionWidth > 0) {
 				pendingIndicatorX = containerProgress * (panelCount - 1) * cachedContentOptionWidth;
@@ -950,7 +964,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 		} else {
 			const $container = $('.subpanels-container');
 			const currentX = getTranslateX($container);
-			const expectedX = -currentPanelIndex * window.innerWidth;
+			const expectedX = -currentPanelIndex * getInfoPanelWidth();
 			if (Math.abs(currentX - expectedX) > 5) {
 				animateToTargetPanel(0, { targetIndex: currentPanelIndex, isUserExplicitSelection: false });
 			}
@@ -1032,9 +1046,9 @@ $(window).on('resize', function() {
 	if ($('.info-panels-show-hide-wrapper').is(':visible')) {
 		const $container = $('.subpanels-container');
 		const $allSubpanels = $container.children('.subpanel');
-		$container.width(3 * window.innerWidth);
-		$allSubpanels.width(window.innerWidth);
-		const targetX = -currentPanelIndex * window.innerWidth;
+		$container.width(3 * getInfoPanelWidth());
+		$allSubpanels.width(getInfoPanelWidth());
+		const targetX = -currentPanelIndex * getInfoPanelWidth();
 		$container.css({
 			'transition': 'none',
 			'transform': 'translateX(' + targetX + 'px)'

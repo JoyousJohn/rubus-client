@@ -109,6 +109,86 @@
         border-radius: 1rem;
     }
 
+    .info-panels-show-hide-wrapper .info-panels-wrapper {
+        left: 0;
+        right: auto;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: 25%;
+        margin: 2rem;
+        border-radius: 1rem;
+        overflow: hidden;
+        height: auto;
+        max-height: calc(100vh - 4rem);
+    }
+
+    .info-panels-content .subpanels-container {
+        width: 300%;
+        transform: translateX(-33.3333%);
+    }
+
+    .info-panels-content .subpanel {
+        width: 33.3333%;
+    }
+
+    /* ── Routes subpanel: selectors become an in-flow side rail ──────────
+       Grid auto track shrink-to-fits the widest pill, so the content column
+       is pushed right by exactly the rail width — no JS measurement needed. */
+    .subpanel.route-panel .subpanel-inner {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        column-gap: 1rem;
+    }
+
+    .subpanel.route-panel #route-selectors-container {
+        position: sticky;
+        top: 0;
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        align-self: start;
+        max-height: calc(100vh - 8rem);
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 402;
+    }
+
+    #route-selectors-container .bottom {
+        position: static;
+        width: auto;
+        padding-bottom: 0;
+    }
+
+    #route-selectors-container .route-selectors {
+        position: static;
+        overflow-x: hidden;
+        overflow-y: visible;
+        padding-left: 0;
+        padding-top: 0;
+        touch-action: pan-y;
+    }
+
+    #route-selectors-container .route-selectors::after {
+        display: none;
+    }
+
+    .subpanel.route-panel #route-selection-prompt,
+    .subpanel.route-panel .route-panel-wrapper {
+        grid-column: 2;
+        min-width: 0;
+    }
+
+    .subpanel.route-panel .route-panel-wrapper {
+        width: auto;
+    }
+
+    /* Bottom clearance was for the overlaid mobile selector row */
+    .subpanel.route-panel .route-stops-grid {
+        margin-bottom: 2rem;
+        padding-bottom: 4rem;
+    }
+
     .settings-floating-bar {
         left: 2rem;
         right: auto;
