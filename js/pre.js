@@ -1395,6 +1395,13 @@ async function fetchETAs() {
     if (popupStopId) {
         updateStopBuses(popupStopId);
     }
+    // Refresh map tooltips for the selected route when no popup is open: the
+    // idle-resume wipe cleared busETAs, and though the polls recompute them,
+    // this guarantees the labels re-render from the fresh tables (mirrors the
+    // guard used at the end of updateTimeToStops).
+    if (shownRoute && !popupBusName && !popupStopId) {
+        updateTooltips(shownRoute);
+    }
 
     // Hide the indicator once both fetches settle (success or error) so it
     // never lingers if a sub-fetch throws.
