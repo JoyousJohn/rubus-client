@@ -122,6 +122,7 @@ function openRUBusSocket() {
         }
         // console.log("RUBus WebSocket connection opened");
         // Update response time to indicate WebSocket is active
+        clearServerFailure('live updates');
         updateRubusResponseTime();
     });
 
@@ -406,7 +407,9 @@ function openRUBusSocket() {
         // Extract and log the original event object with all its nested values
         const originalEventExtracted = extractAllValues(event, 3, 0);
         console.error("Original event:", originalEventExtracted);
-        // Don't mark RUBus as failing on WebSocket errors - only HTTP request failures matter
+        // Surface live-update failures in the notification banner, but don't
+        // mark RUBus as fully failing on WebSocket errors - HTTP polling still works.
+        markServerFailure('live updates');
     });
 
 }

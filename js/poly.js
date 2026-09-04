@@ -1424,7 +1424,21 @@ function updateStopBuses(stopId, actuallyShownRoute) {
     const postCutoffEntries = [];
 
     for (const entry of sortedEntries) {
-        if (busData[entry.busName]?.atDepot || !isValid(entry.busName)) {
+        const bus = busData[entry.busName];
+        const isOosOrDepot = !!(bus?.oos || bus?.atDepot);
+        // Buses missing ETA tables entirely (e.g. right after an idle-resume
+        // wipe) are not out of service — they just haven't had their ETAs
+        // recomputed yet. Always render them as dimmed no-ETA rows so the
+        // popup is honest but never appears to have "no incoming buses".
+        const missingEtas = !busETAs[entry.busName];
+        if (isOosOrDepot) {
+            if (!settings['toggle-show-out-of-service'] || hideOutOfServiceBuses) {
+                continue;
+            }
+            deferredEntries.push(entry);
+        } else if (missingEtas) {
+            firstLoopEntries.push(entry);
+        } else if (!isValid(entry.busName)) {
             if (!settings['toggle-show-out-of-service'] || hideOutOfServiceBuses) {
                 continue;
             }

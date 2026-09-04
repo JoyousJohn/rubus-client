@@ -3,8 +3,47 @@ const excludedRouteMappings = {};
 let tripshotDown = false;
 let pendingForceImmediate = false;
 
+// Composite server-outage state: tracks which RUBus/TripShot data sources are
+// currently failing so the notification banner lists every active failure and
+// only hides once all have recovered. Keys: 'bus positions', 'ETAs',
+// 'wait times', 'live updates'.
+const serverFailures = new Set();
+let serverFailureDetail = '';
+
+function markServerFailure(key, detail) {
+    serverFailures.add(key);
+    if (detail !== undefined) {
+        serverFailureDetail = detail;
+    }
+    updateServerFailureBanner();
+}
+
+function clearServerFailure(key) {
+    serverFailures.delete(key);
+    if (key === 'bus positions') {
+        serverFailureDetail = '';
+    }
+    if (serverFailures.size === 0) {
+        serverFailureDetail = '';
+    }
+    updateServerFailureBanner();
+}
+
+function updateServerFailureBanner() {
+    if (typeof $ === 'undefined') return;
+    if (serverFailures.size === 0) {
+        $('.notif-popup').slideUp();
+        return;
+    }
+    const parts = ['bus positions', 'ETAs', 'wait times', 'live updates'].filter(key => serverFailures.has(key));
+    let html = `RUBus/TripShot servers are experiencing issues. Unavailable: ${parts.join(', ')}.`;
+    if (serverFailureDetail) {
+        html += `<br><br>Error: ${serverFailureDetail}`;
+    }
+    $('.notif-popup').html(html).fadeIn();
+}
+
 async function immediatelyUpdateBusDataPre() {
-    console.log(`[${new Date().toISOString()}] [IMMEDIATE PRE] cancelling all animations and graying markers`);
     cancelAllAnimations();
 
     $('.updating-buses').stop(true, true).fadeIn();
@@ -58,8 +97,6 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     const isDocHidden = (typeof document !== 'undefined' && document.visibilityState === 'hidden');
     const shouldImmediateUpdate = Boolean(immediatelyUpdate) || forceImmediateUpdate || longGapSinceUpdate || isDocHidden || settings['toggle-always-immediate-update'];
     
-    console.log(`[${new Date().toISOString()}] [POLL TRIGGER] timeSinceLastPoll=${timeSinceLastPoll}ms | timeSinceLastMarkerUpdate=${currentTime - (lastUpdateTime || 0)}ms | longGap=${longGapSinceUpdate} (threshold=${pollDelay + pollDelayBuffer}ms) | isHidden=${isDocHidden} | forceImm=${forceImmediateUpdate} | shouldImmediate=${shouldImmediateUpdate}`);
-
     // Allow immediate updates even on initial load if forceImmediateUpdate is set (app resume scenario)
     if (shouldImmediateUpdate && (!isInitial || forceImmediateUpdate)) {
         immediatelyUpdate = true;
@@ -89,30 +126,23 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         $('.slow-connection').slideUp();
 
         if (!response.ok) {
-            $('.notif-popup').html(`TripShot servers are unavailable and incorrect (if any) bus data may be being displayed.`).fadeIn();
+            markServerFailure('bus positions');
             tripshotDown = true;
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log(`[${new Date().toISOString()}] [POLL RESP] fetch response received in ${new Date().getTime() - currentTime}ms | buses in payload: ${Object.keys(data || {}).length}`);
 
         if (sim) return; // don't allow race conditions of simming before fetch completed
 
         if (!data || data.error) {
-            $('.notif-popup').html(
-                `RUBus servers are unavailable and incorrect (if any) bus data may be shown. <br><br>Error: ${data.error}` +
-                `<br><br><span class="notif-close-btn" style="color:rgb(138, 193, 248); cursor: pointer; display: inline-block; pointer-events: all;">Close</span>`
-            ).fadeIn();
-            $('.notif-popup').off('click', '.notif-close-btn').on('click', '.notif-close-btn', function() {
-                $('.notif-popup').slideUp();
-            });
+            markServerFailure('bus positions', data.error);
             tripshotDown = true;
             return;
         } else {
             // Server is responding successfully, hide notification popup and reset tripshotDown flag
+            clearServerFailure('bus positions');
             if (tripshotDown) {
-                $('.notif-popup').slideUp();
                 tripshotDown = false;
             }
         }
@@ -317,10 +347,6 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 pollMovedCount++;
                 pollDurations.push(animationDuration);
 
-                if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
-                    console.log(`[${new Date().toISOString()}] [BUS MOVED] bus=${busName} route=${routeStr} timeSinceLastMove=${timeSinceLastMove}ms (effectiveInterval=${effectiveInterval}ms) -> apiAnimationDuration=${animationDuration}ms | pos: [${lastPosition[0].toFixed(5)}, ${lastPosition[1].toFixed(5)}] -> [${apiLat.toFixed(5)}, ${apiLng.toFixed(5)}]`);
-                }
-                
                 // Only append finite coordinates to the Bézier history
                 if (coordsAreFinite) {
                     busData[busName].previousPositions.push([apiLat, apiLng]);
@@ -331,9 +357,6 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 }
             } else {
                 pollUnchangedCount++;
-                if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
-                    console.log(`[${new Date().toISOString()}] [BUS UNCHANGED] bus=${busName} route=${routeStr} coords unchanged at [${apiLat ? apiLat.toFixed(5) : '?'}, ${apiLng ? apiLng.toFixed(5) : '?'}] -> preserving in-flight animation`);
-                }
             }
 
             const apiRotation = parseFiniteCoord(bus.rotation);
@@ -402,25 +425,6 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             }
         }
 
-        if (priorActiveBuses.length > 0) {
-            const idleDurations = priorIdleBuses
-                .map(name => (busMarkers[name] && busMarkers[name]._idleSince) ? (performance.now() - busMarkers[name]._idleSince) : null)
-                .filter(d => d !== null && d >= 0);
-            const avgIdleStr = idleDurations.length > 0
-                ? ` (avg idle wait: ${(idleDurations.reduce((a, b) => a + b, 0) / idleDurations.length / 1000).toFixed(1)}s)`
-                : '';
-            const avgDurStr = pollDurations.length > 0
-                ? `${Math.round(pollDurations.reduce((a, b) => a + b, 0) / pollDurations.length)}ms`
-                : 'N/A';
-            const idlePercent = Math.round((priorIdleBuses.length / priorActiveBuses.length) * 100);
-            console.log(
-                `%c[${new Date().toISOString()}] [FLEET HEALTH] Active on map: ${priorActiveBuses.length} buses | ` +
-                `Status BEFORE this poll: ${priorIdleBuses.length}/${priorActiveBuses.length} (${idlePercent}%) were IDLE/STOPPED${avgIdleStr}, ${priorAnimatingBuses.length} were still animating | ` +
-                `Poll results: ${pollMovedCount} moved (avg duration: ${avgDurStr}), ${pollUnchangedCount} unchanged`,
-                priorIdleBuses.length > 0 ? 'color: #ff9900; font-weight: bold;' : 'color: #00d2ff; font-weight: bold;'
-            );
-        }
-
         const routesNeedingPolylines = new Set(
             [...pollActiveRoutes].filter(route =>
                 !polylines[route] &&
@@ -459,8 +463,8 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
         updateRubusResponseTime();
 
+        clearServerFailure('bus positions');
         if (tripshotDown) {
-            $('.notif-popup').slideUp();
             tripshotDown = false;
         }
 
@@ -505,6 +509,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
 
     } catch (error) {
         console.error('Error fetching bus data:', error);
+        markServerFailure('bus positions');
     } finally {
         busFetchInProgress = false;
         // Guarantee the "UPDATING" badge settles. It's normally hidden by
@@ -1010,6 +1015,7 @@ async function fetchWhere() {
     } catch (error) {
         console.error('Error fetching bus locations:', error);
         markRubusRequestsFailing();
+        markServerFailure('bus positions');
     }
 
 }
@@ -1045,8 +1051,6 @@ function formatKnightMoverCallCutoff(serviceEndHour) {
 }
 
 function checkMinRoutes() {
-
-    console.log("Checking min routes")
 
     // The Call Knight Mover popup must never appear while the simulator is
     // running. It's still hidden at the end of startSim() and when closing a
@@ -1285,10 +1289,6 @@ function getMessages() {
 
 
 function cancelAllAnimations() {
-    const active = Object.keys(animationFrames);
-    if (active.length > 0) {
-        console.log(`[${new Date().toISOString()}] [ANIM CANCEL ALL] Cancelled ${active.length} active animations: [${active.join(', ')}]`);
-    }
     Object.keys(animationFrames).forEach(busName => {
         delete animationFrames[busName];
     });
@@ -1310,8 +1310,21 @@ async function fetchETAs() {
     if (showIndicator) {
         $('.refreshing-etas').stop(true, true).fadeIn();
     }
+    // Track sub-fetch success so the resume gate's freshness timestamp is only
+    // advanced when the tables actually refreshed: a failed or aborted fetch
+    // leaves lastETAsFetchTime stale so the next resume retries immediately
+    // instead of waiting out the freshness window.
+    let etasSucceeded = false;
+    let waitsSucceeded = false;
+
+    const etasController = new AbortController();
+    const etasFetchTimeout = setTimeout(() => etasController.abort(), 8000);
     try {
-        const response = await fetch('https://demo.rubus.live/etas');
+        const response = await fetch('https://demo.rubus.live/etas', {
+            method: 'GET',
+            signal: etasController.signal
+        });
+        clearTimeout(etasFetchTimeout);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -1319,17 +1332,27 @@ async function fetchETAs() {
         etas = data[campus] || {}; // can prob remove || {} if server defaults eta obj empty campus mappings
         // console.log('ETAs fetched:', etas);
         // updateTimeToStops('all')
+        etasSucceeded = true;
+
+        clearServerFailure('ETAs');
 
         updateRubusResponseTime();
     } catch (error) {
+        clearTimeout(etasFetchTimeout);
         console.error('Error fetching ETAs:', error);
         markRubusRequestsFailing();
 
-        $('.notif-popup').text('RUBus/Passio servers are experiencing issues and ETAs could not be fetched. Accurate, live bus positioning is still available.').fadeIn();
+        markServerFailure('ETAs');
     }
 
+    const waitsController = new AbortController();
+    const waitsFetchTimeout = setTimeout(() => waitsController.abort(), 8000);
     try {
-        const response = await fetch('https://demo.rubus.live/waits');
+        const response = await fetch('https://demo.rubus.live/waits', {
+            method: 'GET',
+            signal: waitsController.signal
+        });
+        clearTimeout(waitsFetchTimeout);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -1337,16 +1360,23 @@ async function fetchETAs() {
         waits = data[campus];
         updateWaitTimes();
         // console.log('Waits fetched:', waits);
+        waitsSucceeded = true;
+
+        clearServerFailure('wait times');
 
         updateRubusResponseTime();
     } catch (error) {
+        clearTimeout(waitsFetchTimeout);
         console.error('Error fetching waits:', error);
         markRubusRequestsFailing();
+        markServerFailure('wait times');
     }
 
-    // Whether or not the sub-fetches succeeded, treat this as a completed ETA
-    // refresh so the resume gate sees a fresh-enough timestamp when it runs next.
-    lastETAsFetchTime = Date.now();
+    // Only advance the freshness timestamp when both tables refreshed; a failed
+    // or aborted fetch leaves it stale so the resume gate retries promptly.
+    if (etasSucceeded && waitsSucceeded) {
+        lastETAsFetchTime = Date.now();
+    }
 
     // Deterministic re-render once the ETA/waits tables are ready: recompute
     // busETAs from the (possibly new) tables, then refresh any open stop popup
@@ -1452,7 +1482,9 @@ $(document).ready(async function() {
 
             const now = new Date();
             const hour = now.getHours();
-            if (hour >= 8 && hour < 23) {
+            // Only surface the no-active-routes message when no fetch is
+            // failing: if the failure banner is up, it must not be overwritten.
+            if (serverFailures.size === 0 && hour >= 8 && hour < 23) {
                 $('.knight-mover').hide();
                 $('.notif-popup').html(
                     `Passio servers are unavailable. Data shown may be limited. This affects all bus apps.<br><br>You can still see navigation directions, including what bus to take, by tapping the search icon towards the bottom right.<br><br>RUBus will immediately display buses once Passio is back online.` +
@@ -1567,8 +1599,6 @@ $(document).ready(async function() {
                 return;
             }
             _lastResumeTrigger = now;
-
-            console.log('App resumed - triggering immediate bus update');
 
             // Re-fetch the ETA/waits tables when they're stale (the app slept for
             // longer than this threshold), so busETAs are recomputed from fresh
