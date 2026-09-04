@@ -2469,6 +2469,7 @@ const toggleSettings = [
     'toggle-show-alerts-other-campuses',
     'toggle-show-out-of-service',
     'toggle-show-bus-btns',
+    'toggle-always-show-breaks',
 
     'toggle-pause-update-marker',
     'toggle-pause-rotation-updating',

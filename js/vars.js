@@ -67,6 +67,7 @@ const defaultSettings = {
     'toggle-show-alerts-other-campuses': false,
     'toggle-show-out-of-service': false,
     'toggle-show-bus-btns': true,
+    'toggle-always-show-breaks': false,
     'campus': 'nb',
     'parking-campus': false,
     'marker-type': 'rubus', // 'rubus' or 'passio'

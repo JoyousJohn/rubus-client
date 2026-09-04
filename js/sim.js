@@ -1082,7 +1082,7 @@ async function startSim() {
 
     $('.sim-btn').hide();
     hideInfoBoxes(); // needs to be first since this might show knight mover
-    $('.updating-buses, .slow-connection, .knight-mover, .past-breaks-wrapper, .bus-ridership-wrapper, .campus-switcher').hide();
+    $('.updating-buses, .slow-connection, .knight-mover, .past-breaks-wrapper, .show-breaks-prompt, .bus-ridership-wrapper, .campus-switcher').hide();
     $('.right-btns').removeClass('right-btns-bottom')
     if (!settings['toggle-hide-sim-popup']) {
         $('.sim-popup').slideDown();
@@ -1229,7 +1229,8 @@ $(document).ready(async function() {
     })
 
     $('.sim-exit').click(function() {
-        $('.updating-buses, .past-breaks-wrapper, .bus-ridership-wrapper').show();
+        $('.updating-buses, .bus-ridership-wrapper').show();
+        $('.past-breaks-wrapper, .show-breaks-prompt').hide();
         if (settings['toggle-show-campus-switcher']) {
             $('.campus-switcher').show();
         }

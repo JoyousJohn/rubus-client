@@ -129,6 +129,18 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-always-show-breaks':
+            console.log(`Always Show Breaks is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-always-show-breaks'] = isChecked;
+            {
+                const currentBus = (typeof popupBusName !== 'undefined' && popupBusName) ? popupBusName : null;
+                if (currentBus) {
+                    if (isChecked) revealBreaksClicked();
+                    else resetBreaksGate(currentBus);
+                }
+            }
+            break;
+
         case 'toggle-show-etas-in-seconds':
             console.log(`Show ETAs in seconds is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-etas-in-seconds'] = isChecked;

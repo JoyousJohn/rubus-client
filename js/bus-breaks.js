@@ -66,13 +66,94 @@ function buildChronBreakList(expectedStops, breakDataChron) {
     return { chronList, missedStops };
 }
 
+// Gate: past breaks stay hidden behind the "Tap to show past breaks" prompt
+// until the user reveals them. Tracks which bus the gate was opened for so a
+// stale async fetch for a previous bus can't pop the wrapper open.
+let breaksRevealedForBus = null;
+
+function isBreaksRevealed(busName) {
+    return breaksRevealedForBus !== null && breaksRevealedForBus === busName;
+}
+
+// Buses with 3+ missed stops get a warning prefix on the prompt, and tapping
+// it expands all stops immediately instead of just recent breaks.
+let frequentSkipperBuses = {};
+
+function updateBreaksPrompt(busName, missedCount) {
+    if (isBreaksRevealed(busName)) return; // prompt already gone
+    const cur = (typeof popupBusName !== 'undefined' && popupBusName) ? popupBusName : null;
+    if (cur && cur !== busName) return; // stale fetch for a previous bus
+    const $prompt = $('.show-breaks-prompt');
+    if (missedCount >= 3) {
+        $prompt.html('<span style="color: #f84949">This bus frequently skips stops:</span> Show past breaks &amp; stops');
+    } else {
+        $prompt.text('Show past breaks & stops');
+    }
+}
+
+// Reset to gated state on bus open/switch: prompt visible, wrapper hidden.
+// Kicks off a background fetch (wrapper stays hidden) so the prompt can warn
+// about frequent skippers before the user taps.
+function resetBreaksGate(busName) {
+    breaksRevealedForBus = null;
+    if (busName) delete frequentSkipperBuses[busName];
+    $('.bus-breaks').empty();
+    $('.show-more-breaks, .show-all-breaks').hide();
+    if (settings['toggle-always-show-breaks']) {
+        // Bypass the tap gate: reveal immediately, prompt text never shown.
+        breaksRevealedForBus = busName;
+        $('.show-breaks-prompt').hide();
+        $('.past-breaks-wrapper').removeClass('none').show().css('display', 'flex');
+    } else {
+        $('.past-breaks-wrapper').hide();
+        $('.show-breaks-prompt').text('Show past breaks & stops').css('pointer-events', '').show();
+    }
+    if (busName) getBusBreaks(busName);
+}
+
+// Cache-fresh check mirroring getBusBreaks(): sim buses generate synchronously.
+function isBreaksCacheFresh(busName) {
+    if (!busName) return false;
+    if (busData[busName]?.type === 'sim') return true;
+    const entry = busBreaksCache[busName];
+    const THREE_MINUTES = 3 * 60 * 1000;
+    return !!(entry && entry.data && !entry.data.error && (Date.now() - entry.timestamp) < THREE_MINUTES);
+}
+
+// Prompt click (underneath next-stops-grid): "Loading..." only for a real
+// network fetch; cache hits populate synchronously so the text goes straight
+// away. Slides the wrapper down meanwhile (all stops immediately for
+// frequent skippers).
+function revealBreaksClicked() {
+    const currentBus = (typeof popupBusName !== 'undefined' && popupBusName) ? popupBusName : (typeof sourceBusName !== 'undefined' ? sourceBusName : null);
+    if (!currentBus || breaksRevealedForBus === currentBus) return;
+    breaksRevealedForBus = currentBus;
+    // Paint "Loading..." first: the slideDown + fetch/populate work below can
+    // block the main thread for ~a second, and anything queued in the same
+    // task would never get painted. rAF + setTimeout yields past the paint.
+    $('.show-breaks-prompt').text('Loading...').css('pointer-events', 'none').show();
+    requestAnimationFrame(() => setTimeout(() => {
+        if (breaksRevealedForBus !== currentBus) return; // bus switched meanwhile
+        $('.past-breaks-wrapper').removeClass('none').hide().slideDown('fast', function() {
+            $(this).css('display', 'flex');
+            updateNextStopsMaxHeight();
+        });
+        if (frequentSkipperBuses[currentBus]) {
+            getBusBreaks(currentBus, false, 'all_stops');
+        } else {
+            getBusBreaks(currentBus);
+        }
+    }, 0));
+}
+
 function populateBusBreaks(busBreakData, busName) {
     const MAX_INITIAL_BREAKS = 7; // Maximum number of breaks shown initially
 
     if (!busBreakData || busBreakData.error) {
         $('.bus-breaks').empty();
+        if (busName) delete frequentSkipperBuses[busName];
         // $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
-        $('.past-breaks-wrapper, .bus-history').hide();
+        $('.past-breaks-wrapper, .bus-history, .show-breaks-prompt').hide();
         $('.show-more-breaks, .show-all-breaks').hide();
         $('.info-overdue-break').hide();
         // Update max height since overdue break is now hidden
@@ -133,7 +214,13 @@ function populateBusBreaks(busBreakData, busName) {
         $('.info-overdue-break').hide();
     }
 
-    $('.past-breaks-wrapper').show();
+    // Content is populated on demand; only show the wrapper if the user
+    // already pressed the prompt for this bus (stale fetches stay hidden).
+    if (isBreaksRevealed(busName)) {
+        $('.past-breaks-wrapper').removeClass('none').show().css('display', 'flex');
+    } else {
+        $('.past-breaks-wrapper').hide();
+    }
     const breakDiv = $('.bus-breaks');
     breakDiv.empty(); // Clear existing breaks before adding new ones
     
@@ -156,6 +243,8 @@ function populateBusBreaks(busBreakData, busName) {
     if (missedStops.length > 0) {
         console.log(`Bus ${busName} (${busData[busName]?.busName}) missed ${missedStops.length} stops:`, missedStops.map(stopId => stopsData[stopId]?.name || stopId));
     }
+    frequentSkipperBuses[busName] = missedStops.length >= 3;
+    updateBreaksPrompt(busName, missedStops.length);
 
     for (const stopData of allStopsToShow) {
         let extraClass = '';
@@ -185,24 +274,33 @@ function populateBusBreaks(busBreakData, busName) {
             const _stopLabel = stopsData[breakItem.stop_id].shortName || stopsData[breakItem.stop_id].name;
             breakDiv.append($('<div></div>').addClass(extraClass).css('color','var(--theme-extra)').text(_stopLabel));
 
-            let durationDiffPercent = Math.round(((breakItem.break_duration - waits[breakItem.stop_id])/breakItem.break_duration * 100));
-
-            let percentDiffCol = ''
-            if (durationDiffPercent > 0) { // slower than average
-                percentDiffCol = '#f84949';
-                durationDiffPercent = '+' + durationDiffPercent;
-            } else if (durationDiffPercent < 0) { // faster than average
-                percentDiffCol = 'var(--theme-short-stops-color)';
+            // No baseline yet for this stop (waits rebuild live after a server
+            // restart): omit the percent instead of rendering NaN%.
+            const baselineWait = waits[breakItem.stop_id];
+            const hasBaseline = Number.isFinite(baselineWait);
+            let durationDiffInner = '';
+            if (hasBaseline) {
+                let durationDiffPercent = Math.round(((breakItem.break_duration - baselineWait)/breakItem.break_duration * 100));
+                let percentDiffCol = '';
+                if (durationDiffPercent > 0) { // slower than average
+                    percentDiffCol = '#f84949';
+                    durationDiffPercent = '+' + durationDiffPercent;
+                } else if (durationDiffPercent < 0) { // faster than average
+                    percentDiffCol = 'var(--theme-short-stops-color)';
+                }
+                durationDiffInner = `<div class="stop-dur-percent none text-1p2rem" style="color: ${percentDiffCol};">${durationDiffPercent}%</div>`;
             }
 
             breakDiv.append(`<div class="${extraClass}"><div class="flex gap-x-0p5rem justify-between">
                 <div class="bold-500">${Math.floor(breakItem.break_duration/60) ? Math.floor(breakItem.break_duration/60) + 'm ' : ''}${Math.round(breakItem.break_duration % 60) ? Math.round(breakItem.break_duration % 60) + 's' : ''}</div>
-                <div class="stop-dur-percent none text-1p2rem" style="color: ${percentDiffCol};">${durationDiffPercent}%</div>
+                ${durationDiffInner}
             </div></div>`);
 
             if (!consideredStops.has(breakItem.stop_id)) {
-                totalAvgBreakTime += waits[breakItem.stop_id];
-                totalBusBreakTime += breakItem.break_duration;
+                if (hasBaseline) {
+                    totalAvgBreakTime += baselineWait;
+                    totalBusBreakTime += breakItem.break_duration;
+                }
                 consideredStops.add(breakItem.stop_id);
             }
 
@@ -224,13 +322,21 @@ function populateBusBreaks(busBreakData, busName) {
     }
 
 
-    const percentDiff = Math.round((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime * 100);
+    // totalAvgBreakTime stays 0 when no stop in this history has a network
+    // baseline yet (waits rebuild live after a server restart): skip the %
+    // comparison instead of rendering NaN%.
+    const hasBaselineAvg = totalAvgBreakTime > 0;
+    const percentDiff = hasBaselineAvg ? Math.round((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime * 100) : null;
 
     const timeDiff = Math.round((new Date(busBreakData[busBreakData.length - 1].time_departed.replace(/\.\d+/, '')) - new Date(busBreakData[0].time_arrived.replace(/\.\d+/, ''))) / 1000);
     const breakMinPerHour = (totalBusStopTime / timeDiff * 60).toFixed(1);
     // $('.bus-avg-break-time-per-hour').html(`${breakMinPerHour} min/hr`);
 
-    $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
+    if (hasBaselineAvg) {
+        $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
+    } else {
+        $('.bus-avg-break-time').html(`No network average yet, breaks for <span style="color: var(--theme-breaks-min-color);">${Math.ceil(breakMinPerHour)} min/hr</span>`);
+    }
 
     // Temp disable quickness
     // if ((totalBusBreakTime - totalAvgBreakTime) / totalAvgBreakTime > 0.3) {
@@ -242,8 +348,8 @@ function populateBusBreaks(busBreakData, busName) {
     if (settings['toggle-show-bus-quickness-breakdown']) {
         $('.bus-quickness-breakdown-wrapper').html(`<div class="flex flex-col text-1p3rem mt-0p5rem">
             <div>Total bus stop time/loop: ${Math.round(totalBusBreakTime)}s</div>
-            <div>Network avg stop time/loop: ${Math.round(totalAvgBreakTime)}s</div>
-            <div>Percent difference: ${percentDiff}%</div>
+            <div>Network avg stop time/loop: ${hasBaselineAvg ? Math.round(totalAvgBreakTime) + 's' : 'no data yet'}</div>
+            <div>Percent difference: ${hasBaselineAvg ? percentDiff + '%' : '—'}</div>
         </div>`).show();
     } else {
         $('.bus-quickness-breakdown-wrapper').hide();
@@ -273,10 +379,27 @@ function populateBusBreaks(busBreakData, busName) {
         $('.show-more-breaks').hide();
         $('.show-all-breaks').click(function() { $('.no-breaks').remove(); });
         $('.show-all-breaks').text("Show Stops");
-        $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg`);
+        if (hasBaselineAvg) {
+            $('.bus-avg-break-time').html(`Stops <span style="color: ${percentDiff > 0 ? '#f84949' : 'var(--theme-short-stops-color)'};">${Math.abs(percentDiff)}%</span> ${percentDiff > 0 ? 'longer' : 'shorter'} than avg`);
+        } else {
+            $('.bus-avg-break-time').html(`No network average yet`);
+        }
     } else {
         $('.show-all-breaks').text("Show All Stops (Slow)");
     }
+
+    // Frequent skippers skip the recent-only view: show all stops immediately.
+    if (frequentSkipperBuses[busName] && isBreaksRevealed(busName)) {
+        applyBreaksDisplayMode('all_stops');
+    }
+
+    // Fetch landed: remove the prompt text (it read "Loading..." since the tap).
+    // Background prefetches leave the prompt alone so it stays tappable.
+    if (isBreaksRevealed(busName)) {
+        $('.show-breaks-prompt').hide();
+    }
+
+    updateNextStopsMaxHeight();
 }
 
 
