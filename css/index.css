@@ -645,7 +645,10 @@ html, body {
 }
 
 .knight-mover {
-    background-color: var(--theme-bg);
+    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--theme-border);
     color: var(--theme-color);
     padding: 1rem 2rem;
     border-radius: 1rem;
@@ -691,8 +694,10 @@ html, body {
 .campus-toggle {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    background-color: var(--theme-bg);
-    border: 1px solid var(--theme-color);
+    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--theme-border);
     border-radius: 1rem;
     overflow: hidden;
     font-family: var(--font-family);
@@ -704,7 +709,9 @@ html, body {
     font-size: 1.3rem;
 }
 .campus-toggle-btn.selected {
-    background-color: var(--theme-color);
+    background-color: color-mix(in srgb, var(--theme-color) 90%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--theme-bg);
 }
 
@@ -995,7 +1002,9 @@ html, body {
 }
 
 .bus-info-main, .info-next-stops {
-    background-color: var(--theme-bg);
+    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     /* background-color: red; */
     border-radius: 1rem;
     padding: 1.3rem 2rem;
@@ -1004,9 +1013,11 @@ html, body {
 
 .bus-info-main {
     border-radius: 0 0 1rem 1rem !important;
-    background-color: color-mix(in srgb, var(--theme-bg) 77%, transparent);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    border-bottom: 1px solid var(--theme-border);
+}
+
+.info-next-stops {
+    border: 1px solid var(--theme-border);
 }
 
 .bus-info-main-left {
@@ -1227,7 +1238,10 @@ html, body {
 
 
 .my-location-popup {
-    background-color: var(--theme-bg);
+    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--theme-border);
     border-radius: 1rem;
     margin: 1rem;
     padding: 1rem;
@@ -1253,7 +1267,10 @@ html, body {
 }
 
 .stop-info-popup-inner {
-    background-color: var(--theme-bg);
+    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--theme-border);
     border-radius: 1rem;
     overflow-y: scroll;
     max-height: 40vh;
