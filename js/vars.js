@@ -282,26 +282,29 @@ function showSimBtnIfEligible() {
 
 // Special-route handling for SAC North (stop 3)
 function isSpecialRoute(route) {
-    return route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1';
+    const r = String(route || '').toLowerCase();
+    return r === 'wknd1' || r === 'all' || r === 'winter1' || r === 'on1' || r === 'summer1';
 }
 
 // Unified ETA accessor that hides schema differences
 function getETAForStop(busName, stopId, previousStopId) {
     if (!busETAs || !busETAs[busName]) return undefined;
-    const route = busData && busData[busName] ? busData[busName].route : undefined;
-    const special = isSpecialRoute(route);
-    if (special && stopId === 3) {
-        const viaMap = busETAs[busName][3] && busETAs[busName][3]['via'];
-        if (!viaMap) return undefined;
+    const numStopId = Number(stopId);
+    const busEntry = busETAs[busName][stopId] !== undefined ? busETAs[busName][stopId] : (numStopId === 3 ? busETAs[busName][3] : undefined);
+    if (busEntry && typeof busEntry === 'object' && busEntry.via) {
+        const viaMap = busEntry.via;
         if (previousStopId !== undefined && previousStopId !== null) {
-            return viaMap[previousStopId];
+            const viaVal = viaMap[previousStopId] !== undefined ? viaMap[previousStopId] : viaMap[Number(previousStopId)];
+            if (typeof viaVal === 'number') return viaVal;
         }
         const values = Object.values(viaMap).filter(v => typeof v === 'number');
         if (!values.length) return undefined;
         return Math.min.apply(null, values);
     }
-    return busETAs[busName][stopId];
+    return typeof busEntry === 'number' ? busEntry : (typeof busETAs[busName][stopId] === 'number' ? busETAs[busName][stopId] : undefined);
 }
+window.isSpecialRoute = isSpecialRoute;
+window.getETAForStop = getETAForStop;
 
 // Coordinate ingestion helpers (used by ws.js / pre.js). A coordinate is only
 // accepted when it parses to a finite number; null/undefined/''/non-numeric
@@ -398,3 +401,11 @@ window._panelOpenedAt = window._panelOpenedAt || {};
 function markPanelOpened(name) {
     try { window._panelOpenedAt[name] = Date.now(); } catch (e) {}
 }
+
+// Global PostHog event capture helper. Safe against ad blockers and offline usage.
+function capturePostHog(eventName, properties = {}) {
+    if (window.posthog && typeof window.posthog.capture === 'function') {
+        window.posthog.capture(eventName, properties);
+    }
+}
+window.capturePostHog = capturePostHog;

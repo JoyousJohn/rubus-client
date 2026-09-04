@@ -23,34 +23,48 @@ const SEARCH_CAMPUS_NAMES = {
 // nav from/to autocomplete.
 const FEATURED_RESULT_NAME = 'shi stadium and hale center';
 
-// Reorder matched results so the featured building is placed right after any
-// stops (never above stops), otherwise at the very top. Results are either
-// Fusion-style ({ item, ... }) or raw items. Returns the same array (mutated)
-// so callers can keep using it.
+// Substrings that additionally mark a result as featured (also pinned above
+// other buildings but never above stops): student centers and dining venues.
+const FEATURED_RESULT_KEYWORDS = ['student center', 'dining'];
+
+function isFeaturedResult(item) {
+    if (!item || typeof item.name !== 'string') return false;
+    const name = item.name.trim().toLowerCase();
+    if (name === FEATURED_RESULT_NAME) return true;
+    return FEATURED_RESULT_KEYWORDS.some(keyword => name.includes(keyword));
+}
+
+// Reorder matched results so every featured building (SHI Stadium, student
+// centers, dining halls) is placed right after any stops (never above stops),
+// otherwise at the very top. Results are either Fusion-style ({ item, ... })
+// or raw items. Returns the same array (mutated) so callers can keep using it.
 function pinFeaturedResult(results) {
     if (!Array.isArray(results) || results.length <= 1) return results;
-    const targetIndex = results.findIndex(r => {
-        const item = r && r.item ? r.item : r;
-        return item &&
-            typeof item.name === 'string' &&
-            item.name.trim().toLowerCase() === FEATURED_RESULT_NAME;
-    });
-    if (targetIndex < 0) return results;
 
-    const reversedStopIdx = [...results].reverse().findIndex(r => {
-        const item = r && r.item ? r.item : r;
-        return item && item.category === 'stop';
-    });
-    const lastStopIndex = reversedStopIdx === -1 ? -1 : (results.length - 1 - reversedStopIdx);
-    const hasStops = lastStopIndex >= 0;
+    const lastStopIndex = (() => {
+        let idx = -1;
+        for (let i = 0; i < results.length; i++) {
+            const item = results[i] && results[i].item ? results[i].item : results[i];
+            if (item && item.category === 'stop') idx = i;
+        }
+        return idx;
+    })();
 
-    if (hasStops) {
-        if (targetIndex <= lastStopIndex) return results; // already after stops / no reorder needed
-        const insertionIndex = lastStopIndex + 1;
-        results.splice(insertionIndex, 0, results.splice(targetIndex, 1)[0]);
-    } else if (targetIndex > 0) {
-        results.unshift(results.splice(targetIndex, 1)[0]);
+    // Extract featured results preserving their relative order.
+    const featured = [];
+    const rest = [];
+    for (const r of results) {
+        const item = r && r.item ? r.item : r;
+        if (isFeaturedResult(item)) featured.push(r);
+        else rest.push(r);
     }
+    if (featured.length === 0) return results;
+
+    // Insert featured results right after the last stop (never above stops);
+    // otherwise at the very top.
+    const insertionIndex = lastStopIndex === -1 ? 0 : lastStopIndex + 1;
+    rest.splice(insertionIndex, 0, ...featured);
+    results.splice(0, results.length, ...rest);
     return results;
 }
 window.pinFeaturedResult = pinFeaturedResult;
@@ -349,7 +363,20 @@ $(document).ready(function() {
             isPressAndHold = false;
             return;
         }
-        
+
+        // If the map was left by flying to a nav waypoint, restore the nav menu
+        // (same route view as the popup's "<- Back to nav" button) instead of
+        // dropping into the search menu.
+        if (window._navReturnPending && window.navRouteSession && window.navRouteSession.routeData &&
+            typeof openNavBack === 'function') {
+            openNavBack();
+            sa_event('btn_press', {
+                'btn': 'search',
+                'context': 'nav_return'
+            });
+            return;
+        }
+
         hideInfoBoxes(true);
         $('.knight-mover').hide();
         $('.bottom').hide();
@@ -553,7 +580,7 @@ $(document).ready(function() {
                             lng: stop.longitude,
                             category: 'stop',
                             type: 'stop',
-                            aliases: [stop.shortName, stop.shorterName, stop.mainName].filter(Boolean),
+                            aliases: [stop.shortName, stop.shorterName, stop.mainName, ...(stop.aliases || [])].filter(Boolean),
                             abbreviations: [stop.shorterName, stop.shortName].filter(Boolean)
                         };
                         for (const mainWord in aliasMap) {
@@ -634,6 +661,15 @@ $(document).ready(function() {
 
     // Open the from/to form with this place as the destination
     function onRowDirections(item) {
+        if (typeof capturePostHog === 'function') {
+            capturePostHog('search_directions_clicked', {
+                item_name: item.name,
+                item_category: item.category,
+                item_id: item.id || item.number || null,
+                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+            });
+        }
+
         // Set the place as the destination
         if (item.category === 'stop') {
             setNavigationFromStop(String(item.id), 'to');
@@ -811,6 +847,19 @@ $(document).ready(function() {
         $('.search-results-wrapper, .search-results').show();
 
         const results = matchQueryItems(sanitizedQuery, queryLower);
+        if (typeof capturePostHog === 'function') {
+            clearTimeout(window._posthogMainSearchTimer);
+            window._posthogMainSearchTimer = setTimeout(() => {
+                capturePostHog('search_performed', {
+                    query: sanitizedQuery,
+                    query_length: sanitizedQuery.length,
+                    result_count: results ? results.length : 0,
+                    has_results: results && results.length > 0,
+                    source: 'main_search',
+                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                });
+            }, 500);
+        }
         renderResults(results, function(item) {
             handleSearchItemSelection(item, {
                 'btn': 'search_result_selected',
@@ -962,6 +1011,16 @@ $(document).ready(function() {
         }
         
         sa_event('btn_press', eventData);
+
+        if (typeof capturePostHog === 'function') {
+            capturePostHog('search_result_selected', {
+                item_name: item.name,
+                item_category: item.category,
+                item_id: item.id || item.number || null,
+                source: (eventData && eventData.btn) ? eventData.btn : 'search_results',
+                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+            });
+        }
     }
     
     function getRecentNavigations() {
@@ -1027,6 +1086,13 @@ $(document).ready(function() {
 
                 $row.css('cursor', 'pointer');
                 $row.on('click', function() {
+                    if (typeof capturePostHog === 'function') {
+                        capturePostHog('favorite_nav_route_selected', {
+                            from: fromName,
+                            to: toName,
+                            campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                        });
+                    }
                     if (typeof openFavoriteNavRoute === 'function') {
                         openFavoriteNavRoute(fav);
                     }
@@ -1384,6 +1450,8 @@ function setSearchMode(mode) {
 }
 
 function openDirectionsNav() {
+    // A fresh, manual entry into nav supersedes any pending nav return.
+    window._navReturnPending = false;
     updateSearchHeading();
     $('.search-wrapper').removeClass('none');
     $('.bottom').hide();

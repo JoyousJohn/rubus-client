@@ -818,6 +818,10 @@ function swapNavLocations(e) {
     }
     triggerNavButtonFeedback($('.route-swap-btn, .route-swap-button'));
 
+    if (typeof capturePostHog === 'function') {
+        capturePostHog('navigation_action', { action: 'swap_locations' });
+    }
+
     const fromInput = $('#nav-from-input');
     const toInput = $('#nav-to-input');
     const fromVal = fromInput.val().trim();
@@ -899,6 +903,10 @@ function randomizeNavLocations(e) {
         e.stopPropagation();
     }
     triggerNavButtonFeedback($('.route-random-btn'));
+
+    if (typeof capturePostHog === 'function') {
+        capturePostHog('navigation_action', { action: 'randomize_locations' });
+    }
 
     if (!_hasRandomizedSinceSave) {
         _savedExplicitNav = {
@@ -1024,6 +1032,9 @@ function revertNavLocations() {
         updateNavFavoriteStarState();
     }
     sa_event('btn_press', { btn: 'revert_nav', from: fromName, to: toName });
+    if (typeof capturePostHog === 'function') {
+        capturePostHog('navigation_action', { action: 'revert_locations', from: fromName, to: toName });
+    }
 }
 window.revertNavLocations = revertNavLocations;
 
@@ -1157,6 +1168,9 @@ function toggleCurrentNavFavorite() {
         favorites.splice(existingIndex, 1);
         saveFavoriteNavRoutes(favorites);
         sa_event('btn_press', { btn: 'unfavorite_nav_route', from: fromName, to: toName });
+        if (typeof capturePostHog === 'function') {
+            capturePostHog('navigation_action', { action: 'unfavorite_route', from: fromName, to: toName });
+        }
     } else {
         // Add favorite to beginning
         const newFav = {
@@ -1181,6 +1195,9 @@ function toggleCurrentNavFavorite() {
         favorites.unshift(newFav);
         saveFavoriteNavRoutes(favorites);
         sa_event('btn_press', { btn: 'favorite_nav_route', from: fromName, to: toName });
+        if (typeof capturePostHog === 'function') {
+            capturePostHog('navigation_action', { action: 'favorite_route', from: fromName, to: toName });
+        }
     }
 
     updateNavFavoriteStarState();
@@ -2307,6 +2324,20 @@ function showNavigationAutocomplete(inputElement, query) {
     // Force the featured building (if present) to the top of the matches.
     results = window.pinFeaturedResult(results);
 
+    if (typeof capturePostHog === 'function') {
+        clearTimeout(window._posthogNavSearchTimer);
+        window._posthogNavSearchTimer = setTimeout(() => {
+            capturePostHog('search_performed', {
+                query: sanitizedQuery,
+                query_length: sanitizedQuery.length,
+                result_count: results ? results.length : 0,
+                has_results: results && results.length > 0,
+                source: isFromInput ? 'nav_from' : 'nav_to',
+                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+            });
+        }, 500);
+    }
+
     // Create result elements (limit to 5 results), matching the main search's
     // .search-result-item row structure so styling is identical.
     const maxResults = 5;
@@ -2376,6 +2407,16 @@ function showNavigationAutocomplete(inputElement, query) {
                 'place': item.name,
                 'category': item.category || 'unknown'
             });
+
+            if (typeof capturePostHog === 'function') {
+                capturePostHog('search_result_selected', {
+                    item_name: item.name,
+                    item_category: item.category || 'unknown',
+                    item_id: item.id || item.number || null,
+                    source: isFromInput ? 'nav_from_autocomplete' : 'nav_to_autocomplete',
+                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                });
+            }
 
 
             // Refresh input styling/state
@@ -3078,13 +3119,70 @@ function getStartWalkSeconds(startWalkDist) {
 // selected route. Only buses arriving AFTER the walk to the stop are listed;
 // the wait shown subtracts the walking time (so (0m wait) if you'd have to
 // sprint).
+// Determine preceding stop ID for targetStopId along a circular route.
+// Handles routes like wknd1/all where stop 3 (SAC NB) appears multiple times by picking
+// the occurrence along the shortest forward path between boarding and alighting stops.
+function getRoutePreviousStopId(routeName, targetStopId, otherStopId, role = 'boarding') {
+    if (!routeName || targetStopId === undefined || targetStopId === null) return undefined;
+    const lower = String(routeName).toLowerCase();
+    const stops = typeof stopLists !== 'undefined' ? stopLists[lower] : null;
+    if (!Array.isArray(stops) || stops.length === 0) return undefined;
+    const target = parseInt(targetStopId, 10);
+    const targetIndices = [];
+    stops.forEach((s, idx) => {
+        if (s === target) targetIndices.push(idx);
+    });
+    if (targetIndices.length === 0) return undefined;
+    if (targetIndices.length === 1) {
+        const prevIdx = (targetIndices[0] - 1 + stops.length) % stops.length;
+        return stops[prevIdx];
+    }
+    if (otherStopId !== undefined && otherStopId !== null) {
+        const other = parseInt(otherStopId, 10);
+        const otherIndices = [];
+        stops.forEach((s, idx) => {
+            if (s === other) otherIndices.push(idx);
+        });
+        if (otherIndices.length > 0) {
+            let bestTargetIdx = targetIndices[0];
+            let minDistance = Infinity;
+            if (role === 'boarding') {
+                for (const tIdx of targetIndices) {
+                    for (const oIdx of otherIndices) {
+                        const dist = (oIdx - tIdx + stops.length) % stops.length;
+                        if (dist > 0 && dist < minDistance) {
+                            minDistance = dist;
+                            bestTargetIdx = tIdx;
+                        }
+                    }
+                }
+            } else {
+                for (const tIdx of targetIndices) {
+                    for (const oIdx of otherIndices) {
+                        const dist = (tIdx - oIdx + stops.length) % stops.length;
+                        if (dist > 0 && dist < minDistance) {
+                            minDistance = dist;
+                            bestTargetIdx = tIdx;
+                        }
+                    }
+                }
+            }
+            const prevIdx = (bestTargetIdx - 1 + stops.length) % stops.length;
+            return stops[prevIdx];
+        }
+    }
+    const defaultIdx = (targetIndices[0] - 1 + stops.length) % stops.length;
+    return stops[defaultIdx];
+}
+window.getRoutePreviousStopId = getRoutePreviousStopId;
+
 // Top N buses approaching a given stop for a route, sorted soonest-first.
 // Shared by the boarding ("next buses") list and the alighting ("arrival") list
 // so both show the exact same buses. When fewer than `limit` buses are found on
 // the current loop, merges in the same buses' second loop (first-loop ETA + one
 // full route loop time) so the list always has up to `limit` entries when any
 // qualifying buses exist.
-function getTopApproachingBuses(routeName, stopId, walkSeconds, limit) {
+function getTopApproachingBuses(routeName, stopId, walkSeconds, limit, previousStopId) {
     if (typeof busesByRoutes === 'undefined' || typeof selectedCampus === 'undefined' ||
         !busesByRoutes[selectedCampus]) {
         return [];
@@ -3115,7 +3213,7 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit) {
             if (typeof isBusInService === 'function' && !isBusInService(busName)) return;
             if (typeof isBusShownOnMap === 'function' && !isBusShownOnMap(busName)) return;
             // ETA to the boarding stop (seconds) on the current loop
-            const eta = (typeof getETAForStop === 'function') ? getETAForStop(busName, stopId) : undefined;
+            const eta = (typeof getETAForStop === 'function') ? getETAForStop(busName, stopId, previousStopId) : undefined;
             if (typeof eta !== 'number' || !isFinite(eta) || eta < 0) return;
             // This bus's first catchable pass: walk forward loop by loop until the
             // ETA is late enough that the user can actually reach the stop. A bus
@@ -3154,10 +3252,10 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit) {
     return candidates.slice(0, targetLimit);
 }
 
-function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, selectedBusIndex, listType = 'boarding') {
+function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, selectedBusIndex, listType = 'boarding', previousStopId) {
     try {
         const now = Date.now();
-        const top = getTopApproachingBuses(routeName, stopId, walkSeconds, 3);
+        const top = getTopApproachingBuses(routeName, stopId, walkSeconds, 3, previousStopId);
         if (top.length === 0) return '';
 
         let selectedIdx = 0;
@@ -3216,7 +3314,9 @@ window.getUpcomingBusesHtml = getUpcomingBusesHtml;
 // boarding list, with two columns: bus name and "<arrival time> arrival time".
 function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSeconds, selectedBusName, selectedBusIndex) {
     try {
-        const top = getTopApproachingBuses(routeName, boardingStopId, walkSeconds, 3);
+        const boardingPrev = getRoutePreviousStopId(routeName, boardingStopId, alightingStopId, 'boarding');
+        const alightingPrev = getRoutePreviousStopId(routeName, alightingStopId, boardingStopId, 'alighting');
+        const top = getTopApproachingBuses(routeName, boardingStopId, walkSeconds, 3, boardingPrev);
         if (top.length === 0) return '';
 
         let selectedIdx = 0;
@@ -3230,7 +3330,7 @@ function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSe
         const now = Date.now();
         const rows = top.map((b, i) => {
             // ETA at the destination/alighting stop
-            const etaSeconds = getBusArrivalETAAtStop(b, alightingStopId, routeName, 5);
+            const etaSeconds = getBusArrivalETAAtStop(b, alightingStopId, routeName, 5, alightingPrev);
             const arrivalTime = new Date(now + etaSeconds * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
             const routeColor = getRouteColor(routeName);
@@ -3256,9 +3356,9 @@ function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSe
 window.getArrivingBusesHtml = getArrivingBusesHtml;
 
 // Calculate the arrival ETA (seconds from now) of approaching bus `b` at `destStopId`.
-function getBusArrivalETAAtStop(b, destStopId, routeName, fallbackMin) {
+function getBusArrivalETAAtStop(b, destStopId, routeName, fallbackMin, previousStopId) {
     if (!b) return 0;
-    let eta = (typeof getETAForStop === 'function') ? getETAForStop(b.busName, destStopId) : undefined;
+    let eta = (typeof getETAForStop === 'function') ? getETAForStop(b.busName, destStopId, previousStopId) : undefined;
     const loopTimes = (typeof calculateLoopTimes === 'function') ? calculateLoopTimes() : null;
     const lower = String(routeName || '').toLowerCase();
     let loopTimeSec = (loopTimes && typeof loopTimes[lower] === 'number' && isFinite(loopTimes[lower]) && loopTimes[lower] > 0)
@@ -3289,7 +3389,7 @@ window.getBusArrivalETAAtStop = getBusArrivalETAAtStop;
 //    tappable to select which Leg 1 bus the user is taking (earliest/soonest selected by default).
 // 2. Incoming buses list (Leg 2): 3 soonest buses departing the transfer stop towards the alighting stop,
 //    filtered to only include buses arriving at or after the selected Leg 1 bus reaches the transfer stop.
-function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transferStopId, walkSeconds, selectedBusName, leg1TravelMin, selectedBusIndex, selectedLeg2BusName, selectedLeg2BusIndex) {
+function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transferStopId, walkSeconds, selectedBusName, leg1TravelMin, selectedBusIndex, selectedLeg2BusName, selectedLeg2BusIndex, endStopId) {
     try {
         // For a route option requiring a transfer, BOTH routes must be in service.
         // If either route is not in service (e.g. options to the right of the vertical line),
@@ -3300,8 +3400,12 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
             }
         }
 
-        const topLeg1 = getTopApproachingBuses(leg1RouteName, startStopId, walkSeconds, 3);
-        const topLeg2Fallback = getTopApproachingBuses(leg2RouteName, transferStopId, walkSeconds + ((leg1TravelMin || 5) * 60), 3);
+        const leg1Prev = getRoutePreviousStopId(leg1RouteName, startStopId, transferStopId, 'boarding');
+        const leg1AlightPrev = getRoutePreviousStopId(leg1RouteName, transferStopId, startStopId, 'alighting');
+        const leg2Prev = endStopId ? getRoutePreviousStopId(leg2RouteName, transferStopId, endStopId, 'boarding') : null;
+
+        const topLeg1 = getTopApproachingBuses(leg1RouteName, startStopId, walkSeconds, 3, leg1Prev);
+        const topLeg2Fallback = getTopApproachingBuses(leg2RouteName, transferStopId, walkSeconds + ((leg1TravelMin || 5) * 60), 3, leg2Prev);
         if (topLeg1.length === 0 || topLeg2Fallback.length === 0) return '';
 
         const now = Date.now();
@@ -3319,12 +3423,12 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
                 const idx = topLeg1.findIndex(b => b.busName === selectedBusName);
                 if (idx >= 0) selectedIndex = idx;
             }
-            selectedArrivalSec = getBusArrivalETAAtStop(topLeg1[selectedIndex], transferStopId, leg1RouteName, leg1TravelMin);
+            selectedArrivalSec = getBusArrivalETAAtStop(topLeg1[selectedIndex], transferStopId, leg1RouteName, leg1TravelMin, leg1AlightPrev);
 
             const showRadio = topLeg1.length > 1;
             const destRows = topLeg1.map((b, i) => {
                 const isSelected = i === selectedIndex;
-                const etaTransfer = getBusArrivalETAAtStop(b, transferStopId, leg1RouteName, leg1TravelMin);
+                const etaTransfer = getBusArrivalETAAtStop(b, transferStopId, leg1RouteName, leg1TravelMin, leg1AlightPrev);
                 const arrivalTime = new Date(now + etaTransfer * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                 const busLabel = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
                 const radioHtml = showRadio ? `
@@ -3348,7 +3452,7 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
         }
 
         // Connecting Leg 2 buses arriving AT OR AFTER selectedArrivalSec
-        const topLeg2 = getTopApproachingBuses(leg2RouteName, transferStopId, selectedArrivalSec, 3);
+        const topLeg2 = getTopApproachingBuses(leg2RouteName, transferStopId, selectedArrivalSec, 3, leg2Prev);
         if (topLeg2.length === 0) return '';
 
         let selectedLeg2Idx = 0;
@@ -3871,7 +3975,8 @@ function calculateOptionJourneyMinutes(r, combo, routeData) {
 
             let leg1WaitMinutes = 0;
             if (navRouteHasLiveBuses(leg1.route.name)) {
-                const top1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 1);
+                const leg1Prev = getRoutePreviousStopId(leg1.route.name, startStop.id, transferStop.id, 'boarding');
+                const top1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 1, leg1Prev);
                 if (top1.length > 0) {
                     leg1WaitMinutes = Math.max(0, Math.ceil((top1[0].eta - startWalkSec) / 60));
                     totalMinutes += leg1WaitMinutes;
@@ -3885,7 +3990,8 @@ function calculateOptionJourneyMinutes(r, combo, routeData) {
             const arriveAtTransferSec = startWalkSec + (leg1WaitMinutes * 60) + (leg1TravelMinutes * 60);
             if (navRouteHasLiveBuses(leg2.route.name)) {
                 const minTransferSec = arriveAtTransferSec + 120; // 2 min transfer buffer
-                const top2 = getTopApproachingBuses(leg2.route.name, transferStop.id, minTransferSec, 1);
+                const leg2Prev = getRoutePreviousStopId(leg2.route.name, transferStop.id, endStop.id, 'boarding');
+                const top2 = getTopApproachingBuses(leg2.route.name, transferStop.id, minTransferSec, 1, leg2Prev);
                 if (top2.length > 0) {
                     const leg2WaitMinutes = Math.max(2, Math.ceil((top2[0].eta - arriveAtTransferSec) / 60));
                     totalMinutes += leg2WaitMinutes;
@@ -3912,7 +4018,8 @@ function calculateOptionJourneyMinutes(r, combo, routeData) {
     // actually catch (after the walk there). Skipped only if no live
     // data exists yet — then the wait is just unknown, not zero.
     if (routeStartStop && navRouteHasLiveBuses(r.name)) {
-        const top = getTopApproachingBuses(r.name, routeStartStop.id, startWalkSec, 1);
+        const directPrev = endStop ? getRoutePreviousStopId(r.name, routeStartStop.id, endStop.id, 'boarding') : null;
+        const top = getTopApproachingBuses(r.name, routeStartStop.id, startWalkSec, 1, directPrev);
         if (top.length > 0) {
             totalMinutes += Math.max(0, Math.ceil((top[0].eta - startWalkSec) / 60));
         }
@@ -4128,6 +4235,20 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 'from_route': (routesForDisplay[curSelected] && routesForDisplay[curSelected].route) ? routesForDisplay[curSelected].route.name : '',
                 'route_index': newRouteIndex
             });
+
+            if (typeof capturePostHog === 'function') {
+                capturePostHog('navigation_route_selected', {
+                    route_name: newRoute.name,
+                    display_name: routesForDisplay[newRouteIndex].displayName || newRoute.name,
+                    route_type: newRoute.isWalk ? 'walk' : (newRoute.isTransfer ? 'transfer' : 'direct'),
+                    route_index: newRouteIndex,
+                    from_route: (routesForDisplay[curSelected] && routesForDisplay[curSelected].route) ? routesForDisplay[curSelected].route.name : '',
+                    journey_minutes: newRoute.journeyMinutes || newRoute.walkMinutes || null,
+                    from_name: (navRouteSession && navRouteSession.routeData && navRouteSession.routeData.startBuilding && navRouteSession.routeData.startBuilding.name) || (navRouteSession && navRouteSession.fromVal) || '',
+                    to_name: (navRouteSession && navRouteSession.routeData && navRouteSession.routeData.endBuilding && navRouteSession.routeData.endBuilding.name) || (navRouteSession && navRouteSession.toVal) || '',
+                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                });
+            }
 
             // Update visual selection across all pills
             const defaultBg = 'var(--theme-unselected-route-bg)';
@@ -4401,7 +4522,8 @@ function computeRouteEndTime(options) {
             return null;
         }
         const leg1TravelMin = computeBusTravelTimeMinutes(leg1.routeDetails || leg1);
-        const topLeg1 = getTopApproachingBuses(leg1RouteName, startStopId, startWalkSec, 3);
+        const leg1Prev = getRoutePreviousStopId(leg1RouteName, startStopId, transferStopId, 'boarding');
+        const topLeg1 = getTopApproachingBuses(leg1RouteName, startStopId, startWalkSec, 3, leg1Prev);
         if (topLeg1.length === 0) return null;
 
         let selBus = topLeg1[0];
@@ -4412,8 +4534,10 @@ function computeRouteEndTime(options) {
             if (found) selBus = found;
         }
 
-        const arriveAtTransferSec = getBusArrivalETAAtStop(selBus, transferStopId, leg1RouteName, leg1TravelMin);
-        const topLeg2 = getTopApproachingBuses(leg2RouteName, transferStopId, arriveAtTransferSec, 3);
+        const leg1AlightPrev = getRoutePreviousStopId(leg1RouteName, transferStopId, startStopId, 'alighting');
+        const arriveAtTransferSec = getBusArrivalETAAtStop(selBus, transferStopId, leg1RouteName, leg1TravelMin, leg1AlightPrev);
+        const leg2Prev = getRoutePreviousStopId(leg2RouteName, transferStopId, endStopId, 'boarding');
+        const topLeg2 = getTopApproachingBuses(leg2RouteName, transferStopId, arriveAtTransferSec, 3, leg2Prev);
         if (topLeg2.length === 0) return null;
 
         let selLeg2Bus = topLeg2[0];
@@ -4425,13 +4549,15 @@ function computeRouteEndTime(options) {
         }
 
         const leg2TravelMin = computeBusTravelTimeMinutes(leg2.routeDetails || leg2);
-        alightingEtaSec = getBusArrivalETAAtStop(selLeg2Bus, endStopId, leg2RouteName, leg2TravelMin);
+        const leg2AlightPrev = getRoutePreviousStopId(leg2RouteName, endStopId, transferStopId, 'alighting');
+        alightingEtaSec = getBusArrivalETAAtStop(selLeg2Bus, endStopId, leg2RouteName, leg2TravelMin, leg2AlightPrev);
     } else if (route && (route.name || (route.route && route.route.name))) {
         const rName = route.name || route.route.name;
         if (!navRouteHasLiveBuses(rName)) {
             return null;
         }
-        const top = getTopApproachingBuses(rName, startStopId, startWalkSec, 3);
+        const boardingPrev = getRoutePreviousStopId(rName, startStopId, endStopId, 'boarding');
+        const top = getTopApproachingBuses(rName, startStopId, startWalkSec, 3, boardingPrev);
         if (top.length === 0) return null;
 
         let selBus = top[0];
@@ -4443,7 +4569,8 @@ function computeRouteEndTime(options) {
         }
 
         const travelMin = computeBusTravelTimeMinutes(route.routeDetails || route);
-        alightingEtaSec = getBusArrivalETAAtStop(selBus, endStopId, rName, travelMin);
+        const alightingPrev = getRoutePreviousStopId(rName, endStopId, startStopId, 'alighting');
+        alightingEtaSec = getBusArrivalETAAtStop(selBus, endStopId, rName, travelMin, alightingPrev);
     }
 
     if (typeof alightingEtaSec !== 'number' || isNaN(alightingEtaSec) || alightingEtaSec < 0) {
@@ -4542,7 +4669,8 @@ function updateNavBusesDisplay() {
             const leg1TravelMin = computeBusTravelTimeMinutes(route.leg1.routeDetails || route.leg1);
             const leg2TravelMin = computeBusTravelTimeMinutes(route.leg2.routeDetails || route.leg2);
 
-            const topLeg1 = getTopApproachingBuses(route.leg1.route.name, startStop.id, walkSeconds, 3);
+            const leg1Prev = getRoutePreviousStopId(route.leg1.route.name, startStop.id, transferStop.id, 'boarding');
+            const topLeg1 = getTopApproachingBuses(route.leg1.route.name, startStop.id, walkSeconds, 3, leg1Prev);
             let selectedLeg1BusName = routeData.selectedTransferLeg1BusName || null;
             let selectedLeg1BusIndex = (typeof routeData.selectedTransferLeg1BusIndex === 'number') ? routeData.selectedTransferLeg1BusIndex : null;
             if (topLeg1.length > 0) {
@@ -4569,10 +4697,12 @@ function updateNavBusesDisplay() {
             let selectedArrivalSec = walkSeconds + (leg1TravelMin * 60);
             if (topLeg1.length > 0) {
                 const selBus = (selectedLeg1BusIndex !== null && topLeg1[selectedLeg1BusIndex]) || topLeg1[0];
-                selectedArrivalSec = getBusArrivalETAAtStop(selBus, transferStop.id, route.leg1.route.name, leg1TravelMin);
+                const leg1AlightPrev = getRoutePreviousStopId(route.leg1.route.name, transferStop.id, startStop.id, 'alighting');
+                selectedArrivalSec = getBusArrivalETAAtStop(selBus, transferStop.id, route.leg1.route.name, leg1TravelMin, leg1AlightPrev);
             }
 
-            const topLeg2 = getTopApproachingBuses(route.leg2.route.name, transferStop.id, selectedArrivalSec, 3);
+            const leg2Prev = getRoutePreviousStopId(route.leg2.route.name, transferStop.id, endStop.id, 'boarding');
+            const topLeg2 = getTopApproachingBuses(route.leg2.route.name, transferStop.id, selectedArrivalSec, 3, leg2Prev);
             let selectedLeg2BusName = routeData.selectedTransferLeg2BusName || null;
             let selectedLeg2BusIndex = (typeof routeData.selectedTransferLeg2BusIndex === 'number') ? routeData.selectedTransferLeg2BusIndex : null;
             if (topLeg2.length > 0) {
@@ -4595,7 +4725,7 @@ function updateNavBusesDisplay() {
                 routeData.selectedTransferLeg2BusIndex = null;
             }
 
-            const upcomingHtml = getUpcomingBusesHtml(route.leg1.route.name, startStop.id, walkSeconds, selectedLeg1BusName, selectedLeg1BusIndex, 'boarding_leg1');
+            const upcomingHtml = getUpcomingBusesHtml(route.leg1.route.name, startStop.id, walkSeconds, selectedLeg1BusName, selectedLeg1BusIndex, 'boarding_leg1', leg1Prev);
             const transferBusesHtml = transferStop ? getTransferBusesHtml(
                 route.leg1.route.name,
                 route.leg2.route.name,
@@ -4606,7 +4736,8 @@ function updateNavBusesDisplay() {
                 leg1TravelMin,
                 selectedLeg1BusIndex,
                 selectedLeg2BusName,
-                selectedLeg2BusIndex
+                selectedLeg2BusIndex,
+                endStop ? endStop.id : null
             ) : '';
 
             const arrivingHtml = transferStop ? getArrivingBusesHtml(route.leg2.route.name, transferStop.id, endStop.id, selectedArrivalSec, selectedLeg2BusName, selectedLeg2BusIndex) : '';
@@ -4666,7 +4797,8 @@ function updateNavBusesDisplay() {
             return;
         }
 
-        const top = getTopApproachingBuses(route.name, startStop.id, walkSeconds, 3);
+        const boardingPrev = getRoutePreviousStopId(route.name, startStop.id, endStop.id, 'boarding');
+        const top = getTopApproachingBuses(route.name, startStop.id, walkSeconds, 3, boardingPrev);
         let selectedIncomingBusName = routeData.selectedIncomingBusName || null;
         let selectedIncomingBusIndex = (typeof routeData.selectedIncomingBusIndex === 'number') ? routeData.selectedIncomingBusIndex : null;
         if (top.length > 0) {
@@ -4689,7 +4821,7 @@ function updateNavBusesDisplay() {
             routeData.selectedIncomingBusIndex = null;
         }
 
-        const upcomingHtml = getUpcomingBusesHtml(route.name, startStop.id, walkSeconds, selectedIncomingBusName, selectedIncomingBusIndex, 'direct_boarding');
+        const upcomingHtml = getUpcomingBusesHtml(route.name, startStop.id, walkSeconds, selectedIncomingBusName, selectedIncomingBusIndex, 'direct_boarding', boardingPrev);
         const arrivingHtml = getArrivingBusesHtml(route.name, startStop.id, endStop.id, walkSeconds, selectedIncomingBusName, selectedIncomingBusIndex);
 
         const $incomingList = $('.incoming-buses-list');
@@ -5084,7 +5216,8 @@ function renderTimelineWaypointsHtml(data) {
             const selName = isTransfer ? data.selectedTransferLeg1BusName : data.selectedIncomingBusName;
             const selIdx = isTransfer ? data.selectedTransferLeg1BusIndex : data.selectedIncomingBusIndex;
             const listType = isTransfer ? 'boarding_leg1' : 'direct_boarding';
-            busesHtml = getUpcomingBusesHtml(rName, startStop.id, startWalkSec, selName, selIdx, listType);
+            const boardingPrev = getRoutePreviousStopId(rName, startStop.id, isTransfer ? transferStop.id : endStop.id, 'boarding');
+            busesHtml = getUpcomingBusesHtml(rName, startStop.id, startWalkSec, selName, selIdx, listType, boardingPrev);
         } else if (waypoint.role === 'transfer') {
             busesHtml = getTransferBusesHtml(
                 leg1.route.name,
@@ -5096,11 +5229,14 @@ function renderTimelineWaypointsHtml(data) {
                 leg1TravelMin,
                 data.selectedTransferLeg1BusIndex,
                 data.selectedTransferLeg2BusName,
-                data.selectedTransferLeg2BusIndex
+                data.selectedTransferLeg2BusIndex,
+                endStop ? endStop.id : null
             );
         } else if (waypoint.role === 'alighting') {
             if (isTransfer) {
-                const topLeg1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 3);
+                const leg1Prev = getRoutePreviousStopId(leg1.route.name, startStop.id, transferStop.id, 'boarding');
+                const leg1AlightPrev = getRoutePreviousStopId(leg1.route.name, transferStop.id, startStop.id, 'alighting');
+                const topLeg1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 3, leg1Prev);
                 let selectedArrivalSec = arriveAtTransferSec;
                 if (topLeg1.length > 0) {
                     let selBus = topLeg1[0];
@@ -5111,7 +5247,7 @@ function renderTimelineWaypointsHtml(data) {
                         const found = topLeg1.find(b => b.busName === data.selectedTransferLeg1BusName);
                         if (found) selBus = found;
                     }
-                    selectedArrivalSec = getBusArrivalETAAtStop(selBus, transferStop.id, leg1.route.name, leg1TravelMin);
+                    selectedArrivalSec = getBusArrivalETAAtStop(selBus, transferStop.id, leg1.route.name, leg1TravelMin, leg1AlightPrev);
                 }
                 busesHtml = getArrivingBusesHtml(
                     leg2.route.name,
@@ -5549,6 +5685,25 @@ function displayRoute(routeData) {
     };
     window.navRouteSession = navRouteSession;
 
+    if (typeof capturePostHog === 'function') {
+        const selectedEntry = routesForDisplay[selectedRouteDisplayIndex];
+        const selectedRouteObj = (selectedEntry && selectedEntry.route) || route;
+        capturePostHog('navigation_calculated', {
+            from_name: (startBuilding && startBuilding.name) || originalInputs.from,
+            from_category: (startBuilding && startBuilding.category) || (startIsStop ? 'stop' : 'building'),
+            to_name: (endBuilding && endBuilding.name) || originalInputs.to,
+            to_category: (endBuilding && endBuilding.category) || (endIsStop ? 'stop' : 'building'),
+            routes_count: routesForDisplay.length,
+            has_direct: routesForDisplay.some(r => !r.isTransfer && !r.isWalk),
+            has_transfer: routesForDisplay.some(r => r.isTransfer),
+            has_walk: routesForDisplay.some(r => r.isWalk),
+            recommended_route: (selectedEntry && selectedEntry.displayName) || (selectedRouteObj && selectedRouteObj.name) || '',
+            recommended_duration_minutes: (selectedRouteObj && (selectedRouteObj.journeyMinutes || selectedRouteObj.walkMinutes)) || null,
+            has_live_buses: !!(selectedEntry && selectedEntry.hasLive),
+            campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+        });
+    }
+
     // Render the route selector above the directions wrapper (outside the scrolled content)
     renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex);
 
@@ -5587,6 +5742,15 @@ function displayRoute(routeData) {
                 navRouteSession.routeData.selectedTransferLeg2BusName = null;
                 navRouteSession.routeData.selectedTransferLeg2BusIndex = null;
                 updateNavBusesDisplay();
+
+                if (typeof capturePostHog === 'function') {
+                    capturePostHog('navigation_bus_selected', {
+                        bus_name: String(busName),
+                        bus_index: (typeof busIndex !== 'undefined') ? parseInt(busIndex, 10) : 0,
+                        leg: 'transfer_leg1',
+                        campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                    });
+                }
             }
         });
     }
@@ -5618,6 +5782,15 @@ function displayRoute(routeData) {
                     navRouteSession.routeData.selectedIncomingBusIndex = parsedIdx;
                 }
                 updateNavBusesDisplay();
+
+                if (typeof capturePostHog === 'function') {
+                    capturePostHog('navigation_bus_selected', {
+                        bus_name: busNameStr,
+                        bus_index: parsedIdx,
+                        leg: listType || 'boarding',
+                        campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                    });
+                }
             }
         });
     }
@@ -5646,6 +5819,7 @@ function displayRoute(routeData) {
             navRouteSession.selectedToStop = selectedToStop;
         }
         navReentry = true;
+        window._navReturnPending = true;
         
         if (waypointType === 'building') {
             // Find and select the building on the map
@@ -5978,7 +6152,8 @@ function computeRouteTripStats(r, combo, routeData) {
             let leg1Wait = 0;
             let leg1Live = false;
             if (leg1.route && navRouteHasLiveBuses(leg1.route.name)) {
-                const top1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 1);
+                const leg1Prev = getRoutePreviousStopId(leg1.route.name, startStop.id, transferStop.id, 'boarding');
+                const top1 = getTopApproachingBuses(leg1.route.name, startStop.id, startWalkSec, 1, leg1Prev);
                 if (top1.length > 0) {
                     leg1Wait = Math.max(0, Math.ceil((top1[0].eta - startWalkSec) / 60));
                     leg1Live = true;
@@ -5990,7 +6165,8 @@ function computeRouteTripStats(r, combo, routeData) {
             const arriveAtTransferSec = startWalkSec + (leg1Wait * 60) + (leg1TravelMinutes * 60);
             if (leg2.route && navRouteHasLiveBuses(leg2.route.name)) {
                 const minTransferSec = arriveAtTransferSec + 120; // 2 min buffer
-                const top2 = getTopApproachingBuses(leg2.route.name, transferStop.id, minTransferSec, 1);
+                const leg2Prev = getRoutePreviousStopId(leg2.route.name, transferStop.id, endStop.id, 'boarding');
+                const top2 = getTopApproachingBuses(leg2.route.name, transferStop.id, minTransferSec, 1, leg2Prev);
                 if (top2.length > 0) {
                     leg2Wait = Math.max(2, Math.ceil((top2[0].eta - arriveAtTransferSec) / 60));
                     leg2Live = true;
@@ -6014,7 +6190,8 @@ function computeRouteTripStats(r, combo, routeData) {
 
         if (startStop && r.name && navRouteHasLiveBuses(r.name)) {
             const walkSeconds = hasStartWalk ? getStartWalkSeconds(rawStartWalk) : 0;
-            const top = getTopApproachingBuses(r.name, startStop.id, walkSeconds, 1);
+            const directPrev = endStop ? getRoutePreviousStopId(r.name, startStop.id, endStop.id, 'boarding') : null;
+            const top = getTopApproachingBuses(r.name, startStop.id, walkSeconds, 1, directPrev);
             if (top.length > 0) {
                 waitMinutes = Math.max(0, Math.ceil((top[0].eta - walkSeconds) / 60));
                 hasLiveWait = true;
@@ -6144,7 +6321,8 @@ function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
                 let leg1WaitBackup = 0;
 
                 if (leg1Route && leg1Route.name && navRouteHasLiveBuses(leg1Route.name)) {
-                    const top1 = getTopApproachingBuses(leg1Route.name, startStopId, startWalkSec, 3);
+                    const leg1Prev = getRoutePreviousStopId(leg1Route.name, startStopId, transferStopId, 'boarding');
+                    const top1 = getTopApproachingBuses(leg1Route.name, startStopId, startWalkSec, 3, leg1Prev);
                     if (top1.length > 0) {
                         leg1WaitSoonest = Math.max(0, Math.ceil((top1[0].eta - startWalkSec) / 60));
                         if (top1.length > 1) {
@@ -6161,7 +6339,8 @@ function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
 
                 if (leg2Route && leg2Route.name && navRouteHasLiveBuses(leg2Route.name)) {
                     const minTransferSec = arriveAtTransferSec + 120; // 2 min buffer
-                    const top2 = getTopApproachingBuses(leg2Route.name, transferStopId, minTransferSec, 3);
+                    const leg2Prev = getRoutePreviousStopId(leg2Route.name, transferStopId, endStopId, 'boarding');
+                    const top2 = getTopApproachingBuses(leg2Route.name, transferStopId, minTransferSec, 3, leg2Prev);
                     if (top2.length > 0) {
                         leg2WaitSoonest = Math.max(2, Math.ceil((top2[0].eta - arriveAtTransferSec) / 60));
                         if (top2.length > 1) {
@@ -6312,7 +6491,8 @@ function clearRouteDisplay() {
 }
 
 // Reopen the nav menu exactly as it was when a waypoint popup was opened
-// (used by the "<- Back to nav" button on building/stop popups).
+// (used by the "<- Back to nav" button on building/stop popups and by the
+// search button when the map was left via a nav waypoint fly).
 function openNavBack() {
     navBackActive = false;
     navReentry = false;
@@ -6321,6 +6501,13 @@ function openNavBack() {
 
     // Tear down popups (icons, selectors, highlighting) before reopening nav.
     hideInfoBoxes(true);
+
+    // Open the nav shell first so the restored route view is visible. In the
+    // waypoint-fly path the shell was closed by closeNavigation(), so re-show
+    // it here (also hides .bottom + applies directions mode).
+    if (typeof openDirectionsNav === 'function') {
+        openDirectionsNav();
+    }
 
     // Restore the from/to inputs exactly as the user left them.
     isSettingInputProgrammatically = true;
@@ -6356,11 +6543,15 @@ function openNavBack() {
         $('.navigate-inner').scrollTop(s.scrollTop);
         $('.nav-directions-wrapper').scrollTop(s.scrollTop);
     }
+
+    // The nav view is restored: the next search-button press can open search again.
+    window._navReturnPending = false;
 }
 window.openNavBack = openNavBack;
 
 // Fully close and clear navigation UI and state
 function closeNavigation() {
+    capturePostHog('navigation_action', { action: 'close_navigation' });
     try {
         // Clear route UI
         $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();
