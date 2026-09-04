@@ -1510,6 +1510,8 @@
                 </div>
             </div>
             <div class="search-recents-wrapper">
+                <div class="search-fav-routes flex flex-col gap-y-1rem text-1p5rem none"></div>
+                <div class="search-fav-divider none"></div>
                 <div class="search-recents flex flex-col gap-y-1rem text-1p5rem"></div>
             </div>
             <div class="search-recs-wrapper mt-1rem">
@@ -1530,7 +1532,9 @@
                     <button class="nav-clear-btn" id="nav-from-clear-btn" type="button">×</button>
                 </div>
                 <div class="nav-mid-row">
-                    <div class="nav-mid-left"></div>
+                    <div class="nav-mid-left">
+                        <button class="route-fav-btn none" type="button" title="Favorite this route" aria-label="Favorite this route"><i class="fa-regular fa-star"></i></button>
+                    </div>
                     <div class="nav-mid-center">
                         <span class="nav-mid-arrow" title="Direction of travel"><i class="fa-solid fa-arrow-down"></i></span>
                         <button class="route-swap-btn" type="button" onclick="swapNavLocations(event)" title="Swap start and destination"><i class="fa-regular fa-arrow-up-arrow-down"></i></button>

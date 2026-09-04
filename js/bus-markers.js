@@ -279,9 +279,6 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
 
     // If shouldTeleport is true, skip animation and set position directly
     if (shouldTeleport) {
-        if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
-            console.log(`[${new Date().toISOString()}] [ANIM SNAP] bus=${busName} shouldTeleport=true (dist=${Math.round(distToTarget)}m, gap=${Math.round((new Date().getTime() - (busData[busName].previousTime || 0)) / 1000)}s, imm=${immediatelyUpdate}, forceImm=${typeof forceImmediateUpdate !== 'undefined' && forceImmediateUpdate}) | snapped directly to [${endLatLng.lat.toFixed(5)}, ${endLatLng.lng.toFixed(5)}]`);
-        }
         marker.setLatLng(endLatLng);
 
         // Update rotation immediately as well
@@ -560,10 +557,6 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
     animateMarker.durationSource = durationSource;
     animateMarker.totalPathDistance = effectiveTotalDistance;
     animateMarker.lastVelocity = initialVelocityMs;
-
-    if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
-        console.log(`[${new Date().toISOString()}] [ANIM START] bus=${busName} duration=${Math.round(duration)}ms (src: ${durationSource}) | dist=${Math.round(effectiveTotalDistance)}m | v0=${(initialVelocityMs * 2.23694).toFixed(1)}mph -> v_avg=${(avgSpeedMs * 2.23694).toFixed(1)}mph (k=${kRatio.toFixed(2)})`);
-    }
 
     // Custom DOM-mode markers update a DOM transform and step every rAF
     // frame; WebGL markers flush via the batched setData()/updateData()

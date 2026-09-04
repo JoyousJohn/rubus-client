@@ -18,6 +18,43 @@ const SEARCH_CAMPUS_NAMES = {
     'newark': 'Newark'
 };
 
+// Building name (case-insensitive) that must always be forced to the top of
+// matched results whenever it appears. Used by both the main search and the
+// nav from/to autocomplete.
+const FEATURED_RESULT_NAME = 'shi stadium and hale center';
+
+// Reorder matched results so the featured building is placed right after any
+// stops (never above stops), otherwise at the very top. Results are either
+// Fusion-style ({ item, ... }) or raw items. Returns the same array (mutated)
+// so callers can keep using it.
+function pinFeaturedResult(results) {
+    if (!Array.isArray(results) || results.length <= 1) return results;
+    const targetIndex = results.findIndex(r => {
+        const item = r && r.item ? r.item : r;
+        return item &&
+            typeof item.name === 'string' &&
+            item.name.trim().toLowerCase() === FEATURED_RESULT_NAME;
+    });
+    if (targetIndex < 0) return results;
+
+    const reversedStopIdx = [...results].reverse().findIndex(r => {
+        const item = r && r.item ? r.item : r;
+        return item && item.category === 'stop';
+    });
+    const lastStopIndex = reversedStopIdx === -1 ? -1 : (results.length - 1 - reversedStopIdx);
+    const hasStops = lastStopIndex >= 0;
+
+    if (hasStops) {
+        if (targetIndex <= lastStopIndex) return results; // already after stops / no reorder needed
+        const insertionIndex = lastStopIndex + 1;
+        results.splice(insertionIndex, 0, results.splice(targetIndex, 1)[0]);
+    } else if (targetIndex > 0) {
+        results.unshift(results.splice(targetIndex, 1)[0]);
+    }
+    return results;
+}
+window.pinFeaturedResult = pinFeaturedResult;
+
 function updateSearchHeading() {
     const $icon = $('.search-heading-icon');
     if (searchMode === 'directions') {
@@ -592,7 +629,7 @@ $(document).ready(function() {
         } else {
             results = [];
         }
-        return results;
+        return pinFeaturedResult(results);
     }
 
     // Open the from/to form with this place as the destination
@@ -953,6 +990,55 @@ $(document).ready(function() {
         const $searchRecentsWrapper = $('.search-recents-wrapper');
         $searchRecents.empty();
 
+        let $searchFavRoutes = $('.search-fav-routes');
+        let $searchFavDivider = $('.search-fav-divider');
+        if (!$searchFavRoutes.length) {
+            $searchFavRoutes = $('<div class="search-fav-routes flex flex-col gap-y-1rem text-1p5rem none"></div>');
+            $searchRecents.before($searchFavRoutes);
+        }
+        if (!$searchFavDivider.length) {
+            $searchFavDivider = $('<div class="search-fav-divider none"></div>');
+            $searchRecents.before($searchFavDivider);
+        }
+        $searchFavRoutes.empty();
+
+        const favRoutes = (typeof getFavoriteNavRoutes === 'function')
+            ? getFavoriteNavRoutes()
+            : (JSON.parse(localStorage.getItem('favoriteNavRoutes') || '[]'));
+
+        if (favRoutes.length > 0) {
+            favRoutes.forEach(fav => {
+                if (!fav || !fav.from || !fav.to) return;
+                const fromName = (fav.fromPlace && fav.fromPlace.name) || fav.from;
+                const toName = (fav.toPlace && fav.toPlace.name) || fav.to;
+                const destItem = fav.toPlace || fav.fromPlace || { category: 'building' };
+                let typeIcon = 'icon-building';
+                if (destItem.category === 'stop') typeIcon = 'icon-bus-simple';
+                else if (destItem.category === 'parking') typeIcon = 'icon-parking';
+
+                const $row = $('<div class="search-result-item flex"></div>');
+                $row.append('<i class="icon ' + typeIcon + '"></i>');
+
+                const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.5rem; overflow:hidden;"></div>');
+                const $nameText = $('<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(`${fromName} → ${toName}`);
+                $nameWrap.append($nameText);
+                $nameWrap.append('<i class="icon icon-star-solid fa-solid fa-star" style="flex-shrink:0; font-size:1.3rem; color:#ffb703;"></i>');
+                $row.append($nameWrap);
+
+                $row.css('cursor', 'pointer');
+                $row.on('click', function() {
+                    if (typeof openFavoriteNavRoute === 'function') {
+                        openFavoriteNavRoute(fav);
+                    }
+                });
+
+                $searchFavRoutes.append($row);
+            });
+            $searchFavRoutes.removeClass('none').show();
+        } else {
+            $searchFavRoutes.addClass('none').hide();
+        }
+
         const recentSearches = getRecentSearches();
         // Only place items (buildings/stops/parking lots) — navigation entries are no longer shown.
         const uniqueItems = [];
@@ -967,11 +1053,24 @@ $(document).ready(function() {
             }
         }
 
-        if (uniqueItems.length === 0) {
+        // Show horizontal dividing line between the fav nav routes section and the recent building searches section
+        if (favRoutes.length > 0 && uniqueItems.length > 0) {
+            $searchFavDivider.removeClass('none').show();
+        } else {
+            $searchFavDivider.addClass('none').hide();
+        }
+
+        if (favRoutes.length === 0 && uniqueItems.length === 0) {
             $searchRecentsWrapper.hide();
             return;
         }
         $searchRecentsWrapper.show();
+
+        if (uniqueItems.length === 0) {
+            $searchRecents.hide();
+            return;
+        }
+        $searchRecents.show();
 
         // Show only the 3 most recent
         const recentToShow = uniqueItems.slice(0, 3);
@@ -1103,6 +1202,7 @@ $(document).ready(function() {
             });
         }
     }
+    window.populateRecentSearches = populateRecentSearches;
 
     // Populate search recommendations with 3 random popular buildings and active stops
     function populateSearchRecommendations() {
@@ -1291,6 +1391,9 @@ function openDirectionsNav() {
     adjustSearchHeights();
     attachSearchViewportListeners();
     applySearchMode('directions');
+    if (typeof updateNavFavoriteStarState === 'function') {
+        updateNavFavoriteStarState();
+    }
 
     // Callers handle their own focus: the building-directions button focuses
     // the source input, openNav() focuses the appropriate input, and

@@ -227,6 +227,25 @@
     padding: 0.25rem 2rem 1rem;
     display: flex;
     flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-border) transparent;
+}
+
+.search-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.search-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.search-content::-webkit-scrollbar-thumb {
+    background-color: var(--theme-border);
+    border-radius: 4px;
+}
+
+.search-content::-webkit-scrollbar-thumb:hover {
+    background-color: var(--theme-extra);
 }
 
 .search-recent-navigations-wrapper {
@@ -252,8 +271,28 @@
    min-height forces same visual row height so gap-y:1rem / row-gap:1.3rem
    appears identical between sections. Changing breaks vertical rhythm. */
 .search-surprise-me .search-result-item,
-.search-recent-navigations .search-result-item {
+.search-recent-navigations .search-result-item,
+.search-fav-routes .search-result-item {
     min-height: 3.2rem;
+}
+
+.search-fav-routes {
+    margin-top: 0.25rem;
+}
+
+.search-fav-routes .search-result-item i.fa-star,
+.search-fav-routes .search-result-item i.icon-star-solid {
+    color: #ffb703 !important;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.search-fav-divider {
+    width: 100%;
+    height: 1px;
+    background-color: var(--theme-line-bg);
+    opacity: 0.5;
+    margin: 1.2rem 0;
 }
 
 .recent-nav-remove-btn:hover {

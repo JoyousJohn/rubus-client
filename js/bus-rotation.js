@@ -288,14 +288,6 @@ function applyBusAnimationRate(rate) {
 // Cancel a bus's in-flight animation (registered step + throttle timestamp)
 // so a re-registered animation doesn't inherit a stale step interval.
 function cancelBusAnimation(busName) {
-    if (animationFrames[busName]) {
-        const prevAnim = animationFrames[busName];
-        const elapsed = prevAnim.startTime ? (performance.now() - prevAnim.startTime) : null;
-        const dur = prevAnim.duration || null;
-        if (elapsed !== null && dur !== null && typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
-            console.log(`[${new Date().toISOString()}] [ANIM CANCEL] bus=${busName} canceled mid-flight at elapsed=${Math.round(elapsed)}ms / ${Math.round(dur)}ms (${((elapsed / dur) * 100).toFixed(1)}%)`);
-        }
-    }
     delete animationFrames[busName];
     delete animationLastStep[busName];
 }
@@ -354,12 +346,6 @@ function animateBusRotation(busName, targetRotation, duration = 650) {
     if (Math.abs(rotationChange) < 0.5) {
         marker.setRotation(targetRotation);
         return;
-    }
-
-    if (animationFrames[busName]) {
-        if (typeof shouldLogBus === 'function' && shouldLogBus(busName)) {
-            console.log(`[${new Date().toISOString()}] [ROTATION OVERWRITE] bus=${busName} animateBusRotation replacing active animation with ${duration}ms rotation animation to ${targetRotation.toFixed(1)}°`);
-        }
     }
 
     cancelBusAnimation(busName);

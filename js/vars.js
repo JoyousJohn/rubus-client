@@ -26,10 +26,8 @@ function shouldLogBus(busName) {
     if (typeof popupBusName !== 'undefined' && popupBusName === busName) return true; // Always log focused/clicked bus!
     if (window.DEBUG_BUS_FILTER.length === 0) {
         window.DEBUG_BUS_FILTER.push(busName);
-        console.log(`[RUBUS DEBUG] Auto-tracking bus ${busName} for detailed logs (click any bus to focus & track it, or set window.DEBUG_BUS_FILTER = ['${busName}'])`);
     } else if (window.DEBUG_BUS_FILTER.length < 3 && !window.DEBUG_BUS_FILTER.includes(busName)) {
         window.DEBUG_BUS_FILTER.push(busName);
-        console.log(`[RUBUS DEBUG] Auto-tracking bus ${busName} (now tracking: ${window.DEBUG_BUS_FILTER.join(', ')})`);
     }
     return window.DEBUG_BUS_FILTER.includes(busName);
 }
