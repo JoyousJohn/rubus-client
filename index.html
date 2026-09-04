@@ -1389,6 +1389,15 @@
                                             <div class="bus-service-header-divider"></div>
                                         </div>
                                     </div>
+                                    <div class="route-changes-wrapper none">
+                                        <div class="route-changes-title text-1p7rem">Route Changes</div>
+                                        <div class="route-changes-grid grid select-none">
+                                            <div class="route-changes-heading"><span>BUS</span></div>
+                                            <div class="route-changes-heading"><span>CHANGE</span></div>
+                                            <div class="route-changes-heading"><span>TIME</span></div>
+                                            <div class="route-changes-header-divider"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2053,6 +2062,24 @@
                 <script>
                 $('.span-i-show-bus-btns').click(function() {
                     const $el = $('.show-bus-btns-explain');
+                    if ($el.is(':animated')) return;
+                    $el.slideToggle();
+                })
+                </script>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading flex flex-1 align-center span-i-always-show-breaks">Always Show Breaks<span class="span-i pointer select-none">i</span></div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-always-show-breaks" class="toggle-input">
+                        <label for="toggle-always-show-breaks" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="always-show-breaks-explain none ml-0p5rem text-1p3rem dimgray">Always show a bus's past breaks under its next stops without needing to tap to reveal them.</div>
+                <script>
+                $('.span-i-always-show-breaks').click(function() {
+                    const $el = $('.always-show-breaks-explain');
                     if ($el.is(':animated')) return;
                     $el.slideToggle();
                 })

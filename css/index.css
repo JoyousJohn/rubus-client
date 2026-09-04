@@ -1067,7 +1067,7 @@ html, body {
 
 .info-next-stops {
     /* max-height: 35vh; */
-    overflow-y: scroll;
+    overflow-y: auto;
     display: none;
     scrollbar-width: thin;
     scrollbar-color: var(--theme-border) transparent;
@@ -1189,6 +1189,7 @@ html, body {
     /* margin-bottom: 0.5rem; find some other way to add this  */
     font-size: 1.3rem;
     color: gray;
+    margin-top: 1rem;
 }
 
 .bus-data-extra {

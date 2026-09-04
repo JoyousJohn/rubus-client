@@ -287,7 +287,13 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                         console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
                         logPolylineRemoval(oldRoute, 'fetchBusData-routeChange');
                         console.log('Polylines on map before remove:', polylines[oldRoute] && polylines[oldRoute].isAdded ? polylines[oldRoute].isAdded() : false);
-                        polylines[oldRoute].remove();
+                        if (polylines[oldRoute]) {
+                            polylines[oldRoute].remove();
+                        } else if (getPolylineRemovalHistory(oldRoute).length > 0) {
+                            console.warn(`[fetchBusData-routeChange] polyline for ${oldRoute} already removed, skipping double-remove`);
+                        } else {
+                            throw new Error(`[fetchBusData-routeChange] polyline for ${oldRoute} missing with no prior removal — investigate`);
+                        }
                         console.log('Polylines on map after remove:', polylines[oldRoute] && polylines[oldRoute].isAdded ? polylines[oldRoute].isAdded() : false);
                         updatePolylineBoundsIfNeeded();
 
@@ -1512,7 +1518,6 @@ $(document).ready(async function() {
         setTimeout(() => {
             populateFavs()
         }, 1);
-        makeRidershipChart()
 
         await fetchETAs();
 

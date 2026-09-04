@@ -1593,7 +1593,7 @@ function updateBusOverview(routes) {
 
         if ($(`.bus-overview-ridership[route="${route}"]`).length === 0) {
             const $busName = $(`<div class="bus-overview-name pointer text-1p6rem" route="${route}">${route.toUpperCase()}</div>`).css('color', colorMappings[route]);
-            const $busRidership = $(`<div class="bus-overview-ridership pointer" route="${route}">${routeRiderships[route]} riders</div>`);
+            const $busRidership = $(`<div class="bus-overview-ridership pointer" route="${route}">${routeRiderships[route] === 0 ? '–' : routeRiderships[route] + ' riders'}</div>`);
             const $loopTime = $(`<div class="bus-overview-loop-time pointer" route="${route}">${loopTimeDisplay}</div>`);
             const onRouteClick = function() {
                 $('.info-panels-close').trigger('click');
@@ -1623,7 +1623,8 @@ function updateBusOverview(routes) {
                 $loopTimeElm.text(`${loopMin} min`);
             }
 
-            const prevRiders = parseInt($(`.bus-overview-ridership[route="${route}"]`).text().split(' ')[0]);
+            const prevRidersText = $(`.bus-overview-ridership[route="${route}"]`).text().trim();
+            const prevRiders = prevRidersText === '–' ? 0 : parseInt(prevRidersText.split(' ')[0]);
             const newRiders = (routeRiderships[route])
 
 
@@ -1637,7 +1638,7 @@ function updateBusOverview(routes) {
                 }
 
                 setTimeout(() => {
-                    $(`.bus-overview-ridership[route="${route}"]`).text(`${routeRiderships[route]} riders`).css('color', color).css('transition', 'color 0.25s');
+                    $(`.bus-overview-ridership[route="${route}"]`).text(routeRiderships[route] === 0 ? '–' : `${routeRiderships[route]} riders`).css('color', color).css('transition', 'color 0.25s');
 
                     setTimeout(() => {
                         $(`.bus-overview-ridership[route="${route}"]`).css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
