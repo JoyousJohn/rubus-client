@@ -1,29 +1,59 @@
 // js/bus-breaks.js - extracted verbatim from js/map.js
 
 // Build chronological (oldest-first) display list with missed stops interleaved
-// in route order. Tracks a cursor into the (possibly circular, possibly
-// duplicate-containing) expectedStops loop so each consecutive pair of actual
-// visits resolves to the minimal forward walk; intermediates are missed.
-function buildChronBreakList(expectedStops, breakDataChron) {
+// in route order. Each break record may carry its own `route` (added by
+// rubus-server); when the route changes between records we emit an
+// isRouteChange separator row and reset the cursor to the new route's stop
+// list — no missed stops are inferred across the boundary (different routes
+// have different stop lists, so comparing across them only produces false
+// misses). Records without a route (older data / sim) inherit the previous
+// segment's route, falling back to the bus's current route.
+function buildChronBreakList(busName, breakDataChron) {
     const chronList = [];
     const missedStops = [];
     if (!breakDataChron || breakDataChron.length === 0) {
         return { chronList, missedStops };
     }
-    if (!expectedStops || expectedStops.length === 0) {
-        for (const breakItem of breakDataChron) {
-            chronList.push({ breakItem, isMissed: false });
-        }
-        return { chronList, missedStops };
-    }
-    const routeLen = expectedStops.length;
-    chronList.push({ breakItem: breakDataChron[0], isMissed: false });
-    let cursorIdx = expectedStops.indexOf(breakDataChron[0].stop_id);
+    const currentRoute = (busData && busData[busName] && busData[busName].route) ? busData[busName].route : null;
 
-    for (let k = 1; k < breakDataChron.length; k++) {
+    let activeRoute = null;
+    let expectedStops = [];
+    let routeLen = 0;
+    let cursorIdx = -1;
+
+    const initSegment = (route, firstStopId) => {
+        activeRoute = route;
+        expectedStops = (route && stopLists[route]) ? stopLists[route] : [];
+        routeLen = expectedStops.length;
+        cursorIdx = routeLen ? expectedStops.indexOf(firstStopId) : -1;
+    };
+
+    for (let k = 0; k < breakDataChron.length; k++) {
         const currItem = breakDataChron[k];
-        const prevItem = breakDataChron[k - 1];
+        const prevItem = k > 0 ? breakDataChron[k - 1] : null;
         const currId = currItem.stop_id;
+        const currRoute = currItem.route || activeRoute || currentRoute;
+
+        // Route change: separator row, then start the new segment fresh.
+        if (activeRoute !== null && currRoute && currRoute !== activeRoute) {
+            chronList.push({
+                isRouteChange: true,
+                oldRoute: activeRoute,
+                newRoute: currRoute
+            });
+            initSegment(currRoute, currId);
+            chronList.push({ breakItem: currItem, isMissed: false });
+            continue;
+        }
+
+        // First record ever: initialize the first segment.
+        if (activeRoute === null) {
+            initSegment(currRoute, currId);
+            chronList.push({ breakItem: currItem, isMissed: false });
+            continue;
+        }
+
+        // Same route as previous: drive the cursor through its stop list.
         const prevId = prevItem.stop_id;
 
         // Duplicate consecutive record for the same visit: no travel, no miss.
@@ -34,7 +64,7 @@ function buildChronBreakList(expectedStops, breakDataChron) {
         // Lost sync (unknown/detour stop): show actual, try to resync on curr.
         if (cursorIdx === -1) {
             chronList.push({ breakItem: currItem, isMissed: false });
-            cursorIdx = expectedStops.indexOf(currId);
+            cursorIdx = routeLen ? expectedStops.indexOf(currId) : -1;
             continue;
         }
         if (expectedStops.indexOf(currId) === -1) {
@@ -161,13 +191,6 @@ function populateBusBreaks(busBreakData, busName) {
         return;
     }
 
-    // Get bus route and expected stops for comparison
-    const busRoute = busData[busName]?.route;
-    let expectedStops = [];
-    if (busRoute && stopLists[busRoute] && stopLists[busRoute].length > 0) {
-        expectedStops = stopLists[busRoute];
-    }
-    
     // Calculate time since last long break (duration > 180 seconds)
     const lastBreakMin = (() => {
         if (busBreakData && busBreakData.length > 0) {
@@ -235,9 +258,10 @@ function populateBusBreaks(busBreakData, busName) {
     let totalBusBreakTime = 0;
     let totalBusStopTime = 0;
 
-    // busBreakData is oldest-first; detect gaps per consecutive pair and
-    // interleave misses in route order, then display most-recent-first.
-    const { chronList, missedStops } = buildChronBreakList(expectedStops, busBreakData);
+    // busBreakData is oldest-first; detect gaps per consecutive pair within
+    // each route segment (splitting segments where the bus changed routes),
+    // then display most-recent-first.
+    const { chronList, missedStops } = buildChronBreakList(busName, busBreakData);
     const allStopsToShow = [...chronList].reverse();
 
     if (missedStops.length > 0) {
@@ -248,6 +272,19 @@ function populateBusBreaks(busBreakData, busName) {
 
     for (const stopData of allStopsToShow) {
         let extraClass = '';
+
+        if (stopData.isRouteChange) {
+            // Separator: bus changed routes mid-history. Spans the full grid
+            // and stays visible (not hidden like short/missed stops).
+            const newCol = (typeof colorMappings !== 'undefined' && stopData.newRoute && colorMappings[stopData.newRoute]) ? colorMappings[stopData.newRoute] : 'var(--theme-color)';
+            const sepCol = (typeof colorMappings !== 'undefined' && stopData.oldRoute && colorMappings[stopData.oldRoute]) ? colorMappings[stopData.oldRoute] : newCol;
+            breakDiv.append($(`<div class="route-change-sep" style="grid-column: 1 / -1; border-top: 1px solid var(--theme-line-bg); margin: 0.75rem 0; padding-top: 0.75rem; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;"></div>`)
+                .append($('<span class="text-1p2rem" style="color: var(--theme-extra);"></span>').text('Switched to'))
+                .append($(`<span class="text-1p3rem bold-600" style="color: ${sepCol};">${String(stopData.oldRoute).toUpperCase()}</span>`))
+                .append($('<span class="text-1p2rem" style="color: var(--theme-color-lighter);">→</span>'))
+                .append($(`<span class="text-1p3rem bold-600" style="color: ${newCol};">${String(stopData.newRoute).toUpperCase()}</span>`)));
+            continue;
+        }
 
         if (!stopData.isMissed) {
             const breakItem = stopData.breakItem;
@@ -423,19 +460,12 @@ function checkAllBusesForMissedStops() {
         for (const busName of routeBuses) {
             totalBuses++;
             
-            // Get the bus's route and expected stops
-            const busRoute = busData[busName]?.route;
-            if (!busRoute || !stopLists[busRoute] || stopLists[busRoute].length === 0) {
-                continue;
-            }
-            
-            const expectedStops = stopLists[busRoute];
-            
             // Get actual stops from bus break data
             if (busBreaksCache[busName] && busBreaksCache[busName].data && !busBreaksCache[busName].data.error) {
                 const busBreakData = busBreaksCache[busName].data;
-                // Same per-gap logic as populateBusBreaks (handles loops + duplicates).
-                const { missedStops } = buildChronBreakList(expectedStops, busBreakData);
+                // Same per-gap logic as populateBusBreaks (handles loops,
+                // duplicates, and route-change segments).
+                const { missedStops } = buildChronBreakList(busName, busBreakData);
                 
                 if (missedStops.length > 0) {
                     busesWithMissedStops++;
@@ -499,7 +529,8 @@ function generateSimBusBreaks(busName) {
             stop_id: stopId,
             time_arrived: timeArrived.toISOString().replace('Z', ''),
             time_departed: timeDeparted.toISOString().replace('Z', ''),
-            break_duration: dwellSecs
+            break_duration: dwellSecs,
+            route: route
         });
 
         cursorTime = timeArrived.getTime();
