@@ -585,7 +585,8 @@
     "name": "College Avenue Student Center CASC",
     "category": "building",
     "lat": 40.502638503809116,
-    "lng": -74.4521825625
+    "lng": -74.4521825625,
+    "aliases": ["Atrium"]
   },
   "school of communication & information sc&i": {
     "id": "3134",
@@ -2776,7 +2777,8 @@
     "name": "Livingston Dining Commons",
     "category": "building",
     "lat": 40.52286744161758,
-    "lng": -74.4380937254
+    "lng": -74.4380937254,
+    "aliases": ["dining hall"]
   },
   "livingston apartments building a": {
     "id": "4177",

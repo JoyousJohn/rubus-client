@@ -3135,7 +3135,8 @@
       "category": "building",
       "lat": 40.52286744161758,
       "lng": -74.4380937254,
-      "campus": "livingston"
+      "campus": "livingston",
+      "aliases": ["dining hall"]
     },
     "livingston apartments building a": {
       "id": "4177",
