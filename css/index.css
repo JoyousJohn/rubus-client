@@ -358,6 +358,32 @@ html, body {
     /* border: 1px solid black; */
 }
 
+/* Small gray octagon appended to an ETA tooltip when the soonest bus for
+   that stop is stopped overtime. Always gray here (the red "!" octagon is
+   reserved for the bus popup). */
+.corner-label .stop-eta-octagon {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    margin-left: 2px;
+    --o: calc(50%*tan(-22.5deg));
+    clip-path: polygon(
+        var(--o) 50%,50% var(--o),
+        calc(100% - var(--o)) 50%,
+        50% calc(100% - var(--o))
+    );
+    background-color: gray;
+    transform: rotate(90deg);
+    vertical-align: middle;
+}
+
+/* The ETA text is wrapped in a span so the ink can be nudged into the pill's
+   vertical center (fonts center the content box, not the optical ink). */
+.corner-label .stop-eta-text {
+    display: inline-block;
+    vertical-align: middle;
+}
+
 .bus-marker-wrapper {
     position: relative;
     width: 30px;

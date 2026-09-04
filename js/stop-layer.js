@@ -53,6 +53,119 @@
     const ETA_TEXT_FONT_STACK = '"Open Sans", sans-serif';
     const ETA_TEXT_WIDTH_BUFFER = 1.0;
     const ETA_SPRITE_MAX = 300;      // LRU cap on cached pill textures
+    // Gray octagon appended to an ETA pill when the soonest bus is stopped
+    // overtime (mirrors the DOM .stop-eta-octagon). Sized relative to the
+    // 14px-tall pill so it stays visibly "after" the minute count.
+    const ETA_OCTAGON_SIZE = 10;     // css px (edge-to-edge)
+    const ETA_OCTAGON_GAP = 2;       // css px gap between text and octagon
+    const ETA_OCTAGON_COLOR = '#9e9e9e';
+    // Full ink-centering (aligning the glyph ink box with the pill center)
+    // reads a fraction too low at tooltip sizes. The optical center sits
+    // between the content-box center (baseline middle) and the ink center, so
+    // we apply only this fraction of the ink correction. The direction and
+    // magnitude stay font-dependent (driven by the per-font ink scan).
+    const ETA_INK_CENTER_FACTOR = 0.65;
+
+    // Ink-centering for the ETA pill text. `textBaseline: middle` centers the
+    // font's content box (ascent+descent), but a glyph's optical ink sits below
+    // that center (ascenders are taller than descenders), so text always looks
+    // a fraction of a pixel high. Different fonts have different metric
+    // ratios, so we pixel-scan the actual rendered ink and return the baseline
+    // offset (in the same px units as `font`) that places the ink's vertical
+    // center exactly on the target y.
+    function measureTextInkBaselineOffset(text, font) {
+        try {
+            const c = document.createElement('canvas');
+            const ctx = c.getContext('2d');
+            ctx.font = font;
+            const m = ctx.measureText(text);
+            const fbAscent = (typeof m.fontBoundingBoxAscent === 'number' && m.fontBoundingBoxAscent) ? m.fontBoundingBoxAscent : (m.actualBoundingBoxAscent || 12);
+            const fbDescent = (typeof m.fontBoundingBoxDescent === 'number' && m.fontBoundingBoxDescent) ? m.fontBoundingBoxDescent : (m.actualBoundingBoxDescent || 3);
+            const pad = 6;
+            const baselineY = Math.ceil(fbAscent) + pad;
+            const width = Math.ceil(m.width) + pad * 2 + 4;
+            const height = Math.ceil(fbAscent + fbDescent) + pad * 2 + 4;
+            c.width = width;
+            c.height = height;
+            ctx.font = font; // resizing the canvas resets its context state
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = '#000';
+            ctx.fillText(text, pad, baselineY);
+            const data = ctx.getImageData(0, 0, width, height).data;
+            let inkTop = -1, inkBottom = -1;
+            outer: for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    if (data[(y * width + x) * 4 + 3] !== 0) { inkTop = y; break outer; }
+                }
+            }
+            outer2: for (let y = height - 1; y >= 0; y--) {
+                for (let x = 0; x < width; x++) {
+                    if (data[(y * width + x) * 4 + 3] !== 0) { inkBottom = y; break outer2; }
+                }
+            }
+            if (inkTop === -1) return 0;
+            // Drawing the text at (targetY + offset) centers its ink on targetY.
+            return baselineY - (inkTop + inkBottom) / 2;
+        } catch (e) {
+            return 0;
+        }
+    }
+
+    // DOM variant: returns the translateY (px) to apply to a line-height:1 text
+    // element so its ink is vertically centered within its font-size box. Same
+    // ink-scan as the canvas version, but keyed for the DOM corner-label (which
+    // uses the app-selected font). Cached by (font, text).
+    function getInkCenteringOffset(text, font) {
+        const cache = getInkCenteringOffset._cache || (getInkCenteringOffset._cache = {});
+        const key = font + '|' + text;
+        if (cache[key] !== undefined) return cache[key];
+        try {
+            const canvas = getInkCenteringOffset._canvas || (getInkCenteringOffset._canvas = document.createElement('canvas'));
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.font = font;
+            const m = ctx.measureText(text);
+            const fbAscent = (typeof m.fontBoundingBoxAscent === 'number' && m.fontBoundingBoxAscent) ? m.fontBoundingBoxAscent : (m.actualBoundingBoxAscent || 12);
+            const fbDescent = (typeof m.fontBoundingBoxDescent === 'number' && m.fontBoundingBoxDescent) ? m.fontBoundingBoxDescent : (m.actualBoundingBoxDescent || 3);
+            const sizeMatch = String(font).match(/(\d+(?:\.\d+)?)px/);
+            const fontSizePx = sizeMatch ? parseFloat(sizeMatch[1]) : 12;
+            const pad = 10;
+            const baselineY = Math.ceil(fbAscent) + pad;
+            const width = Math.ceil(m.width) + pad * 2 + 4;
+            const height = Math.ceil(fbAscent + fbDescent) + pad * 2 + 4;
+            canvas.width = width;
+            canvas.height = height;
+            ctx.font = font;
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = '#000';
+            ctx.fillText(text, pad, baselineY);
+            const data = ctx.getImageData(0, 0, width, height).data;
+            let inkTop = -1, inkBottom = -1;
+            outer: for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    if (data[(y * width + x) * 4 + 3] !== 0) { inkTop = y; break outer; }
+                }
+            }
+            outer2: for (let y = height - 1; y >= 0; y--) {
+                for (let x = 0; x < width; x++) {
+                    if (data[(y * width + x) * 4 + 3] !== 0) { inkBottom = y; break outer2; }
+                }
+            }
+            let offset = 0;
+            if (inkTop !== -1) {
+                const inkAscent = baselineY - inkTop;
+                const inkDescent = inkBottom - baselineY;
+                const lineBoxHeight = fontSizePx;
+                const halfLeading = (lineBoxHeight - (fbAscent + fbDescent)) / 2;
+                const baselineFromTop = halfLeading + fbAscent;
+                const inkCenterFromTop = baselineFromTop + (inkDescent - inkAscent) / 2;
+                offset = lineBoxHeight / 2 - inkCenterFromTop;
+            }
+            cache[key] = offset;
+            return offset;
+        } catch (e) {
+            return 0;
+        }
+    }
 
     const manager = {
         _map: null,
@@ -61,6 +174,7 @@
         _pendingRefresh: false,
         _cached: {},          // stopId -> serialized feature
         _etaText: {},         // stopId -> current ETA string
+        _etaOvertime: {},     // stopId -> bool (soonest bus stopped overtime)
         _selectedStop: null,  // stopId currently selected (popup open)
         _lastClickEvent: null, // dedup handle for icon+label overlap clicks
         _etaSpriteCounter: 0, // unique id counter for pill sprites
@@ -346,16 +460,17 @@
         // generating and caching a per-text sprite on first use. Sprites are
         // re-built if the image is missing (e.g. after a style reload resets
         // all images) or if the size constants changed.
-        _getEtaSprite(text) {
+        _getEtaSprite(text, overtime) {
             if (!text) return '';
-            let name = this._etaSprites[text];
+            const key = overtime ? text + '\u0001' : text;
+            let name = this._etaSprites[key];
             if (name && this._map && !this._map.hasImage(name)) {
                 name = null;
             }
             if (!name) {
                 name = 'stop-eta-' + (++this._etaSpriteCounter);
-                this._etaSprites[text] = name;
-                this._buildEtaSprite(name, text);
+                this._etaSprites[key] = name;
+                this._buildEtaSprite(name, text, overtime);
             }
             const idx = this._etaSpriteOrder.indexOf(name);
             if (idx >= 0) this._etaSpriteOrder.splice(idx, 1);
@@ -365,8 +480,10 @@
         },
 
         // Renders a white rounded pill with the ETA text at 2x scale and
-        // registers it (pixelRatio 2), mirroring the DOM corner-label.
-        _buildEtaSprite(name, text) {
+        // registers it (pixelRatio 2), mirroring the DOM corner-label. When
+        // `overtime` is true a small gray octagon is drawn after the minute
+        // count.
+        _buildEtaSprite(name, text, overtime) {
             const map = this._map;
             const s = STOP_SPRITE_DPR;
             const font = (ETA_FONT_SIZE * s) + 'px ' + ETA_TEXT_FONT_STACK;
@@ -377,7 +494,10 @@
             // than canvas sans-serif, so an un-buffered pill lets the text
             // overflow its rounded ends.
             const textW = Math.ceil(ctx.measureText(text).width * ETA_TEXT_WIDTH_BUFFER);
-            const pillW = Math.max(2, Math.round(textW + ETA_PILL_PADDING_X * 2 * s));
+            const octSize = overtime ? Math.round(ETA_OCTAGON_SIZE * s) : 0;
+            const octGap = overtime ? Math.round(ETA_OCTAGON_GAP * s) : 0;
+            const contentW = textW + octGap + octSize;
+            const pillW = Math.max(2, Math.round(contentW + ETA_PILL_PADDING_X * 2 * s));
             const pillH = Math.round(ETA_PILL_HEIGHT * s);
             // Radius is exactly half the height, so the left/right ends are
             // perfect semicircles (no straight vertical segments).
@@ -398,13 +518,37 @@
             ctx.fillStyle = '#111111';
             ctx.font = font;
             ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(text, pillW / 2, pillTop + pillH / 2);
+            ctx.textBaseline = 'alphabetic';
+            const contentLeft = (pillW - contentW) / 2;
+            const textX = contentLeft + textW / 2;
+            const pillCenterY = pillTop + pillH / 2;
+            const baselineOffset = measureTextInkBaselineOffset(text, font) * ETA_INK_CENTER_FACTOR;
+            ctx.fillText(text, textX, pillCenterY + baselineOffset);
+            if (overtime) {
+                this._drawOctagon(ctx, contentLeft + textW + octGap + octSize / 2, pillCenterY, octSize, ETA_OCTAGON_COLOR);
+            }
             try {
                 map.addImage(name, ctx.getImageData(0, 0, pillW, canvas.height), { pixelRatio: s });
             } catch (err) {
                 console.error('[StopLayerManager] addImage failed for ETA pill', text, err);
             }
+        },
+
+        // Draws a filled regular octagon (flat top/bottom, like a stop sign)
+        // centered at (cx, cy). Used for the overtime indicator on ETA pills.
+        _drawOctagon(ctx, cx, cy, size, color) {
+            const r = size / 2;
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+                const angle = Math.PI / 8 + (Math.PI / 4) * i;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
         },
 
         _roundRectPath(ctx, x, y, w, h, r) {
@@ -464,7 +608,7 @@
                     stopId: String(stopId),
                     opacity: opacity,
                     eta: this._etaText[stopId] || '',
-                    etaSprite: this._getEtaSprite(this._etaText[stopId] || ''),
+                    etaSprite: this._getEtaSprite(this._etaText[stopId] || '', !!this._etaOvertime[stopId]),
                     selected: this._selectedStop === String(stopId),
                     rider: typeof appStyle !== 'undefined' && appStyle === 'rider'
                 }
@@ -548,6 +692,7 @@
 
         clearEtas() {
             this._etaText = {};
+            this._etaOvertime = {};
             this.refresh();
         }
     };
@@ -555,20 +700,43 @@
     // ETA label write helper: updates the DOM corner-label (DOM renderer
     // mode) and the GL label property (WebGL renderer mode) in one place.
     // `show` undefined = text-only update, true = text + show, false = clear.
-    window.setStopEtaLabel = function(stopId, text, show) {
+    // `overtime` true = the soonest bus is stopped too long, so a gray
+    // octagon is appended after the minute count (see the user-visible tooltip).
+    window.setStopEtaLabel = function(stopId, text, show, overtime) {
         const $el = $(`[stop-eta="${stopId}"]`);
-        if (show === undefined) {
-            $el.text(text);
-        } else if (show) {
-            $el.text(text).show();
-        } else {
+        if (show === false || !text) {
             $el.text('').hide();
+        } else {
+            // The text is wrapped so the ink can be nudged into the pill's
+            // vertical center (fonts center the content box, not the optical
+            // ink, leaving text ~1px high). The octagon stays a pill-centered
+            // sibling so both align with the pill.
+            const textSpan = document.createElement('span');
+            textSpan.className = 'stop-eta-text';
+            textSpan.appendChild(document.createTextNode(String(text)));
+            const el = $el[0];
+            const offset = el ? getInkCenteringOffset(String(text), getComputedStyle(el).font) * ETA_INK_CENTER_FACTOR : 0;
+            textSpan.style.transform = offset ? `translateY(${offset}px)` : '';
+            $el.empty().append(textSpan);
+            if (overtime) $el.append(createStopEtaOctagonEl());
+            if (show) $el.show();
         }
         manager._etaText[String(stopId)] = (show === false) ? '' : String(text || '');
+        manager._etaOvertime[String(stopId)] = (show === false) ? false : !!overtime;
         if (manager.isActive()) {
             manager._pushStop(stopId);
         }
     };
+
+    // Builds the small gray octagon appended to an ETA tooltip when the soonest
+    // bus for that stop is stopped overtime. A plain octagon shape (no "!") is
+    // used at this size; the red "!" octagon is reserved for the bus popup.
+    function createStopEtaOctagonEl() {
+        const el = document.createElement('span');
+        el.className = 'stop-eta-octagon';
+        return el;
+    }
+    window.createStopEtaOctagonEl = createStopEtaOctagonEl;
 
     // Clears every ETA label (panout/fit/campus flows that hide them all).
     window.clearAllStopEtas = function() {
