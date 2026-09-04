@@ -1708,6 +1708,10 @@ html, body {
     background-color: var(--theme-bg);
     font-family: var(--font-family);
     /* padding: 1rem; */
+    /* Trailing space must be padding, not a child margin: bottom margins on
+       the last child collapse out through this unpadded parent and fail to
+       extend the scrollable area. */
+    padding-bottom: 2rem;
     display: none;
     /* overflow-y: scroll; */
     height: min-content;

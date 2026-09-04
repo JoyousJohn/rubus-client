@@ -170,6 +170,7 @@ riderRouteMapping = {
     'summer2': 'Summer 2',
     'all': 'All',
     'helix': 'Helix',
+    'kbs': 'Knightsbridge',
 }
 
 function popRiderStopInfo(stopId) {

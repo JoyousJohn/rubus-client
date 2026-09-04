@@ -191,10 +191,10 @@ function resolveAutoTheme(theme) {
 // Global variable to track if out of service buses should be hidden in stop grid
 let hideOutOfServiceBuses = false;
 
-const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement', 'helix', 'cam', 'cc', 'ccx', 'ps', 'psx']
+const knownRoutes = ['a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement', 'helix', 'kbs', 'cam', 'cc', 'ccx', 'ps', 'psx']
 
 const routesByCampusBase = {
-    'nb': ['fav', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement', 'helix'],
+    'nb': ['fav', 'a', 'b', 'bhe', 'ee', 'f', 'h', 'lx', 'on1', 'on2', 'rexb', 'rexl', 'wknd1', 'wknd2', 'c', 'ftbl', 'all', 'winter1', 'winter2', 'bl', 'summer1', 'summer2', 'commencement', 'helix', 'kbs'],
     'camden': ['cam'],
     'newark': ['cc', 'ccx', 'ps', 'psx']
 }
@@ -391,3 +391,10 @@ window.isElectricBus = isElectricBus;
 window.formatElectricBusName = formatElectricBusName;
 
 let originalStopShownRoute; // Preserve map selection before opening stop popup (undefined = no save)
+
+// Most-recently-opened panel tracking for ESC ordering (desktop).
+// Keys: 'settings' | 'info' | 'right'. Values: Date.now() at open.
+window._panelOpenedAt = window._panelOpenedAt || {};
+function markPanelOpened(name) {
+    try { window._panelOpenedAt[name] = Date.now(); } catch (e) {}
+}

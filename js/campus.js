@@ -3,7 +3,7 @@ let stopsData = {};
 const bounds = {}
 
 const southWestNB = L.latLng(40.4550081,-74.4957839);
-const northEastNB = L.latLng(40.538852,-74.4074799);
+const northEastNB = L.latLng(40.555,-74.4074799);
 bounds['nb'] = L.latLngBounds(southWestNB, northEastNB);
 
 const southWestNewark = L.latLng(40.72830473203244, -74.19679900094992);

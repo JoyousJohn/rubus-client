@@ -91,6 +91,36 @@ $('.shoot-fireworks').click(function() {
     }, 200);
 });
 
+// Close only the most recently opened panel (ESC ordering).
+// Returns true if something was closed.
+function closeLatestPanel() {
+    const times = (typeof window !== 'undefined' && window._panelOpenedAt) || {};
+    const open = [];
+    if ($('.settings-panel').is(':visible')) open.push('settings');
+    if ($('.info-panels-show-hide-wrapper').is(':visible')) open.push('info');
+    if ($('.bus-info-popup, .stop-info-popup, .building-info-popup, .my-location-popup').is(':visible')) open.push('right');
+    if (!open.length) {
+        // Preserve legacy behavior: ESC also dismissed standalone search.
+        if ($('.search-wrapper').is(':visible')) {
+            closeSearch();
+            return true;
+        }
+        return false;
+    }
+    // Newest first; ties break toward the most transient (right > info > settings).
+    const priority = { right: 3, info: 2, settings: 1 };
+    open.sort((a, b) => ((times[b] || 0) - (times[a] || 0)) || (priority[b] - priority[a]));
+    const latest = open[0];
+    if (latest === 'right') {
+        hideInfoBoxes();
+    } else if (latest === 'info') {
+        $('.info-panels-close').click();
+    } else {
+        closeSettingsPanel();
+    }
+    return true;
+}
+
 $(document).on('keydown', function(e) {
     const isSettingsOpen = $('.settings-panel').is(':visible');
     const $settingsInput = $('#settings-search-input');
@@ -119,14 +149,8 @@ $(document).on('keydown', function(e) {
             return;
         }
 
-        hideInfoBoxes();
-        $('.settings-panel').fadeOut('fast');
-        $('.bottom').fadeIn('fast'); // this is being hidden due to settings-btn click?... Why tho
-        if (typeof detachSettingsViewportListeners === 'function') {
-            detachSettingsViewportListeners();
-        }
-        $('.settings-floating-bar').hide();
-        stopStatusUpdates();
+        // Close only the most recently opened panel, not everything at once.
+        closeLatestPanel();
 
         if (settings['toggle-hide-other-routes'] && !shownRoute) {
             showAllStops();

@@ -30,6 +30,7 @@ const campusMappings = {
     'psx': 'Penn Station Express',
     'cam': 'Camden',
     'helix': '',
+    'kbs': '',
 } 
 
 
@@ -41,5 +42,7 @@ const campusShortNamesMappings = {
     'douglas': 'Douglas',
     'downtown': 'NB',
     'newark': 'Newark',
-    'camden': 'Camden'
+    'camden': 'Camden',
+    'piscataway': 'Piscataway',
+    'Piscataway': 'Piscataway'
 }

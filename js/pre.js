@@ -285,24 +285,27 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                     if (!activeRoutes.has(oldRoute)) {
                         populateRouteSelectors(activeRoutes);
                         console.log(`[INFO] The last bus for route ${oldRoute} changed routes to ${routeStr}.`)
-                        logPolylineRemoval(oldRoute, 'fetchBusData-routeChange');
-                        console.log('Polylines on map before remove:', polylines[oldRoute] && polylines[oldRoute].isAdded ? polylines[oldRoute].isAdded() : false);
-                        if (polylines[oldRoute]) {
-                            polylines[oldRoute].remove();
-                        } else if (getPolylineRemovalHistory(oldRoute).length > 0) {
-                            console.warn(`[fetchBusData-routeChange] polyline for ${oldRoute} already removed, skipping double-remove`);
-                        } else {
-                            throw new Error(`[fetchBusData-routeChange] polyline for ${oldRoute} missing with no prior removal — investigate`);
+                        const isForceOldRoute = isForceShowEnabled() && getForceShowRoutes().includes(oldRoute);
+                        if (!isForceOldRoute) {
+                            logPolylineRemoval(oldRoute, 'fetchBusData-routeChange');
+                            console.log('Polylines on map before remove:', polylines[oldRoute] && polylines[oldRoute].isAdded ? polylines[oldRoute].isAdded() : false);
+                            if (polylines[oldRoute]) {
+                                polylines[oldRoute].remove();
+                            } else if (getPolylineRemovalHistory(oldRoute).length > 0) {
+                                console.warn(`[fetchBusData-routeChange] polyline for ${oldRoute} already removed, skipping double-remove`);
+                            } else {
+                                throw new Error(`[fetchBusData-routeChange] polyline for ${oldRoute} missing with no prior removal — investigate`);
+                            }
+                            console.log('Polylines on map after remove:', polylines[oldRoute] && polylines[oldRoute].isAdded ? polylines[oldRoute].isAdded() : false);
+                            updatePolylineBoundsIfNeeded();
                         }
-                        console.log('Polylines on map after remove:', polylines[oldRoute] && polylines[oldRoute].isAdded ? polylines[oldRoute].isAdded() : false);
-                        updatePolylineBoundsIfNeeded();
 
                         if (shownRoute && shownRoute === oldRoute) {
                             toggleRoute(oldRoute);
                         }
                     }
 
-                    if (!skipPolylineUpdateFromFetch && !polylines[routeStr] && isBusShownOnMap(busName)) {
+                    if (!isForceShowEnabled() && !skipPolylineUpdateFromFetch && !polylines[routeStr] && isBusShownOnMap(busName)) {
                         setPolylines([routeStr]);
                     }
                     populateFavs();
@@ -438,7 +441,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             )
         );
 
-        if (routesNeedingPolylines.size > 0 && !skipPolylineUpdateFromFetch) {
+        if (!isForceShowEnabled() && routesNeedingPolylines.size > 0 && !skipPolylineUpdateFromFetch) {
             await initRoutePointsCache(selectedCampus);
             if (sim) return;
             await setPolylines(routesNeedingPolylines, { fitBounds: false });
@@ -589,17 +592,20 @@ function makeBulkOoS(oosBusNames) {
                 updateRiderRoutes();
             }
 
-            if (route !== 'none') {
-                console.log(`Removing polyline for route ${route}`);
-                updatePolylineBoundsIfNeeded();
-                if (polylines[route]) {
-                    logPolylineRemoval(route, 'makeBulkOoS');
-                    polylines[route].remove();
+            const isForceRoute = isForceShowEnabled() && getForceShowRoutes().includes(route);
+            if (!isForceRoute) {
+                if (route !== 'none') {
+                    console.log(`Removing polyline for route ${route}`);
+                    updatePolylineBoundsIfNeeded();
+                    if (polylines[route]) {
+                        logPolylineRemoval(route, 'makeBulkOoS');
+                        polylines[route].remove();
+                    }
+                } else {
+                    console.log('Route is none');
                 }
-            } else {
-                console.log('Route is none');
+                delete polylines[route];
             }
-            delete polylines[route];
             $(`.route-selector[routename="${route}"]`).remove();
 
             if (shownRoute && shownRoute === route) {
@@ -711,20 +717,23 @@ function makeOoS(busName) {
             updateRiderRoutes();
         }
         
-        if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polylines, have to ensure code works flawlessly!
-            console.log(`Removing polyline for route ${route}`);
-            // Update global bounds since a route was removed
-            updatePolylineBoundsIfNeeded();
-            if (polylines[route]) {
-                logPolylineRemoval(route, 'makeOoS');
-                console.log('Polylines on map before remove:', polylines[route].isAdded ? polylines[route].isAdded() : false);
-                polylines[route].remove();
-                console.log('Polylines on map after remove:', polylines[route].isAdded ? polylines[route].isAdded() : false);
+        const isForceRoute = isForceShowEnabled() && getForceShowRoutes().includes(route);
+        if (!isForceRoute) {
+            if (route !== 'none') { // otherwise route should always exist... I don't want to just check if route exists in polylines, have to ensure code works flawlessly!
+                console.log(`Removing polyline for route ${route}`);
+                // Update global bounds since a route was removed
+                updatePolylineBoundsIfNeeded();
+                if (polylines[route]) {
+                    logPolylineRemoval(route, 'makeOoS');
+                    console.log('Polylines on map before remove:', polylines[route].isAdded ? polylines[route].isAdded() : false);
+                    polylines[route].remove();
+                    console.log('Polylines on map after remove:', polylines[route].isAdded ? polylines[route].isAdded() : false);
+                }
+            } else {
+                console.log('Route is none');
             }
-        } else {
-            console.log('Route is none');
+            delete polylines[route];
         }
-        delete polylines[route];
         $(`.route-selector[routename="${route}"]`).remove(); 
         checkMinRoutes();
 

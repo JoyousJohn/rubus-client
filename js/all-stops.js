@@ -170,6 +170,8 @@ $('.info-panels').click(function(e) {
     console.log('Storing originalShownRoute for restoration (entry):', originalShownRoute);
 
     $('.info-panels-show-hide-wrapper').show().scrollTop(0);
+    markPanelOpened('info');
+    if (isDesktop && !isTouchDevice) showEscNotice('info');
 
     // Populate the network panel first to avoid layout shifts affecting positioning
     busesOverview();

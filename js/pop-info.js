@@ -269,6 +269,8 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         displayRoute = dataRoute;
     } else if (dataRoute === 'all') {
         displayRoute = 'All Campus';
+    } else if (dataRoute === 'kbs') {
+        displayRoute = 'Knightsbridge';
     } else {
         displayRoute = dataRoute.toUpperCase();
     }

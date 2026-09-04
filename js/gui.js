@@ -1030,8 +1030,13 @@ function selectedRoute(route) {
     const routesTabActive = $('.subpanels-container').hasClass('panel-routes');
 
     // Always show panels and move selectors when invoked via long-press or when panels are closed
-    if (!$('.info-panels-show-hide-wrapper').is(':visible') || isLongPress) {
+    const infoWasHidden = !$('.info-panels-show-hide-wrapper').is(':visible');
+    if (infoWasHidden || isLongPress) {
         $('.info-panels-show-hide-wrapper').show();
+        if (infoWasHidden) {
+            markPanelOpened('info');
+            if (isDesktop && !isTouchDevice) showEscNotice('info');
+        }
         busesOverview();
         moveRouteSelectorsToSubpanel();
         // Show all route selectors in subpanel (not filtered by stop selection)
@@ -1685,10 +1690,10 @@ function busesOverview() {
         $('.bottom, .leaflet-control-attribution').hide();
         $('.buses-panel-wrapper').css('margin-left', 0);
     } else {
-        const routeSelectorsWidth = $('.route-selectors').width() / parseFloat(getComputedStyle(document.documentElement).fontSize) + 3;
-        $('.buses-panel-wrapper').css('margin-left', routeSelectorsWidth + 'rem');
-        const leftBtnHeight = $('.left-btns').height();
-        $('.buses-panel-wrapper').css('max-height', window.innerHeight - leftBtnHeight - 4 * parseFloat(getComputedStyle(document.documentElement).fontSize));
+        // No max-height cap: the wrapper lives inside the pinned subpanel now,
+        // which manages its own scrolling (the old floating-overlay cap broke
+        // trailing scroll space on desktop).
+        $('.buses-panel-wrapper').css('max-height', '');
     }
 
     $('.buses-panel-wrapper').slideDown('fast');
@@ -1937,7 +1942,8 @@ const stopsByCampus = {
         'Busch': [5, 6, 7, 8, 9, 10, 11, 26],
         'Livingston': [12, 13, 14, 15, 24],
         'Cook': [16, 17, 18, 19, 20, 21],
-        'Downtown': [22, 23]
+        'Downtown': [22, 23],
+        'Piscataway': [30]
     },
     "newark": {
         "Newark": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
@@ -2288,7 +2294,7 @@ function renderRouteChangesMenu(allChanges) {
         const changeTime = new Date(row.time);
         const timeStr = isNaN(changeTime)
             ? ''
-            : changeTime.toLocaleString('en-US', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            : changeTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
         const $busCol = $('<div class="route-changes-bus pointer text-2rem"></div>').css('color', routeColor).text(busLabel);
         const $changeCol = $('<div class="route-changes-change pointer text-1p6rem"></div>').css('color', routeColor)
             .text(`${String(row.oldRoute || '?').toUpperCase()} → ${String(row.newRoute || '?').toUpperCase()}`);
@@ -2416,6 +2422,7 @@ function openSettingsPanel() {
     });
     
     $('.settings-panel').show();
+    markPanelOpened('settings');
     // if (!isDesktop) {
     $('.bottom').hide();
     // }
@@ -2632,6 +2639,7 @@ const defaultColorMappings = {
     'summer2': '#2bd6ec',
     'commencement': 'LightSalmon',
     'helix': '#db6464',
+    'kbs': '#009688',
     'sim': '#ff6b6b',
 
     'psx': 'LightSalmon',

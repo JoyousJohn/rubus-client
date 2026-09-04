@@ -275,6 +275,9 @@
 /* Bus Route Changes Panel */
 .route-changes-wrapper {
     margin-top: 2rem;
+    /* Contained by .buses-panel-wrapper's padding-bottom, so this stacks
+       with it instead of collapsing out of the scroll area. */
+    margin-bottom: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
     padding: 2rem;

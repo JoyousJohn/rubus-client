@@ -349,6 +349,10 @@ $('.info-panels-close').click(function() {
 		animationFrameId = null;
 	}
 	$('.info-panels-show-hide-wrapper').hide();
+    // Dismiss the ESC hint unless a right-side popup still owns it
+    if (!$('.bus-info-popup, .stop-info-popup, .building-info-popup').is(':visible')) {
+        $('.desktop-esc-notice').hide();
+    }
     moveRouteSelectorsToMain();
     $('.bottom').show();
     $('.bottom').css('bottom', '0px');

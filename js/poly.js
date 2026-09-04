@@ -65,6 +65,9 @@ function applyForceShowState() {
     for (const route of forceRoutes) {
         addForceShowPolyline(route);
     }
+    if (isForceShowStopsEnabled()) {
+        applyForceShowStops();
+    }
 }
 
 function revertForceShowState() {
@@ -687,12 +690,14 @@ window.debugPolylineState = function(routeName) {
 };
 
 function getRouteStyle(routeName) {
-    const forceRoutes = getForceShowRoutes();
+    const forceMode = isForceShowEnabled();
+    const forceRoutes = forceMode ? getForceShowRoutes() : [];
     const isForce = forceRoutes.includes(routeName);
     const active = routeHasInServiceBuses(routeName) || isForce;
+    const baseOpacity = active ? 1 : (settings['toggle-show-out-of-service'] ? 0.5 : 0);
     return {
         color: active ? (colorMappings[routeName] || '#888') : 'rgba(128,128,128,0.7)',
-        opacity: active ? 1 : 0.5,
+        opacity: baseOpacity,
         buttonColor: active ? (colorMappings[routeName] || '#888') : 'gray',
         buttonOpacity: active ? 1 : 0.5
     };
@@ -709,9 +714,6 @@ function updatePolylineStyle(routeName) {
         } else if (settings['toggle-distances-line-on-focus']) {
             targetOpacity = 0;
         }
-    }
-    if (!settings['toggle-show-out-of-service'] && !routeHasValidInServiceBuses(routeName)) {
-        targetOpacity = 0;
     }
     polylines[routeName].setStyle({ color: style.color, opacity: targetOpacity });
     const pathEl = polylines[routeName].getElement();
@@ -1012,7 +1014,7 @@ function updatePolylineBoundsIfNeeded() {
 function prunePolylinesWithoutInService() {
     try {
         const forceMode = isForceShowEnabled();
-        const forceRoutes = getForceShowRoutes();
+        const forceRoutes = forceMode ? getForceShowRoutes() : [];
         const campusRoutes = Object.keys(busesByRoutes[selectedCampus]);
         let activeRoutesChanged = false;
 
@@ -1094,12 +1096,15 @@ function updateStopsOpacity() {
     const servicedStops = new Set();
     const oosStops = new Set();
     const routeKeys = Object.keys(stopLists || {});
+    const forceStopsMode = isForceShowStopsEnabled();
+    const forceRoutes = forceStopsMode ? getForceShowRoutes() : [];
 
     for (const route of routeKeys) {
         // Stop visibility must use the same validity criteria as route
         // pruning. A bus that is still present in busData but is off-route
         // should not keep every stop on that route visible.
-        const isInService = routeHasValidInServiceBuses(route);
+        const isForced = forceStopsMode && forceRoutes.includes(route);
+        const isInService = routeHasValidInServiceBuses(route) || isForced;
         const list = stopLists[route];
         if (!list) continue;
         if (isInService) {
