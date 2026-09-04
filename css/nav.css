@@ -151,6 +151,10 @@
     height: 3.4rem;
 }
 
+.route-fav-btn.none {
+    display: none !important;
+}
+
 .route-fav-btn:hover {
     opacity: 1;
     background: transparent;
@@ -587,20 +591,35 @@
     margin-left: 0.2rem;
 }
 
-.route-option-walk {
+.route-option.route-option-walk {
     display: inline-flex;
     align-items: center;
-    font-size: 1.1rem;
-    font-weight: 500;
-    opacity: 0.9;
     white-space: nowrap;
+    border-color: transparent !important;
 }
 
-.route-option-walk i,
-.route-option-walk svg {
-    font-size: 1.05rem;
-    margin-left: 0.15rem;
-    margin-right: 0.2rem;
+.route-option.route-option-walk .route-option-label {
+    display: inline-flex;
+    align-items: center;
+}
+
+.route-option.route-option-walk .route-option-label i,
+.route-option.route-option-walk .route-option-label .icon,
+.route-option.route-option-walk .route-option-label svg {
+    font-size: 1.1rem;
+    margin-right: 0.35rem;
+}
+
+.navigate-wrapper .route-option.route-option-walk.selected .route-option-label i,
+.navigate-wrapper .route-option.route-option-walk.selected .route-option-label .icon,
+.navigate-wrapper .route-option.route-option-walk.selected .route-option-label svg {
+    color: white !important;
+}
+
+.navigate-wrapper .route-option.route-option-walk:not(.selected) .route-option-label i,
+.navigate-wrapper .route-option.route-option-walk:not(.selected) .route-option-label .icon,
+.navigate-wrapper .route-option.route-option-walk:not(.selected) .route-option-label svg {
+    color: var(--theme-stops-list-text) !important;
 }
 
 .route-option.selected {
@@ -609,7 +628,9 @@
 }
 
 .route-option.transfer-route,
-.route-option.transfer-route.selected {
+.route-option.transfer-route.selected,
+.route-option.route-option-walk,
+.route-option.route-option-walk.selected {
     border-color: transparent !important;
 }
 

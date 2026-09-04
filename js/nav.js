@@ -476,21 +476,23 @@ function setupNavigationInputs() {
             // Only clear if the input value doesn't match the selected building (case-insensitive, trimmed)
             const inputValue = input.val().trim().toLowerCase();
             if (input.attr('id') === 'nav-from-input') {
-                const buildingName = selectedFromBuilding && buildingIndex[selectedFromBuilding]?.name?.toLowerCase();
-                const stopName = selectedFromStop && stopsData[selectedFromStop]?.name?.toLowerCase();
-                if (buildingName && inputValue !== buildingName) {
+                const b = selectedFromBuilding && typeof buildingIndex !== 'undefined' && (buildingIndex[selectedFromBuilding] || buildingIndex[selectedFromBuilding.toLowerCase()]);
+                const buildingName = b ? (b.name || '').toLowerCase() : (selectedFromBuilding || '').toLowerCase();
+                const stopName = selectedFromStop && typeof stopsData !== 'undefined' && stopsData[selectedFromStop]?.name?.toLowerCase();
+                if (selectedFromBuilding && inputValue !== buildingName && inputValue !== String(selectedFromBuilding).toLowerCase()) {
                     selectedFromBuilding = null;
                 }
-                if (stopName && inputValue !== stopName) {
+                if (selectedFromStop && inputValue !== stopName && inputValue !== String(selectedFromStop).toLowerCase()) {
                     selectedFromStop = null;
                 }
             } else if (input.attr('id') === 'nav-to-input') {
-                const buildingName = selectedToBuilding && buildingIndex[selectedToBuilding]?.name?.toLowerCase();
-                const stopName = selectedToStop && stopsData[selectedToStop]?.name?.toLowerCase();
-                if (buildingName && inputValue !== buildingName) {
+                const b = selectedToBuilding && typeof buildingIndex !== 'undefined' && (buildingIndex[selectedToBuilding] || buildingIndex[selectedToBuilding.toLowerCase()]);
+                const buildingName = b ? (b.name || '').toLowerCase() : (selectedToBuilding || '').toLowerCase();
+                const stopName = selectedToStop && typeof stopsData !== 'undefined' && stopsData[selectedToStop]?.name?.toLowerCase();
+                if (selectedToBuilding && inputValue !== buildingName && inputValue !== String(selectedToBuilding).toLowerCase()) {
                     selectedToBuilding = null;
                 }
-                if (stopName && inputValue !== stopName) {
+                if (selectedToStop && inputValue !== stopName && inputValue !== String(selectedToStop).toLowerCase()) {
                     selectedToStop = null;
                 }
             }
@@ -1068,31 +1070,35 @@ function getCurrentNavPlaces() {
     if (!fromVal || !toVal) return null;
 
     let fromPlace = null;
-    if (selectedFromBuilding && typeof buildingIndex !== 'undefined' && buildingIndex && buildingIndex[selectedFromBuilding]) {
-        const b = buildingIndex[selectedFromBuilding];
-        if (b && b.name && b.name.toLowerCase() === fromVal.toLowerCase()) fromPlace = b;
+    if (selectedFromBuilding && typeof buildingIndex !== 'undefined' && buildingIndex) {
+        const b = buildingIndex[selectedFromBuilding] || buildingIndex[selectedFromBuilding.toLowerCase()];
+        if (b && ((b.name || '').toLowerCase() === fromVal.toLowerCase() || String(selectedFromBuilding).toLowerCase() === fromVal.toLowerCase())) {
+            fromPlace = b;
+        }
     } else if (selectedFromStop && typeof stopsData !== 'undefined' && stopsData && stopsData[selectedFromStop]) {
         const s = stopsData[selectedFromStop];
-        if (s && s.name && s.name.toLowerCase() === fromVal.toLowerCase()) {
+        if (s && ((s.name || '').toLowerCase() === fromVal.toLowerCase() || String(selectedFromStop).toLowerCase() === fromVal.toLowerCase())) {
             fromPlace = { name: s.name, lat: s.latitude, lng: s.longitude, id: parseInt(selectedFromStop, 10), category: 'stop' };
         }
     }
     if (!fromPlace && typeof resolvePlaceByName === 'function') {
-        fromPlace = resolvePlaceByName(fromVal);
+        fromPlace = resolvePlaceByName(fromVal, false);
     }
 
     let toPlace = null;
-    if (selectedToBuilding && typeof buildingIndex !== 'undefined' && buildingIndex && buildingIndex[selectedToBuilding]) {
-        const b = buildingIndex[selectedToBuilding];
-        if (b && b.name && b.name.toLowerCase() === toVal.toLowerCase()) toPlace = b;
+    if (selectedToBuilding && typeof buildingIndex !== 'undefined' && buildingIndex) {
+        const b = buildingIndex[selectedToBuilding] || buildingIndex[selectedToBuilding.toLowerCase()];
+        if (b && ((b.name || '').toLowerCase() === toVal.toLowerCase() || String(selectedToBuilding).toLowerCase() === toVal.toLowerCase())) {
+            toPlace = b;
+        }
     } else if (selectedToStop && typeof stopsData !== 'undefined' && stopsData && stopsData[selectedToStop]) {
         const s = stopsData[selectedToStop];
-        if (s && s.name && s.name.toLowerCase() === toVal.toLowerCase()) {
+        if (s && ((s.name || '').toLowerCase() === toVal.toLowerCase() || String(selectedToStop).toLowerCase() === toVal.toLowerCase())) {
             toPlace = { name: s.name, lat: s.latitude, lng: s.longitude, id: parseInt(selectedToStop, 10), category: 'stop' };
         }
     }
     if (!toPlace && typeof resolvePlaceByName === 'function') {
-        toPlace = resolvePlaceByName(toVal);
+        toPlace = resolvePlaceByName(toVal, false);
     }
 
     if (fromPlace && toPlace) {
@@ -1602,6 +1608,46 @@ function calculateTransferRouteScore(t, totalWalkingFeet, startStop, endStop) {
     return score;
 }
 
+// Determine whether pure walking should be included as a route option alongside bus options
+function shouldIncludeWalkOption(directWalkMinutes, directWalkFeet, busRoutesForDisplay) {
+    if (typeof directWalkMinutes !== 'number' || directWalkMinutes <= 0) return false;
+    // Don't show pure walk if start and end are practically the same spot
+    if (directWalkFeet <= 30) return false;
+
+    // If there are no bus routes at all, show walking if distance is within 45 minutes (~2 miles)
+    if (!busRoutesForDisplay || busRoutesForDisplay.length === 0) {
+        return directWalkMinutes <= 45;
+    }
+
+    const liveBusRoutes = busRoutesForDisplay.filter(e => !e.isWalk && !e.route?.isWalk && e.hasLive && e.journeyMinutes > 0);
+    const minLiveBusTime = liveBusRoutes.length > 0
+        ? Math.min(...liveBusRoutes.map(e => e.journeyMinutes))
+        : Infinity;
+    const allBusRoutes = busRoutesForDisplay.filter(e => !e.isWalk && !e.route?.isWalk);
+    const minAnyBusTime = allBusRoutes.length > 0
+        ? Math.min(...allBusRoutes.map(e => (typeof e.journeyMinutes === 'number' && e.journeyMinutes > 0) ? e.journeyMinutes : Infinity))
+        : Infinity;
+    const fastestBusTime = isFinite(minLiveBusTime) ? minLiveBusTime : minAnyBusTime;
+
+    // 1. Shorter and faster than taking any bus (always include)
+    if (isFinite(fastestBusTime) && directWalkMinutes <= fastestBusTime) {
+        return true;
+    }
+
+    // 2. Reasonably short walk on campus (<= 25 minutes or <= 5500 ft / ~1 mile)
+    if (directWalkMinutes <= 25 || directWalkFeet <= 5500) {
+        return true;
+    }
+
+    // 3. Within 30 minutes AND not more than 10 minutes slower than the fastest bus
+    if (directWalkMinutes <= 30 && isFinite(fastestBusTime) && directWalkMinutes <= fastestBusTime + 10) {
+        return true;
+    }
+
+    return false;
+}
+window.shouldIncludeWalkOption = shouldIncludeWalkOption;
+
 function calculateRoute(from, to) {
     console.log('🚀 calculateRoute called with:', from, '→', to);
 
@@ -1642,6 +1688,13 @@ function calculateRoute(from, to) {
             };
         } else {
             endBuilding = resolvePlaceByName(to);
+        }
+
+        if (!startBuilding) {
+            startBuilding = resolvePlaceByName(from, true);
+        }
+        if (!endBuilding) {
+            endBuilding = resolvePlaceByName(to, true);
         }
 
         if (!startBuilding || !endBuilding) {
@@ -1692,12 +1745,84 @@ function calculateRoute(from, to) {
         const startIsStop = String(startBuilding.category || '').toLowerCase() === 'stop';
         const endIsStop = String(endBuilding.category || '').toLowerCase() === 'stop';
 
+        // Calculate direct walking distance between start and end locations
+        const directWalkDist = calculateWalkingDistance(
+            startBuilding.lat, startBuilding.lng,
+            endBuilding.lat, endBuilding.lng
+        );
+        const directWalkFeet = directWalkDist ? directWalkDist.feet : 0;
+        const directWalkMinutes = Math.max(1, Math.ceil(directWalkFeet / 220));
+
+        const walkRouteObj = {
+            name: 'walk',
+            displayName: 'Walk',
+            isWalk: true,
+            isTransfer: false,
+            hasLive: true,
+            journeyMinutes: directWalkMinutes,
+            walkMinutes: directWalkMinutes,
+            totalWalkingFeet: directWalkFeet,
+            walkDistance: directWalkDist,
+            startBuilding,
+            endBuilding
+        };
+
+        // Check if fuzzy matching was used
+        const fromNormalized = String(from || '').trim().toLowerCase();
+        const toNormalized = String(to || '').trim().toLowerCase();
+        const startResolvedName = String((startBuilding && startBuilding.name) || '').trim().toLowerCase();
+        const endResolvedName = String((endBuilding && endBuilding.name) || '').trim().toLowerCase();
+
+        const usedFuzzyMatch = {
+            from: startIsStop
+                ? false
+                : fromNormalized !== startResolvedName,
+            to: endIsStop
+                ? false
+                : toNormalized !== endResolvedName
+        };
+
         // Resolve boarding/alighting stops - search closest stops even if start/end is a stop,
         // allowing walking to nearby stops when beneficial (e.g. Science Building -> ARC for REXB)
         const startStops = findClosestStops(startBuilding.lat, startBuilding.lng, 5);
         const endStops = findClosestStops(endBuilding.lat, endBuilding.lng, 5);
 
         if (startStops.length === 0 || endStops.length === 0) {
+            if (shouldIncludeWalkOption(directWalkMinutes, directWalkFeet, [])) {
+                $('.nav-message').hide();
+                if (typeof saveRecentNavigation === 'function') saveRecentNavigation(startBuilding, endBuilding);
+                if (startBuilding) saveRecentSearch(startBuilding);
+                if (endBuilding) saveRecentSearch(endBuilding);
+                displayRoute({
+                    startBuilding,
+                    endBuilding,
+                    startStop: null,
+                    endStop: null,
+                    route: walkRouteObj,
+                    allRoutes: [walkRouteObj],
+                    selectedRouteIndex: 0,
+                    startWalkDistance: directWalkDist,
+                    endWalkDistance: null,
+                    hasAlternatives: false,
+                    alternativeRoutes: [],
+                    usedFuzzyMatch,
+                    originalInputs: { from, to },
+                    startIsStop,
+                    endIsStop,
+                    routeCombosMap: {
+                        'walk': {
+                            startStop: null,
+                            endStop: null,
+                            startWalkDistance: directWalkDist,
+                            endWalkDistance: null,
+                            totalWalkingFeet: directWalkFeet,
+                            isWalk: true,
+                            isTransfer: false
+                        }
+                    }
+                });
+                return;
+            }
             showNavigationMessage("Could not find nearby bus stops");
             return;
         }
@@ -1706,6 +1831,41 @@ function calculateRoute(from, to) {
         const { sortedOptions, bestByRoute } = findBestRouteCombination(startStops, endStops, startBuilding, endBuilding, startIsStop, endIsStop);
 
         if (!sortedOptions || sortedOptions.length === 0) {
+            if (shouldIncludeWalkOption(directWalkMinutes, directWalkFeet, [])) {
+                $('.nav-message').hide();
+                if (typeof saveRecentNavigation === 'function') saveRecentNavigation(startBuilding, endBuilding);
+                if (startBuilding) saveRecentSearch(startBuilding);
+                if (endBuilding) saveRecentSearch(endBuilding);
+                displayRoute({
+                    startBuilding,
+                    endBuilding,
+                    startStop: null,
+                    endStop: null,
+                    route: walkRouteObj,
+                    allRoutes: [walkRouteObj],
+                    selectedRouteIndex: 0,
+                    startWalkDistance: directWalkDist,
+                    endWalkDistance: null,
+                    hasAlternatives: false,
+                    alternativeRoutes: [],
+                    usedFuzzyMatch,
+                    originalInputs: { from, to },
+                    startIsStop,
+                    endIsStop,
+                    routeCombosMap: {
+                        'walk': {
+                            startStop: null,
+                            endStop: null,
+                            startWalkDistance: directWalkDist,
+                            endWalkDistance: null,
+                            totalWalkingFeet: directWalkFeet,
+                            isWalk: true,
+                            isTransfer: false
+                        }
+                    }
+                });
+                return;
+            }
             showNavigationMessage("No bus routes connect these locations");
             return;
         }
@@ -1718,7 +1878,6 @@ function calculateRoute(from, to) {
         const startWalkDistance = bestRoute.startWalkDistance;
         const endWalkDistance = bestRoute.endWalkDistance;
         const totalWalkingFeet = bestRoute.totalWalkingFeet;
-
 
         // Rank routes by desirability (best first)
         const rankedRoutes = selectBestRoute(connectingRoutes, startStop, endStop);
@@ -1739,6 +1898,41 @@ function calculateRoute(from, to) {
 
         // Ensure we still have routes
         if (filteredRankedRoutes.length === 0) {
+            if (shouldIncludeWalkOption(directWalkMinutes, directWalkFeet, [])) {
+                $('.nav-message').hide();
+                if (typeof saveRecentNavigation === 'function') saveRecentNavigation(startBuilding, endBuilding);
+                if (startBuilding) saveRecentSearch(startBuilding);
+                if (endBuilding) saveRecentSearch(endBuilding);
+                displayRoute({
+                    startBuilding,
+                    endBuilding,
+                    startStop: null,
+                    endStop: null,
+                    route: walkRouteObj,
+                    allRoutes: [walkRouteObj],
+                    selectedRouteIndex: 0,
+                    startWalkDistance: directWalkDist,
+                    endWalkDistance: null,
+                    hasAlternatives: false,
+                    alternativeRoutes: [],
+                    usedFuzzyMatch,
+                    originalInputs: { from, to },
+                    startIsStop,
+                    endIsStop,
+                    routeCombosMap: {
+                        'walk': {
+                            startStop: null,
+                            endStop: null,
+                            startWalkDistance: directWalkDist,
+                            endWalkDistance: null,
+                            totalWalkingFeet: directWalkFeet,
+                            isWalk: true,
+                            isTransfer: false
+                        }
+                    }
+                });
+                return;
+            }
             showNavigationMessage("No suitable bus route after filtering");
             return;
         }
@@ -1791,8 +1985,32 @@ function calculateRoute(from, to) {
             allRoutesAcrossBestCombos.push(routeObj);
         });
 
+        routeCombosMap['walk'] = {
+            startStop: null,
+            endStop: null,
+            startWalkDistance: directWalkDist,
+            endWalkDistance: null,
+            totalWalkingFeet: directWalkFeet,
+            isWalk: true,
+            isTransfer: false
+        };
+        allRoutesAcrossBestCombos.push(walkRouteObj);
+
         // Ensure primary route is present and comes first in selection order
         const primaryKey = String(primaryRoute.name || '').toLowerCase();
+        if (!routeCombosMap[primaryKey]) {
+            routeCombosMap[primaryKey] = {
+                startStop: bestRoute.startStop,
+                transferStop: bestRoute.transferStop || primaryRoute.transferStop,
+                endStop: bestRoute.endStop,
+                startWalkDistance: bestRoute.startWalkDistance,
+                endWalkDistance: bestRoute.endWalkDistance,
+                totalWalkingFeet: bestRoute.totalWalkingFeet,
+                isTransfer: !!primaryRoute.isTransfer,
+                leg1: bestRoute.leg1 || primaryRoute.leg1,
+                leg2: bestRoute.leg2 || primaryRoute.leg2
+            };
+        }
         const dedupedRoutes = [];
         const seen = new Set();
         // Primary first
@@ -1808,21 +2026,6 @@ function calculateRoute(from, to) {
                 seen.add(k);
             }
         });
-
-        // Check if fuzzy matching was used
-        const fromNormalized = String(from || '').trim().toLowerCase();
-        const toNormalized = String(to || '').trim().toLowerCase();
-        const startResolvedName = String((startBuilding && startBuilding.name) || '').trim().toLowerCase();
-        const endResolvedName = String((endBuilding && endBuilding.name) || '').trim().toLowerCase();
-
-        const usedFuzzyMatch = {
-            from: startIsStop
-                ? false
-                : fromNormalized !== startResolvedName,
-            to: endIsStop
-                ? false
-                : toNormalized !== endResolvedName
-        };
 
         // Save to recent navigations and recent searches
         if (typeof saveRecentNavigation === 'function') saveRecentNavigation(startBuilding, endBuilding);
@@ -2014,12 +2217,15 @@ function setNavigationFromStop(stopId, targetInput = 'to') {
 
 // Fuzzy search for building using Fuse.js
 function findBuildingFuzzy(searchTerm) {
+    if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length < 2) {
+        return null;
+    }
     if (!window.fuse || !window.fuseReady) {
         console.warn('Fuse.js not ready for building search');
         return null;
     }
 
-    const results = window.fuse.search(searchTerm);
+    const results = window.fuse.search(searchTerm.trim());
     if (results.length > 0) {
         return results[0].item; // Return the best match
     }
@@ -2147,9 +2353,21 @@ function showNavigationAutocomplete(inputElement, query) {
 
             // Set the selected place variable (may be building or stop by name)
             if (isFromInput) {
-                selectedFromBuilding = item.name.toLowerCase();
+                if (item.category === 'stop' && (item.id || item.number)) {
+                    selectedFromStop = String(item.id || item.number);
+                    selectedFromBuilding = null;
+                } else {
+                    selectedFromBuilding = item.name.toLowerCase();
+                    selectedFromStop = null;
+                }
             } else {
-                selectedToBuilding = item.name.toLowerCase();
+                if (item.category === 'stop' && (item.id || item.number)) {
+                    selectedToStop = String(item.id || item.number);
+                    selectedToBuilding = null;
+                } else {
+                    selectedToBuilding = item.name.toLowerCase();
+                    selectedToStop = null;
+                }
             }
 
             // Track navigation place selection
@@ -2277,39 +2495,108 @@ function findClosestStop(targetLat, targetLng) {
 }
 
 // Resolve an input string to a place object (building or stop)
-function resolvePlaceByName(inputName) {
+function resolvePlaceByName(inputName, allowFuzzy = false) {
     if (!inputName) return null;
     const normalized = String(inputName).trim().toLowerCase();
+    if (!normalized) return null;
 
-    // Exact building match (by normalized key)
+    // 1. Exact building match (by normalized key)
     if (typeof buildingIndex !== 'undefined' && buildingIndex && buildingIndex[normalized]) {
         return buildingIndex[normalized];
     }
 
-    // Exact stop match (case-insensitive by name)
-    if (typeof stopsData !== 'undefined' && stopsData) {
-        for (const stopId in stopsData) {
-        const stop = stopsData[stopId];
-        if (String(stop.name || '').trim().toLowerCase() === normalized) {
-            return {
-                name: stop.name,
-                lat: stop.latitude,
-                lng: stop.longitude,
-                id: parseInt(stopId, 10),
-                category: 'stop'
-            };
+    // 2. Exact building match (by building name property)
+    if (typeof buildingIndex !== 'undefined' && buildingIndex) {
+        for (const key in buildingIndex) {
+            const b = buildingIndex[key];
+            if (b && b.name && b.name.toLowerCase() === normalized) {
+                return b;
+            }
         }
     }
-}
 
-    // Fuzzy building match via Fuse.js
-    const fuzzyBuilding = findBuildingFuzzy(inputName);
-    if (fuzzyBuilding) {
-        return fuzzyBuilding;
+    // 3. Exact stop match (case-insensitive by name or stop ID)
+    if (typeof stopsData !== 'undefined' && stopsData) {
+        for (const stopId in stopsData) {
+            const stop = stopsData[stopId];
+            if (!stop) continue;
+            if (String(stopId).toLowerCase() === normalized ||
+                String(stop.name || '').trim().toLowerCase() === normalized ||
+                String(stop.shortName || '').trim().toLowerCase() === normalized ||
+                String(stop.shorterName || '').trim().toLowerCase() === normalized ||
+                String(stop.mainName || '').trim().toLowerCase() === normalized) {
+                return {
+                    name: stop.name,
+                    lat: stop.latitude,
+                    lng: stop.longitude,
+                    id: parseInt(stopId, 10),
+                    category: 'stop'
+                };
+            }
+        }
+    }
+
+    // 4. Exact stop match across all campuses stops data
+    if (typeof allStopsData !== 'undefined' && allStopsData) {
+        for (const campus in allStopsData) {
+            const campusStops = allStopsData[campus];
+            if (!campusStops) continue;
+            for (const stopId in campusStops) {
+                const stop = campusStops[stopId];
+                if (!stop) continue;
+                if (String(stopId).toLowerCase() === normalized ||
+                    String(stop.name || '').trim().toLowerCase() === normalized ||
+                    String(stop.shortName || '').trim().toLowerCase() === normalized ||
+                    String(stop.shorterName || '').trim().toLowerCase() === normalized ||
+                    String(stop.mainName || '').trim().toLowerCase() === normalized) {
+                    return {
+                        name: stop.name,
+                        lat: stop.latitude,
+                        lng: stop.longitude,
+                        id: parseInt(stopId, 10),
+                        category: 'stop'
+                    };
+                }
+            }
+        }
+    }
+
+    // 5. Exact abbreviation lookup via precomputed abbrevMap
+    if (typeof abbrevMap !== 'undefined' && abbrevMap && typeof abbrevMap.has === 'function' && abbrevMap.has(normalized)) {
+        const matches = abbrevMap.get(normalized);
+        if (matches && matches.length > 0 && matches[0].item) {
+            return matches[0].item;
+        }
+    }
+
+    // 6. Exact name, abbreviation, or alias match via buildingList
+    const list = (typeof window !== 'undefined' && window.buildingList) || (typeof buildingList !== 'undefined' ? buildingList : null);
+    if (list && Array.isArray(list)) {
+        for (const item of list) {
+            if (!item) continue;
+            if (item.name && item.name.toLowerCase() === normalized) {
+                return item;
+            }
+            if (Array.isArray(item.abbreviations) && item.abbreviations.some(a => String(a).toLowerCase() === normalized)) {
+                return item;
+            }
+            if (Array.isArray(item.aliases) && item.aliases.some(a => String(a).toLowerCase() === normalized)) {
+                return item;
+            }
+        }
+    }
+
+    // 7. Fuzzy building match via Fuse.js (only when explicitly requested and query is meaningful)
+    if (allowFuzzy && normalized.length >= 2) {
+        const fuzzyBuilding = findBuildingFuzzy(inputName);
+        if (fuzzyBuilding) {
+            return fuzzyBuilding;
+        }
     }
 
     return null;
 }
+window.resolvePlaceByName = resolvePlaceByName;
 
 // Find bus routes that connect two stops
 function findConnectingRoutes(startStopId, endStopId) {
@@ -3405,14 +3692,15 @@ function formatRouteLabelColored(routeName) {
 
 // Load road names for walking segments and update the UI (non-blocking)
 function loadWalkingRoadNames(startBuilding, endBuilding, startStop, endStop, startIsStop, endIsStop) {
-    const hasStartWalk = !!(startBuilding && startStop && (!startIsStop || String(startBuilding.id) !== String(startStop.id)));
-    const hasEndWalk = !!(endBuilding && endStop && (!endIsStop || String(endBuilding.id) !== String(endStop.id)));
+    const isDirectWalk = !startStop && !endStop && startBuilding && endBuilding;
+    const hasStartWalk = isDirectWalk || !!(startBuilding && startStop && (!startIsStop || String(startBuilding.id) !== String(startStop.id)));
+    const hasEndWalk = !isDirectWalk && !!(endBuilding && endStop && (!endIsStop || String(endBuilding.id) !== String(endStop.id)));
 
     // Run pathfinding in background without blocking UI
     Promise.all([
         // Start walking segment pathfinding
         hasStartWalk ? 
-            loadStartWalkingRoads(startBuilding, startStop) : Promise.resolve(),
+            (isDirectWalk ? loadStartWalkingRoads(startBuilding, endBuilding) : loadStartWalkingRoads(startBuilding, startStop)) : Promise.resolve(),
         
         // End walking segment pathfinding  
         hasEndWalk ? 
@@ -3427,8 +3715,12 @@ function loadWalkingRoadNames(startBuilding, endBuilding, startStop, endStop, st
 // Helper function to load start walking road names
 async function loadStartWalkingRoads(startBuilding, startStop) {
     try {
-        const startCoord = [startBuilding.lng, startBuilding.lat];
-        const stopCoord = [startStop.longitude, startStop.latitude];
+        const startLng = (typeof startBuilding.lng !== 'undefined') ? startBuilding.lng : startBuilding.longitude;
+        const startLat = (typeof startBuilding.lat !== 'undefined') ? startBuilding.lat : startBuilding.latitude;
+        const stopLng = (typeof startStop.longitude !== 'undefined') ? startStop.longitude : startStop.lng;
+        const stopLat = (typeof startStop.latitude !== 'undefined') ? startStop.latitude : startStop.lat;
+        const startCoord = [startLng, startLat];
+        const stopCoord = [stopLng, stopLat];
         
         if (NAV_DEBUG) console.log('Start walking path coordinates:', { startCoord, stopCoord });
         
@@ -3656,7 +3948,7 @@ function filterTransferRoutesForDisplay(routesForDisplay, routeCombosMap, routeD
         return !!(entry.isTransfer || (entry.route && (entry.route.isTransfer || (entry.route.leg1 && entry.route.leg2))));
     };
 
-    const directRoutes = routesForDisplay.filter(e => !isTransferEntry(e));
+    const directRoutes = routesForDisplay.filter(e => !isTransferEntry(e) && !e.isWalk && !(e.route && e.route.isWalk));
     const transferRoutes = routesForDisplay.filter(e => isTransferEntry(e));
 
     // If there are no direct routes or no transfer routes, nothing to filter
@@ -3719,6 +4011,7 @@ function sortRoutesForDisplay(routesForDisplay) {
             return a.journeyMinutes - b.journeyMinutes;
         }
         const getStops = (entry) => {
+            if (entry.isWalk || (entry.route && entry.route.isWalk)) return 0;
             if (entry.route && entry.route.isTransfer) {
                 const s1 = (entry.route.leg1?.routeDetails?.stopsInOrder?.length) || (entry.route.leg1?.stops?.length) || 0;
                 const s2 = (entry.route.leg2?.routeDetails?.stopsInOrder?.length) || (entry.route.leg2?.stops?.length) || 0;
@@ -3743,13 +4036,22 @@ function buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex) {
         const isSelected = index === selectedRouteDisplayIndex;
         const route = entry.route;
         const isTransfer = !!(route.isTransfer || entry.isTransfer);
+        const isWalk = !!(route.isWalk || entry.isWalk);
         const routeKey = route.name.toLowerCase();
         const label = entry.displayName;
 
         let style = '';
         let labelHtml = '';
 
-        if (isTransfer) {
+        if (isWalk) {
+            if (isSelected) {
+                style = `background-color: var(--theme-accent); color: white; border-color: transparent !important;`;
+                labelHtml = `<span class="route-option-label" style="color: white; font-weight: 700;"><i class="fa-solid fa-person-walking" style="margin-right: 0.35rem; color: white;"></i>Walk</span>`;
+            } else {
+                style = `background-color: var(--theme-unselected-route-bg); color: var(--theme-unselected-route-text); border-color: transparent !important;`;
+                labelHtml = `<span class="route-option-label" style="color: var(--theme-unselected-route-text); font-weight: 700;"><i class="fa-solid fa-person-walking" style="margin-right: 0.35rem; color: var(--theme-stops-list-text);"></i>Walk</span>`;
+            }
+        } else if (isTransfer) {
             const l1 = (route.leg1 && route.leg1.route && route.leg1.route.name) || route.name.split('-')[0] || '';
             const l2 = (route.leg2 && route.leg2.route && route.leg2.route.name) || route.name.split('-')[1] || '';
             const color1 = getRouteColor(l1);
@@ -3786,9 +4088,9 @@ function buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex) {
         }
 
         const selectedClass = isSelected ? 'selected' : '';
-        const transferClass = isTransfer ? 'transfer-route' : '';
+        const transferClass = isTransfer ? 'transfer-route' : (isWalk ? 'route-option-walk' : '');
         const hasLive = entry.hasLive;
-        const liveDotHtml = hasLive ? `<span class="nav-route-live-dot" aria-label="Buses in service" title="Buses in service"></span>` : ``;
+        const liveDotHtml = (!isWalk && hasLive) ? `<span class="nav-route-live-dot" aria-label="Buses in service" title="Buses in service"></span>` : ``;
 
         const journeyMinutes = hasLive ? Math.max(1, entry.journeyMinutes) : 0;
         const timeHtml = (hasLive && journeyMinutes > 0) ? `<span class="route-option-time">${journeyMinutes}m</span>` : ``;
@@ -3835,10 +4137,13 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 const rEntry = routesForDisplay[rIdx];
                 $(this).removeClass('selected');
                 const isItemTransfer = rEntry && (rEntry.isTransfer || (rEntry.route && rEntry.route.isTransfer));
-                const itemBorder = isItemTransfer ? 'border-color: transparent !important;' : '';
+                const isItemWalk = rEntry && (rEntry.isWalk || (rEntry.route && rEntry.route.isWalk));
+                const itemBorder = (isItemTransfer || isItemWalk) ? 'border-color: transparent !important;' : '';
                 $(this).attr('style', `background-color: ${defaultBg}; color: ${defaultText}; ${itemBorder}`);
 
-                if (rEntry && (rEntry.isTransfer || (rEntry.route && rEntry.route.isTransfer))) {
+                if (isItemWalk) {
+                    $(this).find('.route-option-label').html(`<i class="fa-solid fa-person-walking" style="margin-right: 0.35rem; color: var(--theme-stops-list-text);"></i>Walk`);
+                } else if (rEntry && (rEntry.isTransfer || (rEntry.route && rEntry.route.isTransfer))) {
                     const l1 = (rEntry.route.leg1 && rEntry.route.leg1.route && rEntry.route.leg1.route.name) || rEntry.route.name.split('-')[0] || '';
                     const l2 = (rEntry.route.leg2 && rEntry.route.leg2.route && rEntry.route.leg2.route.name) || rEntry.route.name.split('-')[1] || '';
                     const c1 = getRouteColor(l1);
@@ -3859,7 +4164,10 @@ function bindNavRouteOptionClicks(routesForDisplay) {
             $(this).addClass('selected');
 
             // Style newly selected pill
-            if (newRoute.isTransfer) {
+            if (newRoute.isWalk) {
+                $(this).attr('style', `background-color: var(--theme-accent); color: white; border-color: transparent !important;`);
+                $(this).find('.route-option-label').html(`<i class="fa-solid fa-person-walking" style="margin-right: 0.35rem; color: white;"></i>Walk`);
+            } else if (newRoute.isTransfer) {
                 const l1 = (newRoute.leg1 && newRoute.leg1.route && newRoute.leg1.route.name) || newRoute.name.split('-')[0] || '';
                 const l2 = (newRoute.leg2 && newRoute.leg2.route && newRoute.leg2.route.name) || newRoute.name.split('-')[1] || '';
                 const c1 = getRouteColor(l1);
@@ -3891,6 +4199,43 @@ function bindNavRouteOptionClicks(routesForDisplay) {
             const newRouteKey = String(newRoute.name || '').toLowerCase();
             const routeCombosMap = routeData.routeCombosMap || {};
             const combo = routeCombosMap[newRouteKey];
+
+            if (newRoute.isWalk) {
+                if (navRouteSession && navRouteSession.routeData) {
+                    navRouteSession.routeData.route = newRoute;
+                    navRouteSession.routeData.startStop = null;
+                    navRouteSession.routeData.transferStop = null;
+                    navRouteSession.routeData.endStop = null;
+                    navRouteSession.routeData.startWalkDistance = (combo && combo.startWalkDistance) || routeData.startWalkDistance;
+                    navRouteSession.routeData.endWalkDistance = null;
+                    navRouteSession.routeData.restoreRouteName = 'walk';
+                    navRouteSession.routeData.selectedTransferLeg1BusName = null;
+                    navRouteSession.routeData.selectedTransferLeg1BusIndex = null;
+                    navRouteSession.routeData.selectedIncomingBusName = null;
+                    navRouteSession.routeData.selectedIncomingBusIndex = null;
+                    navRouteSession.routeData.selectedTransferLeg2BusName = null;
+                    navRouteSession.routeData.selectedTransferLeg2BusIndex = null;
+                }
+
+                setTimeout(() => {
+                    updateRouteDisplay({
+                        startBuilding: routeData.startBuilding,
+                        endBuilding: routeData.endBuilding,
+                        startStop: null,
+                        transferStop: null,
+                        endStop: null,
+                        route: newRoute,
+                        startWalkDistance: (combo && combo.startWalkDistance) || routeData.startWalkDistance,
+                        endWalkDistance: null,
+                        originalInputs: routeData.originalInputs,
+                        startIsStop: routeData.startIsStop,
+                        endIsStop: routeData.endIsStop
+                    });
+
+                    positionGlobalWaypointConnector();
+                }, 0);
+                return;
+            }
 
             const effectiveStartStop = combo && combo.startStop ? combo.startStop : routeData.startStop;
             const effectiveEndStop = combo && combo.endStop ? combo.endStop : routeData.endStop;
@@ -4021,6 +4366,15 @@ function computeRouteEndTime(options) {
         selectedTransferLeg2BusName
     } = options;
 
+    if (route && route.isWalk) {
+        const walkMin = (typeof route.journeyMinutes === 'number' && route.journeyMinutes > 0)
+            ? route.journeyMinutes
+            : ((route.walkMinutes) || (startWalkDistance && typeof startWalkDistance.feet === 'number' ? Math.ceil(startWalkDistance.feet / 220) : (typeof startWalkDistance === 'number' ? Math.ceil(startWalkDistance / 220) : 0)));
+        const now = Date.now();
+        const finalEtaTimestampMs = now + (walkMin * 60 * 1000);
+        return new Date(finalEtaTimestampMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
     if (!route || !startStop || !endStop) return null;
 
     const isTransfer = !!(route.isTransfer || (route.leg1 && route.leg2));
@@ -4110,8 +4464,34 @@ function updateNavBusesDisplay() {
         const routeData = session.routeData;
         const route = routeData.route;
         const startStop = routeData.startStop;
-        const endStop = routeData.endStop;
-        if (!route || !startStop || !endStop) return;
+        if (!route) return;
+
+        if (route.isWalk) {
+            $('.incoming-buses-list').remove();
+            $('.destination-buses-list').remove();
+            $('.transfer-buses-container').remove();
+            const endTimeStr = computeRouteEndTime({
+                route,
+                startWalkDistance: routeData.startWalkDistance
+            });
+            const $endRow = $('.waypoint-row[data-waypoint-role="end_building"]');
+            if ($endRow.length > 0) {
+                const desc = endTimeStr ? `End here at ${endTimeStr}` : 'End here';
+                const $desc = $endRow.find('.waypoint-description');
+                if ($desc.length > 0) {
+                    $desc.text(desc);
+                } else {
+                    $endRow.find('.waypoint-header').append(`<div class="waypoint-description">${desc}</div>`);
+                }
+            }
+            if (typeof updateNavInfoBanners === 'function') {
+                updateNavInfoBanners(route, routeData.selectedRouteDisplayIndex, routeData.routesForDisplay);
+            }
+            positionGlobalWaypointConnector();
+            return;
+        }
+
+        if (!startStop || !endStop) return;
 
         const walkSeconds = routeData.startWalkDistance ? getStartWalkSeconds(routeData.startWalkDistance) : 0;
 
@@ -4404,6 +4784,10 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
             let statusChanged = false;
             let timeChanged = false;
             routesForDisplay.forEach(entry => {
+                if (entry.isWalk || (entry.route && entry.route.isWalk)) {
+                    entry.hasLive = true;
+                    return;
+                }
                 const rName = String(entry.route.name || '').toLowerCase();
                 const dName = entry.displayName;
                 const isLive = emptiedList.includes(rName) ? false : navRouteHasLiveBuses(rName, dName);
@@ -4465,6 +4849,68 @@ function renderTimelineWaypointsHtml(data) {
         startIsStop = false,
         endIsStop = false
     } = data;
+
+    if (route && route.isWalk) {
+        const walkMin = (typeof route.journeyMinutes === 'number' && route.journeyMinutes > 0)
+            ? route.journeyMinutes
+            : (route.walkMinutes || (startWalkDistance && typeof startWalkDistance.feet === 'number' ? Math.ceil(startWalkDistance.feet / 220) : (typeof startWalkDistance === 'number' ? Math.ceil(startWalkDistance / 220) : 0)));
+        const walkFeet = Math.round((startWalkDistance && typeof startWalkDistance.feet === 'number') ? startWalkDistance.feet : (typeof startWalkDistance === 'number' ? startWalkDistance : (route.totalWalkingFeet || 0)));
+        const endTimeStr = computeRouteEndTime({
+            route,
+            startWalkDistance: startWalkDistance || walkFeet
+        });
+        const endBuildingDesc = endTimeStr ? `End here at ${endTimeStr}` : 'End here';
+        const startLat = startBuilding ? (typeof startBuilding.lat !== 'undefined' ? startBuilding.lat : startBuilding.latitude) : null;
+        const startLng = startBuilding ? (typeof startBuilding.lng !== 'undefined' ? startBuilding.lng : startBuilding.longitude) : null;
+        const endLat = endBuilding ? (typeof endBuilding.lat !== 'undefined' ? endBuilding.lat : endBuilding.latitude) : null;
+        const endLng = endBuilding ? (typeof endBuilding.lng !== 'undefined' ? endBuilding.lng : endBuilding.longitude) : null;
+        const mapsBtn = (startLat && startLng && endLat && endLng) ? getWalkingMapsButtonHtml(startLat, startLng, endLat, endLng) : '';
+
+        const startName = (startBuilding && startBuilding.name) || 'Start';
+        const endName = (endBuilding && endBuilding.name) || 'End';
+
+        return `
+            <div class="waypoint-row clickable-waypoint building-row" data-waypoint-role="start_building" data-waypoint-index="0" data-waypoint-type="${startIsStop ? 'stop' : 'building'}" data-waypoint-name="${startName}" data-is-boarding="false" data-is-transfer="false" data-is-alighting="false">
+                <div class="waypoint-circle building-circle">
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div class="waypoint-content" style="margin-left: 0.75rem;">
+                    <div class="waypoint-header">
+                        <h4 class="waypoint-title" style="user-select: none;">${startName} <i class="fa-duotone fa-solid fa-right" style="--fa-primary-color: var(--theme-link); --fa-secondary-color: color-mix(in srgb, var(--theme-link) 70%, white);"></i></h4>
+                        <div class="waypoint-description">Start here</div>
+                    </div>
+                </div>
+            </div>
+            <div class="waypoint-emoji waypoint-travel-walk">
+                <div class="waypoint-travel-row">
+                    <div class="waypoint-travel-header">
+                        <div class="waypoint-circle"><i class="fa-solid fa-person-walking"></i></div>
+                        <span class="travel-time">${walkMin}m</span>
+                        <span class="walking-info">Walk ${walkFeet.toLocaleString()} ft to destination</span>
+                    </div>
+                    ${mapsBtn}
+                </div>
+                <div class="walking-roads-wrapper">
+                    <div class="walking-roads-list" id="start-walking-roads">
+                        <div class="roads-sequence" style="font-size: 1.1rem;">
+                            <span style="color: var(--theme-color-lighter); font-weight: 500; animation: navPulse 1s ease-in-out infinite;">Loading road names...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="waypoint-row clickable-waypoint building-row" data-waypoint-role="end_building" data-waypoint-index="1" data-waypoint-type="${endIsStop ? 'stop' : 'building'}" data-waypoint-name="${endName}" data-is-boarding="false" data-is-transfer="false" data-is-alighting="false">
+                <div class="waypoint-circle building-circle">
+                    <i class="fa-solid fa-flag-checkered"></i>
+                </div>
+                <div class="waypoint-content" style="margin-left: 0.75rem;">
+                    <div class="waypoint-header">
+                        <h4 class="waypoint-title" style="user-select: none;">${endName} <i class="fa-duotone fa-solid fa-right" style="--fa-primary-color: var(--theme-link); --fa-secondary-color: color-mix(in srgb, var(--theme-link) 70%, white);"></i></h4>
+                        <div class="waypoint-description">${endBuildingDesc}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     const isTransfer = !!(route && route.isTransfer);
     const leg1 = isTransfer ? route.leg1 : null;
@@ -4842,14 +5288,15 @@ function displayRoute(routeData) {
             return n.startsWith('wknd');
         };
 
-        const baseRoutes = allRoutes.filter(r => !isExcluded(r) && (r.isTransfer || !isWknd(r.name)));
-        const wkndRoutes = allRoutes.filter(r => !r.isTransfer && !isExcluded(r) && isWknd(r.name));
+        const baseRoutes = allRoutes.filter(r => !isExcluded(r) && (r.isTransfer || r.isWalk || !isWknd(r.name)));
+        const wkndRoutes = allRoutes.filter(r => !r.isTransfer && !r.isWalk && !isExcluded(r) && isWknd(r.name));
 
         // Build display entries for base routes
         routesForDisplay = baseRoutes.map(r => ({
             route: r,
             displayName: r.displayName || r.name.toUpperCase(),
-            isTransfer: !!r.isTransfer
+            isTransfer: !!r.isTransfer,
+            isWalk: !!r.isWalk
         }));
 
         // Group weekend variants by suffix (e.g., 1, 2)
@@ -4874,6 +5321,16 @@ function displayRoute(routeData) {
 
         // Compute journey time and active bus status for each candidate route
         routesForDisplay.forEach(entry => {
+            if (entry.isWalk || (entry.route && entry.route.isWalk)) {
+                entry.isWalk = true;
+                entry.hasLive = true;
+                const walkMin = (typeof entry.route.journeyMinutes === 'number' && entry.route.journeyMinutes > 0)
+                    ? entry.route.journeyMinutes
+                    : (entry.route.walkMinutes || 0);
+                entry.journeyMinutes = walkMin;
+                entry.walkMinutes = walkMin;
+                return;
+            }
             const rKey = entry.route.name.toLowerCase();
             const combo = routeCombosMap[rKey];
             const hasLive = navRouteHasLiveBuses(entry.route.name, entry.displayName);
@@ -4881,6 +5338,17 @@ function displayRoute(routeData) {
             entry.journeyMinutes = hasLive ? calculateOptionJourneyMinutes(entry.route, combo, routeData) : 0;
             entry.walkMinutes = calculateOptionWalkMinutes(entry.route, combo, routeData);
         });
+
+        // Filter walk option if not appropriate
+        const walkEntry = routesForDisplay.find(e => e.isWalk || (e.route && e.route.isWalk));
+        if (walkEntry) {
+            const busOptions = routesForDisplay.filter(e => !e.isWalk && !(e.route && e.route.isWalk));
+            const walkMin = walkEntry.journeyMinutes || walkEntry.walkMinutes;
+            const walkDist = (walkEntry.route && walkEntry.route.totalWalkingFeet) || (walkEntry.route && walkEntry.route.walkDistance && walkEntry.route.walkDistance.feet) || (walkMin * 220);
+            if (!shouldIncludeWalkOption(walkMin, walkDist, busOptions)) {
+                routesForDisplay = routesForDisplay.filter(e => e !== walkEntry);
+            }
+        }
 
         // Filter transfer routes: only show transfer options that have a shorter
         // total time than the slowest direct route, or considerably less walking.
@@ -4903,7 +5371,13 @@ function displayRoute(routeData) {
             const primaryEntry = routesForDisplay[selectedRouteDisplayIndex];
             const primaryKey = primaryEntry.route.name.toLowerCase();
             const primaryCombo = routeCombosMap[primaryKey];
-            if (primaryCombo) {
+            if (primaryEntry.isWalk || (primaryEntry.route && primaryEntry.route.isWalk)) {
+                route = primaryEntry.route;
+                startStop = null;
+                endStop = null;
+                startWalkDistance = (primaryCombo && primaryCombo.startWalkDistance) || (primaryEntry.route && primaryEntry.route.walkDistance) || startWalkDistance;
+                endWalkDistance = null;
+            } else if (primaryCombo) {
                 if (primaryEntry.route.isTransfer || primaryCombo.isTransfer) {
                     startStop = primaryCombo.startStop;
                     const transferStop = primaryCombo.transferStop;
@@ -4937,17 +5411,33 @@ function displayRoute(routeData) {
             }
         }
     } else if (allRoutes.length === 1) {
-        const rName = String((allRoutes[0] && allRoutes[0].name) || '').toLowerCase();
-        if (rName !== 'on1' && rName !== 'on2' && !rName.startsWith('on')) {
+        if (allRoutes[0].isWalk) {
             routesForDisplay = [{
                 route: allRoutes[0],
-                displayName: allRoutes[0].displayName || allRoutes[0].name.toUpperCase(),
-                isTransfer: !!allRoutes[0].isTransfer,
-                hasLive: navRouteHasLiveBuses(allRoutes[0].name),
-                journeyMinutes: navRouteHasLiveBuses(allRoutes[0].name) ? calculateOptionJourneyMinutes(allRoutes[0], null, routeData) : 0,
-                walkMinutes: calculateOptionWalkMinutes(allRoutes[0], null, routeData)
+                displayName: 'Walk',
+                isTransfer: false,
+                isWalk: true,
+                hasLive: true,
+                journeyMinutes: allRoutes[0].journeyMinutes || (typeof allRoutes[0].walkMinutes === 'number' ? allRoutes[0].walkMinutes : 0),
+                walkMinutes: allRoutes[0].walkMinutes || 0
             }];
             selectedRouteDisplayIndex = 0;
+            route = allRoutes[0];
+            startStop = null;
+            endStop = null;
+        } else {
+            const rName = String((allRoutes[0] && allRoutes[0].name) || '').toLowerCase();
+            if (rName !== 'on1' && rName !== 'on2' && !rName.startsWith('on')) {
+                routesForDisplay = [{
+                    route: allRoutes[0],
+                    displayName: allRoutes[0].displayName || allRoutes[0].name.toUpperCase(),
+                    isTransfer: !!allRoutes[0].isTransfer,
+                    hasLive: navRouteHasLiveBuses(allRoutes[0].name),
+                    journeyMinutes: navRouteHasLiveBuses(allRoutes[0].name) ? calculateOptionJourneyMinutes(allRoutes[0], null, routeData) : 0,
+                    walkMinutes: calculateOptionWalkMinutes(allRoutes[0], null, routeData)
+                }];
+                selectedRouteDisplayIndex = 0;
+            }
         }
     }
 
@@ -5368,6 +5858,33 @@ function computeRouteTripStats(r, combo, routeData) {
     const startIsStop = !!(rd && rd.startIsStop);
     const endIsStop = !!(rd && rd.endIsStop);
 
+    if (r && r.isWalk) {
+        const rawWalk = (combo && typeof combo.startWalkDistance !== 'undefined')
+            ? combo.startWalkDistance
+            : ((r && typeof r.startWalkDistance !== 'undefined') ? r.startWalkDistance : (rd && rd.startWalkDistance));
+        const walkMin = (typeof r.journeyMinutes === 'number' && r.journeyMinutes > 0)
+            ? r.journeyMinutes
+            : (r.walkMinutes || (rawWalk && typeof rawWalk.feet === 'number' ? Math.ceil(rawWalk.feet / 220) : (typeof rawWalk === 'number' ? Math.ceil(rawWalk / 220) : 0)));
+        const totalFeet = (rawWalk && typeof rawWalk.feet === 'number') ? rawWalk.feet : (typeof rawWalk === 'number' ? rawWalk : (r.totalWalkingFeet || 0));
+        const roundedFeet = totalFeet <= 300 ? Math.round(totalFeet) : Math.ceil(totalFeet / 100) * 100;
+        let walkDistanceText = '';
+        if (roundedFeet >= 5280) {
+            walkDistanceText = `${(roundedFeet / 5280).toFixed(1)} mi`;
+        } else {
+            walkDistanceText = `${roundedFeet.toLocaleString()} ft`;
+        }
+        return {
+            walkMinutes: walkMin,
+            walkDistanceText,
+            waitMinutes: 0,
+            hasLiveWait: false,
+            busMinutes: 0,
+            busStopsText: 'Direct walk',
+            isTransfer: false,
+            isWalk: true
+        };
+    }
+
     const startStop = (combo && combo.startStop) || (r && r.startStop) || (rd && rd.startStop) || null;
     const endStop = (combo && combo.endStop) || (r && r.endStop) || (rd && rd.endStop) || null;
 
@@ -5543,12 +6060,14 @@ function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
         $('#nav-stat-walk .nav-route-stat-sub').text(stats.walkDistanceText);
 
         $('#nav-stat-wait .nav-route-stat-val').text(stats.hasLiveWait ? `${stats.waitMinutes}m` : '--');
-        const waitSubText = (stats.isTransfer || (curRoute && (curRoute.isTransfer || (curRoute.leg1 && curRoute.leg2))))
-            ? 'Shortest total wait'
-            : 'Shortest wait';
+        const waitSubText = stats.isWalk
+            ? 'No wait'
+            : ((stats.isTransfer || (curRoute && (curRoute.isTransfer || (curRoute.leg1 && curRoute.leg2))))
+                ? 'Shortest total wait'
+                : 'Shortest wait');
         $('#nav-stat-wait .nav-route-stat-sub').text(waitSubText);
 
-        $('#nav-stat-bus .nav-route-stat-val').text(`${stats.busMinutes}m`);
+        $('#nav-stat-bus .nav-route-stat-val').text(stats.isWalk ? '--' : `${stats.busMinutes}m`);
         $('#nav-stat-bus .nav-route-stat-sub').text(stats.busStopsText);
 
         $('.nav-route-stats-bar').removeClass('none');
@@ -5564,7 +6083,7 @@ function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
     const hasTransfer = !!(curRoute && (curRoute.isTransfer || (curRoute.leg1 && curRoute.leg2)));
     if (hasTransfer && directionsVisible && curRoutes && curRoutes.length > 0) {
         const isTransferEntry = (e) => !!(e.isTransfer || (e.route && (e.route.isTransfer || (e.route.leg1 && e.route.leg2))));
-        const directRoutes = curRoutes.filter(e => !isTransferEntry(e));
+        const directRoutes = curRoutes.filter(e => !isTransferEntry(e) && !e.isWalk && !(e.route && e.route.isWalk));
 
         if (directRoutes.length === 0) {
             showTransferWarning = true;
@@ -5673,7 +6192,8 @@ function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
 
     // 3. Substantially more walking banner ("Although this path may be faster than other routes, it may contain substantially more walking.")
     let hasSubstantiallyMoreWalking = false;
-    if (curRoutes && curRoutes.length > 1 && directionsVisible) {
+    const isCurWalk = !!(curRoute && curRoute.isWalk);
+    if (!isCurWalk && curRoutes && curRoutes.length > 1 && directionsVisible) {
         const curEntry = curRoutes[curIndex] || curRoutes.find(e => e.route && curRoute && e.route.name === curRoute.name);
         if (curEntry) {
             let curWalk = (typeof curEntry.walkMinutes === 'number') ? curEntry.walkMinutes : 0;
@@ -5700,9 +6220,9 @@ function updateNavInfoBanners(route, selectedIndex, routesForDisplay) {
                 return false;
             };
 
-            // Exclude weekend route walking times from the comparison times
+            // Exclude weekend route walking times and pure walking routes from the comparison times
             const otherWalks = curRoutes
-                .filter(e => e !== curEntry && !isWeekendNavRoute(e))
+                .filter(e => e !== curEntry && !isWeekendNavRoute(e) && !e.isWalk && !(e.route && e.route.isWalk))
                 .map(e => {
                     let w = (typeof e.walkMinutes === 'number') ? e.walkMinutes : 0;
                     if (!w && typeof calculateOptionWalkMinutes === 'function') {
