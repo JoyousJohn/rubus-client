@@ -105,16 +105,17 @@ function isBreaksRevealed(busName) {
     return breaksRevealedForBus !== null && breaksRevealedForBus === busName;
 }
 
-// Buses with 3+ missed stops get a warning prefix on the prompt, and tapping
-// it expands all stops immediately instead of just recent breaks.
+// Buses that missed >25% of their recent stops get a warning prefix on the
+// prompt, and tapping expands all stops immediately instead of just recent
+// breaks.
 let frequentSkipperBuses = {};
 
-function updateBreaksPrompt(busName, missedCount) {
+function updateBreaksPrompt(busName, isFrequentSkipper) {
     if (isBreaksRevealed(busName)) return; // prompt already gone
     const cur = (typeof popupBusName !== 'undefined' && popupBusName) ? popupBusName : null;
     if (cur && cur !== busName) return; // stale fetch for a previous bus
     const $prompt = $('.show-breaks-prompt');
-    if (missedCount >= 3) {
+    if (isFrequentSkipper) {
         $prompt.html('<span style="color: #f84949">This bus frequently skips stops:</span> Show past breaks &amp; stops');
     } else {
         $prompt.text('Show past breaks & stops');
@@ -267,8 +268,20 @@ function populateBusBreaks(busBreakData, busName) {
     if (missedStops.length > 0) {
         console.log(`Bus ${busName} (${busData[busName]?.busName}) missed ${missedStops.length} stops:`, missedStops.map(stopId => stopsData[stopId]?.name || stopId));
     }
-    frequentSkipperBuses[busName] = missedStops.length >= 3;
-    updateBreaksPrompt(busName, missedStops.length);
+    // Frequent-skipper detection uses the most recent N stops (a stop count,
+    // not a time window — routes have different times between stops). Only
+    // stops from the bus's most recent route segment count toward the sample,
+    // so a mid-history route change never lets the prior route's (missing)
+    // stops pollute the ratio.
+    const FREQUENT_SKIPPER_SAMPLE_STOPS = 30;
+    const lastRouteIdx = chronList.map(s => s.isRouteChange ? 1 : 0).lastIndexOf(1);
+    const currentSegment = lastRouteIdx === -1 ? chronList : chronList.slice(lastRouteIdx + 1);
+    const recentStops = currentSegment.filter(s => !s.isRouteChange).slice(-FREQUENT_SKIPPER_SAMPLE_STOPS);
+    const recentMissed = recentStops.filter(s => s.isMissed).length;
+    const missedRatio = recentStops.length > 0 ? recentMissed / recentStops.length : 0;
+    const isFrequentSkipper = missedRatio > 0.25;
+    frequentSkipperBuses[busName] = isFrequentSkipper;
+    updateBreaksPrompt(busName, isFrequentSkipper);
 
     for (const stopData of allStopsToShow) {
         let extraClass = '';
