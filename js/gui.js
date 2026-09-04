@@ -3473,6 +3473,7 @@ function handleNearestStop(fly) {
                 } else {
                     userPosition = newPosition; // Update the userPosition after animation completes
                     updateNearestStop();
+                    populateMeClosestStops();
                 }
             };
 
