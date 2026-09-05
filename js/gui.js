@@ -3931,7 +3931,7 @@ async function getBuildNumber() {
         const lastPage = parseInt(metaBuildNum, 10);
         currentBuildNumber = lastPage;
         const dateStr = (metaBuildDate && metaBuildDate !== '__BUILD_DATE__') ? ` (${metaBuildDate})` : '';
-        $('.build-number').html(`Alpha ${lastPage - 473} <span style="color:var(--theme-extra)">//</span> b${lastPage.toLocaleString()}${dateStr}`);
+        $('.build-number').html(`Alpha ${lastPage - 473} <span style="color:var(--theme-extra)">//</span> b${lastPage}${dateStr}`);
         updateChangelogNewBadge();
 
         const $toast = $('#update-toast');
@@ -3966,7 +3966,7 @@ async function getBuildNumber() {
                 if (match) {
                     const lastPage = parseInt(match[1], 10);
                     currentBuildNumber = lastPage;
-                    $('.build-number').html(`Alpha ${lastPage - 473} <span style="color:var(--theme-extra)">//</span> b${lastPage.toLocaleString()} (${commitDate})`);
+                    $('.build-number').html(`Alpha ${lastPage - 473} <span style="color:var(--theme-extra)">//</span> b${lastPage} (${commitDate})`);
                     // Show the changelog "NEW" badge only when the build has advanced
                     // past the one the user last opened the changelog on.
                     updateChangelogNewBadge();

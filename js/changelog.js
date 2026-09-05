@@ -258,7 +258,8 @@ function renderChangelog() {
             const $existingUl = $existingDateContainer.find('.changelog-items');
 
             newCommits.forEach(c => {
-                const commitLink = c.url ? `<a href="${c.url}" target="_blank" rel="noopener noreferrer" class="changelog-link">${c.message}</a>` : c.message;
+                const escMsg = escapeHtml(c.message);
+                const commitLink = c.url ? `<a href="${c.url}" target="_blank" rel="noopener noreferrer" class="changelog-link">${escMsg}</a>` : escMsg;
                 const $li = $(`<li class="changelog-message">${commitLink}</li>`);
                 $li.hide();
                 $existingUl.append($li);
@@ -292,7 +293,8 @@ function renderChangelog() {
             });
 
             newCommits.forEach(c => {
-                const commitLink = c.url ? `<a href="${c.url}" target="_blank" rel="noopener noreferrer" class="changelog-link">${c.message}</a>` : c.message;
+                const escMsg = escapeHtml(c.message);
+                const commitLink = c.url ? `<a href="${c.url}" target="_blank" rel="noopener noreferrer" class="changelog-link">${escMsg}</a>` : escMsg;
                 const $li = $(`<li class="changelog-message">${commitLink}</li>`);
                 $ul.append($li);
             });
