@@ -302,11 +302,29 @@
     font-weight: 500;
     font-size: 1.5rem;
     line-height: 1;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 0.4rem;
     user-select: none;
-    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s ease;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.route-changes-heading:hover {
+    color: var(--theme-color);
+}
+
+.route-changes-heading.active {
+    color: var(--theme-color);
+    font-weight: 700;
+}
+
+.route-changes-sort-icon {
+    font-size: 1.2rem;
+    line-height: 1;
 }
 
 .route-changes-header-divider {
@@ -328,6 +346,13 @@
     font-weight: 600;
     display: flex;
     align-items: center;
+}
+
+.route-changes-arrow {
+    color: var(--theme-extra);
+    padding: 0 0.3rem;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .route-changes-time {

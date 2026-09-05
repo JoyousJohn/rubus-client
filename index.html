@@ -1384,9 +1384,18 @@
                                     <div class="route-changes-wrapper none">
                                         <div class="route-changes-title text-1p7rem">Route Changes</div>
                                         <div class="route-changes-grid grid select-none">
-                                            <div class="route-changes-heading"><span>BUS</span></div>
-                                            <div class="route-changes-heading"><span>CHANGE</span></div>
-                                            <div class="route-changes-heading"><span>TIME</span></div>
+                                            <div class="route-changes-heading route-changes-heading-bus pointer active" onclick="toggleRouteChangesSort('bus')">
+                                                <span>BUS</span>
+                                                <i class="route-changes-sort-icon route-changes-sort-icon-bus fa-solid fa-chevron-down"></i>
+                                            </div>
+                                            <div class="route-changes-heading route-changes-heading-change pointer" onclick="toggleRouteChangesSort('change')">
+                                                <span>CHANGE</span>
+                                                <i class="route-changes-sort-icon route-changes-sort-icon-change fa-solid fa-chevron-down none"></i>
+                                            </div>
+                                            <div class="route-changes-heading route-changes-heading-time pointer" onclick="toggleRouteChangesSort('time')">
+                                                <span>TIME</span>
+                                                <i class="route-changes-sort-icon route-changes-sort-icon-time fa-solid fa-chevron-down none"></i>
+                                            </div>
                                             <div class="route-changes-header-divider"></div>
                                         </div>
                                     </div>

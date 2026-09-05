@@ -2255,6 +2255,39 @@ function updateBusServiceTime() {
 let routeChangesCache = { data: null, timestamp: 0 };
 const ROUTE_CHANGES_CACHE_MS = 60 * 1000;
 
+let routeChangesSortColumn = 'time';
+let routeChangesSortDirection = 'desc';
+
+function updateRouteChangesSortHeaders() {
+    const cols = ['bus', 'change', 'time'];
+    const chevronClass = routeChangesSortDirection === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down';
+
+    cols.forEach(col => {
+        const $heading = $(`.route-changes-heading-${col}`);
+        const $icon = $(`.route-changes-sort-icon-${col}`);
+        if (routeChangesSortColumn === col) {
+            $heading.addClass('active');
+            $icon.removeClass('none fa-chevron-up fa-chevron-down').addClass(chevronClass);
+        } else {
+            $heading.removeClass('active');
+            $icon.addClass('none');
+        }
+    });
+}
+
+function toggleRouteChangesSort(column) {
+    if (routeChangesSortColumn === column) {
+        routeChangesSortDirection = routeChangesSortDirection === 'desc' ? 'asc' : 'desc';
+    } else {
+        routeChangesSortColumn = column;
+        routeChangesSortDirection = column === 'time' ? 'desc' : 'asc';
+    }
+    if (routeChangesCache.data) {
+        renderRouteChangesMenu(routeChangesCache.data);
+    }
+}
+window.toggleRouteChangesSort = toggleRouteChangesSort;
+
 function updateRouteChangesMenu() {
     const now = Date.now();
     if (routeChangesCache.data && (now - routeChangesCache.timestamp) < ROUTE_CHANGES_CACHE_MS) {
@@ -2277,6 +2310,8 @@ function renderRouteChangesMenu(allChanges) {
     const $grid = $('.route-changes-grid');
     const $wrapper = $('.route-changes-wrapper');
     if (!$grid.length) return;
+
+    updateRouteChangesSortHeaders();
     $grid.children().not('.route-changes-heading, .route-changes-header-divider').remove();
 
     const rows = [];
@@ -2289,23 +2324,47 @@ function renderRouteChangesMenu(allChanges) {
         $wrapper.hide();
         return;
     }
-    rows.sort((a, b) => new Date(b.time) - new Date(a.time));
+    rows.sort((a, b) => {
+        let cmp = 0;
+        if (routeChangesSortColumn === 'bus') {
+            const labelA = (busData[a.busName] && busData[a.busName].busName) ? busData[a.busName].busName : a.busName;
+            const labelB = (busData[b.busName] && busData[b.busName].busName) ? busData[b.busName].busName : b.busName;
+            cmp = String(labelA).localeCompare(String(labelB), undefined, { numeric: true, sensitivity: 'base' });
+        } else if (routeChangesSortColumn === 'change') {
+            const changeA = String(`${a.oldRoute || '?'}_${a.newRoute || '?'}`).toUpperCase();
+            const changeB = String(`${b.oldRoute || '?'}_${b.newRoute || '?'}`).toUpperCase();
+            cmp = changeA.localeCompare(changeB, undefined, { sensitivity: 'base' });
+        } else {
+            const timeA = new Date(a.time).getTime() || 0;
+            const timeB = new Date(b.time).getTime() || 0;
+            cmp = timeA - timeB;
+        }
+        if (cmp !== 0) {
+            return routeChangesSortDirection === 'asc' ? cmp : -cmp;
+        }
+        return new Date(b.time) - new Date(a.time);
+    });
     $wrapper.show();
 
     rows.slice(0, 30).forEach(row => {
         const busLabel = (busData[row.busName] && busData[row.busName].busName)
             ? busData[row.busName].busName : row.busName;
-        const routeColor = (row.newRoute && colorMappings[row.newRoute])
+        const oldRouteColor = (row.oldRoute && colorMappings[row.oldRoute])
+            ? colorMappings[row.oldRoute] : 'var(--theme-color)';
+        const newRouteColor = (row.newRoute && colorMappings[row.newRoute])
             ? colorMappings[row.newRoute] : 'var(--theme-color)';
         const changeTime = new Date(row.time);
         const timeStr = isNaN(changeTime)
             ? ''
             : changeTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const $busCol = $('<div class="route-changes-bus pointer text-2rem"></div>').css('color', routeColor).text(busLabel);
-        const $changeCol = $('<div class="route-changes-change pointer text-1p6rem"></div>').css('color', routeColor)
-            .text(`${String(row.oldRoute || '?').toUpperCase()} → ${String(row.newRoute || '?').toUpperCase()}`);
+        const $busCol = $('<div class="route-changes-bus pointer text-2rem"></div>').css('color', newRouteColor).text(busLabel);
+        const $changeCol = $('<div class="route-changes-change pointer text-1p6rem"></div>')
+            .append($('<span class="route-changes-old-route"></span>').css('color', oldRouteColor).text(String(row.oldRoute || '?').toUpperCase()))
+            .append($('<span class="route-changes-arrow"></span>').text(' → '))
+            .append($('<span class="route-changes-new-route"></span>').css('color', newRouteColor).text(String(row.newRoute || '?').toUpperCase()));
         const $timeCol = $('<div class="route-changes-time pointer text-2rem"></div>').text(timeStr);
         const onRowClick = function() {
+            if (!isBusShownOnMap(row.busName)) return;
             $('.info-panels-close').trigger('click');
             flyToBus(row.busName);
             selectBusMarker(row.busName);
