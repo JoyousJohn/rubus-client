@@ -1524,7 +1524,9 @@ function updateBusOverview(routes) {
     const routeData = routes.map(route => {
         routeRiderships[route] = 0;
         busesByRoutes[selectedCampus][route].forEach(busName => {
-            const riders = Math.ceil(busData[busName].capacity/100 * 57)
+            const riders = (busData[busName].riders !== undefined && busData[busName].riders !== null)
+                ? busData[busName].riders
+                : Math.ceil(busData[busName].capacity / 100 * 59);
             routeRiderships[route] += riders;
             totalRidership += riders;
         });
@@ -1794,14 +1796,17 @@ async function makeRidershipChart() {
                         // color: themeColor,
                         callback: function(val, index) {
                             const time = this.getLabelForValue(val);
+                            if (!time) return '';
                             const hour = parseInt(time.split(':')[0]); 
+                            const ampmMatch = time.match(/[AP]M/i);
+                            const ampm = ampmMatch ? ampmMatch[0].toUpperCase() : '';
                             
                             const totalDataPoints = this.chart.data.labels.length;
                             if (totalDataPoints > 150) { // check if the 150 num should be changed later
                                 // Skip odd-hour labels if there are more than 150 data points
-                                return hour % 2 !== 0 || !time.includes(':00') ? '' : hour + time.split(' ')[1];
+                                return hour % 2 !== 0 || !time.includes(':00') ? '' : hour + ampm;
                             } else {
-                                return time.includes(':00') ? hour + time.split(' ')[1] : '';
+                                return time.includes(':00') ? hour + ampm : '';
                             }
                         }
                     }
@@ -1831,36 +1836,32 @@ async function updateRidershipChart() {
             return; // Don't show chart if no ridership data
         }
 
-        const utcOffset = new Date().getTimezoneOffset();
+        const easternOffset = getEasternOffsetMinutes();
 
-        // Prepare entries for sorting and formatting
+        // Prepare entries for sorting and formatting in Rutgers Eastern Time (America/New_York)
         const entries = Object.entries(timeRiderships).map(([key, value]) => {
-            let localMinutes = parseInt(key) - utcOffset;
-            if (localMinutes < 0) localMinutes += 1440; // Handle day wraparound
+            const utcMinute = parseInt(key, 10);
+            let easternMinutes = (utcMinute - easternOffset) % 1440;
+            if (easternMinutes < 0) easternMinutes += 1440; // Handle day wraparound
 
-            // Add 24 hours (1440 mins) to early morning times to sort them at the end
-            const sortMinutes = localMinutes < 300 ? localMinutes + 1440 : localMinutes;
+            // Transit service day starts at 5:00 AM (300 mins); early morning hours (12am-4:59am) sort at the end
+            const sortMinutes = easternMinutes < 300 ? easternMinutes + 1440 : easternMinutes;
 
-            const hours = Math.floor(localMinutes / 60);
-            const minutes = localMinutes % 60;
-            const time = new Date();
-            time.setHours(hours, minutes, 0, 0);
-
-            const formattedTime = time.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit'
-            });
+            const hours = Math.floor(easternMinutes / 60);
+            const minutes = easternMinutes % 60;
+            const hour12 = hours % 12 || 12;
+            const ampm = hours < 12 ? 'AM' : 'PM';
+            const minuteStr = minutes < 10 ? '0' + minutes : minutes;
+            const formattedTime = `${hour12}:${minuteStr} ${ampm}`;
 
             return [formattedTime, value, sortMinutes];
         });
 
-        // Sort and convert to chart format
-        const sortedData = Object.fromEntries(
-            entries.sort(([, , a], [, , b]) => a - b)
-        );
+        // Sort entries by transit day order (5:00 AM through 4:55 AM)
+        entries.sort((a, b) => a[2] - b[2]);
 
-        const labels = Object.keys(sortedData);
-        const values = Object.values(sortedData);
+        const labels = entries.map(e => e[0]);
+        const values = entries.map(e => e[1]);
 
         const totalRidership = values.reduce((a, b) => a + b, 0);
         const maxRidership = Math.max(...values, 0);

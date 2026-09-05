@@ -409,3 +409,20 @@ function capturePostHog(eventName, properties = {}) {
     }
 }
 window.capturePostHog = capturePostHog;
+
+function getEasternOffsetMinutes(date = new Date()) {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: 'numeric',
+        minute: 'numeric',
+        hourCycle: 'h23'
+    });
+    const parts = Object.fromEntries(formatter.formatToParts(date).map(p => [p.type, p.value]));
+    const easternMinutes = parseInt(parts.hour, 10) * 60 + parseInt(parts.minute, 10);
+    const utcMinutes = date.getUTCHours() * 60 + date.getUTCMinutes();
+    let diff = utcMinutes - easternMinutes;
+    if (diff < -720) diff += 1440;
+    if (diff > 720) diff -= 1440;
+    return diff;
+}
+window.getEasternOffsetMinutes = getEasternOffsetMinutes;

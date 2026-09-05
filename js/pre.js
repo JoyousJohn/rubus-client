@@ -376,6 +376,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
             busData[busName].isKnown = knownRoutes.includes(routeStr);
 
             busData[busName].capacity = bus.capacity;
+            if (bus.riders !== undefined) busData[busName].riders = bus.riders;
 
             busData[busName].oos = false;
 
@@ -1279,31 +1280,7 @@ function populateMessages(messages) {
 
 }
 
-function getMessages() {
-    const payload = {
-        systemSelected0: "1268",
-        amount: 1, // unsure what this does
-    };
 
-    fetch("https://passiogo.com/goServices.php?getAlertMessages=1&deviceId=21050160&alertCRC=0d4cbb29&buildNo=110&embedded=0", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: "json=" + encodeURIComponent(JSON.stringify(payload))
-    })
-    .then(res => res.json())
-    .then(data => {
-        const messages = data.msgs;
-        if (messages) {
-            cachedAlertMessages = messages;
-            clearAlertsDisplay();
-            populateMessages(messages);
-        }
-    })
-    .catch(err => console.error("Error", err));
-
-}
 
 
 function cancelAllAnimations() {
@@ -1700,8 +1677,6 @@ $(document).ready(async function() {
         }, Math.floor(Math.random() * (1000 - 200 + 1)) + 200);
 
         window.addEventListener('beforeunload', cancelAllAnimations);
-
-        // getMessages();
     }
 
     if (typeof map !== 'undefined' && map) {

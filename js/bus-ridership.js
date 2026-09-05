@@ -62,6 +62,34 @@ function updateHistoricalCapacity(busName) {
     }
 }
 
+function formatBusRidershipEntries(timeRiderships) {
+    const easternOffset = getEasternOffsetMinutes();
+    const entries = Object.entries(timeRiderships).map(([key, value]) => {
+        const utcMinute = parseInt(key, 10);
+        let easternMinutes = (utcMinute - easternOffset) % 1440;
+        if (easternMinutes < 0) easternMinutes += 1440; // Handle day wraparound
+
+        // Transit service day starts at 5:00 AM (300 mins); early morning hours sort at the end
+        const sortMinutes = easternMinutes < 300 ? easternMinutes + 1440 : easternMinutes;
+
+        const hours = Math.floor(easternMinutes / 60);
+        const minutes = easternMinutes % 60;
+        const hour12 = hours % 12 || 12;
+        const ampm = hours < 12 ? 'AM' : 'PM';
+        const minuteStr = minutes < 10 ? '0' + minutes : minutes;
+        const formattedTime = `${hour12}:${minuteStr} ${ampm}`;
+
+        return [formattedTime, value, sortMinutes];
+    });
+
+    entries.sort((a, b) => a[2] - b[2]);
+
+    return {
+        labels: entries.map(e => e[0]),
+        values: entries.map(e => e[1])
+    };
+}
+
 function createBusRidershipChart(busName) {
     
     // If chart already exists, just update its data if needed
@@ -72,28 +100,7 @@ function createBusRidershipChart(busName) {
             return;
         }
 
-        const utcOffset = new Date().getTimezoneOffset();
-        const entries = Object.entries(timeRiderships).map(([key, value]) => {
-            let localMinutes = parseInt(key) - utcOffset;
-            if (localMinutes < 0) localMinutes += 1440;
-            const sortMinutes = localMinutes < 300 ? localMinutes + 1440 : localMinutes;
-            const hours = Math.floor(localMinutes / 60);
-            const minutes = localMinutes % 60;
-            const time = new Date();
-            time.setHours(hours, minutes, 0, 0);
-            const formattedTime = time.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit'
-            });
-            return [formattedTime, value, sortMinutes];
-        });
-
-        const sortedData = Object.fromEntries(
-            entries.sort(([, , a], [, , b]) => a - b)
-        );
-
-        const newLabels = Object.keys(sortedData);
-        const newValues = Object.values(sortedData);
+        const { labels: newLabels, values: newValues } = formatBusRidershipEntries(timeRiderships);
 
         // Only update if data has changed
         const currentLabels = busRidershipCharts[busName].data.labels;
@@ -121,34 +128,7 @@ function createBusRidershipChart(busName) {
         return;
     }
 
-    const utcOffset = new Date().getTimezoneOffset();
-
-    const entries = Object.entries(timeRiderships).map(([key, value]) => {
-        let localMinutes = parseInt(key) - utcOffset;
-        if (localMinutes < 0) localMinutes += 1440; // Handle day wraparound
-
-        // Add 24 hours (1440 mins) to early morning times to sort them at the end
-        const sortMinutes = localMinutes < 300 ? localMinutes + 1440 : localMinutes;
-
-        const hours = Math.floor(localMinutes / 60);
-        const minutes = localMinutes % 60;
-        const time = new Date();
-        time.setHours(hours, minutes, 0, 0);
-
-        const formattedTime = time.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit'
-        });
-
-        return [formattedTime, value, sortMinutes];
-    });
-
-    const sortedData = Object.fromEntries(
-        entries.sort(([, , a], [, , b]) => a - b)
-    );
-
-    const labels = Object.keys(sortedData);
-    const values = Object.values(sortedData);
+    const { labels, values } = formatBusRidershipEntries(timeRiderships);
 
     const ctx = document.createElement('canvas');
     $('.bus-historical-capacity').empty().css('height', '90px').append(ctx).show();
@@ -191,7 +171,7 @@ function createBusRidershipChart(busName) {
                     intersect: false,
                     callbacks: {
                         label: function(context) {
-                            return `${context.parsed.y}% full`;
+                            return `${context.parsed.y} riders`;
                         }
                     }
                 }
@@ -211,34 +191,14 @@ function createBusRidershipChart(busName) {
                         // Explicitly set which ticks to display
                         callback: function(value, index, values) {
                             const label = this.getLabelForValue(value);
+                            if (!label) return '';
                             const timePart = String(label).split(' ')[0];
-                            
-                            // Always show first and last labels
-                            // if (index === 0 || index === values.length - 1) {
-                            //     const [hour, period] = String(label).split(' ');
-                            //     return hour.split(':')[0] + ' ' + period;
-                            // }
                             
                             // For intermediate labels, only show hour labels (:00)
                             if (timePart.endsWith(':00')) {
                                 const [hour, period] = String(label).split(' ');
                                 const hourNum = hour.split(':')[0];
-                                const timeLabel = hourNum + ' ' + period;
-                                
-                                // // Check if this hour matches the first or last hour
-                                // const firstLabel = String(this.getLabelForValue(values[0].value));
-                                // const lastLabel = String(this.getLabelForValue(values[values.length - 1].value));
-                                // const firstHour = firstLabel.split(' ')[0].split(':')[0];
-                                // const firstPeriod = firstLabel.split(' ')[1];
-                                // const lastHour = lastLabel.split(' ')[0].split(':')[0];
-                                // const lastPeriod = lastLabel.split(' ')[1];
-                                
-                                // // Don't show intermediate labels that match first or last hour
-                                // if (timeLabel === firstHour + ' ' + firstPeriod || timeLabel === lastHour + ' ' + lastPeriod) {
-                                    // return '';
-                                // }
-                                
-                                return timeLabel;
+                                return hourNum + ' ' + (period || '');
                             }
                             return '';
                         }

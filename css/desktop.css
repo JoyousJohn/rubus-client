@@ -401,6 +401,8 @@
         animation: esc-notice-in 0.3s ease;
         align-items: center;
         gap: 0.5rem;
+        user-select: none;
+        -webkit-user-select: none;
     }
     .desktop-esc-notice .esc-border-glow {
         position: absolute;

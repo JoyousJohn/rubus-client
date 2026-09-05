@@ -13,6 +13,8 @@
 
 .ridership-chart-wrapper {
     display: none;
+    position: relative;
+    height: 200px;
     margin-top: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
