@@ -449,6 +449,10 @@ function addPermitModeCampusSelector(parkingCampus, isSelected = false) {
 
     // Add to route selectors (at the end, after settings button)
     $('.route-selectors').append($routeElm);
+    if ($('.direct-feedback-btn').length) {
+        $('.route-selectors').append($('.direct-feedback-btn'));
+    }
+    $('.route-selectors').append($('.sim-btn'));
 }
 
 

@@ -116,6 +116,7 @@ function moveRouteSelectorsToSubpanel() {
     const routeSelectorsContainer = $('#route-selectors-container');
     window._detachedSimBtn = $('.sim-btn').detach();
     bottomElement.appendTo(routeSelectorsContainer);
+    $('.direct-feedback-btn').hide();
 }
 
 // Function to move route selectors back to the main page
@@ -126,6 +127,7 @@ function moveRouteSelectorsToMain() {
         $('.route-selectors').append(window._detachedSimBtn);
         window._detachedSimBtn = null;
     }
+    updateDirectFeedbackBtnVisibility();
 }
 
 // Function to restore the last selected panel position when opening info panels
@@ -363,6 +365,7 @@ $('.info-panels-close').click(function() {
         $('.settings-btn').show();
         showSimBtnIfEligible();
     }
+    updateDirectFeedbackBtnVisibility();
     $('.info-panels-close').show();
     // Restore original route selection if needed
     closeRouteMenu();

@@ -92,10 +92,11 @@ $('.shoot-fireworks').click(function() {
 });
 
 // Close only the most recently opened panel (ESC ordering).
-// Returns true if something was closed.
+// Returns the closed panel identifier or null if nothing was closed.
 function closeLatestPanel() {
-    const times = (typeof window !== 'undefined' && window._panelOpenedAt) || {};
+    const times = window._panelOpenedAt || {};
     const open = [];
+    if ($('.leave-feedback-wrapper').is(':visible')) open.push('feedback');
     if ($('.settings-panel').is(':visible')) open.push('settings');
     if ($('.info-panels-show-hide-wrapper').is(':visible')) open.push('info');
     if ($('.bus-info-popup, .stop-info-popup, .building-info-popup, .my-location-popup').is(':visible')) open.push('right');
@@ -103,22 +104,24 @@ function closeLatestPanel() {
         // Preserve legacy behavior: ESC also dismissed standalone search.
         if ($('.search-wrapper').is(':visible')) {
             closeSearch();
-            return true;
+            return 'search';
         }
-        return false;
+        return null;
     }
-    // Newest first; ties break toward the most transient (right > info > settings).
-    const priority = { right: 3, info: 2, settings: 1 };
+    // Newest first; ties break toward the most transient (feedback > right > info > settings).
+    const priority = { feedback: 4, right: 3, info: 2, settings: 1 };
     open.sort((a, b) => ((times[b] || 0) - (times[a] || 0)) || (priority[b] - priority[a]));
     const latest = open[0];
-    if (latest === 'right') {
+    if (latest === 'feedback') {
+        closeFeedbackModal();
+    } else if (latest === 'right') {
         hideInfoBoxes();
     } else if (latest === 'info') {
         $('.info-panels-close').click();
     } else {
         closeSettingsPanel();
     }
-    return true;
+    return latest;
 }
 
 $(document).on('keydown', function(e) {
@@ -150,7 +153,15 @@ $(document).on('keydown', function(e) {
         }
 
         // Close only the most recently opened panel, not everything at once.
-        closeLatestPanel();
+        const closed = closeLatestPanel();
+        if (!closed) return;
+
+        e.preventDefault();
+
+        // If only the feedback modal was closed, do not reset underlying map route/stops
+        if (closed === 'feedback') {
+            return;
+        }
 
         if (settings['toggle-hide-other-routes'] && !shownRoute) {
             showAllStops();

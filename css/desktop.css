@@ -15,7 +15,6 @@
 
     .info-next-stops {
         max-height: 100%;
-        margin-bottom: 1rem;
     }
 
     .route-selectors {
@@ -46,6 +45,10 @@
 
     .route-selector.parking-campus-selector {
         aspect-ratio: auto !important;
+    }
+
+    .direct-feedback-btn {
+        aspect-ratio: auto;
     }
 
     .left-btns {
@@ -85,6 +88,7 @@
 
     .bus-info-main {
         border-radius: 1rem !important;
+        border: 1px solid var(--theme-border);
     }
 
     .fa-gear {

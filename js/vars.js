@@ -399,8 +399,9 @@ let originalStopShownRoute; // Preserve map selection before opening stop popup 
 // Keys: 'settings' | 'info' | 'right'. Values: Date.now() at open.
 window._panelOpenedAt = window._panelOpenedAt || {};
 function markPanelOpened(name) {
-    try { window._panelOpenedAt[name] = Date.now(); } catch (e) {}
+    window._panelOpenedAt[name] = Date.now();
 }
+window.markPanelOpened = markPanelOpened;
 
 // Global PostHog event capture helper. Safe against ad blockers and offline usage.
 function capturePostHog(eventName, properties = {}) {

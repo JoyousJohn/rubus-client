@@ -3,6 +3,7 @@ const FEEDBACK_CONTACT_MAX_LEN = 200;
 const FEEDBACK_RATE_LIMIT_MS = 30000;
 const FEEDBACK_MIN_INTERVAL_MS = 1000;
 let feedbackSending = false;
+let feedbackSource = 'bus';
 
 function getLastFeedbackTime() {
     try { return parseInt(localStorage.getItem('rubus_last_feedback_time') || '0', 10) || 0; } catch (e) { return 0; }
@@ -27,56 +28,103 @@ function updateSendButtonState() {
     }
 }
 
-function saveFeedbackDraft() {
+function getFeedbackDraftKey(source = feedbackSource) {
+    return source || 'general';
+}
+
+function saveFeedbackDraft(source = feedbackSource) {
+    const key = getFeedbackDraftKey(source);
     try {
-        localStorage.setItem('rubus_feedback_draft', $('.feedback-input').val() || '');
-        localStorage.setItem('rubus_feedback_contact_draft', $('.feedback-contact-input').val() || '');
+        const raw = localStorage.getItem('rubus_feedback_drafts_by_modal');
+        const drafts = raw ? JSON.parse(raw) : {};
+        drafts[key] = {
+            feedback: $('.feedback-input').val() || '',
+            contact: $('.feedback-contact-input').val() || '',
+            tripshot: $('.feedback-dest-tripshot').is(':checked')
+        };
+        localStorage.setItem('rubus_feedback_drafts_by_modal', JSON.stringify(drafts));
     } catch (e) {}
 }
 
-function clearFeedbackDraft() {
+function clearFeedbackDraft(source = feedbackSource) {
+    const key = getFeedbackDraftKey(source);
     try {
+        const raw = localStorage.getItem('rubus_feedback_drafts_by_modal');
+        if (raw) {
+            const drafts = JSON.parse(raw);
+            delete drafts[key];
+            localStorage.setItem('rubus_feedback_drafts_by_modal', JSON.stringify(drafts));
+        }
         localStorage.removeItem('rubus_feedback_draft');
         localStorage.removeItem('rubus_feedback_contact_draft');
+        localStorage.removeItem('rubus_feedback_tripshot_draft');
     } catch (e) {}
     $('.feedback-input').val('');
     $('.feedback-contact-input').val('');
     $('.feedback-contact-container').hide();
     $('.feedback-contact-toggle-wrapper').show();
+    $('.feedback-dest-rubus').prop('checked', true);
+    $('.feedback-dest-tripshot').prop('checked', false);
+    $('.feedback-dest-tag').hide();
     updateSendButtonState();
 }
 
-function restoreFeedbackDraft() {
+function restoreFeedbackDraft(source = feedbackSource) {
+    const key = getFeedbackDraftKey(source);
+    let draft = null;
     try {
-        const savedFeedback = localStorage.getItem('rubus_feedback_draft');
-        const savedContact = localStorage.getItem('rubus_feedback_contact_draft');
+        const raw = localStorage.getItem('rubus_feedback_drafts_by_modal');
+        if (raw) {
+            const drafts = JSON.parse(raw);
+            draft = drafts[key] || null;
+        }
 
-        if (savedFeedback !== null) {
-            $('.feedback-input').val(savedFeedback);
+        // Backward compatibility with legacy unsplit drafts
+        if (!draft && !raw) {
+            const legacyFeedback = localStorage.getItem('rubus_feedback_draft');
+            const legacyContact = localStorage.getItem('rubus_feedback_contact_draft');
+            const legacyTripshot = localStorage.getItem('rubus_feedback_tripshot_draft');
+            if (legacyFeedback !== null) {
+                draft = {
+                    feedback: legacyFeedback,
+                    contact: legacyContact || '',
+                    tripshot: legacyTripshot === '1'
+                };
+            }
         }
-        if (savedContact) {
-            $('.feedback-contact-input').val(savedContact);
-            $('.feedback-contact-container').show();
-            $('.feedback-contact-toggle-wrapper').hide();
-        } else if (!$('.feedback-contact-input').val()) {
-            $('.feedback-contact-container').hide();
-            $('.feedback-contact-toggle-wrapper').show();
-        }
-    } catch (e) {
-        if ($('.feedback-contact-input').val()) {
+    } catch (e) {}
+
+    if (draft) {
+        $('.feedback-input').val(draft.feedback || '');
+        if (draft.contact) {
+            $('.feedback-contact-input').val(draft.contact);
             $('.feedback-contact-container').show();
             $('.feedback-contact-toggle-wrapper').hide();
         } else {
+            $('.feedback-contact-input').val('');
             $('.feedback-contact-container').hide();
             $('.feedback-contact-toggle-wrapper').show();
         }
+        $('.feedback-dest-rubus').prop('checked', true);
+        $('.feedback-dest-tripshot').prop('checked', Boolean(draft.tripshot));
+    } else {
+        $('.feedback-input').val('');
+        $('.feedback-contact-input').val('');
+        $('.feedback-contact-container').hide();
+        $('.feedback-contact-toggle-wrapper').show();
+        $('.feedback-dest-rubus').prop('checked', true);
+        $('.feedback-dest-tripshot').prop('checked', false);
     }
+    $('.feedback-dest-tag').hide();
     updateSendButtonState();
 }
 
 function openFeedbackModal(source = 'bus') {
     feedbackSource = source;
-    if (source === 'general') {
+    if (source === 'direct') {
+        $('.feedback-title').text("Leave feedback");
+        $('.feedback-subtext').text("Suggestions, bug reports, comments, complaints, or anything about RUBus or the buses.");
+    } else if (source === 'general') {
         $('.feedback-title').text("Leave feedback");
         $('.feedback-subtext').text("About anything — features, bugs, or suggestions.");
     } else if (source === 'font') {
@@ -103,15 +151,26 @@ function openFeedbackModal(source = 'bus') {
         $('.feedback-input').attr('placeholder', "What's on your mind?");
     }
 
-    restoreFeedbackDraft();
+    if (source === 'direct') {
+        $('.feedback-contact-input').attr('placeholder', "Email, Insta @, Reddut u/, etc. (optional)");
+        $('.feedback-destinations').show();
+    } else {
+        $('.feedback-contact-input').attr('placeholder', "Insta @, Reddit u/, email, etc. (optional)");
+        $('.feedback-destinations').hide();
+    }
+
+    markPanelOpened('feedback');
+    restoreFeedbackDraft(source);
     $('.empty-feedback').hide();
+    $('.feedback-dest-tag').hide();
     $('.leave-feedback-wrapper').fadeIn('fast');
     if (typeof sa_event === 'function') {
         const btnMap = {
             'general': 'footer_feedback',
             'font': 'settings_font_suggest',
             'theme': 'settings_theme_suggest',
-            'bus': 'bus_feedback'
+            'bus': 'bus_feedback',
+            'direct': 'direct_feedback'
         };
         sa_event('btn_press', { btn: btnMap[source] || 'feedback_open' });
     }
@@ -122,10 +181,13 @@ function openFeedbackModal(source = 'bus') {
 
 function closeFeedbackModal() {
     saveFeedbackDraft();
+    delete window._panelOpenedAt['feedback'];
+    $('.feedback-dest-tag').hide();
     $('.leave-feedback-wrapper').hide();
     if (feedbackSource === 'bus') {
         $('.bottom').show();
     }
+    updateDirectFeedbackBtnVisibility();
 }
 
 function sendFeedback() {
@@ -180,12 +242,23 @@ function sendFeedback() {
         }
     }
 
+    const sendToRubus = true;
+    const sendToTripshot = (feedbackSource === 'direct') && $('.feedback-dest-tripshot').is(':checked');
+
     const payload = {
         feedback: feedback,
         contact: contact || null,
         busName: busNameVal,
         route: routeVal,
         source: feedbackSource,
+        sendToRubus: sendToRubus,
+        sendToTripshot: sendToTripshot,
+        send_to_rubus: sendToRubus,
+        send_to_tripshot: sendToTripshot,
+        recipients: [
+            ...(sendToRubus ? ['RUBus Team'] : []),
+            ...(sendToTripshot ? ['TripShot/RU'] : [])
+        ],
         timeSent: new Date().toISOString() 
     };
 
@@ -205,7 +278,7 @@ function sendFeedback() {
         success: function (data) {
             feedbackSending = false;
             updateSendButtonState();
-            clearFeedbackDraft();
+            clearFeedbackDraft(feedbackSource);
             if (feedbackSource === 'font' || feedbackSource === 'theme') {
                 $('.feedback-sent').html('<i class="fa-solid fa-circle-check mr-0p5rem"></i>Suggestion sent');
             } else {
@@ -248,6 +321,22 @@ $(document).ready(function() {
         }
         updateSendButtonState();
         saveFeedbackDraft();
+    });
+
+    $('.feedback-dest-tripshot').on('change', function() {
+        saveFeedbackDraft();
+    });
+
+    $(document).on('click', '.feedback-checkbox-label-disabled, .feedback-dest-rubus', function(e) {
+        e.preventDefault();
+        $('.feedback-dest-rubus').prop('checked', true);
+        const $tag = $('.feedback-dest-tag');
+        if ($tag.is(':visible')) {
+            $tag.stop(true, true).css('opacity', 0.4).fadeTo(120, 1);
+        } else {
+            $tag.stop(true, true).fadeIn('fast');
+        }
+        return false;
     });
 
     let mouseDownTarget = null;

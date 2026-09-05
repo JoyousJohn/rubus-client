@@ -1033,7 +1033,7 @@
                         </script>
                         <div class="tripshot-mini flex flex-col gap-y-1rem"></div>
                         <div class="campus-switcher none my-1rem">
-                            <div class="campus-toggle br-1rem">
+                            <div class="campus-toggle br-0p5rem">
                                 <div class="campus-toggle-btn pointer" data-campus="nb">NB</div>
                                 <div class="campus-toggle-btn pointer" data-campus="camden">CAM</div>
                                 <div class="campus-toggle-btn pointer" data-campus="newark">NWK</div>
@@ -1488,6 +1488,16 @@
                     <div class="feedback-subtext text-1p8rem w-full">About this bus or how RUBus is displaying it.</div>
                     <div class="flex">
                         <textarea class="feedback-input mt-2rem text-1p5rem br-0p5rem p-1rem w-full" placeholder="What's on your mind?"></textarea>
+                    </div>
+                    <div class="feedback-destinations none flex flex-col gap-y-1rem mt-1p5rem select-none">
+                        <label class="feedback-checkbox-label feedback-checkbox-label-disabled flex align-center text-1p3rem">
+                            <input type="checkbox" class="feedback-checkbox feedback-dest-rubus" checked disabled onclick="return false;">
+                            <span>Send to RUBus Team <span class="feedback-dest-tag none">(always required)</span></span>
+                        </label>
+                        <label class="feedback-checkbox-label flex align-center text-1p3rem pointer">
+                            <input type="checkbox" class="feedback-checkbox feedback-dest-tripshot pointer">
+                            <span>Send to TripShot/RU</span>
+                        </label>
                     </div>
                     <div class="feedback-contact-toggle-wrapper mt-1rem select-none">
                         <span class="feedback-contact-toggle pointer" onclick="$('.feedback-contact-container').slideDown('fast'); $('.feedback-contact-toggle-wrapper').hide();"><span class="feedback-contact-plus bold-700">+</span> <span class="feedback-contact-label">Leave return contact info (optional)</span></span>
@@ -3053,6 +3063,7 @@
         <div class="flex justify-between">
             <div class="route-selectors">
                 <div class="route-selector settings-btn"><i class="fa-solid fa-gear"></i></div>
+                <div class="route-selector direct-feedback-btn" aria-label="Direct feedback"><i class="fa-solid fa-message-dots"></i></div>
                 <div class="route-selector sim-btn none">SIM</div>
             </div>
         </div>

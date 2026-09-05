@@ -240,6 +240,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         $('.stop-info-popup').hide();
         $('.settings-btn').show();
         showSimBtnIfEligible();
+        updateDirectFeedbackBtnVisibility();
         populateRouteSelectors(activeRoutes);
     }
 

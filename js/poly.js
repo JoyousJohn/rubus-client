@@ -2212,12 +2212,12 @@ async function popStopInfo(stopId) {
         selectedMarkerId = null;
     }
 
-    $('.bus-info-popup, .route-panel, .my-location-popup, .knight-mover').hide();
+    $('.bus-info-popup, .route-panel-wrapper .route-panel, .my-location-popup, .knight-mover').hide();
     
     // Update route selectors to only show routes that service this stop
     populateRouteSelectors(activeRoutes, stopId);
     
-    $('.settings-btn, .sim-btn').hide();
+    $('.settings-btn, .sim-btn, .direct-feedback-btn').hide();
 
     // return;
 

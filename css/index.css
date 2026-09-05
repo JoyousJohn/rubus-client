@@ -698,7 +698,6 @@ html, body {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--theme-border);
-    border-radius: 1rem;
     overflow: hidden;
     font-family: var(--font-family);
 }
@@ -2080,6 +2079,26 @@ html, body {
 /* Remove margin when settings button is at the end */
 .settings-btn:last-child {
     margin-left: 0;
+}
+
+.direct-feedback-btn {
+    background-color: var(--theme-color);
+    color: var(--theme-bg);
+    padding: 0 !important;
+    aspect-ratio: 1;
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.direct-feedback-btn > i {
+    padding: 1rem;
 }
 
 .route-right-mid {

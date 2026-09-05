@@ -87,6 +87,7 @@ function hideInfoBoxes(instantly_hide) {
         
         $('.settings-btn').show();
         showSimBtnIfEligible();
+        updateDirectFeedbackBtnVisibility();
 
         checkMinRoutes(); // because .knight-mover is hidden in popStopInfo()
     }

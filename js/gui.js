@@ -16,7 +16,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
     let lastTime = 0;
     let velocity = 0;
     let animationFrame = null;
-    $('.route-selectors > div').not('.settings-btn, .sim-btn').not('.parking-campus-selector').remove();
+    $('.route-selectors > div').not('.settings-btn, .sim-btn, .parking-campus-selector, .direct-feedback-btn').remove();
 
     if (!allActiveRoutes) return;
 
@@ -268,14 +268,26 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         }
     });
 
-    // Ensure sim-btn appears after settings button and all route selectors
+    // Ensure parking, direct feedback, and sim-btn appear after all route selectors
+    if ($('.parking-campus-selector').length) {
+        $('.route-selectors').append($('.parking-campus-selector'));
+    }
+    if ($('.direct-feedback-btn').length) {
+        $('.route-selectors').append($('.direct-feedback-btn'));
+    }
     $('.route-selectors').append($('.sim-btn'));
+
+    if (stopId !== null) {
+        $('.direct-feedback-btn').hide();
+    } else {
+        updateDirectFeedbackBtnVisibility();
+    }
 
     // Apply selection styling to the currently selected route if it exists in the filtered routes
     let didCenterScroll = false;
     if (shownRoute) {
         // Use the existing toggleRouteSelectors logic to select the route
-        $('.route-selector').not('.parking-campus-selector').not('.settings-btn').each(function() {
+        $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn, .direct-feedback-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn && rn !== shownRoute) {
                 const rnInService = routeHasInServiceBuses(rn);
@@ -528,12 +540,16 @@ function addParkingCampusRouteSelector() {
 
     // Add to route selectors (at the end, after settings button)
     $('.route-selectors').append($routeElm);
+    if ($('.direct-feedback-btn').length) {
+        $('.route-selectors').append($('.direct-feedback-btn'));
+    }
+    $('.route-selectors').append($('.sim-btn'));
 }
 
 
 
 function clearRouteSelectors() {
-    $('.route-selectors > div').not('.settings-btn, .sim-btn').not('.parking-campus-selector').remove();
+    $('.route-selectors > div').not('.settings-btn, .sim-btn, .parking-campus-selector, .direct-feedback-btn').remove();
 }
 
 
@@ -553,8 +569,8 @@ let isLongPress = false; // Flag to track if a long press occurred
 function toggleRouteSelectors(route, wasSelected = false) {
     if (wasSelected) {
 
-        // Restore all route selectors (excluding settings button, sim button, and parking selector) to their colors
-        $('.route-selector').not('.settings-btn, .sim-btn, .parking-campus-selector').each(function() {
+        // Restore all route selectors (excluding settings button, sim button, parking selector, and direct feedback button) to their colors
+        $('.route-selector').not('.settings-btn, .sim-btn, .parking-campus-selector, .direct-feedback-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn !== 'fav') {
                 const hasInService = routeHasInServiceBuses(rn);
@@ -573,8 +589,8 @@ function toggleRouteSelectors(route, wasSelected = false) {
 
     else {
 
-        // Gray out all route selectors (including those without polylines) except the selected one, parking campus selector, sim button, and settings button
-        $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn').each(function() {
+        // Gray out all route selectors (including those without polylines) except the selected one, parking campus selector, sim button, settings button, and direct feedback button
+        $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn, .direct-feedback-btn').each(function() {
             const rn = $(this).attr('routeName');
             if (rn !== route) {
                 const rnInService = routeHasInServiceBuses(rn);
@@ -1017,6 +1033,11 @@ function selectedRoute(route) {
             $('.route-active-buses').text('');
             $('.active-buses').empty();
             $('.route-stops-grid').empty();
+
+            // Hide the inner detail panel so its empty header (e.g. the
+            // default-red .color-circle) takes no space and the subpanel
+            // isn't scrollable — only the prompt should remain.
+            $('.route-panel-wrapper .route-panel').hide();
             
             // Show the route selection prompt since no route is selected
             $('#route-selection-prompt').show();
@@ -1168,10 +1189,10 @@ function selectedRoute(route) {
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
     $('.route-selectors').show();
-    $('.settings-btn, .parking-campus-selector, .sim-btn').hide();
+    $('.settings-btn, .parking-campus-selector, .sim-btn, .direct-feedback-btn').hide();
     
     // Make sure route panel is visible by removing the 'none' class
-    $('.route-panel').show();
+    $('.route-panel-wrapper .route-panel').show();
     
     // Hide the route selection prompt since a route is now selected
     $('#route-selection-prompt').hide();
@@ -1348,7 +1369,7 @@ function ensureRouteSubpanelPopulated() {
     if (!$('.subpanels-container').hasClass('panel-routes')) return;
     // Same route already rendered for the subpanel — make sure it's showing.
     if (panelRoute === shownRoute) {
-        $('.route-panel').show();
+        $('.route-panel-wrapper .route-panel').show();
         return;
     }
     selectedRoute(shownRoute);
@@ -2410,6 +2431,8 @@ function closeRouteMenu() {
         $('.parking-campus-selector').show();
     }
 
+    updateDirectFeedbackBtnVisibility();
+
     // Show the favorite star icon again if there are favorited buses
     if ($('.favs > div').length > 0) {
         $('.route-selector[routeName="fav"]').show();
@@ -2560,6 +2583,22 @@ window.restoreSettingsPanelState = function() {
         openSettingsPanel();
     }
 }
+
+function updateDirectFeedbackBtnVisibility() {
+    const isStopSelected = Boolean(popupStopId) || $('.stop-info-popup').is(':visible');
+    const isSubpanelOpen = $('.info-panels-show-hide-wrapper').is(':visible') || $('#route-selectors-container .bottom').length > 0;
+    if (isStopSelected || isSubpanelOpen) {
+        $('.direct-feedback-btn').hide();
+    } else {
+        $('.direct-feedback-btn').show();
+    }
+}
+window.updateDirectFeedbackBtnVisibility = updateDirectFeedbackBtnVisibility;
+
+$(document).on('click', '.direct-feedback-btn', function(e) {
+    e.preventDefault();
+    openFeedbackModal('direct');
+});
 
 // Open/close bindings for the settings panel (delegated so they survive any
 // re-render of the route-selector row that contains the settings button).

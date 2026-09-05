@@ -74,6 +74,7 @@ function populateAllStops() {
                         if (settings['parking-campus']) {
                             $('.parking-campus-selector').show();
                         }
+                        updateDirectFeedbackBtnVisibility();
                         moveRouteSelectorsToMain();
                         // Restore route selectors based on current stop selection
                         if (popupStopId) {
@@ -115,6 +116,7 @@ function populateAllStops() {
                                 if (settings['parking-campus']) {
                                     $('.parking-campus-selector').show();
                                 }
+                                updateDirectFeedbackBtnVisibility();
 
                                 // Set the route filter and then fly to the stop
                                 toggleRoute(route);
@@ -204,6 +206,7 @@ $('.info-panels').click(function(e) {
     } else {
         // Show the route selection prompt since no route is selected
         $('#route-selection-prompt').show();
+        $('.route-panel-wrapper .route-panel').hide();
     }
 
     // If the restored panel is Routes and a route was already selected on the
@@ -214,5 +217,5 @@ $('.info-panels').click(function(e) {
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
     $('.route-selectors').show();
-    $('.settings-btn, .parking-campus-selector, .sim-btn').hide();
+    $('.settings-btn, .parking-campus-selector, .sim-btn, .direct-feedback-btn').hide();
 })
