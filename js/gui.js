@@ -3936,7 +3936,16 @@ async function getBuildNumber() {
 
         const $toast = $('#update-toast');
         if ($toast.length && $toast.is(':visible') && $toast.find('.update-toast-text').text().trim() === 'Installed update') {
-            $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Installed update v${lastPage}`);
+            const prevBuildNumRaw = localStorage.getItem('rubus-last-build-num');
+            const prevBuildNum = prevBuildNumRaw ? parseInt(prevBuildNumRaw, 10) : null;
+            let text = `Installed update (b${lastPage})`;
+            if (prevBuildNum && !isNaN(prevBuildNum) && lastPage > prevBuildNum) {
+                const diff = lastPage - prevBuildNum;
+                const updateWord = diff === 1 ? 'update' : 'updates';
+                text = `Installed ${diff} ${updateWord} (b${lastPage})`;
+            }
+            $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> ${text}`);
+            localStorage.setItem('rubus-last-build-num', lastPage.toString());
         }
         return;
     }
@@ -3965,7 +3974,16 @@ async function getBuildNumber() {
                     // If the update confirmation toast is currently visible showing the generic label, update it in-place
                     const $toast = $('#update-toast');
                     if ($toast.length && $toast.is(':visible') && $toast.find('.update-toast-text').text().trim() === 'Installed update') {
-                        $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Installed update v${lastPage}`);
+                        const prevBuildNumRaw = localStorage.getItem('rubus-last-build-num');
+                        const prevBuildNum = prevBuildNumRaw ? parseInt(prevBuildNumRaw, 10) : null;
+                        let text = `Installed update (b${lastPage})`;
+                        if (prevBuildNum && !isNaN(prevBuildNum) && lastPage > prevBuildNum) {
+                            const diff = lastPage - prevBuildNum;
+                            const updateWord = diff === 1 ? 'update' : 'updates';
+                            text = `Installed ${diff} ${updateWord} (b${lastPage})`;
+                        }
+                        $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> ${text}`);
+                        localStorage.setItem('rubus-last-build-num', lastPage.toString());
                     }
                 }
             }

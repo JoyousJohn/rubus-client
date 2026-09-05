@@ -111,8 +111,23 @@
                     if (successToastTimer) clearTimeout(successToastTimer);
                     const $toast = $('#update-toast');
                     const metaBuildNum = $('meta[name="rubus-build-num"]').attr('content');
-                    const finalBuildNum = (metaBuildNum && metaBuildNum !== '__BUILD_NUM__') ? metaBuildNum : buildNum;
-                    const text = finalBuildNum ? `Installed update v${finalBuildNum}` : 'Installed update';
+                    const finalBuildNum = (metaBuildNum && metaBuildNum !== '__BUILD_NUM__') ? parseInt(metaBuildNum, 10) : (buildNum ? parseInt(buildNum, 10) : null);
+
+                    const prevBuildNumRaw = localStorage.getItem('rubus-last-build-num');
+                    const prevBuildNum = prevBuildNumRaw ? parseInt(prevBuildNumRaw, 10) : null;
+                    let text = 'Installed update';
+
+                    if (finalBuildNum && !isNaN(finalBuildNum)) {
+                        if (prevBuildNum && !isNaN(prevBuildNum) && finalBuildNum > prevBuildNum) {
+                            const diff = finalBuildNum - prevBuildNum;
+                            const updateWord = diff === 1 ? 'update' : 'updates';
+                            text = `Installed ${diff} ${updateWord} (b${finalBuildNum})`;
+                        } else {
+                            text = `Installed update (b${finalBuildNum})`;
+                        }
+                        localStorage.setItem('rubus-last-build-num', finalBuildNum.toString());
+                    }
+
                     $toast.find('.update-toast-text').html(`<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> ${text}`);
                     $toast.find('.update-toast-actions').hide();
                     $toast.removeClass('none').css({ display: 'flex', opacity: 0 }).stop(true, true).animate({ opacity: 1 }, 350);
@@ -300,6 +315,10 @@
                     // On first visit ever, initialize announcedBuild so first-time users aren't greeted with an update toast
                     if (!announcedBuild) {
                         localStorage.setItem('rubus-announced-build', currentBuild);
+                        const metaBuildNum = $('meta[name="rubus-build-num"]').attr('content');
+                        if (metaBuildNum && metaBuildNum !== '__BUILD_NUM__') {
+                            localStorage.setItem('rubus-last-build-num', metaBuildNum);
+                        }
                         return;
                     }
 
