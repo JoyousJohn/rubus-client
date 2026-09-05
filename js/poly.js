@@ -1605,7 +1605,13 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         }
 
         if (data.nextStopName) {
-            $('.stop-info-buses-grid').append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
+            let nextStopColor = colorMappings[data.route];
+            if (busData[data.busName]?.atDepot) {
+                nextStopColor = 'gray';
+            } else if (visibleRoute && visibleRoute !== data.route) {
+                nextStopColor = 'var(--theme-hidden-route-col)';
+            }
+            $('.stop-info-buses-grid').append(`<div class="stop-bus-next-stop" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${nextStopColor}">To ${data.nextStopName}</div>`);
         }
              
     });
@@ -1705,7 +1711,13 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             }
 
             if (data.nextStopName) {
-                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
+                let nextStopColor = colorMappings[data.route];
+                if (busData[data.busName]?.atDepot) {
+                    nextStopColor = 'gray';
+                } else if (visibleRoute && visibleRoute !== data.route) {
+                    nextStopColor = 'var(--theme-hidden-route-col)';
+                }
+                $('.stop-info-buses-grid-next').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${nextStopColor}">To ${data.nextStopName}</div>`);
             }
         }    
     })
@@ -1764,7 +1776,13 @@ function updateStopBuses(stopId, actuallyShownRoute) {
             }
 
             if (data.nextStopName) {
-                $('.stop-info-buses-grid-post-cutoff').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${colorMappings[data.route]}">To ${data.nextStopName}</div>`);
+                let nextStopColor = colorMappings[data.route];
+                if (busData[data.busName]?.atDepot) {
+                    nextStopColor = 'gray';
+                } else if (visibleRoute && visibleRoute !== data.route) {
+                    nextStopColor = 'var(--theme-hidden-route-col)';
+                }
+                $('.stop-info-buses-grid-post-cutoff').append(`<div class="stop-bus-next-stop user-no-select" style="font-weight: 500; font-size: 1.2rem; margin-top: -0.3rem; line-height: 1; grid-column: span 4; color: ${nextStopColor}">To ${data.nextStopName}</div>`);
             }
         })
     } else {
