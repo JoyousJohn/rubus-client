@@ -36,7 +36,7 @@ function updateServerFailureBanner() {
         return;
     }
     const parts = ['bus positions', 'ETAs', 'wait times', 'live updates'].filter(key => serverFailures.has(key));
-    let html = `RUBus/TripShot servers are experiencing issues. Unavailable: ${parts.join(', ')}.`;
+    let html = `Some TripShot servers are offline or delayed. Unavailable: ${parts.join(', ')}.`;
     if (serverFailureDetail) {
         html += `<br><br>Error: ${serverFailureDetail}`;
     }
@@ -495,6 +495,10 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         }
 
         reconcileBusMarkers();
+
+        if (popupBusName && !isBusShownOnMap(popupBusName)) {
+            hideInfoBoxes();
+        }
 
         if ($('.buses-panel-wrapper').is(':visible')) {
             updateBusOverview(Array.from(pollActiveRoutes));

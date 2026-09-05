@@ -569,28 +569,6 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
         settings && settings['bus-animation-rate']
     );
 
-    // TEMP DEBUG: catch the "buses fly across the map on resume" signature.
-    // A non-immediate animation over a large gap/duration means a stale
-    // previousTime survived the resume reset. Shared with the footer errors
-    // menu via console.warn.
-    {
-        const dbgDist = (typeof startLatLng.distanceTo === 'function') ? (startLatLng.distanceTo(endLatLng) || 0) : 0;
-        const dbgDur = duration || ((cappedTimeSinceLastUpdate || 0) + 2500);
-        const dbgSrc = busData[busName].websocketAnimationDuration ? 'ws'
-                       : (busData[busName].apiAnimationDuration ? 'api'
-                       : (busData[busName].simAnimationDuration ? 'sim' : 'fallback'));
-        if (dbgDist > 800 || dbgDur > 10000) {
-            console.warn('[TEMP-DEBUG][fly] bus=' + busName +
-                ' immediatelyUpdate=false' +
-                ' distM=' + Math.round(dbgDist) +
-                ' durationSec=' + (dbgDur / 1000).toFixed(1) +
-                ' gapSec=' + Math.round((timeSinceLastUpdate || 0) / 1000) +
-                ' src=' + dbgSrc +
-                ' rate=' + (settings && settings['bus-animation-rate']) +
-                ' renderer=' + (marker && marker._rendererMode));
-        }
-    }
-
     // Register this bus's step with the shared animation loop (coalesces all
     // bus animations into a single requestAnimationFrame per frame).
     animationFrames[busName] = animateMarker;
