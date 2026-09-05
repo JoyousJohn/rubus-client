@@ -306,7 +306,7 @@ function getETAForStop(busName, stopId, previousStopId) {
 window.isSpecialRoute = isSpecialRoute;
 window.getETAForStop = getETAForStop;
 
-// Coordinate ingestion helpers (used by ws.js / pre.js). A coordinate is only
+// Coordinate ingestion helpers (used by pre.js). A coordinate is only
 // accepted when it parses to a finite number; null/undefined/''/non-numeric
 // strings are rejected as NaN so bad feed data can't silently become 0.
 function parseFiniteCoord(v) {
