@@ -1496,6 +1496,17 @@ $(document).ready(async function() {
 
         if (activeRoutes.size > 0) {
             updateMarkerSize(); // set correct html marker size before plotting
+        }
+
+        // The Call Knight Mover popup must not depend on the "show out of
+        // service buses" setting: parked-at-depot / off-line buses are drawn
+        // (or not) based on that toggle, but they aren't running service, so
+        // their presence shouldn't decide whether the no-service banner is
+        // shown. Judge by actual in-service buses instead — isBusInService is
+        // independent of the OOS display setting.
+        const anyInServiceBus = Object.keys(busData).some(busName => isBusInService(busName));
+
+        if (anyInServiceBus) {
             checkMinRoutes();
         } else {
             $('.info-main').css('justify-content', 'center'); // change back once buses go in serve. Gonna be annoying to implement that
