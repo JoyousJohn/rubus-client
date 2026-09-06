@@ -2720,6 +2720,7 @@ function closeSettingsPanel() {
     if (isDesktop) {
         localStorage.setItem('settingsPanelOpen', 'false');
     }
+    updateDirectFeedbackBtnVisibility();
 }
 
 // Save the current scroll when the page is left with the panel open, since a
@@ -2737,6 +2738,10 @@ window.restoreSettingsPanelState = function() {
 }
 
 function updateDirectFeedbackBtnVisibility() {
+    if (settings['toggle-hide-direct-feedback']) {
+        $('.direct-feedback-btn').hide();
+        return;
+    }
     const isStopSelected = Boolean(popupStopId) || $('.stop-info-popup').is(':visible');
     const isSubpanelOpen = $('.info-panels-show-hide-wrapper').is(':visible') || $('#route-selectors-container .bottom').length > 0;
     if (isStopSelected || isSubpanelOpen) {
@@ -2854,6 +2859,7 @@ const toggleSettings = [
     'toggle-cull-offscreen-bus-markers',
     'toggle-always-show-break-overdue',
     'toggle-settings-btn-end',
+    'toggle-hide-direct-feedback',
     'toggle-force-show-polylines',
     'toggle-force-show-stops',
     'toggle-adaptive-pixel-ratio',
@@ -3242,6 +3248,7 @@ function updateSettings() {
     });
 
     $('#toggle-hide-sim').prop('checked', !settings['toggle-show-sim']);
+    updateDirectFeedbackBtnVisibility();
 
     // Show Closest Stops toggle controls the center-stops chips above the buildings button
     var _csEnabled = (settings['toggle-show-closest-stops'] !== false) && (settings['toggle-show-center-stops'] !== false);

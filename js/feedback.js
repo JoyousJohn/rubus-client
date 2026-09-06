@@ -159,6 +159,24 @@ function openFeedbackModal(source = 'bus') {
         $('.feedback-destinations').hide();
     }
 
+    const $hideBtn = $('.feedback-hide-direct-btn');
+    if (source === 'direct') {
+        if (settings['toggle-hide-direct-feedback']) {
+            $hideBtn
+                .text('Hidden from map')
+                .removeClass('is-confirming')
+                .addClass('is-hidden')
+                .show();
+        } else {
+            $hideBtn
+                .text('Hide Direct Feedback Button From Map')
+                .removeClass('is-confirming is-hidden')
+                .show();
+        }
+    } else {
+        $hideBtn.hide();
+    }
+
     markPanelOpened('feedback');
     restoreFeedbackDraft(source);
     $('.empty-feedback').hide();
@@ -183,6 +201,7 @@ function closeFeedbackModal() {
     saveFeedbackDraft();
     delete window._panelOpenedAt['feedback'];
     $('.feedback-dest-tag').hide();
+    $('.feedback-hide-direct-btn').removeClass('is-confirming');
     $('.leave-feedback-wrapper').hide();
     if (feedbackSource === 'bus') {
         $('.bottom').show();
@@ -347,6 +366,38 @@ $(document).ready(function() {
     $('.feedback-outside').on('click', function(e) {
         if (e.target === this && mouseDownTarget === this) {
             closeFeedbackModal();
+        }
+    });
+
+    $(document).on('click', '.feedback-hide-direct-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const $btn = $(this);
+        if ($btn.hasClass('is-hidden')) return;
+
+        if (!$btn.hasClass('is-confirming')) {
+            $btn.addClass('is-confirming').text('Confirm? You can add it back from settings.');
+        } else {
+            settings['toggle-hide-direct-feedback'] = true;
+            $('#toggle-hide-direct-feedback').prop('checked', true);
+            saveSettings();
+            updateDirectFeedbackBtnVisibility();
+            $btn.removeClass('is-confirming').addClass('is-hidden').text('Hidden from map');
+            sa_event('toggle_change', {
+                toggle: 'toggle-hide-direct-feedback',
+                isChecked: true,
+                source: 'direct_feedback_modal'
+            });
+        }
+    });
+
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.feedback-hide-direct-btn').length) {
+            const $btn = $('.feedback-hide-direct-btn');
+            if ($btn.hasClass('is-confirming')) {
+                $btn.removeClass('is-confirming').text('Hide Direct Feedback Button From Map');
+            }
         }
     });
 });

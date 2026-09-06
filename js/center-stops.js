@@ -214,8 +214,12 @@ function _csItemsList() {
 function _csRefreshMetrics() {
     var first = document.querySelector('.center-stops-btns-item');
     if (!first) { _csMetrics = null; return; }
-    var maxPx = parseFloat(getComputedStyle(first).maxWidth) || 200;
-    var padH = parseFloat(getComputedStyle(first).paddingLeft) + parseFloat(getComputedStyle(first).paddingRight);
+    var cs = getComputedStyle(first);
+    var maxPx = parseFloat(cs.maxWidth) || 200;
+    // Chips are border-box: content limit must exclude padding AND border
+    // (a 1px theme border would otherwise steal 2px from the measured text).
+    var padH = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
+        + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
     _csMetrics = { maxPx: maxPx, padH: padH, limit: maxPx - padH };
     _syncProbeFont(first);
 }

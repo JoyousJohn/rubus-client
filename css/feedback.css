@@ -1,6 +1,6 @@
 .leave-feedback-modal {
     background-color: var(--theme-bg);
-    opacity: 0.3;
+    opacity: 0.5;
 }
 
 .leave-feedback-wrapper {
@@ -93,10 +93,12 @@
     outline-offset: 2px;
 }
 
-.feedback-checkbox:disabled {
+.feedback-checkbox:disabled,
+.feedback-dest-rubus {
     cursor: not-allowed;
     opacity: 0.6;
     filter: grayscale(1);
+    pointer-events: none;
 }
 
 .feedback-checkbox-label-disabled {
@@ -109,4 +111,43 @@
     color: #f24160;
     margin-left: 0.35rem;
     font-weight: 500;
+}
+
+.feedback-hide-direct-btn {
+    position: fixed;
+    top: calc(100vh - 4.2rem - env(safe-area-inset-bottom, 0px));
+    top: calc(100lvh - 4.2rem - env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--theme-color);
+    opacity: 0.8;
+    font-size: 1.3rem;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: underline;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: color 0.15s ease, opacity 0.15s ease;
+    max-width: 90%;
+    width: max-content;
+    line-height: 1.35;
+    z-index: 10;
+}
+
+.feedback-hide-direct-btn:hover {
+    opacity: 1;
+}
+
+.feedback-hide-direct-btn.is-confirming {
+    color: var(--theme-color);
+    opacity: 1;
+    font-weight: 500;
+}
+
+.feedback-hide-direct-btn.is-hidden {
+    color: var(--theme-color);
+    text-decoration: none;
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
 }

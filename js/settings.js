@@ -740,6 +740,12 @@ $('.settings-toggle .toggle-input').on('change', function () {
             populateRouteSelectors(activeRoutes);
             break;
 
+        case 'toggle-hide-direct-feedback':
+            console.log(`Hide Direct Feedback Button is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-hide-direct-feedback'] = isChecked;
+            updateDirectFeedbackBtnVisibility();
+            break;
+
         case 'toggle-show-alerts-other-campuses':
             settings['toggle-show-alerts-other-campuses'] = isChecked;
             refreshAlertsDisplay();

@@ -1510,7 +1510,7 @@
                     </div>
                     <div class="feedback-destinations none flex flex-col gap-y-1rem mt-1p5rem select-none">
                         <label class="feedback-checkbox-label feedback-checkbox-label-disabled flex align-center text-1p3rem">
-                            <input type="checkbox" class="feedback-checkbox feedback-dest-rubus" checked disabled onclick="return false;">
+                            <input type="checkbox" class="feedback-checkbox feedback-dest-rubus" checked disabled>
                             <span>Send to RUBus Team <span class="feedback-dest-tag none">(always required)</span></span>
                         </label>
                         <label class="feedback-checkbox-label flex align-center text-1p3rem pointer">
@@ -1531,6 +1531,7 @@
                 </div>
             </div>
         </div>
+        <div class="feedback-hide-direct-btn none select-none" role="button">Hide Direct Feedback Button From Map</div>
     </div>
 
     <div class="search-wrapper none">
@@ -2234,6 +2235,16 @@
                     $el.slideToggle();
                 })
                 </script>
+
+                <div class="flex justify-between">
+                    <div class="settings-heading">Hide Direct Feedback Button</div>
+                    <div class="settings-toggle">
+                        <input type="checkbox" id="toggle-hide-direct-feedback" class="toggle-input">
+                        <label for="toggle-hide-direct-feedback" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <div class="text-1p6rem mb-0p25rem bold-500">CAMPUS</div>

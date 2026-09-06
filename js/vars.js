@@ -64,6 +64,7 @@ const defaultSettings = {
     'toggle-show-bike-racks': false,
     'toggle-disable-fireworks-on-open': false,
     'toggle-settings-btn-end': false,
+    'toggle-hide-direct-feedback': false,
     'toggle-show-buildings': true,
     'toggle-show-alerts-other-campuses': false,
     'toggle-show-out-of-service': false,
