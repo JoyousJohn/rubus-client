@@ -1373,6 +1373,25 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
             if (busData[busName]['at_stop'] && busStopId === stopId) {
                 entry.eta = 0;
+                // Special routes visit SAC NB (stop 3) twice: 2->3->6 (To Hill North)
+                // vs 22->3->1 (To CASC). Even when Here, show where it heads next.
+                if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && Number(stopId) === 3) {
+                    let effectivePrev = busData[busName]['prevStopId'];
+                    if (effectivePrev == null) {
+                        const rawStop = busData[busName]['stopId'];
+                        if (Array.isArray(rawStop) && rawStop.length > 1) effectivePrev = rawStop[1];
+                    }
+                    const prevNum = Number(effectivePrev);
+                    if (!Number.isNaN(prevNum)) {
+                        const nextStopId = getNextStopAfterCurrentGivenPrev(servicedRoute, prevNum, 3);
+                        const nextStop = stopsData[nextStopId];
+                        const nextStopName = nextStop ? (nextStop.shorterName || nextStop.shortName || nextStop.mainName || nextStop.name) : '';
+                        if (nextStopName) {
+                            entry.nextStopId = nextStopId;
+                            entry.nextStopName = nextStopName;
+                        }
+                    }
+                }
             } else if (busETAs[busName]) {
                 if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && Number(stopId) === 3) { // special case: show both VIA paths
                     const viaMap = busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];

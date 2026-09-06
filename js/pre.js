@@ -803,7 +803,19 @@ function updateTimeToStops(busNames) {
 
         const busRoute = busData[busName].route
         const isSpecialRoute = (busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1')
-        const nextStop = getNextStopId(busRoute, stopId)
+        let nextStop = getNextStopId(busRoute, stopId)
+        // Resolve the true departure leg from approach prev whether currently dwelling
+        // or enroute having just departed Stop 3.
+        if (isSpecialRoute && Number(stopId) === 3) {
+            let effPrevRaw = data['prevStopId'];
+            if (effPrevRaw == null && Array.isArray(data['stopId']) && data['stopId'].length > 1) {
+                effPrevRaw = data['stopId'][1];
+            }
+            const effPrev = Number(effPrevRaw);
+            if (!Number.isNaN(effPrev)) {
+                nextStop = getNextStopAfterCurrentGivenPrev(busRoute, effPrev, 3);
+            }
+        }
         busData[busName].next_stop = nextStop
         // console.log(`next stop for bus ${busName} is ${nextStop}`)
 
@@ -999,13 +1011,26 @@ async function fetchWhere() {
             
             if (!busLocations[busName]['where']) { continue; } // joined service and didn't get to a stop polygon yet        
             
-            busData[busName]['stopId'] = parseInt(busLocations[busName]['where'][0]);
+            const newStopId = parseInt(busLocations[busName]['where'][0]);
+            const oldRaw = busData[busName]['stopId'];
+            const oldStopId = Array.isArray(oldRaw) ? parseInt(oldRaw[0]) : (oldRaw !== undefined && oldRaw !== null ? parseInt(oldRaw) : NaN);
+            busData[busName]['stopId'] = newStopId;
             if (busLocations[busName]['where'].length === 2) {
                 busData[busName]['prevStopId'] = parseInt(busLocations[busName]['where'][1]);
                 busData[busName]['at_stop'] = false;
             } else if (busLocations[busName]['where'].length === 1) {
                 busData[busName]['at_stop'] = true;
-                delete busData[busName]['prevStopId'];
+                // Server where=[stop] carries no approach leg, but SAC NB (stop 3)
+                // is visited twice (2->3->6 vs 22->3->1). Keep last known prev when
+                // still at the same stop so the stop popup can still show To <next>.
+                // If we arrived from a different stop, record it as prev.
+                if (!Number.isNaN(oldStopId) && oldStopId === newStopId) {
+                    // keep existing prevStopId as-is
+                } else if (!Number.isNaN(oldStopId)) {
+                    busData[busName]['prevStopId'] = oldStopId;
+                } else {
+                    delete busData[busName]['prevStopId'];
+                }
             }
 
             updateRouteBusStatus(busName);

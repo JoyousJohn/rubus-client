@@ -888,7 +888,12 @@ async function updateSimBus(busName) {
         // Update stop context
         bus.prevStopId = prevStop;
         bus.stopId = currStop;
-        bus.next_stop = getNextStopId(route, currStop);
+        if (Number(currStop) === 3 &&
+            (route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1')) {
+            bus.next_stop = getNextStopAfterCurrentGivenPrev(route, Number(prevStop), 3);
+        } else {
+            bus.next_stop = getNextStopId(route, currStop);
+        }
         busLocations[busName] = { where: [currStop] };
         bus.at_stop = true;
         bus.timeArrived = new Date();

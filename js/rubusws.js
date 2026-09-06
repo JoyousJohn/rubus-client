@@ -176,15 +176,30 @@ function openRUBusSocket() {
             const busRoute = busData[busName].route;
             const stopId = eventData.stopId;
 
-            if (busData[busName]['stopId']) {
-                busData[busName]['prevStopId'] = busData[busName]['stopId'];
+            const oldRaw = busData[busName]['stopId'];
+            const oldId = Array.isArray(oldRaw) ? Number(oldRaw[0]) : Number(oldRaw);
+            const newId = Number(stopId);
+            if (!Number.isNaN(oldId) && !Number.isNaN(newId)) {
+                // Was enroute to the same stop (stopId already equals arrival stop):
+                // keep the true approach leg (e.g. 2 vs 22 for SAC NB) instead of
+                // clobbering it with the stop itself.
+                if (oldId !== newId) {
+                    busData[busName]['prevStopId'] = Array.isArray(oldRaw) ? oldRaw[0] : oldRaw;
+                }
             }
             busData[busName]['stopId'] = stopId;
-            if (stopId !== null && stopId !== undefined && !isNaN(Number(stopId))) {
-                busData[busName]['next_stop'] = getNextStopId(busRoute, Number(stopId));
+            if (!Number.isNaN(newId)) {
+                const effPrev = Number(busData[busName]['prevStopId']);
+                if (Number(newId) === 3 && !Number.isNaN(effPrev) &&
+                    (busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1')) {
+                    busData[busName]['next_stop'] = getNextStopAfterCurrentGivenPrev(busRoute, effPrev, 3);
+                } else {
+                    busData[busName]['next_stop'] = getNextStopId(busRoute, newId);
+                }
             }
 
-            const stopName = (stopId !== null && stopId !== undefined && stopsData[stopId]) ? stopsData[stopId].name : '';
+            const stopNameKey = stopId;
+            const stopName = (stopNameKey !== null && stopNameKey !== undefined && stopsData[stopNameKey]) ? stopsData[stopNameKey].name : '';
 
             if (eventData['event'] === 'arrival') {
                 busData[busName]['at_stop'] = true;
@@ -312,10 +327,31 @@ function openRUBusSocket() {
 
                 const busInfo = eventData[busName];
 
+                const oldRawSnap = busData[busName].stopId;
+                const oldIdSnap = Array.isArray(oldRawSnap) ? Number(oldRawSnap[0]) : Number(oldRawSnap);
+                const newRawSnap = busInfo.stopId;
+                const newIdSnap = Array.isArray(newRawSnap) ? Number(newRawSnap[0]) : Number(newRawSnap);
                 busData[busName].at_stop = Boolean(busInfo.stopped);
                 busData[busName].stopId = busInfo.stopId;
-                if (busInfo.stopId !== null && busInfo.stopId !== undefined && !isNaN(Number(busInfo.stopId))) {
-                    busData[busName].next_stop = getNextStopId(busData[busName].route, Number(busInfo.stopId));
+                // Snapshot carries no approach leg. Keep last known prev when still
+                // at the same stop (critical for SAC NB double-visit); if the stop
+                // changed, the old stop is the best prev guess.
+                if (!Number.isNaN(oldIdSnap) && !Number.isNaN(newIdSnap) && oldIdSnap !== newIdSnap &&
+                    oldRawSnap !== undefined && oldRawSnap !== null) {
+                    busData[busName].prevStopId = Array.isArray(oldRawSnap) ? oldRawSnap[0] : oldRawSnap;
+                } else if (busData[busName].prevStopId === undefined && Array.isArray(newRawSnap) && newRawSnap.length > 1) {
+                    // Initial snapshot: server sends [stop, prev] for stopped buses (e.g. [3, 22])
+                    busData[busName].prevStopId = Number(newRawSnap[1]);
+                }
+                if (!Number.isNaN(newIdSnap)) {
+                    const effPrevSnap = Number(busData[busName].prevStopId);
+                    const r = busData[busName].route;
+                    if (newIdSnap === 3 && Boolean(busInfo.stopped) && !Number.isNaN(effPrevSnap) &&
+                        (r === 'wknd1' || r === 'all' || r === 'winter1' || r === 'on1' || r === 'summer1')) {
+                        busData[busName].next_stop = getNextStopAfterCurrentGivenPrev(r, effPrevSnap, 3);
+                    } else {
+                        busData[busName].next_stop = getNextStopId(busData[busName].route, newIdSnap);
+                    }
                 }
                 busData[busName].timeArrived = busInfo.time_arrived;
 
