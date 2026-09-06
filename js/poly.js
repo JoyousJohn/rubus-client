@@ -1539,6 +1539,8 @@ function updateStopBuses(stopId, actuallyShownRoute) {
     // const infoNextStopsScrollPosition = $('.info-next-stops').scrollTop();
     // alert(infoNextStopsScrollPosition)
 
+    let hasOvertimeIncoming = false;
+
     firstLoopEntries.forEach(data => {
 
         // Skip out of service buses if the setting is off or session-hide is active
@@ -1561,6 +1563,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         let stopOctaconVisibilityClass = 'none'
         if (busData[data.busName].overtime) {
             stopOctaconVisibilityClass = ''
+            hasOvertimeIncoming = true;
         }
 
         let stopOoSVisibilityClass = 'none';
@@ -1921,6 +1924,15 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         }
     } else {
         $('.stop-info-avg-wait').hide();
+    }
+
+    if (hasOvertimeIncoming) {
+        $('.stop-info-overtime-notice').removeClass('none').empty()
+            .append($('<span class="stop-octagon stop-octagon-inline" style="opacity: 0.5;"><div>!</div></span>'))
+            .append(document.createTextNode(' represents buses stopped unusually long; these may arrive later than predicted.'))
+            .show();
+    } else {
+        $('.stop-info-overtime-notice').hide();
     }
     
 }

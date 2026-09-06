@@ -1497,6 +1497,23 @@ html, body {
     margin: 0 1rem 1rem 1rem;
 }
 
+.stop-info-overtime-notice {
+    font-size: 1.3rem;
+    color: gray;
+    margin: 0 1rem 1rem 1rem;
+}
+
+/* Smaller inline copy of the red overtime octagon for the legend notice. */
+.stop-octagon-inline {
+    display: inline-flex;
+    width: 1.3rem;
+    margin-right: 0.2rem;
+}
+
+.stop-octagon-inline > div {
+    font-size: 1.1rem;
+}
+
 
 .my-location-popup {
     padding-bottom: 2rem;
