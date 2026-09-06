@@ -9,6 +9,32 @@
         justify-content: end;
     }
 
+    /* Pin search/nav to the right like bus/stop/building popups (not fullscreen) */
+    /* NOTE: `body` prefix bumps specificity so this wins over search.css,
+       which loads after desktop.css (equal-specificity ties go to later file). */
+    body .search-wrapper {
+        left: auto;
+        right: 0;
+        top: 0;
+        bottom: auto;
+        width: 30%;
+        max-width: 30%;
+        height: calc(100vh - 2rem);
+        max-height: calc(100vh - 2rem);
+        margin: 1rem 1rem 1rem auto;
+        border-radius: 1rem;
+        border: 1px solid var(--theme-border);
+        overflow: hidden;
+        background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* Let the glass bg show through (base is solid var(--theme-bg)) */
+    .search-wrapper .navigate-wrapper {
+        background-color: transparent;
+    }
+
     .getting-location-popup {
         margin-top: 0;
     }
