@@ -2328,6 +2328,22 @@ function updateRouteChangesMenu() {
         });
 }
 
+const routeChangesOpenDetails = new Set();
+
+function formatRouteDuration(ms) {
+    if (isNaN(ms) || ms < 0) return null;
+    const totalMinutes = Math.floor(ms / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours > 0) {
+        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+    if (minutes === 0) {
+        return '< 1m';
+    }
+    return `${minutes}m`;
+}
+
 function renderRouteChangesMenu(allChanges) {
     const $grid = $('.route-changes-grid');
     const $wrapper = $('.route-changes-wrapper');
@@ -2338,9 +2354,20 @@ function renderRouteChangesMenu(allChanges) {
 
     const rows = [];
     for (const busName in (allChanges || {})) {
-        for (const change of (allChanges[busName] || [])) {
-            rows.push({ busName, oldRoute: change.old_route, newRoute: change.new_route, time: change.time });
-        }
+        const busHistory = (allChanges[busName] || [])
+            .slice()
+            .sort((a, b) => new Date(a.time) - new Date(b.time));
+        busHistory.forEach((change, idx) => {
+            rows.push({
+                busName,
+                oldRoute: change.old_route,
+                newRoute: change.new_route,
+                time: change.time,
+                joinedService: change.joined_service || change.joinedService,
+                historyIndex: idx,
+                busHistory: busHistory
+            });
+        });
     }
     if (rows.length === 0) {
         $wrapper.hide();
@@ -2376,25 +2403,144 @@ function renderRouteChangesMenu(allChanges) {
         const newRouteColor = (row.newRoute && colorMappings[row.newRoute])
             ? colorMappings[row.newRoute] : 'var(--theme-color)';
         const changeTime = new Date(row.time);
+        const changeTimeMs = changeTime.getTime();
         const timeStr = isNaN(changeTime)
             ? ''
             : changeTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const oldRouteName = String(row.oldRoute || '?').toUpperCase();
+        const newRouteName = String(row.newRoute || '?').toUpperCase();
+
         const $busCol = $('<div class="route-changes-bus pointer text-2rem"></div>').css('color', newRouteColor).text(busLabel);
-        const $changeCol = $('<div class="route-changes-change pointer text-1p6rem"></div>')
-            .append($('<span class="route-changes-old-route"></span>').css('color', oldRouteColor).text(String(row.oldRoute || '?').toUpperCase()))
+        const $changeCol = $('<div class="route-changes-change text-1p6rem"></div>');
+        const $routesPart = $('<div class="route-changes-routes pointer"></div>')
+            .append($('<span class="route-changes-old-route"></span>').css('color', oldRouteColor).text(oldRouteName))
             .append($('<span class="route-changes-arrow"></span>').text(' → '))
-            .append($('<span class="route-changes-new-route"></span>').css('color', newRouteColor).text(String(row.newRoute || '?').toUpperCase()));
-        const $timeCol = $('<div class="route-changes-time pointer text-2rem"></div>').text(timeStr);
-        const onRowClick = function() {
+            .append($('<span class="route-changes-new-route"></span>').css('color', newRouteColor).text(newRouteName));
+        // Green dot after the new route when the bus is still in service
+        // (same style as the nav menu's in-service dot).
+        if (isBusInService(row.busName)) {
+            $routesPart.append($('<span class="nav-route-live-dot" aria-label="Bus in service" title="Bus in service"></span>').css('margin-left', '0.6rem'));
+        }
+
+        // Chevron and the rest of the change column to its right as the expand zone
+        const $expandZone = $('<div class="route-changes-expand-zone pointer" aria-label="Toggle details" title="Toggle details"></div>');
+        const rowKey = `${row.busName}_${row.time}_${row.oldRoute}_${row.newRoute}`;
+        const isExpanded = routeChangesOpenDetails.has(rowKey);
+        const $chevron = $('<i class="route-changes-chevron fa-solid pointer"></i>')
+            .addClass(isExpanded ? 'fa-chevron-up' : 'fa-chevron-down');
+        $expandZone.append($chevron);
+
+        $changeCol.append($routesPart).append($expandZone);
+
+        const $timeCol = $('<div class="route-changes-time pointer text-2rem" aria-label="Toggle details" title="Toggle details"></div>').text(timeStr);
+
+        // Calculate service duration on old route
+        let oldRouteDurationText = 'Unknown';
+        if (!isNaN(changeTimeMs)) {
+            if (row.historyIndex > 0) {
+                const prevChange = row.busHistory[row.historyIndex - 1];
+                const prevTimeMs = new Date(prevChange.time).getTime();
+                const durMs = changeTimeMs - prevTimeMs;
+                const durStr = formatRouteDuration(durMs);
+                if (durStr) oldRouteDurationText = durStr;
+            } else {
+                const joinTimeRaw = row.joinedService
+                    || (typeof joined_service !== 'undefined' && joined_service && joined_service[row.busName])
+                    || (window.joined_service && window.joined_service[row.busName])
+                    || (busData[row.busName] && busData[row.busName].joined_service);
+                if (joinTimeRaw) {
+                    const joinTimeMs = new Date(joinTimeRaw).getTime();
+                    if (!isNaN(joinTimeMs) && joinTimeMs <= changeTimeMs) {
+                        const durMs = changeTimeMs - joinTimeMs;
+                        const durStr = formatRouteDuration(durMs);
+                        if (durStr) oldRouteDurationText = `${durStr} (since start of service)`;
+                    }
+                }
+            }
+        }
+
+        // Calculate service duration on new route
+        let newRouteDurationText = 'Unknown';
+        if (!isNaN(changeTimeMs)) {
+            if (row.historyIndex < row.busHistory.length - 1) {
+                const nextChange = row.busHistory[row.historyIndex + 1];
+                const nextTimeMs = new Date(nextChange.time).getTime();
+                const durMs = nextTimeMs - changeTimeMs;
+                const durStr = formatRouteDuration(durMs);
+                const nextRouteName = String(nextChange.new_route || '?').toUpperCase();
+                newRouteDurationText = durStr
+                    ? `${durStr} (before switching to ${nextRouteName})`
+                    : `Switched to ${nextRouteName}`;
+            } else {
+                const durMs = Date.now() - changeTimeMs;
+                const durStr = formatRouteDuration(durMs);
+                const inService = isBusInService(row.busName);
+                if (inService) {
+                    newRouteDurationText = durStr
+                        ? `${durStr} (currently in service)`
+                        : 'Currently in service';
+                } else {
+                    newRouteDurationText = durStr
+                        ? `${durStr} (now out of service)`
+                        : 'Out of service';
+                }
+            }
+        }
+
+        const $detailRow = $('<div class="route-changes-detail-row" style="grid-column: 1 / -1;"></div>');
+        if (!isExpanded) {
+            $detailRow.hide();
+        }
+
+        const $detailContent = $('<div class="route-changes-detail-content"></div>');
+        const $oldItem = $('<div class="route-changes-detail-item"></div>')
+            .append($('<span class="route-changes-detail-label"></span>').html(`On <span style="color: ${oldRouteColor}; font-weight: 600;">${oldRouteName}</span>:`))
+            .append($('<span class="route-changes-detail-val"></span>').text(oldRouteDurationText));
+        const $newItem = $('<div class="route-changes-detail-item"></div>')
+            .append($('<span class="route-changes-detail-label"></span>').html(`On <span style="color: ${newRouteColor}; font-weight: 600;">${newRouteName}</span>:`))
+            .append($('<span class="route-changes-detail-val"></span>').text(newRouteDurationText));
+
+        $detailContent.append($oldItem).append($newItem);
+        $detailRow.append($detailContent);
+
+        $detailRow.click(function(e) {
+            e.stopPropagation();
+        });
+
+        const toggleDetails = function(e) {
+            e.stopPropagation();
+            const willOpen = !$detailRow.is(':visible');
+            if (willOpen) {
+                routeChangesOpenDetails.add(rowKey);
+                $chevron.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                $detailRow.stop(true, true).slideDown(180);
+            } else {
+                routeChangesOpenDetails.delete(rowKey);
+                $chevron.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                $detailRow.stop(true, true).slideUp(180);
+            }
+        };
+
+        $expandZone.click(toggleDetails);
+        $timeCol.click(toggleDetails);
+        $timeCol.hover(
+            function() { $chevron.css('color', 'var(--theme-color)'); },
+            function() { $chevron.css('color', ''); }
+        );
+
+        const onFlyToBus = function() {
             if (!isBusShownOnMap(row.busName)) return;
             $('.info-panels-close').trigger('click');
             flyToBus(row.busName);
             selectBusMarker(row.busName);
         };
-        $busCol.add($changeCol).add($timeCol).click(onRowClick);
+        $busCol.click(onFlyToBus);
+        $routesPart.click(onFlyToBus);
+
         $grid.append($busCol);
         $grid.append($changeCol);
         $grid.append($timeCol);
+        $grid.append($detailRow);
     });
 }
 

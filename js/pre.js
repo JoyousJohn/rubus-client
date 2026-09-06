@@ -1453,6 +1453,7 @@ $(document).ready(async function() {
                 throw new Error('Network response was not ok');
             }
             joined_service = await response.json();
+            window.joined_service = joined_service;
             // console.log('Bus joined service times:', joined_service);
 
         } catch (error) {
