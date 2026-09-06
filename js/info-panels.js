@@ -162,8 +162,8 @@ function restorePanelPosition() {
 	// Update currentPanelIndex to match the restored position
 	currentPanelIndex = panelIndex;
 
-	// Update header button styling to match the restored panel (slider indicator)
-	updateInfoPanelIndicator(currentPanel);
+	// Update header button styling to match the restored panel (slider indicator) immediately without sliding
+	updateInfoPanelIndicator(currentPanel, { immediate: true });
 
 	// Re-enable transitions after positioning is complete (only if not dragging)
 	setTimeout(() => {
@@ -413,7 +413,9 @@ function updatePanelPosition(panel, options) {
 }
 
 // ── Slider indicator helpers (styled like .campus-slider) ─────────────────
-function updateInfoPanelIndicator(panel) {
+function updateInfoPanelIndicator(panel, options) {
+	const opts = options || {};
+	const immediate = !!opts.immediate;
 	if (!panel) {
 		if (typeof panelOrder !== 'undefined' && typeof currentPanelIndex !== 'undefined') {
 			panel = panelOrder[currentPanelIndex];
@@ -426,28 +428,41 @@ function updateInfoPanelIndicator(panel) {
 	if (!slider || !indicator) return;
 	const target = slider.querySelector(`[data-panel="${panel}"]`);
 	if (!target) return;
-	const options = slider.querySelectorAll('.info-panel-option');
-	const index = Array.from(options).indexOf(target);
-	const count = options.length;
+	const optionsList = slider.querySelectorAll('.info-panel-option');
+	const index = Array.from(optionsList).indexOf(target);
+	const count = optionsList.length;
 	if (index < 0 || count === 0) return;
 
 	// Position indicator with transform (compositor-only). Base left stays at
 	// -3px so the +6px bleed is symmetric; translateX carries the index offset.
 	// Never animate `left` per-frame — that forces layout on every tick.
-	indicator.style.left = '-3px';
+	const sliderWidth = slider.getBoundingClientRect().width;
+	const optionWidth = sliderWidth > 0 ? (sliderWidth / count) : 0;
+
+	indicator.style.transition = immediate ? 'none' : INFO_INDICATOR_TRANSITION;
 	indicator.style.width = `calc(100% / ${count} + 6px)`;
 	indicator.style.top = '-3px';
 	indicator.style.height = 'calc(100% + 6px)';
-	const optionWidth = slider.getBoundingClientRect().width / count;
-	indicator.style.transition = INFO_INDICATOR_TRANSITION;
-	indicator.style.transform = `translateX(${index * optionWidth}px)`;
 
-	slider.querySelectorAll('.info-panel-option').forEach(opt => {
-		opt.classList.remove('selected');
-		opt.classList.remove('all-stops-selected-menu');
+	if (optionWidth > 0) {
+		indicator.style.left = '-3px';
+		indicator.style.transform = `translateX(${index * optionWidth}px)`;
+	} else {
+		indicator.style.left = `calc(${index} * (100% / ${count}) - 3px)`;
+		indicator.style.transform = 'translateX(0)';
+	}
+
+	optionsList.forEach(opt => {
+		opt.classList.remove('selected', 'all-stops-selected-menu');
 	});
-	target.classList.add('selected');
-	target.classList.add('all-stops-selected-menu');
+	target.classList.add('selected', 'all-stops-selected-menu');
+
+	if (immediate) {
+		void indicator.offsetWidth;
+		requestAnimationFrame(() => {
+			indicator.style.transition = INFO_INDICATOR_TRANSITION;
+		});
+	}
 }
 window.updateInfoPanelIndicator = updateInfoPanelIndicator;
 
@@ -739,7 +754,7 @@ function initInfoPanelSliderDrag() {
 	// Keep indicator in sync with theme changes
 	try {
 		const obs = new MutationObserver(function() {
-			try { updateInfoPanelIndicator(panelOrder[currentPanelIndex]); } catch(e) {}
+			try { updateInfoPanelIndicator(panelOrder[currentPanelIndex], { immediate: true }); } catch(e) {}
 		});
 		obs.observe(document.documentElement, { attributes: true, attributeFilter: ['theme', 'data-selected-theme'] });
 	} catch(e) {}
@@ -747,7 +762,7 @@ function initInfoPanelSliderDrag() {
 
 // Initialize after DOM ready
 $(function() {
-	try { updateInfoPanelIndicator(panelOrder[lastUserSelectedPanelIndex] || 'stops'); } catch(e) {}
+	try { updateInfoPanelIndicator(panelOrder[lastUserSelectedPanelIndex] || 'stops', { immediate: true }); } catch(e) {}
 	try { initInfoPanelSliderDrag(); } catch(e) { console.warn('initInfoPanelSliderDrag failed', e); }
 });
 
@@ -1061,7 +1076,7 @@ $(window).on('resize', function() {
 			'transform': 'translateX(' + targetX + 'px)'
 		});
 		// Recompute transform-based indicator (optionWidth changed)
-		try { updateInfoPanelIndicator(panelOrder[currentPanelIndex]); } catch(e) {}
+		try { updateInfoPanelIndicator(panelOrder[currentPanelIndex], { immediate: true }); } catch(e) {}
 	}
 });
 

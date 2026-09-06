@@ -18,6 +18,8 @@
     margin-top: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
+    border: 1px solid var(--theme-border);
+    box-sizing: border-box;
     padding: 1rem;
 }
 
@@ -42,6 +44,8 @@
     column-gap: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
+    border: 1px solid var(--theme-border);
+    box-sizing: border-box;
     padding: 2rem;
 }
 
@@ -127,6 +131,8 @@
     margin-top: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
+    border: 1px solid var(--theme-border);
+    box-sizing: border-box;
     padding: 2rem;
 }
 
@@ -200,6 +206,8 @@
     margin-top: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
+    border: 1px solid var(--theme-border);
+    box-sizing: border-box;
     padding: 2rem;
 }
 
@@ -282,6 +290,8 @@
     margin-bottom: 2rem;
     border-radius: 1rem;
     background-color: var(--theme-bg-closest-stop);
+    border: 1px solid var(--theme-border);
+    box-sizing: border-box;
     padding: 2rem;
 }
 

@@ -90,6 +90,8 @@
 
 
 .incoming-wrapper {
+    border: 1px solid var(--theme-border);
+    box-sizing: border-box;
     transition: 200ms;
 }
 
