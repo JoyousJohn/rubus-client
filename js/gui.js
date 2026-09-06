@@ -1023,7 +1023,7 @@ function selectedRoute(route) {
         
         if (routesTabActive) {
             // We're in the routes subpanel - just unselect the route and stay in the panel
-            toggleRouteSelectors(route);
+            toggleRouteSelectors(route, true);
             
             // Clear the route panel data since no route is selected
             $('.route-name').text('').css('color', '');
