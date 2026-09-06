@@ -1741,7 +1741,7 @@ async function randomStepBusSpeeds() {
             if (settings['toggle-show-route-bus-speeds']) {
                 $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph');
             }
-            $(`.route-bus-capacity[bus-name="${busName}"]`).text(busData[busName].capacity + '% full');
+            $(`.route-bus-capacity[bus-name="${busName}"]`).text((busData[busName].capacity && busData[busName].capacity > 0) ? busData[busName].capacity + '% full' : '');
             updateRouteBusStatus(busName);
         }
     }

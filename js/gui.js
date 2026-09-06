@@ -1160,7 +1160,8 @@ function selectedRoute(route) {
         if ('visualSpeed' in busData[busName] && !isNaN(parseInt(busData[busName].visualSpeed))) {
             speed = parseInt(busData[busName].visualSpeed) + 'mph';
         }
-        const capacity = (busData[busName].capacity !== undefined && busData[busName].capacity !== null ? busData[busName].capacity : 0) + '% full';
+        const rawCap = busData[busName].capacity;
+        const capacity = (rawCap && rawCap > 0) ? rawCap + '% full' : '';
 
         const { isStopped, stopName, etaText } = getBusStopInfo(busName);
         const iconHtml = getBusStopStatusIconHtml(isStopped, stopName);
