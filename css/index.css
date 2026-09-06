@@ -43,7 +43,7 @@
     --theme-bg-closest-stop: rgb(240, 240, 240);
     --theme-hidden-route-col: #d2d1d1;
     --theme-bus-icon-inner: white;
-    --theme-satellite-btn: rgb(143, 171, 255);
+    --theme-satellite-btn: #1a73e8;
     --theme-breaks-min-color: orange;
     --theme-short-stops-color: #29c529;
     --theme-chat-recs-bg: #f1f1f1;
@@ -645,7 +645,7 @@ html, body {
 }
 
 .knight-mover {
-    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--theme-border);
@@ -694,7 +694,7 @@ html, body {
 .campus-toggle {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--theme-border);
@@ -1001,7 +1001,7 @@ html, body {
 }
 
 .bus-info-main, .info-next-stops {
-    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     /* background-color: red; */
@@ -1237,7 +1237,7 @@ html, body {
 
 
 .my-location-popup {
-    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--theme-border);
@@ -1266,7 +1266,7 @@ html, body {
 }
 
 .stop-info-popup-inner {
-    background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--theme-border);
@@ -1297,8 +1297,13 @@ html, body {
 
 .stop-info-back-wrapper, .bus-info-back-wrapper, .building-info-back-wrapper {
     font-size: 1.7rem;
-    background-color: var(--theme-bg);
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--theme-border);
     color: var(--theme-color);
+    user-select: none;
+    -webkit-user-select: none;
     border-radius: 1rem;
     padding: 0 1.5rem 0 1.2rem;
     display: none; /* Hidden by default */
@@ -1309,8 +1314,9 @@ html, body {
 
 .stop-info-back-wrapper:hover,
 .building-info-back-wrapper:hover {
-    background-color: rgb(88, 88, 234);
-    color: rgb(242, 242, 242)
+    background-color: var(--theme-accent);
+    color: var(--theme-bg);
+    border-color: var(--theme-accent);
 }
 
 .bus-btns, .stop-btns, .building-btns {
@@ -1321,7 +1327,10 @@ html, body {
 
 .bus-star, .bus-share, .bus-comment, .bus-follow, .stop-navigate, .stop-directions, .bus-history, .building-navigate, .building-directions {
     color: var(--theme-color);
-    background-color: var(--theme-bg);
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--theme-border);
     font-size: 1.7rem;
     aspect-ratio: 1;
     min-height: fit-content;
@@ -1828,6 +1837,7 @@ html, body {
     background-color: var(--theme-bg);
     padding: 1.7rem;
     border-radius: 5rem;
+    border: 1px solid var(--theme-border);
     font-size: 2.5rem;
     /* width: min-content; */
     color: var(--theme-color);
@@ -1858,6 +1868,7 @@ html, body {
     color: var(--theme-color);
     padding: 0.7rem 1.4rem;
     border-radius: 1.3rem;
+    border: 1px solid var(--theme-border);
     box-sizing: border-box;
     font-size: 1.1rem;
     white-space: normal;

@@ -25,7 +25,7 @@
         border-radius: 1rem;
         border: 1px solid var(--theme-border);
         overflow: hidden;
-        background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent);
+        background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
     }
