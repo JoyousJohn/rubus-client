@@ -52,6 +52,19 @@ $('.settings-toggle .toggle-input').on('change', function () {
                 }
             }
             break;
+
+        case 'toggle-eta-tooltips-above-buses':
+            settings['toggle-eta-tooltips-above-buses'] = isChecked;
+            if (typeof updateStopsLayerOrder === 'function') {
+                updateStopsLayerOrder();
+            }
+            // DOM-renderer mode has no GL layers: re-apply stop marker
+            // z-offsets so tooltips (children of the stop markers) paint
+            // above/below bus markers per the new value.
+            if (!stopLayerManager.isActive()) {
+                updateStopsOpacity();
+            }
+            break;
         
         // Dev settings
 

@@ -228,7 +228,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
             $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
         }
         if (busStopMarkers[popupStopId]) {
-            busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+            busStopMarkers[popupStopId].setZIndexOffset(stopMarkersAboveBuses() ? 1000 : 0);
         }
         stopLayerManager.setSelected(null);
         // Release any popup-only marker pin when switching from a stop to a bus.

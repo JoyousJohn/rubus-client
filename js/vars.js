@@ -56,6 +56,7 @@ const defaultSettings = {
     'toggle-select-closest-stop': true,
     'toggle-hide-other-routes': true,
     'toggle-stops-above-buses': false,
+    'toggle-eta-tooltips-above-buses': false,
     'toggle-offscreen-bus-indicators': false,
     'toggle-offscreen-bus-indicators-above-gui': false,
     'toggle-offscreen-bus-indicators-select-on-tap': false,

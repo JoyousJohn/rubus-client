@@ -174,7 +174,7 @@ async function populateBuildingClosestStopsList(feature) {
     $list.empty();
 
     // Prepare the bottom action wrapper and the Google Maps button (always visible)
-    const $showMoreWrapper = $('<div class="flex justify-between"></div>');
+    const $showMoreWrapper = $('<div class="flex justify-between gap-x-1rem"></div>');
     const $openInGoogleMaps = $('<div class="building-open-in-google-maps pointer mt-1rem" style="color:rgb(105, 105, 191); font-size:1.2rem; text-align:right; margin-left:auto;">Open in Google Maps</div>');
     $openInGoogleMaps.click(function() {
         window.open(`https://www.google.com/maps/search/?api=1&query=${buildingLat},${buildingLng}`, '_blank');

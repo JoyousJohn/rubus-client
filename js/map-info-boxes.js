@@ -32,7 +32,7 @@ function hideInfoBoxes(instantly_hide) {
             $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png')
         }
         
-        busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+        busStopMarkers[popupStopId].setZIndexOffset(stopMarkersAboveBuses() ? 1000 : 0);
 
         if (typeof stopLayerManager !== 'undefined') {
             stopLayerManager.setSelected(null);

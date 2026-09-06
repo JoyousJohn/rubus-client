@@ -6,6 +6,15 @@ let previousRoutesWithPolylines = new Set();
 const FORCE_SHOW_SETTING = 'force-show-polylines';
 const FORCE_SHOW_TOGGLE = 'toggle-force-show-polylines';
 
+// Effective "stops above buses" state for DOM stop markers. The ETA tooltip
+// labels are children of the stop markers, so "Show ETA Tooltips Above
+// Buses" also raises the markers (unavoidable in DOM mode; in WebGL mode
+// only the label layer moves — see updateStopsLayerOrder).
+function stopMarkersAboveBuses() {
+    return !!(settings['toggle-stops-above-buses'] || settings['toggle-eta-tooltips-above-buses']);
+}
+window.stopMarkersAboveBuses = stopMarkersAboveBuses;
+
 function isForceShowEnabled() {
     return settings && settings[FORCE_SHOW_TOGGLE] === true;
 }
@@ -118,7 +127,7 @@ function applyForceShowStops() {
                     iconAnchor: [15, 15],
                     html: `<div class="marker-wrapper"><img src="img/stop_marker.png" width="18" height="18" stop-marker-id="${id}"/><div class="corner-label none" stop-eta="${id}">xm</div></div>`
                 }),
-                zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
+                zIndexOffset: stopMarkersAboveBuses() ? 1000 : 0,
             }).addTo(map).on('click', function(e) {
                 if (e && e.stopPropagation) e.stopPropagation();
                 if (e && e.originalEvent && e.originalEvent.stopPropagation) e.originalEvent.stopPropagation();
@@ -1138,7 +1147,7 @@ function updateStopsOpacity() {
         }
     }
 
-    const baseZ = settings['toggle-stops-above-buses'] ? 1000 : 0;
+    const baseZ = stopMarkersAboveBuses() ? 1000 : 0;
     const isShowOOS = !!settings['toggle-show-out-of-service'];
 
     for (const stopId in busStopMarkers) {
@@ -2064,7 +2073,7 @@ async function popStopInfo(stopId) {
     if (typeof closeSearch === 'function') closeSearch();
     if (popupStopId) {
         $(`img[stop-marker-id="${popupStopId}"]`).attr('src', 'img/stop_marker.png');
-        busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+        busStopMarkers[popupStopId].setZIndexOffset(stopMarkersAboveBuses() ? 1000 : 0);
         if (typeof stopLayerManager !== 'undefined') {
             stopLayerManager.setSelected(null);
         }
@@ -2097,7 +2106,7 @@ async function popStopInfo(stopId) {
                     iconAnchor: [15, 15],
                     html: `<div class="marker-wrapper"><img src="img/stop_marker.png" width="18" height="18" stop-marker-id="${stopId}"/><div class="corner-label none" stop-eta="${stopId}">xm</div></div>`
                 }),
-                zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
+                zIndexOffset: stopMarkersAboveBuses() ? 1000 : 0,
             }).addTo(map).on('click', function(e) {
                 if (e && e.stopPropagation) e.stopPropagation();
                 if (e && e.originalEvent && e.originalEvent.stopPropagation) e.originalEvent.stopPropagation();
@@ -2394,7 +2403,7 @@ async function addStopsToMap() {
                         </div>
                     `
                 }),
-                zIndexOffset: settings['toggle-stops-above-buses'] ? 1000 : 0,
+                zIndexOffset: stopMarkersAboveBuses() ? 1000 : 0,
             })
             .addTo(map)
             .on('click', function(e) {
@@ -2440,7 +2449,7 @@ function clearTemporaryStopPin() {
             // Restore normal z-index/opacity; the next poll's
             // updateStopsOpacity (or the popup-close route restore) decides
             // whether this marker stays visible.
-            marker.setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+            marker.setZIndexOffset(stopMarkersAboveBuses() ? 1000 : 0);
             const el = marker.getElement && marker.getElement();
             if (el) {
                 el.style.opacity = '';

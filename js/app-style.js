@@ -283,7 +283,7 @@ function popRiderStopInfo(stopId) {
             </div>
         `;
         busStopMarkers[popupStopId].setIcon(prevIcon);
-        busStopMarkers[popupStopId].setZIndexOffset(settings['toggle-stops-above-buses'] ? 1000 : 0);
+        busStopMarkers[popupStopId].setZIndexOffset(stopMarkersAboveBuses() ? 1000 : 0);
     }
 
     popupStopId = stopId;

@@ -43,6 +43,10 @@ window.initMap = function() {
         if (stopsAboveBuses === undefined) {
             stopsAboveBuses = !!settings['toggle-stops-above-buses'];
         }
+        // Independent toggle: ETA tooltips above bus markers even when the
+        // stop icons themselves stay below buses (default). Only the label
+        // layer moves; stop icons, buildings and polylines keep their order.
+        const tooltipsAboveBuses = !!settings['toggle-eta-tooltips-above-buses'];
         if (!map) return;
         try {
             if (stopsAboveBuses) {
@@ -65,6 +69,11 @@ window.initMap = function() {
             if (map.getLayer('bus-markers-glow')) map.moveLayer('bus-markers-glow');
             if (map.getLayer('bus-markers-selected')) map.moveLayer('bus-markers-selected');
             if (map.getLayer('bus-markers-selected-labels')) map.moveLayer('bus-markers-selected-labels');
+            // Pin the ETA tooltip labels above bus markers when enabled (and
+            // stops aren't already above buses, which covers labels too).
+            if (tooltipsAboveBuses && !stopsAboveBuses) {
+                if (map.getLayer('stop-markers-labels')) map.moveLayer('stop-markers-labels');
+            }
             // The selected stop always paints above everything else (DOM
             // parity: its z-index is 2000, above bus markers at 500).
             if (map.getLayer('stop-markers-selected')) map.moveLayer('stop-markers-selected');
