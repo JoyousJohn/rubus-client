@@ -965,28 +965,43 @@ async function addPolylineForRoute(routeName) {
     }
 }
 
+// Single-bus in-service predicate shared by the route helpers below.
+function isRouteBusInService(busName) {
+    const b = busData[busName];
+    if (!b) return false;
+    // A bus with no position yet (new API entry before lat/long are
+    // set) must not count as in-service: distanceFromLine() returns
+    // false for missing coords, and !undefined === true, which
+    // previously false-positived depot/OOS buses as in-service when
+    // addStopsToMap() ran before fields were initialized (sim-exit
+    // helix case: 2 stops instead of all 29).
+    if (b.lat === undefined || b.long === undefined) return false;
+    if (b.oos) return false;
+    if (b.atDepot) return false;
+    if (distanceFromLine(busName)) return false;
+    return true;
+}
+
 // Check if a route has any in-service buses
 function routeHasInServiceBuses(route) {
     try {
         const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
-        return routeBuses && routeBuses.some(busName => {
-            const b = busData[busName];
-            if (!b) return false;
-            // A bus with no position yet (new API entry before lat/long are
-            // set) must not count as in-service: distanceFromLine() returns
-            // false for missing coords, and !undefined === true, which
-            // previously false-positived depot/OOS buses as in-service when
-            // addStopsToMap() ran before fields were initialized (sim-exit
-            // helix case: 2 stops instead of all 29).
-            if (b.lat === undefined || b.long === undefined) return false;
-            if (b.oos) return false;
-            if (b.atDepot) return false;
-            if (distanceFromLine(busName)) return false;
-            return true;
-        });
+        return routeBuses && routeBuses.some(isRouteBusInService);
     } catch (e) {
         console.error('[poly] Error checking routeHasInServiceBuses for route', route, e);
         return false;
+    }
+}
+
+// Count of currently in-service buses on a route.
+function countInServiceBuses(route) {
+    try {
+        const routeBuses = busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route];
+        if (!routeBuses) return 0;
+        return routeBuses.filter(isRouteBusInService).length;
+    } catch (e) {
+        console.error('[poly] Error checking countInServiceBuses for route', route, e);
+        return 0;
     }
 }
 
@@ -1357,7 +1372,9 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     sortedServicedRoutes.forEach(servicedRoute => {
         
-        const $serviedRouteElm = $(`<div>${servicedRoute.toUpperCase()}</div>`);
+        const $serviedRouteElm = $('<div></div>')
+            .append(document.createTextNode(servicedRoute.toUpperCase() + ' '))
+            .append($('<span style="font-weight: 400;"></span>').text(`(${countInServiceBuses(servicedRoute)})`));
         if ((visibleRoute && visibleRoute !== servicedRoute) || !routeHasInServiceBuses(servicedRoute)) {
             $serviedRouteElm.css('color', 'var(--theme-hidden-route-col)');
         } else {
