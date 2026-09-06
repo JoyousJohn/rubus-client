@@ -765,7 +765,9 @@ html, body {
     border-radius: 1.5rem;
     font-family: var(--font-family);
     font-size: 1.3rem;
-    z-index: 1005;
+    /* Above .desktop-esc-notice (z-index 10000) so both top-center toasts
+       never bury the update prompt underneath the ESC hint on desktop. */
+    z-index: 10001;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     display: flex;
     align-items: center;
