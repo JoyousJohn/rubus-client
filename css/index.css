@@ -1052,6 +1052,23 @@ html, body {
     color: #f62929;
 }
 
+.info-stopped-for.overtime .info-stopped-row {
+    cursor: pointer;
+}
+
+.info-stopped-overtime-explainer {
+    font-size: 1.2rem;
+    line-height: 1.35;
+    color: var(--theme-extra);
+    opacity: 0.85;
+    text-align: center;
+    margin-top: 0.5rem;
+    padding: 0 1rem;
+    white-space: normal;
+    cursor: pointer;
+    user-select: none;
+}
+
 .info-stopped-for.departing .info-stopped-for-text {
     animation: departingPulse 1.2s ease-in-out infinite;
 }

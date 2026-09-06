@@ -244,6 +244,10 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         populateRouteSelectors(activeRoutes);
     }
 
+    if (popupBusName && popupBusName !== busName) {
+        $('.info-stopped-overtime-explainer').hide();
+    }
+
     if (busData[busName]['overtime'] && !forceUnstoppedBuses.has(busName)) {
         // Stopped overtime: red text + red octagon to the right of the
         // "Stopped Xm Xs" label.

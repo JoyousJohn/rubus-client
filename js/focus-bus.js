@@ -481,6 +481,7 @@ function showDeparting() {
             $stoppedFor.addClass('none').removeClass('overtime').removeClass('departing').css('opacity', '').css('transition', '').css('display', '');
             $('.info-stopped-for-text').text('');
             $('.info-stopped-for .info-stopped-octagon').addClass('none');
+            $('.info-stopped-overtime-explainer').hide();
             stopOvertimeCounter();
         });
     }, 7000);
@@ -508,6 +509,7 @@ function hideStoppedFor(immediate = false) {
         $stoppedFor.stop(true, true).addClass('none').removeClass('overtime').removeClass('departing').css('opacity', '').css('transition', '');
         $('.info-stopped-for-text').text('');
         $('.info-stopped-for .info-stopped-octagon').addClass('none');
+        $('.info-stopped-overtime-explainer').hide();
         stopOvertimeCounter();
         return;
     }
@@ -702,7 +704,22 @@ function stopOvertimeCounter() {
     }
     $('.info-stopped-for').removeClass('overtime');
     hideStoppedOctagon();
+    $('.info-stopped-overtime-explainer').slideUp('fast');
 }
+
+// Slide down overtime explanation when tapping the timer row or octagon while overtime is active
+$(document).on('click', '.info-stopped-row', function(e) {
+    e.stopPropagation();
+    const $explainer = $('.info-stopped-overtime-explainer');
+    if (!$explainer.is(':visible') && ($('.info-stopped-for').hasClass('overtime') || !$('.info-stopped-for .info-stopped-octagon').hasClass('none'))) {
+        $explainer.stop(true, true).slideDown('fast');
+    }
+});
+
+$(document).on('click', '.info-stopped-overtime-explainer', function(e) {
+    e.stopPropagation();
+    $(this).stop(true, true).slideUp('fast');
+});
 
 $('.satellite-btn').click(function() {
     if (currentTileLayerType === 'satellite') {
