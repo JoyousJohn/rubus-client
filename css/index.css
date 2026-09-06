@@ -1069,6 +1069,11 @@ html, body {
     user-select: none;
 }
 
+.info-stopped-for-text {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .info-stopped-for.departing .info-stopped-for-text {
     animation: departingPulse 1.2s ease-in-out infinite;
 }
@@ -1095,6 +1100,8 @@ html, body {
        line-height 0.7 = 1.05rem); shift it up by half the difference so it
        is vertically centered on the text line. */
     margin-top: -0.15em;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .info-stopped-octagon > div {
@@ -1332,10 +1339,18 @@ html, body {
 }
 
 .stop-info-back-wrapper:hover,
+.bus-info-back-wrapper:hover,
 .building-info-back-wrapper:hover {
     background-color: var(--theme-accent);
     color: var(--theme-bg);
     border-color: var(--theme-accent);
+}
+
+.stop-info-back-wrapper:hover .stop-info-back,
+.stop-info-back-wrapper:hover .stop-info-back *,
+.bus-info-back-wrapper:hover .bus-info-back,
+.bus-info-back-wrapper:hover .bus-info-back * {
+    color: var(--theme-bg) !important;
 }
 
 .bus-btns, .stop-btns, .building-btns {

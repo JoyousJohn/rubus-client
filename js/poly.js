@@ -2355,19 +2355,46 @@ async function popStopInfo(stopId) {
         $('.stop-info-hide-oos').hide();
     }
 
-    if (sourceBusName && !sourceStopId) { // !sourceStopId kind a hack, have to look into how/why this is being set
-        $('.stop-info-back .flex div').text('BACK');
+    if (sourceBusName && !sourceStopId) {
+        const bus = busData[sourceBusName];
+        const routeKey = bus?.route || '';
+        let displayRoute = routeKey;
+        if (displayRoute === 'on') {
+            displayRoute = 'Overnight';
+        } else if (displayRoute === 'summer1' || displayRoute === 'summer2') {
+            displayRoute = displayRoute.charAt(0).toUpperCase() + displayRoute.slice(1, -1) + ' ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'all') {
+            displayRoute = 'All Campus';
+        } else if (displayRoute === 'kbs') {
+            displayRoute = 'Knightsbridge';
+        } else if (displayRoute) {
+            displayRoute = displayRoute.toUpperCase();
+        }
+
+        const busNumber = formatElectricBusName(bus?.busName || sourceBusName);
+        const routeColor = colorMappings[routeKey] || 'var(--theme-color)';
+
+        if (displayRoute && busNumber) {
+            $('.stop-info-back .flex div').html(`<span class="bold-600">${displayRoute}</span> ${busNumber}`);
+        } else {
+            $('.stop-info-back .flex div').text(busNumber || 'BACK');
+        }
+
+        $('.stop-info-back').css('color', routeColor);
         $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
         $('.stop-info-back-wrapper').css('display', 'flex');
     } else if (cameFromNav) {
+        $('.stop-info-back').css('color', '');
         $('.stop-info-back .flex div').text('Back to nav');
         $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
         $('.stop-info-back-wrapper').css('display', 'flex');
     } else if (cameFromSearch) {
+        $('.stop-info-back').css('color', '');
         $('.stop-info-back .flex div').text('Back to search');
         $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
         $('.stop-info-back-wrapper').css('display', 'flex');
     } else {
+        $('.stop-info-back').css('color', '');
         $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).hide();
     }
 

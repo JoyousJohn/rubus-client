@@ -475,9 +475,13 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     }
     
     if (sourceStopId) {
+        const stop = stopsData[sourceStopId];
+        const stopDisplayName = stop?.shorterName || stop?.shortName || stop?.name || 'BACK';
+        $('.bus-info-back .flex div').text(stopDisplayName);
         $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).show();
         $('.bus-info-back-wrapper').css('display', 'flex');
     } else {
+        $('.bus-info-back .flex div').text('BACK');
         $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).hide();
     }
     sourceBusName = busName;
@@ -804,12 +808,14 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         const closestStopName = stopsData[closestStopId].name + (settings['toggle-show-stop-id'] ? ` (#${closestStopId})` : '');
         $closestWrap.find('.next-stop-name').text(closestStopName);
         $grid.append($closestWrap.click(() => {
+            sourceStopId = null;
             flyToStop(closestStopId, true); // true indicates user interaction
         }));
         $grid.append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
             <div class="next-stop-eta closest-stop-eta" data-stop-id="${closestStopId}">temp</div>
             <div class="next-stop-time closest-stop-time">temp:temp</div>
         </div>`).click(() => {
+            sourceStopId = null;
             flyToStop(closestStopId, true); // true indicates user interaction
         }));
         $('.next-stops-grid > .grid').css('margin-top', '-0.5rem')
@@ -842,11 +848,13 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         // campusName and stopName are already escaped, so safe to use html; use text for extra safety on rebuild
         // Rebuild wrapper via html is safe since escaped, but we keep html for simplicity
         $grid.append($atStopWrap.click(() => {
+                sourceStopId = null;
                 flyToStop(stopId);
             }));
         $grid.append($(`<div class="flex flex-col center pointer">
             <div class="next-stop-eta here-eta" data-stop-id="${stopId}">Here</div>
         </div>`).click(() => {
+            sourceStopId = null;
             flyToStop(stopId);
         }));
 
@@ -877,12 +885,14 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
                 <div class="next-stop-campus">${row.campusName}</div>
                 <div class="next-stop-name flex">${row.stopName}</div>
             </div>`).click(() => {
+                sourceStopId = null;
                 flyToStop(row.stopId);
             }));
         $grid.append($(`<div class="flex flex-col center pointer">
             <div class="next-stop-eta" data-stop-id="${row.stopId}" data-stop-index="${row.rowIndex}">${row.eta}</div>
             <div class="next-stop-time">${row.formattedTime}</div>
         </div>`).click(() => {
+            sourceStopId = null;
             flyToStop(row.stopId);
         }));
         etaLabelsToSet.push([row.stopId, row.eta]);
