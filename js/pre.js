@@ -7,10 +7,15 @@ let pendingForceImmediate = false;
 // currently failing so the notification banner lists every active failure and
 // only hides once all have recovered. Keys: 'bus positions', 'ETAs',
 // 'wait times', 'live updates'.
+// The banner only surfaces after a second consecutive failure for a key — a
+// single blip stays silent. Any success resets that key's streak.
 const serverFailures = new Set();
+const serverFailureStrikes = {};
 let serverFailureDetail = '';
 
 function markServerFailure(key, detail) {
+    serverFailureStrikes[key] = (serverFailureStrikes[key] || 0) + 1;
+    if (serverFailureStrikes[key] < 2) return;
     serverFailures.add(key);
     if (detail !== undefined) {
         serverFailureDetail = detail;
@@ -19,6 +24,7 @@ function markServerFailure(key, detail) {
 }
 
 function clearServerFailure(key) {
+    serverFailureStrikes[key] = 0;
     serverFailures.delete(key);
     if (key === 'bus positions') {
         serverFailureDetail = '';
