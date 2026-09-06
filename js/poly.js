@@ -1372,7 +1372,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 
     sortedServicedRoutes.forEach(servicedRoute => {
         
-        const $serviedRouteElm = $('<div></div>')
+        const $serviedRouteElm = $('<div class="pointer"></div>')
             .append(document.createTextNode(servicedRoute.toUpperCase() + ' '))
             .append($('<span style="font-weight: 400;"></span>').text(`(${countInServiceBuses(servicedRoute)})`));
         if ((visibleRoute && visibleRoute !== servicedRoute) || !routeHasInServiceBuses(servicedRoute)) {
@@ -1380,6 +1380,18 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         } else {
             $serviedRouteElm.css('color', colorMappings[servicedRoute]);
         }
+        // Filter exactly like the bottom route pills, but keep nudging toward
+        // them: toggleRouteSelectors hides the notice, so re-show it once the
+        // toggle settles (it may await a polyline fetch).
+        $serviedRouteElm.click(function(e) {
+            e.stopPropagation();
+            window._keepStopNotice = true;
+            Promise.resolve(toggleRoute(servicedRoute)).then(function() {
+                window._keepStopNotice = false;
+                var $notice = $('.stop-info-use-route-selectors-notice');
+                if (!$notice.is(':visible')) $notice.slideDown('fast');
+            });
+        });
         
         $('.info-stop-servicing').append($serviedRouteElm)
         // busIdsServicing = busIdsServicing.concat(busesByRoutes[servicedRoute]);

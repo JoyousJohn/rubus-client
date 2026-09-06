@@ -625,7 +625,12 @@ function toggleRouteSelectors(route, wasSelected = false) {
 
     }
 
-    $('.stop-info-use-route-selectors-notice').slideUp('fast');
+    // Servicing-text toggles (stop popup) set window._keepStopNotice to keep
+    // the nudge visible across spam clicks instead of flickering it.
+    if (!window._keepStopNotice) {
+        $('.stop-info-use-route-selectors-notice').slideUp('fast');
+    }
+    window._keepStopNotice = false;
 
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
