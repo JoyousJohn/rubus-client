@@ -1152,6 +1152,8 @@ function selectedRoute(route) {
     $('.route-active-buses').text(visibleRouteBuses.length === 1 ? '1 bus running' : visibleRouteBuses.length + ' buses running');
 
     $('.active-buses').empty();
+    const showRouteBusSpeeds = settings['toggle-show-route-bus-speeds'];
+    $('.active-buses').css('grid-template-columns', showRouteBusSpeeds ? 'auto auto 1fr auto auto' : 'auto auto 1fr auto');
     visibleRouteBuses.forEach(busName => {
 
         let speed = '0mph';
@@ -1183,7 +1185,11 @@ function selectedRoute(route) {
             $nameCol.append(`<div class="bus-depot white br-0p5rem text-1p4rem">Depot</div>`);
         }
         
-        $('.active-buses').append($nameCol, $iconCol, $stopCol, $speedCol, $capCol);
+        if (showRouteBusSpeeds) {
+            $('.active-buses').append($nameCol, $iconCol, $stopCol, $speedCol, $capCol);
+        } else {
+            $('.active-buses').append($nameCol, $iconCol, $stopCol, $capCol);
+        }
     });
     // Ensure route selectors are visible and nav buttons are hidden in subpanel
     $('.bottom').show();
@@ -1260,7 +1266,6 @@ function selectedRoute(route) {
                             stopLists[route][j] === busData[busName].stopId &&
                             stopLists[route][j-1] === busData[busName].prevStopId) {
                             busIndex = j;
-                            alert('what is this')
                             break;
                         }
                     }
@@ -2494,10 +2499,10 @@ function renderRouteChangesMenu(allChanges) {
 
         const $detailContent = $('<div class="route-changes-detail-content"></div>');
         const $oldItem = $('<div class="route-changes-detail-item"></div>')
-            .append($('<span class="route-changes-detail-label"></span>').html(`On <span style="color: ${oldRouteColor}; font-weight: 600;">${oldRouteName}</span>:`))
+            .append($('<span class="route-changes-detail-label"></span>').html(`On <span style="color: ${oldRouteColor};">${oldRouteName}</span>:`))
             .append($('<span class="route-changes-detail-val"></span>').text(oldRouteDurationText));
         const $newItem = $('<div class="route-changes-detail-item"></div>')
-            .append($('<span class="route-changes-detail-label"></span>').html(`On <span style="color: ${newRouteColor}; font-weight: 600;">${newRouteName}</span>:`))
+            .append($('<span class="route-changes-detail-label"></span>').html(`On <span style="color: ${newRouteColor};">${newRouteName}</span>:`))
             .append($('<span class="route-changes-detail-val"></span>').text(newRouteDurationText));
 
         $detailContent.append($oldItem).append($newItem);
@@ -2826,6 +2831,7 @@ const toggleSettings = [
     'toggle-show-invalid-etas',
     'toggle-show-rotation-points',
     'toggle-show-selected-rotation-points',
+    'toggle-show-route-bus-speeds',
     'toggle-show-rubus-ai',
     'toggle-show-bus-quickness-breakdown',
     'toggle-always-immediate-update',

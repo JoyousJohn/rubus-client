@@ -402,6 +402,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
             immediatelyUpdateStoppedBusRotations();
             break;
 
+        case 'toggle-show-route-bus-speeds':
+            settings['toggle-show-route-bus-speeds'] = isChecked;
+            if (typeof panelRoute !== 'undefined' && panelRoute && typeof selectedRoute === 'function') {
+                selectedRoute(panelRoute);
+            }
+            break;
+
         case 'toggle-show-rubus-ai':
             settings['toggle-show-rubus-ai'] = isChecked;
 

@@ -437,10 +437,10 @@
 
 .route-changes-detail-label {
     color: var(--theme-color-lighter);
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .route-changes-detail-val {
     color: var(--theme-color);
-    font-weight: 600;
+    font-weight: 400;
 }

@@ -118,8 +118,12 @@ async function calculateSpeed(busName) {
     const speedDiff = acceptedSpeed - currentVisualSpeed;
     // if (speedDiff < 1) return
 
-    // Only animate if UI actually shows this bus's speed (popup or route panel)
-    const isSpeedVisible = (typeof popupBusName !== 'undefined' && popupBusName === busName && showBusSpeeds) || (typeof panelRoute !== 'undefined' && panelRoute === busData[busName].route);
+    // Only animate if UI actually shows this bus's speed (popup or route panel).
+    // Route panel speeds are hidden unless the dev toggle is enabled, so don't
+    // burn intervals animating visualSpeed for route-only visibility. The base
+    // speed value is still computed below so popups stay correct.
+    const showRouteSpeeds = settings['toggle-show-route-bus-speeds'];
+    const isSpeedVisible = (typeof popupBusName !== 'undefined' && popupBusName === busName && showBusSpeeds) || (showRouteSpeeds && typeof panelRoute !== 'undefined' && panelRoute === busData[busName].route);
     if (!isSpeedVisible) {
         busData[busName].speed = acceptedSpeed;
         busData[busName].visualSpeed = acceptedSpeed;
@@ -177,7 +181,9 @@ async function calculateSpeed(busName) {
         }
 
         if (panelRoute === busData[busName].route) {
-            $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph');
+            if (settings['toggle-show-route-bus-speeds']) {
+                $(`.route-bus-speed[bus-name="${busName}"]`).text(parseInt(busData[busName].visualSpeed) + 'mph');
+            }
             $(`.route-bus-capacity[bus-name="${busName}"]`).text(busData[busName].capacity + '% full');
             updateRouteBusStatus(busName);
         }
