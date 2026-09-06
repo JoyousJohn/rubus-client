@@ -838,6 +838,15 @@ function stopMsEtaCountdown() {
 
 $(document).ready(function() {
 
+    // "Allow Landscape" can't work in the installed PWA (the manifest pins
+    // portrait), so only offer it on the website version.
+    try {
+        const inPwa = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+        if (inPwa) {
+            $('.allow-landscape-row, .allow-landscape-explain').hide();
+        }
+    } catch (e) {}
+
     // Untoggle if the switch is not one that gets saved in settings (like some of the dev ones)
     $('.dev-options-wrapper .toggle-input').each(function() {
         const toggleId = $(this).attr('id');
