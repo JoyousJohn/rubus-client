@@ -135,7 +135,7 @@ function openFeedbackModal(source = 'bus') {
         $('.feedback-subtext').text("Or a color palette to add to RUBus.");
     } else {
         $('.feedback-title').text("Leave feedback");
-        const busNum = (typeof popupBusName !== 'undefined' && popupBusName) ? ((typeof busData !== 'undefined' && busData[popupBusName] && busData[popupBusName].busName) ? busData[popupBusName].busName : popupBusName) : null;
+        const busNum = popupBusName ? ((busData[popupBusName] && busData[popupBusName].busName) ? busData[popupBusName].busName : popupBusName) : null;
         if (busNum) {
             $('.feedback-subtext').text(`About bus ${busNum} or how RUBus is displaying it.`);
         } else {
@@ -182,16 +182,14 @@ function openFeedbackModal(source = 'bus') {
     $('.empty-feedback').hide();
     $('.feedback-dest-tag').hide();
     $('.leave-feedback-wrapper').fadeIn('fast');
-    if (typeof sa_event === 'function') {
-        const btnMap = {
-            'general': 'footer_feedback',
-            'font': 'settings_font_suggest',
-            'theme': 'settings_theme_suggest',
-            'bus': 'bus_feedback',
-            'direct': 'direct_feedback'
-        };
-        sa_event('btn_press', { btn: btnMap[source] || 'feedback_open' });
-    }
+    const btnMap = {
+        'general': 'footer_feedback',
+        'font': 'settings_font_suggest',
+        'theme': 'settings_theme_suggest',
+        'bus': 'bus_feedback',
+        'direct': 'direct_feedback'
+    };
+    sa_event('btn_press', { btn: btnMap[source] || 'feedback_open' });
     if (source === 'bus') {
         $('.bottom').hide();
     }
@@ -244,9 +242,7 @@ function sendFeedback() {
         return;
     }
 
-    if (typeof sa_event === 'function') {
-        sa_event('btn_press', { btn: 'feedback_send_' + feedbackSource });
-    }
+    sa_event('btn_press', { btn: 'feedback_send_' + feedbackSource });
 
     feedbackSending = true;
     updateSendButtonState();
@@ -254,9 +250,9 @@ function sendFeedback() {
     let busNameVal = "";
     let routeVal = "";
 
-    if (feedbackSource === 'bus' && typeof popupBusName !== 'undefined' && popupBusName !== null) {
+    if (feedbackSource === 'bus' && popupBusName) {
         busNameVal = String(popupBusName);
-        if (typeof busData !== 'undefined' && busData[popupBusName] && busData[popupBusName].route) {
+        if (busData[popupBusName] && busData[popupBusName].route) {
             routeVal = busData[popupBusName].route;
         }
     }
@@ -317,9 +313,7 @@ function sendFeedback() {
                 try { localStorage.removeItem('rubus_last_feedback_time'); } catch (e) {}
             }
             console.error("Error sending feedback:", textStatus, errorThrown);
-            if (typeof markRubusRequestsFailing === 'function') {
-                markRubusRequestsFailing();
-            }
+            markRubusRequestsFailing();
             $('.feedback-sent').html('<i class="fa-solid fa-triangle-exclamation mr-0p5rem"></i>Failed to send. Please try again.').slideDown();
             setTimeout(() => { $('.feedback-sent').slideUp(); }, 3000);
         }
@@ -359,12 +353,34 @@ $(document).ready(function() {
     });
 
     let mouseDownTarget = null;
-    $('.feedback-outside').on('mousedown', function(e) {
+    let inputWasFocusedOnPointerDown = false;
+
+    $('.feedback-outside').on('mousedown pointerdown touchstart', function(e) {
         mouseDownTarget = e.target;
+        const active = document.activeElement;
+        inputWasFocusedOnPointerDown = Boolean(
+            active &&
+            (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') &&
+            $(active).closest('.leave-feedback-wrapper').length > 0
+        );
     });
 
     $('.feedback-outside').on('click', function(e) {
         if (e.target === this && mouseDownTarget === this) {
+            const active = document.activeElement;
+            const isCurrentlyFocused = Boolean(
+                active &&
+                (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') &&
+                $(active).closest('.leave-feedback-wrapper').length > 0
+            );
+
+            if (inputWasFocusedOnPointerDown || isCurrentlyFocused) {
+                inputWasFocusedOnPointerDown = false;
+                if (active) active.blur();
+                $('.feedback-input, .feedback-contact-input').blur();
+                return;
+            }
+
             closeFeedbackModal();
         }
     });
