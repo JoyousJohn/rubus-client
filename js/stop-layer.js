@@ -503,7 +503,7 @@
             this._roundRectPath(ctx, 0, pillTop + pillH, pillW, pillH, r).fill();
             ctx.fillStyle = '#ffffff';
             this._roundRectPath(ctx, 0, pillTop, pillW, pillH, r).fill();
-            ctx.fillStyle = text.includes('+') ? '#7a1818' : '#111111';
+            ctx.fillStyle = text.includes('+') ? '#b84500' : '#111111';
             ctx.font = font;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'alphabetic';
