@@ -119,7 +119,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     try {
         slowConnectionTimeout = setTimeout(() => {
             $('.slow-connection').slideDown();
-        }, 3000);
+        }, 5000);
         fetchTimeout = setTimeout(() => {
             controller.abort();
         }, 8000);

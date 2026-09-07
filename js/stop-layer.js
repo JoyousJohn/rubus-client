@@ -53,12 +53,6 @@
     const ETA_TEXT_FONT_STACK = '"Open Sans", sans-serif';
     const ETA_TEXT_WIDTH_BUFFER = 1.0;
     const ETA_SPRITE_MAX = 300;      // LRU cap on cached pill textures
-    // Gray octagon appended to an ETA pill when the soonest bus is stopped
-    // overtime (mirrors the DOM .stop-eta-octagon). Sized relative to the
-    // 14px-tall pill so it stays visibly "after" the minute count.
-    const ETA_OCTAGON_SIZE = 10;     // css px (edge-to-edge)
-    const ETA_OCTAGON_GAP = 2;       // css px gap between text and octagon
-    const ETA_OCTAGON_COLOR = '#9e9e9e';
     // Full ink-centering (aligning the glyph ink box with the pill center)
     // reads a fraction too low at tooltip sizes. The optical center sits
     // between the content-box center (baseline middle) and the ink center, so
@@ -174,7 +168,6 @@
         _pendingRefresh: false,
         _cached: {},          // stopId -> serialized feature
         _etaText: {},         // stopId -> current ETA string
-        _etaOvertime: {},     // stopId -> bool (soonest bus stopped overtime)
         _selectedStop: null,  // stopId currently selected (popup open)
         _lastClickEvent: null, // dedup handle for icon+label overlap clicks
         _etaSpriteCounter: 0, // unique id counter for pill sprites
@@ -460,9 +453,9 @@
         // generating and caching a per-text sprite on first use. Sprites are
         // re-built if the image is missing (e.g. after a style reload resets
         // all images) or if the size constants changed.
-        _getEtaSprite(text, overtime) {
+        _getEtaSprite(text) {
             if (!text) return '';
-            const key = overtime ? text + '\u0001' : text;
+            const key = text;
             let name = this._etaSprites[key];
             if (name && this._map && !this._map.hasImage(name)) {
                 name = null;
@@ -470,7 +463,7 @@
             if (!name) {
                 name = 'stop-eta-' + (++this._etaSpriteCounter);
                 this._etaSprites[key] = name;
-                this._buildEtaSprite(name, text, overtime);
+                this._buildEtaSprite(name, text);
             }
             const idx = this._etaSpriteOrder.indexOf(name);
             if (idx >= 0) this._etaSpriteOrder.splice(idx, 1);
@@ -480,10 +473,8 @@
         },
 
         // Renders a white rounded pill with the ETA text at 2x scale and
-        // registers it (pixelRatio 2), mirroring the DOM corner-label. When
-        // `overtime` is true a small gray octagon is drawn after the minute
-        // count.
-        _buildEtaSprite(name, text, overtime) {
+        // registers it (pixelRatio 2), mirroring the DOM corner-label.
+        _buildEtaSprite(name, text) {
             const map = this._map;
             const s = STOP_SPRITE_DPR;
             const font = (ETA_FONT_SIZE * s) + 'px ' + ETA_TEXT_FONT_STACK;
@@ -494,10 +485,7 @@
             // than canvas sans-serif, so an un-buffered pill lets the text
             // overflow its rounded ends.
             const textW = Math.ceil(ctx.measureText(text).width * ETA_TEXT_WIDTH_BUFFER);
-            const octSize = overtime ? Math.round(ETA_OCTAGON_SIZE * s) : 0;
-            const octGap = overtime ? Math.round(ETA_OCTAGON_GAP * s) : 0;
-            const contentW = textW + octGap + octSize;
-            const pillW = Math.max(2, Math.round(contentW + ETA_PILL_PADDING_X * 2 * s));
+            const pillW = Math.max(2, Math.round(textW + ETA_PILL_PADDING_X * 2 * s));
             const pillH = Math.round(ETA_PILL_HEIGHT * s);
             // Radius is exactly half the height, so the left/right ends are
             // perfect semicircles (no straight vertical segments).
@@ -515,40 +503,18 @@
             this._roundRectPath(ctx, 0, pillTop + pillH, pillW, pillH, r).fill();
             ctx.fillStyle = '#ffffff';
             this._roundRectPath(ctx, 0, pillTop, pillW, pillH, r).fill();
-            ctx.fillStyle = '#111111';
+            ctx.fillStyle = text.includes('+') ? '#7a1818' : '#111111';
             ctx.font = font;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'alphabetic';
-            const contentLeft = (pillW - contentW) / 2;
-            const textX = contentLeft + textW / 2;
             const pillCenterY = pillTop + pillH / 2;
             const baselineOffset = measureTextInkBaselineOffset(text, font) * ETA_INK_CENTER_FACTOR;
-            ctx.fillText(text, textX, pillCenterY + baselineOffset);
-            if (overtime) {
-                this._drawOctagon(ctx, contentLeft + textW + octGap + octSize / 2, pillCenterY, octSize, ETA_OCTAGON_COLOR);
-            }
+            ctx.fillText(text, pillW / 2, pillCenterY + baselineOffset);
             try {
                 map.addImage(name, ctx.getImageData(0, 0, pillW, canvas.height), { pixelRatio: s });
             } catch (err) {
                 console.error('[StopLayerManager] addImage failed for ETA pill', text, err);
             }
-        },
-
-        // Draws a filled regular octagon (flat top/bottom, like a stop sign)
-        // centered at (cx, cy). Used for the overtime indicator on ETA pills.
-        _drawOctagon(ctx, cx, cy, size, color) {
-            const r = size / 2;
-            ctx.beginPath();
-            for (let i = 0; i < 8; i++) {
-                const angle = Math.PI / 8 + (Math.PI / 4) * i;
-                const x = cx + r * Math.cos(angle);
-                const y = cy + r * Math.sin(angle);
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.fillStyle = color;
-            ctx.fill();
         },
 
         _roundRectPath(ctx, x, y, w, h, r) {
@@ -608,7 +574,7 @@
                     stopId: String(stopId),
                     opacity: opacity,
                     eta: this._etaText[stopId] || '',
-                    etaSprite: this._getEtaSprite(this._etaText[stopId] || '', !!this._etaOvertime[stopId]),
+                    etaSprite: this._getEtaSprite(this._etaText[stopId] || ''),
                     selected: this._selectedStop === String(stopId),
                     rider: typeof appStyle !== 'undefined' && appStyle === 'rider'
                 }
@@ -692,7 +658,6 @@
 
         clearEtas() {
             this._etaText = {};
-            this._etaOvertime = {};
             this.refresh();
         }
     };
@@ -700,17 +665,15 @@
     // ETA label write helper: updates the DOM corner-label (DOM renderer
     // mode) and the GL label property (WebGL renderer mode) in one place.
     // `show` undefined = text-only update, true = text + show, false = clear.
-    // `overtime` true = the soonest bus is stopped too long, so a gray
-    // octagon is appended after the minute count (see the user-visible tooltip).
-    window.setStopEtaLabel = function(stopId, text, show, overtime) {
+    window.setStopEtaLabel = function(stopId, text, show) {
         const $el = $(`[stop-eta="${stopId}"]`);
         if (show === false || !text) {
-            $el.text('').hide();
+            $el.text('').removeClass('stop-eta-overtime').hide();
         } else {
+            $el.toggleClass('stop-eta-overtime', String(text).includes('+'));
             // The text is wrapped so the ink can be nudged into the pill's
             // vertical center (fonts center the content box, not the optical
-            // ink, leaving text ~1px high). The octagon stays a pill-centered
-            // sibling so both align with the pill.
+            // ink, leaving text ~1px high).
             const textSpan = document.createElement('span');
             textSpan.className = 'stop-eta-text';
             textSpan.appendChild(document.createTextNode(String(text)));
@@ -718,29 +681,17 @@
             const offset = el ? getInkCenteringOffset(String(text), getComputedStyle(el).font) * ETA_INK_CENTER_FACTOR : 0;
             textSpan.style.transform = offset ? `translateY(${offset}px)` : '';
             $el.empty().append(textSpan);
-            if (overtime) $el.append(createStopEtaOctagonEl());
             if (show) $el.show();
         }
         manager._etaText[String(stopId)] = (show === false) ? '' : String(text || '');
-        manager._etaOvertime[String(stopId)] = (show === false) ? false : !!overtime;
         if (manager.isActive()) {
             manager._pushStop(stopId);
         }
     };
 
-    // Builds the small gray octagon appended to an ETA tooltip when the soonest
-    // bus for that stop is stopped overtime. A plain octagon shape (no "!") is
-    // used at this size; the red "!" octagon is reserved for the bus popup.
-    function createStopEtaOctagonEl() {
-        const el = document.createElement('span');
-        el.className = 'stop-eta-octagon';
-        return el;
-    }
-    window.createStopEtaOctagonEl = createStopEtaOctagonEl;
-
     // Clears every ETA label (panout/fit/campus flows that hide them all).
     window.clearAllStopEtas = function() {
-        $('[stop-eta]').text('').hide();
+        $('[stop-eta]').text('').removeClass('stop-eta-overtime').hide();
         if (manager.isActive()) {
             manager.clearEtas();
         }
