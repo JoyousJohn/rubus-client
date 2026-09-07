@@ -13,6 +13,7 @@ function fetchCommitCount() {
             headers: { 'User-Agent': 'RUBus-Build-Script' }
         };
         const req = https.get(options, (res) => {
+            console.log(`[build] GitHub API status: ${res.statusCode}`);
             const linkHeader = res.headers['link'];
             if (linkHeader) {
                 const match = linkHeader.match(/page=(\d+)>; rel="last"/);
@@ -37,7 +38,6 @@ async function main() {
     if (!commitHash) {
         try {
             commitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-            commitCount = parseInt(execSync('git rev-list --count HEAD', { encoding: 'utf8' }).trim(), 10);
         } catch (e) {
             commitHash = Date.now().toString(36);
         }
@@ -45,8 +45,21 @@ async function main() {
         commitHash = commitHash.slice(0, 7);
     }
 
+    // Count locally first — the clone is full after the unshallow fetch in the
+    // build command, so this is the exact commit being built. No API needed.
+    try {
+        const raw = execSync('git rev-list --count HEAD', { encoding: 'utf8' }).trim();
+        const n = parseInt(raw, 10);
+        if (!isNaN(n) && n > 0) commitCount = n;
+    } catch (e) {
+        console.log('[build] local commit count failed, falling back to GitHub API');
+    }
+
     if (!commitCount) {
         commitCount = await fetchCommitCount();
+    }
+    if (!commitCount) {
+        console.log('[build] WARNING: commit count unavailable; meta rubus-build-num keeps placeholder');
     }
 
     const now = new Date();
