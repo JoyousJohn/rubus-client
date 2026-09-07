@@ -793,7 +793,7 @@ function updateTooltips(route) {
             if (lowestBusName) {
                 const lowestETAMin = Math.ceil(lowestETA / 60);
                 const overtime = !!(busData[lowestBusName] && busData[lowestBusName].overtime);
-                setStopEtaLabel(stopId, lowestETAMin + ' min', true, overtime);
+                setStopEtaLabel(stopId, lowestETAMin + (overtime ? '+ min' : ' min'), true);
             } else {
                 setStopEtaLabel(stopId, '', false);
             }
