@@ -617,9 +617,9 @@ function flyToBus(busName) {
         return;
     }
 
-    const lat = Number(busData[busName].lat);
-    const long = Number(busData[busName].long);
-    const loc = { lat, long };
+    const markerLatLng = busMarkers[busName]?.getLatLng?.();
+    const lat = markerLatLng?.lat ?? Number(busData[busName].lat);
+    const lng = markerLatLng?.lng ?? Number(busData[busName].long);
     const targetZoom = 18;
 
     selectBusMarker(busName);
@@ -628,7 +628,7 @@ function flyToBus(busName) {
     // The popup is shown synchronously by selectBusMarker → popInfo, so its
     // current content bottom (above the action-button row) is measurable here.
     const contentEl = document.querySelector('.bus-info-popup .info-next-stops');
-    flyToCenteredBelow([loc.lat, loc.long], targetZoom, contentEl, 0.3);
+    flyToCenteredBelow([lat, lng], targetZoom, contentEl, 0.3);
 }
 
 
