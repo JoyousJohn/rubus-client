@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 
 const ROOT = process.cwd();
 const JS_DIR = path.join(ROOT, 'js');
@@ -18,7 +18,8 @@ function countLinesInDir(dir, ext) {
     try { entries = fs.readdirSync(d); } catch { return; }
     for (const entry of entries) {
       if (entry === EXCLUDE_FILE) continue;
-      const fp = path.join(d, entry);
+      if (path.basename(entry) !== entry) continue;
+      const fp = path.join(d, path.basename(entry));
       const stat = fs.statSync(fp);
       if (stat.isDirectory()) {
         if (!EXCLUDE_DIRS.has(entry)) walk(fp);
@@ -33,7 +34,7 @@ function countLinesInDir(dir, ext) {
 }
 
 function git(cmd) {
-  try { return execSync(`git ${cmd}`, { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim(); }
+  try { return execFileSync('git', cmd.split(' '), { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim(); }
   catch { return null; }
 }
 
