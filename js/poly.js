@@ -1437,6 +1437,10 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                         const approachPrev = busData[busName] && busData[busName]['prevStopId'];
                         Object.entries(viaMap).forEach(([prevIdStr, etaSecs]) => {
                             const prevId = Number(prevIdStr);
+                            if (![2, 22].includes(prevId)) {
+                                console.warn('[poly] Ignoring unapproved VIA approach key for Stop 3: ' + prevId);
+                                return;
+                            }
                             const etaMins = Math.ceil(etaSecs / 60);
                             const nextStopId = getNextStopAfterCurrentGivenPrev(servicedRoute, prevId, 3);
                             const nextStop = stopsData[nextStopId];

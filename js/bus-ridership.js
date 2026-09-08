@@ -49,6 +49,10 @@ function updateHistoricalCapacity(busName) {
                 busRiderships = data;
                 busRiderships.lastUpdate = new Date().getTime();
                 if (!busRidershipCharts[busName] || dataChanged) {
+                    if (popupBusName && popupBusName !== busName) {
+                        console.warn('[bus-ridership] Dropped stale ridership response for ' + busName + '; current popup is ' + popupBusName);
+                        return;
+                    }
                     handleChartUpdate();
                 }
                 updateRubusResponseTime();

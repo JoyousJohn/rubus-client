@@ -613,6 +613,10 @@ function getBusBreaks(busName, forceRefresh = false, showMode = null) {
                 data: data,
                 timestamp: currentTime
             };
+            if (popupBusName && popupBusName !== busName) {
+                console.warn('[bus-breaks] Dropped stale breaks response for ' + busName + '; current popup is ' + popupBusName);
+                return;
+            }
             populateBusBreaks(data, busName);
             applyBreaksDisplayMode(showMode);
             updateRubusResponseTime();

@@ -1632,6 +1632,14 @@ function updateBusOverview(routes) {
         }
     }
 
+    const activeRouteSet = new Set(routeData.map(r => r.route));
+    $('.buses-overview-grid .bus-overview-name[route]').each(function() {
+        const r = $(this).attr('route');
+        if (r && !activeRouteSet.has(r)) {
+            $(`.buses-overview-grid [route="${r}"]`).remove();
+        }
+    });
+
     routeData.forEach(({route}) => {
         const loopMin = loopTimes[route];
         const loopTimeDisplay = (typeof loopMin === 'number' && !isNaN(loopMin)) ? `${loopMin} min` : '--';
@@ -1670,25 +1678,23 @@ function updateBusOverview(routes) {
 
             const prevRidersText = $(`.bus-overview-ridership[route="${route}"]`).text().trim();
             const prevRiders = prevRidersText === '–' ? 0 : parseInt(prevRidersText.split(' ')[0]);
-            const newRiders = (routeRiderships[route])
-
+            const newRiders = (routeRiderships[route]);
 
             if (prevRiders !== newRiders) {
-                // console.log(`'prevriders: ${prevRiders}, newriders: ${newRiders} `)
-                let color = ''
+                let color = '';
                 if (prevRiders > newRiders) {
-                    color = 'red'
+                    color = 'red';
                 } else if (prevRiders < newRiders) {
-                    color = 'lime'
+                    color = 'lime';
                 }
 
-                setTimeout(() => {
-                    $(`.bus-overview-ridership[route="${route}"]`).text(routeRiderships[route] === 0 ? '–' : `${routeRiderships[route]} riders`).css('color', color).css('transition', 'color 0.25s');
-
+                const $ridersElm = $(`.bus-overview-ridership[route="${route}"]`);
+                if ($ridersElm.length > 0) {
+                    $ridersElm.text(routeRiderships[route] === 0 ? '–' : `${routeRiderships[route]} riders`).css('color', color).css('transition', 'color 0.25s');
                     setTimeout(() => {
                         $(`.bus-overview-ridership[route="${route}"]`).css('color', 'var(--theme-color-lighter)').css('transition', 'color 1s');
                     }, 1000);
-                }, Math.random() * 5000);
+                }
             }
         }
     });

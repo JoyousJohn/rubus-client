@@ -357,8 +357,10 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         $('.bus-depot-mid').hide();
     }
 
-    if (sharedBusName && sharedBusName === busName) {
+    if (sharedBusName === busName) {
         $('.info-shared-bus-mid').show();
+    } else {
+        $('.info-shared-bus-mid').hide();
     }
 
     if (joined_service[busName]) {
@@ -384,7 +386,8 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         const timeInServiceText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
         $('.bus-joined-service').text('Joined service at ' + displayTime + ' (' + timeInServiceText + ' ago)');
-    
+    } else {
+        $('.bus-joined-service').text('');
     }
 
     $('.info-next-stops').show();
@@ -462,9 +465,10 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     // a synchronous WebGL feature update (and possibly a sprite texture
     // upload), which would otherwise delay the popup's first paint.
     const gridResult = renderNextStopsGrid(busName);
-    if (gridResult.aborted) return;
-    const etaLabelsToSet = gridResult.etaLabels;
-    updateHistoricalCapacity(busName);
+    const etaLabelsToSet = gridResult.etaLabels || [];
+    if (!gridResult.aborted) {
+        updateHistoricalCapacity(busName);
+    }
 
     if (sourceBusName !== busName) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
         // $('.bus-history').show();
@@ -516,6 +520,10 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     // ETA tooltips on stops when selecting a bus should only be visible if bus focusing is enabled.
     if (etaLabelsToSet.length && settings['toggle-hide-other-routes']) {
         requestAnimationFrame(() => {
+            if (popupBusName && popupBusName !== busName) {
+                console.warn('[pop-info] Dropped stale ETA labels rAF for ' + busName + '; current popup is ' + popupBusName);
+                return;
+            }
             etaLabelsToSet.forEach(([stopId, eta]) => setStopEtaLabel(stopId, eta, true));
         });
     } else if (!settings['toggle-hide-other-routes'] && !shownRoute) {
@@ -622,7 +630,14 @@ function renderNextStopsGrid(busName) {
     }
 
     const build = buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shouldShowClosestStop);
-    if (build.aborted) return { aborted: true };
+    if (build.aborted) {
+        $('.next-stops-grid').hide();
+        $('.next-stops-grid > div').empty();
+        $('.next-stops-oos-notice').show();
+        $('.info-next-stops').show();
+        lastNextStopsSignature = null;
+        return { aborted: true, etaLabels: [] };
+    }
 
     // Structural signature: anything that changes the grid's shape rather than
     // just the ETA numbers. The ETA values themselves are intentionally not
@@ -639,8 +654,9 @@ function renderNextStopsGrid(busName) {
         return { aborted: false, etaLabels: etaLabelsToSet };
     }
 
-    lastNextStopsSignature = signature;
+    lastNextStopsSignature = null;
     rebuildGrid(busName, data, build.rows, shouldShowClosestStop, closestStopIsNextStop, build.negativeETA, build.hasNegativeETA, etaLabelsToSet);
+    lastNextStopsSignature = signature;
     return { aborted: false, etaLabels: etaLabelsToSet };
 }
 
@@ -701,6 +717,14 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
             // the client-side tickdown, so the display is always derived from
             // abs - now rather than from the freshly parsed string.
             if (!window.msEtaAbs) window.msEtaAbs = new Map();
+            if (window.msEtaAbs.size > 60) {
+                const now = Date.now();
+                for (const [k, absTime] of window.msEtaAbs) {
+                    if (absTime < now || !k.startsWith(`${busName}:`)) {
+                        window.msEtaAbs.delete(k);
+                    }
+                }
+            }
             const msKey = `${busName}:${route}:${i}`;
             if (!window.msEtaAbs.has(msKey)) {
                 window.msEtaAbs.set(msKey, Date.now() + Math.floor(eta) * 1000);

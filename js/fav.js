@@ -125,8 +125,10 @@ $('.bus-star').click(function() {
                 }
                 flyToBus(currentBusName);
             }
-        })
-        $('.favs').append($thisFav)
+        });
+        if (!$(`.favs [data-fav-name="${currentBusName}"]`).length) {
+            $('.favs').append($thisFav);
+        }
 
         busMarkers[currentBusName].setFavorite(true);
 

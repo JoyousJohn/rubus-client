@@ -36,6 +36,10 @@ async function focusBus(busName) {
         console.error(`focusBus: bus ${busName} removed from busData while loading polyline; aborting focus`);
         return;
     }
+    if (popupBusName && popupBusName !== busName) {
+        console.warn('[focus-bus] Aborting focus for ' + busName + '; user selected ' + popupBusName);
+        return;
+    }
     const bus = busData[busName];
 
     // Show distance line on focus if the setting is enabled

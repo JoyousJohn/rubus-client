@@ -1431,6 +1431,10 @@ html, body {
     border-radius: 0.5rem;
 }
 
+.no-buses {
+    margin-top: 0.25rem;
+}
+
 .stop-info-buses-grid, .stop-info-buses-grid-next, .stop-info-buses-grid-post-cutoff, .stop-info-buses-grid-deferred {
     display: grid;
     grid-template-columns: auto 1fr auto auto;

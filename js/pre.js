@@ -36,17 +36,19 @@ function clearServerFailure(key) {
 }
 
 function updateServerFailureBanner() {
-    if (typeof $ === 'undefined') return;
     if (serverFailures.size === 0) {
-        $('.notif-popup').slideUp();
+        $('.notif-popup').stop(true, true).slideUp();
         return;
     }
     const parts = ['bus positions', 'ETAs', 'wait times', 'live updates'].filter(key => serverFailures.has(key));
     let html = `Some TripShot servers are offline or delayed. Unavailable: ${parts.join(', ')}.`;
     if (serverFailureDetail) {
-        html += `<br><br>Error: ${serverFailureDetail}`;
+        const detail = String(serverFailureDetail).trim();
+        if (!detail.toLowerCase().includes('offline or delayed') && detail !== html) {
+            html += `<br><br>Error: ${escapeHtml(detail)}`;
+        }
     }
-    $('.notif-popup').html(html).fadeIn();
+    $('.notif-popup').html(html).stop(true, true).fadeIn();
 }
 
 async function immediatelyUpdateBusDataPre() {
@@ -142,7 +144,10 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         if (sim) return; // don't allow race conditions of simming before fetch completed
 
         if (!data || data.error) {
-            markServerFailure('bus positions', data.error);
+            if (data && data.error) {
+                console.warn('[TripShot Outage Response]', data.error);
+            }
+            markServerFailure('bus positions', data ? data.error : undefined);
             tripshotDown = true;
             return;
         } else {
@@ -365,6 +370,9 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 // Only append finite coordinates to the Bézier history
                 if (coordsAreFinite) {
                     busData[busName].previousPositions.push([apiLat, apiLng]);
+                    if (busData[busName].previousPositions.length > 20) {
+                        busData[busName].previousPositions.shift();
+                    }
                 }
                 
                 if (popupBusName === busName && settings['toggle-distances-line-on-focus']) {
@@ -969,8 +977,12 @@ function updateTimeToStops(busNames) {
                     // Determine the approach leg for this occurrence of 3
                     const approachPrev = (i === 0 && busData[busName] && busData[busName]['prevStopId']) ? busData[busName]['prevStopId'] : prevStopId;
                     if (approachPrev !== undefined) {
-                        if (!busETAs[busName][thisStopId]) busETAs[busName][thisStopId] = {'via': {}}
-                        busETAs[busName][thisStopId]['via'][approachPrev] = Math.round(currentETA)
+                        if (![2, 22].includes(Number(approachPrev))) {
+                            console.warn('[pre] Unexpected approach predecessor for Stop 3 on ' + busName + '; approachPrev: ' + approachPrev);
+                        } else {
+                            if (!busETAs[busName][thisStopId]) busETAs[busName][thisStopId] = {'via': {}};
+                            busETAs[busName][thisStopId]['via'][approachPrev] = Math.round(currentETA);
+                        }
                     }
                     // Do not overwrite stop 3 with a numeric ETA on special routes
                 } else {
@@ -992,28 +1004,37 @@ function updateTimeToStops(busNames) {
 }
 
 
+let whereFetchInProgress = false;
+let pendingWhereFetch = false;
+
 async function fetchWhere() {
     if (sim) return;
-    let busLocations;
-    try {
-        const response = await fetch('https://demo.rubus.live/where');
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        busLocations = await response.json();
-    } catch (error) {
-        if (document.hidden || !navigator.onLine) {
-            console.warn('[fetchWhere] Background or offline fetch failed:', error.message || error);
-        } else {
-            console.error('Error fetching bus locations:', error);
-            markRubusRequestsFailing();
-        }
+    if (whereFetchInProgress) {
+        pendingWhereFetch = true;
         return;
     }
+    whereFetchInProgress = true;
+    try {
+        let busLocations;
+        try {
+            const response = await fetch('https://demo.rubus.live/where');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            busLocations = await response.json();
+        } catch (error) {
+            if (document.hidden || !navigator.onLine) {
+                console.warn('[fetchWhere] Background or offline fetch failed:', error.message || error);
+            } else {
+                console.error('Error fetching bus locations:', error);
+                markRubusRequestsFailing();
+            }
+            return;
+        }
 
-    updateRubusResponseTime();
+        updateRubusResponseTime();
 
-    const validBusNames = []
+        const validBusNames = []
         for (const busName in busLocations) {
 
             // if (!(busName in busData)) { continue; } // refreshed page and bus went out of service before backend could remove from busdata, still in bus_locactions.
@@ -1079,7 +1100,13 @@ async function fetchWhere() {
         if ($('.info-panels-show-hide-wrapper').is(':visible')) {
             populateAllStops();
         }
-
+    } finally {
+        whereFetchInProgress = false;
+        if (pendingWhereFetch) {
+            pendingWhereFetch = false;
+            setTimeout(() => fetchWhere(), 0);
+        }
+    }
 }
 
 
@@ -1335,118 +1362,131 @@ function cancelAllAnimations() {
 
 let joined_service = {};
 
+let etasFetchInProgress = false;
+let pendingEtasFetch = false;
+
 async function fetchETAs() {
-    // Capture the campus once: both fetches below key their data by
-    // selectedCampus, and switching campus mid-flight would otherwise mix ETAs
-    // and waits from different campuses for one poll cycle.
-    const campus = selectedCampus;
-    // The caller (resume handler) sets this flag to signal a user-visible pull,
-    // e.g. after long idle when ETAs are stale. Surface an honest indicator
-    // while it runs; the init/campus-switch callers leave it unset so no badge
-    // flashes there.
-    const showIndicator = _etAsRefreshScheduled === true;
-    if (showIndicator) {
-        $('.refreshing-etas').stop(true, true).fadeIn();
+    if (etasFetchInProgress) {
+        pendingEtasFetch = true;
+        return;
     }
-    // Track sub-fetch success so the resume gate's freshness timestamp is only
-    // advanced when the tables actually refreshed: a failed or aborted fetch
-    // leaves lastETAsFetchTime stale so the next resume retries immediately
-    // instead of waiting out the freshness window.
-    let etasSucceeded = false;
-    let waitsSucceeded = false;
-
-    const etasController = new AbortController();
-    const etasFetchTimeout = setTimeout(() => etasController.abort(), 8000);
+    etasFetchInProgress = true;
     try {
-        const response = await fetch('https://demo.rubus.live/etas', {
-            method: 'GET',
-            signal: etasController.signal
-        });
-        clearTimeout(etasFetchTimeout);
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+        // Capture the campus once: both fetches below key their data by
+        // selectedCampus, and switching campus mid-flight would otherwise mix ETAs
+        // and waits from different campuses for one poll cycle.
+        const campus = selectedCampus;
+        // The caller (resume handler) sets this flag to signal a user-visible pull,
+        // e.g. after long idle when ETAs are stale. Surface an honest indicator
+        // while it runs; the init/campus-switch callers leave it unset so no badge
+        // flashes there.
+        const showIndicator = _etAsRefreshScheduled === true;
+        if (showIndicator) {
+            $('.refreshing-etas').stop(true, true).fadeIn();
         }
-        const data = await response.json();
-        etas = data[campus] || {}; // can prob remove || {} if server defaults eta obj empty campus mappings
-        // console.log('ETAs fetched:', etas);
-        // updateTimeToStops('all')
-        etasSucceeded = true;
+        // Track sub-fetch success so the resume gate's freshness timestamp is only
+        // advanced when the tables actually refreshed: a failed or aborted fetch
+        // leaves lastETAsFetchTime stale so the next resume retries immediately
+        // instead of waiting out the freshness window.
+        let etasSucceeded = false;
+        let waitsSucceeded = false;
 
-        clearServerFailure('ETAs');
-
-        updateRubusResponseTime();
-    } catch (error) {
-        clearTimeout(etasFetchTimeout);
-        console.error('Error fetching ETAs:', error);
-        markRubusRequestsFailing();
-
-        markServerFailure('ETAs');
-    }
-
-    const waitsController = new AbortController();
-    const waitsFetchTimeout = setTimeout(() => waitsController.abort(), 8000);
-    try {
-        const response = await fetch('https://demo.rubus.live/waits', {
-            method: 'GET',
-            signal: waitsController.signal
-        });
-        clearTimeout(waitsFetchTimeout);
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        waits = data[campus];
-        updateWaitTimes();
-        // console.log('Waits fetched:', waits);
-        waitsSucceeded = true;
-
-        clearServerFailure('wait times');
-
-        updateRubusResponseTime();
-    } catch (error) {
-        clearTimeout(waitsFetchTimeout);
-        console.error('Error fetching waits:', error);
-        markRubusRequestsFailing();
-        markServerFailure('wait times');
-    }
-
-    // Only advance the freshness timestamp when both tables refreshed; a failed
-    // or aborted fetch leaves it stale so the resume gate retries promptly.
-    if (etasSucceeded && waitsSucceeded) {
-        lastETAsFetchTime = Date.now();
-    }
-
-    // Deterministic re-render once the ETA/waits tables are ready: recompute
-    // busETAs from the (possibly new) tables, then refresh any open stop popup
-    // so it never keeps showing values derived from a stale table (and any new
-    // popup opened between the start of this fetch and its completion gets the
-    // fresh numbers immediately on open). updateStoBuses itself is guarded and
-    // renders missing busETAs as dimmed no-ETA rows, which is the honest state
-    // before the tables are populated.
-    if (typeof busData === 'object' && busData !== null) {
-        Object.keys(busData).forEach(busName => {
-            if (busData[busName] && busData[busName].route) {
-                updateTimeToStops([busName]);
+        const etasController = new AbortController();
+        const etasFetchTimeout = setTimeout(() => etasController.abort(), 8000);
+        try {
+            const response = await fetch('https://demo.rubus.live/etas', {
+                method: 'GET',
+                signal: etasController.signal
+            });
+            clearTimeout(etasFetchTimeout);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
-        });
-    }
-    if (popupStopId) {
-        updateStopBuses(popupStopId);
-    }
-    // Refresh map tooltips for the selected route when no popup is open: the
-    // idle-resume wipe cleared busETAs, and though the polls recompute them,
-    // this guarantees the labels re-render from the fresh tables (mirrors the
-    // guard used at the end of updateTimeToStops).
-    if (shownRoute && !popupBusName && !popupStopId) {
-        updateTooltips(shownRoute);
-    }
+            const data = await response.json();
+            etas = data[campus] || {}; // can prob remove || {} if server defaults eta obj empty campus mappings
+            // console.log('ETAs fetched:', etas);
+            // updateTimeToStops('all')
+            etasSucceeded = true;
 
-    // Hide the indicator once both fetches settle (success or error) so it
-    // never lingers if a sub-fetch throws.
-    if (typeof $ !== 'undefined') {
+            clearServerFailure('ETAs');
+
+            updateRubusResponseTime();
+        } catch (error) {
+            clearTimeout(etasFetchTimeout);
+            console.error('Error fetching ETAs:', error);
+            markRubusRequestsFailing();
+
+            markServerFailure('ETAs');
+        }
+
+        const waitsController = new AbortController();
+        const waitsFetchTimeout = setTimeout(() => waitsController.abort(), 8000);
+        try {
+            const response = await fetch('https://demo.rubus.live/waits', {
+                method: 'GET',
+                signal: waitsController.signal
+            });
+            clearTimeout(waitsFetchTimeout);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            waits = data[campus];
+            updateWaitTimes();
+            // console.log('Waits fetched:', waits);
+            waitsSucceeded = true;
+
+            clearServerFailure('wait times');
+
+            updateRubusResponseTime();
+        } catch (error) {
+            clearTimeout(waitsFetchTimeout);
+            console.error('Error fetching waits:', error);
+            markRubusRequestsFailing();
+            markServerFailure('wait times');
+        }
+
+        // Only advance the freshness timestamp when both tables refreshed; a failed
+        // or aborted fetch leaves it stale so the resume gate retries promptly.
+        if (etasSucceeded && waitsSucceeded) {
+            lastETAsFetchTime = Date.now();
+        }
+
+        // Deterministic re-render once the ETA/waits tables are ready: recompute
+        // busETAs from the (possibly new) tables, then refresh any open stop popup
+        // so it never keeps showing values derived from a stale table (and any new
+        // popup opened between the start of this fetch and its completion gets the
+        // fresh numbers immediately on open). updateStoBuses itself is guarded and
+        // renders missing busETAs as dimmed no-ETA rows, which is the honest state
+        // before the tables are populated.
+        if (busData) {
+            Object.keys(busData).forEach(busName => {
+                if (busData[busName] && busData[busName].route) {
+                    updateTimeToStops([busName]);
+                }
+            });
+        }
+        if (popupStopId) {
+            updateStopBuses(popupStopId);
+        }
+        // Refresh map tooltips for the selected route when no popup is open: the
+        // idle-resume wipe cleared busETAs, and though the polls recompute them,
+        // this guarantees the labels re-render from the fresh tables (mirrors the
+        // guard used at the end of updateTimeToStops).
+        if (shownRoute && !popupBusName && !popupStopId) {
+            updateTooltips(shownRoute);
+        }
+
+        // Hide the indicator once both fetches settle (success or error) so it
+        // never lingers if a sub-fetch throws.
         $('.refreshing-etas').stop(true, true).slideUp();
+    } finally {
+        etasFetchInProgress = false;
+        if (pendingEtasFetch) {
+            pendingEtasFetch = false;
+            setTimeout(() => fetchETAs(), 0);
+        }
     }
-
 }
 
 $(document).ready(async function() {
@@ -1679,7 +1719,6 @@ $(document).ready(async function() {
             }
 
             // Kick a fetch right away to avoid waiting for the interval
-            busFetchInProgress = false;
             if (!settings['toggle-pause-tripshot-polling']) { fetchBusData(true); }
         };
 
