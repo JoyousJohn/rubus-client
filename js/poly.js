@@ -1594,7 +1594,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         $('.stop-info-buses-grid').append($stopBusElm);
 
         if (visibleRoute && visibleRoute !== data.route) {
-            $('.stop-octagon').last().css('background-color', 'var(--theme-hidden-route-col)').find('div').css('color', 'gray');
+            $stopBusElm.find('.stop-octagon').css('background-color', 'var(--theme-hidden-route-col)').find('div').css('color', 'gray');
         }
 
         if (Object.is(data.eta, -0)) {
