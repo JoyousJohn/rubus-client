@@ -1030,10 +1030,18 @@ function updatePolylineBoundsIfNeeded() {
 
         let combinedBounds = null;
 
+        const outlierRoutes = new Set(['helix', 'kbs']);
+        const hasNonOutlierRoutes = Array.from(currentRoutesWithPolylines).some(route => !outlierRoutes.has(route));
+
         // Compute bounds from current polylines for routes with valid buses
         for (const route of currentRoutesWithPolylines) {
             if (!routeBounds[route] && polylines[route]) {
                 routeBounds[route] = polylines[route].getBounds();
+            }
+            // Exclude outlier routes (helix, kbs) from extending campus bounds
+            // so their remote stops (RWJMS, HELIX H-1, 33 Knightsbridge) don't zoom out the default map view.
+            if (hasNonOutlierRoutes && outlierRoutes.has(route)) {
+                continue;
             }
             if (routeBounds[route]) {
                 if (combinedBounds === null) {
