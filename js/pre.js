@@ -528,10 +528,17 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
         }
 
     } catch (error) {
-        console.error('Error fetching bus data:', error);
-        markServerFailure('bus positions');
+        if (document.hidden || !navigator.onLine) {
+            console.warn('[fetchBusData] Background or offline fetch skipped/aborted:', error.message || error);
+        } else {
+            console.error('Error fetching bus data:', error);
+            markServerFailure('bus positions');
+        }
     } finally {
         busFetchInProgress = false;
+        clearTimeout(slowConnectionTimeout);
+        clearTimeout(fetchTimeout);
+        $('.slow-connection').stop(true, true).slideUp();
         // Guarantee the "UPDATING" badge settles. It's normally hidden by
         // immediatelyUpdateBusDataPost() on the success path; tucking the hide
         // here means a dropped/aborted/failed immediate fetch can never leave
@@ -995,9 +1002,12 @@ async function fetchWhere() {
         }
         busLocations = await response.json();
     } catch (error) {
-        console.error('Error fetching bus locations:', error);
-        markRubusRequestsFailing();
-        markServerFailure('bus positions');
+        if (document.hidden || !navigator.onLine) {
+            console.warn('[fetchWhere] Background or offline fetch failed:', error.message || error);
+        } else {
+            console.error('Error fetching bus locations:', error);
+            markRubusRequestsFailing();
+        }
         return;
     }
 
@@ -1597,6 +1607,7 @@ $(document).ready(async function() {
 
             // ALWAYS force immediate updates and cancel all in-flight animations on resume
             forceImmediateUpdate = true;
+            clearServerFailure('bus positions');
             cancelAllAnimations();
 
             // Reset stale timing data for all buses to prevent incorrect animation durations
@@ -1730,6 +1741,7 @@ function startBusPolling() {
     }, initPollDelay);
 
     setInterval(async () => {
+        if (document.hidden) return;
         if (!settings['toggle-pause-tripshot-polling']) { fetchBusData(); }
     }, pollDelay);
 }
