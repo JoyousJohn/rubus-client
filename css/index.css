@@ -1916,11 +1916,11 @@ html, body {
     display: none;
     background-color: var(--theme-bg);
     color: var(--theme-color);
-    padding: 0.7rem 1.4rem;
+    padding: 0.5rem 1.2rem;
     border-radius: 1.3rem;
     border: 1px solid var(--theme-border);
     box-sizing: border-box;
-    font-size: 1.1rem;
+    font-size: 1rem;
     white-space: normal;
     text-align: left;
     max-width: var(--center-stops-max-width, 10rem);
