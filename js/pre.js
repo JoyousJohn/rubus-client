@@ -1001,6 +1001,8 @@ function updateTimeToStops(busNames) {
     if (shownRoute && !popupBusName && !popupStopId) {
         updateTooltips(shownRoute);
     }
+
+    refreshMeClosestStopsEtas();
 }
 
 

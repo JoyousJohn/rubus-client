@@ -4048,10 +4048,12 @@ function populateMeClosestStops() {
 
             let etaText = '';
             if (eta !== null && eta !== Infinity && typeof eta === 'number') {
-                etaText = ` ${Math.ceil(eta % 60)}m`;
+                etaText = ` ${Math.ceil(eta / 60)}m`;
             }
 
             $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()}${etaText}</div>`)
+            .attr('data-stop-id', String(stopId))
+            .attr('data-route', route)
             .css('background-color', bgCol)
             .click(function() {
                 $('.my-location-popup').hide(); // instead of slow fade out
@@ -4086,6 +4088,51 @@ function populateMeClosestStops() {
 
     $('.closest-stops-list').append($showAllStops);
 
+}
+
+// In-place ETA refresh for the "You're at / Near" closest-stops list.
+// Full populateMeClosestStops() rebuilds the DOM (resetting the Show All
+// expanded state and causing flicker), so ETA surfaces call this instead on
+// every updateTimeToStops cycle. If the route set for a stop changed
+// (bus went OOS / route change), fall back to a full rebuild.
+function refreshMeClosestStopsEtas() {
+    const $chips = $('.closest-stops-list .route-here[data-stop-id][data-route]');
+    if (!$chips.length) return;
+
+    const stopsToCheck = {};
+    $chips.each(function() {
+        stopsToCheck[$(this).attr('data-stop-id')] = true;
+    });
+
+    for (const sid of Object.keys(stopsToCheck)) {
+        const expected = routesServicing(parseInt(sid));
+        const rendered = $chips.filter(`[data-stop-id="${sid}"]`).map(function() {
+            return $(this).attr('data-route');
+        }).get();
+        const same = expected.length === rendered.length && expected.every(r => rendered.includes(r));
+        if (!same) {
+            populateMeClosestStops();
+            return;
+        }
+    }
+
+    $chips.each(function() {
+        const $chip = $(this);
+        const sid = parseInt($chip.attr('data-stop-id'));
+        const route = $chip.attr('data-route');
+        const eta = getSoonestBus(sid, route)[1];
+        let etaText = '';
+        if (eta !== null && eta !== Infinity && typeof eta === 'number') {
+            etaText = ` ${Math.ceil(eta / 60)}m`;
+        }
+        const next = `${route.toUpperCase()}${etaText}`;
+        if ($chip.text() !== next) $chip.text(next);
+        const bgCol = routeHasInServiceBuses(route) ? colorMappings[route] : 'gray';
+        if ($chip.data('bg') !== bgCol) {
+            $chip.data('bg', bgCol);
+            $chip.css('background-color', bgCol);
+        }
+    });
 }
 
 
