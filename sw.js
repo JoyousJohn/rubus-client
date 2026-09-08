@@ -14,7 +14,8 @@ const PRECACHE_ASSETS = [
     '/img/rubus-favicon-back-to-college.png',
     '/img/stop_marker.png',
     '/img/stop_marker_selected.png',
-    '/img/passio-bus.svg'
+    '/img/passio-bus.svg',
+    '/lib/jquery-3.6.4.min.js'
 ];
 
 // Domains and endpoints that must ALWAYS bypass cache and fetch directly from live network
