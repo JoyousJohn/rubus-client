@@ -4095,9 +4095,30 @@ function populateMeClosestStops() {
 // expanded state and causing flicker), so ETA surfaces call this instead on
 // every updateTimeToStops cycle. If the route set for a stop changed
 // (bus went OOS / route change), fall back to a full rebuild.
+let _lastClosestEtaRefresh = 0;
 function refreshMeClosestStopsEtas() {
+    // ETAs render in whole minutes but updateTimeToStops fires per bus per
+    // poll (~15+ calls/cycle): cap refreshes to poll cadence so identical
+    // geometry isn't recomputed dozens of times per cycle.
+    const now = Date.now();
+    if (now - _lastClosestEtaRefresh < 4000) return;
+    _lastClosestEtaRefresh = now;
+
     const $chips = $('.closest-stops-list .route-here[data-stop-id][data-route]');
     if (!$chips.length) return;
+
+    // isValid() runs distanceFromLine geometry per bus and gets re-hit for
+    // every chip sharing a route: memoize per run (results only live here).
+    const validCache = new Map();
+    const inServiceCache = new Map();
+    const isInServiceCached = (route) => {
+        let v = inServiceCache.get(route);
+        if (v === undefined) {
+            v = routeHasInServiceBuses(route);
+            inServiceCache.set(route, v);
+        }
+        return v;
+    };
 
     const stopsToCheck = {};
     $chips.each(function() {
@@ -4120,14 +4141,14 @@ function refreshMeClosestStopsEtas() {
         const $chip = $(this);
         const sid = parseInt($chip.attr('data-stop-id'));
         const route = $chip.attr('data-route');
-        const eta = getSoonestBus(sid, route)[1];
+        const eta = getSoonestBus(sid, route, validCache)[1];
         let etaText = '';
         if (eta !== null && eta !== Infinity && typeof eta === 'number') {
             etaText = ` ${Math.ceil(eta / 60)}m`;
         }
         const next = `${route.toUpperCase()}${etaText}`;
         if ($chip.text() !== next) $chip.text(next);
-        const bgCol = routeHasInServiceBuses(route) ? colorMappings[route] : 'gray';
+        const bgCol = isInServiceCached(route) ? colorMappings[route] : 'gray';
         if ($chip.data('bg') !== bgCol) {
             $chip.data('bg', bgCol);
             $chip.css('background-color', bgCol);

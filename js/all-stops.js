@@ -9,7 +9,7 @@ function getRoutesServicingStop(stopId) {
     return routes;
 }
 
-function getSoonestBus(stopId, route) {
+function getSoonestBus(stopId, route, validCache) {
     let lowestETA = Infinity;
     let lowestBusName;
 
@@ -19,11 +19,24 @@ function getSoonestBus(stopId, route) {
         return [null, null];
     }
 
+    // Optional per-run memo: isValid() runs route geometry per bus and the
+    // closest-stops refresh re-hits the same buses across chips.
+    const checkValid = validCache
+        ? (name) => {
+            let v = validCache.get(name);
+            if (v === undefined) {
+                v = isValid(name);
+                validCache.set(name, v);
+            }
+            return v;
+        }
+        : isValid;
+
     try { // busesByRoutes[selectedCampus][route] disapears when negative/invalid ETA? have to check if this is why/when it is so
 
         busesByRoutes[selectedCampus][route].forEach(busName => {
 
-            if (busETAs[busName] && isValid(busName)) {
+            if (busETAs[busName] && checkValid(busName)) {
 
                 const eta = getETAForStop(busName, stopId);
                 if (eta < lowestETA) {

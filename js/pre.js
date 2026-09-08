@@ -94,6 +94,8 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
     }
     busFetchInProgress = true;
 
+    // console.log(`[poll] fetching bus data at ${new Date().toLocaleTimeString('en-US', { hour12: false })}`);
+
     const url = 'https://demo.rubus.live/buses';
 
     const currentTime = new Date().getTime();
