@@ -153,6 +153,7 @@ function initSpoofing() {
         populateMeClosestStops();
 
         $('.fly-closest-stop-wrapper').fadeIn();
+        $('.building-info-popup').hide();
         $('.my-location-popup').show();
         hideCenterStops();
     });
