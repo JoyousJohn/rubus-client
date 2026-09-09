@@ -223,6 +223,17 @@ $('.info-panels').click(function(e) {
         toggleRouteSelectors(shownRoute);
         // Hide the route selection prompt since a route is selected
         $('#route-selection-prompt').hide();
+    } else if (lastPanelRoute) {
+        // No map filter, but the subpanel remembers a route from a previous
+        // panels session: render it again. If already on the routes tab do it
+        // now; otherwise hide the prompt so ensureRouteSubpanelPopulated
+        // renders it on arrival instead of switching tabs here.
+        if ($('.subpanels-container').hasClass('panel-routes')) {
+            selectedRoute(lastPanelRoute);
+        } else {
+            $('#route-selection-prompt').hide();
+            $('.route-panel-wrapper .route-panel').hide();
+        }
     } else {
         // Show the route selection prompt since no route is selected
         $('#route-selection-prompt').show();

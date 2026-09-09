@@ -563,6 +563,7 @@ let shownRoute;
 let shownBeforeRoute;
 let routePanelOpenedFromLongPress = false; // Track if routes panel opened via long-press
 let originalShownRoute = null; // Preserve map selection before opening panel
+let lastPanelRoute = null; // Routes subpanel's rendered route; unlike panelRoute/shownRoute it survives close/reopen
 let lastMapShownRoute = null; // Tracks current map selection when panels are closed
 let isLongPress = false; // Flag to track if a long press occurred
 
@@ -828,6 +829,10 @@ async function toggleRoute(route) {
 
     const isUnselecting = (shownRoute === route);
     shownRoute = isUnselecting ? null : route;
+    // Explicit map-level unselect: forget the subpanel memory too so a
+    // cleared filter isn't resurrected on the next panels open.
+    // (closeRouteMenu re-asserts its own snapshot after its revert calls.)
+    if (isUnselecting) lastPanelRoute = null;
 
     // Show all polylines and buses
     if (isUnselecting) {
@@ -1049,6 +1054,8 @@ function selectedRoute(route) {
             
             // Reset panelRoute so the route can be selected again
             panelRoute = null;
+            // Explicit in-panel unselect: forget the remembered route too.
+            lastPanelRoute = null;
             
             return;
         } else {
@@ -1367,6 +1374,9 @@ function selectedRoute(route) {
     }, 0);
 
     panelRoute = route
+    // Remember the subpanel's route independently of the map filter so the
+    // selection survives close/reopen (cleared only on explicit unselect).
+    lastPanelRoute = route;
 
     // Panels were (re)opened or repopulated above: put each subpanel back at
     // its remembered scroll position now that the route detail height is
@@ -1385,16 +1395,24 @@ function selectedRoute(route) {
 // just re-shown when the same route was rendered before but its detail
 // area got hidden (e.g. a stop popup hid .route-panel after population).
 function ensureRouteSubpanelPopulated() {
-    if (!shownRoute) return;
-    if ($('#route-selection-prompt').is(':visible')) return;
     if (!$('.info-panels-show-hide-wrapper').is(':visible')) return;
     if (!$('.subpanels-container').hasClass('panel-routes')) return;
-    // Same route already rendered for the subpanel — make sure it's showing.
-    if (panelRoute === shownRoute) {
-        $('.route-panel-wrapper .route-panel').show();
+    if (shownRoute) {
+        if ($('#route-selection-prompt').is(':visible')) return;
+        // Same route already rendered for the subpanel — make sure it's showing.
+        if (panelRoute === shownRoute) {
+            $('.route-panel-wrapper .route-panel').show();
+            return;
+        }
+        selectedRoute(shownRoute);
         return;
     }
-    selectedRoute(shownRoute);
+    // No route filter on the map: fall back to the subpanel's remembered
+    // route so a selection from a previous panels session survives
+    // close/reopen. (Cleared on explicit unselect / campus change, so a
+    // deliberately cleared prompt with no memory still stays empty.)
+    if (panelRoute || !lastPanelRoute) return;
+    selectedRoute(lastPanelRoute);
 }
 window.ensureRouteSubpanelPopulated = ensureRouteSubpanelPopulated;
 
@@ -2574,6 +2592,10 @@ function renderRouteChangesMenu(allChanges) {
 
 function closeRouteMenu() {
     saveInfoSubpanelScrollPositions();
+    // Snapshot the subpanel's route before the revert below resets the map
+    // filter (and clears lastPanelRoute via toggleRoute); re-asserted at end
+    // so the selection survives close/reopen.
+    const rememberedPanelRoute = panelRoute || lastPanelRoute;
     cancelInfoPanelAnimation();
     $('.subpanels-container').removeClass('is-dragging-or-animating');
     console.log('closeRouteMenu called');
@@ -2656,6 +2678,10 @@ function closeRouteMenu() {
             console.log('Already showing all buses');
         }
     }
+
+    // Re-assert the subpanel's remembered route: the revert above resets the
+    // map filter on purpose, but the routes subpanel selection must survive.
+    lastPanelRoute = rememberedPanelRoute;
 }
 
 

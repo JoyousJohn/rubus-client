@@ -92,6 +92,8 @@ function cleanupOldMap() {
     // campus. Clear it so panout/route selectors can't target stale geometry.
     shownRoute = null;
     shownBeforeRoute = null;
+    // The remembered subpanel route belongs to the old campus too.
+    lastPanelRoute = null;
 
     // Reset all nearest-stop state so stop IDs from the previous campus can't be
     // looked up against the new campus's stopsData. `stopsData` is swapped
