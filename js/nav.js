@@ -3288,12 +3288,14 @@ function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, s
                 soonest: i === 0,
                 isSelected,
                 radioHtml,
-                index: i
+                index: i,
+                loop: b.loop || 1
             };
         }).map(b => `
             <div class="incoming-bus-row ${showRadio ? 'selectable-incoming-bus' : ''} ${b.isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${b.index}" data-list-type="${listType}" ${showRadio ? 'title="Tap to select this bus"' : ''}>
                 ${b.radioHtml}
                 <span class="incoming-bus-name" style="color: ${b.routeColor};">${typeof escapeHtml === 'function' ? escapeHtml(b.busLabel) : b.busLabel}</span>
+                ${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}
                 <span class="incoming-bus-arrival">arrives ${b.arrivalTime}</span>
                 <span class="incoming-bus-wait ${b.soonest ? 'soonest' : ''}">${b.waitMin > 0 ? `${b.waitMin}m wait` : 'No wait'}</span>
             </div>
@@ -3339,6 +3341,7 @@ function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSe
             return `
                 <div class="destination-bus-row ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}">
                     <span class="destination-bus-name" style="color: ${routeColor};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
+                    ${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}
                     <span class="destination-bus-arrival">${arrivalTime} arrival</span>
                 </div>
             `;
@@ -3440,6 +3443,7 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
                     <div class="destination-bus-row ${showRadio ? 'selectable-transfer-bus' : ''} ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${i}" data-eta-transfer="${etaTransfer}" ${showRadio ? 'title="Tap to select this bus"' : ''}>
                         ${radioHtml}
                         <span class="destination-bus-name" style="color: ${leg1Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
+                        ${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}
                         <span class="destination-bus-arrival">${arrivalTime} arrival</span>
                     </div>
                 `;
@@ -3479,6 +3483,7 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
                 <div class="incoming-bus-row ${showLeg2Radio ? 'selectable-incoming-bus' : ''} ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${i}" data-list-type="transfer_leg2" ${showLeg2Radio ? 'title="Tap to select this bus"' : ''}>
                     ${radioHtml}
                     <span class="incoming-bus-name" style="color: ${leg2Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
+                    ${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}
                     <span class="incoming-bus-arrival">arrives ${arrivalTime}</span>
                     <span class="incoming-bus-wait ${i === 0 ? 'soonest' : ''}">${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}</span>
                 </div>
@@ -4424,7 +4429,79 @@ function bindNavRouteOptionClicks(routesForDisplay) {
 }
 
 // Render route selector HTML into container and bind events
+let _navSelectorAnomalyActive = false;
+// Integrity tripwire: a pill row is 3 levels (outer .nav-route-selector-container
+// > middle .nav-route-selector > inner .route-options-container holding pills).
+// Renderers only ever replace the single live container, so any count above 1
+// at any level — or any pill outside the container — is anomalous. Warn-once per
+// episode (reset when clean) so 5s polls can't spam. console.warn only: never
+// console.error here, the error tracker scrapes that into user-visible UI.
+function checkNavSelectorIntegrity(context) {
+    try {
+        const containers = $('.nav-route-selector-container');
+        const middlesIn = $('.nav-route-selector-container .nav-route-selector');
+        const middlesAll = $('.nav-route-selector');
+        const innersIn = $('.nav-route-selector-container .route-options-container');
+        const innersAll = $('.route-options-container');
+        const pillsIn = $('.nav-route-selector-container .route-option');
+        const pillsAll = $('.route-option');
+        const seenIdx = {};
+        let dupIdx = 0;
+        pillsIn.each(function() {
+            const k = $(this).attr('data-route-index');
+            if (k !== undefined) {
+                if (seenIdx[k]) dupIdx++;
+                else seenIdx[k] = true;
+            }
+        });
+        const problems = [];
+        if (containers.length > 1) problems.push(containers.length + 'x outer .nav-route-selector-container');
+        if (middlesIn.length > 1) problems.push(middlesIn.length + 'x middle .nav-route-selector inside container');
+        if (middlesAll.length > middlesIn.length) problems.push((middlesAll.length - middlesIn.length) + 'x middle .nav-route-selector outside container');
+        if (innersIn.length > 1) problems.push(innersIn.length + 'x inner .route-options-container inside container');
+        if (innersAll.length > innersIn.length) problems.push((innersAll.length - innersIn.length) + 'x inner .route-options-container outside container');
+        if (pillsAll.length > pillsIn.length) problems.push((pillsAll.length - pillsIn.length) + 'x stray .route-option pills outside container');
+        if (dupIdx > 0) problems.push(dupIdx + 'x duplicate pill indices inside container');
+        if (problems.length > 0) {
+            if (!_navSelectorAnomalyActive) {
+                _navSelectorAnomalyActive = true;
+                // Forensic specimen: counts alone can't identify the injector,
+                // so capture the first stray node's markup and parent chain.
+                let specimen = null;
+                let parentChain = null;
+                const strayNodes = pillsAll.not(pillsIn).add(middlesAll.not(middlesIn)).add(innersAll.not(innersIn));
+                const firstStray = strayNodes.first()[0];
+                if (firstStray) {
+                    specimen = firstStray.outerHTML ? firstStray.outerHTML.slice(0, 500) : String(firstStray);
+                    const chain = [];
+                    let el = firstStray.parentElement;
+                    while (el && chain.length < 6) {
+                        const cls = (el.className && typeof el.className === 'string') ? '.' + el.className.trim().split(/\s+/).join('.') : '';
+                        chain.push(el.tagName.toLowerCase() + cls);
+                        el = el.parentElement;
+                    }
+                    parentChain = chain.join(' < ');
+                }
+                console.warn('[nav] Route selector duplication (' + context + '): ' + problems.join('; '), {
+                    containers: containers.length,
+                    middlesInContainer: middlesIn.length,
+                    middlesTotal: middlesAll.length,
+                    innersInContainer: innersIn.length,
+                    innersTotal: innersAll.length,
+                    pillsInContainer: pillsIn.length,
+                    pillsTotal: pillsAll.length,
+                    specimen: specimen,
+                    parentChain: parentChain
+                });
+            }
+        } else {
+            _navSelectorAnomalyActive = false;
+        }
+    } catch (e) {}
+}
+
 function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
+    checkNavSelectorIntegrity('renderNavRouteSelector');
     const $container = $('.nav-route-selector-container');
     if (!$container.length) return;
     if (!routesForDisplay || routesForDisplay.length <= 1) {
@@ -5402,12 +5479,11 @@ function displayRoute(routeData) {
 
     // Clear existing route display and ensure flex when shown
     $('.nav-directions-wrapper').removeClass('none').addClass('flex').empty();
+    $('.nav-route-selector-container').empty().addClass('none');
     navDirectionsWasVisibleBeforeFocus = false;
 
     const directionsContainer = $('.nav-directions-wrapper');
 
-    // Create route selector header if there are multiple routes
-    let routeSelectorHtml = '';
     // Prepare routes for display: exclude winter/summer/all/on; group WKND together and place at end
     let routesForDisplay = [];
     let selectedRouteDisplayIndex = 0;
@@ -5600,8 +5676,6 @@ function displayRoute(routeData) {
         }
     }
 
-    routeSelectorHtml = buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex);
-
     // Removed multi-stop info UI per request
 
     // No longer showing alternative routes info since it's clear from the route selector above
@@ -5747,6 +5821,11 @@ function displayRoute(routeData) {
 
     // Position the single global waypoint connector after render
     positionGlobalWaypointConnector();
+
+    // Integrity tripwire (per row level, warn-once) — catches anything the
+    // render above could not have produced, including displayRoute branches
+    // that return before renderNavRouteSelector runs.
+    checkNavSelectorIntegrity('displayRoute');
 
     // Add click handlers for selectable transfer destination bus rows.
     // Tapping a Leg 1 bus selects it and updates the Leg 2 incoming buses list.
