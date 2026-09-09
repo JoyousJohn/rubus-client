@@ -110,10 +110,7 @@ function hideInfoBoxes(instantly_hide) {
         if (busData[busIdThatWasFocused]) {
             const route = busData[busIdThatWasFocused].route;
             const noInService = !routeHasInServiceBuses(route);
-            if (noInService && polylines[route]) {
-                logPolylineRemoval(route, 'hideInfoBoxes');
-                try { polylines[route].remove(); } catch (e) { console.warn('[hideInfoBoxes] failed to remove polyline for route ' + route + ':', e); }
-                delete polylines[route];
+            if (noInService && removePolyline(route, 'hideInfoBoxes')) {
                 // Recompute global polyline bounds via shared helper
                 updatePolylineBoundsIfNeeded();
             }

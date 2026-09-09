@@ -53,14 +53,19 @@ async function addForceShowPolyline(routeName) {
     const polyline = L.polyline(coordinates, polylineOptions);
     polyline.addTo(map);
     polylines[routeName] = polyline;
+    // Reset removal count when polyline is successfully created
+    // (mirrors addPolylineForRoute/setPolylines) so force-show off/on
+    // cycles don't trip the double-removal detector.
+    if (polylineRemovalCount[routeName]) {
+        delete polylineRemovalCount[routeName];
+    }
     routeBounds[routeName] = polyline.getBounds();
     routePointsCache[routeName] = polyline.getLatLngs();
 }
 
 function removeForceShowPolyline(routeName) {
     if (!polylines[routeName]) return;
-    polylines[routeName].remove();
-    delete polylines[routeName];
+    removePolyline(routeName, 'removeForceShowPolyline');
     delete routeBounds[routeName];
 }
 
@@ -68,8 +73,7 @@ function applyForceShowState() {
     const forceRoutes = getForceShowRoutes();
     for (const route of Object.keys(polylines)) {
         if (!forceRoutes.includes(route)) {
-            try { polylines[route].remove(); } catch (e) { console.warn('[applyForceShowState] failed to remove polyline for route ' + route + ':', e); }
-            delete polylines[route];
+            removePolyline(route, 'applyForceShowState');
         }
     }
     for (const route of forceRoutes) {
@@ -83,8 +87,7 @@ function applyForceShowState() {
 function revertForceShowState() {
     for (const route of Object.keys(polylines)) {
         if (!routeHasInServiceBuses(route)) {
-            try { polylines[route].remove(); } catch (e) { console.warn('[revertForceShowState] failed to remove polyline for route ' + route + ':', e); }
-            delete polylines[route];
+            removePolyline(route, 'revertForceShowState');
         }
     }
     const forceRoutes = getForceShowRoutes();
@@ -691,6 +694,26 @@ function getPolylineRemovalHistory(routeName = null) {
     return polylineRemovalLog.slice(); // Return copy
 }
 
+// Single-owner polyline removal: detach layer, drop dict entry, log only
+// real removals. Returns true if something was removed, false if already
+// gone (normal OOS/route-change race on resume — debug, not warn).
+// routeBounds is intentionally kept cached for fast re-adds.
+function removePolyline(routeName, caller) {
+    const p = polylines[routeName];
+    if (!p) {
+        console.debug(`[${caller}] polyline for ${routeName} already gone, skipping`);
+        return false;
+    }
+    logPolylineRemoval(routeName, caller);
+    try {
+        p.remove();
+    } catch (e) {
+        console.warn(`[${caller}] failed to remove polyline for route ${routeName}:`, e);
+    }
+    delete polylines[routeName];
+    return true;
+}
+
 // Global debugging functions (accessible from console)
 window.debugPolylineRemovals = function(routeName = null) {
     const history = getPolylineRemovalHistory(routeName);
@@ -755,8 +778,7 @@ async function setPolylines(activeRoutes, opts = {}) {
         for (const routeName in polylines) {
             if (!routesToSet.includes(routeName)) {
                 if (polylines[routeName]) {
-                    polylines[routeName].remove();
-                    delete polylines[routeName];
+                    removePolyline(routeName, 'setPolylines-forceCleanup');
                 }
             }
         }
@@ -832,6 +854,12 @@ async function setPolylines(activeRoutes, opts = {}) {
         const pathEl = polyline.getElement();
         if (pathEl) pathEl.style.opacity = String(targetOpacity);
 
+        // Reset removal count when polyline is successfully created
+        // (mirrors addPolylineForRoute) so legitimate re-adds don't trip
+        // the double-removal detector.
+        if (polylineRemovalCount[routeName]) {
+            delete polylineRemovalCount[routeName];
+        }
         // Cache route bounds and points even if layer later gets pruned
         routeBounds[routeName] = polyline.getBounds();
         routePointsCache[routeName] = polyline.getLatLngs();
@@ -1091,8 +1119,7 @@ function prunePolylinesWithoutInService() {
         if (forceMode) {
             for (const routeName of Object.keys(polylines)) {
                 if (!forceRoutes.includes(routeName)) {
-                    try { polylines[routeName].remove(); } catch (e) { console.warn('[prunePolylinesWithoutInService] failed to remove polyline for route ' + routeName + ':', e); }
-                    delete polylines[routeName];
+                    removePolyline(routeName, 'prunePolylinesWithoutInService-forceCleanup');
                 }
             }
         }
@@ -2410,10 +2437,7 @@ async function popStopInfo(stopId) {
     // If we just unfocused a bus, check if its route has no in-service buses and prune polylines if needed
     if (popupBusName) {
         const route = busData[popupBusName].route;
-        if (!routeHasInServiceBuses(route) && polylines[route]) {
-            logPolylineRemoval(route, 'popStopInfo');
-            try { polylines[route].remove(); } catch (e) { console.warn('[popStopInfo] failed to remove polyline for route ' + route + ':', e); }
-            delete polylines[route];
+        if (!routeHasInServiceBuses(route) && removePolyline(route, 'popStopInfo')) {
             // Keep routeBounds cached; recompute global polyline bounds via shared helper
             updatePolylineBoundsIfNeeded();
         }
