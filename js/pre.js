@@ -824,6 +824,16 @@ function updateTimeToStops(busNames) {
             return;
         }
 
+        // A bus that is not at a stop cannot be dwelling overtime, no matter
+        // which pathway flipped at_stop (WS departure event, HTTP fallback
+        // fetchWhere, WS snapshot/reconnect). The dwell branch below only
+        // assigns the flag while dwelling, so clear it here to keep the
+        // overtime-driven surfaces (route stop "x+ min" tooltips, popup
+        // overtime UI) from sticking on stale state.
+        if (!data['at_stop']) {
+            delete busData[busName].overtime;
+        }
+
         const busRoute = busData[busName].route
         const isSpecialRoute = (busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1')
         let nextStop = getNextStopId(busRoute, stopId)
