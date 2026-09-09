@@ -626,6 +626,15 @@ function flyToBus(busName) {
     const lng = markerLatLng?.lng ?? Number(busData[busName].long);
     const targetZoom = 18;
 
+    // Leaving a stop for a bus: remember the stop's 2nd-loop expansion and
+    // scroll position so the bus back button can restore them. The visibility
+    // guard keeps unrelated flyToBus callers (fav, search) from clobbering it.
+    if (popupStopId != null && $('.stop-info-popup').is(':visible')) {
+        window.sourceStopSecondLoopOpen = $('.stop-info-next-loop-wrapper').is(':visible');
+        window.sourceStopScrollTop = $('.stop-info-popup-inner').scrollTop() || 0;
+        window.sourceStopScrollStopId = Number(popupStopId);
+    }
+
     selectBusMarker(busName);
 
     // Center the bus in the map area still visible below the bus info popup.

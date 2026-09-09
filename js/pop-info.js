@@ -532,6 +532,21 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
 
     updateNextStopsMaxHeight();
 
+    // Returning via the stop back button: restore the bus next-stops scroll
+    // position instead of jumping to the top. One-shot: cleared on consume
+    // so live polls (which also call popInfo) preserve the user's scroll.
+    // A fresh bus switch (isNewBus, e.g. marker tap) still starts at top —
+    // this also covers the selectBusMarker path, which sets popupBusName
+    // before popInfo so rebuildGrid's own popupBusName check can't see it.
+    if (window.sourceBusScrollBusName === busName) {
+        const busTopToRestore = window.sourceBusScrollTop || 0;
+        setTimeout(() => { $('.info-next-stops').scrollTop(busTopToRestore); }, 0);
+        window.sourceBusScrollBusName = null;
+        window.sourceBusScrollTop = 0;
+    } else if (isNewBus) {
+        setTimeout(() => { $('.info-next-stops').scrollTop(0); }, 0);
+    }
+
     if (settings['toggle-hide-other-routes'] && (!popupBusName || popupBusName !== busName)) {
         focusBus(busName);
     }

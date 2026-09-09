@@ -137,6 +137,16 @@ function hideInfoBoxes(instantly_hide) {
         sourceStopId = null;
     }
 
+    // Drop any saved stop <-> bus return state (2nd-loop expansion, menu
+    // scroll positions) when all popups close — a fresh open starts at top.
+    // window.* prefix: these are var-declared in poly.js, so plain property
+    // access/assignment (never throws, even cross-file load order).
+    window.sourceStopSecondLoopOpen = false;
+    window.sourceStopScrollTop = 0;
+    window.sourceStopScrollStopId = null;
+    window.sourceBusScrollTop = 0;
+    window.sourceBusScrollBusName = null;
+
     if (selectedMarkerId && busMarkers[selectedMarkerId]) {
         const rotationElement = getMarkerRotationElement(busMarkers[selectedMarkerId]);
         if (rotationElement) {

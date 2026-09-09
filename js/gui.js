@@ -3885,6 +3885,13 @@ async function checkIfLocationShared() {
 
 function flyToStop(stopId, fromUserInteraction = false) {
     console.log('[DEBUG flyToStop]', { stopId, fromUserInteraction, hasStopData: !!(stopsData && stopsData[stopId]), hasMarker: !!(busStopMarkers && busStopMarkers[stopId]), busStopMarkersKeys: Object.keys(busStopMarkers || {}) });
+    // Leaving a bus for a stop: remember the bus next-stops scroll position
+    // so the stop back button can restore it. The visibility guard keeps
+    // unrelated flyToStop callers (map clicks, search) from clobbering it.
+    if (popupBusName != null && $('.bus-info-popup').is(':visible')) {
+        window.sourceBusScrollTop = $('.info-next-stops').scrollTop() || 0;
+        window.sourceBusScrollBusName = popupBusName;
+    }
     const stopData = stopsData[stopId];
     if (!stopData) {
         console.error('[DEBUG flyToStop] Missing stopData for stopId:', stopId);

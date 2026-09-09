@@ -1952,6 +1952,18 @@ function updateStopBuses(stopId, actuallyShownRoute) {
 let sourceBusName = null;
 let sourceStopId = null;
 
+// Return-state memory for stop <-> bus back-button navigation.
+// When leaving a stop for a bus (stop -> bus -> back to stop), we remember
+// whether the 2nd loop was manually expanded and where the stop menu was
+// scrolled, so the back button restores them instead of resetting.
+// When leaving a bus for a stop (bus -> stop -> back to bus), we remember
+// the bus next-stops scroll position for the same reason.
+var sourceStopSecondLoopOpen = false;
+var sourceStopScrollTop = 0;
+var sourceStopScrollStopId = null;
+var sourceBusScrollTop = 0;
+var sourceBusScrollBusName = null;
+
 // Config object mapping stopId to its switch pair and direction info
 const stopSwitchConfig = {
     'nb': {
@@ -2349,6 +2361,14 @@ async function popStopInfo(stopId) {
         $('.stop-info-next-loop-wrapper').show();
         $('.stop-info-show-next-loop').hide();
     }
+    // Returning via the bus back button: restore a manually expanded 2nd
+    // loop instead of collapsing it per the always-show setting.
+    const isReturnToStop = sourceStopScrollStopId != null && Number(sourceStopScrollStopId) === Number(stopId);
+    if (isReturnToStop && sourceStopSecondLoopOpen && nextLoopEntries.length > 0) {
+        $('.stop-info-next-loop-wrapper').show();
+        $('.stop-info-show-next-loop').hide();
+        if (!settings['toggle-always-show-second']) $('.always-show-next-loop').show();
+    }
     updateStopBuses(stopId, shownRoute);
 
     // Check if there are out of service buses and show hide button if not already hidden
@@ -2416,7 +2436,15 @@ async function popStopInfo(stopId) {
     if (typeof hideCenterStops === 'function') hideCenterStops();
     if (typeof isDesktop !== 'undefined' && isDesktop && !isTouchDevice) showEscNotice('stop');
 
-    $('.stop-info-popup-inner').scrollTop(0);
+    if (isReturnToStop) {
+        const topToRestore = sourceStopScrollTop || 0;
+        setTimeout(() => { $('.stop-info-popup-inner').scrollTop(topToRestore); }, 0);
+        sourceStopScrollStopId = null;
+        sourceStopScrollTop = 0;
+        sourceStopSecondLoopOpen = false;
+    } else {
+        $('.stop-info-popup-inner').scrollTop(0);
+    }
 
     setTimeout(updateStopBusesMaxHeight, 0);
 
