@@ -552,28 +552,84 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     scrollChatToBottom($messages, true);
 
     const reqStartTime = performance.now();
-    let totalEstimatedTokens = 0;
+    let phase = 'waiting'; // 'waiting' | 'thinking' | 'answering'
+    let phaseStartTime = null;
+    let streamedThinking = '';
+    let streamedAnswer = '';
     let tpsInterval = null;
+    let $currentThinkingBox = null;
+    let $botMeta = null;
+
+    const selectedModel = settings['chatbot-model'] || 'ling';
+    const selectedProvider = settings['chatbot-provider'] || 'auto';
+    let currentModel = selectedModel;
+    let currentProvider = selectedProvider;
+
+    function formatModelName(rawModel) {
+        if (!rawModel) return '';
+        const m = rawModel.toLowerCase();
+        if (m.includes('ling-3') || m === 'ling') return 'Ling 3.0 Flash';
+        if (m.includes('deepseek-v4') || m === 'deepseek') return 'DeepSeek V4 Flash';
+        if (m.includes('solar') || m === 'solar-pro') return 'Solar Pro';
+        return rawModel.split('/').pop();
+    }
+
+    function formatProviderName(rawProvider) {
+        if (!rawProvider || rawProvider === 'auto') return '';
+        const p = rawProvider.trim();
+        if (p.toLowerCase() === 'deepinfra') return 'DeepInfra';
+        if (p.toLowerCase() === 'novita') return 'Novita';
+        if (p.toLowerCase() === 'together') return 'Together';
+        if (p.toLowerCase() === 'upstage') return 'Upstage';
+        if (p.toLowerCase() === 'sail research') return 'Sail Research';
+        if (p.length > 0 && p[0] === p[0].toUpperCase()) return p;
+        return p.charAt(0).toUpperCase() + p.slice(1);
+    }
+
+    function formatThinkingBadge(metric) {
+        const parts = [];
+        const modelStr = formatModelName(currentModel);
+        const providerStr = formatProviderName(currentProvider);
+        if (modelStr) parts.push(modelStr);
+        if (providerStr) parts.push(providerStr);
+        if (metric) parts.push(metric);
+        return parts.join(' · ');
+    }
 
     function estimateTokens(text) {
         if (!text) return 0;
-        return Math.max(1, Math.ceil(text.length / 3.8));
+        return Math.max(1, Math.round(text.length / 3.8));
     }
 
-    function getLiveTpsString() {
-        const elapsedSec = (performance.now() - reqStartTime) / 1000;
-        if (totalEstimatedTokens === 0) {
+    function getLiveStatusString() {
+        const now = performance.now();
+        if (phase === 'waiting' || !phaseStartTime) {
+            const elapsedSec = (now - reqStartTime) / 1000;
             return `${elapsedSec.toFixed(1)}s`;
         }
-        if (elapsedSec < 0.15) return '';
-        const tps = (totalEstimatedTokens / elapsedSec).toFixed(1);
-        return `${tps} tps`;
+
+        const elapsedPhaseSec = (now - phaseStartTime) / 1000;
+        if (elapsedPhaseSec < 0.1) return '';
+
+        if (phase === 'thinking') {
+            const tokens = estimateTokens(streamedThinking);
+            const tps = (tokens / elapsedPhaseSec).toFixed(1);
+            return `${tps} tps`;
+        } else if (phase === 'answering') {
+            const tokens = estimateTokens(streamedAnswer);
+            const tps = (tokens / elapsedPhaseSec).toFixed(1);
+            return `${tps} tps`;
+        }
+        return `${((now - reqStartTime) / 1000).toFixed(1)}s`;
     }
 
     function updateActiveTps() {
-        const tpsText = getLiveTpsString();
+        const tpsText = getLiveStatusString();
         if (tpsText) {
             $('.chat-tps-badge.active-tps').text(tpsText);
+            if (phase === 'thinking' && $currentThinkingBox) {
+                $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(tpsText));
+            }
         }
     }
 
@@ -590,6 +646,35 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     `);
     $messages.append($botMsg);
     scrollChatToBottom($messages, false);
+
+    function ensureThinkingBox() {
+        if (!$currentThinkingBox) {
+            const isVisible = settings['toggle-show-thinking'];
+            $currentThinkingBox = $(`
+                <div class="chat-thinking-box"${isVisible ? '' : ' style="display: none;"'}>
+                    <div class="thinking-header">
+                        <i class="fa-solid fa-brain"></i>
+                        <span class="thinking-tps-badge">${formatThinkingBadge('')}</span>
+                    </div>
+                    <div class="thinking-content"></div>
+                </div>
+            `);
+            $currentThinkingBox.insertBefore($botMsg);
+        }
+        return $currentThinkingBox;
+    }
+
+    function ensureBotMeta() {
+        if (!$botMeta) {
+            $botMeta = $(`
+                <div class="chat-status-line chat-message-meta">
+                    <span class="chat-tps-badge active-tps"></span>
+                </div>
+            `);
+            $botMeta.insertAfter($botMsg);
+        }
+        return $botMeta;
+    }
 
     // Prepare conversation history (excluding the just-added user message) and truncate
     const historyToSend = truncateChatHistory(window.chatHistory.slice(0, -1));
@@ -608,109 +693,134 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     window.currentChatController = controller;
 
     let finalAnswer = null;
-    let toolCalls = [];
-    let streamedThinking = '';
-    let $currentThinkingBox = null;
 
     function handleChatData(data) {
         try {
-            if (data.thinking) {
-                totalEstimatedTokens += estimateTokens(data.thinking);
-                streamedThinking = (streamedThinking ? streamedThinking + '\n\n' : '') + data.thinking;
-                updateActiveTps();
-                if (settings['toggle-show-thinking']) {
-                    if (!$currentThinkingBox) {
-                        $currentThinkingBox = $(`
-                            <div class="chat-thinking-box">
-                                <div class="thinking-header"><i class="fa-solid fa-brain"></i> Thought Process <span class="thinking-toggle" style="font-size: 1rem; margin-left: 0.5rem; opacity: 0.7;">▼</span></div>
-                                <div class="thinking-content"></div>
-                            </div>
-                        `);
-                        $currentThinkingBox.find('.thinking-header').click(function() {
-                            const $content = $(this).siblings('.thinking-content');
-                            const isVis = $content.is(':visible');
-                            $content.slideToggle(150);
-                            $(this).find('.thinking-toggle').text(isVis ? '▶' : '▼');
-                        });
-                        $currentThinkingBox.insertBefore($botMsg);
+            if (data.model) currentModel = data.model;
+            if (data.provider) currentProvider = data.provider;
+
+            // 1. Thinking delta or complete thinking block
+            if (data.thinking_delta && !data.done) {
+                if (phase !== 'thinking') {
+                    phase = 'thinking';
+                    phaseStartTime = performance.now();
+                    $botMsg.find('.chat-status-text').text('Thinking...');
+                    if (streamedThinking && !streamedThinking.endsWith('\n\n')) {
+                        streamedThinking += (streamedThinking.endsWith('\n') ? '\n' : '\n\n');
                     }
+                }
+                streamedThinking += data.thinking_delta;
+
+                ensureThinkingBox();
+                $currentThinkingBox.find('.thinking-content').text(streamedThinking);
+                $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(getLiveStatusString()));
+                updateActiveTps();
+            } else if (data.thinking && !data.done) {
+                if (!streamedThinking) {
+                    streamedThinking = data.thinking;
+                    ensureThinkingBox();
                     $currentThinkingBox.find('.thinking-content').text(streamedThinking);
-                    scrollChatToBottom($messages, false);
+                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(getLiveStatusString()));
                 }
             }
 
+            // 2. Tool call progress notification
             if (data.progress && !data.done) {
                 console.log(data);
-                totalEstimatedTokens += estimateTokens(data.progress);
-                toolCalls.push(data.progress);
+                phase = 'waiting';
+                phaseStartTime = null;
+                streamedAnswer = '';
+
+                // Log function call in thinking element if a tool was executed
+                if (data.tool_name) {
+                    const toolTrace = `[Called ${data.tool_name}]`;
+                    const lastLine = (streamedThinking || '').trimEnd().split('\n').pop() || '';
+                    if (lastLine !== toolTrace) {
+                        if (streamedThinking) {
+                            const trimmed = streamedThinking.trimEnd();
+                            streamedThinking = trimmed + (trimmed.endsWith(']') ? '\n' : '\n\n') + toolTrace + '\n';
+                        } else {
+                            streamedThinking = toolTrace + '\n';
+                        }
+                    }
+                    ensureThinkingBox();
+                    $currentThinkingBox.find('.thinking-content').text(streamedThinking);
+                    const thinkTokens = estimateTokens(streamedThinking);
+                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${thinkTokens} tokens`));
+                } else if ($currentThinkingBox) {
+                    const thinkTokens = estimateTokens(streamedThinking);
+                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${thinkTokens} tokens`));
+                }
+
                 // Remove pulse animation from previous thinking steps
                 $('.chat-tps-badge.active-tps').removeClass('active-tps');
                 $('.chat-message.bot.thinking.loading').removeClass('loading');
+                if ($botMeta) {
+                    $botMeta.remove();
+                    $botMeta = null;
+                }
                 $botMsg.hide();
+
                 const safeProgressText = $('<div>').text(data.progress).html();
                 const $thinkingDiv = $(`
                     <div class="chat-message bot loading thinking">
                         <div class="chat-status-line">
                             <span class="chat-status-text">${safeProgressText}</span>
-                            <span class="chat-tps-badge active-tps">${getLiveTpsString()}</span>
+                            <span class="chat-tps-badge active-tps">${getLiveStatusString()}</span>
                         </div>
                     </div>
                 `);
                 $thinkingDiv.insertBefore($botMsg);
-            } else if (data.done) {
+                scrollChatToBottom($messages, false);
+            }
+
+            // 3. Streaming answer content delta
+            if (data.delta && !data.done) {
+                if (phase !== 'answering') {
+                    // Finalize thinking header badge if it exists
+                    if ($currentThinkingBox && phase === 'thinking') {
+                        const thinkSec = Math.max(0.1, (performance.now() - phaseStartTime) / 1000).toFixed(1);
+                        const thinkTokens = estimateTokens(streamedThinking);
+                        const thinkTps = (thinkTokens / thinkSec).toFixed(1);
+                        $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${thinkSec}s · ${thinkTps} tps`));
+                    }
+                    phase = 'answering';
+                    phaseStartTime = performance.now();
+                    $('.chat-message.bot.thinking').slideUp();
+                    $botMsg.show().removeClass('loading');
+                    $botMsg.html('<div class="chat-message-content"></div>');
+                    ensureBotMeta();
+                }
+                streamedAnswer += data.delta;
+                let cleanStream = streamedAnswer
+                    .replace(/<suggestions>[\s\S]*?(?:<\/suggestions>|$)/gi, '')
+                    .replace(/<think(?:ing)?>[\s\S]*?(?:<\/think(?:ing)?>|$)/gi, '')
+                    .replace(/<\|[^>]*>/g, '');
+                $botMsg.find('.chat-message-content').html(colorRouteNames(parseMarkdown(cleanStream)));
+                updateActiveTps();
+                scrollChatToBottom($messages, false);
+            }
+
+            // 4. Response complete
+            else if (data.done) {
                 if (tpsInterval) {
                     clearInterval(tpsInterval);
                     tpsInterval = null;
                 }
-                if (data.answer) {
-                    totalEstimatedTokens += estimateTokens(data.answer);
-                }
                 $('.chat-tps-badge.active-tps').removeClass('active-tps');
                 $('.chat-message.bot.thinking').slideUp();
-                $botMsg.show();
-                finalAnswer = data.answer;
+                $botMsg.show().removeClass('loading');
+                finalAnswer = data.answer || streamedAnswer || '';
 
-                const thinkingToDisplay = data.thinking || streamedThinking;
-                if (settings['toggle-show-thinking'] && thinkingToDisplay && !$currentThinkingBox) {
-                    $currentThinkingBox = $(`
-                        <div class="chat-thinking-box">
-                            <div class="thinking-header"><i class="fa-solid fa-brain"></i> Thought Process <span class="thinking-toggle" style="font-size: 1rem; margin-left: 0.5rem; opacity: 0.7;">▼</span></div>
-                            <div class="thinking-content"></div>
-                        </div>
-                    `);
-                    $currentThinkingBox.find('.thinking-header').click(function() {
-                        const $content = $(this).siblings('.thinking-content');
-                        const isVis = $content.is(':visible');
-                        $content.slideToggle(150);
-                        $(this).find('.thinking-toggle').text(isVis ? '▶' : '▼');
-                    });
+                const thinkingToDisplay = (streamedThinking || data.thinking || '').trim();
+                if (thinkingToDisplay) {
+                    ensureThinkingBox();
                     $currentThinkingBox.find('.thinking-content').text(thinkingToDisplay);
-                    $currentThinkingBox.insertBefore($botMsg);
+                    const thinkTokens = data.reasoning_tokens || estimateTokens(thinkingToDisplay);
+                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${thinkTokens} tokens`));
                 }
 
-                if (settings['toggle-show-thinking'] && toolCalls.length > 0) {
-                    const $showEntireResponse = $('<div class="text-1p3rem pointer" style="color: #8181f1; margin-left: 1.3rem;">Show raw response & tools</div>').click(function() {
-                        const $expandedInfo = $('<div class="expanded-raw-info" style="margin-left: 1.3rem;"></div>');
-                        const $respDiv = $('<div class="text-1p3rem" style="white-space: pre-wrap; margin-top: 0.5rem; color: #aaa;"></div>').text('Response content: ' + data.answer);
-                        $expandedInfo.append($respDiv);
-                        if (toolCalls.length > 0) {
-                            const $toolsList = $('<div class="text-1p3rem" style="color: #8181f1; margin-top: 0.5rem;">Tools called:</div>');
-                            const $ul = $('<ul style="margin: 0.25rem 0 0 0; padding-left: 1.5rem;"></ul>');
-                            toolCalls.forEach(tool => {
-                                const $li = $('<li style="color: #aaa;"></li>').text(tool);
-                                $ul.append($li);
-                            });
-                            $toolsList.append($ul);
-                            $expandedInfo.append($toolsList);
-                        }
-                        $expandedInfo.insertAfter($(this));
-                        $(this).remove();
-                        scrollChatToBottom($messages, false);
-                    });
-                    $messages.append($showEntireResponse);
-                }
-
-                let rawText = data.answer || '';
+                let rawText = finalAnswer;
                 if (!rawText && data.progress && data.progress.startsWith('Error:')) {
                     console.error('[Chat Error]', data.progress);
                     const errLower = data.progress.toLowerCase();
@@ -755,9 +865,17 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     finalAnswer = finalAnswer.replace(/<suggestions>[\s\S]*?<\/suggestions>/i, '').trim();
                 }
 
+                const answerDurationSec = (phaseStartTime && phase === 'answering')
+                    ? Math.max(0.1, (performance.now() - phaseStartTime) / 1000)
+                    : Math.max(0.1, (performance.now() - reqStartTime) / 1000);
+                const totalAnswerTokens = data.completion_tokens || estimateTokens(finalAnswer);
+                const finalAnswerTps = (totalAnswerTokens / answerDurationSec).toFixed(1);
+
                 console.log(finalAnswer);
                 const processedAnswer = colorRouteNames(parseMarkdown(finalAnswer));
-                $botMsg.html(processedAnswer).removeClass('loading');
+                $botMsg.html(`<div class="chat-message-content">${processedAnswer}</div>`).removeClass('loading');
+                ensureBotMeta();
+                $botMeta.find('.chat-tps-badge').removeClass('active-tps').text(`${finalAnswerTps} tps · ${answerDurationSec.toFixed(1)}s`);
 
                 if (suggestions.length > 0) {
                     const $chipsContainer = $('<div class="chat-suggestions-container flex flex-wrap gap-0p5rem mt-1rem"></div>');
@@ -770,10 +888,10 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                         });
                         $chipsContainer.append($chip);
                     });
-                    $chipsContainer.insertAfter($botMsg);
+                    $chipsContainer.insertAfter($botMeta);
                 }
 
-                window.chatHistory.push({ role: 'assistant', content: finalAnswer });
+                window.chatHistory.push({ role: 'assistant', content: finalAnswer, thinking: thinkingToDisplay, model: currentModel, provider: currentProvider });
                 window.currentChatController = null;
                 scrollChatToTurnTopOrBottom($messages, $userMsg, false);
             } else {
@@ -784,8 +902,6 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         }
     }
 
-    const selectedModel = (typeof settings !== 'undefined' && settings['chatbot-model']) || 'ling';
-    const selectedProvider = (typeof settings !== 'undefined' && settings['chatbot-provider']) || 'auto';
     const isLocalDev = (typeof window !== 'undefined') && (
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1' ||
@@ -842,7 +958,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         // If server returns plain JSON (non-streaming fallback)
         if (contentType.includes('application/json') && !contentType.includes('text/event-stream')) {
             const data = await response.json();
-            handleChatData(data.done !== undefined ? data : { done: true, answer: data.answer || data.response || JSON.stringify(data), progress: data.progress });
+            handleChatData(data.done !== undefined ? data : { done: true, answer: data.answer || data.response || JSON.stringify(data), progress: data.progress, model: data.model, provider: data.provider });
             return;
         }
         if (!response.body || !response.body.getReader) {

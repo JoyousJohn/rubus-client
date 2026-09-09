@@ -65,7 +65,6 @@
   line-height: 1.55;
   word-break: break-word;
   margin: 0.75rem 0;
-  white-space: pre-wrap;
 }
 
 .chat-message.user {
@@ -74,14 +73,16 @@
   background: #565fe5;
   color: #fff;
   border-radius: 2rem 2rem 0.5rem 2rem;
+  white-space: pre-wrap;
 }
 
 .chat-message.bot {
-  max-width: 95%;
+  max-width: 88%;
   align-self: flex-start;
   color: var(--theme-color);
   border-radius: 1.2rem 1.2rem 1.2rem 0.3rem;
   opacity: 1;
+  margin-bottom: 0.25rem;
 }
 
 .chat-message.bot ul.chat-md-list {
@@ -135,6 +136,27 @@
   -webkit-text-fill-color: currentColor;
 }
 
+.thinking-tps-badge {
+  font-family: monospace;
+  font-size: 1.15rem;
+  margin-left: auto;
+  opacity: 0.7;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.chat-message-meta {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  font-size: 1.15rem;
+  opacity: 0.65;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  padding-right: 0.2rem;
+  box-sizing: border-box;
+}
+
 .chat-thinking-box {
   background: rgba(128, 128, 128, 0.09);
   border-left: 3px solid #8181f1;
@@ -147,21 +169,17 @@
 }
 
 .chat-thinking-box .thinking-header {
-  font-weight: 600;
+  font-weight: 400;
   color: #8181f1;
-  cursor: pointer;
-  user-select: none;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.chat-thinking-box .thinking-header:hover {
-  text-decoration: underline;
+  flex-wrap: wrap;
 }
 
 .chat-thinking-box .thinking-content {
   margin-top: 0.5rem;
+  margin-right: -1.2rem;
   white-space: pre-wrap;
   font-family: inherit;
   font-size: 1.2rem;

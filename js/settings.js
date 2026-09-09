@@ -527,9 +527,9 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-show-thinking':
             settings['toggle-show-thinking'] = isChecked;
             if (isChecked) {
-                $('.chat-thinking-wrapper').show();
+                $('.chat-thinking-box').show();
             } else {
-                $('.chat-thinking-wrapper').hide();
+                $('.chat-thinking-box').hide();
             }
             break;
 
