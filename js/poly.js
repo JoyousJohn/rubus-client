@@ -1384,6 +1384,9 @@ const routeCutoffSchedules = window.routeCutoffSchedules = {
         thu: '03:46',
         fri: '03:46'
     },
+    'kbs': {
+        daily: '19:00'
+    },
     'lx': {
         mon: '02:29',
         tue: '02:29',
