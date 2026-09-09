@@ -738,7 +738,7 @@ $(document).ready(function() {
     // Render fuzzy results into the results list with the given pick handler.
     // Built as a single HTML string with FINAL custom icon classes so the
     // MutationObserver / FontAwesome swap never fires per keystroke.
-    function renderResults(results, onPick) {
+    function renderResults(results, onPick, query) {
         const $results = $('.search-results');
         const entries = []; // { item, matchedAbbreviation }
         const MAX_ROWS = 30;
@@ -752,6 +752,8 @@ $(document).ready(function() {
         }
 
         if (entries.length === 0) {
+            const inputVal = query !== undefined ? query : $('.search-pill-bar input').val();
+            console.log('No results found for search input:', inputVal);
             $results.html('<div class="dimgray">No results found.</div>');
             return;
         }
@@ -866,7 +868,7 @@ $(document).ready(function() {
                 'result': item.name,
                 'category': item.category
             });
-        });
+        }, query);
 
         if (!buildingsLayer) {
             loadBuildings().then(() => {

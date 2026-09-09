@@ -2316,6 +2316,7 @@ function showNavigationAutocomplete(inputElement, query) {
     }
 
     if (results.length === 0) {
+        console.log('No results found for nav input:', query);
         resultsContainer.html('<div class="dimgray">No results found.</div>');
         resultsContainer.removeClass('none');
         return;
@@ -5484,6 +5485,27 @@ function displayRoute(routeData) {
             const walkDist = (walkEntry.route && walkEntry.route.totalWalkingFeet) || (walkEntry.route && walkEntry.route.walkDistance && walkEntry.route.walkDistance.feet) || (walkMin * 220);
             if (!shouldIncludeWalkOption(walkMin, walkDist, busOptions)) {
                 routesForDisplay = routesForDisplay.filter(e => e !== walkEntry);
+            }
+        }
+
+        // Drop direct bus strictly worse than walk, e.g. LX CASC->Yard for Yard->SoCam
+        {
+            const dFeet = routeCombosMap['walk']?.totalWalkingFeet || 0;
+            const dMin = Math.max(1, Math.ceil(dFeet / 220));
+            if (dFeet > 0) {
+                routesForDisplay = routesForDisplay.filter(e => {
+                    if (e.isWalk || e.route?.isWalk) return true;
+                    if (e.isTransfer || e.route?.isTransfer || (e.route?.leg1 && e.route?.leg2)) return true;
+                    const c = routeCombosMap[String(e.route?.name || '').toLowerCase()];
+                    if (!c) return true;
+                    const tot = c.totalWalkingFeet || 0;
+                    const endW = c.endWalkDistance?.feet || 0;
+                    const startW = c.startWalkDistance?.feet || 0;
+                    if (endW + 100 >= dFeet && tot >= dFeet) return false; // no progress
+                    if (startW >= dFeet) return false; // absurd boarding
+                    if (tot > dFeet + 500 && (!e.hasLive || (e.journeyMinutes || Infinity) > dMin + 3)) return false; // dominated
+                    return true;
+                });
             }
         }
 
