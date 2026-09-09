@@ -90,6 +90,78 @@ try {
 	currentPanelIndex = lastUserSelectedPanelIndex;
 } catch(e) {}
 
+// ── Per-subpanel scroll memory ───────────────────────────────────────────
+// Remember each subpanel's scroll position so closing and reopening the info
+// panels restores where you were instead of jumping back to the top.
+// (Switching subpanels while open already preserves scroll; reopening lost
+// it because repopulation collapses the content and clamps scrollTop to 0.)
+const infoSubpanelScrollTops = { routes: [], stops: [], network: [] };
+let infoSubpanelScrollPaused = false;
+
+function infoSubpanelScrollers(panel) {
+	const outer = document.querySelector({
+		routes: '.subpanel.route-panel',
+		stops: '.subpanel.all-stops-panel',
+		network: '.subpanel.buses-panel'
+	}[panel]);
+	if (!outer) return [];
+	// Outer + inner are both vertical-overflow capable depending on layout,
+	// plus the desktop-only route-pill side rail inside the routes subpanel.
+	return [outer, outer.querySelector('.subpanel-inner'),
+		panel === 'routes' ? outer.querySelector('#route-selectors-container') : null]
+		.filter(el => el);
+}
+
+function saveInfoSubpanelScrollPositions() {
+	if (infoSubpanelScrollPaused) return;
+	for (const panel of panelOrder) {
+		const stored = infoSubpanelScrollTops[panel];
+		// Skip collapsed scrollers (mid-rebuild): keep the stored value.
+		infoSubpanelScrollTops[panel] = infoSubpanelScrollers(panel).map((el, i) =>
+			el.scrollHeight > el.clientHeight + 1 ? el.scrollTop
+				: (stored[i] !== undefined ? stored[i] : null));
+	}
+}
+
+function applyInfoSubpanelScrollPositions() {
+	for (const panel of panelOrder) {
+		const scrollers = infoSubpanelScrollers(panel);
+		infoSubpanelScrollTops[panel].forEach((top, i) => {
+			if (top !== null && scrollers[i]) {
+				scrollers[i].scrollTop = Math.max(0, Math.min(top, scrollers[i].scrollHeight - scrollers[i].clientHeight));
+			}
+		});
+	}
+}
+
+// Restore after the content height is back. Re-applied once layout settles
+// (slideDown animation, chart, fonts), which can clamp an early set.
+function restoreInfoSubpanelScrollPositions() {
+	infoSubpanelScrollPaused = true;
+	applyInfoSubpanelScrollPositions();
+	requestAnimationFrame(applyInfoSubpanelScrollPositions);
+	setTimeout(() => {
+		applyInfoSubpanelScrollPositions();
+		infoSubpanelScrollPaused = false;
+	}, 300);
+}
+
+function pauseInfoSubpanelScrollSaving() {
+	infoSubpanelScrollPaused = true;
+}
+
+function initInfoSubpanelScrollMemory() {
+	$('.subpanel, .subpanel-inner, #route-selectors-container').on('scroll', function() {
+		if (infoSubpanelScrollPaused) return;
+		const sub = this.closest('.subpanel');
+		if (!sub || this.scrollHeight <= this.clientHeight + 1) return;
+		const panel = sub.classList.contains('route-panel') ? 'routes'
+			: sub.classList.contains('all-stops-panel') ? 'stops' : 'network';
+		const i = infoSubpanelScrollers(panel).indexOf(this);
+		if (i !== -1) infoSubpanelScrollTops[panel][i] = this.scrollTop;
+	});
+}
+
 // Width of a single visible info subpanel. On mobile this equals the
 // viewport width; on desktop the wrapper is pinned left (like settings)
 // so we must measure the actual content width instead of window.innerWidth.
@@ -350,6 +422,7 @@ $('.info-panels-close').click(function() {
 		cancelAnimationFrame(animationFrameId);
 		animationFrameId = null;
 	}
+	saveInfoSubpanelScrollPositions();
 	$('.info-panels-show-hide-wrapper').hide();
     // Dismiss the ESC hint unless a right-side popup still owns it
     if (!$('.bus-info-popup, .stop-info-popup, .building-info-popup').is(':visible')) {
@@ -764,6 +837,7 @@ function initInfoPanelSliderDrag() {
 $(function() {
 	try { updateInfoPanelIndicator(panelOrder[lastUserSelectedPanelIndex] || 'stops', { immediate: true }); } catch(e) {}
 	try { initInfoPanelSliderDrag(); } catch(e) { console.warn('initInfoPanelSliderDrag failed', e); }
+	initInfoSubpanelScrollMemory();
 });
 
 let initialTransformX = 0;

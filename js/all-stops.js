@@ -78,6 +78,7 @@ function populateAllStops() {
                         $('.subpanels-container').removeClass('is-dragging-or-animating');
                         clearPanoutFeedback();
                         flyToStop(stopId, true); // true indicates user interaction
+                        saveInfoSubpanelScrollPositions();
                         $('.info-panels-show-hide-wrapper').hide();
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();
@@ -119,6 +120,7 @@ function populateAllStops() {
                                 clearPanoutFeedback();
 
                                 // Match parent behavior: close panels and restore main UI
+                                saveInfoSubpanelScrollPositions();
                                 $('.info-panels-show-hide-wrapper').hide();
                                 $('.bottom').show();
                                 moveRouteSelectorsToMain();
@@ -184,7 +186,12 @@ $('.info-panels').click(function(e) {
     originalShownRoute = shownRoute || null;
     console.log('Storing originalShownRoute for restoration (entry):', originalShownRoute);
 
-    $('.info-panels-show-hide-wrapper').show().scrollTop(0);
+    // NOTE: do NOT reset scroll here — each subpanel (routes/stops/network)
+    // restores its own remembered position at the end of this open flow.
+    $('.info-panels-show-hide-wrapper').show();
+    // Guard the remembered positions while repopulation collapses/rebuilds
+    // content (empty() clamps scrollTop to 0 and must not overwrite memory).
+    pauseInfoSubpanelScrollSaving();
     markPanelOpened('info');
     if (isDesktop && !isTouchDevice) showEscNotice('info');
 
@@ -225,6 +232,10 @@ $('.info-panels').click(function(e) {
     // If the restored panel is Routes and a route was already selected on the
     // map, render its details (the pill highlight above is not enough).
     ensureRouteSubpanelPopulated();
+
+    // Restore each subpanel's remembered scroll position now that content
+    // height is back (handles its own rAF/deferred re-apply internally).
+    restoreInfoSubpanelScrollPositions();
 
     // Show and position route selectors immediately when info panels are opened
     $('.bottom').show();

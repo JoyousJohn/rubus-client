@@ -1063,7 +1063,12 @@ function selectedRoute(route) {
 
     // Always show panels and move selectors when invoked via long-press or when panels are closed
     const infoWasHidden = !$('.info-panels-show-hide-wrapper').is(':visible');
-    if (infoWasHidden || isLongPress) {
+    // Remember whether we guarded scroll memory so the matching restore at
+    // the end of this function always runs (avoids leaking the suppression).
+    const didGuardSubpanelScroll = infoWasHidden || isLongPress;
+    if (didGuardSubpanelScroll) {
+        // Guard remembered subpanel scroll while repopulation collapses content.
+        pauseInfoSubpanelScrollSaving();
         $('.info-panels-show-hide-wrapper').show();
         if (infoWasHidden) {
             markPanelOpened('info');
@@ -1362,6 +1367,12 @@ function selectedRoute(route) {
     }, 0);
 
     panelRoute = route
+
+    // Panels were (re)opened or repopulated above: put each subpanel back at
+    // its remembered scroll position now that the route detail height is
+    // back. (Restoring matches the pre-existing behavior where the scroller
+    // kept its offset across route renders.) Releases the save suppression.
+    if (didGuardSubpanelScroll) restoreInfoSubpanelScrollPositions();
 
 }
 
@@ -2562,6 +2573,7 @@ function renderRouteChangesMenu(allChanges) {
 }
 
 function closeRouteMenu() {
+    saveInfoSubpanelScrollPositions();
     cancelInfoPanelAnimation();
     $('.subpanels-container').removeClass('is-dragging-or-animating');
     console.log('closeRouteMenu called');
