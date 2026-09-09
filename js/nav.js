@@ -3294,8 +3294,7 @@ function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, s
         }).map(b => `
             <div class="incoming-bus-row ${showRadio ? 'selectable-incoming-bus' : ''} ${b.isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${b.index}" data-list-type="${listType}" ${showRadio ? 'title="Tap to select this bus"' : ''}>
                 ${b.radioHtml}
-                <span class="incoming-bus-name" style="color: ${b.routeColor};">${typeof escapeHtml === 'function' ? escapeHtml(b.busLabel) : b.busLabel}</span>
-                ${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}
+                <span class="incoming-bus-name" style="color: ${b.routeColor};">${escapeHtml(b.busLabel)}${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}</span>
                 <span class="incoming-bus-arrival">arrives ${b.arrivalTime}</span>
                 <span class="incoming-bus-wait ${b.soonest ? 'soonest' : ''}">${b.waitMin > 0 ? `${b.waitMin}m wait` : 'No wait'}</span>
             </div>
@@ -3340,8 +3339,7 @@ function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSe
             const isSelected = i === selectedIdx;
             return `
                 <div class="destination-bus-row ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}">
-                    <span class="destination-bus-name" style="color: ${routeColor};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
-                    ${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}
+                    <span class="destination-bus-name" style="color: ${routeColor};">${escapeHtml(busLabel)}${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}</span>
                     <span class="destination-bus-arrival">${arrivalTime} arrival</span>
                 </div>
             `;
@@ -3442,8 +3440,7 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
                 return `
                     <div class="destination-bus-row ${showRadio ? 'selectable-transfer-bus' : ''} ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${i}" data-eta-transfer="${etaTransfer}" ${showRadio ? 'title="Tap to select this bus"' : ''}>
                         ${radioHtml}
-                        <span class="destination-bus-name" style="color: ${leg1Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
-                        ${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}
+                        <span class="destination-bus-name" style="color: ${leg1Color};">${escapeHtml(busLabel)}${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}</span>
                         <span class="destination-bus-arrival">${arrivalTime} arrival</span>
                     </div>
                 `;
@@ -3482,8 +3479,7 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
             return `
                 <div class="incoming-bus-row ${showLeg2Radio ? 'selectable-incoming-bus' : ''} ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${i}" data-list-type="transfer_leg2" ${showLeg2Radio ? 'title="Tap to select this bus"' : ''}>
                     ${radioHtml}
-                    <span class="incoming-bus-name" style="color: ${leg2Color};">${typeof escapeHtml === 'function' ? escapeHtml(busLabel) : busLabel}</span>
-                    ${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}
+                    <span class="incoming-bus-name" style="color: ${leg2Color};">${escapeHtml(busLabel)}${b.loop > 1 ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}</span>
                     <span class="incoming-bus-arrival">arrives ${arrivalTime}</span>
                     <span class="incoming-bus-wait ${i === 0 ? 'soonest' : ''}">${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}</span>
                 </div>
