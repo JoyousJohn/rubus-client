@@ -1371,6 +1371,18 @@ function selectedRoute(route) {
         console.log(heightDiff)
         firstCircle.addClass('connecting-line');
         firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
+
+        // Center each direction chevron vertically between its dot and the
+        // previous dot. Direct children only: excludes the nested inner dot.
+        const $dots = $('.route-stops-grid > .next-stop-circle');
+        $dots.each(function (i) {
+            if (i === 0) return;
+            const prevRect = $dots[i - 1].getBoundingClientRect();
+            const curRect = this.getBoundingClientRect();
+            const mid = (prevRect.top + prevRect.height / 2 + curRect.top + curRect.height / 2) / 2;
+            // 6px ~= half the rendered chevron height, so the V centers on the midpoint
+            this.style.setProperty('--chevron-top', `${mid - curRect.top - 6}px`);
+        });
     }, 0);
 
     panelRoute = route
@@ -2781,6 +2793,18 @@ window.addEventListener('pagehide', function() {
 });
 
 window.restoreSettingsPanelState = function() {
+    // If settings were cleared or this is a first-time load, discard stale panel state
+    if (!localStorage.getItem('settings')) {
+        localStorage.removeItem('settingsPanelOpen');
+        localStorage.removeItem('settingsPanelScroll');
+        return;
+    }
+
+    // Do not restore the settings panel while onboarding modals are active
+    if ($('.theme-modal').is(':visible') || $('.campus-modal').is(':visible')) {
+        return;
+    }
+
     if (isDesktop && localStorage.getItem('settingsPanelOpen') === 'true') {
         openSettingsPanel();
     }
