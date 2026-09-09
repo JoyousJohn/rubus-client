@@ -212,6 +212,19 @@
                     }).then(function(html) {
                         const match = html.match(/name="rubus-build" content="([^"]*)"/);
                         const remoteBuild = (match && match[1] && match[1] !== '__BUILD_HASH__') ? match[1] : null;
+                        const currentBuild = $('meta[name="rubus-build"]').attr('content');
+                        if (remoteBuild && currentBuild && currentBuild !== '__BUILD_HASH__' && remoteBuild === currentBuild) {
+                            // Already running this build: activate silently so the
+                            // registration stays fresh, without bothering the user.
+                            if (worker && worker.state !== 'redundant') {
+                                try {
+                                    worker.postMessage({ action: 'skipWaiting' });
+                                } catch (e) {
+                                    console.warn('[SW] Silent skipWaiting failed:', e);
+                                }
+                            }
+                            return;
+                        }
                         showUpdateToast(worker, remoteBuild);
                     }).catch(function() {
                         showUpdateToast(worker, null);
@@ -252,11 +265,26 @@
                             });
                             return;
                         }
-                        if (waitingWorker) {
+                        let activated = false;
+                        if (waitingWorker && waitingWorker.state !== 'redundant' && waitingWorker.state !== 'activated') {
                             waitingWorker.postMessage({ action: 'skipWaiting' });
+                            activated = true;
                         }
                         if (reg && reg.waiting) {
                             reg.waiting.postMessage({ action: 'skipWaiting' });
+                            activated = true;
+                        }
+                        if (!activated) {
+                            // Nothing pending (e.g. another tab already applied the
+                            // update, or the build is already live): reload straight
+                            // into the latest code instead of stalling on the timeout.
+                            refreshing = true;
+                            if (updateTimeoutTimer) {
+                                clearTimeout(updateTimeoutTimer);
+                                updateTimeoutTimer = null;
+                            }
+                            window.location.replace(window.location.href);
+                            return;
                         }
                     }).catch(function() {
                         showUpdateFailedToast();
@@ -328,11 +356,37 @@
                     }
 
                     if (announcedBuild !== currentBuild) {
-                        const lastShow = localStorage.getItem('last-update-toast-show');
-                        const eightHours = 8 * 60 * 60 * 1000;
-                        if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
-                            showUpdatedSuccessToast();
-                        }
+                        // The loaded page is newer than the last announced build — but verify
+                        // it is still the latest deploy before announcing it. A newer deploy may
+                        // have gone live after this page loaded; announcing a stale page would
+                        // flash "Installed x updates (bOld)" right before the update toast.
+                        fetch('/index.html', { method: 'GET', cache: 'no-cache' }).then(function(res) {
+                            return res.text();
+                        }).then(function(html) {
+                            const match = html.match(/name="rubus-build" content="([^"]*)"/);
+                            const remoteBuild = (match && match[1] && match[1] !== '__BUILD_HASH__') ? match[1] : null;
+                            if (remoteBuild && remoteBuild !== currentBuild) {
+                                // A newer build is already live: don't announce this stale page.
+                                // Surface the update instead; the SW updatefound flow attaches the worker.
+                                showUpdateToast(null, remoteBuild);
+                                return;
+                            }
+                            // Don't overwrite an update-available toast that won the race.
+                            const $t = $('#update-toast');
+                            if ($t.is(':visible') && $t.find('.update-toast-actions').is(':visible')) return;
+                            const lastShow = localStorage.getItem('last-update-toast-show');
+                            const eightHours = 8 * 60 * 60 * 1000;
+                            if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
+                                showUpdatedSuccessToast();
+                            }
+                        }).catch(function() {
+                            // Offline or fetch failed: fall back to announcing the loaded page.
+                            const lastShow = localStorage.getItem('last-update-toast-show');
+                            const eightHours = 8 * 60 * 60 * 1000;
+                            if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
+                                showUpdatedSuccessToast();
+                            }
+                        });
                     }
                 }
 
