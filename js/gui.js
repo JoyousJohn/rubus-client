@@ -1380,8 +1380,8 @@ function selectedRoute(route) {
             const prevRect = $dots[i - 1].getBoundingClientRect();
             const curRect = this.getBoundingClientRect();
             const mid = (prevRect.top + prevRect.height / 2 + curRect.top + curRect.height / 2) / 2;
-            // 6px ~= half the rendered chevron height, so the V centers on the midpoint
-            this.style.setProperty('--chevron-top', `${mid - curRect.top - 6}px`);
+            // 3px = half the chevron triangle height (6px), centers it between dots
+            this.style.setProperty('--chevron-top', `${mid - curRect.top - 3}px`);
         });
     }, 0);
 

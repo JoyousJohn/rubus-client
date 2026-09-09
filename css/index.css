@@ -1202,6 +1202,25 @@ html, body {
     z-index: -1;
 }
 
+/* Downward chevrons indicating direction of travel between stops in the
+   routes subpanel. One V per segment, drawn just above each dot (except the
+   first) via the CSS border trick: two transparent side borders + a visible
+   bottom border form a sharp downward triangle. Scoped to direct grid
+   children so the nested inner dot and the bus-popup grid are unaffected. */
+.route-stops-grid > .next-stop-circle:not(.connecting-line)::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: var(--chevron-top, -20px);
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid var(--theme-extra);
+    pointer-events: none;
+}
+
 .next-stop-campus {
     font-size: 1.2rem;
     color: gray;
