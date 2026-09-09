@@ -266,6 +266,7 @@ window.initMap = function() {
 
             if (settings['toggle-show-bus-log']) {
                 $('.bus-log-wrapper').show();
+                scrollBusLogToBottom();
             }
 
             if (settings['toggle-hide-other-routes'] && !shownRoute) {

@@ -330,6 +330,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
 
             if (isChecked) {
                 $('.bus-log-wrapper').show();
+                scrollBusLogToBottom();
             } else {
                 $('.bus-log-wrapper').hide();
             }
@@ -955,6 +956,7 @@ $(document).ready(function() {
 
     if (settings['toggle-show-bus-log']) {
         $('.bus-log-wrapper').show();
+        scrollBusLogToBottom();
     }
 
     if (settings['toggle-show-extra-bus-data']) {

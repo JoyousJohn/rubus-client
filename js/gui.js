@@ -3496,6 +3496,30 @@ $(document).ready(function() {
 
 })
 
+function scrollBusLogToBottom() {
+    const wrapper = $('.bus-log-wrapper')[0];
+    if (!wrapper) return;
+    wrapper.scrollTop = wrapper.scrollHeight;
+    requestAnimationFrame(() => {
+        wrapper.scrollTop = wrapper.scrollHeight;
+    });
+}
+window.scrollBusLogToBottom = scrollBusLogToBottom;
+
+function appendToBusLog(...elements) {
+    const wrapper = $('.bus-log-wrapper')[0];
+    // If the user has explicitly scrolled elsewhere and is not at the end (within 25px tolerance),
+    // do not scroll to the bottom when a new event is added.
+    const isAtEnd = wrapper ? (wrapper.scrollHeight - wrapper.scrollTop - wrapper.clientHeight <= 25) : true;
+
+    $('.bus-log').append(...elements);
+
+    if (isAtEnd && wrapper && $('.bus-log-wrapper').is(':visible')) {
+        wrapper.scrollTop = wrapper.scrollHeight;
+    }
+}
+window.appendToBusLog = appendToBusLog;
+
 function toggleDevOptions() {
 
     const $devWrapper = $('.dev-options-wrapper');

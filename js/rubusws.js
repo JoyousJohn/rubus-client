@@ -236,8 +236,7 @@ function openRUBusSocket() {
                 $arrivedLine.append(document.createTextNode(' '));
                 $arrivedLine.append($('<span style="color: #46dd46;"></span>').text('arrived'));
                 $arrivedLine.append(document.createTextNode(' at ' + stopName));
-                $('.bus-log').append($time).append($arrivedLine);
-                $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+                appendToBusLog($time, $arrivedLine);
 
             } else if (eventData['event'] === 'departure') {
                 busData[busName]['at_stop'] = false
@@ -274,8 +273,7 @@ function openRUBusSocket() {
                 $departLine.append(document.createTextNode(' '));
                 $departLine.append($('<span style="color: #ec5050;"></span>').text('departed'));
                 $departLine.append(document.createTextNode(' ' + stopName + ' after ' + stoppedFor + ' (' + stoppedDiff + '%)'));
-                $('.bus-log').append($time2).append($departLine);
-                $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+                appendToBusLog($time2, $departLine);
 
                 if (busRotationPoints[busName]) {
                     ['pt1', 'pt2', 'line'].forEach(val => {

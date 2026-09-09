@@ -264,8 +264,7 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                     $line.append($('<strong></strong>').text(busData[busName].busName || busName));
                     $line.append(document.createTextNode(' '));
                     $line.append($('<span style="color: var(--theme-accent);"></span>').text('in service'));
-                    $('.bus-log').append($time).append($line);
-                    $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+                    appendToBusLog($time, $line);
                 }
 
             } else {
@@ -584,8 +583,7 @@ function makeBulkOoS(oosBusNames) {
         $line.append($('<strong></strong>').text(busName));
         $line.append(document.createTextNode(' '));
         $line.append($('<span style="color: var(--theme-accent);"></span>').text('out of service'));
-        $('.bus-log').append($time).append($line);
-        $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+        appendToBusLog($time, $line);
 
         clearBusSpeed(busName);
         if (busMarkers[busName]) {
@@ -706,8 +704,7 @@ function makeOoS(busName) {
     $line.append($('<strong></strong>').text(busName));
     $line.append(document.createTextNode(' '));
     $line.append($('<span style="color: var(--theme-accent);"></span>').text('out of service'));
-    $('.bus-log').append($time).append($line);
-    $('.bus-log-wrapper').scrollTop($('.bus-log-wrapper')[0].scrollHeight);
+    appendToBusLog($time, $line);
 
     clearBusSpeed(busName);
     if (busMarkers[busName]) { // investigate why this would occur
