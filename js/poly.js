@@ -1333,6 +1333,142 @@ function getNextStopAfterCurrentGivenPrev(route, prevStopId, currentStopId) {
     }
 }
 
+// Route schedule cutoffs: the time when the last bus stops running for that operating day shift.
+// Shifts running past midnight (e.g. 2:29 AM) are assigned to the day the shift began.
+// Supports day names ('mon', 'tue', ...), day shortcuts ('weekday', 'weekend', 'daily'), or numeric indices (0=Sun, 1=Mon, ...).
+const routeCutoffSchedules = window.routeCutoffSchedules = {
+    'a': {
+        mon: '21:00',
+        tue: '21:00',
+        wed: '21:00',
+        thu: '21:00',
+        fri: '21:13'
+    },
+    'b': {
+        mon: '22:49',
+        tue: '22:49',
+        wed: '22:49',
+        thu: '22:49',
+        fri: '22:49'
+    },
+    'bl': {
+        mon: '02:25',
+        tue: '02:25',
+        wed: '02:25'
+    },
+    'c': {
+        mon: '21:59',
+        tue: '21:59',
+        wed: '21:59',
+        thu: '21:59',
+        fri: '19:25'
+    },
+    'ee': {
+        mon: '02:41',
+        tue: '02:41',
+        wed: '02:41',
+        thu: '03:34',
+        fri: '03:34'
+    },
+    'f': {
+        mon: '20:46',
+        tue: '20:46',
+        wed: '20:46',
+        thu: '20:46',
+        fri: '20:46'
+    },
+    'h': {
+        mon: '03:00',
+        tue: '03:00',
+        wed: '03:00',
+        thu: '03:46',
+        fri: '03:46'
+    },
+    'lx': {
+        mon: '02:29',
+        tue: '02:29',
+        wed: '02:29',
+        thu: '03:29',
+        fri: '03:30',
+        sat: null,
+        sun: null
+    },
+    'rexb': {
+        mon: '23:00',
+        tue: '23:00',
+        wed: '23:00',
+        thu: '23:00',
+        fri: '22:54'
+    },
+    'rexl': {
+        mon: '23:04',
+        tue: '23:04',
+        wed: '23:04',
+        thu: '23:04',
+        fri: '22:59'
+    },
+    'summer1': {
+        daily: '24:00'
+    },
+    'summer2': {
+        daily: '23:00'
+    },
+    'wknd1': {
+        // Saturday night shift running overnight into Sunday morning 2:49 AM
+        sat: '02:49'
+    },
+    'wknd2': {
+        // Saturday night shift running overnight into Sunday morning 2:35 AM
+        sat: '02:35'
+    }
+};
+
+const CUTOFF_DAY_NAMES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+function isPostCutoffEntry(entry, refTime) {
+    const sched = routeCutoffSchedules[entry.route];
+    if (!sched) return false;
+
+    const refEasternStr = refTime.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const refEastern = new Date(refEasternStr);
+
+    const hour = refEastern.getHours();
+    const dayOfWeek = refEastern.getDay();
+
+    const isOvernightTail = hour < 5;
+    const operatingDayIndex = isOvernightTail ? (dayOfWeek + 6) % 7 : dayOfWeek;
+    const operatingDayName = CUTOFF_DAY_NAMES[operatingDayIndex];
+
+    const cutoffTime = sched[operatingDayName] || sched.daily;
+    if (!cutoffTime) return false;
+
+    const [cutoffHour, cutoffMinute] = cutoffTime.split(':').map(Number);
+    let cutoffDate;
+
+    if (cutoffHour < 5) {
+        cutoffDate = new Date(refEastern);
+        if (!isOvernightTail) {
+            cutoffDate.setDate(cutoffDate.getDate() + 1);
+        }
+        cutoffDate.setHours(cutoffHour, cutoffMinute, 0, 0);
+    } else if (cutoffHour === 24) {
+        cutoffDate = new Date(refEastern);
+        if (!isOvernightTail) {
+            cutoffDate.setDate(cutoffDate.getDate() + 1);
+        }
+        cutoffDate.setHours(0, cutoffMinute, 0, 0);
+    } else {
+        cutoffDate = new Date(refEastern);
+        if (isOvernightTail) {
+            cutoffDate.setDate(cutoffDate.getDate() - 1);
+        }
+        cutoffDate.setHours(cutoffHour, cutoffMinute, 0, 0);
+    }
+
+    const arrivalEastern = new Date(refEastern.getTime() + entry.eta * 60000);
+    return arrivalEastern > cutoffDate;
+}
+
 function updateStopBuses(stopId, actuallyShownRoute) {
 
     if (settings['toggle-pause-stop-eta-updates']) return;
@@ -1504,17 +1640,6 @@ function updateStopBuses(stopId, actuallyShownRoute) {
         });
 
     $('.stop-info-buses-grid, .stop-info-buses-grid-next, .stop-info-buses-grid-post-cutoff, .stop-info-buses-grid-deferred').empty();
-
-    function isPostCutoffEntry(entry, refTime) {
-        const cutoffHr = entry.route === 'summer1' ? 24 : entry.route === 'summer2' ? 23 : null;
-        if (cutoffHr !== null) {
-            const arrival = new Date(refTime.getTime() + entry.eta * 60000);
-            const cutoff = new Date(refTime);
-            cutoff.setHours(cutoffHr, 0, 0, 0);
-            return arrival > cutoff;
-        }
-        return false;
-    }
 
     const now = new Date();
     const firstLoopEntries = [];
