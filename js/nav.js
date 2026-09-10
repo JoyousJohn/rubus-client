@@ -1428,10 +1428,21 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
     // Find the best combination for each route type, ranked by generalized
     // travel time (live-aware via estimateComboCost) instead of static stop
     // counts, so e.g. LX alighting at CASC + walking beats riding all the way
-    // to SAC NB when the ride saving exceeds the extra walk. Static score is
-    // the tiebreak; options with no time estimate fall back to score.
+    // to SAC NB when the ride saving exceeds the extra walk. A challenger must
+    // beat the incumbent by more than MARGIN minutes; near-ties go to less
+    // walking, exact ties to static score. Live ETAs are measurements but
+    // still noisy (± a dwell), so even live challengers must clear a 1-min
+    // bar before yanking the alighting stop; static fallback credits every
+    // segment a flat 5 min against precisely measured walks, so it gets 2.
+    const MARGIN_LIVE = 1;
+    const MARGIN_STATIC = 2;
     const navCtx = { startBuilding, endBuilding, startIsStop, endIsStop };
     const bestByRoute = {};
+    // Destination-closest ("anchor") combo per route: min end-walk, then min
+    // total walk, then min cost, then score. Independent from the pick above;
+    // powers the "exiting early" rationale bullet (picked-vs-anchor).
+    const anchors = {};
+    const endFeetOf = (o) => (o.endWalkDistance && o.endWalkDistance.feet > 30) ? Math.round(o.endWalkDistance.feet) : 0;
     routeOptions.forEach(option => {
         option.connectingRoutes.forEach(route => {
             const routeName = route.name.toLowerCase();
@@ -1441,21 +1452,56 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
                 combination: option,
                 route: route,
                 _cost: est ? est.cost : null,
-                _journey: est ? est.journey : null
+                _journey: est ? est.journey : null,
+                _walk: est ? est.walk : null
             };
             if (!cur) {
                 bestByRoute[routeName] = entry;
             } else if (est && cur._cost !== null) {
-                // Both time-informed (integer-minute costs): lowest wins, score tiebreaks.
-                if (est.cost < cur._cost ||
-                    (est.cost === cur._cost && option.score > cur.combination.score)) {
+                const margin = navRouteHasLiveBuses(route.name) ? MARGIN_LIVE : MARGIN_STATIC;
+                if (est.cost < cur._cost - margin ||
+                    (Math.abs(est.cost - cur._cost) <= margin &&
+                        (est.walk < cur._walk ||
+                            (est.walk === cur._walk && option.score > cur.combination.score)))) {
                     bestByRoute[routeName] = entry;
                 }
             } else if (est || (cur._cost === null && option.score > cur.combination.score)) {
                 // Time-informed beats uninformed; otherwise legacy score rule.
                 bestByRoute[routeName] = entry;
             }
+            const aFeet = endFeetOf(option);
+            const aCost = est ? est.cost : Infinity;
+            const curA = anchors[routeName];
+            if (!curA || aFeet < curA.endFeet ||
+                (aFeet === curA.endFeet && (option.totalWalkingFeet < curA.totalFeet ||
+                    (option.totalWalkingFeet === curA.totalFeet && (aCost < curA.cost ||
+                        (aCost === curA.cost && option.score > curA.score)))))) {
+                anchors[routeName] = {
+                    option, endFeet: aFeet, totalFeet: option.totalWalkingFeet,
+                    cost: est ? est.cost : null, journey: est ? est.journey : null,
+                    score: option.score
+                };
+            }
         });
+    });
+
+    // Finalize rationale anchors: kept only when the anchor alights elsewhere
+    // than the pick and both sides are time-informed (else no honest numbers).
+    Object.keys(bestByRoute).forEach(routeName => {
+        const best = bestByRoute[routeName];
+        const a = anchors[routeName];
+        best._anchor = null;
+        if (!a || !best.combination || !a.option) return;
+        const pickedEndId = best.combination.endStop && best.combination.endStop.id;
+        const anchorEndId = a.option.endStop && a.option.endStop.id;
+        if (pickedEndId == null || anchorEndId == null || String(pickedEndId) === String(anchorEndId)) return;
+        if (best._journey == null || a.journey == null) return;
+        best._anchor = {
+            endStopId: anchorEndId,
+            name: a.option.endStop.name,
+            journey: a.journey,
+            endFeet: a.endFeet
+        };
     });
 
     if (NAV_DEBUG) {
@@ -1469,7 +1515,7 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
             console.log(`      Walking: ${combo.totalWalkingFeet} ft (${combo.startWalkDistance?.feet || 0} + ${combo.endWalkDistance?.feet || 0})`);
             console.log(`      Score: ${combo.score.toFixed(2)}`);
             if (typeof best._journey === 'number') {
-                console.log(`      Journey: ~${best._journey.toFixed(0)} min (cost ${best._cost.toFixed(1)})`);
+                console.log(`      Journey: ~${best._journey.toFixed(0)} min (cost ${best._cost.toFixed(1)}, walk ${best._walk}m)`);
             }
             console.log(`      Other routes available: ${combo.connectingRoutes.map(r => r.displayName || r.name).join(', ')}`);
             console.log('');
@@ -2051,7 +2097,9 @@ function calculateRoute(from, to) {
                 totalWalkingFeet: combo.totalWalkingFeet,
                 isTransfer: !!combo.isTransfer,
                 leg1: combo.leg1,
-                leg2: combo.leg2
+                leg2: combo.leg2,
+                journey: (typeof best._journey === 'number') ? best._journey : null,
+                anchor: best._anchor || null
             };
             allRoutesAcrossBestCombos.push(routeObj);
         });
@@ -4445,8 +4493,10 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                         routeDetails: getRouteDetails(leg2Route, transferStop.id, effectiveEndStop.id)
                     }
                 };
+                attachRationale(newRouteDetails.leg2.routeDetails, combo);
             } else {
                 newRouteDetails = getRouteDetails(newRoute, effectiveStartStop.id, effectiveEndStop.id);
+                attachRationale(newRouteDetails, combo);
             }
 
             if (navRouteSession && navRouteSession.routeData) {
@@ -4574,6 +4624,7 @@ function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
     const html = buildRouteSelectorHtml(routesForDisplay, selectedRouteDisplayIndex);
     $container.removeClass('none').html(html);
     bindNavRouteOptionClicks(routesForDisplay);
+    enableNavPillDragScroll();
     if (typeof replaceFontAwesomeIcons === 'function') {
         replaceFontAwesomeIcons();
     }
@@ -4603,6 +4654,106 @@ function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
     }
 }
 window.renderNavRouteSelector = renderNavRouteSelector;
+
+// Click-and-drag horizontal scrolling for the route pills on desktop.
+// Touch keeps its native scrolling; only mouse pointers are handled here.
+// Document-delegated (bound once) so pill re-renders can't drop it. A drag
+// past DRAG_PX suppresses the pill click that the browser would otherwise
+// fire on pointerup, via a capture-phase swallower that runs before the
+// pills' own bubble-phase click handler.
+function enableNavPillDragScroll() {
+    if (window._navPillDragBound) return;
+    window._navPillDragBound = true;
+    const DRAG_PX = 6;
+    const FLING_MIN_VELOCITY = 0.15; // px/ms below this: no fling on release
+    const FLING_MAX_VELOCITY = 4; // px/ms sanity cap
+    const FLING_TAU_MS = 300; // exponential decay time constant (~iOS-like)
+    const FLING_STOP_VELOCITY = 0.05; // px/ms
+    let drag = null; // { el, startX, startScroll, moved, samples: [{x, t}] }
+    let momentum = null; // { el, v, lastT, raf }
+    const cancelMomentum = () => {
+        if (momentum) {
+            cancelAnimationFrame(momentum.raf);
+            momentum = null;
+        }
+    };
+    const stepMomentum = (now) => {
+        if (!momentum || !document.contains(momentum.el)) { momentum = null; return; }
+        const el = momentum.el;
+        const max = el.scrollWidth - el.clientWidth;
+        if (max <= 0) { momentum = null; return; }
+        const dt = Math.min(64, Math.max(1, now - momentum.lastT));
+        momentum.lastT = now;
+        momentum.v *= Math.exp(-dt / FLING_TAU_MS);
+        if (Math.abs(momentum.v) < FLING_STOP_VELOCITY) { momentum = null; return; }
+        const before = el.scrollLeft;
+        el.scrollLeft = before + momentum.v * dt;
+        if (el.scrollLeft <= 0 || el.scrollLeft >= max - 1 || el.scrollLeft === before) {
+            if (el.scrollLeft < 0) el.scrollLeft = 0;
+            if (el.scrollLeft > max) el.scrollLeft = max;
+            momentum = null;
+            return;
+        }
+        momentum.raf = requestAnimationFrame(stepMomentum);
+    };
+    document.addEventListener('pointerdown', (e) => {
+        const scroller = e.target && e.target.closest ? e.target.closest('.route-options-container') : null;
+        if (!scroller) return;
+        if (e.pointerType !== 'mouse' || e.button !== 0) return;
+        cancelMomentum();
+        drag = { el: scroller, startX: e.clientX, startScroll: scroller.scrollLeft, moved: false, samples: [{ x: e.clientX, t: performance.now() }] };
+    });
+    document.addEventListener('pointermove', (e) => {
+        if (!drag || !document.contains(drag.el)) { drag = null; return; }
+        const now = performance.now();
+        drag.samples.push({ x: e.clientX, t: now });
+        while (drag.samples.length > 2 && now - drag.samples[0].t > 100) drag.samples.shift();
+        const dx = e.clientX - drag.startX;
+        if (!drag.moved && Math.abs(dx) < DRAG_PX) return;
+        if (!drag.moved) {
+            drag.moved = true;
+            drag.el.classList.add('nav-dragging');
+        }
+        drag.el.scrollLeft = drag.startScroll - dx;
+        if (e.cancelable) e.preventDefault();
+    });
+    const endDrag = () => {
+        if (!drag) return;
+        const wasDrag = drag.moved;
+        const el = drag.el;
+        let flingV = 0;
+        if (wasDrag && drag.samples.length >= 2) {
+            const first = drag.samples[0];
+            const last = drag.samples[drag.samples.length - 1];
+            const dt = last.t - first.t;
+            const fresh = performance.now() - last.t < 80;
+            if (fresh && dt > 0) {
+                flingV = -((last.x - first.x) / dt); // scroll direction opposes pointer
+                if (Math.abs(flingV) < FLING_MIN_VELOCITY) flingV = 0;
+                flingV = Math.max(-FLING_MAX_VELOCITY, Math.min(FLING_MAX_VELOCITY, flingV));
+            }
+        }
+        el.classList.remove('nav-dragging');
+        drag = null;
+        if (!wasDrag) return;
+        window._navSuppressPillClick = true;
+        setTimeout(() => { window._navSuppressPillClick = false; }, 0);
+        if (flingV !== 0 && document.contains(el) && (el.scrollWidth - el.clientWidth) > 0) {
+            cancelMomentum();
+            momentum = { el, v: flingV, lastT: performance.now(), raf: requestAnimationFrame(stepMomentum) };
+        }
+    };
+    document.addEventListener('pointerup', endDrag);
+    document.addEventListener('pointercancel', endDrag);
+    document.addEventListener('click', (e) => {
+        if (window._navSuppressPillClick && e.target.closest && e.target.closest('.route-option')) {
+            e.stopPropagation();
+            e.preventDefault();
+            window._navSuppressPillClick = false;
+        }
+    }, true);
+}
+window.enableNavPillDragScroll = enableNavPillDragScroll;
 
 // Calculate expected arrival time at the route destination (arrival at alighting stop + walk to destination)
 function computeRouteEndTime(options) {
@@ -5159,6 +5310,85 @@ function requestNavStatusRecalc() {
 }
 window.requestNavStatusRecalc = requestNavStatusRecalc;
 
+// Minimum net minutes saved before suggesting an earlier alighting stop.
+// Guards against nagging over seconds of fallback-estimate noise.
+const EARLY_ALIGHT_MIN_NET_MIN = 2;
+
+// Best earlier-alighting candidate on a leg ending at the destination:
+// ride minutes saved (live segment ETAs + dwell when available, 5 min/stop
+// fallback) minus extra walking minutes vs the planned alighting stop.
+// Returns { stopId, stopName, netMin, extraFeet } or null. Display-only hint;
+// never changes the pick. Leg 1 of a transfer is excluded by callers (early
+// getoff there would break the connection).
+function getEarlyAlightHint(routeDetails, boardId, alightId, endBuilding, endWalkDistance) {
+    try {
+        const seq = (routeDetails && routeDetails.stopsInOrder) || [];
+        if (!endBuilding || seq.length < 3) return null;
+        const curEndFeet = (endWalkDistance && endWalkDistance.feet > 30) ? endWalkDistance.feet : 0;
+        let best = null;
+        for (let i = 1; i < seq.length - 1; i++) {
+            const cand = seq[i];
+            if (String(cand.id) === String(alightId)) continue;
+            const stopData = stopsData[cand.id] || null;
+            if (!stopData) continue;
+            const rideMin = computeBusTravelTimeMinutes({ stopsInOrder: seq.slice(i) });
+            if (!(rideMin > 0)) continue;
+            const walkDist = calculateWalkingDistance(stopData.latitude, stopData.longitude, endBuilding.lat, endBuilding.lng);
+            const extraFeet = Math.max(0, Math.round(walkDist.feet) - curEndFeet);
+            const netMin = rideMin - Math.ceil(extraFeet / 220);
+            if (NAV_DEBUG) {
+                console.log(`[nav] early-alight candidate ${cand.name || stopData.name}: ride ~${rideMin}m, extra walk ${extraFeet}ft, net ~${netMin.toFixed(1)}m ${netMin >= EARLY_ALIGHT_MIN_NET_MIN ? '=> SHOW' : '(hidden)'}`);
+            }
+            if (netMin >= EARLY_ALIGHT_MIN_NET_MIN &&
+                (!best || netMin > best.netMin || (netMin === best.netMin && extraFeet < best.extraFeet))) {
+                best = { stopId: cand.id, stopName: cand.name || stopData.name, netMin, extraFeet };
+            }
+        }
+        return best;
+    } catch (e) {
+        console.warn('[nav] getEarlyAlightHint failed:', e);
+        return null;
+    }
+}
+
+// Minimum transit-side minutes saved before justifying an early alighting
+// with a rationale bullet. Below this the pick stands unexplained (marginal
+// wins anchor instead, and the forward hint covers the rest).
+const RATIONALE_MIN_NET_MIN = 4;
+
+// "Exiting early" rationale for a picked leg that alighted before the
+// destination-closest stop: { anchorName, extraFeet, saveMin } or null.
+// extraFeet is measured walking; saveMin backs walking back out of the
+// journey delta so it prices transit-side (ride + waits) savings. Boarding
+// may differ between anchor and pick, so wait deltas can leak into saveMin —
+// accepted noise; the gate keeps it significant either way.
+function buildRationale(comboMapEntry) {
+    try {
+        const a = comboMapEntry && comboMapEntry.anchor;
+        const pj = comboMapEntry && comboMapEntry.journey;
+        if (!a || typeof pj !== 'number' || typeof a.journey !== 'number') return null;
+        const pickedEndId = comboMapEntry.endStop && comboMapEntry.endStop.id;
+        if (pickedEndId == null || String(pickedEndId) === String(a.endStopId)) return null;
+        const pickedEndFeet = comboMapEntry.endWalkDistance && comboMapEntry.endWalkDistance.feet > 30
+            ? Math.round(comboMapEntry.endWalkDistance.feet) : 0;
+        const extraFeet = Math.max(0, pickedEndFeet - a.endFeet);
+        const saveMin = Math.round((a.journey - pj) + Math.ceil(extraFeet / 220));
+        if (!(saveMin >= RATIONALE_MIN_NET_MIN)) return null;
+        return { anchorName: a.name, extraFeet, saveMin };
+    } catch (e) {
+        console.warn('[nav] buildRationale failed:', e);
+        return null;
+    }
+}
+
+// Attach a rationale bullet payload to built route details (no-op when the
+// pick already rides to the anchor or numbers are missing).
+function attachRationale(detailsObj, comboMapEntry) {
+    if (!detailsObj || !comboMapEntry) return;
+    const rat = buildRationale(comboMapEntry);
+    if (rat) detailsObj._rationale = rat;
+}
+
 // Unified generator for timeline waypoint rows HTML (handles both single-bus and multi-bus transfer routes)
 function renderTimelineWaypointsHtml(data) {
     const {
@@ -5368,6 +5598,30 @@ function renderTimelineWaypointsHtml(data) {
         `;
     };
 
+    // Tip bullets rendered under .bus-stops-list: the "exiting early"
+    // rationale (why the pick alighted before the closest stop) first, then
+    // the "get off even earlier" forward hint. Shared row styling.
+    const TIP_ROW_STYLE = 'display: flex; align-items: baseline; gap: 0.6rem; font-size: 1.25rem; font-weight: 500; line-height: 1.35; color: var(--theme-color); opacity: 0.85; margin-top: 0.4rem; margin-left: 3.5rem;';
+    const TIP_ICON = '<i class="fa-solid fa-lightbulb" style="flex-shrink: 0;"></i>';
+    const buildRationaleHtml = (rat) => {
+        if (!rat) return '';
+        return `
+            <div class="early-alight-hint" style="${TIP_ROW_STYLE}">
+                ${TIP_ICON}
+                <span>Exiting the bus early here instead of <strong>${escapeHtml(rat.anchorName)}</strong> adds ~${rat.extraFeet.toLocaleString()} ft walking but saves ~${rat.saveMin} min on the bus.</span>
+            </div>
+        `;
+    };
+    const buildEarlyHintHtml = (hint) => {
+        if (!hint) return '';
+        return `
+            <div class="early-alight-hint" style="${TIP_ROW_STYLE}">
+                ${TIP_ICON}
+                <span>Get off at <strong>${escapeHtml(hint.stopName)}</strong> instead to save ~${Math.round(hint.netMin)} min — adds ~${hint.extraFeet.toLocaleString()} ft walking.</span>
+            </div>
+        `;
+    };
+
     // Calculate times for transfer legs
     let leg1TravelMin = 0;
     let leg2TravelMin = 0;
@@ -5492,6 +5746,12 @@ function renderTimelineWaypointsHtml(data) {
                 const travelMin = isTransfer ? leg1TravelMin : computeBusTravelTimeMinutes(activeDetails);
                 const stopsCount = Math.max(0, (activeDetails && activeDetails.stopsInOrder ? activeDetails.stopsInOrder.length : (activeDetails.totalStops || (activeDetails.stops ? activeDetails.stops.length : 0))) - 1);
                 const stopsSeq = isTransfer ? buildStopsSeqHtml(leg1.routeDetails, startStop.id, transferStop.id) : (route.stopsInOrder ? buildStopsSeqHtml(route, startStop.id, endStop.id) : '');
+                // Early-alighting only applies to the leg ending at the
+                // destination; leg 1 ends at the transfer stop.
+                const earlyHint = (!isTransfer && route.stopsInOrder)
+                    ? getEarlyAlightHint(route, startStop.id, endStop.id, endBuilding, endWalkDistance)
+                    : null;
+                const rationale = (!isTransfer && activeDetails._rationale) || null;
 
                 travelHtml = `
                     <div class="waypoint-emoji waypoint-travel-bus" data-leg="1">
@@ -5501,7 +5761,7 @@ function renderTimelineWaypointsHtml(data) {
                             ${isLive ? `<span class="travel-time">${travelMin}m</span>` : ''}
                             <span class="stops-info">Take bus for ${stopsCount} ${getStopCountText(activeDetails)}</span>
                         </div>
-                        ${stopsSeq ? `<div class="bus-stops-list-wrapper">${stopsSeq}</div>` : ''}
+                        ${stopsSeq ? `<div class="bus-stops-list-wrapper">${stopsSeq}${buildRationaleHtml(rationale)}${buildEarlyHintHtml(earlyHint)}</div>` : ''}
                     </div>
                 `;
             } else if (waypoint.role === 'transfer') {
@@ -5510,6 +5770,8 @@ function renderTimelineWaypointsHtml(data) {
                 const activeDetails = leg2.routeDetails || leg2;
                 const stopsCount = Math.max(0, (activeDetails && activeDetails.stopsInOrder ? activeDetails.stopsInOrder.length : (activeDetails.totalStops || (activeDetails.stops ? activeDetails.stops.length : 0))) - 1);
                 const stopsSeq = buildStopsSeqHtml(leg2.routeDetails, transferStop.id, endStop.id);
+                const earlyHint = getEarlyAlightHint(leg2.routeDetails, transferStop.id, endStop.id, endBuilding, endWalkDistance);
+                const rationale = activeDetails._rationale || null;
 
                 travelHtml = `
                     <div class="waypoint-emoji waypoint-travel-bus" data-leg="2">
@@ -5519,7 +5781,7 @@ function renderTimelineWaypointsHtml(data) {
                             ${isLive ? `<span class="travel-time">${leg2TravelMin}m</span>` : ''}
                             <span class="stops-info">Take bus for ${stopsCount} ${getStopCountText(activeDetails)}</span>
                         </div>
-                        ${stopsSeq ? `<div class="bus-stops-list-wrapper">${stopsSeq}</div>` : ''}
+                        ${stopsSeq ? `<div class="bus-stops-list-wrapper">${stopsSeq}${buildRationaleHtml(rationale)}${buildEarlyHintHtml(earlyHint)}</div>` : ''}
                     </div>
                 `;
             } else if (waypoint.role === 'alighting' && hasEndWalk) {
@@ -5746,8 +6008,10 @@ function displayRoute(routeData) {
                             routeDetails: getRouteDetails(leg2Route, transferStop.id, endStop.id)
                         }
                     };
+                    attachRationale(route.leg2.routeDetails, primaryCombo);
                 } else {
                     route = getRouteDetails(primaryEntry.route, primaryCombo.startStop.id, primaryCombo.endStop.id);
+                    attachRationale(route, primaryCombo);
                     startStop = primaryCombo.startStop;
                     endStop = primaryCombo.endStop;
                     startWalkDistance = primaryCombo.startWalkDistance;
