@@ -1248,6 +1248,38 @@ function openFavoriteNavRoute(fav) {
 }
 window.openFavoriteNavRoute = openFavoriteNavRoute;
 
+// Generalized time cost for a candidate combo (lower is better).
+// journeyMinutes already counts walking once; walking is counted a second
+// time so pure-time ranking can't trade a huge walk for a tiny ride saving
+// (walk-aversion ~2x, standard transit practice). calculateOptionJourneyMinutes
+// folds in live waits + live segment times when buses are running and falls
+// back to walk + 5 min/stop (+ transfer buffer) when they aren't, so this is
+// live-aware without breaking the offline case. Static score stays the tiebreak.
+function estimateComboCost(route, option, ctx) {
+    try {
+        const combo = {
+            startStop: option.startStop,
+            transferStop: option.transferStop,
+            endStop: option.endStop,
+            startWalkDistance: option.startWalkDistance,
+            endWalkDistance: option.endWalkDistance,
+            totalWalkingFeet: option.totalWalkingFeet,
+            isTransfer: !!option.isTransfer,
+            leg1: option.leg1,
+            leg2: option.leg2
+        };
+        const journey = calculateOptionJourneyMinutes(route, combo, ctx) || 0;
+        const walk = calculateOptionWalkMinutes(route, combo, ctx) || 0;
+        if (journey > 0) return { cost: journey + walk, journey, walk };
+    } catch (e) {
+        // Never break routing on an estimation failure; the caller falls back
+        // to static score. Warn (not error) so it surfaces in console without
+        // tripping the user-visible error tracker.
+        console.warn('[nav] estimateComboCost failed, falling back to static score:', route && route.name, e);
+    }
+    return null;
+}
+
 // Find the best combination of start and end stops for routing
 function findBestRouteCombination(startStops, endStops, startBuilding, endBuilding, startIsStop, endIsStop) {
     console.log('🔍 findBestRouteCombination called with:', startStops.length, 'start stops,', endStops.length, 'end stops');
@@ -1393,16 +1425,35 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
         .sort((a, b) => b.score - a.score)
         .slice(0, 10); // Return top 10 options
 
-    // Find the best combination for each route type
+    // Find the best combination for each route type, ranked by generalized
+    // travel time (live-aware via estimateComboCost) instead of static stop
+    // counts, so e.g. LX alighting at CASC + walking beats riding all the way
+    // to SAC NB when the ride saving exceeds the extra walk. Static score is
+    // the tiebreak; options with no time estimate fall back to score.
+    const navCtx = { startBuilding, endBuilding, startIsStop, endIsStop };
     const bestByRoute = {};
     routeOptions.forEach(option => {
         option.connectingRoutes.forEach(route => {
             const routeName = route.name.toLowerCase();
-            if (!bestByRoute[routeName] || option.score > bestByRoute[routeName].score) {
-                bestByRoute[routeName] = {
-                    combination: option,
-                    route: route
-                };
+            const cur = bestByRoute[routeName];
+            const est = estimateComboCost(route, option, navCtx);
+            const entry = {
+                combination: option,
+                route: route,
+                _cost: est ? est.cost : null,
+                _journey: est ? est.journey : null
+            };
+            if (!cur) {
+                bestByRoute[routeName] = entry;
+            } else if (est && cur._cost !== null) {
+                // Both time-informed (integer-minute costs): lowest wins, score tiebreaks.
+                if (est.cost < cur._cost ||
+                    (est.cost === cur._cost && option.score > cur.combination.score)) {
+                    bestByRoute[routeName] = entry;
+                }
+            } else if (est || (cur._cost === null && option.score > cur.combination.score)) {
+                // Time-informed beats uninformed; otherwise legacy score rule.
+                bestByRoute[routeName] = entry;
             }
         });
     });
@@ -1417,6 +1468,9 @@ function findBestRouteCombination(startStops, endStops, startBuilding, endBuildi
             console.log(`   ${rLabel}: ${combo.startStop.name} → ${combo.endStop.name}`);
             console.log(`      Walking: ${combo.totalWalkingFeet} ft (${combo.startWalkDistance?.feet || 0} + ${combo.endWalkDistance?.feet || 0})`);
             console.log(`      Score: ${combo.score.toFixed(2)}`);
+            if (typeof best._journey === 'number') {
+                console.log(`      Journey: ~${best._journey.toFixed(0)} min (cost ${best._cost.toFixed(1)})`);
+            }
             console.log(`      Other routes available: ${combo.connectingRoutes.map(r => r.displayName || r.name).join(', ')}`);
             console.log('');
         });
@@ -2067,7 +2121,10 @@ function calculateRoute(from, to) {
             originalInputs: { from, to },
             startIsStop,
             endIsStop,
-            
+            // One-shot preserve request from requestNavStatusRecalc (silent
+            // status-flip recompute): keeps the user's selected pill when it
+            // is still viable instead of resetting to index 0.
+            restoreRouteName: window._navPreserveRouteName || null,
             routeCombosMap
         });
 
@@ -5037,6 +5094,14 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
                     updateNavInfoBanners(currentRoute, routeData.selectedRouteDisplayIndex, routesForDisplay);
                 }
             }
+
+            if (statusChanged) {
+                // A route flipped in/out of service: the picked stops may be
+                // stale (e.g. F died overnight while EE still runs). Silently
+                // recompute (debounced, selection+scroll preserving). The
+                // light update above already refreshed times for this tick.
+                requestNavStatusRecalc();
+            }
         }
 
         // Update live upcoming/destination buses on the active route
@@ -5047,6 +5112,52 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
     }
 }
 window.updateNavOnOutOfService = updateNavOnOutOfService;
+
+// Debounce for status-flip recomputes (changeovers can drop several buses
+// within a minute; one silent recalc per window is enough).
+let _lastNavStatusRecalcAt = 0;
+
+// Silently recompute the current nav route after a route flipped in/out of
+// service, so stop choice (boarding/alighting per route) follows the live
+// network instead of the snapshot from the original calc. Preserves the
+// user's selected pill when still viable and the scroll position; otherwise
+// falls back to the new first pill. Returns true when a recalc ran.
+// Guards: no open route, user typing in a nav input, or debounce window.
+function requestNavStatusRecalc() {
+    try {
+        if (!navRouteSession || !navRouteSession.routeData) return false;
+        if ($('.navigate-wrapper').length > 0 && $('.navigate-wrapper').hasClass('none')) return false;
+        if (navAnyInputFocused) return false;
+        if ($('#nav-from-input').is(':focus') || $('#nav-to-input').is(':focus')) return false;
+        const now = Date.now();
+        if (now - _lastNavStatusRecalcAt < 45000) return false;
+        _lastNavStatusRecalcAt = now;
+        const fromVal = (navRouteSession.fromVal || $('#nav-from-input').val() || '').trim();
+        const toVal = (navRouteSession.toVal || $('#nav-to-input').val() || '').trim();
+        if (!fromVal || !toVal) return false;
+        const curRoute = navRouteSession.routeData.route;
+        window._navPreserveRouteName = (curRoute && curRoute.name) ? String(curRoute.name).toLowerCase() : null;
+        const $scroller = $('.nav-directions-wrapper');
+        const $inner = $('.navigate-inner');
+        const prevScroll = $scroller.length ? $scroller.scrollTop() : 0;
+        const prevInnerScroll = $inner.length ? $inner.scrollTop() : 0;
+        lastComputedRouteKey = null; // force recompute past the reshow fast-path
+        window._suppressRecentSave = true; // silent: don't churn recents timestamps
+        calculateRoute(fromVal, toVal);
+        window._navPreserveRouteName = null;
+        setTimeout(() => { window._suppressRecentSave = false; }, 600);
+        if ($scroller.length) $scroller.scrollTop(prevScroll);
+        if ($inner.length) $inner.scrollTop(prevInnerScroll);
+        return true;
+    } catch (e) {
+        // Warn (not error): background refresh failing shouldn't pop
+        // user-visible UI via the error tracker, but must stay debuggable.
+        console.warn('[nav] requestNavStatusRecalc failed:', e);
+        window._navPreserveRouteName = null;
+        return false;
+    }
+}
+window.requestNavStatusRecalc = requestNavStatusRecalc;
 
 // Unified generator for timeline waypoint rows HTML (handles both single-bus and multi-bus transfer routes)
 function renderTimelineWaypointsHtml(data) {
