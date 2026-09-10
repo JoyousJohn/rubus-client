@@ -571,6 +571,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         if (m.includes('ling-3') || m === 'ling') return 'Ling 3.0 Flash';
         if (m.includes('deepseek-v4') || m === 'deepseek') return 'DeepSeek V4 Flash';
         if (m.includes('solar') || m === 'solar-pro') return 'Solar Pro';
+        if (m.includes('mercury')) return 'Mercury 2.5';
         return rawModel.split('/').pop();
     }
 
@@ -592,7 +593,12 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         const providerStr = formatProviderName(currentProvider);
         if (modelStr) parts.push(modelStr);
         if (providerStr) parts.push(providerStr);
-        if (metric) parts.push(metric);
+        if (metric) {
+            const formattedMetric = String(metric).replace(/(\d+)(\s+tokens)/, (m, count, suffix) => {
+                return Number(count).toLocaleString() + suffix;
+            });
+            parts.push(formattedMetric);
+        }
         return parts.join(' · ');
     }
 
@@ -653,7 +659,6 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
             $currentThinkingBox = $(`
                 <div class="chat-thinking-box"${isVisible ? '' : ' style="display: none;"'}>
                     <div class="thinking-header">
-                        <i class="fa-solid fa-brain"></i>
                         <span class="thinking-tps-badge">${formatThinkingBadge('')}</span>
                     </div>
                     <div class="thinking-content"></div>
@@ -746,10 +751,10 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     ensureThinkingBox();
                     $currentThinkingBox.find('.thinking-content').text(streamedThinking);
                     const thinkTokens = estimateTokens(streamedThinking);
-                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${thinkTokens} tokens`));
+                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${Number(thinkTokens).toLocaleString()} tokens`));
                 } else if ($currentThinkingBox) {
                     const thinkTokens = estimateTokens(streamedThinking);
-                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${thinkTokens} tokens`));
+                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${Number(thinkTokens).toLocaleString()} tokens`));
                 }
 
                 // Remove pulse animation from previous thinking steps
@@ -817,7 +822,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     ensureThinkingBox();
                     $currentThinkingBox.find('.thinking-content').text(thinkingToDisplay);
                     const thinkTokens = data.reasoning_tokens || estimateTokens(thinkingToDisplay);
-                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${thinkTokens} tokens`));
+                    $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${Number(thinkTokens).toLocaleString()} tokens`));
                 }
 
                 let rawText = finalAnswer;
@@ -856,14 +861,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     finalAnswer = rawText.trim() || 'There was an issue formatting the response.';
                 }
 
-                let suggestions = [];
-                const suggestionsMatch = finalAnswer.match(/<suggestions>([\s\S]*?)<\/suggestions>/i);
-                if (suggestionsMatch) {
-                    suggestions = suggestionsMatch[1].split('\n')
-                        .map(line => line.replace(/^[•\-\*\s]+/, '').trim())
-                        .filter(text => text.length > 0);
-                    finalAnswer = finalAnswer.replace(/<suggestions>[\s\S]*?<\/suggestions>/i, '').trim();
-                }
+                const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
 
                 const answerDurationSec = (phaseStartTime && phase === 'answering')
                     ? Math.max(0.1, (performance.now() - phaseStartTime) / 1000)

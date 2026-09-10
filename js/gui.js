@@ -3054,6 +3054,94 @@ function saveSettings() {
     localStorage.setItem('settings', JSON.stringify(stored));
 }
 
+// Chatbot models and their providers are served by rubus-chat (/chat/models)
+// rather than duplicated here, so the dev-settings buttons always match the
+// server's allowlist.
+let chatbotModelCatalog = null;
+
+function getChatServerBaseUrls() {
+    const isLocalDev = window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '0.0.0.0';
+    return isLocalDev
+        ? ['http://localhost:8000', 'https://talk.rubus.live']
+        : ['https://talk.rubus.live'];
+}
+
+async function fetchChatbotModelCatalog() {
+    for (const baseUrl of getChatServerBaseUrls()) {
+        try {
+            const resp = await fetch(`${baseUrl}/chat/models`, { headers: { 'Accept': 'application/json' } });
+            if (resp.ok) return await resp.json();
+            console.warn('[Chatbot Settings] /chat/models returned status', resp.status, 'from', baseUrl);
+        } catch (err) {
+            console.warn('[Chatbot Settings] Could not reach', `${baseUrl}/chat/models:`, err.message);
+        }
+    }
+    return null;
+}
+
+function renderChatbotModelOptions() {
+    const $container = $('#chatbot-model-options');
+    if (!chatbotModelCatalog) return;
+    let selectedModel = settings['chatbot-model'] || chatbotModelCatalog.default_model;
+    if (!chatbotModelCatalog.models.some(model => model.key === selectedModel)) {
+        selectedModel = chatbotModelCatalog.default_model;
+        settings['chatbot-model'] = selectedModel;
+        saveSettings();
+    }
+    $container.empty();
+    // One column per model rather than a fixed 3-column grid.
+    $container.css('grid-template-columns', `repeat(${Math.max(chatbotModelCatalog.models.length, 1)}, 1fr)`);
+    chatbotModelCatalog.models.forEach(model => {
+        $('<div>')
+            .addClass('settings-option')
+            .attr('settings-option', 'chatbot-model')
+            .attr('chatbot-model-option', model.key)
+            .text(model.label)
+            .toggleClass('settings-selected', model.key === selectedModel)
+            .appendTo($container);
+    });
+}
+
+function renderChatbotProviderOptions() {
+    const $container = $('#chatbot-provider-options');
+    if (!chatbotModelCatalog) return;
+    const selectedModel = settings['chatbot-model'] || chatbotModelCatalog.default_model;
+    const model = chatbotModelCatalog.models.find(m => m.key === selectedModel);
+    const providers = (model && model.providers) || [];
+    const providerKeys = providers.map(provider => provider.key);
+    const defaultProvider = (model && model.default_provider) || providerKeys[0];
+    let selectedProvider = settings['chatbot-provider'] || defaultProvider;
+    if (!providerKeys.includes(selectedProvider)) {
+        selectedProvider = defaultProvider;
+        settings['chatbot-provider'] = selectedProvider;
+        saveSettings();
+    }
+    $container.empty();
+    // One column per provider rather than a fixed 3-column grid.
+    $container.css('grid-template-columns', `repeat(${Math.max(providers.length, 1)}, 1fr)`);
+    providers.forEach(provider => {
+        $('<div>')
+            .addClass('settings-option')
+            .attr('settings-option', 'chatbot-provider')
+            .attr('chatbot-provider-option', provider.key)
+            .text(provider.label)
+            .toggleClass('settings-selected', provider.key === selectedProvider)
+            .appendTo($container);
+    });
+}
+
+async function populateChatbotOptions() {
+    chatbotModelCatalog = await fetchChatbotModelCatalog();
+    if (!chatbotModelCatalog) {
+        console.error('[Chatbot Settings] Could not load chatbot models from the chat server');
+        return;
+    }
+    renderChatbotModelOptions();
+    renderChatbotProviderOptions();
+}
+
 function updateSettings() {
     settings = loadSettingsFromStorage();
     if (settings) {
@@ -3142,8 +3230,6 @@ function updateSettings() {
     $(`div.settings-option[bus-positioning-option="${settings['bus-positioning']}"]`).addClass('settings-selected')
     $(`div.settings-option[raster-sharpness-option="${settings['raster-sharpness']}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-marker-renderer-option="${settings['bus-marker-renderer']}"]`).addClass('settings-selected')
-    $(`div.settings-option[chatbot-model-option="${settings['chatbot-model'] || 'ling'}"]`).addClass('settings-selected')
-    $(`div.settings-option[chatbot-provider-option="${settings['chatbot-provider'] || 'auto'}"]`).addClass('settings-selected')
     $(`div.settings-option[bus-animation-rate-option="${settings['bus-animation-rate']}"]`).addClass('settings-selected')
     $(`div.settings-option[campus-option="${settings['campus']}"]`).addClass('settings-selected');
 
@@ -3170,7 +3256,7 @@ function updateSettings() {
         $('.parking-add-btn .text-1p3rem').hide();
     }
 
-    $('.settings-option').click(function() {
+    $(document).off('click.rubusSettingOption').on('click.rubusSettingOption', '.settings-option', function() {
         if ($(this).hasClass('settings-selected')) { return; }
 
         const settingsOption = $(this).attr('settings-option')
@@ -3264,6 +3350,10 @@ function updateSettings() {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['chatbot-model'] = $(this).attr('chatbot-model-option')
+            // Each model exposes its own provider set, so rebuild the provider
+            // buttons and fall back to an available provider if the current
+            // one isn't offered by the newly selected model.
+            renderChatbotProviderOptions()
 
         } else if (settingsOption === 'chatbot-provider') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
@@ -3307,7 +3397,7 @@ function updateSettings() {
             saveSettings()
         }
 
-    })
+    });
 
     toggleSettings.forEach(toggleSetting => {
 
@@ -3456,6 +3546,8 @@ function selectRubusLogo(logoFilename) {
 $(document).ready(function() {
 
     // updateSettings();
+
+    populateChatbotOptions();
 
     $('.stop-info-back-wrapper').click(function() {
         // If we arrived here from a navigation waypoint, return to nav
