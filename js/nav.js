@@ -4089,17 +4089,22 @@ function filterTransferRoutesForDisplay(routesForDisplay, routeCombosMap, routeD
         return tTime > 0 && slowestDirectTotalTime > 0 && tTime < slowestDirectTotalTime;
     });
 
-    // Slower than the slowest direct route (show a maximum of ONE more slower transfer option after the slowest direct route)
+    // Slower than the slowest direct route: keep ALL live slower transfers
+    // (they're actionable — e.g. EE runs later than F, so EE→LX must survive
+    // even when F→LX is faster on paper), plus a maximum of ONE offline
+    // slower transfer for schedule reference.
     const slowerTransfers = otherTransfers
         .filter(t => !fasterTransfers.includes(t))
         .sort((a, b) => getTotalMinutes(a) - getTotalMinutes(b));
 
-    const maxOneSlowerTransfer = slowerTransfers.slice(0, 1);
+    const liveSlowerTransfers = slowerTransfers.filter(t => t.hasLive);
+    const maxOneOfflineSlowerTransfer = slowerTransfers.filter(t => !t.hasLive).slice(0, 1);
 
     const eligibleTransfers = new Set([
         ...lowWalkingTransfers,
         ...fasterTransfers,
-        ...maxOneSlowerTransfer
+        ...liveSlowerTransfers,
+        ...maxOneOfflineSlowerTransfer
     ]);
 
     return routesForDisplay.filter(e => !isTransferEntry(e) || eligibleTransfers.has(e));
