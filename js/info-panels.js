@@ -343,14 +343,6 @@ function animateToTargetPanel(initialVelocity, options) {
 			if ($targetOpt.length) {
 				$targetOpt.addClass('selected all-stops-selected-menu');
 			}
-			// Theme color
-			try {
-				const curTheme = document.documentElement.getAttribute('data-selected-theme') || (typeof settings !== 'undefined' && settings && settings['theme']) || 'beige-coffee';
-				const resolved = (typeof resolveAutoTheme === 'function') ? resolveAutoTheme(curTheme) : curTheme;
-				if (typeof themeIndicatorColorMap !== 'undefined' && themeIndicatorColorMap[resolved]) {
-					$indicator.css({ backgroundColor: themeIndicatorColorMap[resolved].bg, boxShadow: themeIndicatorColorMap[resolved].shadow });
-				}
-			} catch(e) {}
 			// Disable CSS transition — we will drive transform via JS for perfect sync
 			$indicator.css('transition', 'none');
 			$indicator.css('left', '-3px');
@@ -517,6 +509,8 @@ function updateInfoPanelIndicator(panel, options) {
 	indicator.style.width = `calc(100% / ${count} + 6px)`;
 	indicator.style.top = '-3px';
 	indicator.style.height = 'calc(100% + 6px)';
+	indicator.style.removeProperty('background-color');
+	indicator.style.removeProperty('box-shadow');
 
 	if (optionWidth > 0) {
 		indicator.style.left = '-3px';
