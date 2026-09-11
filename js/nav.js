@@ -2444,9 +2444,9 @@ function showNavigationAutocomplete(inputElement, query) {
         }, 500);
     }
 
-    // Create result elements (limit to 5 results), matching the main search's
+    // Create result elements (limit to 30 results), matching the main search's
     // .search-result-item row structure so styling is identical.
-    const maxResults = 5;
+    const maxResults = 30;
     results.slice(0, maxResults).forEach(result => {
         const item = result.item ? result.item : result;
         const matchedAbbreviation = result.matchedAbbreviation;
