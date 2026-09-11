@@ -2585,6 +2585,7 @@ async function popStopInfo(stopId) {
     $('.stop-info-use-route-selectors-notice').hide();
 
     $('.stop-info-popup').stop(true, true).show();
+    markPanelOpened('right');
     if (typeof hideCenterStops === 'function') hideCenterStops();
     if (typeof isDesktop !== 'undefined' && isDesktop && !isTouchDevice) showEscNotice('stop');
 

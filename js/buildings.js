@@ -298,6 +298,7 @@ function showBuildingInfo(feature) {
     navBackActive = cameFromNav;       // persist for the back-button click handler (set after hideInfoBoxes)
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
+    markPanelOpened('right');
     // Show "Back to search"/"Back to nav" when this building was opened from
     // a search result or a navigation waypoint
     if (cameFromNav) {
@@ -424,6 +425,7 @@ function loadBuildings() {
                                     locationMarker.on('click', function() {
                                         $('.bus-info-popup, .stop-info-popup').hide();
                                         $('.my-location-popup').show();
+                                        markPanelOpened('right');
                                         if (typeof hideCenterStops === 'function') hideCenterStops();
                                     });
                                     window.locationMarker = locationMarker;
@@ -435,6 +437,7 @@ function loadBuildings() {
 
                                 $('.fly-closest-stop-wrapper').fadeIn();
                                 $('.my-location-popup').show();
+                                markPanelOpened('right');
                                 if (typeof hideCenterStops === 'function') hideCenterStops();
 
                                 sa_event('btn_press', {

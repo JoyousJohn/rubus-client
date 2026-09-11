@@ -14,6 +14,7 @@ function hideInfoBoxes(instantly_hide) {
         $('.bus-info-popup, .stop-info-popup, .my-location-popup, .building-info-popup').fadeOut();
         closeSearch();
     }
+    delete window._panelOpenedAt['right'];
     
     // Hide the out of service hide button when closing popups
     $('.stop-info-hide-oos').hide();
@@ -176,7 +177,9 @@ const shownEscTypes = new Set();
 
 function showEscNotice(type) {
     // Every right-side popup (bus/stop/building) funnels through here on open.
-    markPanelOpened('right');
+    if (type !== 'info') {
+        markPanelOpened('right');
+    }
 
     if (!isDesktop || isTouchDevice) return;
 

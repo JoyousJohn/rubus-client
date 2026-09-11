@@ -2102,47 +2102,337 @@ function ensureRouteSubpanelPopulated() {
 window.ensureRouteSubpanelPopulated = ensureRouteSubpanelPopulated;
 
 
-$('.color-circle').click(function() {
-    $('.color-select-route').text(shownRoute.toUpperCase()).css('color', colorMappings[shownRoute]);
-    
-    $('.color-circle-select-default').css('background-color', defaultColorMappings[shownRoute])
+let currentRouteColorChoice = null;
+let currentWheelHue = 0;
+let currentWheelSat = 1;
+let currentWheelBrightness = 1.0;
+let isDraggingColorWheel = false;
 
-    let colorValue = colorMappings[shownRoute];
-    let colorMappingRGB;
-
-    if (colorValue.startsWith('rgb')) {
-        colorMappingRGB = colorValue;
-    } else {
-        const tempElement = document.createElement('div');
-        tempElement.style.color = colorValue;
-        document.body.appendChild(tempElement);
-        colorMappingRGB = window.getComputedStyle(tempElement).color;
-        document.body.removeChild(tempElement);
+function colorToHex(color) {
+    if (!color) return '#000000';
+    if (/^#[0-9a-fA-F]{6}$/.test(color)) return color.toLowerCase();
+    if (/^#[0-9a-fA-F]{3}$/.test(color)) {
+        return ('#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3]).toLowerCase();
     }
+    const tempElement = document.createElement('div');
+    tempElement.style.color = color;
+    document.body.appendChild(tempElement);
+    const cs = window.getComputedStyle(tempElement).color;
+    document.body.removeChild(tempElement);
+    const m = cs.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (m) {
+        return '#' + [m[1], m[2], m[3]].map(x => parseInt(x, 10).toString(16).padStart(2, '0')).join('');
+    }
+    return '#000000';
+}
 
-    $('.color-circle-select').each(function() {
-        const color = $(this).css('background-color');
-        if (color === colorMappingRGB) {
-            $(this).addClass('selected-color-choice').text('✔');
+function hexToHsv(hexStr) {
+    const hex = colorToHex(hexStr).slice(1);
+    const r = parseInt(hex.substr(0, 2), 16) / 255;
+    const g = parseInt(hex.substr(2, 2), 16) / 255;
+    const b = parseInt(hex.substr(4, 2), 16) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+
+    let h = 0;
+    if (delta > 0.0001) {
+        if (max === r) {
+            h = ((g - b) / delta) % 6;
+        } else if (max === g) {
+            h = (b - r) / delta + 2;
         } else {
-            $(this).text('');
+            h = (r - g) / delta + 4;
         }
-    });
-
-    if (colorMappings[shownRoute] === defaultColorMappings[shownRoute]) {
-        $('.color-reset').css('background-color', 'gray')
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
     }
-    
-    $('.color-selection-modal').css('display', 'flex');
-})
 
-$('.color-circle-select').click(function() {
-    const color = $(this).css('background-color')
-    $('.color-select-route').css('color', color);
-    $('.selected-color-choice').text('').removeClass('selected-color-choice')
-    $(this).text('✔').addClass('selected-color-choice')
-    $('.color-reset').css('background-color', '#f98d1a')
-})
+    const v = max;
+    const s = max > 0.001 ? (1 - (min / max)) : 0;
+    return { h, s: Math.max(0, Math.min(1, s)), v: Math.max(0, Math.min(1, v)) };
+}
+
+function hsvToHex(h, s, v) {
+    const hNorm = ((h % 360 + 360) % 360) / 60;
+    const x = 1 - Math.abs((hNorm % 2) - 1);
+    let r1 = 0, g1 = 0, b1 = 0;
+    if (hNorm < 1) { r1 = 1; g1 = x; b1 = 0; }
+    else if (hNorm < 2) { r1 = x; g1 = 1; b1 = 0; }
+    else if (hNorm < 3) { r1 = 0; g1 = 1; b1 = x; }
+    else if (hNorm < 4) { r1 = 0; g1 = x; b1 = 1; }
+    else if (hNorm < 5) { r1 = x; g1 = 0; b1 = 1; }
+    else { r1 = 1; g1 = 0; b1 = x; }
+
+    const rWhite = 1 + (r1 - 1) * s;
+    const gWhite = 1 + (g1 - 1) * s;
+    const bWhite = 1 + (b1 - 1) * s;
+
+    const rFinal = Math.round(Math.max(0, Math.min(255, rWhite * v * 255)));
+    const gFinal = Math.round(Math.max(0, Math.min(255, gWhite * v * 255)));
+    const bFinal = Math.round(Math.max(0, Math.min(255, bWhite * v * 255)));
+
+    return '#' + [rFinal, gFinal, bFinal].map(c => c.toString(16).padStart(2, '0')).join('');
+}
+
+function renderColorWheelCanvas() {
+    const canvas = document.getElementById('color-wheel-canvas');
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const radius = Math.min(cx, cy) - 2;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+
+    if (ctx.createConicGradient) {
+        const conic = ctx.createConicGradient(0, cx, cy);
+        conic.addColorStop(0 / 6, '#ff0000');
+        conic.addColorStop(1 / 6, '#ffff00');
+        conic.addColorStop(2 / 6, '#00ff00');
+        conic.addColorStop(3 / 6, '#00ffff');
+        conic.addColorStop(4 / 6, '#0000ff');
+        conic.addColorStop(5 / 6, '#ff00ff');
+        conic.addColorStop(6 / 6, '#ff0000');
+        ctx.fillStyle = conic;
+        ctx.fillRect(0, 0, rect.width, rect.height);
+    } else {
+        for (let a = 0; a < 360; a += 2) {
+            const start = (a - 1) * Math.PI / 180;
+            const end = (a + 2) * Math.PI / 180;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, radius, start, end);
+            ctx.closePath();
+            ctx.fillStyle = `hsl(${a}, 100%, 50%)`;
+            ctx.fill();
+        }
+    }
+
+    const radial = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    radial.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    radial.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = radial;
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(128, 128, 128, 0.35)';
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function updateWheelThumbPosition(h, s) {
+    const container = document.querySelector('.color-wheel-container');
+    const thumb = document.getElementById('color-wheel-thumb');
+    if (!container || !thumb) return;
+    const rect = container.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const radius = Math.min(cx, cy) - 2;
+
+    const angleRad = (h * Math.PI) / 180;
+    const dist = s * radius;
+    const x = cx + dist * Math.cos(angleRad);
+    const y = cy + dist * Math.sin(angleRad);
+
+    thumb.style.left = x + 'px';
+    thumb.style.top = y + 'px';
+    thumb.style.backgroundColor = currentRouteColorChoice || '#ffffff';
+}
+
+function updateColorMarkerPreview(color) {
+    const $container = $('#color-marker-preview');
+    if (!$container.length) return;
+
+    const markerType = settings['marker-type'] || 'rubus';
+    const markerSize = settings['marker-size'] || 'medium';
+    const sizeClass = {
+        'small': 'small-marker',
+        'medium': 'medium-marker',
+        'big': 'big-marker'
+    }[markerSize] || 'medium-marker';
+
+    const dims = {
+        small: { outer: 20, inner: 8, rider: 20, duck: 14 },
+        medium: { outer: 27, inner: 13, rider: 27, duck: 18 },
+        big: { outer: 35, inner: 19, rider: 35, duck: 22 }
+    }[markerSize] || { outer: 27, inner: 13, rider: 27, duck: 18 };
+
+    const hex = color || currentRouteColorChoice || '#3565f8';
+    
+    let html = '';
+    if (markerType === 'passio') {
+        const passioSvg = `<svg class="passio-bus-icon" viewBox="0 0 400 481.9" width="400" height="481.9" style="width: 55%; height: 55%; fill: ${hex};"><path d="M109.171 24.437 C 96.559 25.472,91.241 28.892,88.902 37.473 C 88.445 39.150,87.460 42.775,86.714 45.529 C 84.642 53.174,83.952 53.438,64.123 54.149 C 33.711 55.239,26.068 61.177,24.303 85.090 C 22.581 108.405,23.485 386.391,25.317 397.207 C 26.914 406.631,30.903 411.649,41.025 416.968 L 47.092 420.156 200.235 419.759 C 375.894 419.303,366.722 419.766,375.845 410.906 C 383.722 403.256,383.622 405.251,384.051 247.143 C 384.528 71.170,384.513 70.841,375.938 62.731 C 368.185 55.398,365.760 54.699,345.534 53.962 C 322.295 53.115,321.438 52.714,319.961 41.997 C 318.967 34.787,316.690 31.040,311.027 27.292 L 307.598 25.023 280.814 24.329 C 247.453 23.464,120.052 23.545,109.171 24.437 M305.088 40.837 C 307.235 43.489,307.246 48.309,305.111 50.444 C 302.700 52.855,279.220 53.457,184.624 53.532 C 94.574 53.604,101.961 54.260,101.961 46.187 C 101.961 37.957,91.878 38.651,210.317 38.723 L 303.422 38.780 305.088 40.837 M266.974 70.460 C 281.313 72.365,286.521 86.555,276.409 96.166 C 272.351 100.024,265.468 100.475,210.893 100.457 C 131.739 100.432,126.362 99.444,126.362 84.925 C 126.362 76.249,131.478 71.435,142.484 69.754 C 149.042 68.753,258.806 69.375,266.974 70.460 M192.725 118.176 C 197.213 118.900,196.973 114.832,197.543 199.843 L 198.056 276.375 194.712 279.800 L 191.367 283.224 143.832 283.174 C 57.793 283.084,53.392 282.504,48.362 270.588 C 45.728 264.351,46.296 142.220,49.008 131.590 C 52.706 117.096,55.612 116.647,141.612 117.300 C 167.974 117.500,190.975 117.894,192.725 118.176 M322.785 117.637 C 364.263 118.985,361.078 111.735,360.553 203.639 C 360.103 282.535,360.988 278.898,341.612 281.409 C 325.536 283.492,216.739 283.260,214.616 281.138 C 210.508 277.030,208.663 125.818,212.643 119.379 C 213.954 117.258,279.314 116.225,322.785 117.637 M94.153 331.811 C 103.664 336.466,109.784 345.934,110.501 357.104 C 112.272 384.703,72.462 394.765,59.425 370.013 C 47.703 347.757,72.037 320.988,94.153 331.811 M332.387 331.202 C 347.803 336.969,355.568 355.008,348.669 369.023 C 338.073 390.546,305.979 388.947,299.332 366.565 C 292.771 344.469,312.224 323.657,332.387 331.202 M307.093 434.897 C 304.644 435.328,301.546 436.096,300.209 436.605 L 297.779 437.529 298.277 448.733 C 298.551 454.895,299.152 460.667,299.612 461.559 C 300.072 462.451,300.798 464.356,301.225 465.793 C 302.592 470.393,305.057 470.929,326.539 471.307 L 345.889 471.648 348.470 467.578 C 355.541 456.427,355.267 438.312,347.987 435.766 C 343.969 434.361,313.785 433.719,307.093 434.897 M61.438 435.227 C 60.959 435.420,59.462 435.822,58.113 436.120 C 53.433 437.156,52.093 444.066,54.432 455.102 C 57.073 467.565,59.215 469.602,71.391 471.228 C 103.346 475.497,110.032 471.375,110.184 447.310 C 110.263 434.620,112.106 435.501,84.792 435.159 C 72.426 435.003,61.917 435.034,61.438 435.227 " fill="${hex}" fill-rule="evenodd"></path></svg>`;
+        html = `
+            <div class="passio-marker ${sizeClass}">
+                <div class="passio-marker-arrow-out">
+                    <div class="passio-marker-arrow-in" style="background-color: ${hex};"></div>
+                </div>
+                <div class="passio-marker-circle" style="border-color: ${hex};">
+                    ${passioSvg}
+                </div>
+            </div>`;
+    } else if (markerType === 'rider') {
+        html = `
+            <div class="rider-marker ${sizeClass}" style="background-color: ${hex}; width: ${dims.rider}px; height: ${dims.rider}px;">
+                <i class="fa-solid fa-location-arrow"></i>
+            </div>`;
+    } else if (markerType === 'duck') {
+        html = `
+            <div class="duck-marker ${sizeClass}">
+                <i class="fa-solid fa-duck" style="color: ${hex}; font-size: ${dims.duck}px;"></i>
+            </div>`;
+    } else if (markerType === 'dark') {
+        html = `
+            <div class="bus-icon-outer rubus-marker" style="background-color: ${hex}; width: ${dims.outer}px; height: ${dims.outer}px; border: 2px solid white;">
+                <div class="bus-icon-inner" style="background-color: var(--theme-bus-icon-inner); width: ${dims.inner}px; height: ${dims.inner}px; border: 2px solid white;"></div>
+            </div>`;
+    } else {
+        // RUBus default
+        html = `
+            <div class="marker ${sizeClass} rubus-marker" style="background-color: ${hex}; width: ${dims.outer}px; height: ${dims.outer}px;">
+                <div style="background-color: var(--theme-bus-icon-inner); width: ${dims.inner}px; height: ${dims.inner}px;"></div>
+            </div>`;
+    }
+
+    $container.html(html);
+}
+
+function updateColorFromWheel(updateThumbPos = true) {
+    const hex = hsvToHex(currentWheelHue, currentWheelSat, currentWheelBrightness);
+    currentRouteColorChoice = hex;
+
+    $('#route-color-hex-input').val(hex.toUpperCase());
+    $('.color-wheel-preview-chip').css('background-color', hex);
+    $('.color-select-route').css('color', hex);
+    $('#color-wheel-thumb').css('background-color', hex);
+    updateColorMarkerPreview(hex);
+
+    const fullColor = hsvToHex(currentWheelHue, currentWheelSat, 1.0);
+    $('#route-color-brightness').css('background', `linear-gradient(to right, #000000, ${fullColor})`);
+    $('#route-color-brightness').val(Math.round(currentWheelBrightness * 100));
+
+    if (updateThumbPos) {
+        updateWheelThumbPosition(currentWheelHue, currentWheelSat);
+    }
+
+    const defaultHex = colorToHex(defaultColorMappings[shownRoute]);
+    if (hex && defaultHex && hex.toLowerCase() === defaultHex.toLowerCase()) {
+        $('.color-reset').addClass('disabled');
+    } else {
+        $('.color-reset').removeClass('disabled');
+    }
+}
+
+function setRouteColorChoice(color) {
+    const hex = colorToHex(color);
+    currentRouteColorChoice = hex;
+    const hsv = hexToHsv(hex);
+    currentWheelHue = hsv.h;
+    currentWheelSat = hsv.s;
+    currentWheelBrightness = hsv.v;
+    updateColorFromWheel(true);
+}
+
+function handleWheelPointer(e) {
+    const container = document.querySelector('.color-wheel-container');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const radius = Math.min(cx, cy) - 2;
+
+    const clientX = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches && e.touches.length ? e.touches[0].clientY : e.clientY;
+
+    const dx = clientX - rect.left - cx;
+    const dy = clientY - rect.top - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    if (angle < 0) angle += 360;
+
+    currentWheelHue = angle;
+    currentWheelSat = Math.max(0, Math.min(1, dist / radius));
+
+    updateColorFromWheel(true);
+}
+
+function closeColorModal() {
+    $('.color-selection-modal').css('display', 'none');
+    delete window._panelOpenedAt['color'];
+}
+window.closeColorModal = closeColorModal;
+
+$('.color-circle').click(function() {
+    markPanelOpened('color');
+    $('.color-select-route').text(shownRoute.toUpperCase());
+    $('.color-selection-modal').css('display', 'flex');
+    requestAnimationFrame(() => {
+        renderColorWheelCanvas();
+        setRouteColorChoice(colorMappings[shownRoute]);
+    });
+});
+
+$(document).on('pointerdown', '.color-wheel-container', function(e) {
+    isDraggingColorWheel = true;
+    handleWheelPointer(e);
+    $(window).on('pointermove.colorWheel', handleWheelPointer);
+    $(window).on('pointerup.colorWheel pointercancel.colorWheel', function() {
+        isDraggingColorWheel = false;
+        $(window).off('.colorWheel');
+    });
+});
+
+$('#route-color-brightness').on('input', function() {
+    currentWheelBrightness = parseInt($(this).val(), 10) / 100;
+    updateColorFromWheel(false);
+});
+
+$('#route-color-hex-input').on('input', function() {
+    let val = $(this).val().trim();
+    if (!val.startsWith('#')) val = '#' + val;
+    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        setRouteColorChoice(val);
+    }
+});
+
+$('#route-color-hex-input').on('blur', function() {
+    let val = $(this).val().trim();
+    if (!val.startsWith('#')) val = '#' + val;
+    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        setRouteColorChoice(val);
+    } else {
+        $(this).val(currentRouteColorChoice ? currentRouteColorChoice.toUpperCase() : '');
+    }
+});
+
+$(window).on('resize', function() {
+    if ($('.color-selection-modal').is(':visible')) {
+        renderColorWheelCanvas();
+        updateWheelThumbPosition(currentWheelHue, currentWheelSat);
+    }
+});
 
 function updateColorMappingsSelection(selectedColor) {
     colorMappings[shownRoute] = selectedColor
@@ -2192,17 +2482,15 @@ function updateColorMappingsSelection(selectedColor) {
 }
 
 $('.color-reset').click(function() {
-    $('.color-circle-select-default').click();
-    $('.color-reset').css('background-color', 'gray')
-})
+    setRouteColorChoice(defaultColorMappings[shownRoute]);
+});
 
 $('.color-confirm').click(function() {
-    if ($('.selected-color-choice').length) {
-        const selectedColor = $('.selected-color-choice').css('background-color');
-        updateColorMappingsSelection(selectedColor)
+    if (currentRouteColorChoice) {
+        updateColorMappingsSelection(currentRouteColorChoice);
     }
-    $('.color-selection-modal').css('display', 'none')
-})
+    closeColorModal();
+});
 
 
 let overviewSortColumn = 'ridership';
@@ -3292,6 +3580,7 @@ function closeRouteMenu() {
 
     // Hide info panels and show bottom controls
     $('.info-panels-show-hide-wrapper').hide();
+    delete window._panelOpenedAt['info'];
     // Move selectors back to main UI
     moveRouteSelectorsToMain();
     $('.bottom').show();
@@ -3448,6 +3737,7 @@ function closeSettingsPanel() {
         saveSettingsPanelScroll();
     }
     $('.settings-panel').hide();
+    delete window._panelOpenedAt['settings'];
     $('.bottom').show();
     $('.settings-floating-bar').hide();
     stopStatusUpdates();
@@ -4352,6 +4642,7 @@ function updateMarkerSize() {
     if (typeof busLayerManager !== 'undefined') {
         busLayerManager.updateAllMarkerStyles();
     }
+    updateColorMarkerPreview(currentRouteColorChoice);
 }
 
 function applyGuiScale(scale) {
@@ -4398,6 +4689,7 @@ function updateMarkerType() {
     updateMarkerSizeExamples();
 
     recreateAllBusMarkers();
+    updateColorMarkerPreview(currentRouteColorChoice);
 }
 
 // Tear down and recreate every bus marker (used when the marker type or the
@@ -4605,6 +4897,7 @@ function handleNearestStop(fly) {
         locationMarker.on('click', function() {
             $('.bus-info-popup, .stop-info-popup').hide();  
             $('.my-location-popup').show();
+            markPanelOpened('right');
             if (typeof hideCenterStops === 'function') hideCenterStops();
             // map.flyTo(userPosition, 18, {
             //     animate: true,

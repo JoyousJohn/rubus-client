@@ -3192,46 +3192,40 @@
     </div>
 
     <div class="color-selection-modal flex-col none">
-        <div class="text-2rem flex justify-center align-center p-2rem">Select color for <div class="color-select-route bold-600 text-2p5rem"></div> route</div>
-        <div class="color-select-grid grid grid-cols-4 gap-1p5rem px-3rem text-2p5rem white" style="overflow-y: scroll;">
-            <div class="color-circle-select color-circle-select-default"></div>
-            <div class="color-circle-select" style="background-color: #FF0000;"></div>
-            <div class="color-circle-select" style="background-color: #FF2000;"></div>
-            <div class="color-circle-select" style="background-color: #FF4000;"></div>
-            <div class="color-circle-select" style="background-color: #FF6000;"></div>
-            <div class="color-circle-select" style="background-color: #FF8000;"></div>
-            <div class="color-circle-select" style="background-color: #FFA000;"></div>
-            <div class="color-circle-select" style="background-color: #FFC000;"></div>
-            <div class="color-circle-select" style="background-color: #FFE000;"></div>
-            <div class="color-circle-select" style="background-color: #FFFF00;"></div>
-            <div class="color-circle-select" style="background-color: #C0FF00;"></div>
-            <div class="color-circle-select" style="background-color: #80FF00;"></div>
-            <div class="color-circle-select" style="background-color: #40FF00;"></div>
-            <div class="color-circle-select" style="background-color: #00FF00;"></div>
-            <div class="color-circle-select" style="background-color: #00FF40;"></div>
-            <div class="color-circle-select" style="background-color: #00FF80;"></div>
-            <div class="color-circle-select" style="background-color: #00FFC0;"></div>
-            <div class="color-circle-select" style="background-color: #00FFFF;"></div>
-            <div class="color-circle-select" style="background-color: #00C0FF;"></div>
-            <div class="color-circle-select" style="background-color: #0080FF;"></div>
-            <div class="color-circle-select" style="background-color: #0040FF;"></div>
-            <div class="color-circle-select" style="background-color: #0000FF;"></div>
-            <div class="color-circle-select" style="background-color: #2000FF;"></div>
-            <div class="color-circle-select" style="background-color: #4000FF;"></div>
-            <div class="color-circle-select" style="background-color: #6000FF;"></div>
-            <div class="color-circle-select" style="background-color: #8000FF;"></div>
-            <div class="color-circle-select" style="background-color: #A000FF;"></div>
-            <div class="color-circle-select" style="background-color: #C000FF;"></div>
-            <div class="color-circle-select" style="background-color: #E000FF;"></div>
-            <div class="color-circle-select" style="background-color: #FF00FF;"></div>
-            <div class="color-circle-select" style="background-color: #FF00C0;"></div>
-            <div class="color-circle-select" style="background-color: #FF0080;"></div>
+        <div class="text-2rem flex justify-center align-center gap-0p5rem p-2rem select-none">Select color for <div class="color-select-route bold-600 text-2p5rem"></div> route</div>
+        <div class="color-picker-wheel-wrapper flex flex-col justify-evenly align-center flex-1 my-1rem">
+            <div class="color-marker-preview-wrapper flex justify-center align-center select-none">
+                <div id="color-marker-preview" class="color-marker-preview flex justify-center align-center"></div>
+            </div>
+
+            <div class="color-wheel-group flex flex-col align-center select-none">
+                <div class="color-wheel-container relative select-none">
+                    <canvas id="color-wheel-canvas" class="color-wheel-canvas"></canvas>
+                    <div id="color-wheel-thumb" class="color-wheel-thumb"></div>
+                </div>
+
+                <div class="color-brightness-row flex align-center gap-1rem select-none" style="width: 80%; max-width: 210px;">
+                    <i class="fa-solid fa-sun text-1p4rem" style="color: var(--theme-extra); opacity: 0.8;"></i>
+                    <input type="range" id="route-color-brightness" min="0" max="100" value="100" class="color-brightness-slider flex-1" aria-label="Brightness">
+                </div>
+            </div>
         </div>
 
-        <div class="color-select-btns grid grid-cols-3 gap-x-1rem text-2rem center m-2rem bold-500">
-            <div class="color-cancel" style="background-color: #d32828;" onclick="$('.color-selection-modal').css('display', 'none')">Cancel</div>
-            <div class="color-reset" style="background-color: #f98d1a;">Reset</div>
-            <div class="color-confirm" style="background-color: #34ca34;">Done</div>
+        <div class="color-hex-bottom-row flex align-center gap-0p5rem mb-0p5rem select-none">
+            <div class="color-wheel-preview-chip" title="Selected color"></div>
+            <span class="text-1p4rem bold-600" style="color: var(--theme-extra);">HEX</span>
+            <input type="text" id="route-color-hex-input" class="route-color-hex-input text-1p5rem bold-600 center br-0p5rem py-0p25rem px-0p5rem" maxlength="7" spellcheck="false" aria-label="Hex color">
+        </div>
+
+        <div class="color-select-btns flex justify-between align-center m-2rem select-none">
+            <div class="color-reset flex align-center gap-0p5rem pointer" title="Reset to default route color">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Reset</span>
+            </div>
+            <div class="color-select-actions flex align-center gap-1rem">
+                <div class="color-cancel pointer" onclick="closeColorModal()">Cancel</div>
+                <div class="color-confirm pointer">Done</div>
+            </div>
         </div>
 
     </div>

@@ -424,6 +424,7 @@ $('.info-panels-close').click(function() {
 	}
 	saveInfoSubpanelScrollPositions();
 	$('.info-panels-show-hide-wrapper').hide();
+    delete window._panelOpenedAt['info'];
     // Dismiss the ESC hint unless a right-side popup still owns it
     if (!$('.bus-info-popup, .stop-info-popup, .building-info-popup').is(':visible')) {
         $('.desktop-esc-notice').hide();

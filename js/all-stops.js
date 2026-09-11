@@ -80,6 +80,7 @@ function populateAllStops() {
                         flyToStop(stopId, true); // true indicates user interaction
                         saveInfoSubpanelScrollPositions();
                         $('.info-panels-show-hide-wrapper').hide();
+                        delete window._panelOpenedAt['info'];
                         $('.bottom').show();
                         $('.left-btns, .right-btns, .settings-btn').show();
                         showSimBtnIfEligible();
@@ -122,6 +123,7 @@ function populateAllStops() {
                                 // Match parent behavior: close panels and restore main UI
                                 saveInfoSubpanelScrollPositions();
                                 $('.info-panels-show-hide-wrapper').hide();
+                                delete window._panelOpenedAt['info'];
                                 $('.bottom').show();
                                 moveRouteSelectorsToMain();
                         $('.left-btns, .right-btns, .settings-btn').show();

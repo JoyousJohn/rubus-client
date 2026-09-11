@@ -399,10 +399,12 @@ window.formatElectricBusName = formatElectricBusName;
 let originalStopShownRoute; // Preserve map selection before opening stop popup (undefined = no save)
 
 // Most-recently-opened panel tracking for ESC ordering (desktop).
-// Keys: 'settings' | 'info' | 'right'. Values: Date.now() at open.
+// Keys: 'color' | 'feedback' | 'settings' | 'info' | 'right'.
 window._panelOpenedAt = window._panelOpenedAt || {};
+window._panelOpenSeq = window._panelOpenSeq || 0;
 function markPanelOpened(name) {
-    window._panelOpenedAt[name] = Date.now();
+    window._panelOpenSeq = (window._panelOpenSeq || 0) + 1;
+    window._panelOpenedAt[name] = Date.now() + (window._panelOpenSeq * 0.0001);
 }
 window.markPanelOpened = markPanelOpened;
 

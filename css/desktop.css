@@ -191,9 +191,25 @@
         gap: 0.5rem;
     }
 
-    .color-selection-modal .color-select-grid {
-        min-height: 0;
-        flex: 1 1 auto;
+    .color-selection-modal .color-marker-preview-wrapper {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .color-selection-modal .color-marker-preview {
+        width: 8.28rem;
+        height: 8.28rem;
+    }
+
+    .color-selection-modal .color-wheel-container {
+        width: 155px;
+        height: 155px;
+        margin-bottom: 1.8rem;
+    }
+
+    .color-selection-modal .color-hex-bottom-row {
+        margin-left: 2rem;
+        margin-right: 1.5rem;
     }
 
     .color-selection-modal .color-select-btns {
@@ -201,8 +217,7 @@
         margin: 1.5rem;
     }
 
-    .color-selection-modal .color-select-btns > div,
-    .color-circle-select {
+    .color-selection-modal .color-select-btns > div {
         cursor: pointer;
     }
 

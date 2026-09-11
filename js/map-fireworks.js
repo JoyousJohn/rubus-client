@@ -114,7 +114,7 @@ function closeLatestPanel() {
     open.sort((a, b) => ((times[b] || 0) - (times[a] || 0)) || (priority[b] - priority[a]));
     const latest = open[0];
     if (latest === 'color') {
-        $('.color-selection-modal').css('display', 'none');
+        closeColorModal();
     } else if (latest === 'feedback') {
         closeFeedbackModal();
     } else if (latest === 'right') {

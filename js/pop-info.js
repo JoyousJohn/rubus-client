@@ -512,6 +512,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     if (typeof closeSearch === 'function') closeSearch();
 
     $('.bus-info-popup').stop(true, true).show();
+    markPanelOpened('right');
     if (typeof hideCenterStops === 'function') hideCenterStops();
     if (isDesktop && !isTouchDevice) showEscNotice('bus');
 

@@ -144,6 +144,7 @@ function initSpoofing() {
             locationMarker.on('click', function() {
                 $('.bus-info-popup, .stop-info-popup').hide();
                 $('.my-location-popup').show();
+                markPanelOpened('right');
                 hideCenterStops();
             });
             window.locationMarker = locationMarker;
@@ -155,6 +156,7 @@ function initSpoofing() {
         $('.fly-closest-stop-wrapper').fadeIn();
         $('.building-info-popup').hide();
         $('.my-location-popup').show();
+        markPanelOpened('right');
         hideCenterStops();
     });
 }
