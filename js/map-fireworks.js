@@ -96,6 +96,7 @@ $('.shoot-fireworks').click(function() {
 function closeLatestPanel() {
     const times = window._panelOpenedAt || {};
     const open = [];
+    if ($('.color-selection-modal').is(':visible')) open.push('color');
     if ($('.leave-feedback-wrapper').is(':visible')) open.push('feedback');
     if ($('.settings-panel').is(':visible')) open.push('settings');
     if ($('.info-panels-show-hide-wrapper').is(':visible')) open.push('info');
@@ -108,11 +109,13 @@ function closeLatestPanel() {
         }
         return null;
     }
-    // Newest first; ties break toward the most transient (feedback > right > info > settings).
-    const priority = { feedback: 4, right: 3, info: 2, settings: 1 };
+    // Newest first; ties break toward the most transient (color > feedback > right > info > settings).
+    const priority = { color: 5, feedback: 4, right: 3, info: 2, settings: 1 };
     open.sort((a, b) => ((times[b] || 0) - (times[a] || 0)) || (priority[b] - priority[a]));
     const latest = open[0];
-    if (latest === 'feedback') {
+    if (latest === 'color') {
+        $('.color-selection-modal').css('display', 'none');
+    } else if (latest === 'feedback') {
         closeFeedbackModal();
     } else if (latest === 'right') {
         hideInfoBoxes();
@@ -134,7 +137,12 @@ $(document).on('keydown', function(e) {
         const isInputFocused = $settingsInput.is(':focus');
         const isOtherInputFocused = $(e.target).is('input, textarea');
 
-        if ((isControlK || isSlash) && !isInputFocused && !isOtherInputFocused) {
+        if (isControlK) {
+            e.preventDefault();
+            $settingsInput.focus().select();
+            return;
+        }
+        if (isSlash && !isInputFocused && !isOtherInputFocused) {
             e.preventDefault();
             $settingsInput.focus().select();
             return;
@@ -158,8 +166,8 @@ $(document).on('keydown', function(e) {
 
         e.preventDefault();
 
-        // If only the feedback modal was closed, do not reset underlying map route/stops
-        if (closed === 'feedback') {
+        // If only the feedback modal or color modal was closed, do not reset underlying map route/stops
+        if (closed === 'feedback' || closed === 'color') {
             return;
         }
 

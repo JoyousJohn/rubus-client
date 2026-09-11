@@ -135,9 +135,11 @@
         max-width: 25%;
         margin: 2rem;
         border-radius: 1rem;
+        border: 1px solid var(--theme-border);
     }
 
-    .info-panels-show-hide-wrapper .info-panels-wrapper {
+    .info-panels-show-hide-wrapper .info-panels-wrapper,
+    .color-selection-modal {
         left: 0;
         right: auto;
         top: 0;
@@ -149,6 +151,34 @@
         overflow: hidden;
         height: auto;
         max-height: calc(100vh - 4rem);
+        border: 1px solid var(--theme-border);
+        box-sizing: border-box;
+    }
+
+    .color-selection-modal {
+        z-index: 500;
+        white-space: normal;
+    }
+
+    .color-selection-modal > div:first-child {
+        flex-wrap: wrap;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .color-selection-modal .color-select-grid {
+        min-height: 0;
+        flex: 1 1 auto;
+    }
+
+    .color-selection-modal .color-select-btns {
+        font-size: 1.5rem;
+        margin: 1.5rem;
+    }
+
+    .color-selection-modal .color-select-btns > div,
+    .color-circle-select {
+        cursor: pointer;
     }
 
     .info-panels-content .subpanels-container {
