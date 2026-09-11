@@ -1,10 +1,13 @@
 // sw.js - Service Worker for RUBus PWA
 const CACHE_NAME = 'rubus-cache-__BUILD_HASH__';
 
-// Static app shell assets pre-cached for instant launch & offline fallback
+// Static app shell assets pre-cached for instant launch & offline fallback.
+// NOTE: '/' and '/index.html' are the same document — only '/' is precached.
+// Precaching both under separate keys once allowed a skewed install (one hit
+// from an older deploy) to stamp them with different build hashes, and the
+// update detector read the stale alias forever (permanent update loop).
 const PRECACHE_ASSETS = [
     '/',
-    '/index.html',
     '/manifest.json',
     '/css/index.css',
     '/css/desktop.css',
@@ -82,6 +85,15 @@ self.addEventListener('fetch', (event) => {
 
     // Only handle http and https schemes (ignore chrome-extension:, etc.)
     if (!url.protocol.startsWith('http')) {
+        return;
+    }
+
+    // Update probes use cache:'no-store' with a cache-busting query and must
+    // always hit the network: serving them cache-first once caused the
+    // permanent "update available" loop (stale '/index.html' entry vs loaded
+    // '/'). Returning without respondWith lets the request pass through, and
+    // also avoids the InvalidAccessError from cache.put on no-store requests.
+    if (request.cache === 'no-store') {
         return;
     }
 
