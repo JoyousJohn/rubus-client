@@ -123,10 +123,40 @@
     margin: 0;
 }
 
-.search-pill-row .search-result-directions-btn {
+.search-pill-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     height: 100%;
     align-self: stretch;
     box-sizing: border-box;
+    padding: 0 1.4rem;
+    border: none;
+    border-radius: 999px;
+    background-color: var(--theme-extra);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    color: var(--theme-bg);
+    font-size: 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+    user-select: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+    outline: none;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-pill-nav-btn i {
+    font-size: 1.4rem;
+    color: inherit;
+}
+
+.search-pill-nav-btn:hover,
+.search-pill-nav-btn:active {
+    background-color: var(--theme-color);
 }
 
 .search-pill-bar {
