@@ -5461,7 +5461,7 @@ function getEarlyAlightHint(routeDetails, boardId, alightId, endBuilding, endWal
 const RATIONALE_MIN_NET_MIN = 4;
 
 // "Exiting early" rationale for a picked leg that alighted before the
-// destination-closest stop: { anchorName, extraFeet, saveMin } or null.
+// destination-closest stop: { anchorName, pickName, extraFeet, saveMin } or null.
 // extraFeet is measured walking; saveMin backs walking back out of the
 // journey delta so it prices transit-side (ride + waits) savings. Boarding
 // may differ between anchor and pick, so wait deltas can leak into saveMin —
@@ -5478,7 +5478,8 @@ function buildRationale(comboMapEntry) {
         const extraFeet = Math.max(0, pickedEndFeet - a.endFeet);
         const saveMin = Math.round((a.journey - pj) + Math.ceil(extraFeet / 220));
         if (!(saveMin >= RATIONALE_MIN_NET_MIN)) return null;
-        return { anchorName: a.name, extraFeet, saveMin };
+        const pickedEnd = comboMapEntry.endStop || {};
+        return { anchorName: a.name, pickName: pickedEnd.name || null, extraFeet, saveMin };
     } catch (e) {
         console.warn('[nav] buildRationale failed:', e);
         return null;
@@ -5709,10 +5710,11 @@ function renderTimelineWaypointsHtml(data) {
     const TIP_ICON = '<i class="fa-solid fa-lightbulb" style="flex-shrink: 0;"></i>';
     const buildRationaleHtml = (rat) => {
         if (!rat) return '';
+        const whereHtml = rat.pickName ? `at <strong>${escapeHtml(rat.pickName)}</strong> ` : 'here ';
         return `
             <div class="early-alight-hint" style="${TIP_ROW_STYLE}">
                 ${TIP_ICON}
-                <span>Exiting the bus early here instead of <strong>${escapeHtml(rat.anchorName)}</strong> adds ~${rat.extraFeet.toLocaleString()} ft walking but saves ~${rat.saveMin} min on the bus.</span>
+                <span>Exiting the bus early ${whereHtml}instead of <strong>${escapeHtml(rat.anchorName)}</strong> adds ~${rat.extraFeet.toLocaleString()} ft walking but saves ~${rat.saveMin} min on the bus.</span>
             </div>
         `;
     };
