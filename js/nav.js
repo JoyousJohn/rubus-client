@@ -146,7 +146,7 @@ function saveRecentSearch(searchItem) {
             !(item && item.name === searchItem.name && item.category === (searchItem.category || 'building'))
         );
         filtered.unshift(searchItemWithTimestamp);
-        const limited = filtered.slice(0, 10);
+        const limited = filtered.slice(0, 50);
         localStorage.setItem('recentSearches', JSON.stringify(limited));
     } catch(e) {}
 }

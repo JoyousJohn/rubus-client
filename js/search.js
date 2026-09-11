@@ -937,8 +937,8 @@ $(document).ready(function() {
         // Add to front
         filtered.unshift(searchItemWithTimestamp);
         
-        // Keep only last 10 searches (more than we show for better UX)
-        const limited = filtered.slice(0, 10);
+        // Keep a deep backlog; display lists scroll instead of slicing
+        const limited = filtered.slice(0, 50);
         
         localStorage.setItem('recentSearches', JSON.stringify(limited));
     }
@@ -967,9 +967,9 @@ $(document).ready(function() {
             !(item.from === navigationEntry.from && item.to === navigationEntry.to)
         );
         
-        // Add to front and keep only 5 most recent
+        // Add to front and keep a deep backlog; display lists scroll
         filtered.unshift(navigationEntry);
-        const recent = filtered.slice(0, 5);
+        const recent = filtered.slice(0, 50);
         
         localStorage.setItem('recentNavigations', JSON.stringify(recent));
     }
@@ -1084,7 +1084,7 @@ $(document).ready(function() {
                 $row.append('<i class="icon ' + typeIcon + '"></i>');
 
                 const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.5rem; overflow:hidden;"></div>');
-                const $nameText = $('<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(`${fromName} → ${toName}`);
+                const $nameText = $('<div style="min-width:0; white-space:normal; overflow-wrap:break-word;"></div>').text(`${fromName} → ${toName}`);
                 $nameWrap.append($nameText);
                 $nameWrap.append('<i class="icon icon-star-solid fa-solid fa-star" style="flex-shrink:0; font-size:1.3rem; color:#ffb703;"></i>');
                 $row.append($nameWrap);
@@ -1143,8 +1143,8 @@ $(document).ready(function() {
         }
         $searchRecents.show();
 
-        // Show only the 3 most recent
-        const recentToShow = uniqueItems.slice(0, 3);
+        // Show all recents; the list scrolls within a ~3-row-high container
+        const recentToShow = uniqueItems;
         recentToShow.forEach(item => {
             const $row = $('<div class="search-result-item flex"></div>');
             let _typeIcon = '';
@@ -1153,9 +1153,9 @@ $(document).ready(function() {
             else if (item.category === 'stop') _typeIcon = 'icon-bus-simple';
             if (_typeIcon) $row.append('<i class="icon ' + _typeIcon + '"></i>');
             const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; overflow:hidden;"></div>');
-            const $nameText = $('<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(item.name);
+            const $nameText = $('<div style="min-width:0; white-space:normal; overflow-wrap:break-word;"></div>').text(item.name);
+            $nameText.append('<i class="icon icon-clock-rotate-left" style="font-size:1.3rem; opacity:0.9; margin-left:0.4rem;"></i>');
             $nameWrap.append($nameText);
-            $nameWrap.append('<i class="icon icon-clock-rotate-left" style="flex-shrink:0; font-size:1.3rem; opacity:0.9;"></i>');
             $row.append($nameWrap);
 
             $row.append('<i class="search-result-map-pin icon icon-location-dot"></i>');
@@ -1200,7 +1200,7 @@ $(document).ready(function() {
             $searchRecents.append($row);
         });
 
-        // Recent navigations (up to 3, shown under recent searches, before popular results)
+        // Recent navigations (all, shown under recent searches, before popular results)
         let $navWrapper = $('.search-recent-navigations-wrapper');
         if (!$navWrapper.length) {
             $navWrapper = $('<div class="search-recent-navigations-wrapper"><div class="search-recent-navigations flex flex-col gap-y-1rem text-1p5rem"></div></div>');
@@ -1220,7 +1220,7 @@ $(document).ready(function() {
             const key = `nav:${String(nav.from).toLowerCase()}->${String(nav.to).toLowerCase()}`;
             if (!seenNavKeys.has(key)) { seenNavKeys.add(key); uniqueNavs.push(nav); }
         }
-        const navsToShow = uniqueNavs.slice(0, 3);
+        const navsToShow = uniqueNavs;
         if (navsToShow.length === 0) {
             $navWrapper.hide();
         } else {
@@ -1231,9 +1231,9 @@ $(document).ready(function() {
                 const $row = $('<div class="search-result-item flex"></div>');
                 $row.append('<i class="icon icon-route fa-solid fa-route"></i>');
                 const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; overflow:hidden;"></div>');
-                const $nameText = $('<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>').text(`${fromName} → ${toName}`);
+                const $nameText = $('<div style="min-width:0; white-space:normal; overflow-wrap:break-word;"></div>').text(`${fromName} → ${toName}`);
+                $nameText.append('<i class="icon icon-clock-rotate-left" style="font-size:1.3rem; opacity:0.9; margin-left:0.4rem;"></i>');
                 $nameWrap.append($nameText);
-                $nameWrap.append('<i class="icon icon-clock-rotate-left" style="flex-shrink:0; font-size:1.3rem; opacity:0.9;"></i>');
                 $row.append($nameWrap);
                 const $remove = $('<button class="recent-nav-remove-btn" type="button" style="background:none; border:none; color:var(--theme-color); font-size:1.8rem; cursor:pointer; padding:0.25rem; line-height:1; opacity:0.7; flex-shrink:0; margin-left:auto;">×</button>');
                 $remove.on('click', function(e) {
@@ -1344,7 +1344,7 @@ $(document).ready(function() {
         selectedItems.forEach(item => {
             const $recItem = $('<div class="search-result-item flex"></div>');
             $recItem.append('<i class="icon icon-fire-flame-curved"></i>');
-            const $name = $('<div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>').text(item.name);
+            const $name = $('<div style="flex: 1; min-width: 0; white-space: normal; overflow-wrap: break-word;"></div>').text(item.name);
             $recItem.append($name);
 
             $recItem.append('<i class="search-result-map-pin icon icon-location-dot"></i>');

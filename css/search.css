@@ -252,7 +252,7 @@
     border-top: 1px solid var(--theme-line-bg);
     border-bottom: 1px solid var(--theme-line-bg);
     padding: 1rem 0;
-    margin: 1rem 0 0 0;
+    margin: 0;
 }
 
 .search-recent-navigations-wrapper + .search-recs-wrapper {
@@ -278,6 +278,35 @@
 
 .search-fav-routes {
     margin-top: 0.25rem;
+}
+
+/* Scrollable history lists: hold all entries but constrain each list to
+   roughly 3 rows visible (3.2rem rows + 1rem gaps = 11.6rem rows area, plus
+   0.5rem top/bottom interior padding = 12.6rem; border-box keeps the math
+   exact). Interior padding (not divider margins, which sit outside the
+   scrollports and can't cushion edge rows) keeps rows off the container
+   edges, and proximity snap settles partial rows fully visible instead of
+   resting sliced mid-text. */
+.search-fav-routes,
+.search-recents,
+.search-recent-navigations {
+    max-height: 12.6rem;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 0.5rem 0;
+    scroll-snap-type: y proximity;
+}
+
+.search-fav-routes .search-result-item,
+.search-recents .search-result-item,
+.search-recent-navigations .search-result-item {
+    scroll-snap-align: start;
+}
+
+/* Recents gets a deeper bottom cushion above its dividing line. */
+.search-recents {
+    padding-bottom: 1rem;
+    max-height: 13.1rem; /* 11.6rem rows area + 0.5rem top + 1rem bottom */
 }
 
 .search-fav-routes .search-result-item i.fa-star,

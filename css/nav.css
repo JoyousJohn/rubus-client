@@ -477,9 +477,8 @@
 .nav-search-results .search-result-item div:nth-child(2) {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 
 .nav-from-search-results .search-result-item,
@@ -555,6 +554,14 @@
 
 .route-options-container::-webkit-scrollbar {
     display: none;
+}
+
+.route-options-container {
+    cursor: grab;
+}
+
+.route-options-container.nav-dragging {
+    cursor: grabbing;
 }
 
 .route-option {
