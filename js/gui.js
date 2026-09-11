@@ -1136,9 +1136,9 @@ function sizeRouteBusRail() {
     $grid[0].style.setProperty('--bus-rail-width', rail + 'px');
 }
 
-// The buses the routes subpanel shows for a route. Shared by the full render in
-// selectedRoute() and the incremental rail sync below so the stop rows' ETA
-// list and the rail can never disagree about which buses are running.
+// The buses the routes subpanel header rows (.route-bus-row) show for a route.
+// Respects the "show out of service buses" setting, so OOS buses stay listed
+// here when that setting is on.
 function getRoutePanelBusNames(route) {
     const allRouteBuses = (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) || [];
     return allRouteBuses.filter(busName => {
@@ -1147,6 +1147,18 @@ function getRoutePanelBusNames(route) {
             return isBusShownOnMap(busName);
         }
         return true;
+    });
+}
+
+// The buses the route rail (markers + progress) shows for a route. Always
+// in-service only: OOS/depot/off-line buses are fully excluded even when the
+// "show out of service buses" setting is on (they would otherwise park at
+// their latest stop on the rail).
+function getRouteRailBusNames(route) {
+    const allRouteBuses = (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) || [];
+    return allRouteBuses.filter(busName => {
+        if (!busData[busName]) return false;
+        return isBusInService(busName);
     });
 }
 
@@ -1179,8 +1191,8 @@ function buildRouteBusProgress(busName, route) {
 // updateTimeToStops). Reconcile a per-bus layer here against the live bus list so
 // a newly in-service bus gets its element and a retired one loses it. Returns
 // true when the set changed.
-function syncRouteBusLayer($overlay, route, childSelector, buildChild) {
-    const busNames = getRoutePanelBusNames(route);
+function syncRouteBusLayer($overlay, route, childSelector, buildChild, getBusNamesFn) {
+    const busNames = (getBusNamesFn || getRoutePanelBusNames)(route);
     const wanted = new Set(busNames);
     const existing = new Set();
     let changed = false;
@@ -1205,11 +1217,11 @@ function syncRouteBusLayer($overlay, route, childSelector, buildChild) {
 }
 
 function syncRouteBusMarkers($overlay, route) {
-    return syncRouteBusLayer($overlay, route, '.route-bus-marker', buildRouteBusMarker);
+    return syncRouteBusLayer($overlay, route, '.route-bus-marker', buildRouteBusMarker, getRouteRailBusNames);
 }
 
 function syncRouteBusProgress($overlay, route) {
-    return syncRouteBusLayer($overlay, route, '.route-bus-progress', buildRouteBusProgress);
+    return syncRouteBusLayer($overlay, route, '.route-bus-progress', buildRouteBusProgress, getRouteRailBusNames);
 }
 
 // Position of a bus along its route, in stop units (integer part = index of the
@@ -1566,7 +1578,11 @@ function paintRouteBusPositions() {
 
     $overlay.children('.route-bus-marker').each(function () {
         const busName = this.getAttribute('bus-name');
-        if (!busData[busName]) {
+        // Rail never shows out-of-service buses (see getRouteRailBusNames).
+        // Cheap per-frame guard so a bus that just went OOS/depot hides on
+        // the next frame; the full in-service check (incl. off-line) runs in
+        // the poll-time sync which removes the element entirely.
+        if (!busData[busName] || busData[busName].oos || busData[busName].atDepot) {
             this.style.display = 'none';
             placements.set(busName, null);
             return;
@@ -1817,6 +1833,9 @@ function selectedRoute(route) {
         updateRouteStarState(route);
     }
     const visibleRouteBuses = sortRoutePanelBusNames(getRoutePanelBusNames(route), route);
+    // Rail excludes out-of-service buses entirely (see getRouteRailBusNames),
+    // while the header rows above respect the show-out-of-service setting.
+    const visibleRailBuses = sortRoutePanelBusNames(getRouteRailBusNames(route), route);
 
     const routeStops = (stopLists && stopLists[route]) || [];
 
@@ -1984,16 +2003,16 @@ function selectedRoute(route) {
 
     // Travelled-segment + position-dot layer, on the connecting line. Appended
     // before the markers so that on an equal z-index the markers still paint on
-    // top. Both layers track the same bus list.
+    // top. Both layers track the same in-service-only bus list.
     const $progressOverlay = $('<div class="route-bus-progress-overlay"></div>');
-    visibleRouteBuses.forEach(busName => {
+    visibleRailBuses.forEach(busName => {
         $progressOverlay.append(buildRouteBusProgress(busName, route));
     });
     $('.route-stops-grid').append($progressOverlay);
 
     // Rail of bus icons drawn in the grid's left padding, beside the stop line.
     const $busOverlay = $('<div class="route-bus-overlay"></div>');
-    visibleRouteBuses.forEach(busName => {
+    visibleRailBuses.forEach(busName => {
         $busOverlay.append(buildRouteBusMarker(busName, route));
     });
     $('.route-stops-grid').append($busOverlay);
