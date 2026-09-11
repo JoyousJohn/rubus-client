@@ -23,65 +23,93 @@ const SEARCH_CAMPUS_NAMES = {
 // nav from/to autocomplete.
 const FEATURED_RESULT_NAME = 'shi stadium and hale center';
 
-// Substrings that additionally mark a result as featured (also pinned above
-// other buildings but never above stops): student centers and dining venues.
-const FEATURED_RESULT_KEYWORDS = ['student center', 'dining'];
+// Keywords marking categories of featured hubs (pinned above regular buildings
+// but below bus stops). Student centers are prioritized above dining halls,
+// which in turn precede gyms/recreation centers.
+const FEATURED_STUDENT_CENTER_KEYWORDS = ['student center', 'campus center'];
+const FEATURED_DINING_KEYWORDS = ['dining', 'commons'];
+const FEATURED_REC_GYM_KEYWORDS = [
+    'recreation center',
+    'gymnasium',
+    'gym',
+    'fitness center'
+];
 
-function isFeaturedResult(item) {
-    if (!item || typeof item.name !== 'string') return false;
-    const name = item.name.trim().toLowerCase();
-    if (name === FEATURED_RESULT_NAME) return true;
-    return FEATURED_RESULT_KEYWORDS.some(keyword => name.includes(keyword));
+function isNoiseResult(name) {
+    return name.includes('shed') || name.includes('warehouse') || name.includes('shelter');
+}
+
+function sortByExactWordMatch(items, queryLower) {
+    if (!queryLower || items.length <= 1) return items;
+    const regex = new RegExp('\\b' + queryLower.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+    const exact = [];
+    const rest = [];
+    for (const r of items) {
+        const obj = r.item || r;
+        if (regex.test(obj.name)) {
+            exact.push(r);
+        } else {
+            rest.push(r);
+        }
+    }
+    return [...exact, ...rest];
 }
 
 // Reorder matched results so that:
-// 1. All stops, buildings, and parking lots always come before addresses.
-// 2. Featured buildings (SHI Stadium, student centers, dining halls) are placed
-//    right after any stops (never above stops), otherwise at the top of buildings.
-// 3. Addresses follow after all stops, buildings, and lots.
-// Results are either Fusion-style ({ item, ... }) or raw items.
+// 1. Bus stops strictly come first (highest priority).
+// 2. Student & campus centers come immediately after stops.
+// 3. Dining halls & commons follow student centers.
+// 4. Gyms, recreation centers, and SHI Stadium follow dining halls.
+// 5. Regular POIs (buildings, parking lots, etc.) follow featured venues.
+// 6. Municipal street addresses always follow at the very bottom.
+// Within each tier, items whose name contains the exact whole query word (e.g. "gym" in "College Avenue Gym")
+// are prioritized above substring/prefix/alias matches.
+// Results are either Fuse-style ({ item, ... }) or raw items.
 // Returns the same array (mutated) so callers can keep using it.
-function pinFeaturedResult(results) {
-    if (!Array.isArray(results) || results.length <= 1) return results;
+function pinFeaturedResult(results, queryLower) {
+    if (results.length <= 1) return results;
 
-    // Partition into non-addresses (stops, buildings, lots) and addresses
-    const nonAddresses = [];
+    const stops = [];
+    const studentCenters = [];
+    const dining = [];
+    const recreation = [];
+    const regular = [];
     const addresses = [];
+
     for (const r of results) {
         const item = r.item || r;
         if (item.category === 'address') {
             addresses.push(r);
+        } else if (item.category === 'stop') {
+            stops.push(r);
         } else {
-            nonAddresses.push(r);
+            const name = item.name.trim().toLowerCase();
+            if (!isNoiseResult(name)) {
+                if (FEATURED_STUDENT_CENTER_KEYWORDS.some(k => name.includes(k))) {
+                    studentCenters.push(r);
+                    continue;
+                }
+                if (FEATURED_DINING_KEYWORDS.some(k => name.includes(k))) {
+                    dining.push(r);
+                    continue;
+                }
+                if (name === FEATURED_RESULT_NAME || FEATURED_REC_GYM_KEYWORDS.some(k => name.includes(k))) {
+                    recreation.push(r);
+                    continue;
+                }
+            }
+            regular.push(r);
         }
     }
 
-    const lastStopIndex = (() => {
-        let idx = -1;
-        for (let i = 0; i < nonAddresses.length; i++) {
-            const item = nonAddresses[i].item || nonAddresses[i];
-            if (item.category === 'stop') idx = i;
-        }
-        return idx;
-    })();
-
-    // Extract featured results preserving their relative order.
-    const featured = [];
-    const rest = [];
-    for (const r of nonAddresses) {
-        const item = r.item || r;
-        if (isFeaturedResult(item)) featured.push(r);
-        else rest.push(r);
-    }
-
-    // Insert featured results right after the last stop (never above stops);
-    // otherwise at the very top of non-addresses.
-    if (featured.length > 0) {
-        const insertionIndex = lastStopIndex === -1 ? 0 : lastStopIndex + 1;
-        rest.splice(insertionIndex, 0, ...featured);
-    }
-
-    const ordered = rest.concat(addresses);
+    const ordered = [
+        ...sortByExactWordMatch(stops, queryLower),
+        ...sortByExactWordMatch(studentCenters, queryLower),
+        ...sortByExactWordMatch(dining, queryLower),
+        ...sortByExactWordMatch(recreation, queryLower),
+        ...regular,
+        ...addresses
+    ];
     results.splice(0, results.length, ...ordered);
     return results;
 }
@@ -580,6 +608,10 @@ $(document).ready(function() {
 
     // Alias mapping: main word -> array of aliases
     const aliasMap = {
+        'college avenue gym': ['cag', 'gym'],
+        'college ave gym': ['cag', 'gym'],
+        'gym': ['gym', 'fitness', 'workout'],
+        'gymnasium': ['gym', 'fitness', 'workout'],
         'recreation': ['gym', 'rec', 'fitness', 'workout'],
         'library': ['books', 'study', 'reading'],
         'center': ['building', 'complex'],
@@ -620,6 +652,11 @@ $(document).ready(function() {
                     const obj = { name: name, category: data[name].category || 'building', ...data[name] };
                     obj.aliases = obj.aliases || [];
                     obj.abbreviations = obj.abbreviations || [];
+                    // Auto-extract trailing uppercase acronym from building name (e.g. "BSC", "LSC", "CASC", "ARC", "SAC")
+                    const acronymMatch = obj.name.match(/\b([A-Z]{2,5})\b$/);
+                    if (acronymMatch && !obj.abbreviations.includes(acronymMatch[1])) {
+                        obj.abbreviations.push(acronymMatch[1]);
+                    }
                     // Inject aliases based on aliasMap
                     for (const mainWord in aliasMap) {
                         if (obj.name.toLowerCase().includes(mainWord)) {
@@ -744,7 +781,7 @@ $(document).ready(function() {
                 return abbrMatch ? { ...r, matchedAbbreviation: abbrMatch } : r;
             });
         }
-        return pinFeaturedResult(results);
+        return pinFeaturedResult(results, queryLower);
     }
 
     // Secondary matching: municipal street addresses
@@ -773,7 +810,7 @@ $(document).ready(function() {
     function matchQueryItems(sanitizedQuery, queryLower) {
         const poiResults = matchPoiItems(sanitizedQuery, queryLower);
         const addrResults = matchAddressItems(sanitizedQuery);
-        return pinFeaturedResult([...poiResults, ...addrResults]);
+        return pinFeaturedResult([...poiResults, ...addrResults], queryLower);
     }
 
     window.matchPoiItems = matchPoiItems;
@@ -895,6 +932,18 @@ $(document).ready(function() {
         });
     }
 
+    // Format display text, preventing redundant tag when name already ends with the acronym (e.g. "Busch Student Center BSC")
+    function formatItemDisplayText(name, matchedAbbreviation) {
+        if (!matchedAbbreviation) return name;
+        const cleanAbbr = matchedAbbreviation.trim();
+        const endsWithAbbr = new RegExp('\\b' + cleanAbbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i').test(name.trim());
+        if (endsWithAbbr && /^[A-Z0-9]{2,5}$/.test(cleanAbbr) && cleanAbbr === cleanAbbr.toUpperCase()) {
+            return name;
+        }
+        return `${name} (${cleanAbbr})`;
+    }
+    window.formatItemDisplayText = formatItemDisplayText;
+
     // Render fuzzy results into the results list with the given pick handler.
     // Built as a single HTML string with FINAL custom icon classes so the
     // MutationObserver / FontAwesome swap never fires per keystroke.
@@ -923,7 +972,7 @@ $(document).ready(function() {
             const entry = entries[i];
             const item = entry.item;
             const iconClass = placeIconClass(item);
-            const displayText = entry.matchedAbbreviation ? item.name + ' (' + entry.matchedAbbreviation + ')' : item.name;
+            const displayText = formatItemDisplayText(item.name, entry.matchedAbbreviation);
 
             // Mark the result as selected if it's the place currently open on
             // the map (stop popup or building popup).
@@ -1053,7 +1102,7 @@ $(document).ready(function() {
         if (hasAddressSearch) {
             addressSearchDebounceTimer = setTimeout(() => {
                 const addrResults = matchAddressItems(sanitizedQuery);
-                const combined = pinFeaturedResult([...poiResults, ...addrResults]);
+                const combined = pinFeaturedResult([...poiResults, ...addrResults], queryLower);
                 renderResults(combined, onPick, query);
             }, 120);
         }

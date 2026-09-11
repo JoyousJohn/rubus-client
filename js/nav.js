@@ -2419,7 +2419,7 @@ function showNavigationAutocomplete(inputElement, query) {
                 icon = '<i class="icon icon-location-dot"></i>';
             }
 
-            const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
+            const displayText = window.formatItemDisplayText(item.name, matchedAbbreviation);
             // If this result matches the place already set in the active field,
             // mark it as selected (bold name).
             const currentValue = inputElement.val().trim().toLowerCase();
@@ -2564,7 +2564,7 @@ function showNavigationAutocomplete(inputElement, query) {
     if (hasAddressSearch) {
         navAddressSearchTimer = setTimeout(() => {
             const addrResults = window.matchAddressItems(sanitizedQuery);
-            const combined = window.pinFeaturedResult([...poiResults, ...addrResults]);
+            const combined = window.pinFeaturedResult([...poiResults, ...addrResults], queryLower);
             renderNavItems(combined);
         }, 120);
     }
