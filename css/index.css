@@ -1176,8 +1176,13 @@ html, body {
 }
 
 .next-stop-circle {
-    width: 10px;
-    height: 10px;
+    /* These dots are shared: the routes subpanel defines --stop-dot-size on
+       .route-stops-grid to size them at 12px, while the bus popup's next-stops
+       grid uses this class without defining it. The 10px fallback is that
+       surface's long-standing size, so leaving it undefined there is intentional
+       rather than broken. */
+    width: var(--stop-dot-size, 10px);
+    height: var(--stop-dot-size, 10px);
     background-color: rgb(162, 162, 162);
     border-radius: 50%;
     position: relative;
@@ -1202,12 +1207,59 @@ html, body {
     z-index: -1;
 }
 
+/* The route is a loop, but the drawn list is linear, so the wrap segment (last
+   stop back around to the first) can't be drawn between them. Instead each end
+   gets a stub: one above the first dot for buses arriving at the first stop, one
+   below the last dot for buses leaving the last stop.
+
+   updateRouteBusPositions() (js/gui.js) measures the room the grid already has at
+   each end and sizes each stub to fit inside it exactly, so they add no layout
+   height of their own: the gradient reaches fully transparent right at the grid's
+   clip edge. */
+.next-stop-circle.head-line::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    /* Ends 4px below the dot's top edge, the same point .connecting-line::after
+       starts from, so the two join seamlessly regardless of --stop-dot-size. */
+    bottom: calc(var(--stop-dot-size) - 4px);
+    height: var(--route-loop-head-length, 0px);
+    background: linear-gradient(to top, var(--theme-line-bg), transparent);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* The outgoing stub below the last dot. Deliberately its own element rather than
+   a ::after on the last dot: every .next-stop-circle is position:relative +
+   z-index:1, which makes it a stacking context, and a negative-z pseudo-element
+   of a stacking context paints *after* that context's own background — so the
+   stub would cover the last dot instead of passing under it. As a sibling at
+   z-index 0 it paints beneath the dots (z-index 1) exactly like the main
+   connecting line, which only looks correct for the same reason: it lives in the
+   first dot's stacking context, which paints before the later sibling dots.
+   Positioned and sized from JS (sizeRouteLoopLines). */
+.route-loop-tail-line {
+    position: absolute;
+    width: 8px;
+    height: 0;
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, var(--theme-line-bg), transparent);
+    z-index: 0;
+    pointer-events: none;
+}
+
 /* Downward chevrons indicating direction of travel between stops in the
    routes subpanel. One V per segment, drawn just above each dot (except the
    first) via the CSS border trick: two transparent side borders + a visible
    bottom border form a sharp downward triangle. Scoped to direct grid
    children so the nested inner dot and the bus-popup grid are unaffected. */
 .route-stops-grid > .next-stop-circle:not(.connecting-line)::before {
+    /* TEMPORARY: direction chevrons hidden. Remove this one line to restore them;
+       the rest of the rule is untouched. Their per-dot --chevron-top is still
+       computed in selectedRoute (js/gui.js) and simply goes unused while hidden. */
+    display: none;
     content: '';
     position: absolute;
     left: 50%;
@@ -1717,6 +1769,13 @@ html, body {
     margin-top: 0.75rem;
 }
 
+/* Wrapper grouping one bus's cells so the row can be added/removed/reordered as
+   a unit. display:contents keeps the cells as direct grid items of .active-buses,
+   so the layout is unchanged. */
+.route-bus-row {
+    display: contents;
+}
+
 .route-bus-name {
     font-size: 1.7rem;
     color: var(--theme-extra);
@@ -1795,13 +1854,29 @@ html, body {
 }
 
 .route-stops-grid {
+    /* Stop dot diameter for this subpanel, overriding the shared
+       .next-stop-circle default (10px). Everything that sits relative to a dot is
+       derived from it: the dot-to-card connector's height, the head stub's anchor
+       below, and the bus marker offsets, which are measured from the dot's real
+       rect in JS so they follow this automatically. */
+    --stop-dot-size: 14px;
+    /* Distance from a dot's right edge to its card's left edge. The connector
+       line below is sized from this, so the two can't drift apart. */
+    --stop-column-gap: 2rem;
+    /* Left padding is the rail the bus icons live in. sizeRouteBusRail()
+       (js/gui.js) sizes it to the widest bus label on each render; this is only
+       the fallback used before the first measurement. */
+    --bus-rail-width: 8rem;
     display: grid;
     grid-template-columns: auto 1fr;
-    column-gap: 2rem;
+    column-gap: var(--stop-column-gap);
     row-gap: 3rem;
     align-items: center;
     margin-top: 2rem;
     padding: 1rem;
+    /* Left padding is the rail the bus icons live in. */
+    padding-left: var(--bus-rail-width);
+    position: relative;
     overflow-y: scroll;
     margin-bottom: 8rem;
     padding-bottom: 18rem;
@@ -1809,6 +1884,177 @@ html, body {
 }
 .route-stops-grid::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
+}
+
+/* Each stop's name + bus list, carded to match the other panels in the routes and
+   network subpanels (.all-stops-grid > div for the fill/radius/padding,
+   .incoming-wrapper for the border). Targets only the stop cells: the grid's other
+   direct children (the dots, the two overlays, the tail stub) carry no .flex. */
+.route-stops-grid > div.flex {
+    /* Positioning context for the connector line below. z-index is deliberately
+       left auto so the card does NOT become a stacking context: that keeps the
+       dot (z-index 1) painting above this card's connector. */
+    position: relative;
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    border: 1px solid var(--theme-border);
+    /* Padding and border must come out of the 1fr track rather than adding to it,
+       so the card can't overflow its column. */
+    box-sizing: border-box;
+    padding: 1rem;
+}
+
+/* Connector bar from the stop's dot to its card, matching the card's border
+   colour. As tall as the dot is wide, and sharing the dot's centre line (both are
+   centred in the same grid row by align-items: center), so dot and bar read as one
+   shape rather than a thin rule butting into a circle. Starts at the card's
+   padding-box edge (flush with the inside of its 1px border) and runs left across
+   the gap; the extra 4px tucks the end under the dot, which paints above it, so
+   the join is solid instead of hairline. */
+.route-stops-grid > div.flex::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    width: calc(var(--stop-column-gap) + 4px);
+    height: var(--stop-dot-size);
+    transform: translateY(-50%);
+    background: var(--theme-border);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Bus icons drawn along the stop line: absolutely positioned from JS into the
+   grid's left padding, right-aligned against the connecting line. */
+.route-bus-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.route-bus-marker {
+    position: absolute;
+    top: 0;
+    display: flex;
+    align-items: center;
+    column-gap: 0.4rem;
+    /* Vertical position arrives as translateY() in the inline transform (set by
+       paintRouteBusPositions in js/gui.js), not as `top`. Animating `top` forces
+       re-layout and a fresh rasterization every frame, and re-rasterizing a
+       webfont glyph at a shifting fractional offset makes it visibly pop in size.
+       A transform is composited: rasterized once, then translated. The
+       translate(-100%, -50%) below is the right-align and vertical centering.
+       No transition: the rail is repainted every frame from the map marker's
+       interpolated position, so the motion is already continuous. */
+    transform: translate(-100%, -50%);
+    /* Cap: the rail grows to fit the labels, but a pathologically long name
+       ellipsizes instead of squeezing the stop names out of the panel. */
+    max-width: 12rem;
+    font-size: 1.3rem;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--theme-color);
+}
+
+/* A freshly created marker has no position yet: it is appended before the rail
+   has been measured, so its transform is still the bare translate(-100%, -50%)
+   at the top of the grid. Keep it invisible until paintRouteBusPositions gives it
+   a real position, so it can never be seen sitting at the top of the rail or
+   ease in from there. visibility (not display) so it keeps a layout box and
+   sizeRouteBusRail can still measure its width; transition:none so the first
+   placement is written instantly rather than animated. */
+.route-bus-marker.is-unplaced {
+    visibility: hidden;
+    transition: none !important;
+}
+
+/* Per-bus progress drawn ON the connecting line, for moving buses only: a
+   coloured segment from the stop the bus last departed to a dot marking where it
+   is now. Sits above the grey connecting line so the covered part reads as
+   travelled, and below the markers. Each bus owns its own element, so where two
+   buses overlap on the same segment their semi-transparent fills composite and
+   darken, and the stretch behind the lagging bus is the darkest.
+
+   Kept out of .route-bus-overlay so it never affects the rail width measurement
+   (sizeRouteBusRail measures the marker labels). */
+.route-bus-progress-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* left is set from JS to the line's center; children hang off that. Hidden until
+   painted so a new bus can't flash an unplaced segment at the grid's origin. The
+   route colour is set inline on this element and picked up by the children via
+   currentColor. */
+.route-bus-progress {
+    position: absolute;
+    top: 0;
+    visibility: hidden;
+}
+
+.route-bus-progress-line {
+    position: absolute;
+    left: -4px;
+    top: 0;
+    width: 8px;
+    height: 0;
+    background: currentColor;
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.route-bus-progress-dot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    /* Same downward-triangle shape as the direction chevrons on the line
+       (.route-stops-grid > .next-stop-circle::before), kept at their 4:3
+       proportions but sized up to the stop dot's width so the bus's own position
+       reads as the strongest mark on the line.
+       clip-path rather than the chevrons' border trick: it keeps a solid
+       currentColor fill, so this inherits the route colour and its own opacity
+       exactly like the progress segment does. */
+    width: 12px;
+    height: 9px;
+    background: currentColor;
+    opacity: 0.85;
+    pointer-events: none;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    /* translateX(-50%) centres the triangle on the line. No Y shift: the
+       triangle's flat top edge sits exactly at the y it is given, which is where
+       the travelled segment ends, so the segment hangs off the triangle's top
+       rather than being bisected by it. The JS-supplied translateY is appended
+       to this. */
+    transform: translate(-50%, 0);
+}
+
+.route-bus-marker i {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    /* Flex centering aligns the icon's em box with the name's line box, but Font
+       Awesome glyphs sit slightly high inside that box (it includes descender
+       space the icon doesn't use), so the icon reads as raised. Nudge it down by
+       a fraction of its own em to line the two up optically. */
+    transform: translateY(0.05em);
+}
+
+.route-bus-marker-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    font-weight: 400;
 }
 
 .route-stop-name {

@@ -2788,7 +2788,15 @@ function routesServicing(stopId) {
 }
 
 
-function progressToNextStop(busName) {
+// Fraction (0..1) of the way a bus is along its current stop-to-stop leg, found
+// by snapping it to the closest vertex of that leg's dist.js linestring and
+// interpolating between the bracketing percentages.
+//
+// overrideLat/overrideLng let callers pass a position other than the bus's last
+// reported fix — the routes subpanel drives its bus rail from the map marker's
+// *interpolated* position each frame, which is what keeps the icons moving
+// continuously between polls instead of stepping from fix to fix.
+function progressToNextStop(busName, overrideLat, overrideLng) {
     if (!busData[busName]['next_stop']) {
         return 0;
     }
@@ -2808,8 +2816,12 @@ function progressToNextStop(busName) {
     const nextStopDistances = campusPercentages[nextStopId]['from'][prevStopId]['geometry']['coordinates'];
     const percentages = campusPercentages[nextStopId]['from'][prevStopId]['properties']['percentages'];
 
-    const busLat = busData[busName]['lat'];
-    const busLng = busData[busName]['long'];
+    // The override is a coordinate pair, so it is all-or-nothing: mixing one
+    // override component with one reported-fix component would fabricate a point
+    // that isn't on the route at all.
+    const hasOverride = Number.isFinite(overrideLat) && Number.isFinite(overrideLng);
+    const busLat = hasOverride ? overrideLat : busData[busName]['lat'];
+    const busLng = hasOverride ? overrideLng : busData[busName]['long'];
 
     // Step 1: Find the closest point
     let closestIndex = -1;

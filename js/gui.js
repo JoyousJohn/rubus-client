@@ -1012,6 +1012,707 @@ window.updateRouteBusStatus = updateRouteBusStatus;
 
 let panelRoute;
 
+// --- Bus icons along the routes subpanel's stop line ------------------------
+// The routes subpanel draws a vertical line of stops. Each running bus of the
+// selected route gets an icon + name in the grid's left padding, right-aligned
+// against that line. Stopped buses sit beside their stop's dot; moving buses
+// are interpolated down the segment between the stop they left and the one
+// they're heading to, using progressToNextStop() (the closest-point-on-the-
+// dist.js-linestring fraction, same as the map ordering).
+//
+// Positions are driven from the existing pipeline rather than a timer of their
+// own: updateRoutePanelLiveState() runs once per ETA recompute pass at the end of
+// updateTimeToStops() (js/pre.js), which the 5s bus poll, websocket
+// arrival/departure events, and snapshots all funnel through. The CSS top
+// transition does the in-between animation.
+
+let routeBusRailMetrics = null;
+const ROUTE_BUS_MARKER_SPACING = 15;
+// Horizontal gap between a bus marker's right edge and the stop dot. Everything
+// else that used to be a hardcoded distance from the dot's center is derived from
+// the dot's measured size plus this gap, so changing --stop-dot-size in the CSS
+// can't leave these stale. See sizeRouteBusRail / paintRouteBusPositions.
+const ROUTE_BUS_MARKER_CLEARANCE = 3;
+// Breathing room between the widest label and the grid's left edge.
+const ROUTE_BUS_RAIL_MARGIN = 5;
+// Offset from a dot's top edge to where the connecting line starts, matching the
+// `top` on .next-stop-circle.connecting-line::after in the CSS.
+const ROUTE_LOOP_LINE_DOT_OFFSET = 4;
+// The travelled segment and the position triangle are two separate
+// semi-transparent elements, each composited on its own, that meet at the bus's
+// fractional y. Relying on them meeting at exactly the same sub-pixel edge leaves
+// a hairline seam (rounding at a shared fractional boundary doesn't have to agree
+// between two independently rasterized elements). Tuck the segment's end this far
+// under the triangle — which paints on top, so the overlap itself is hidden — so
+// the join is solid regardless of how that boundary rounds. Kept below a third of
+// the triangle's 12px width so the 8px segment can't poke out past its tapering
+// sides (at 3px the triangle is still 8px wide there).
+const ROUTE_BUS_PROGRESS_SEAM_OVERLAP = 2;
+
+// Longest the fading stubs standing in for the route's wrap segment are allowed
+// to be. The actual length is whatever room the grid already has at that end
+// (measured in updateRouteBusPositions), clamped to this: the stubs must not add
+// layout height, or the invisible side of the fade would push the stop list
+// around.
+const ROUTE_LOOP_LINE_MAX = 80;
+
+let routeBusRailWidth = null;
+
+function invalidateRouteBusRailMetrics() {
+    routeBusRailMetrics = null;
+}
+
+// Vertical placement goes through transform rather than `top` so the animated
+// property is composited: animating `top` re-lays-out and re-rasterizes the
+// webfont icon every frame, which makes the glyph visibly change size as it
+// moves. Both states use the same function list so the browser can interpolate
+// them component-wise. Kept in sync with the base transform in css/index.css.
+function routeBusMarkerTransform(topPx) {
+    return `translate(-100%, -50%) translateY(${topPx}px)`;
+}
+
+// Size the two wrap stubs to the space the grid already has above the first dot
+// and below the last dot. Because the gradient fades to nothing at the stub's
+// far end, ending exactly at the grid's clip edge leaves no visible cut-off.
+// Both stubs start at the same offset within their dot as the main connecting
+// line does, so they join it seamlessly. The dot's measured height (not a
+// constant) sets where the head stub stops relative to the dot's bottom edge.
+function sizeRouteLoopLines($grid, $dots) {
+    const gridEl = $grid[0];
+    const gridRect = gridEl.getBoundingClientRect();
+    const firstRect = $dots[0].getBoundingClientRect();
+    const lastRect = $dots[$dots.length - 1].getBoundingClientRect();
+
+    const dotHeight = firstRect.height;
+    const lineStartFromDotTop = ROUTE_LOOP_LINE_DOT_OFFSET;
+
+    const headLength = Math.min(ROUTE_LOOP_LINE_MAX,
+        Math.max(0, firstRect.top + lineStartFromDotTop - gridRect.top));
+    // Reach the grid's bottom edge from where the line starts inside the last dot.
+    const tailLength = Math.min(ROUTE_LOOP_LINE_MAX,
+        Math.max(0, gridRect.bottom - lastRect.bottom + dotHeight - lineStartFromDotTop));
+
+    gridEl.style.setProperty('--route-loop-head-length', headLength + 'px');
+
+    // The outgoing stub is its own element so it can paint beneath the dots (see
+    // the CSS comment). Left/top are in the same coordinate space as the rail
+    // metrics: offsets from the grid's padding box.
+    const tailEl = $grid.children('.route-loop-tail-line')[0];
+    if (tailEl) {
+        tailEl.style.left = (lastRect.left + lastRect.width / 2 - gridRect.left) + 'px';
+        tailEl.style.top = (lastRect.top - gridRect.top + gridEl.scrollTop + lineStartFromDotTop) + 'px';
+        tailEl.style.height = tailLength + 'px';
+    }
+
+    return { headLength, tailLength };
+}
+
+// Size the rail to the labels themselves instead of reserving a fixed width: the
+// widest label, plus the clearance the markers keep from the dot, plus a small
+// breathing room at the panel edge, is all the space the rail needs. The dot's
+// own radius cancels out of this (the padding it occupies is exactly what the
+// marker is positioned against), so only the clearance and margin remain — which
+// is why this no longer depends on the dot's size at all.
+function sizeRouteBusRail() {
+    const $grid = $('.route-stops-grid');
+    const $overlay = $grid.children('.route-bus-overlay');
+    if (!$grid.length || !$overlay.length) return;
+
+    const $markers = $overlay.children('.route-bus-marker');
+    let widest = 0;
+    $markers.each(function () {
+        widest = Math.max(widest, this.getBoundingClientRect().width);
+    });
+
+    // Markers but no measurable width: the panel isn't laid out yet, so keep
+    // whatever rail is in place rather than collapsing it.
+    if ($markers.length && widest <= 0) return;
+
+    const rail = widest > 0
+        ? Math.ceil(widest + ROUTE_BUS_MARKER_CLEARANCE + ROUTE_BUS_RAIL_MARGIN)
+        : 0;
+    if (rail === routeBusRailWidth) return;
+    routeBusRailWidth = rail;
+    $grid[0].style.setProperty('--bus-rail-width', rail + 'px');
+}
+
+// The buses the routes subpanel shows for a route. Shared by the full render in
+// selectedRoute() and the incremental rail sync below so the stop rows' ETA
+// list and the rail can never disagree about which buses are running.
+function getRoutePanelBusNames(route) {
+    const allRouteBuses = (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) || [];
+    return allRouteBuses.filter(busName => {
+        if (!busData[busName]) return false;
+        if (!settings['toggle-show-out-of-service']) {
+            return isBusShownOnMap(busName);
+        }
+        return true;
+    });
+}
+
+function buildRouteBusMarker(busName, route) {
+    // is-unplaced keeps a new marker invisible until paintRouteBusPositions gives
+    // it a real position (see the CSS comment): it is created before the rail is
+    // measured, so until then it only has the top-of-grid base transform.
+    const $marker = $('<div class="route-bus-marker is-unplaced"></div>').attr('bus-name', busName);
+    $marker.append($('<i class="fa-solid fa-bus"></i>').css('color', colorMappings[route]));
+    $marker.append($('<span class="route-bus-marker-name"></span>').text(busData[busName].busName || busName));
+    return $marker;
+}
+
+// The on-the-line progress element for a moving bus: a coloured segment from the
+// stop it last departed plus a dot at its current position. Both are hidden until
+// paintRouteBusPositions has placed them, and stay hidden while the bus is
+// stopped at a stop (no partial leg to draw).
+function buildRouteBusProgress(busName, route) {
+    const el = document.createElement('div');
+    el.className = 'route-bus-progress';
+    el.setAttribute('bus-name', busName);
+    el.style.color = colorMappings[route];
+    el.appendChild($('<div class="route-bus-progress-line"></div>')[0]);
+    el.appendChild($('<div class="route-bus-progress-dot"></div>')[0]);
+    return el;
+}
+
+// A bus can join or leave service while the panel is open, and nothing
+// re-renders the subpanel for that (fetchBusData only calls makeBusesByRoutes +
+// updateTimeToStops). Reconcile a per-bus layer here against the live bus list so
+// a newly in-service bus gets its element and a retired one loses it. Returns
+// true when the set changed.
+function syncRouteBusLayer($overlay, route, childSelector, buildChild) {
+    const busNames = getRoutePanelBusNames(route);
+    const wanted = new Set(busNames);
+    const existing = new Set();
+    let changed = false;
+
+    $overlay.children(childSelector).each(function () {
+        const name = this.getAttribute('bus-name');
+        if (wanted.has(name)) {
+            existing.add(name);
+        } else {
+            this.remove();
+            changed = true;
+        }
+    });
+
+    busNames.forEach(busName => {
+        if (existing.has(busName)) return;
+        $overlay.append(buildChild(busName, route));
+        changed = true;
+    });
+
+    return changed;
+}
+
+function syncRouteBusMarkers($overlay, route) {
+    return syncRouteBusLayer($overlay, route, '.route-bus-marker', buildRouteBusMarker);
+}
+
+function syncRouteBusProgress($overlay, route) {
+    return syncRouteBusLayer($overlay, route, '.route-bus-progress', buildRouteBusProgress);
+}
+
+// Position of a bus along its route, in stop units (integer part = index of the
+// stop it last left, fraction = progress toward the next one). Used to order
+// both the header rows and (indirectly) the rail against the stop list.
+function getBusRouteRank(busName, route) {
+    const bus = busData[busName];
+    if (!bus) return Infinity;
+
+    const routeStops = (stopLists && stopLists[route]) || [];
+    const isStopped = Boolean(bus.at_stop) && !forceUnstoppedBuses.has(busName);
+    const rawStopId = isStopped ? (bus.stopId ?? bus.next_stop) : (bus.next_stop ?? bus.stopId);
+    const stopId = Array.isArray(rawStopId) ? rawStopId[0] : rawStopId;
+
+    let stopIdx = routeStops.indexOf(Number(stopId));
+    if (stopIdx === -1) {
+        stopIdx = routeStops.indexOf(stopId);
+    }
+    if (stopIdx === -1) {
+        return Infinity;
+    }
+
+    if (isStopped) {
+        return stopIdx;
+    }
+
+    // When en route to next_stop, bus is between (stopIdx - 1) and stopIdx.
+    // If progress is known (0 to 1), use (stopIdx - 1 + progress), bounded.
+    let prog = progressToNextStop(busName);
+    if (typeof prog !== 'number' || isNaN(prog) || prog < 0 || prog > 1) {
+        prog = 0.5;
+    }
+    const prevIdx = (stopIdx - 1 + routeStops.length) % routeStops.length;
+    // If moving from last stop to first stop (wrap-around to stop index 0)
+    if (stopIdx === 0) {
+        return (routeStops.length - 1) + prog;
+    }
+    return prevIdx + prog;
+}
+
+function sortRoutePanelBusNames(busNames, route) {
+    // Rank each bus once: getBusRouteRank calls progressToNextStop, which scans
+    // the stop-to-stop linestring, so ranking inside the comparator would run it
+    // O(n log n) times per pass.
+    const ranks = new Map();
+    busNames.forEach(busName => ranks.set(busName, getBusRouteRank(busName, route)));
+    return busNames.slice().sort((a, b) => {
+        const rankA = ranks.get(a);
+        const rankB = ranks.get(b);
+        if (rankA !== rankB) return rankA - rankB;
+        return (busData[a]?.busName || a).localeCompare(busData[b]?.busName || b);
+    });
+}
+
+// One "active buses" header row. Each bus's cells are wrapped so the row can be
+// reconciled as a unit; .route-bus-row uses display:contents, so the cells still
+// land directly in the .active-buses grid.
+function buildRouteBusRow(busName) {
+    const $row = $('<div class="route-bus-row"></div>').attr('bus-name', busName);
+
+    let speed = '0mph';
+    if ('visualSpeed' in busData[busName] && !isNaN(parseInt(busData[busName].visualSpeed))) {
+        speed = parseInt(busData[busName].visualSpeed) + 'mph';
+    }
+    const rawCap = busData[busName].capacity;
+    const capacity = (rawCap && rawCap > 0) ? rawCap + '% full' : '';
+
+    const { isStopped, stopName, etaText } = getBusStopInfo(busName);
+    const iconHtml = getBusStopStatusIconHtml(isStopped, stopName);
+
+    const $nameCol = $(`<div class="route-bus-name flex align-center gap-x-0p5rem">${busData[busName].busName}</div>`);
+    const $iconCol = $(`<div class="route-bus-status-icon" bus-name="${busName}">${iconHtml}</div>`);
+    const $stopCol = $(`<div class="route-bus-stop" bus-name="${busName}" title="${stopName ? (etaText ? `${stopName} (${etaText})` : stopName) : ''}"></div>`);
+    if (stopName) {
+        $stopCol.append(document.createTextNode(stopName));
+        if (etaText) {
+            $stopCol.append($(`<span class="route-bus-eta"></span>`).text(etaText));
+        }
+    }
+    const $speedCol = $(`<div class="route-bus-speed" bus-name="${busName}">${speed}</div>`);
+    const $capCol = $(`<div class="route-bus-capacity" bus-name="${busName}">${capacity}</div>`);
+
+    if (busData[busName].oos) {
+        $nameCol.append(`<div class="bus-oos white br-0p5rem text-1p4rem">OOS</div>`);
+    }
+
+    if (busData[busName].atDepot) {
+        $nameCol.append(`<div class="bus-depot white br-0p5rem text-1p4rem">Depot</div>`);
+    }
+
+    if (settings['toggle-show-route-bus-speeds']) {
+        $row.append($nameCol, $iconCol, $stopCol, $speedCol, $capCol);
+    } else {
+        $row.append($nameCol, $iconCol, $stopCol, $capCol);
+    }
+
+    return $row;
+}
+
+// Same join/leave-service problem as the rail, for the header rows and the
+// "N buses running" count: nothing re-renders the subpanel when the live bus
+// list changes, so reconcile it here. Only touches the DOM when the set or the
+// ordering actually changed.
+function syncRouteBusRows(route) {
+    const $container = $('.active-buses');
+    if (!$container.length) return;
+
+    const busNames = sortRoutePanelBusNames(getRoutePanelBusNames(route), route);
+    const wanted = new Set(busNames);
+    const existing = new Set();
+
+    $container.children('.route-bus-row').each(function () {
+        const name = this.getAttribute('bus-name');
+        if (wanted.has(name)) {
+            existing.add(name);
+        } else {
+            this.remove();
+        }
+    });
+
+    let changed = existing.size !== wanted.size;
+    busNames.forEach(busName => {
+        if (existing.has(busName)) return;
+        $container.append(buildRouteBusRow(busName));
+        changed = true;
+    });
+
+    if (changed) {
+        // Re-append in rank order so a bus that joined mid-route doesn't sit at
+        // the bottom of the list until the next full render.
+        busNames.forEach(busName => {
+            const $row = $container.children(`.route-bus-row[bus-name="${busName}"]`);
+            if ($row.length) $container.append($row);
+        });
+    }
+
+    // This runs once per bus on some passes (fetchETAs recomputes each bus
+    // individually), so skip the writes when the values are already correct.
+    const countText = busNames.length === 1 ? '1 bus running' : busNames.length + ' buses running';
+    const $count = $('.route-active-buses');
+    if ($count.text() !== countText) {
+        $count.text(countText);
+    }
+
+    const columns = settings['toggle-show-route-bus-speeds'] ? 'auto auto 1fr auto auto' : 'auto auto 1fr auto';
+    if ($container[0].style.gridTemplateColumns !== columns) {
+        $container.css('grid-template-columns', columns);
+    }
+}
+
+// Single entry point for keeping the open routes subpanel in sync with live bus
+// state. Called once per ETA recompute pass from updateTimeToStops() (js/pre.js),
+// which the 5s poll, websocket events, and snapshots all funnel through.
+function updateRoutePanelLiveState() {
+    if (!panelRoute) return;
+    syncRouteBusRows(panelRoute);
+    updateRouteBusPositions();
+}
+
+function findRouteStopIndex(routeStops, target, prevStopId) {
+    if (target === null || target === undefined || target === '') return -1;
+    const numTarget = Number(target);
+    let fallback = routeStops.indexOf(numTarget);
+    if (fallback === -1) fallback = routeStops.indexOf(target);
+    if (fallback === -1) return -1;
+    if (prevStopId === null || prevStopId === undefined || prevStopId === '') return fallback;
+    const numPrev = Number(prevStopId);
+    // Stops can repeat on a route (e.g. SAC NB stop 3); prefer the occurrence
+    // whose predecessor is the stop the bus came from.
+    for (let j = 1; j < routeStops.length; j++) {
+        if ((routeStops[j] === numTarget || routeStops[j] === target) &&
+            (routeStops[j - 1] === numPrev || routeStops[j - 1] === prevStopId)) {
+            return j;
+        }
+    }
+    return fallback;
+}
+
+function findRouteStopIndexAfter(routeStops, target, startIndex) {
+    if (target === null || target === undefined || target === '') return -1;
+    const numTarget = Number(target);
+    for (let j = startIndex + 1; j < routeStops.length; j++) {
+        if (routeStops[j] === numTarget || routeStops[j] === target) return j;
+    }
+    return -1;
+}
+
+// Where a bus sits on the rail, in the grid's content coordinates, or null when
+// it can't be placed. Returns { top, trailFrom }:
+//   top      - the bus's y (marker icon and progress dot)
+//   trailFrom- y of the stop it last departed, for the travelled-segment overlay;
+//              null when there is no partial leg to draw (bus stopped, or the leg
+//              is unknown)
+//
+// A bus's reported fix only advances on the bus poll (~5s) and the GPS feed
+// itself broadcasts every ~5-12s, so positioning straight from busData steps
+// from fix to fix. Callers pass the map marker's *interpolated* position here
+// (see paintRouteBusPositions) so it is recomputed every frame and moves
+// continuously, the same way the marker does.
+function computeRouteBusPlacement(busName, routeStops, centers, headLength, tailLength, latOverride, lngOverride) {
+    const bus = busData[busName];
+    if (!bus) return null;
+
+    const isStopped = Boolean(bus.at_stop) && !forceUnstoppedBuses.has(busName);
+
+    if (isStopped) {
+        const raw = (bus.stopId != null) ? bus.stopId : bus.next_stop;
+        const stopId = Array.isArray(raw) ? raw[0] : raw;
+        // Bus stop ids may be an array at duplicated stops (e.g. [3, 2]);
+        // the second entry is the stop it arrived from.
+        const prevHint = (Array.isArray(raw) && raw[1] != null) ? raw[1] : bus.prevStopId;
+        const idx = findRouteStopIndex(routeStops, stopId, prevHint);
+        // Stopped buses get no progress overlay: they are at a stop, not partway
+        // along a leg.
+        return idx === -1 ? null : { top: centers[idx].y, trailFrom: null };
+    }
+
+    const rawFrom = Array.isArray(bus.stopId) ? bus.stopId[0] : bus.stopId;
+    const fromIdx = findRouteStopIndex(routeStops, rawFrom, bus.prevStopId);
+    const toIdx = fromIdx === -1
+        ? findRouteStopIndex(routeStops, bus.next_stop)
+        : findRouteStopIndexAfter(routeStops, bus.next_stop, fromIdx);
+
+    let prog = progressToNextStop(busName, latOverride, lngOverride);
+    if (typeof prog !== 'number' || isNaN(prog)) prog = 0;
+    prog = Math.max(0, Math.min(1, prog));
+
+    // Bus left the last stop and is heading back around to the first. The list
+    // can't draw that leg, so the first half of the trip runs down the outgoing
+    // stub below the last dot and the second half runs down the incoming stub
+    // from above the first dot — rather than parking every such bus on the last
+    // dot. The travelled segment follows it onto whichever stub it is on.
+    const lastIdx = routeStops.length - 1;
+    const wrapsToFirst = fromIdx === lastIdx && toIdx === -1 &&
+        findRouteStopIndex(routeStops, bus.next_stop) === 0;
+
+    if (wrapsToFirst) {
+        if (prog <= 0.5) {
+            return {
+                top: centers[lastIdx].y + (prog / 0.5) * tailLength,
+                trailFrom: centers[lastIdx].y
+            };
+        }
+        const headTop = centers[0].y - headLength;
+        return {
+            top: headTop + ((prog - 0.5) / 0.5) * headLength,
+            trailFrom: headTop
+        };
+    }
+    if (fromIdx !== -1 && toIdx === fromIdx + 1) {
+        return {
+            top: centers[fromIdx].y + prog * (centers[toIdx].y - centers[fromIdx].y),
+            trailFrom: centers[fromIdx].y
+        };
+    }
+    if (fromIdx !== -1) {
+        // A missed stop: hold the icon at the stop the bus just left. No known
+        // leg, so no travelled segment.
+        return { top: centers[fromIdx].y, trailFrom: null };
+    }
+    if (toIdx !== -1) {
+        return { top: centers[toIdx].y, trailFrom: null };
+    }
+    return null;
+}
+
+// Reconcile the marker set, (re)measure the rail, and position everything once.
+// Called from the ETA/poll hook — the per-frame motion is paintRouteBusPositions.
+function updateRouteBusPositions() {
+    if (!panelRoute) return;
+    const $grid = $('.route-stops-grid');
+    const $overlay = $grid.children('.route-bus-overlay');
+    if (!$grid.length || !$overlay.length) return;
+
+    const gridEl = $grid[0];
+    if (gridEl.getBoundingClientRect().height <= 0) return;
+
+    const $dots = $grid.children('.next-stop-circle');
+    if (!$dots.length) return;
+
+    // Pick up buses that joined/left service since the last render or poll.
+    // Both layers track the same bus list, so keep them in step.
+    const $progressOverlay = $grid.children('.route-bus-progress-overlay');
+    const markersChanged = syncRouteBusMarkers($overlay, panelRoute);
+    const progressChanged = $progressOverlay.length ? syncRouteBusProgress($progressOverlay, panelRoute) : false;
+    const busSetChanged = markersChanged || progressChanged;
+
+    if (busSetChanged || !routeBusRailMetrics || routeBusRailMetrics.count !== $dots.length) {
+        // The rail sets the grid's left padding, so it has to settle before any
+        // dot is measured.
+        routeBusRailMetrics = null;
+        sizeRouteBusRail();
+
+        const gridRect = gridEl.getBoundingClientRect();
+        const scrollTop = gridEl.scrollTop;
+        const centers = [];
+        $dots.each(function () {
+            const rect = this.getBoundingClientRect();
+            centers.push({
+                x: rect.left + rect.width / 2 - gridRect.left,
+                y: rect.top + rect.height / 2 - gridRect.top + scrollTop
+            });
+        });
+
+        // Measured, not assumed: the marker offset is derived from the dot's real
+        // size, so restyling .next-stop-circle can't desync the rail.
+        const dotRadius = $dots.eq(0)[0].getBoundingClientRect().width / 2;
+
+        const { headLength, tailLength } = sizeRouteLoopLines($grid, $dots);
+        routeBusRailMetrics = { count: $dots.length, centers, headLength, tailLength, dotRadius };
+    }
+
+    paintRouteBusPositions();
+    ensureRouteBusRailLoop();
+}
+
+// The map marker's current animated position, which advances every frame between
+// polls. Falls back to the last reported fix when there is no marker yet (the
+// bus is new, out of service, or its marker is removed).
+function getInterpolatedBusLatLng(busName) {
+    const bus = busData[busName];
+    const marker = (typeof busMarkers !== 'undefined' && busMarkers) ? busMarkers[busName] : null;
+    if (marker && typeof marker.getLatLng === 'function') {
+        const ll = marker.getLatLng();
+        if (ll && Number.isFinite(ll.lat) && Number.isFinite(ll.lng)) {
+            return ll;
+        }
+    }
+    return { lat: bus ? bus.lat : undefined, lng: bus ? bus.long : undefined };
+}
+
+// Per-frame paint: reads the interpolated marker positions and writes the rail
+// transforms. No CSS transition is involved — this runs every frame, so the
+// icons track the markers exactly instead of easing toward a stale target.
+function paintRouteBusPositions() {
+    if (!panelRoute || !routeBusRailMetrics) return;
+    const $grid = $('.route-stops-grid');
+    const $overlay = $grid.children('.route-bus-overlay');
+    if (!$grid.length || !$overlay.length) return;
+
+    const routeStops = (stopLists && stopLists[panelRoute]) || [];
+    if (!routeStops.length) return;
+
+    const { centers, headLength, tailLength, dotRadius } = routeBusRailMetrics;
+    // From the dot's center back past its radius, then the clearance: the marker's
+    // right edge sits ROUTE_BUS_MARKER_CLEARANCE left of the dot's outer edge.
+    const markerRight = centers[0].x - dotRadius - ROUTE_BUS_MARKER_CLEARANCE;
+    const lineX = centers[0].x;
+
+    const placed = [];
+    // Raw (un-relaxed) placements, keyed by bus, so the progress dot sits at the
+    // bus's true position even when its marker label had to be nudged aside.
+    const placements = new Map();
+
+    $overlay.children('.route-bus-marker').each(function () {
+        const busName = this.getAttribute('bus-name');
+        if (!busData[busName]) {
+            this.style.display = 'none';
+            placements.set(busName, null);
+            return;
+        }
+        const ll = getInterpolatedBusLatLng(busName);
+        const placement = computeRouteBusPlacement(busName, routeStops, centers, headLength, tailLength, ll.lat, ll.lng);
+        placements.set(busName, placement);
+        if (placement === null) {
+            this.style.display = 'none';
+            return;
+        }
+        this.style.display = '';
+        placed.push({ el: this, top: placement.top, name: busName });
+    });
+
+    // Keep markers that land on the same spot (e.g. two buses at one stop) from
+    // overlapping. Resolve overlaps by relaxing neighbours apart, NOT by
+    // threshold clustering: a hard "gap < SPACING => restack the whole group"
+    // rule is discontinuous, so a pair crossing the threshold (or a member
+    // joining/leaving) snapped every marker in the group by several pixels. Since
+    // this runs every frame, that read as random pixel jumps. Relaxation instead
+    // applies a correction that shrinks continuously to zero as the gap
+    // approaches SPACING, so markers settle into place instead of snapping.
+    // Each push moves one marker down and the next up by the same amount, so the
+    // group's mean is preserved and repeated sweeps converge to evenly spaced
+    // markers — the same result the old centred stack produced, reached
+    // continuously. Ordering is tie-broken by name so two markers with
+    // near-equal positions can't swap places frame to frame and swap offsets.
+    placed.sort((a, b) => (a.top - b.top) || a.name.localeCompare(b.name));
+    for (let iter = 0; iter < 8; iter++) {
+        let moved = false;
+        for (let k = 0; k + 1 < placed.length; k++) {
+            const overlap = ROUTE_BUS_MARKER_SPACING - (placed[k + 1].top - placed[k].top);
+            if (overlap > 0) {
+                placed[k].top -= overlap / 2;
+                placed[k + 1].top += overlap / 2;
+                moved = true;
+            }
+        }
+        if (!moved) break;
+    }
+
+    placed.forEach(({ el, top }) => {
+        const firstPlacement = el._routeBusTop === undefined;
+        // Keep sub-pixel positions (the icon travels well under a pixel per
+        // frame, so rounding would make it step). Only a move big enough to see
+        // rewrites the style.
+        if (firstPlacement || Math.abs(el._routeBusTop - top) >= 0.1) {
+            el.style.transform = routeBusMarkerTransform(top);
+            if (firstPlacement) {
+                // Drop is-unplaced only after the position is written and
+                // flushed, so the marker's first visible frame is already at its
+                // real spot rather than animating in from the top of the rail.
+                void el.offsetWidth;
+                el.classList.remove('is-unplaced');
+            }
+            el._routeBusTop = top;
+        }
+        if (el._routeBusLeft !== markerRight) {
+            el.style.left = markerRight + 'px';
+            el._routeBusLeft = markerRight;
+        }
+    });
+
+    paintRouteBusProgress($grid, placements, lineX);
+}
+
+// Draw each moving bus's travelled segment and position dot on the connecting
+// line. Stopped buses (trailFrom === null) keep their overlay hidden — they sit
+// at a stop, so there is no partial leg and no circle to show.
+function paintRouteBusProgress($grid, placements, lineX) {
+    const $progressOverlay = $grid.children('.route-bus-progress-overlay');
+    if (!$progressOverlay.length) return;
+
+    $progressOverlay.children('.route-bus-progress').each(function () {
+        const busName = this.getAttribute('bus-name');
+        const placement = placements.get(busName);
+        const show = !!placement && placement.trailFrom !== null && placement.trailFrom !== undefined;
+        if (!show) {
+            if (this._routeBusVisible !== false) {
+                this.style.visibility = 'hidden';
+                this._routeBusVisible = false;
+            }
+            return;
+        }
+        if (this._routeBusVisible !== true) {
+            this.style.visibility = 'visible';
+            this._routeBusVisible = true;
+        }
+
+        if (this._routeBusLeft !== lineX) {
+            this.style.left = lineX + 'px';
+            this._routeBusLeft = lineX;
+        }
+
+        const lineEl = this._lineEl || (this._lineEl = this.querySelector('.route-bus-progress-line'));
+        const dotEl = this._dotEl || (this._dotEl = this.querySelector('.route-bus-progress-dot'));
+        if (!lineEl || !dotEl) return;
+
+        const fromY = placement.trailFrom;
+        const top = placement.top;
+        // The segment runs between the departed stop and the bus, extended by the
+        // small overlap that tucks it under the triangle (which paints on top) so
+        // the two don't leave a compositing seam where they meet. Derived from
+        // min/max rather than assuming the bus moved downward, so a segment can
+        // never end up drawn on the wrong side.
+        const lineTop = Math.min(fromY, top);
+        const lineBottom = Math.max(fromY, top) + ROUTE_BUS_PROGRESS_SEAM_OVERLAP;
+        const lineLen = lineBottom - lineTop;
+
+        if (lineEl._top !== lineTop || lineEl._len !== lineLen) {
+            lineEl.style.transform = `translateY(${lineTop}px)`;
+            lineEl.style.height = lineLen + 'px';
+            lineEl._top = lineTop;
+            lineEl._len = lineLen;
+        }
+        if (dotEl._top !== top) {
+            // Top edge of the triangle at the segment's end (no -50% Y shift), so
+            // the travelled segment stops where the triangle begins.
+            dotEl.style.transform = `translate(-50%, 0) translateY(${top}px)`;
+            dotEl._top = top;
+        }
+    });
+}
+
+let routeBusRailFrameId = null;
+
+// Drive the rail from the map's own frame clock while a route is rendered, so
+// the icons animate with the markers rather than only when new data lands. The
+// loop parks itself when the panel closes (the poll hook restarts it) and is
+// suspended automatically by the browser while the tab is hidden, resuming on
+// its own — so it deliberately does not test document.hidden.
+function ensureRouteBusRailLoop() {
+    if (routeBusRailFrameId !== null) return;
+    const tick = () => {
+        routeBusRailFrameId = null;
+        const $overlay = $('.route-stops-grid').children('.route-bus-overlay');
+        if (!panelRoute || !$overlay.length || !routeBusRailMetrics) return;
+        paintRouteBusPositions();
+        routeBusRailFrameId = requestAnimationFrame(tick);
+    };
+    routeBusRailFrameId = requestAnimationFrame(tick);
+}
+
+window.addEventListener('resize', invalidateRouteBusRailMetrics);
+
 function selectedRoute(route) {
     console.log('selectedRoute called with:', route);
     console.log('panelRoute:', panelRoute);
@@ -1115,100 +1816,18 @@ function selectedRoute(route) {
     if (typeof updateRouteStarState === 'function') {
         updateRouteStarState(route);
     }
-    const allRouteBuses = (busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) || [];
-    const visibleRouteBuses = allRouteBuses.filter(busName => {
-        if (!busData[busName]) return false;
-        if (!settings['toggle-show-out-of-service']) {
-            return isBusShownOnMap(busName);
-        }
-        return true;
-    });
+    const visibleRouteBuses = sortRoutePanelBusNames(getRoutePanelBusNames(route), route);
 
     const routeStops = (stopLists && stopLists[route]) || [];
-    const getBusRouteRank = (busName) => {
-        const bus = busData[busName];
-        if (!bus) return Infinity;
 
-        const isStopped = Boolean(bus.at_stop) && !forceUnstoppedBuses.has(busName);
-        const rawStopId = isStopped ? (bus.stopId ?? bus.next_stop) : (bus.next_stop ?? bus.stopId);
-        const stopId = Array.isArray(rawStopId) ? rawStopId[0] : rawStopId;
-
-        let stopIdx = routeStops.indexOf(Number(stopId));
-        if (stopIdx === -1) {
-            stopIdx = routeStops.indexOf(stopId);
-        }
-        if (stopIdx === -1) {
-            return Infinity;
-        }
-
-        if (isStopped) {
-            return stopIdx;
-        }
-
-        // When en route to next_stop, bus is between (stopIdx - 1) and stopIdx.
-        // If progress is known (0 to 1), use (stopIdx - 1 + progress), bounded.
-        let prog = progressToNextStop(busName);
-        if (typeof prog !== 'number' || isNaN(prog) || prog < 0 || prog > 1) {
-            prog = 0.5;
-        }
-        const prevIdx = (stopIdx - 1 + routeStops.length) % routeStops.length;
-        // If moving from last stop to first stop (wrap-around to stop index 0)
-        if (stopIdx === 0) {
-            return (routeStops.length - 1) + prog;
-        }
-        return prevIdx + prog;
-    };
-
-    visibleRouteBuses.sort((a, b) => {
-        const rankA = getBusRouteRank(a);
-        const rankB = getBusRouteRank(b);
-        if (rankA !== rankB) return rankA - rankB;
-        return (busData[a]?.busName || a).localeCompare(busData[b]?.busName || b);
-    });
-
-    $('.route-active-buses').text(visibleRouteBuses.length === 1 ? '1 bus running' : visibleRouteBuses.length + ' buses running');
-
+    // Rebuild the header rows from scratch on a full render (the reconciliation
+    // path below keeps them in sync between renders).
     $('.active-buses').empty();
-    const showRouteBusSpeeds = settings['toggle-show-route-bus-speeds'];
-    $('.active-buses').css('grid-template-columns', showRouteBusSpeeds ? 'auto auto 1fr auto auto' : 'auto auto 1fr auto');
     visibleRouteBuses.forEach(busName => {
-
-        let speed = '0mph';
-        if ('visualSpeed' in busData[busName] && !isNaN(parseInt(busData[busName].visualSpeed))) {
-            speed = parseInt(busData[busName].visualSpeed) + 'mph';
-        }
-        const rawCap = busData[busName].capacity;
-        const capacity = (rawCap && rawCap > 0) ? rawCap + '% full' : '';
-
-        const { isStopped, stopName, etaText } = getBusStopInfo(busName);
-        const iconHtml = getBusStopStatusIconHtml(isStopped, stopName);
-
-        const $nameCol = $(`<div class="route-bus-name flex align-center gap-x-0p5rem">${busData[busName].busName}</div>`);
-        const $iconCol = $(`<div class="route-bus-status-icon" bus-name="${busName}">${iconHtml}</div>`);
-        const $stopCol = $(`<div class="route-bus-stop" bus-name="${busName}" title="${stopName ? (etaText ? `${stopName} (${etaText})` : stopName) : ''}"></div>`);
-        if (stopName) {
-            $stopCol.append(document.createTextNode(stopName));
-            if (etaText) {
-                $stopCol.append($(`<span class="route-bus-eta"></span>`).text(etaText));
-            }
-        }
-        const $speedCol = $(`<div class="route-bus-speed" bus-name="${busName}">${speed}</div>`);
-        const $capCol = $(`<div class="route-bus-capacity" bus-name="${busName}">${capacity}</div>`);
-
-        if (busData[busName].oos) {
-            $nameCol.append(`<div class="bus-oos white br-0p5rem text-1p4rem">OOS</div>`);
-        }
-
-        if (busData[busName].atDepot) {
-            $nameCol.append(`<div class="bus-depot white br-0p5rem text-1p4rem">Depot</div>`);
-        }
-        
-        if (showRouteBusSpeeds) {
-            $('.active-buses').append($nameCol, $iconCol, $stopCol, $speedCol, $capCol);
-        } else {
-            $('.active-buses').append($nameCol, $iconCol, $stopCol, $capCol);
-        }
+        $('.active-buses').append(buildRouteBusRow(busName));
     });
+    syncRouteBusRows(route);
+
     // Ensure route selectors are visible and nav buttons are hidden in subpanel
     $('.bottom').show();
     $('.left-btns, .right-btns').hide();
@@ -1222,6 +1841,7 @@ function selectedRoute(route) {
     $('#route-selection-prompt').hide();
     
     $('.route-stops-grid').empty();
+    routeBusRailMetrics = null;
 
     let firstCircle;
     let lastCircle;
@@ -1362,15 +1982,47 @@ function selectedRoute(route) {
 
     $('.route-stops-grid .next-stop-circle').css('background-color', colorMappings[route])
 
+    // Travelled-segment + position-dot layer, on the connecting line. Appended
+    // before the markers so that on an equal z-index the markers still paint on
+    // top. Both layers track the same bus list.
+    const $progressOverlay = $('<div class="route-bus-progress-overlay"></div>');
+    visibleRouteBuses.forEach(busName => {
+        $progressOverlay.append(buildRouteBusProgress(busName, route));
+    });
+    $('.route-stops-grid').append($progressOverlay);
+
+    // Rail of bus icons drawn in the grid's left padding, beside the stop line.
+    const $busOverlay = $('<div class="route-bus-overlay"></div>');
+    visibleRouteBuses.forEach(busName => {
+        $busOverlay.append(buildRouteBusMarker(busName, route));
+    });
+    $('.route-stops-grid').append($busOverlay);
+
     lastCircle = $('.route-stops-grid .next-stop-circle').last();
 
     setTimeout(() => {
+        // The rail sets the grid's left padding (widening the stop-name column
+        // can change row heights), so it must settle before anything is measured.
+        const $stopsGrid = $('.route-stops-grid');
+        sizeRouteBusRail();
+
         const firstRect = firstCircle[0].getBoundingClientRect();
         const lastRect = lastCircle[0].getBoundingClientRect();
         const heightDiff = Math.abs(lastRect.top - firstRect.top);
         console.log(heightDiff)
-        firstCircle.addClass('connecting-line');
+        // head-line: the fading incoming stub above the first dot.
+        firstCircle.addClass('connecting-line head-line');
         firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
+
+        // tail-line: the fading outgoing stub below the last dot, as its own
+        // sibling element so it paints under the dot (see the CSS comment).
+        // Created in the same pass as the dots so sizeRouteLoopLines can measure
+        // and position it; skip it on a single-stop route where first and last
+        // are the same dot.
+        const $lastDot = $stopsGrid.children('.next-stop-circle').last();
+        if ($lastDot.length && !$lastDot.is(firstCircle)) {
+            $stopsGrid.append('<div class="route-loop-tail-line"></div>');
+        }
 
         // Center each direction chevron vertically between its dot and the
         // previous dot. Direct children only: excludes the nested inner dot.
@@ -1383,6 +2035,8 @@ function selectedRoute(route) {
             // 3px = half the chevron triangle height (6px), centers it between dots
             this.style.setProperty('--chevron-top', `${mid - curRect.top - 3}px`);
         });
+
+        updateRouteBusPositions();
     }, 0);
 
     panelRoute = route

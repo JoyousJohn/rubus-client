@@ -1024,6 +1024,12 @@ function updateTimeToStops(busNames) {
     }
 
     refreshMeClosestStopsEtas();
+
+    // Keep the open routes subpanel in sync with live bus state (header rows and
+    // the rail of bus icons) on the same pass that recomputes ETAs: this is the
+    // one place the 5s bus poll, websocket arrival/departure events, and
+    // snapshots all funnel through. No-op unless a route is rendered.
+    updateRoutePanelLiveState();
 }
 
 
