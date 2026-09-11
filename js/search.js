@@ -394,11 +394,11 @@ $(document).ready(function() {
         if (searchMode === 'directions') {
             $('.navigate-wrapper').removeClass('none');
             $('.nav-pill-bar').removeClass('none');
-            $('.search-pill-bar, .search-content').addClass('none');
+            $('.search-pill-row, .search-pill-bar, .search-content').addClass('none');
             $('.search-top-back-btn').css({'visibility':'visible','pointer-events':'auto'});
         } else {
             $('.search-top-back-btn').css({'visibility':'hidden','pointer-events':'none'});
-            $('.search-pill-bar, .search-content').removeClass('none');
+            $('.search-pill-row, .search-pill-bar, .search-content').removeClass('none');
             $('.nav-pill-bar, .navigate-wrapper').addClass('none');
             $('.search-pill-bar input').trigger('input');
         }
@@ -730,6 +730,46 @@ $(document).ready(function() {
             'category': item.category
         });
     }
+
+    // Open directions navigation directly (persisting any prior inputs or computed route)
+    function onSearchPillDirections() {
+        capturePostHog('search_directions_clicked', {
+            source: 'search_pill_nav_btn',
+            campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+        });
+        sa_event('btn_press', {
+            'btn': 'search_pill_directions'
+        });
+
+        openDirectionsNav();
+
+        const fromVal = ($('#nav-from-input').val() || '').trim();
+        const toVal = ($('#nav-to-input').val() || '').trim();
+
+        window._suppressNavAutocompleteOnFocus = true;
+        if (!fromVal) {
+            if (window.focusNavFromInput) {
+                window.focusNavFromInput();
+            } else {
+                setTimeout(function() {
+                    $('#nav-from-input').focus();
+                }, 100);
+            }
+        } else if (!toVal) {
+            if (window.focusNavInput) {
+                window.focusNavInput('#nav-to-input');
+            } else {
+                setTimeout(function() {
+                    $('#nav-to-input').focus();
+                }, 100);
+            }
+        }
+    }
+
+    $(document).on('click', '.search-pill-nav-btn', function(e) {
+        e.stopPropagation();
+        onSearchPillDirections();
+    });
 
     // Escape user-provided text for safe HTML insertion
     function escapeHTML(str) {
@@ -1418,7 +1458,7 @@ function applySearchMode(mode) {
     }
 
     if (mode === 'directions') {
-        $('.search-pill-bar').addClass('none');
+        $('.search-pill-row, .search-pill-bar').addClass('none');
         $('.nav-pill-bar').removeClass('none nav-collapsed');
         $('.search-wrapper').removeClass('nav-source-hidden');
         $('.search-content').addClass('none');
@@ -1427,7 +1467,7 @@ function applySearchMode(mode) {
         hideNavigationAutocomplete();
     } else {
         $('.navigate-wrapper').addClass('none');
-        $('.search-pill-bar').removeClass('none');
+        $('.search-pill-row, .search-pill-bar').removeClass('none');
         $('.nav-pill-bar').addClass('none').removeClass('nav-collapsed');
         $('.search-wrapper').removeClass('nav-source-hidden');
         $('.search-content').removeClass('none');

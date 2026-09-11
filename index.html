@@ -1609,10 +1609,13 @@
             <div class="settings-main-heading search-main-heading center flex align-center justify-center gap-x-0p5rem" style="flex:1;"><i class="search-heading-icon icon icon-search" style="opacity: 0.88;"></i><span class="search-heading-text"></span></div>
             <button class="search-top-close-btn flex align-center justify-center" type="button" aria-label="Close" style="background:none; border:none; font-size:1.8rem; color:var(--theme-color); cursor:pointer; padding:0.5rem; flex-shrink:0;"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="search-pill-bar">
-            <button class="search-pin-btn flex align-center justify-center" type="button" aria-label="Search pin" tabindex="-1" style="background:none; border:none; color:var(--theme-bg); font-size:1.8rem; padding:0.5rem; margin-left:-0.25rem; line-height:1; flex-shrink:0; pointer-events:none; height:2.8rem;"><i class="fa-solid fa-location-dot fa-fw"></i></button>
-            <input type="text" name="searchQuery" placeholder="Search {num} buildings & lots" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
-            <button class="search-clear-btn" type="button" aria-label="Clear">×</button>
+        <div class="search-pill-row flex">
+            <div class="search-pill-bar">
+                <button class="search-pin-btn flex align-center justify-center" type="button" aria-label="Search pin" tabindex="-1" style="background:none; border:none; color:var(--theme-bg); font-size:1.8rem; padding:0.5rem; margin-left:-0.25rem; line-height:1; flex-shrink:0; pointer-events:none; height:2.8rem;"><i class="fa-solid fa-location-dot fa-fw"></i></button>
+                <input type="text" name="searchQuery" placeholder="Search {num} buildings & lots" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+                <button class="search-clear-btn" type="button" aria-label="Clear">×</button>
+            </div>
+            <button class="search-result-directions-btn search-pill-nav-btn" type="button" title="Get directions" aria-label="Navigation"><i class="fa-solid fa-diamond-turn-right"></i><span>Nav</span></button>
         </div>
         <div class="search-content">
             <div class="search-results-wrapper none mt-1rem">
