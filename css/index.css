@@ -1673,6 +1673,7 @@ html, body {
 .route-name {
     font-weight: bold;
     font-size: 2.5rem;
+    color: var(--route-color);
 }
 
 .route-campuses {
@@ -1682,7 +1683,7 @@ html, body {
 
 .color-circle {
     border-radius: 5rem;
-    background-color: red;
+    background-color: var(--route-color, red);
     aspect-ratio: 1 / 1;
     height: 3.5rem;
     width: 3.5rem;
@@ -2102,6 +2103,10 @@ html, body {
     display: none; /* Chrome, Safari, Opera */
 }
 
+.route-stops-grid .next-stop-circle {
+    background-color: var(--route-color);
+}
+
 /* Each stop's name + bus list, carded to match the other panels in the routes and
    network subpanels (.all-stops-grid > div for the fill/radius/padding,
    .incoming-wrapper for the border). Targets only the stop cells: the grid's other
@@ -2209,12 +2214,13 @@ html, body {
 
 /* left is set from JS to the line's center; children hang off that. Hidden until
    painted so a new bus can't flash an unplaced segment at the grid's origin. The
-   route colour is set inline on this element and picked up by the children via
+   route colour is inherited from --route-color and picked up by the children via
    currentColor. */
 .route-bus-progress {
     position: absolute;
     top: 0;
     visibility: hidden;
+    color: var(--route-color);
 }
 
 .route-bus-progress-line {
@@ -2259,6 +2265,7 @@ html, body {
     align-items: center;
     justify-content: center;
     font-size: 1.35rem;
+    color: var(--route-color);
     /* Flex centering aligns the icon's em box with the name's line box, but Font
        Awesome glyphs sit slightly high inside that box (it includes descender
        space the icon doesn't use), so the icon reads as raised. Nudge it down by

@@ -1219,7 +1219,7 @@ function buildRouteBusMarker(busName, route) {
     // it a real position (see the CSS comment): it is created before the rail is
     // measured, so until then it only has the top-of-grid base transform.
     const $marker = $('<div class="route-bus-marker is-unplaced"></div>').attr('bus-name', busName);
-    $marker.append($('<i class="fa-solid fa-bus"></i>').css('color', colorMappings[route]));
+    $marker.append($('<i class="fa-solid fa-bus"></i>'));
     $marker.append($('<span class="route-bus-marker-name"></span>').text(busData[busName].busName || busName));
     return $marker;
 }
@@ -1232,7 +1232,6 @@ function buildRouteBusProgress(busName, route) {
     const el = document.createElement('div');
     el.className = 'route-bus-progress';
     el.setAttribute('bus-name', busName);
-    el.style.color = colorMappings[route];
     el.appendChild($('<div class="route-bus-progress-line"></div>')[0]);
     el.appendChild($('<div class="route-bus-progress-dot"></div>')[0]);
     return el;
@@ -1808,6 +1807,7 @@ function selectedRoute(route) {
             clearSubpanelRoutePillHighlight();
             
             // Clear the route panel data since no route is selected
+            $('.route-panel').each(function() { this.style.removeProperty('--route-color'); });
             $('.route-name').text('').css('color', '');
             $('.route-campuses').text('');
             $('.color-circle').css('background-color', '');
@@ -1882,9 +1882,9 @@ function selectedRoute(route) {
     // map filter; overlay the panel selection afterwards.
     highlightSubpanelRoutePill(route);
 
-    $('.route-name').text(route.toUpperCase()).css('color', colorMappings[route])
-    $('.route-campuses').text(campusMappings[route])
-    $('.color-circle').css('background-color', colorMappings[route])
+    $('.route-panel').each(function() { this.style.setProperty('--route-color', colorMappings[route]); });
+    $('.route-name').text(route.toUpperCase());
+    $('.route-campuses').text(campusMappings[route]);
     if (typeof updateRouteStarState === 'function') {
         updateRouteStarState(route);
     }
@@ -1930,7 +1930,7 @@ function selectedRoute(route) {
 
         if (!firstCircle) {
             firstCircle = $('.route-stops-grid .next-stop-circle').last();
-            firstCircle.append(`<div class="next-stop-circle" style="z-index: 1; background-color: ${colorMappings[route]}"></div>`)
+            firstCircle.append('<div class="next-stop-circle" style="z-index: 1;"></div>');
         }
 
         let i = 0;
@@ -2054,8 +2054,6 @@ function selectedRoute(route) {
         $('.route-stops-grid').append($stopElm);
         previousStopId = stopId;
     });
-
-    $('.route-stops-grid .next-stop-circle').css('background-color', colorMappings[route])
 
     // Travelled-segment + position-dot layer, on the connecting line. Appended
     // before the markers so that on an equal z-index the markers still paint on
@@ -2519,8 +2517,9 @@ function updateColorMappingsSelection(selectedColor) {
     }
 
     // update shown element colors
-    $(`.color-circle, .next-stop-circle`).css('background-color', selectedColor);
-    $('.route-name').css('color', selectedColor);
+    if (panelRoute === route) {
+        $('.route-panel').each(function() { this.style.setProperty('--route-color', selectedColor); });
+    }
     // Always update route selector with the selected color when it's the currently shown route
     $(`.route-selector[routename="${route}"]`).css('background-color', selectedColor).css('box-shadow', `0 0 10px ${selectedColor}`);
 
