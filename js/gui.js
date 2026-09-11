@@ -2376,8 +2376,8 @@ function updateColorFromWheel(updateThumbPos = true) {
         updateWheelThumbPosition(currentWheelHue, currentWheelSat);
     }
 
-    const defaultHex = colorToHex(defaultColorMappings[shownRoute]);
-    if (hex && defaultHex && hex.toLowerCase() === defaultHex.toLowerCase()) {
+    const defaultHex = colorToHex(defaultColorMappings[currentColorRoute]);
+    if (hex && hex.toLowerCase() === defaultHex.toLowerCase()) {
         $('.color-reset').addClass('disabled');
     } else {
         $('.color-reset').removeClass('disabled');
@@ -2418,19 +2418,25 @@ function handleWheelPointer(e) {
     updateColorFromWheel(true);
 }
 
+let currentColorRoute = null;
+
 function closeColorModal() {
     $('.color-selection-modal').css('display', 'none');
     delete window._panelOpenedAt['color'];
+    currentColorRoute = null;
 }
 window.closeColorModal = closeColorModal;
 
 $('.color-circle').click(function() {
+    const targetRoute = panelRoute || shownRoute;
+    if (!targetRoute) return;
+    currentColorRoute = targetRoute;
     markPanelOpened('color');
-    $('.color-select-route').text(shownRoute.toUpperCase());
+    $('.color-select-route').text(targetRoute.toUpperCase());
     $('.color-selection-modal').css('display', 'flex');
     requestAnimationFrame(() => {
         renderColorWheelCanvas();
-        setRouteColorChoice(colorMappings[shownRoute]);
+        setRouteColorChoice(colorMappings[targetRoute]);
     });
 });
 
@@ -2475,54 +2481,58 @@ $(window).on('resize', function() {
 });
 
 function updateColorMappingsSelection(selectedColor) {
-    colorMappings[shownRoute] = selectedColor
-    settings['colorMappings'] = {...(settings['colorMappings'] || {})}
-    settings['colorMappings'][shownRoute] = selectedColor
-    saveSettings()
+    const route = currentColorRoute;
+    if (!route) return;
+    colorMappings[route] = selectedColor;
+    settings['colorMappings'] = {...(settings['colorMappings'] || {})};
+    settings['colorMappings'][route] = selectedColor;
+    saveSettings();
 
     // Update all existing markers for this route through the manager (every
     // marker type, both renderer modes).
-    busLayerManager.updateRouteColor(shownRoute, selectedColor);
+    busLayerManager.updateRouteColor(route, selectedColor);
 
     // Passio bus icons embed a recolored SVG; regenerate it first, then
     // re-apply so the icon's src is updated.
     if (settings['marker-type'] === 'passio') {
         generateColoredSvgForColor(selectedColor).then(() => {
-            busLayerManager.updateRouteColor(shownRoute, selectedColor);
+            busLayerManager.updateRouteColor(route, selectedColor);
         }).catch(error => {
-            console.error(`Failed to regenerate SVG for route ${shownRoute}:`, error);
+            console.error(`Failed to regenerate SVG for route ${route}:`, error);
         });
     }
 
     // update shown element colors
-    $(`.color-circle, .next-stop-circle`).css('background-color', selectedColor)
-    $('.route-name').css('color', selectedColor)
+    $(`.color-circle, .next-stop-circle`).css('background-color', selectedColor);
+    $('.route-name').css('color', selectedColor);
     // Always update route selector with the selected color when it's the currently shown route
-    $(`.route-selector[routename="${shownRoute}"]`).css('background-color', selectedColor).css('box-shadow', `0 0 10px ${selectedColor}`)
+    $(`.route-selector[routename="${route}"]`).css('background-color', selectedColor).css('box-shadow', `0 0 10px ${selectedColor}`);
 
-    if (polylines[shownRoute]) {
-        polylines[shownRoute].setStyle({ color: selectedColor });
+    if (polylines[route]) {
+        polylines[route].setStyle({ color: selectedColor });
     }
 
     if (popupStopId) {
-        updateStopBuses(popupStopId)
+        updateStopBuses(popupStopId);
     }
 
     populateFavs();
 
-    if (sharedBusName && busData[sharedBusName].route === shownRoute) {
-        $('.shared > span').css('color', selectedColor)
+    if (sharedBusName && busData[sharedBusName].route === route) {
+        $('.shared > span').css('color', selectedColor);
     }
 
     $('.route-here').each(function() {
-        if ($(this).hasClass('route-here-' + shownRoute)) {
-            $(this).css('background-color', colorMappings[shownRoute]);
+        if ($(this).hasClass('route-here-' + route)) {
+            $(this).css('background-color', colorMappings[route]);
         }
-    })
+    });
 }
 
 $('.color-reset').click(function() {
-    setRouteColorChoice(defaultColorMappings[shownRoute]);
+    if (currentColorRoute) {
+        setRouteColorChoice(defaultColorMappings[currentColorRoute]);
+    }
 });
 
 $('.color-confirm').click(function() {
