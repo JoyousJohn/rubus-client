@@ -636,6 +636,42 @@ function toggleRouteSelectors(route, wasSelected = false) {
     $('.favs').show(); //for when immediately pressing a route selector from entering into the shared bus screen
 }
 
+// Subpanel-only pill highlight: same visuals as toggleRouteSelectors but never
+// touches shownRoute, so selecting a route in the routes subpanel leaves the
+// map filter untouched. The 5s poll (plotBus / updatePolylineStyle) keys off
+// shownRoute, so writing it here is what used to filter the map a few seconds
+// after a subpanel tap.
+function highlightSubpanelRoutePill(route) {
+    $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn, .direct-feedback-btn').each(function() {
+        const rn = $(this).attr('routeName');
+        if (rn !== route) {
+            const rnInService = routeHasInServiceBuses(rn);
+            $(this).css('background-color', 'gray').css('box-shadow', '').css('opacity', rnInService ? '1' : '0.5');
+        }
+    });
+    const selectedRouteColor = colorMappings[route];
+    $(`.route-selector[routeName="${route}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`).css('opacity', '1');
+}
+
+// Clear a subpanel selection's highlight and fall back to the true map filter
+// (shownRoute), if any — still without writing shownRoute.
+function clearSubpanelRoutePillHighlight() {
+    $('.route-selector').not('.settings-btn, .sim-btn, .parking-campus-selector, .direct-feedback-btn').each(function() {
+        const rn = $(this).attr('routeName');
+        if (rn !== 'fav') {
+            const hasInService = routeHasInServiceBuses(rn);
+            const routeColor = hasInService ? colorMappings[rn] : 'gray';
+            $(this).css('background-color', routeColor).css('opacity', hasInService ? '1' : '0.5');
+        }
+    });
+    $('.route-selector').css('box-shadow', '');
+    $(`.route-selector[routeName="fav"]`).css('background-color', 'gold').css('opacity', '1');
+    $('.sim-btn').css('opacity', '1');
+    if (shownRoute) {
+        highlightSubpanelRoutePill(shownRoute);
+    }
+}
+
 
 function hideAllStops() {
     // Used to loop (active) polylines and then get stop ids from stopLists, but this didn't hide all stops on the very first bus because there are no polylines.
@@ -1749,8 +1785,11 @@ function selectedRoute(route) {
         const routesTabActive = $('.subpanels-container').hasClass('panel-routes');
         
         if (routesTabActive) {
-            // We're in the routes subpanel - just unselect the route and stay in the panel
-            toggleRouteSelectors(route, true);
+            // We're in the routes subpanel - just unselect the route and stay in the panel.
+            // Subpanel-only: clear the pill highlight back to the true map
+            // filter (shownRoute) without writing shownRoute, so the map is
+            // left untouched.
+            clearSubpanelRoutePillHighlight();
             
             // Clear the route panel data since no route is selected
             $('.route-name').text('').css('color', '');
@@ -1821,10 +1860,11 @@ function selectedRoute(route) {
         }
     }
 
-    // Now perform route selection after selectors are populated
-    if (shownRoute !== route) {
-        toggleRouteSelectors(route);
-    }
+    // Subpanel-only selection: highlight the pill without touching shownRoute,
+    // so the map filter is left untouched (the poll keys bus/polyline
+    // visibility off shownRoute). populateRouteSelectors above highlights the
+    // map filter; overlay the panel selection afterwards.
+    highlightSubpanelRoutePill(route);
 
     $('.route-name').text(route.toUpperCase()).css('color', colorMappings[route])
     $('.route-campuses').text(campusMappings[route])
