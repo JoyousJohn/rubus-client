@@ -320,6 +320,22 @@ $(document).ready(function() {
         sa_event('btn_press', { 'btn': 'search_top_close' });
     });
 
+    // Report missing location link click
+    $(document).on('click', '.report-missing-location-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const query = $(this).attr('data-query') || $('.search-pill-bar input').val().trim();
+        $('.search-pill-bar input, #nav-from-input, #nav-to-input').blur();
+        openFeedbackModal('missing_location', { query: query });
+    });
+
+    $(document).on('keydown', '.report-missing-location-btn', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            $(this).click();
+        }
+    });
+
     // Track press and hold state
     let pressAndHoldTimer = null;
     let isPressAndHold = false;
@@ -797,7 +813,7 @@ $(document).ready(function() {
         if (entries.length === 0) {
             const inputVal = query !== undefined ? query : $('.search-pill-bar input').val();
             console.log('No results found for search input:', inputVal);
-            $results.html('<div class="dimgray">No results found.</div>');
+            $results.html('<div class="dimgray">No results found. <a role="button" tabindex="0" class="report-missing-location-btn" data-query="' + escapeHTML(inputVal) + '">Report missing location.</a></div>');
             return;
         }
 

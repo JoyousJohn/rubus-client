@@ -2422,7 +2422,7 @@ function showNavigationAutocomplete(inputElement, query) {
 
     if (results.length === 0) {
         console.log('No results found for nav input:', query);
-        resultsContainer.html('<div class="dimgray">No results found.</div>');
+        resultsContainer.html('<div class="dimgray">No results found. <a role="button" tabindex="0" class="report-missing-location-btn" data-query="' + (typeof escapeHtml === 'function' ? escapeHtml(query) : query) + '">Report missing location.</a></div>');
         resultsContainer.removeClass('none');
         return;
     }

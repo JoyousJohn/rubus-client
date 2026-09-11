@@ -4,6 +4,7 @@ const FEEDBACK_RATE_LIMIT_MS = 30000;
 const FEEDBACK_MIN_INTERVAL_MS = 1000;
 let feedbackSending = false;
 let feedbackSource = 'bus';
+let feedbackMissingLocationQuery = null;
 
 function getLastFeedbackTime() {
     try { return parseInt(localStorage.getItem('rubus_last_feedback_time') || '0', 10) || 0; } catch (e) { return 0; }
@@ -40,7 +41,8 @@ function saveFeedbackDraft(source = feedbackSource) {
         drafts[key] = {
             feedback: $('.feedback-input').val() || '',
             contact: $('.feedback-contact-input').val() || '',
-            tripshot: $('.feedback-dest-tripshot').is(':checked')
+            tripshot: $('.feedback-dest-tripshot').is(':checked'),
+            query: (source === 'missing_location') ? feedbackMissingLocationQuery : null
         };
         localStorage.setItem('rubus_feedback_drafts_by_modal', JSON.stringify(drafts));
     } catch (e) {}
@@ -59,6 +61,9 @@ function clearFeedbackDraft(source = feedbackSource) {
         localStorage.removeItem('rubus_feedback_contact_draft');
         localStorage.removeItem('rubus_feedback_tripshot_draft');
     } catch (e) {}
+    if (source === 'missing_location') {
+        feedbackMissingLocationQuery = null;
+    }
     $('.feedback-input').val('');
     $('.feedback-contact-input').val('');
     $('.feedback-contact-container').hide();
@@ -94,6 +99,10 @@ function restoreFeedbackDraft(source = feedbackSource) {
         }
     } catch (e) {}
 
+    if (draft && source === 'missing_location' && draft.query && !feedbackMissingLocationQuery) {
+        feedbackMissingLocationQuery = draft.query;
+    }
+
     if (draft) {
         $('.feedback-input').val(draft.feedback || '');
         if (draft.contact) {
@@ -119,8 +128,18 @@ function restoreFeedbackDraft(source = feedbackSource) {
     updateSendButtonState();
 }
 
-function openFeedbackModal(source = 'bus') {
+function openFeedbackModal(source = 'bus', options = {}) {
+    if (typeof options === 'string') {
+        options = { query: options };
+    }
     feedbackSource = source;
+    if (source === 'missing_location') {
+        const q = (options && typeof options.query === 'string') ? options.query : '';
+        feedbackMissingLocationQuery = q.trim();
+    } else {
+        feedbackMissingLocationQuery = null;
+    }
+
     if (source === 'direct') {
         $('.feedback-title').text("Leave feedback");
         $('.feedback-subtext').text("Suggestions, bug reports, comments, complaints, or anything about RUBus or the buses.");
@@ -133,6 +152,9 @@ function openFeedbackModal(source = 'bus') {
     } else if (source === 'theme') {
         $('.feedback-title').text("Suggest new theme");
         $('.feedback-subtext').text("Or a color palette to add to RUBus.");
+    } else if (source === 'missing_location') {
+        $('.feedback-title').text("Report missing location");
+        $('.feedback-subtext').text("Tell us what place or building is missing from navigation.");
     } else {
         $('.feedback-title').text("Leave feedback");
         const busNum = popupBusName ? ((busData[popupBusName] && busData[popupBusName].busName) ? busData[popupBusName].busName : popupBusName) : null;
@@ -147,6 +169,8 @@ function openFeedbackModal(source = 'bus') {
         $('.feedback-input').attr('placeholder', "What colors do you like?");
     } else if (source === 'font') {
         $('.feedback-input').attr('placeholder', "What font style or typeface?");
+    } else if (source === 'missing_location') {
+        $('.feedback-input').attr('placeholder', "What location is missing?");
     } else {
         $('.feedback-input').attr('placeholder', "What's on your mind?");
     }
@@ -179,6 +203,20 @@ function openFeedbackModal(source = 'bus') {
 
     markPanelOpened('feedback');
     restoreFeedbackDraft(source);
+    if (source === 'missing_location') {
+        const q = feedbackMissingLocationQuery;
+        const cleanQuery = q ? q.replace(/^"+|"+$/g, '').trim() : '';
+        const currentVal = $('.feedback-input').val().trim();
+        if (cleanQuery) {
+            const defaultMsg = `Location "${cleanQuery}" is missing from navigation`;
+            if (!currentVal || !currentVal.toLowerCase().includes(cleanQuery.toLowerCase())) {
+                $('.feedback-input').val(defaultMsg);
+            }
+        } else if (!currentVal) {
+            $('.feedback-input').val('Location is missing from navigation');
+        }
+        updateSendButtonState();
+    }
     $('.empty-feedback').hide();
     $('.feedback-dest-tag').hide();
     $('.leave-feedback-wrapper').fadeIn('fast');
@@ -187,7 +225,8 @@ function openFeedbackModal(source = 'bus') {
         'font': 'settings_font_suggest',
         'theme': 'settings_theme_suggest',
         'bus': 'bus_feedback',
-        'direct': 'direct_feedback'
+        'direct': 'direct_feedback',
+        'missing_location': 'search_missing_location'
     };
     sa_event('btn_press', { btn: btnMap[source] || 'feedback_open' });
     if (source === 'bus') {
@@ -266,6 +305,8 @@ function sendFeedback() {
         busName: busNameVal,
         route: routeVal,
         source: feedbackSource,
+        query: (feedbackSource === 'missing_location' && feedbackMissingLocationQuery) ? feedbackMissingLocationQuery : null,
+        missingLocation: (feedbackSource === 'missing_location' && feedbackMissingLocationQuery) ? feedbackMissingLocationQuery : null,
         sendToRubus: sendToRubus,
         sendToTripshot: sendToTripshot,
         send_to_rubus: sendToRubus,
@@ -296,6 +337,8 @@ function sendFeedback() {
             clearFeedbackDraft(feedbackSource);
             if (feedbackSource === 'font' || feedbackSource === 'theme') {
                 $('.feedback-sent').html('<i class="fa-solid fa-circle-check mr-0p5rem"></i>Suggestion sent');
+            } else if (feedbackSource === 'missing_location') {
+                $('.feedback-sent').html('<i class="fa-solid fa-circle-check mr-0p5rem"></i>Report sent');
             } else {
                 $('.feedback-sent').html('<i class="fa-solid fa-circle-check mr-0p5rem"></i>Feedback sent');
             }

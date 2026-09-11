@@ -504,6 +504,16 @@
     margin-left: 0.5rem;
 }
 
+.report-missing-location-btn {
+    color: var(--theme-link, #5672f7);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.report-missing-location-btn:hover {
+    opacity: 0.8;
+}
+
 .search-result-item {
     display: flex;
     align-items: center;
