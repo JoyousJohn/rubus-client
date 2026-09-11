@@ -117,7 +117,10 @@ function updateSearchHeading() {
                     }
                 }
             }
-            return rawVal;
+            // Not a selected or exactly-resolvable place (e.g. half-typed or
+            // garbage input): report no valid place so the header falls back
+            // instead of echoing keystrokes.
+            return '';
         };
 
         const destName = getNavPlaceName('to');
