@@ -558,13 +558,29 @@ $(document).ready(function() {
     $clearBtn.hide();
 
     let fuse;
+    let fusePois = null;
+    let fuseAddresses = null;
     let buildingList = [];
     let fuseReady = false;
+
+    function shouldSearchAddresses(query) {
+        if (typeof query === 'string') {
+            return /\d/.test(query) || query.trim().length >= 3;
+        }
+        if (query?.$and) {
+            return query.$and.some(clause => {
+                const token = clause.$or[0].name;
+                return /\d/.test(token) || token.length >= 3;
+            });
+        }
+        return true;
+    }
 
     // Make fuse variables globally accessible
     window.fuse = fuse;
     window.fuseReady = fuseReady;
     window.buildingList = buildingList;
+    window.shouldSearchAddresses = shouldSearchAddresses;
 
     // Alias mapping: main word -> array of aliases
     const aliasMap = {
@@ -602,8 +618,9 @@ $(document).ready(function() {
         Promise.all([buildingsPromise, addressPromise])
             .then(([data, addresses]) => {
                 buildingIndex = data;
-                // Convert object to array with name property and inject aliases
-                buildingList = Object.keys(data).map(name => {
+
+                // 1. Campus buildings
+                const poiList = Object.keys(data).map(name => {
                     const obj = { name: name, category: data[name].category || 'building', ...data[name] };
                     obj.aliases = obj.aliases || [];
                     obj.abbreviations = obj.abbreviations || [];
@@ -616,17 +633,7 @@ $(document).ready(function() {
                     return obj;
                 });
 
-                // Add address entries for the selected campus
-                for (const addr of addresses) {
-                    buildingList.push({
-                        ...addr,
-                        category: 'address',
-                        aliases: addr.aliases || [],
-                        abbreviations: addr.abbreviations || []
-                    });
-                }
-
-                // Add bus stops for the selected campus
+                // 2. Bus stops
                 const campusStops = (typeof allStopsData !== 'undefined' && allStopsData[campusKey]) ? allStopsData[campusKey] : stopsData;
                 if (campusStops) {
                     for (const [stopId, stop] of Object.entries(campusStops)) {
@@ -646,15 +653,22 @@ $(document).ready(function() {
                                 stopObj.aliases = stopObj.aliases.concat(aliasMap[mainWord]);
                             }
                         }
-                        buildingList.push(stopObj);
+                        poiList.push(stopObj);
                     }
                 }
 
-                // Precompute lowercase-abbreviation -> entries for O(1) lookups
+                // 3. Municipal addresses
+                for (let i = 0; i < addresses.length; i++) {
+                    addresses[i].category = 'address';
+                }
+
+                // Combine into full buildingList for global lookups and UI
+                buildingList = [...poiList, ...addresses];
+
+                // Precompute lowercase-abbreviation -> entries for O(1) lookups (POIs only)
                 abbrevMap.clear();
-                for (const item of buildingList) {
-                    const abbrs = item.abbreviations || [];
-                    for (const a of abbrs) {
+                for (const item of poiList) {
+                    for (const a of item.abbreviations) {
                         const key = String(a).toLowerCase();
                         if (!abbrevMap.has(key)) {
                             abbrevMap.set(key, []);
@@ -663,11 +677,32 @@ $(document).ready(function() {
                     }
                 }
 
-                fuse = new Fuse(buildingList, {
+                // Tier 1: Campus POIs (buildings, stops, parking) ~1,000 items
+                fusePois = new Fuse(poiList, {
                     keys: ['name', 'aliases', 'abbreviations'],
                     threshold: 0.3,
                     includeScore: true,
                 });
+
+                // Tier 2: Municipal addresses ~19,000 items
+                fuseAddresses = addresses.length > 0 ? new Fuse(addresses, {
+                    keys: ['name', 'aliases'],
+                    threshold: 0.3,
+                    includeScore: true,
+                }) : null;
+
+                // Fast-path router: searches primary campus POIs first; searches addresses
+                // only when query contains a digit (e.g. "76 Sicard") or is at least 3 chars.
+                fuse = {
+                    search: function(query) {
+                        const poiResults = fusePois.search(query);
+                        if (!fuseAddresses || !shouldSearchAddresses(query)) {
+                            return poiResults;
+                        }
+                        const addrResults = fuseAddresses.search(query);
+                        return [...poiResults, ...addrResults];
+                    }
+                };
                 fuseReady = true;
 
                 // Update global variables
@@ -682,17 +717,17 @@ $(document).ready(function() {
     window.initSearchIndex = initSearchIndex;
     initSearchIndex();
 
-    // Run the existing fuzzy-search matching (exact abbreviation / Fuse tokens)
-    function matchQueryItems(sanitizedQuery, queryLower) {
+    // Fast-path matching: Rutgers POIs (buildings, stops, parking) searched instantly
+    function matchPoiItems(sanitizedQuery, queryLower) {
+        if (!fusePois) return [];
         const tokens = sanitizedQuery.split(/\s+/).filter(Boolean);
-        let results;
+        let results = [];
         if (tokens.length === 1) {
-            // O(1) exact-abbreviation lookup via precomputed map when available
             const exactAbbrevMatches = (abbrevMap.get(queryLower) || []);
             if (exactAbbrevMatches.length > 0) {
                 results = exactAbbrevMatches;
             } else {
-                results = fuse.search(sanitizedQuery);
+                results = fusePois.search(sanitizedQuery);
             }
         } else if (tokens.length > 1) {
             const extendedQuery = {
@@ -704,18 +739,48 @@ $(document).ready(function() {
                     ]
                 }))
             };
-            results = fuse.search(extendedQuery);
+            results = fusePois.search(extendedQuery);
             const tokenSet = new Set(tokens.map(t => t.toLowerCase()));
             results = results.map(r => {
                 const item = r.item || r;
-                const abbrMatch = (item.abbreviations || []).find(a => tokenSet.has(a.toLowerCase()));
+                const abbrMatch = item.abbreviations.find(a => tokenSet.has(a.toLowerCase()));
                 return abbrMatch ? { ...r, matchedAbbreviation: abbrMatch } : r;
             });
-        } else {
-            results = [];
         }
         return pinFeaturedResult(results);
     }
+
+    // Secondary matching: municipal street addresses
+    function matchAddressItems(sanitizedQuery) {
+        if (!fuseAddresses || !shouldSearchAddresses(sanitizedQuery)) {
+            return [];
+        }
+        const tokens = sanitizedQuery.split(/\s+/).filter(Boolean);
+        if (tokens.length === 1) {
+            return fuseAddresses.search(sanitizedQuery);
+        } else if (tokens.length > 1) {
+            const extendedQuery = {
+                $and: tokens.map(token => ({
+                    $or: [
+                        { name: token },
+                        { aliases: token }
+                    ]
+                }))
+            };
+            return fuseAddresses.search(extendedQuery);
+        }
+        return [];
+    }
+
+    // Run the full combined search (synchronous)
+    function matchQueryItems(sanitizedQuery, queryLower) {
+        const poiResults = matchPoiItems(sanitizedQuery, queryLower);
+        const addrResults = matchAddressItems(sanitizedQuery);
+        return pinFeaturedResult([...poiResults, ...addrResults]);
+    }
+
+    window.matchPoiItems = matchPoiItems;
+    window.matchAddressItems = matchAddressItems;
 
     // Open the from/to form with this place as the destination
     function onRowDirections(item) {
@@ -906,12 +971,16 @@ $(document).ready(function() {
     };
     window.renderSearchResults = renderResults;
 
+    let addressSearchDebounceTimer = null;
+
     $('.search-pill-bar input').on('input', function() {
         const query = $(this).val().trim();
         // Remove schedule-style room suffixes like "AB-101" -> "AB"
         const sanitizedQuery = query.replace(/-[^\s]*/g, '').replace(/\s+/g, ' ').trim();
         const queryLower = sanitizedQuery.toLowerCase();
         const $results = $('.search-results');
+
+        clearTimeout(addressSearchDebounceTimer);
 
         // Toggle clear button visibility
         toggleClearButton();
@@ -946,33 +1015,50 @@ $(document).ready(function() {
         }
         $('.search-results-wrapper, .search-results').show();
 
-        const results = matchQueryItems(sanitizedQuery, queryLower);
+        const onPick = function(item) {
+            handleSearchItemSelection(item, {
+                'btn': 'search_result_selected',
+                'result': item.name,
+                'category': item.category
+            });
+        };
+
+        // 1. Instant search: Rutgers POIs (buildings, stops, parking)
+        const poiResults = matchPoiItems(sanitizedQuery, queryLower);
+        const hasAddressSearch = fuseAddresses && shouldSearchAddresses(sanitizedQuery);
+
+        // If POIs matched, or if no address search is pending, render immediately
+        if (poiResults.length > 0 || !hasAddressSearch) {
+            renderResults(poiResults, onPick, query);
+        }
+
         if (typeof capturePostHog === 'function') {
             clearTimeout(window._posthogMainSearchTimer);
             window._posthogMainSearchTimer = setTimeout(() => {
                 capturePostHog('search_performed', {
                     query: sanitizedQuery,
                     query_length: sanitizedQuery.length,
-                    result_count: results ? results.length : 0,
-                    has_results: results && results.length > 0,
+                    result_count: poiResults.length,
+                    has_results: poiResults.length > 0,
                     source: 'main_search',
                     campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
                 });
             }, 500);
         }
-        renderResults(results, function(item) {
-            handleSearchItemSelection(item, {
-                'btn': 'search_result_selected',
-                'result': item.name,
-                'category': item.category
-            });
-        }, query);
 
         if (!buildingsLayer) {
             loadBuildings().then(() => {
-                // Temporarily show buildings layer if setting is disabled but we just loaded it
                 showBuildingsTemporarily();
             });
+        }
+
+        // 2. Debounced search: Municipal addresses (120ms)
+        if (hasAddressSearch) {
+            addressSearchDebounceTimer = setTimeout(() => {
+                const addrResults = matchAddressItems(sanitizedQuery);
+                const combined = pinFeaturedResult([...poiResults, ...addrResults]);
+                renderResults(combined, onPick, query);
+            }, 120);
         }
     });
 

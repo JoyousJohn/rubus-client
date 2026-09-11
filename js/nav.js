@@ -2360,11 +2360,14 @@ function findBuildingFuzzy(searchTerm) {
     return null;
 }
 
+let navAddressSearchTimer = null;
+
 // Show autocomplete dropdown for navigation inputs
 function showNavigationAutocomplete(inputElement, query) {
     const isFromInput = inputElement.attr('id') === 'nav-from-input';
     const resultsContainer = $('.nav-search-results');
 
+    clearTimeout(navAddressSearchTimer);
     resultsContainer.empty();
     currentAutocompleteIndex = -1;
 
@@ -2386,54 +2389,162 @@ function showNavigationAutocomplete(inputElement, query) {
 
     // Perform fuzzy search with schedule-style sanitization and abbreviation support
     const sanitizedQuery = query.replace(/-[^\s]*/g, '').replace(/\s+/g, ' ').trim();
-    const tokens = sanitizedQuery.split(/\s+/).filter(Boolean);
     const queryLower = sanitizedQuery.toLowerCase();
-    let results;
 
-    if (tokens.length === 1) {
-        // Prefer exact abbreviation matches for single-token queries
-        const list = Array.isArray(window.buildingList) ? window.buildingList : [];
-        const exactAbbrevMatches = list
-            .map(item => {
-                const match = (item.abbreviations || []).find(abbr => String(abbr).toLowerCase() === queryLower);
-                return match ? { item, matchedAbbreviation: match } : null;
-            })
-            .filter(Boolean);
-        if (exactAbbrevMatches.length > 0) {
-            results = exactAbbrevMatches;
-        } else {
-            results = window.fuse.search(sanitizedQuery);
+    function renderNavItems(results) {
+        resultsContainer.empty();
+        if (results.length === 0) {
+            console.log('No results found for nav input:', query);
+            resultsContainer.html('<div class="dimgray">No results found. <a role="button" tabindex="0" class="report-missing-location-btn" data-query="' + (typeof escapeHtml === 'function' ? escapeHtml(query) : query) + '">Report missing location.</a></div>');
+            resultsContainer.removeClass('none');
+            return;
         }
-    } else if (tokens.length > 1) {
-        // Multi-token search across name, aliases, and abbreviations
-        const extendedQuery = {
-            $and: tokens.map(token => ({
-                $or: [
-                    { name: token },
-                    { aliases: token },
-                    { abbreviations: token }
-                ]
-            }))
-        };
-        results = window.fuse.search(extendedQuery);
-        // Annotate results when any token exactly equals an abbreviation
-        const tokenSet = new Set(tokens.map(t => t.toLowerCase()));
-        results = results.map(r => {
-            const item = r.item || r;
-            const abbrMatch = (item.abbreviations || []).find(a => tokenSet.has(String(a).toLowerCase()));
-            return abbrMatch ? { ...r, matchedAbbreviation: abbrMatch } : r;
-        });
-    }
 
-    if (results.length === 0) {
-        console.log('No results found for nav input:', query);
-        resultsContainer.html('<div class="dimgray">No results found. <a role="button" tabindex="0" class="report-missing-location-btn" data-query="' + (typeof escapeHtml === 'function' ? escapeHtml(query) : query) + '">Report missing location.</a></div>');
         resultsContainer.removeClass('none');
-        return;
+
+        // Create result elements (limit to 30 results), matching the main search's
+        // .search-result-item row structure so styling is identical.
+        const maxResults = 30;
+        results.slice(0, maxResults).forEach(result => {
+            const item = result.item ? result.item : result;
+            const matchedAbbreviation = result.matchedAbbreviation;
+            let icon = '';
+            if (item.category === 'building') {
+                icon = '<i class="icon icon-building"></i>';
+            } else if (item.category === 'parking') {
+                icon = '<i class="icon icon-parking"></i>';
+            } else if (item.category === 'stop') {
+                icon = '<i class="icon icon-bus-simple"></i>';
+            } else if (item.category === 'address') {
+                icon = '<i class="icon icon-location-dot"></i>';
+            }
+
+            const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
+            // If this result matches the place already set in the active field,
+            // mark it as selected (bold name).
+            const currentValue = inputElement.val().trim().toLowerCase();
+            const isSelected = item.name.toLowerCase() === currentValue;
+            const $resultElement = $('<div class="search-result-item flex' + (isSelected ? ' selected' : '') + '"></div>');
+            if (icon) $resultElement.append(icon);
+            $resultElement.append($('<div' + (isSelected ? ' class="search-result-selected-name"' : '') + '></div>').text(displayText));
+            // Right chevron: tapping the row selects the place into the field.
+            $resultElement.append('<i class="search-result-map-pin icon icon-chevron-right"></i>');
+            // Hidden Nav-button placeholder to match search-row height (which includes a 1rem-padded Nav pill) without changing row-gap – keeps 1.3rem gap visually identical
+            $resultElement.append('<span class="search-result-directions-btn" aria-hidden="true" style="visibility:hidden; pointer-events:none; margin-left:0; padding:1rem; font-size:1.3rem; border:1px solid transparent; height:auto; gap:0.4rem; display:flex; align-items:center;"><i class="fa-solid fa-diamond-turn-right"></i>Nav</span>');
+
+            // Use click only (like the main search results) so touch scrolling
+            // doesn't trigger selection — click fires only after a tap without scroll.
+            const handleSelection = function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                // Choosing a source clears the pending-recent state
+                if (isFromInput && window.navPendingSourceSelection) {
+                    window.navPendingSourceSelection = false;
+                }
+                // Set the input value programmatically to avoid clearing selection
+                isSettingInputProgrammatically = true;
+                inputElement.val(item.name);
+                isSettingInputProgrammatically = false;
+
+                // Save selected item to recent searches
+                saveRecentSearch(item);
+
+                // Set the selected place variable (may be building or stop by name)
+                if (isFromInput) {
+                    if (item.category === 'stop' && (item.id || item.number)) {
+                        selectedFromStop = String(item.id || item.number);
+                        selectedFromBuilding = null;
+                    } else {
+                        selectedFromBuilding = item.name.toLowerCase();
+                        selectedFromStop = null;
+                    }
+                } else {
+                    if (item.category === 'stop' && (item.id || item.number)) {
+                        selectedToStop = String(item.id || item.number);
+                        selectedToBuilding = null;
+                    } else {
+                        selectedToBuilding = item.name.toLowerCase();
+                        selectedToStop = null;
+                    }
+                }
+
+                // Track navigation place selection
+                sa_event('btn_press', {
+                    'btn': isFromInput ? 'nav_from_place_selected' : 'nav_to_place_selected',
+                    'place': item.name,
+                    'category': item.category || 'unknown'
+                });
+
+                if (typeof capturePostHog === 'function') {
+                    capturePostHog('search_result_selected', {
+                        item_name: item.name,
+                        item_category: item.category || 'unknown',
+                        item_id: item.id || item.number || null,
+                        source: isFromInput ? 'nav_from_autocomplete' : 'nav_to_autocomplete',
+                        campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                    });
+                }
+
+                // Refresh input styling/state
+                inputElement.trigger('input');
+
+                // Try to compute route based on resolvable input values (do not gate on selected* flags)
+                const fromValue = $('#nav-from-input').val().trim();
+                const toValue = $('#nav-to-input').val().trim();
+                if (fromValue && toValue) {
+                    // Hide results immediately for better UX (before route calculation)
+                    resultsContainer.addClass('none');
+                    const fromPlace = resolvePlaceByName(fromValue);
+                    const toPlace = resolvePlaceByName(toValue);
+                    if (fromPlace && toPlace) {
+                        // Dismiss mobile keyboard to reveal directions
+                        try { inputElement.blur(); } catch (err) { /* ignore */ }
+                        // Run route calculation in background to prevent blocking UI
+                        setTimeout(() => {
+                            calculateRoute(fromValue, toValue);
+                        }, 0);
+                    }
+                } else if (isFromInput && !toValue) {
+                    window._navSwitchingInputs = true;
+                    setTimeout(() => { window._navSwitchingInputs = false; }, 350);
+                    if (window.focusNavToInput) window.focusNavToInput();
+                    else $('#nav-to-input').focus();
+                    renderNavToRecents();
+                } else if (!isFromInput && !fromValue) {
+                    window._navSwitchingInputs = true;
+                    setTimeout(() => { window._navSwitchingInputs = false; }, 350);
+                    if (window.focusNavFromInput) window.focusNavFromInput();
+                    else $('#nav-from-input').focus();
+                    renderNavFromRecents();
+                }
+            };
+
+            // Attach click for selection (fires after a tap, not during a scroll)
+            $resultElement.on('click', handleSelection);
+
+            // After picking a place, both bars come back (the other input is next).
+            const restoreBars = function() {
+                if (isFromInput && window.navPendingSourceSelection) {
+                    window.navPendingSourceSelection = false;
+                }
+                $('.nav-pill-bar').removeClass('nav-collapsed');
+                $('.search-wrapper').removeClass('nav-source-hidden');
+                $('.nav-dest-row').removeClass('none');
+            };
+
+            $resultElement.on('click', restoreBars);
+            resultsContainer.append($resultElement);
+        });
+
+        replaceFontAwesomeIcons();
     }
 
-    // Force the featured building (if present) to the top of the matches.
-    results = window.pinFeaturedResult(results);
+    // 1. Instant search: Rutgers POIs (buildings, stops, parking)
+    const poiResults = window.matchPoiItems(sanitizedQuery, queryLower);
+    const hasAddressSearch = window.shouldSearchAddresses(sanitizedQuery);
+
+    if (poiResults.length > 0 || !hasAddressSearch) {
+        renderNavItems(poiResults);
+    }
 
     if (typeof capturePostHog === 'function') {
         clearTimeout(window._posthogNavSearchTimer);
@@ -2441,152 +2552,22 @@ function showNavigationAutocomplete(inputElement, query) {
             capturePostHog('search_performed', {
                 query: sanitizedQuery,
                 query_length: sanitizedQuery.length,
-                result_count: results ? results.length : 0,
-                has_results: results && results.length > 0,
+                result_count: poiResults.length,
+                has_results: poiResults.length > 0,
                 source: isFromInput ? 'nav_from' : 'nav_to',
                 campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
             });
         }, 500);
     }
 
-    // Create result elements (limit to 30 results), matching the main search's
-    // .search-result-item row structure so styling is identical.
-    const maxResults = 30;
-    results.slice(0, maxResults).forEach(result => {
-        const item = result.item ? result.item : result;
-        const matchedAbbreviation = result.matchedAbbreviation;
-        let icon = '';
-        if (item.category === 'building') {
-            icon = '<i class="icon icon-building"></i>';
-        } else if (item.category === 'parking') {
-            icon = '<i class="icon icon-parking"></i>';
-        } else if (item.category === 'stop') {
-            icon = '<i class="icon icon-bus-simple"></i>';
-        } else if (item.category === 'address') {
-            icon = '<i class="icon icon-location-dot"></i>';
-        }
-
-        const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;
-        // If this result matches the place already set in the active field,
-        // mark it as selected (bold name).
-        const currentValue = inputElement.val().trim().toLowerCase();
-        const isSelected = item.name.toLowerCase() === currentValue;
-        const $resultElement = $('<div class="search-result-item flex' + (isSelected ? ' selected' : '') + '"></div>');
-        if (icon) $resultElement.append(icon);
-        $resultElement.append($('<div' + (isSelected ? ' class="search-result-selected-name"' : '') + '></div>').text(displayText));
-        // Right chevron: tapping the row selects the place into the field.
-        $resultElement.append('<i class="search-result-map-pin icon icon-chevron-right"></i>');
-        // Hidden Nav-button placeholder to match search-row height (which includes a 1rem-padded Nav pill) without changing row-gap – keeps 1.3rem gap visually identical
-        $resultElement.append('<span class="search-result-directions-btn" aria-hidden="true" style="visibility:hidden; pointer-events:none; margin-left:0; padding:1rem; font-size:1.3rem; border:1px solid transparent; height:auto; gap:0.4rem; display:flex; align-items:center;"><i class="fa-solid fa-diamond-turn-right"></i>Nav</span>');
-
-        // Use click only (like the main search results) so touch scrolling
-        // doesn't trigger selection — click fires only after a tap without scroll.
-        const handleSelection = function(e) {
-            if (e && e.stopPropagation) e.stopPropagation();
-            // Choosing a source clears the pending-recent state
-            if (isFromInput && window.navPendingSourceSelection) {
-                window.navPendingSourceSelection = false;
-            }
-            // Set the input value programmatically to avoid clearing selection
-            isSettingInputProgrammatically = true;
-            inputElement.val(item.name);
-            isSettingInputProgrammatically = false;
-
-            // Save selected item to recent searches
-            saveRecentSearch(item);
-
-            // Set the selected place variable (may be building or stop by name)
-            if (isFromInput) {
-                if (item.category === 'stop' && (item.id || item.number)) {
-                    selectedFromStop = String(item.id || item.number);
-                    selectedFromBuilding = null;
-                } else {
-                    selectedFromBuilding = item.name.toLowerCase();
-                    selectedFromStop = null;
-                }
-            } else {
-                if (item.category === 'stop' && (item.id || item.number)) {
-                    selectedToStop = String(item.id || item.number);
-                    selectedToBuilding = null;
-                } else {
-                    selectedToBuilding = item.name.toLowerCase();
-                    selectedToStop = null;
-                }
-            }
-
-            // Track navigation place selection
-            sa_event('btn_press', {
-                'btn': isFromInput ? 'nav_from_place_selected' : 'nav_to_place_selected',
-                'place': item.name,
-                'category': item.category || 'unknown'
-            });
-
-            if (typeof capturePostHog === 'function') {
-                capturePostHog('search_result_selected', {
-                    item_name: item.name,
-                    item_category: item.category || 'unknown',
-                    item_id: item.id || item.number || null,
-                    source: isFromInput ? 'nav_from_autocomplete' : 'nav_to_autocomplete',
-                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-                });
-            }
-
-
-            // Refresh input styling/state
-            inputElement.trigger('input');
-
-            // Try to compute route based on resolvable input values (do not gate on selected* flags)
-            const fromValue = $('#nav-from-input').val().trim();
-            const toValue = $('#nav-to-input').val().trim();
-            if (fromValue && toValue) {
-                // Hide results immediately for better UX (before route calculation)
-                resultsContainer.addClass('none');
-                const fromPlace = resolvePlaceByName(fromValue);
-                const toPlace = resolvePlaceByName(toValue);
-                if (fromPlace && toPlace) {
-                    // Dismiss mobile keyboard to reveal directions
-                    try { inputElement.blur(); } catch (err) { /* ignore */ }
-                    // Run route calculation in background to prevent blocking UI
-                    setTimeout(() => {
-                        calculateRoute(fromValue, toValue);
-                    }, 0);
-                }
-            } else if (isFromInput && !toValue) {
-                window._navSwitchingInputs = true;
-                setTimeout(() => { window._navSwitchingInputs = false; }, 350);
-                if (window.focusNavToInput) window.focusNavToInput();
-                else $('#nav-to-input').focus();
-                renderNavToRecents();
-            } else if (!isFromInput && !fromValue) {
-                window._navSwitchingInputs = true;
-                setTimeout(() => { window._navSwitchingInputs = false; }, 350);
-                if (window.focusNavFromInput) window.focusNavFromInput();
-                else $('#nav-from-input').focus();
-                renderNavFromRecents();
-            }
-        };
-
-        // Attach click for selection (fires after a tap, not during a scroll)
-        $resultElement.on('click', handleSelection);
-
-        // After picking a place, both bars come back (the other input is next).
-        const restoreBars = function() {
-            if (isFromInput && window.navPendingSourceSelection) {
-                window.navPendingSourceSelection = false;
-            }
-            $('.nav-pill-bar').removeClass('nav-collapsed');
-            $('.search-wrapper').removeClass('nav-source-hidden');
-            $('.nav-dest-row').removeClass('none');
-        };
-        $resultElement.on('click', restoreBars);
-
-        resultsContainer.append($resultElement);
-    });
-    
-    // Convert FontAwesome icons to custom icons
-    replaceFontAwesomeIcons();
-
-    resultsContainer.removeClass('none');
+    // 2. Debounced search: Municipal addresses (120ms)
+    if (hasAddressSearch) {
+        navAddressSearchTimer = setTimeout(() => {
+            const addrResults = window.matchAddressItems(sanitizedQuery);
+            const combined = window.pinFeaturedResult([...poiResults, ...addrResults]);
+            renderNavItems(combined);
+        }, 120);
+    }
 }
 
 // Hide autocomplete dropdowns
