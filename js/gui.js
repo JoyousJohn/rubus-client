@@ -283,27 +283,30 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         updateDirectFeedbackBtnVisibility();
     }
 
-    // Apply selection styling to the currently selected route if it exists in the filtered routes
+    // Apply selection styling to the currently selected route if it exists in the filtered routes.
+    // Uses the effective pill selection (subpanel route while panels are open,
+    // else the map filter) so poll-time rebuilds don't wipe the subpanel highlight.
     let didCenterScroll = false;
-    if (shownRoute) {
+    const effectivePillRoute = getEffectivePillSelection();
+    if (effectivePillRoute) {
         // Use the existing toggleRouteSelectors logic to select the route
         $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn, .direct-feedback-btn').each(function() {
             const rn = $(this).attr('routeName');
-            if (rn && rn !== shownRoute) {
+            if (rn && rn !== effectivePillRoute) {
                 const rnInService = routeHasInServiceBuses(rn);
                 $(this).css('background-color', 'gray').css('opacity', rnInService ? '1' : '0.5');
             }
         });
 
-        if (routesArray.includes(shownRoute)) {
+        if (routesArray.includes(effectivePillRoute)) {
             // Always use the route color when selected, regardless of in-service status
-            const selectedRouteColor = colorMappings[shownRoute];
-            $(`.route-selector[routeName="${shownRoute}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`).css('opacity', '1')
+            const selectedRouteColor = colorMappings[effectivePillRoute];
+            $(`.route-selector[routeName="${effectivePillRoute}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`).css('opacity', '1')
 
             const container = $('.route-selectors');
 
             if (container[0].scrollWidth > $(document).width()) {
-                const element = $(`.route-selector[routeName="${shownRoute}"]`);
+                const element = $(`.route-selector[routeName="${effectivePillRoute}"]`);
                 const containerWidth = container.width();
                 const elementWidth = element.outerWidth();
 
@@ -651,6 +654,19 @@ function highlightSubpanelRoutePill(route) {
     });
     const selectedRouteColor = colorMappings[route];
     $(`.route-selector[routeName="${route}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`).css('opacity', '1');
+}
+
+// Which route the pills should show as selected. While the info panels are
+// open with a subpanel route rendered, the pills live inside the subpanel and
+// serve that selection — so panelRoute wins and the map filter (shownRoute)
+// is ignored. Otherwise the pills are on the map and reflect shownRoute.
+// Poll-time repainters (populateRouteSelectors, prunePolylinesWithoutInService)
+// must use this, or every poll wipes the subpanel highlight.
+function getEffectivePillSelection() {
+    if (panelRoute && $('.info-panels-show-hide-wrapper').is(':visible')) {
+        return panelRoute;
+    }
+    return shownRoute;
 }
 
 // Clear a subpanel selection's highlight and fall back to the true map filter

@@ -1135,17 +1135,23 @@ function prunePolylinesWithoutInService() {
                 }
             }
 
-            // Update route selector button color on UI
+            // Update route selector button color on UI. Uses the effective pill
+            // selection (subpanel route while panels are open, else the map
+            // filter) so the poll doesn't wipe the subpanel highlight — and
+            // maintains the selection glow, which populateRouteSelectors sets
+            // on rebuild but this per-poll touch-up otherwise leaves stale.
             const $btn = $(`.route-selector[routeName="${routeName}"]`);
             if ($btn.length) {
-                if (shownRoute) {
-                    if (routeName === shownRoute) {
-                        $btn.css({ 'background-color': colorMappings[routeName], 'opacity': '1' });
+                const effectivePillRoute = getEffectivePillSelection();
+                if (effectivePillRoute) {
+                    if (routeName === effectivePillRoute) {
+                        const selColor = colorMappings[routeName];
+                        $btn.css({ 'background-color': selColor, 'opacity': '1', 'box-shadow': `0 0 10px ${selColor}` });
                     } else {
-                        $btn.css({ 'background-color': 'gray', 'opacity': routeHasInServiceBuses(routeName) ? '1' : '0.5' });
+                        $btn.css({ 'background-color': 'gray', 'opacity': routeHasInServiceBuses(routeName) ? '1' : '0.5', 'box-shadow': '' });
                     }
                 } else {
-                    $btn.css({ 'background-color': style.buttonColor, 'opacity': String(style.buttonOpacity) });
+                    $btn.css({ 'background-color': style.buttonColor, 'opacity': String(style.buttonOpacity), 'box-shadow': '' });
                 }
             }
 
