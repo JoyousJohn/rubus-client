@@ -9,7 +9,7 @@ let searchOpenView = null; // { center, zoom } of the map right before the searc
 let searchViewportListenersAttached = false;
 let searchVvpHandler = null;
 
-const SEARCH_PLACEHOLDER_TEMPLATE = 'Search {num} places & addresses';
+const SEARCH_PLACEHOLDER_TEMPLATE = 'Search {num}+ buildings & lots';
 
 // Campus key -> display name for the search menu heading
 const SEARCH_CAMPUS_NAMES = {
@@ -272,8 +272,8 @@ window.focusNavInput = function(selector) {
 window.focusNavFromInput = function() { return window.focusNavInput('#nav-from-input'); };
 window.focusNavToInput = function() { return window.focusNavInput('#nav-to-input'); };
 
-// Function to update search placeholder with building count
-function updateSearchPlaceholder(buildingCount) {
+// Function to update search placeholder with POI count
+function updateSearchPlaceholder(poiCount) {
     if (searchMode === 'directions') {
         return;
     }
@@ -282,14 +282,8 @@ function updateSearchPlaceholder(buildingCount) {
         return;
     }
     
-    const formattedCount = buildingCount.toLocaleString();
-    
-    const currentPlaceholder = $searchInput.attr('placeholder') || '';
-    const originalPlaceholder = currentPlaceholder.includes('{num}')
-        ? currentPlaceholder
-        : SEARCH_PLACEHOLDER_TEMPLATE;
-    const updatedPlaceholder = originalPlaceholder.replace('{num}', formattedCount);
-    $searchInput.attr('placeholder', updatedPlaceholder);
+    const formattedCount = poiCount.toLocaleString();
+    $searchInput.attr('placeholder', SEARCH_PLACEHOLDER_TEMPLATE.replace('{num}', formattedCount));
 }
 
 $(document).ready(function() {
@@ -561,6 +555,7 @@ $(document).ready(function() {
     let fusePois = null;
     let fuseAddresses = null;
     let buildingList = [];
+    let poiList = [];
     let fuseReady = false;
 
     function shouldSearchAddresses(query) {
@@ -580,6 +575,7 @@ $(document).ready(function() {
     window.fuse = fuse;
     window.fuseReady = fuseReady;
     window.buildingList = buildingList;
+    window.poiList = poiList;
     window.shouldSearchAddresses = shouldSearchAddresses;
 
     // Alias mapping: main word -> array of aliases
@@ -709,9 +705,10 @@ $(document).ready(function() {
                 window.fuse = fuse;
                 window.fuseReady = fuseReady;
                 window.buildingList = buildingList;
+                window.poiList = poiList;
                 
-                // Update search placeholder with actual count
-                updateSearchPlaceholder(buildingList.length);
+                // Update search placeholder with actual count of POI places
+                updateSearchPlaceholder(poiList.length);
             });
     }
     window.initSearchIndex = initSearchIndex;
@@ -1614,9 +1611,9 @@ function applySearchMode(mode) {
         $('.nav-pill-bar').addClass('none').removeClass('nav-collapsed');
         $('.search-wrapper').removeClass('nav-source-hidden');
         $('.search-content').removeClass('none');
-        $('.search-pill-bar input').attr('placeholder', 'Search {num} buildings & lots');
-        if (window.buildingList && window.buildingList.length) {
-            updateSearchPlaceholder(window.buildingList.length);
+        const poiCount = (window.poiList && window.poiList.length) || (window.buildingList && window.buildingList.length) || 0;
+        if (poiCount) {
+            updateSearchPlaceholder(poiCount);
         }
         // Re-render the search view: query results if the input still has a
         // query, otherwise the empty-state recents/popular sections. The input
