@@ -209,6 +209,7 @@ function renderNavFromRecents() {
         if (item.category === 'building') rightTypeIcon = 'icon-building';
         else if (item.category === 'parking') rightTypeIcon = 'icon-parking';
         else if (item.category === 'stop') rightTypeIcon = 'icon-bus-simple';
+        else if (item.category === 'address') rightTypeIcon = 'icon-location-dot';
         const $row = $('<div class="search-result-item flex"></div>');
         $row.append(leftIcon);
         $row.append($('<div></div>').text(item.name));
@@ -287,6 +288,7 @@ function renderNavToRecents() {
         if (item.category === 'building') rightTypeIcon = 'icon-building';
         else if (item.category === 'parking') rightTypeIcon = 'icon-parking';
         else if (item.category === 'stop') rightTypeIcon = 'icon-bus-simple';
+        else if (item.category === 'address') rightTypeIcon = 'icon-location-dot';
         const $row = $('<div class="search-result-item flex"></div>');
         $row.append(leftIcon);
         $row.append($('<div></div>').text(item.name));
@@ -2225,7 +2227,7 @@ function checkAndTriggerRouteCalculation() {
 
         // Check if from input matches selected building or stop
         if (selectedFromBuilding) {
-            const fromBuilding = buildingIndex[selectedFromBuilding];
+            const fromBuilding = (buildingIndex && buildingIndex[selectedFromBuilding]) || resolvePlaceByName(selectedFromBuilding);
             fromMatches = fromBuilding && fromBuilding.name.toLowerCase() === fromValue.toLowerCase();
         } else if (selectedFromStop) {
             const fromStop = stopsData[selectedFromStop];
@@ -2234,7 +2236,7 @@ function checkAndTriggerRouteCalculation() {
 
         // Check if to input matches selected building or stop
         if (selectedToBuilding) {
-            const toBuilding = buildingIndex[selectedToBuilding];
+            const toBuilding = (buildingIndex && buildingIndex[selectedToBuilding]) || resolvePlaceByName(selectedToBuilding);
             toMatches = toBuilding && toBuilding.name.toLowerCase() === toValue.toLowerCase();
         } else if (selectedToStop) {
             const toStop = stopsData[selectedToStop];
@@ -2457,6 +2459,8 @@ function showNavigationAutocomplete(inputElement, query) {
             icon = '<i class="icon icon-parking"></i>';
         } else if (item.category === 'stop') {
             icon = '<i class="icon icon-bus-simple"></i>';
+        } else if (item.category === 'address') {
+            icon = '<i class="icon icon-location-dot"></i>';
         }
 
         const displayText = matchedAbbreviation ? `${item.name} (${matchedAbbreviation})` : item.name;

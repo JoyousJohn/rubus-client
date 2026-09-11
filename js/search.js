@@ -9,7 +9,7 @@ let searchOpenView = null; // { center, zoom } of the map right before the searc
 let searchViewportListenersAttached = false;
 let searchVvpHandler = null;
 
-const SEARCH_PLACEHOLDER_TEMPLATE = 'Search {num} buildings & lots';
+const SEARCH_PLACEHOLDER_TEMPLATE = 'Search {num} places & addresses';
 
 // Campus key -> display name for the search menu heading
 const SEARCH_CAMPUS_NAMES = {
@@ -34,18 +34,33 @@ function isFeaturedResult(item) {
     return FEATURED_RESULT_KEYWORDS.some(keyword => name.includes(keyword));
 }
 
-// Reorder matched results so every featured building (SHI Stadium, student
-// centers, dining halls) is placed right after any stops (never above stops),
-// otherwise at the very top. Results are either Fusion-style ({ item, ... })
-// or raw items. Returns the same array (mutated) so callers can keep using it.
+// Reorder matched results so that:
+// 1. All stops, buildings, and parking lots always come before addresses.
+// 2. Featured buildings (SHI Stadium, student centers, dining halls) are placed
+//    right after any stops (never above stops), otherwise at the top of buildings.
+// 3. Addresses follow after all stops, buildings, and lots.
+// Results are either Fusion-style ({ item, ... }) or raw items.
+// Returns the same array (mutated) so callers can keep using it.
 function pinFeaturedResult(results) {
     if (!Array.isArray(results) || results.length <= 1) return results;
 
+    // Partition into non-addresses (stops, buildings, lots) and addresses
+    const nonAddresses = [];
+    const addresses = [];
+    for (const r of results) {
+        const item = r.item || r;
+        if (item.category === 'address') {
+            addresses.push(r);
+        } else {
+            nonAddresses.push(r);
+        }
+    }
+
     const lastStopIndex = (() => {
         let idx = -1;
-        for (let i = 0; i < results.length; i++) {
-            const item = results[i] && results[i].item ? results[i].item : results[i];
-            if (item && item.category === 'stop') idx = i;
+        for (let i = 0; i < nonAddresses.length; i++) {
+            const item = nonAddresses[i].item || nonAddresses[i];
+            if (item.category === 'stop') idx = i;
         }
         return idx;
     })();
@@ -53,18 +68,21 @@ function pinFeaturedResult(results) {
     // Extract featured results preserving their relative order.
     const featured = [];
     const rest = [];
-    for (const r of results) {
-        const item = r && r.item ? r.item : r;
+    for (const r of nonAddresses) {
+        const item = r.item || r;
         if (isFeaturedResult(item)) featured.push(r);
         else rest.push(r);
     }
-    if (featured.length === 0) return results;
 
     // Insert featured results right after the last stop (never above stops);
-    // otherwise at the very top.
-    const insertionIndex = lastStopIndex === -1 ? 0 : lastStopIndex + 1;
-    rest.splice(insertionIndex, 0, ...featured);
-    results.splice(0, results.length, ...rest);
+    // otherwise at the very top of non-addresses.
+    if (featured.length > 0) {
+        const insertionIndex = lastStopIndex === -1 ? 0 : lastStopIndex + 1;
+        rest.splice(insertionIndex, 0, ...featured);
+    }
+
+    const ordered = rest.concat(addresses);
+    results.splice(0, results.length, ...ordered);
     return results;
 }
 window.pinFeaturedResult = pinFeaturedResult;
@@ -288,6 +306,8 @@ $(document).ready(function() {
             return 'icon icon-parking';
         } else if (item.category === 'stop') {
             return 'icon icon-bus-simple';
+        } else if (item.category === 'address') {
+            return 'icon icon-location-dot';
         }
         return '';
     }
@@ -560,7 +580,7 @@ $(document).ready(function() {
     // Precomputed lowercase-abbreviation -> matching place entries (built once)
     let abbrevMap = new Map();
 
-    // Load campus-specific building and stop index and initialize Fuse.js
+    // Load campus-specific building, address, and stop index and initialize Fuse.js
     function initSearchIndex() {
         const campusKey = (settings && settings['campus']) || 'nb';
         const campusToFile = {
@@ -568,10 +588,19 @@ $(document).ready(function() {
             'newark': 'lib/building_index_newark.json',
             'camden': 'lib/building_index_camden.json'
         };
+        const campusToAddressFile = {
+            'nb': 'lib/addresses_nb.json'
+        };
         const buildingsJsonPath = campusToFile[campusKey] || campusToFile['nb'];
-        fetch(buildingsJsonPath)
-            .then(response => response.json())
-            .then(data => {
+        const addressJsonPath = campusToAddressFile[campusKey];
+
+        const buildingsPromise = fetch(buildingsJsonPath).then(response => response.json());
+        const addressPromise = addressJsonPath
+            ? fetch(addressJsonPath).then(response => response.json())
+            : Promise.resolve([]);
+
+        Promise.all([buildingsPromise, addressPromise])
+            .then(([data, addresses]) => {
                 buildingIndex = data;
                 // Convert object to array with name property and inject aliases
                 buildingList = Object.keys(data).map(name => {
@@ -586,6 +615,16 @@ $(document).ready(function() {
                     }
                     return obj;
                 });
+
+                // Add address entries for the selected campus
+                for (const addr of addresses) {
+                    buildingList.push({
+                        ...addr,
+                        category: 'address',
+                        aliases: addr.aliases || [],
+                        abbreviations: addr.abbreviations || []
+                    });
+                }
 
                 // Add bus stops for the selected campus
                 const campusStops = (typeof allStopsData !== 'undefined' && allStopsData[campusKey]) ? allStopsData[campusKey] : stopsData;
@@ -829,7 +868,7 @@ $(document).ready(function() {
             let isSelected = false;
             if (item.category === 'stop') {
                 isSelected = typeof popupStopId !== 'undefined' && String(popupStopId) === String(item.id);
-            } else if (item.category === 'building') {
+            } else if (item.category === 'building' || item.category === 'address' || item.category === 'parking') {
                 isSelected = typeof popupBuildingName !== 'undefined' && String(popupBuildingName).toLowerCase() === String(item.name).toLowerCase();
             }
 
@@ -1058,7 +1097,7 @@ $(document).ready(function() {
     // Helper function to handle search item selection (stop or building)
     function handleSearchItemSelection(item, eventData) {
         closeSearch();
-        searchReentry = item.category === 'stop' || item.category === 'building' || item.category === 'parking';
+        searchReentry = item.category === 'stop' || item.category === 'building' || item.category === 'parking' || item.category === 'address';
         
         if (item.category === 'stop') {
             // Handle stop selection
@@ -1135,6 +1174,7 @@ $(document).ready(function() {
                 let typeIcon = 'icon-building';
                 if (destItem.category === 'stop') typeIcon = 'icon-bus-simple';
                 else if (destItem.category === 'parking') typeIcon = 'icon-parking';
+                else if (destItem.category === 'address') typeIcon = 'icon-location-dot';
 
                 const $row = $('<div class="search-result-item flex"></div>');
                 $row.append('<i class="icon ' + typeIcon + '"></i>');
@@ -1207,6 +1247,7 @@ $(document).ready(function() {
             if (item.category === 'building') _typeIcon = 'icon-building';
             else if (item.category === 'parking') _typeIcon = 'icon-parking';
             else if (item.category === 'stop') _typeIcon = 'icon-bus-simple';
+            else if (item.category === 'address') _typeIcon = 'icon-location-dot';
             if (_typeIcon) $row.append('<i class="icon ' + _typeIcon + '"></i>');
             const $nameWrap = $('<div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; overflow:hidden;"></div>');
             const $nameText = $('<div style="min-width:0; white-space:normal; overflow-wrap:break-word;"></div>').text(item.name);

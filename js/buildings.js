@@ -55,6 +55,10 @@ function unhighlightBuilding() {
         }
     }
     highlightedBuildingLayer = null;
+    if (window.addressMarker) {
+        map.removeLayer(window.addressMarker);
+        window.addressMarker = null;
+    }
 }
 
 function highlightBuilding(feature) {
@@ -322,6 +326,18 @@ function showBuildingInfo(feature) {
         // Remove highlight from previous
         unhighlightBuilding();
         highlightBuilding(feature);
+    } else {
+        unhighlightBuilding();
+    }
+
+    if (feature.category === 'address') {
+        const addressIcon = L.divIcon({
+            className: 'address-pin-marker',
+            html: '<div style="width:28px;height:28px;background:#2563eb;border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.35);"><i class="icon icon-location-dot" style="color:white;font-size:14px;"></i></div>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+        });
+        window.addressMarker = L.marker([feature.lat, feature.lng], { icon: addressIcon }).addTo(map);
     }
 
     // Set up and default the switcher
