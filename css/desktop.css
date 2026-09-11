@@ -35,6 +35,31 @@
         background-color: transparent;
     }
 
+    /* Pin bus log to the right like bus/stop/building popups */
+    .bus-log-wrapper {
+        left: auto;
+        right: 0;
+        top: 0;
+        bottom: auto;
+        width: 30%;
+        max-width: 30%;
+        height: auto;
+        max-height: calc(100vh - 2rem);
+        margin: 1rem 1rem 1rem auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--theme-border) transparent;
+    }
+
+    .bus-log-wrapper::-webkit-scrollbar {
+        display: block;
+        width: 6px;
+    }
+
+    .bus-log-wrapper::-webkit-scrollbar-thumb {
+        background-color: var(--theme-border);
+        border-radius: 1rem;
+    }
+
     .getting-location-popup {
         margin-top: 0;
     }
