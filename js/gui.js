@@ -3924,6 +3924,7 @@ const toggleSettings = [
     'toggle-show-chat',
     'toggle-show-thinking',
     'toggle-show-road-network',
+    'toggle-show-address-points',
     'toggle-distances-line-on-focus',
     'toggle-show-depot-poly',
     'toggle-pause-stop-eta-updates',

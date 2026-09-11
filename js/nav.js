@@ -2204,6 +2204,9 @@ function showNavigationMessage(message) {
 
 let roadNetworkLayer = null; // Global variable to store the road network layer
 let roadNetworkData = null; // Cache for road network data for address lookups
+let addressPointsData = null; // Cache for address points data
+const ADDRESS_POINTS_SOURCE_ID = 'address-points-source';
+const ADDRESS_POINTS_LAYER_ID = 'address-points-layer';
 
 // Variables to track building selections from map clicks
 let selectedFromBuilding = null; // normalized building name from map click for "from" input
@@ -3723,6 +3726,122 @@ function toggleRoadNetwork() {
         loadAndDisplayRoadNetwork();
     }
 }
+
+// Function to load and display address points on the map
+async function loadAndDisplayAddressPoints() {
+    if (!(map.style && map.style._loaded)) {
+        map.once('style.load', () => {
+            loadAndDisplayAddressPoints();
+        });
+        return;
+    }
+
+    if (!map.__addressPointsHooked) {
+        map.__addressPointsHooked = true;
+        map.on('style.load', () => {
+            if (settings['toggle-show-address-points']) {
+                loadAndDisplayAddressPoints();
+            }
+        });
+    }
+
+    if (!addressPointsData) {
+        const response = await fetch('lib/addresses_nb.json');
+        addressPointsData = await response.json();
+    }
+
+    const geojson = {
+        type: 'FeatureCollection',
+        features: addressPointsData.map(addr => ({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [addr.lng, addr.lat]
+            },
+            properties: {
+                name: addr.name,
+                lat: addr.lat,
+                lng: addr.lng
+            }
+        }))
+    };
+
+    const source = map.getSource(ADDRESS_POINTS_SOURCE_ID);
+    if (source) {
+        source.setData(geojson);
+    } else {
+        map.addSource(ADDRESS_POINTS_SOURCE_ID, {
+            type: 'geojson',
+            data: geojson
+        });
+    }
+
+    if (!map.getLayer(ADDRESS_POINTS_LAYER_ID)) {
+        const beforeId = map.getLayer('stop-markers-layer') ? 'stop-markers-layer' :
+                         (map.getLayer('bus-markers-layer') ? 'bus-markers-layer' : undefined);
+        map.addLayer({
+            id: ADDRESS_POINTS_LAYER_ID,
+            type: 'circle',
+            source: ADDRESS_POINTS_SOURCE_ID,
+            paint: {
+                'circle-radius': [
+                    'interpolate', ['linear'], ['zoom'],
+                    12, 1.5,
+                    14, 2.5,
+                    16, 4.5,
+                    18, 7
+                ],
+                'circle-color': '#2563eb',
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#ffffff',
+                'circle-opacity': 0.85
+            }
+        }, beforeId);
+
+        map.on('click', ADDRESS_POINTS_LAYER_ID, (e) => {
+            const props = e.features[0].properties;
+            showBuildingInfo({
+                name: props.name,
+                lat: props.lat,
+                lng: props.lng,
+                category: 'address'
+            });
+        });
+
+        map.on('mouseenter', ADDRESS_POINTS_LAYER_ID, () => {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+
+        map.on('mouseleave', ADDRESS_POINTS_LAYER_ID, () => {
+            map.getCanvas().style.cursor = '';
+        });
+    } else {
+        map.setLayoutProperty(ADDRESS_POINTS_LAYER_ID, 'visibility', 'visible');
+    }
+
+    showNavigationMessage('Address points displayed on map');
+}
+
+function hideAddressPoints() {
+    if (map.getLayer(ADDRESS_POINTS_LAYER_ID)) {
+        map.setLayoutProperty(ADDRESS_POINTS_LAYER_ID, 'visibility', 'none');
+    }
+    showNavigationMessage('Address points hidden');
+}
+
+function toggleAddressPoints() {
+    const isVisible = map.getLayer(ADDRESS_POINTS_LAYER_ID) &&
+                      map.getLayoutProperty(ADDRESS_POINTS_LAYER_ID, 'visibility') === 'visible';
+    if (isVisible) {
+        hideAddressPoints();
+    } else {
+        loadAndDisplayAddressPoints();
+    }
+}
+
+window.loadAndDisplayAddressPoints = loadAndDisplayAddressPoints;
+window.hideAddressPoints = hideAddressPoints;
+window.toggleAddressPoints = toggleAddressPoints;
 
 // Load road network data (internal function)
 async function _loadRoadNetworkData() {

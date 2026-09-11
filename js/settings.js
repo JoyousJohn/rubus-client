@@ -571,6 +571,16 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-address-points':
+            console.log(`Show Address Points is now ${isChecked ? 'ON' : 'OFF'}`);
+            settings['toggle-show-address-points'] = isChecked;
+            if (isChecked) {
+                loadAndDisplayAddressPoints();
+            } else {
+                hideAddressPoints();
+            }
+            break;
+
         case 'toggle-distances-line-on-focus':
             console.log(`Distances Line on Focus is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-distances-line-on-focus'] = isChecked;
@@ -1001,6 +1011,10 @@ $(document).ready(function() {
 
     if (settings['toggle-show-road-network']) {
         loadAndDisplayRoadNetwork();
+    }
+
+    if (settings['toggle-show-address-points']) {
+        loadAndDisplayAddressPoints();
     }
 
     if (!settings['toggle-show-bus-btns']) {

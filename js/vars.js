@@ -110,6 +110,7 @@ const defaultSettings = {
     'toggle-show-chat': false,
     'toggle-show-thinking': false,
     'toggle-show-road-network': false,
+    'toggle-show-address-points': false,
     'toggle-distances-line-on-focus': false,
     'toggle-show-depot-poly': false,
     'toggle-pause-stop-eta-updates': false,
