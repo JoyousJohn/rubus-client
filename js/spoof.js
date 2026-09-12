@@ -154,7 +154,10 @@ function initSpoofing() {
         populateMeClosestStops();
 
         $('.fly-closest-stop-wrapper').fadeIn();
-        $('.building-info-popup').hide();
+        // Dismiss any open stop/bus/building popup with full state reset
+        // (selected icons, route filter, overtime counter) — teleporting moves
+        // "you" away, same as opening a building popup does.
+        hideInfoBoxes(true);
         $('.my-location-popup').show();
         markPanelOpened('right');
         hideCenterStops();
