@@ -333,14 +333,14 @@
 
 /* Scrollable history lists: hold all entries but constrain each list to
    roughly 4.2 rows visible (4.2 × 3.2rem rows + 2×1rem gaps = 15.44rem rows area, plus
-   1rem top/bottom interior padding = 17.44rem; border-box keeps the math
+   1rem top/bottom interior padding + 0.5rem first-row wrap cushion = 17.94rem; border-box keeps the math
    exact). Interior padding cushions rows off the container edges and dividers.
    Showing a partial 5th row provides a natural scroll affordance without
    scroll-snap hijacking desktop mouse wheels or mobile momentum. */
 .search-fav-routes,
 .search-recents,
 .search-recent-navigations {
-    max-height: 17.44rem;
+    max-height: 17.94rem;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
@@ -362,8 +362,14 @@
     mask-image: linear-gradient(to bottom, black calc(100% - 2.5rem), transparent 100%);
 }
 
-/* Maintain bottom cushion underneath the last row before dividing lines,
-   especially when text wraps onto multiple lines. */
+/* Maintain top cushion above the first row and bottom cushion underneath the last row
+   before dividing lines and container edges, especially when text wraps onto multiple lines. */
+.search-fav-routes .search-result-item:first-child,
+.search-recents .search-result-item:first-child,
+.search-recent-navigations .search-result-item:first-child {
+    margin-top: 0.5rem;
+}
+
 .search-fav-routes .search-result-item:last-child,
 .search-recents .search-result-item:last-child,
 .search-recent-navigations .search-result-item:last-child {
