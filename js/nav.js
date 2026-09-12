@@ -406,6 +406,64 @@ $(document).ready(function() {
         })();
     });
 
+    // Handle stop popup directions button (binding lives here, not inline
+    // in index.html, so all Nav-button flows stay in one place).
+    $('.stop-directions').click(function(e) {
+        if (e) {
+            e.stopPropagation();
+        }
+
+        // Track stop directions button click
+        sa_event('btn_press', {
+            'btn': 'stop_directions',
+            'stop_name': stopsData[popupStopId].name,
+            'stopId': popupStopId
+        });
+
+        // Store the stop ID before it gets cleared by hideInfoBoxes
+        const currentStopId = popupStopId;
+
+        hideInfoBoxes();
+
+        // Always set the selected stop as the destination
+        setNavigationFromStop(currentStopId, 'to');
+
+        const manualStopNavFromFlow = function() {
+            openDirectionsNav();
+            prepareNavFromWithRecents();
+
+            // Focus on the from input for user to enter their starting location
+            // (programmatic focus — don't pop autocomplete).
+            window._suppressNavAutocompleteOnFocus = true;
+            if (window.focusNavFromInput) window.focusNavFromInput();
+            else {
+                setTimeout(() => {
+                    $('#nav-from-input').focus();
+                }, 0);
+            }
+        };
+
+        // Auto-fill nav-from from user location when possible
+        // (near stop → building/lot → address), without
+        // focusing or showing recents.
+        try {
+            tryAutoFillNavFromUserLocation().then(function(autoFilled) {
+                if (!autoFilled) manualStopNavFromFlow();
+            }).catch(function() {
+                manualStopNavFromFlow();
+            });
+        } catch (e) {
+            manualStopNavFromFlow();
+        }
+    });
+
+    $('.stop-navigate').click(function() {
+        $(this).css('background-color', '#565fe5');
+        setTimeout(() => {
+            $(this).css('background-color', '');
+        }, 250);
+    });
+
     // Handle navigation input functionality
     setupNavigationInputs();
 });
