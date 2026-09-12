@@ -346,6 +346,14 @@
     box-sizing: border-box;
     padding: 0.5rem 0;
     scroll-snap-type: y proximity;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.search-fav-routes::-webkit-scrollbar,
+.search-recents::-webkit-scrollbar,
+.search-recent-navigations::-webkit-scrollbar {
+    display: none;
 }
 
 .search-fav-routes .search-result-item,
