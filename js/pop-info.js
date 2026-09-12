@@ -1,4 +1,26 @@
 // js/pop-info.js - extracted verbatim from js/map.js
+// TEMP PERF DEBUG (tap -> bus popup 1s freeze): shared timing helper (see
+// bus-layer.js for the canonical definition; guarded so load order is safe).
+// Master switch: all perf logs are behind window.BUS_POPUP_PERF_DEBUG
+// (default OFF). Set it to true in the console to re-enable at runtime.
+if (typeof window.BUS_POPUP_PERF_DEBUG === 'undefined') {
+    window.BUS_POPUP_PERF_DEBUG = false;
+}
+if (!window.busPopupPerfReset) {
+    window.__busPopupT0 = null;
+    window.busPopupPerfReset = function() { window.__busPopupT0 = performance.now(); return window.__busPopupT0; };
+}
+if (!window.busPopupPerfLog) {
+    window.busPopupPerfLog = function(stage, busName) {
+        try {
+            if (!window.BUS_POPUP_PERF_DEBUG) return;
+            const now = performance.now();
+            if (window.__busPopupT0 == null) window.__busPopupT0 = now;
+            const delta = now - window.__busPopupT0;
+            console.log(`[bus-popup-perf][${new Date().toISOString()}][+${delta.toFixed(1)}ms] ${stage}` + (busName ? ` bus=${busName}` : ''));
+        } catch (e) {}
+    };
+}
 window.msEtaAbs = window.msEtaAbs || new Map();
 let stoppedForInterval;
 let stoppedForHideTimeout;
@@ -13,6 +35,7 @@ let stoppedOctagonHideTimeout;
 // when the bus is moving between stops into a different campus than the one it
 // just left.
 function getBusServicedCampuses(busName) {
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('getBusServicedCampuses entry', busName);
     const data = busData[busName];
     if (!data || !data.route) return { campuses: [], approachingNewCampus: false };
     const routeStops = stopLists[data.route];
@@ -61,6 +84,7 @@ function getBusServicedCampuses(busName) {
     if (campuses.length > 1 && campuses[campuses.length - 1] === campuses[0]) {
         campuses.pop();
     }
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog(`getBusServicedCampuses done (campuses=${campuses.length})`, busName);
     return { campuses, approachingNewCampus };
 }
 
@@ -79,6 +103,7 @@ function centerBusNameInk() {
     const font = style.font || `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
     const key = text + '\u0000' + font;
     let offset = busNameInkCache.get(key);
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog(`centerBusNameInk ${offset === undefined ? 'cache MISS (will pixel-scan)' : 'cache hit'} text="${text}"`, undefined);
     if (offset === undefined) {
         // Measure against the real font; the fallback font has different
         // metrics and would cache a wrong correction. popInfo re-runs on the
@@ -144,6 +169,7 @@ function computeInkCenteringOffset(text, fontShorthand, fontSizePx) {
     const inkCenterFromTop = baselineFromTop + (inkDescent - inkAscent) / 2;
     // Flex centers the line box in the element, so centering the ink only needs
     // this line-box-relative correction.
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('computeInkCenteringOffset done (pixel scan finished)', text);
     return lineBoxHeight / 2 - inkCenterFromTop;
 }
 
@@ -182,6 +208,12 @@ function updateBusPopupSpeedOrCapacity(busName) {
 window.updateBusPopupSpeedOrCapacity = updateBusPopupSpeedOrCapacity;
 
 function popInfo(busName, resetCampusFontSize, isNewBus = false) {
+    // Only verbose-log tap-initiated renders: T0 is (re)anchored on marker
+    // tap (<5s ago). Background poll refreshes of the open popup skip the
+    // per-step logs to keep the console usable.
+    const _perfTap = (typeof performance !== 'undefined' && window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000);
+    const _plog = (stage) => { if (_perfTap) window.busPopupPerfLog(stage, busName); };
+    _plog(`popInfo entry (isNewBus=${isNewBus} resetCampusFontSize=${resetCampusFontSize})`);
 
     const data = busData[busName]
     let dataRoute = data.route
@@ -203,8 +235,10 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
             'route': 'sim-' + data.route,
         });
     }
+    _plog('popInfo: after sa_event');
 
     if (appStyle === 'rider') {
+        _plog('popInfo: rider style -> popRiderInfo, returning early');
         popRiderInfo(busName);
         return;
     }
@@ -218,6 +252,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         }
         $('.bus-historical-capacity').empty();
     }
+    _plog('popInfo: after ridership chart teardown');
 
     if (popupStopId) {
         if (appStyle === 'rider') {
@@ -243,6 +278,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         updateDirectFeedbackBtnVisibility();
         populateRouteSelectors(activeRoutes);
     }
+    _plog('popInfo: after popupStopId cleanup');
 
     if (popupBusName && popupBusName !== busName) {
         $('.info-stopped-overtime-explainer').hide();
@@ -261,6 +297,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         $('.info-stopped-for').removeClass('overtime');
         hideStoppedOctagon();
     }
+    _plog('popInfo: after overtime handling');
 
     let displayRoute;
     if (dataRoute === 'wknd1' || dataRoute === 'wknd2') {
@@ -291,6 +328,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     if (isElectric && data.busName !== busNameElmText) {
         data.busName = busNameElmText;
     }
+    _plog('popInfo: after route display + electric bus name');
     
     const campusesElement = $('.info-campuses-mid');
     const campusText = campusMappings[data.route];
@@ -308,10 +346,13 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
             }  
         }, 0);    
     }
+    _plog('popInfo: before speed/capacity + name ink centering');
     updateBusPopupSpeedOrCapacity(busName);
     $('.info-name-mid').text(busNameElmText);
     centerBusNameInk();
+    _plog('popInfo: after centerBusNameInk, before getBusServicedCampuses');
     const serviced = getBusServicedCampuses(busName);
+    _plog('popInfo: after getBusServicedCampuses');
     const servicedCampuses = serviced.campuses;
     // Two campuses means the bus shuttles back and forth between them, so use
     // a left-right arrow; otherwise chain the sequence with a right arrow.
@@ -344,6 +385,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         campusesHtml = rotated.map((seg, i) => i === k ? `<b><u>${seg}</u></b>` : seg).join(campusesArrow);
     }
     $('.info-campuses-serviced').html(campusesHtml).toggle(servicedCampuses.length > 0);
+    _plog('popInfo: after campuses serviced html');
 
     if (busData[busName].oos) {
         $('.bus-oos-mid').show();
@@ -390,11 +432,14 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         $('.bus-joined-service').text('');
     }
 
+    _plog('popInfo: before updateBusLastBreakLine');
     updateBusLastBreakLine(busName);
+    _plog('popInfo: after updateBusLastBreakLine');
 
     $('.info-next-stops').show();
         
     $('.bus-data-extra').empty();
+    _plog('popInfo: before bus-data-extra build (Object.entries loop + validity + distanceFromLine)');
     const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     let extraDataHtml = `<div class="center mb-0p5rem">Bus ID: ${esc(busName)}</div>`;
     for (const [key, value] of Object.entries(busData[busName])) {
@@ -442,9 +487,12 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
             extraDataHtml += `<div>${esc(key)}: <span style="opacity: 0.7">${extraDataVal}</span></div>`;
         }
     }
+    _plog(`popInfo: bus-data-extra html built (${extraDataHtml.length} chars), before append`);
     $('.bus-data-extra').html(extraDataHtml);
+    _plog('popInfo: after bus-data-extra append');
 
     const isSwitchingBus = isNewBus || (popupBusName && popupBusName !== busName);
+    _plog('popInfo: before stopped-for handling');
     if ('at_stop' in busData[busName] && busData[busName].at_stop === true) {
         startStoppedForTimer(busName)
     } else if (departingTimeout && !isSwitchingBus) {
@@ -452,6 +500,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     } else {
         hideStoppedFor(isSwitchingBus);
     }
+    _plog('popInfo: after stopped-for handling');
 
     if (settings['toggle-show-selected-rotation-points']) {
         immediatelyUpdateStoppedBusRotations();
@@ -466,10 +515,14 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     // renderNextStopsGrid and applied after the popup is shown: each call does
     // a synchronous WebGL feature update (and possibly a sprite texture
     // upload), which would otherwise delay the popup's first paint.
+    _plog('popInfo: before renderNextStopsGrid');
     const gridResult = renderNextStopsGrid(busName);
+    _plog(`popInfo: after renderNextStopsGrid (aborted=${gridResult.aborted} etaLabels=${(gridResult.etaLabels || []).length})`);
     const etaLabelsToSet = gridResult.etaLabels || [];
     if (!gridResult.aborted) {
+        _plog('popInfo: before updateHistoricalCapacity');
         updateHistoricalCapacity(busName);
+        _plog('popInfo: after updateHistoricalCapacity (sync part; fetch may continue async)');
     }
 
     if (sourceBusName !== busName) { // kinda a hack to repopulating bus breaks when already shown, fixes hiding the shown more breaks each time... needed some way to check if it was already shown, can probably find a better way to check later (set a separate var, or hide/clear/empty some element on hide info boxes/pop info bus change...)
@@ -477,7 +530,9 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         $('.info-quickness-mid').hide();
         // Past breaks stay gated behind the prompt under next-stops-grid;
         // fetch happens on demand in revealBreaksClicked().
+        _plog('popInfo: before resetBreaksGate');
         resetBreaksGate(busName);
+        _plog('popInfo: after resetBreaksGate');
     }
     
     if (sourceRouteName) {
@@ -518,6 +573,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).hide();
     }
     sourceBusName = busName;
+    _plog('popInfo: after back-button handling');
 
     if (favBuses.includes(busName)) {
         $('.bus-star > i').css('color', 'gold').removeClass('icon-star').addClass('icon-star-solid')
@@ -540,7 +596,12 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     unhighlightBuilding();
     if (typeof closeSearch === 'function') closeSearch();
 
+    _plog('popInfo: before popup show');
     $('.bus-info-popup').stop(true, true).show();
+    _plog('popInfo: after popup show (DOM updated, before paint)');
+    if (_perfTap) {
+        requestAnimationFrame(() => { if (window.busPopupPerfLog) window.busPopupPerfLog('popInfo: popup first frame painted (rAF)', busName); });
+    }
     markPanelOpened('right');
     if (typeof hideCenterStops === 'function') hideCenterStops();
     if (isDesktop && !isTouchDevice) showEscNotice('bus');
@@ -560,7 +621,9 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         clearAllStopEtas();
     }
 
+    _plog('popInfo: before updateNextStopsMaxHeight');
     updateNextStopsMaxHeight();
+    _plog('popInfo: after updateNextStopsMaxHeight');
 
     // Returning via the stop back button: restore the bus next-stops scroll
     // position instead of jumping to the top. One-shot: cleared on consume
@@ -578,8 +641,18 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     }
 
     if (settings['toggle-hide-other-routes'] && (!popupBusName || popupBusName !== busName)) {
-        focusBus(busName);
+        _plog('popInfo: before focusBus (async, not awaited)');
+        try {
+            const _popFocusResult = focusBus(busName);
+            if (_perfTap && _popFocusResult && typeof _popFocusResult.then === 'function') {
+                _popFocusResult.then(() => { if (window.busPopupPerfLog) window.busPopupPerfLog('popInfo: focusBus done (async)', busName); })
+                    .catch((err) => { if (window.busPopupPerfLog) window.busPopupPerfLog('popInfo: focusBus error (async): ' + err, busName); });
+            }
+        } catch (err) {
+            _plog('popInfo: focusBus threw: ' + err);
+        }
     }
+    _plog('popInfo: exit (sync part done)');
 
     // DISABLED: Your Bus feature // updateRidingBadgeUI();
 }
@@ -593,6 +666,9 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
 let lastNextStopsSignature = null;
 
 function renderNextStopsGrid(busName) {
+    const _rTap = (typeof performance !== 'undefined' && window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000);
+    const _rlog = (stage) => { if (_rTap) window.busPopupPerfLog(stage, busName); };
+    _rlog('renderNextStopsGrid entry');
     const data = busData[busName];
     const etaLabelsToSet = [];
 
@@ -675,6 +751,7 @@ function renderNextStopsGrid(busName) {
     }
 
     const build = buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shouldShowClosestStop);
+    _rlog(`renderNextStopsGrid: after buildStopRows (aborted=${build.aborted} rows=${(build.rows || []).length} stops=${sortedStops.length})`);
     if (build.aborted) {
         $('.next-stops-grid').hide();
         $('.next-stops-grid > div').empty();
@@ -695,12 +772,16 @@ function renderNextStopsGrid(busName) {
     ]);
 
     if (lastNextStopsSignature === signature && $('.next-stops-grid > div').children().length > 0) {
+        _rlog('renderNextStopsGrid: signature unchanged -> incremental update path');
         updateGridIncremental(busName, build.rows, build.negativeETA, build.hasNegativeETA, etaLabelsToSet);
+        _rlog('renderNextStopsGrid: exit (incremental)');
         return { aborted: false, etaLabels: etaLabelsToSet };
     }
 
     lastNextStopsSignature = null;
+    _rlog(`renderNextStopsGrid: signature changed -> full rebuildGrid path (rows=${build.rows.length})`);
     rebuildGrid(busName, data, build.rows, shouldShowClosestStop, closestStopIsNextStop, build.negativeETA, build.hasNegativeETA, etaLabelsToSet);
+    _rlog('renderNextStopsGrid: exit (rebuild)');
     lastNextStopsSignature = signature;
     return { aborted: false, etaLabels: etaLabelsToSet };
 }
@@ -709,6 +790,7 @@ function renderNextStopsGrid(busName) {
 // name, campus) shared by both the rebuild and incremental paths, so the ETA
 // math never runs twice. Mirrors the original inline loop exactly.
 function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shouldShowClosestStop) {
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog(`buildStopRows entry (stops=${sortedStops.length})`, busName);
     const secondsDivisor = (showETAsInSeconds || showETAsInMs) ? 1 : 60;
     const route = data.route;
     const rows = [];
@@ -861,11 +943,13 @@ function buildStopRows(busName, data, sortedStops, approachPrev, nextStop, shoul
         });
     }
 
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog(`buildStopRows done (rows=${rows.length} hasNegativeETA=${hasNegativeETA})`, busName);
     return { aborted: false, rows: rows, negativeETA: negativeETA, hasNegativeETA: hasNegativeETA };
 }
 
 // Full DOM rebuild path (first render or structural change).
 function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNextStop, negativeETA, hasNegativeETA, etaLabelsToSet) {
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog(`rebuildGrid entry (rows=${rows.length})`, busName);
     const $grid = $('.next-stops-grid > div');
     $grid.empty();
 
@@ -991,6 +1075,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
     if (data.oos) {
         distanceFromLine(busName);
     }
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('rebuildGrid: all row DOM appended, before show + connecting-line layout', busName);
 
     if (!negativeETA) {
         // The show-invalid-etas dev setting can keep the grid visible despite
@@ -1006,6 +1091,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         }
 
         setTimeout(() => {
+            if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 8000) window.busPopupPerfLog('rebuildGrid: connecting-line layout timeout running (getBoundingClientRect)', busName);
             const firstRect = firstCircle[0].getBoundingClientRect();
             const lastRect = lastCircle[0].getBoundingClientRect();
             const heightDiff = Math.abs(lastRect.top - firstRect.top);
@@ -1044,6 +1130,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
 // flash). The `.here-eta` rows ("Here" current-stop label) are static and
 // excluded; the closest-stop section gets its own handling below.
 function updateGridIncremental(busName, rows, negativeETA, hasNegativeETA, etaLabelsToSet) {
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog(`updateGridIncremental entry (rows=${rows.length})`, busName);
     for (const row of rows) {
         $(`.next-stop-eta[data-stop-index="${row.rowIndex}"]:not(.here-eta)`).text(row.eta).siblings('.next-stop-time').text(row.formattedTime);
         if (!row.skipRow) etaLabelsToSet.push([row.stopId, row.eta]);
@@ -1092,9 +1179,11 @@ function updateGridIncremental(busName, rows, negativeETA, hasNegativeETA, etaLa
             $('.next-stops-grid').show();
         }
     }
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('updateGridIncremental exit', busName);
 }
 
 function updateNextStopsMaxHeight() {
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('updateNextStopsMaxHeight entry (layout reads)');
     const nextStops = $('.info-next-stops');
     if (nextStops.length === 0) return;
     
@@ -1114,4 +1203,5 @@ function updateNextStopsMaxHeight() {
     }
 
     nextStops.css('max-height', targetMaxHeight);
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('updateNextStopsMaxHeight exit');
 }

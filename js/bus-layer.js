@@ -22,6 +22,31 @@
 (function() {
     'use strict';
 
+    // TEMP PERF DEBUG (tap -> bus popup 1s freeze): shared timing helper.
+    // Filter the console on "[bus-popup-perf]". Each line carries an ISO
+    // timestamp plus ms since the tap (T0). Guarded definitions so later
+    // files (plot-bus/pop-info/focus-bus/...) reuse the same helpers.
+    // Master switch: all perf logs are behind window.BUS_POPUP_PERF_DEBUG
+    // (default OFF). Set it to true in the console to re-enable at runtime.
+    if (typeof window.BUS_POPUP_PERF_DEBUG === 'undefined') {
+        window.BUS_POPUP_PERF_DEBUG = false;
+    }
+    if (!window.busPopupPerfReset) {
+        window.__busPopupT0 = null;
+        window.busPopupPerfReset = function() { window.__busPopupT0 = performance.now(); return window.__busPopupT0; };
+    }
+    if (!window.busPopupPerfLog) {
+            window.busPopupPerfLog = function(stage, busName) {
+                try {
+                    if (!window.BUS_POPUP_PERF_DEBUG) return;
+                    const now = performance.now();
+                if (window.__busPopupT0 == null) window.__busPopupT0 = now;
+                const delta = now - window.__busPopupT0;
+                console.log(`[bus-popup-perf][${new Date().toISOString()}][+${delta.toFixed(1)}ms] ${stage}` + (busName ? ` bus=${busName}` : ''));
+            } catch (e) {}
+        };
+    }
+
     // =========================================================================
     // Sprite Rendering (used by the 'maplibre' mode)
     // =========================================================================
@@ -618,6 +643,8 @@
                 if (this._element) {
                     this._element.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        if (window.busPopupPerfReset) window.busPopupPerfReset();
+                        if (window.busPopupPerfLog) window.busPopupPerfLog('tap: DOM bus marker clicked', this._busName);
                         this._fireClick();
                     });
                 }
@@ -630,6 +657,7 @@
         // -- Internal helpers --
 
         _fireClick() {
+            if (window.busPopupPerfLog) window.busPopupPerfLog('_fireClick dispatching to click handlers', this._busName);
             for (const handler of this._clickHandlers) {
                 try { handler(); } catch (e) { console.error(e); }
             }
@@ -878,6 +906,7 @@
         // -- Internal helpers --
 
         _fireClick() {
+            if (window.busPopupPerfLog) window.busPopupPerfLog('_fireClick dispatching to click handlers', this._busName);
             for (const handler of this._clickHandlers) {
                 try { handler(); } catch (e) { console.error(e); }
             }
@@ -1422,6 +1451,7 @@
          * Set the selected bus.
          */
         setSelectedBus(busName) {
+            if (window.busPopupPerfLog) window.busPopupPerfLog(`setSelectedBus entry (proxies=${Object.keys(this._proxies).length})`, busName);
             this._selectedBusName = busName;
             for (const name in this._proxies) {
                 const proxy = this._proxies[name];
@@ -1437,6 +1467,7 @@
                     }
                 }
             }
+            if (window.busPopupPerfLog) window.busPopupPerfLog('setSelectedBus done, before scheduleBatchUpdate', busName);
             this.scheduleBatchUpdate();
         }
 
@@ -1671,6 +1702,10 @@
                 });
                 this._map.on('click', layerId, function(e) {
                     if (!e.features || e.features.length === 0) return;
+                    // Anchor tap-to-popup timing at the earliest confirmed bus
+                    // hit (empty clicks return above without touching T0).
+                    if (window.busPopupPerfReset) window.busPopupPerfReset();
+                    if (window.busPopupPerfLog) window.busPopupPerfLog(`tap: map click received on ${layerId} features=${e.features.length}`);
                     // MapLibre binds its click pipeline to the canvas container, so
                     // clicks on DOM markers (stop icons, distance markers) bubble
                     // in here too. Without this guard, clicking a stop marker that
@@ -1678,6 +1713,7 @@
                     // Those elements handle their own clicks, so skip them.
                     const target = e.originalEvent && e.originalEvent.target;
                     if (target && typeof target.closest === 'function' && target.closest('.maplibregl-marker')) {
+                        if (window.busPopupPerfLog) window.busPopupPerfLog('tap: bus click skipped (DOM marker overlap)');
                         return;
                     }
                     // In WebGL renderer mode stops are GL features too. Mirror DOM
@@ -1686,14 +1722,21 @@
                     // the bus click (the stop handler in stop-layer.js handles it).
                     if (typeof window.stopLayerManager !== 'undefined' && window.stopLayerManager.isActive()) {
                         const stopLayers = ['stop-markers-layer', 'stop-markers-labels', 'stop-markers-selected', 'stop-markers-selected-labels'].filter(id => self._map.getLayer(id));
-                        if (stopLayers.length && self._map.queryRenderedFeatures(e.point, { layers: stopLayers }).length) {
+                        if (window.busPopupPerfLog) window.busPopupPerfLog('tap: before stop-overlap queryRenderedFeatures');
+                        const stopHits = stopLayers.length ? self._map.queryRenderedFeatures(e.point, { layers: stopLayers }) : [];
+                        if (window.busPopupPerfLog) window.busPopupPerfLog(`tap: after stop-overlap query (${stopHits.length} hits)`);
+                        if (stopHits.length) {
                             const stopsAbove = !!(settings && settings['toggle-stops-above-buses']);
-                            if (stopsAbove) return;
+                            if (stopsAbove) {
+                                if (window.busPopupPerfLog) window.busPopupPerfLog('tap: bus click skipped (stop above bus)');
+                                return;
+                            }
                         }
                     }
                     const busName = e.features[0].properties.busName;
                     const proxy = self._proxies[busName];
                     if (proxy) {
+                        if (window.busPopupPerfLog) window.busPopupPerfLog('tap: WebGL bus hit -> _fireClick', busName);
                         proxy._fireClick();
                     }
                 });

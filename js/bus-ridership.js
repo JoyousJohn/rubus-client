@@ -1,4 +1,26 @@
 // js/bus-ridership.js - extracted verbatim from js/map.js
+// TEMP PERF DEBUG (tap -> bus popup 1s freeze): shared timing helper (see
+// bus-layer.js for the canonical definition; guarded so load order is safe).
+// Master switch: all perf logs are behind window.BUS_POPUP_PERF_DEBUG
+// (default OFF). Set it to true in the console to re-enable at runtime.
+if (typeof window.BUS_POPUP_PERF_DEBUG === 'undefined') {
+    window.BUS_POPUP_PERF_DEBUG = false;
+}
+if (!window.busPopupPerfReset) {
+    window.__busPopupT0 = null;
+    window.busPopupPerfReset = function() { window.__busPopupT0 = performance.now(); return window.__busPopupT0; };
+}
+if (!window.busPopupPerfLog) {
+    window.busPopupPerfLog = function(stage, busName) {
+        try {
+            if (!window.BUS_POPUP_PERF_DEBUG) return;
+            const now = performance.now();
+            if (window.__busPopupT0 == null) window.__busPopupT0 = now;
+            const delta = now - window.__busPopupT0;
+            console.log(`[bus-popup-perf][${new Date().toISOString()}][+${delta.toFixed(1)}ms] ${stage}` + (busName ? ` bus=${busName}` : ''));
+        } catch (e) {}
+    };
+}
 let busRiderships = {};
 
 let busRidershipCharts = {};
@@ -26,12 +48,15 @@ function shouldShowCapacityChart(busName) {
 }
 
 function updateHistoricalCapacity(busName) {
+    const _rcTap = (typeof performance !== 'undefined' && window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000);
+    if (_rcTap) window.busPopupPerfLog('updateHistoricalCapacity entry', busName);
     // Only proceed if this is a new bus selection or data needs refresh
     const currentMinute = new Date().getMinutes();
     const shouldRefresh = currentMinute % 5 === 1 && !busRiderships.lastUpdate || 
                          (currentMinute % 5 === 1 && new Date().getTime() - busRiderships.lastUpdate > 60000);
     
     const handleChartUpdate = () => {
+        if (_rcTap) window.busPopupPerfLog('updateHistoricalCapacity: handleChartUpdate (sync chart build/hide)', busName);
         const shouldShow = shouldShowCapacityChart(busName);
         if (shouldShow) {
             createBusRidershipChart(busName);
@@ -39,12 +64,15 @@ function updateHistoricalCapacity(busName) {
         } else {
             $('.bus-ridership-wrapper').hide();
         }
+        if (_rcTap) window.busPopupPerfLog('updateHistoricalCapacity: handleChartUpdate done', busName);
     };
                          
     if (Object.keys(busRiderships).length === 0 || shouldRefresh) {
+        if (_rcTap) window.busPopupPerfLog('updateHistoricalCapacity: starting network fetch (async, non-blocking)', busName);
         fetch('https://demo.rubus.live/bus_ridership')
             .then(response => response.json())
             .then(data => {
+                if (_rcTap) window.busPopupPerfLog('updateHistoricalCapacity: fetch response received', busName);
                 const dataChanged = JSON.stringify(busRiderships) !== JSON.stringify(data);
                 busRiderships = data;
                 busRiderships.lastUpdate = new Date().getTime();
@@ -62,7 +90,11 @@ function updateHistoricalCapacity(busName) {
                 markRubusRequestsFailing();
             });
     } else if (!busRidershipCharts[busName]) {
+        if (_rcTap) window.busPopupPerfLog('updateHistoricalCapacity: cache path -> handleChartUpdate (sync)', busName);
         handleChartUpdate();
+        if (_rcTap) window.busPopupPerfLog('updateHistoricalCapacity: cache path done', busName);
+    } else if (_rcTap) {
+        window.busPopupPerfLog('updateHistoricalCapacity: exit (chart already exists, no work)');
     }
 }
 

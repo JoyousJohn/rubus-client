@@ -1,4 +1,26 @@
 // js/bus-breaks.js - extracted verbatim from js/map.js
+// TEMP PERF DEBUG (tap -> bus popup 1s freeze): shared timing helper (see
+// bus-layer.js for the canonical definition; guarded so load order is safe).
+// Master switch: all perf logs are behind window.BUS_POPUP_PERF_DEBUG
+// (default OFF). Set it to true in the console to re-enable at runtime.
+if (typeof window.BUS_POPUP_PERF_DEBUG === 'undefined') {
+    window.BUS_POPUP_PERF_DEBUG = false;
+}
+if (!window.busPopupPerfReset) {
+    window.__busPopupT0 = null;
+    window.busPopupPerfReset = function() { window.__busPopupT0 = performance.now(); return window.__busPopupT0; };
+}
+if (!window.busPopupPerfLog) {
+    window.busPopupPerfLog = function(stage, busName) {
+        try {
+            if (!window.BUS_POPUP_PERF_DEBUG) return;
+            const now = performance.now();
+            if (window.__busPopupT0 == null) window.__busPopupT0 = now;
+            const delta = now - window.__busPopupT0;
+            console.log(`[bus-popup-perf][${new Date().toISOString()}][+${delta.toFixed(1)}ms] ${stage}` + (busName ? ` bus=${busName}` : ''));
+        } catch (e) {}
+    };
+}
 
 // Build chronological (oldest-first) display list with missed stops interleaved
 // in route order. Each break record may carry its own `route` (added by
@@ -126,6 +148,7 @@ function updateBreaksPrompt(busName, isFrequentSkipper) {
 // Kicks off a background fetch (wrapper stays hidden) so the prompt can warn
 // about frequent skippers before the user taps.
 function resetBreaksGate(busName) {
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('resetBreaksGate entry', busName);
     breaksRevealedForBus = null;
     if (busName) delete frequentSkipperBuses[busName];
     $('.bus-breaks').empty();
@@ -139,7 +162,10 @@ function resetBreaksGate(busName) {
         $('.past-breaks-wrapper').hide();
         $('.show-breaks-prompt').text('Show past breaks & stops').css('pointer-events', '').show();
     }
-    if (busName) getBusBreaks(busName);
+    if (busName) {
+        if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('resetBreaksGate done (sync), before getBusBreaks', busName);
+        getBusBreaks(busName);
+    }
 }
 
 // Cache-fresh check mirroring getBusBreaks(): sim buses generate synchronously.
@@ -203,6 +229,7 @@ function formatLastBreakAgo(lastBreakMin) {
 }
 
 function updateBusLastBreakLine(busName, busBreakData) {
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('updateBusLastBreakLine entry', busName);
     const data = busBreakData || (busBreaksCache[busName] ? busBreaksCache[busName].data : null);
     const lastBreakMin = getLastBreakMin(data);
     if (lastBreakMin !== null) {
@@ -210,9 +237,11 @@ function updateBusLastBreakLine(busName, busBreakData) {
     } else {
         $('.bus-last-break').text('');
     }
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog('updateBusLastBreakLine exit', busName);
 }
 
 function populateBusBreaks(busBreakData, busName) {
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000) window.busPopupPerfLog(`populateBusBreaks entry (records=${Array.isArray(busBreakData) ? busBreakData.length : 'n/a'})`, busName);
     const MAX_INITIAL_BREAKS = 7; // Maximum number of breaks shown initially
 
     if (!busBreakData || busBreakData.error || (Array.isArray(busBreakData) && busBreakData.length === 0)) {
@@ -439,6 +468,7 @@ function populateBusBreaks(busBreakData, busName) {
     }
 
     updateNextStopsMaxHeight();
+    if (window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 8000) window.busPopupPerfLog('populateBusBreaks exit', busName);
 }
 
 
@@ -573,13 +603,17 @@ function showAllStopsClicked() {
 }
 
 function getBusBreaks(busName, forceRefresh = false, showMode = null) {
+    const _bbTap = (typeof performance !== 'undefined' && window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 5000);
+    if (_bbTap) window.busPopupPerfLog(`getBusBreaks entry (forceRefresh=${forceRefresh} cacheFresh=${isBreaksCacheFresh(busName)})`, busName);
     const currentTime = new Date().getTime();
     const THREE_MINUTES = 3 * 60 * 1000;
 
     if (!forceRefresh && busBreaksCache[busName] &&
         (currentTime - busBreaksCache[busName].timestamp) < THREE_MINUTES) {
+        if (_bbTap) window.busPopupPerfLog('getBusBreaks: cache hit -> populateBusBreaks (sync)', busName);
         populateBusBreaks(busBreaksCache[busName].data, busName);
         applyBreaksDisplayMode(showMode);
+        if (_bbTap) window.busPopupPerfLog('getBusBreaks: cache-hit path done', busName);
         return;
     }
 
@@ -595,9 +629,11 @@ function getBusBreaks(busName, forceRefresh = false, showMode = null) {
     }
 
     const cacheBuster = forceRefresh ? `&_t=${currentTime}` : '';
+    if (_bbTap) window.busPopupPerfLog('getBusBreaks: starting network fetch (async, non-blocking)', busName);
     fetch(`https://demo.rubus.live/get_breaks?bus_id=${busName}${cacheBuster}`)
         .then(response => response.json())
         .then(data => {
+            if (_bbTap) window.busPopupPerfLog(`getBusBreaks: fetch response received (records=${Array.isArray(data) ? data.length : 'n/a'})`, busName);
             busBreaksCache[busName] = {
                 data: data,
                 timestamp: currentTime

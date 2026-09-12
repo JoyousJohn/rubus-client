@@ -1,10 +1,37 @@
 // js/focus-bus.js - extracted verbatim from js/map.js
+// TEMP PERF DEBUG (tap -> bus popup 1s freeze): shared timing helper (see
+// bus-layer.js for the canonical definition; guarded so load order is safe).
+// Master switch: all perf logs are behind window.BUS_POPUP_PERF_DEBUG
+// (default OFF). Set it to true in the console to re-enable at runtime.
+if (typeof window.BUS_POPUP_PERF_DEBUG === 'undefined') {
+    window.BUS_POPUP_PERF_DEBUG = false;
+}
+if (!window.busPopupPerfReset) {
+    window.__busPopupT0 = null;
+    window.busPopupPerfReset = function() { window.__busPopupT0 = performance.now(); return window.__busPopupT0; };
+}
+if (!window.busPopupPerfLog) {
+    window.busPopupPerfLog = function(stage, busName) {
+        try {
+            if (!window.BUS_POPUP_PERF_DEBUG) return;
+            const now = performance.now();
+            if (window.__busPopupT0 == null) window.__busPopupT0 = now;
+            const delta = now - window.__busPopupT0;
+            console.log(`[bus-popup-perf][${new Date().toISOString()}][+${delta.toFixed(1)}ms] ${stage}` + (busName ? ` bus=${busName}` : ''));
+        } catch (e) {}
+    };
+}
 
 // Dev-helper state: buses force-treated as departed (forceUnstopBus) so the
 // stopped label stays gone. Clear with forceUnstoppedBuses.delete(busName).
 const forceUnstoppedBuses = new Set();
 
 async function focusBus(busName) {
+    // Captured at entry: the await below yields to the event loop, but the
+    // whole focus still belongs to the tap, so keep logging post-await too.
+    const _fTap = (typeof performance !== 'undefined' && window.busPopupPerfLog && window.__busPopupT0 != null && (performance.now() - window.__busPopupT0) < 8000);
+    const _flog = (stage) => { if (_fTap) window.busPopupPerfLog(stage, busName); };
+    _flog('focusBus entry');
     // Clear panout feedback when focusing on a bus
     clearPanoutFeedback();
 
@@ -17,10 +44,12 @@ async function focusBus(busName) {
 
     hideStopsExcept(route)
     hidePolylinesExcept(route)
+    _flog('focusBus: after hideStopsExcept + hidePolylinesExcept');
 
     // Ensure the route polyline exists for focusing (temporary show for OOS routes).
     // Failure to load is non-fatal — we fall back to centering on the bus — but it
     // must not be hidden.
+    _flog(`focusBus: before polyline ensure (cached=${!!polylines[route]})`);
     if (!polylines[route]) {
         try {
             await addPolylineForRoute(route);
@@ -28,6 +57,7 @@ async function focusBus(busName) {
             console.error(`focusBus: failed to load polyline for route ${route}; centering on bus`, e);
         }
     }
+    _flog('focusBus: after polyline ensure (await resolved)');
 
     // The await above yields to the event loop, during which the bus may have gone
     // out of service and been removed from busData. Re-assert the invariant before
@@ -63,6 +93,7 @@ async function focusBus(busName) {
             busMarkers[marker].setVisibility(false);
         }
     }
+    _flog(`focusBus: after hiding other bus markers (total=${Object.keys(busMarkers).length})`);
 
     // Temporarily commented out: refit bounds to focused bus's route
     /*
@@ -110,6 +141,7 @@ async function focusBus(busName) {
         savedCenter = map.getCenter();
         savedZoom = map.getZoom();
     }
+    _flog('focusBus: exit');
 }
 
 // Global variable to store the current distance line layer
@@ -277,6 +309,8 @@ function updateDistanceLinePositionMarker(busName) {
 }
 
 function distanceFromLine(busName, returnDetails = false) {
+    // TEMP PERF DEBUG: time the full polyline scan; only logs slow calls.
+    const _d0 = (typeof performance !== 'undefined') ? performance.now() : 0;
     if (!busData[busName] || busData[busName].lat === undefined || busData[busName].long === undefined) {
         return returnDetails ? { isOffLine: false, feet: 0 } : false;
     }
@@ -327,6 +361,12 @@ function distanceFromLine(busName, returnDetails = false) {
     }
 
     if (minDist === Infinity) return returnDetails ? { isOffLine: false, feet: 0 } : false;
+    try {
+        if (typeof performance !== 'undefined' && window.busPopupPerfLog) {
+            const _dDur = performance.now() - _d0;
+            if (_dDur > 25) window.busPopupPerfLog(`distanceFromLine SLOW: ${_dDur.toFixed(1)}ms points=${flatPoints.length}`, busName);
+        }
+    } catch (e) {}
     
     const distanceFeet = minDist * 3.28084;
     const isOffLine = distanceFeet > 333;

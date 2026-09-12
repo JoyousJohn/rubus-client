@@ -1,4 +1,26 @@
 // js/plot-bus.js - extracted verbatim from js/map.js
+// TEMP PERF DEBUG (tap -> bus popup 1s freeze): shared timing helper (see
+// bus-layer.js for the canonical definition; guarded so load order is safe).
+// Master switch: all perf logs are behind window.BUS_POPUP_PERF_DEBUG
+// (default OFF). Set it to true in the console to re-enable at runtime.
+if (typeof window.BUS_POPUP_PERF_DEBUG === 'undefined') {
+    window.BUS_POPUP_PERF_DEBUG = false;
+}
+if (!window.busPopupPerfReset) {
+    window.__busPopupT0 = null;
+    window.busPopupPerfReset = function() { window.__busPopupT0 = performance.now(); return window.__busPopupT0; };
+}
+if (!window.busPopupPerfLog) {
+    window.busPopupPerfLog = function(stage, busName) {
+        try {
+            if (!window.BUS_POPUP_PERF_DEBUG) return;
+            const now = performance.now();
+            if (window.__busPopupT0 == null) window.__busPopupT0 = now;
+            const delta = now - window.__busPopupT0;
+            console.log(`[bus-popup-perf][${new Date().toISOString()}][+${delta.toFixed(1)}ms] ${stage}` + (busName ? ` bus=${busName}` : ''));
+        } catch (e) {}
+    };
+}
 let selectedMarkerId;
 let pauseUpdateMarkerPositions = false;
 
@@ -41,6 +63,7 @@ function plotBus(busName, immediatelyUpdate=false, moved=true) {
         }
 
         busMarkers[busName].on('click', function() {
+            if (window.busPopupPerfLog) window.busPopupPerfLog('tap: proxy click handler entry (plotBus)', busName);
             sourceStopId = null;
             sourceBusName = null;
             sourceRouteName = null;
@@ -85,11 +108,32 @@ function plotBus(busName, immediatelyUpdate=false, moved=true) {
 
 function selectBusMarker(busName) {
     const isNewFocus = (popupBusName !== busName);
+    // Anchor tap-to-popup timing for non-tap callers (flyToBus/search/favs):
+    // a stale T0 (>2s) means no tap preceded this, so re-anchor here.
+    try {
+        if (isNewFocus && window.busPopupPerfReset && (window.__busPopupT0 == null || (performance.now() - window.__busPopupT0) > 2000)) {
+            window.busPopupPerfReset();
+        }
+    } catch (e) {}
+    if (window.busPopupPerfLog) window.busPopupPerfLog(`selectBusMarker entry (isNewFocus=${isNewFocus})`, busName);
     popupBusName = busName;
+    if (window.busPopupPerfLog) window.busPopupPerfLog('selectBusMarker: before popInfo', busName);
     popInfo(busName, true, isNewFocus);
+    if (window.busPopupPerfLog) window.busPopupPerfLog('selectBusMarker: after popInfo (sync)', busName);
 
     if (settings['toggle-hide-other-routes'] && isNewFocus) {
-        focusBus(busName);
+        if (window.busPopupPerfLog) window.busPopupPerfLog('selectBusMarker: before focusBus', busName);
+        try {
+            const _selectFocusResult = focusBus(busName);
+            if (_selectFocusResult && typeof _selectFocusResult.then === 'function') {
+                _selectFocusResult.then(() => { if (window.busPopupPerfLog) window.busPopupPerfLog('selectBusMarker: focusBus done (async)', busName); })
+                    .catch((err) => { if (window.busPopupPerfLog) window.busPopupPerfLog('selectBusMarker: focusBus error (async): ' + err, busName); });
+            } else if (window.busPopupPerfLog) {
+                window.busPopupPerfLog('selectBusMarker: focusBus done (sync)', busName);
+            }
+        } catch (err) {
+            if (window.busPopupPerfLog) window.busPopupPerfLog('selectBusMarker: focusBus threw: ' + err, busName);
+        }
     }
 
     if (selectedMarkerId) {
@@ -99,6 +143,7 @@ function selectBusMarker(busName) {
         }
     }
     
+    if (window.busPopupPerfLog) window.busPopupPerfLog('selectBusMarker: before selection glow + setSelectedBus', busName);
     const rotationElement = getMarkerRotationElement(busMarkers[busName]);
     if (rotationElement) {
         rotationElement.style.boxShadow = '0 0 10px ' + colorMappings[busData[busName].route];
@@ -110,6 +155,7 @@ function selectBusMarker(busName) {
     if (typeof busLayerManager !== 'undefined') {
         busLayerManager.setSelectedBus(busName);
     }
+    if (window.busPopupPerfLog) window.busPopupPerfLog('selectBusMarker: exit', busName);
 
     $('.bus-log-wrapper').hide();
 
