@@ -8,6 +8,7 @@ let searchOpenView = null; // { center, zoom } of the map right before the searc
 
 let searchViewportListenersAttached = false;
 let searchVvpHandler = null;
+let programmaticSearchScroll = false;
 
 const SEARCH_PLACEHOLDER_TEMPLATE = 'Search {num}+ buildings & lots';
 
@@ -261,7 +262,9 @@ function adjustSearchHeights() {
 
   scrollContainers.forEach(el => {
     if (atBottomMap.get(el) && el.scrollHeight > el.clientHeight) {
+      programmaticSearchScroll = true;
       el.scrollTop = el.scrollHeight - el.clientHeight;
+      setTimeout(() => { programmaticSearchScroll = false; }, 100);
     }
   });
 
@@ -347,13 +350,64 @@ $(document).ready(function() {
     const $clearBtn = $('.search-clear-btn');
     $input.val('')
 
+    let searchTouchStartY = 0;
+    let searchTouchStartX = 0;
+    let searchTouchActive = false;
+
+    document.addEventListener('touchstart', function(e) {
+        if (!e.touches || e.touches.length !== 1) return;
+        if ($(e.target).closest('.search-content, .search-fav-routes, .search-recents, .search-recent-navigations').length) {
+            searchTouchActive = true;
+            searchTouchStartY = e.touches[0].clientY;
+            searchTouchStartX = e.touches[0].clientX;
+        } else {
+            searchTouchActive = false;
+        }
+    }, { passive: true, capture: true });
+
+    document.addEventListener('touchmove', function(e) {
+        if (!searchTouchActive || !e.touches || e.touches.length !== 1) return;
+        const dy = Math.abs(e.touches[0].clientY - searchTouchStartY);
+        const dx = Math.abs(e.touches[0].clientX - searchTouchStartX);
+        if (dy > 6 || dx > 6) {
+            searchTouchActive = false;
+            if ($input.is(':focus')) {
+                $input.blur();
+            }
+        }
+    }, { passive: true, capture: true });
+
+    document.addEventListener('touchend', function() {
+        searchTouchActive = false;
+    }, { passive: true, capture: true });
+
+    document.addEventListener('touchcancel', function() {
+        searchTouchActive = false;
+    }, { passive: true, capture: true });
+
+    document.addEventListener('wheel', function(e) {
+        if ($(e.target).closest('.search-content, .search-fav-routes, .search-recents, .search-recent-navigations').length) {
+            if ($input.is(':focus')) {
+                $input.blur();
+            }
+        }
+    }, { passive: true, capture: true });
+
     document.addEventListener('scroll', function(e) {
-        if (e.target && e.target.classList && (
-            e.target.classList.contains('search-fav-routes') ||
-            e.target.classList.contains('search-recents') ||
-            e.target.classList.contains('search-recent-navigations')
-        )) {
+        if (!e.target || !e.target.classList) return;
+        const isFavRoutes = e.target.classList.contains('search-fav-routes');
+        const isRecents = e.target.classList.contains('search-recents');
+        const isRecentNavs = e.target.classList.contains('search-recent-navigations');
+        const isContent = e.target.classList.contains('search-content');
+
+        if (isFavRoutes || isRecents || isRecentNavs) {
             updateHistoryScrollFade(e.target);
+        }
+
+        if (!programmaticSearchScroll && (isFavRoutes || isRecents || isRecentNavs || isContent)) {
+            if ($input.is(':focus')) {
+                $input.blur();
+            }
         }
     }, true);
 
@@ -548,7 +602,9 @@ $(document).ready(function() {
       setTimeout(() => {
         const $container = $('.search-content');
         if ($container.length > 0) {
+          programmaticSearchScroll = true;
           $container.scrollTop(0);
+          setTimeout(() => { programmaticSearchScroll = false; }, 100);
         }
         requestAnimationFrame(updateAllHistoryScrollFades);
       }, 150);
@@ -1754,7 +1810,9 @@ function openSearch() {
     if (typeof hideCenterStops === 'function') hideCenterStops();
     adjustSearchHeights();
     attachSearchViewportListeners();
+    programmaticSearchScroll = true;
     $('.search-fav-routes, .search-recents, .search-recent-navigations').scrollTop(0);
+    setTimeout(() => { programmaticSearchScroll = false; }, 100);
 }
 
 // Reopen the search menu (used by the "Back to search" button on building/stop popups
@@ -1768,6 +1826,8 @@ function openSearchBack() {
     if (typeof hideCenterStops === 'function') hideCenterStops();
     adjustSearchHeights();
     attachSearchViewportListeners();
+    programmaticSearchScroll = true;
     $('.search-fav-routes, .search-recents, .search-recent-navigations').scrollTop(0);
+    setTimeout(() => { programmaticSearchScroll = false; }, 100);
     $('.search-pill-bar input').trigger('input').focus();
 }
