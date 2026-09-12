@@ -132,7 +132,6 @@ const defaultSettings = {
     'toggle-show-selected-rotation-points': false,
     'toggle-show-route-bus-speeds': false,
     'bus-animation-rate': 'off',
-    'toggle-always-show-break-overdue': false,
     'toggle-force-show-polylines': false,
     'toggle-force-show-stops': true,
     'force-show-polylines': '',

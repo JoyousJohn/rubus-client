@@ -739,11 +739,6 @@ $('.settings-toggle .toggle-input').on('change', function () {
             break;
 
 
-        case 'toggle-always-show-break-overdue':
-            console.log(`Always Show Break Overdue is now ${isChecked ? 'ON' : 'OFF'}`);
-            settings['toggle-always-show-break-overdue'] = isChecked;
-            break;
-
         case 'toggle-settings-btn-end':
             console.log(`Settings Button at End is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-settings-btn-end'] = isChecked;

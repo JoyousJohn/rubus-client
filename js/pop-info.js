@@ -390,6 +390,8 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         $('.bus-joined-service').text('');
     }
 
+    updateBusLastBreakLine(busName);
+
     $('.info-next-stops').show();
         
     $('.bus-data-extra').empty();
@@ -1063,16 +1065,8 @@ function updateNextStopsMaxHeight() {
     const nextStops = $('.info-next-stops');
     if (nextStops.length === 0) return;
     
-    // Account for the overdue break element if it's visible
-    let overdueBreakHeight = 0;
-    const overdueBreak = $('.info-overdue-break');
-    if (overdueBreak.is(':visible')) {
-        const marginTop = parseFloat(overdueBreak.css('margin-top')) || 0;
-        overdueBreakHeight = overdueBreak.outerHeight() + marginTop;
-    }
-    
     // 1.5rem*2 = vertical padding on .info-next-stops, plus xrem gap to be above .bottom <-- no longer acccrate 8/19
-    const maxHeight = window.innerHeight - nextStops.offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight() - overdueBreakHeight;
+    const maxHeight = window.innerHeight - nextStops.offset().top - $('.bus-info-bottom').innerHeight() - $('.bottom').innerHeight();
     let targetMaxHeight = maxHeight - 75;
 
     const $grid = $('.next-stops-grid');

@@ -985,7 +985,6 @@
                             </div>
                         </div>
                         <div class="info-campuses-serviced"></div>
-                        <div class="info-overdue-break none mt-0p5rem" style="opacity: 0.7;"></div>
                     </div>
                 </div>
 
@@ -1015,6 +1014,7 @@
                         <div class="bus-historical-capacity mt-0p5rem"></div>
                     </div>
 
+                    <div class="bus-last-break"></div>
                     <div class="bus-joined-service"></div>
 
                     <div class="bus-data-extra none"></div>
@@ -2195,24 +2195,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="flex justify-between">
-                    <div class="settings-heading flex flex-1 align-center span-i-break-overdue">Time Since Last Break<span class="span-i pointer select-none">i</span></div>
-                    <div class="settings-toggle">
-                        <input type="checkbox" id="toggle-always-show-break-overdue" class="toggle-input">
-                        <label for="toggle-always-show-break-overdue" class="toggle-label">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="break-overdue-explain none ml-0p5rem text-1p3rem dimgray">When selecting a bus, always show the time since it last took a break. If disabled, the time since last break notice will only be shown if a bus is overdue its expected break interval.</div>
-                <script>
-                $('.span-i-break-overdue').click(function() {
-                    const $el = $('.break-overdue-explain');
-                    if ($el.is(':animated')) return;
-                    $el.slideToggle();
-                })
-                </script>
 
                 <div class="flex justify-between bus-names-row">
                     <div class="settings-heading">Bus Names on Map</div>

@@ -1654,6 +1654,7 @@ $(document).ready(async function() {
                 const displayTime = isToday ? formattedTime : 
                     `${formattedTime} on ${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}/${serviceDate.getDate().toString().padStart(2, '0')}`;
                 $('.bus-joined-service').text('Joined service at ' + displayTime);
+                updateBusLastBreakLine(popupBusName);
                 $('.info-next-stops').show();
             }
         }

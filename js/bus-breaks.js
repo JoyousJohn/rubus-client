@@ -177,6 +177,41 @@ function revealBreaksClicked() {
     }, 0));
 }
 
+// Last-break line shown above "Joined service at..." in the bus info popup.
+// Always rendered when a last long break (>180s) is known, regardless of how
+// long ago it was. Plain text styling matches .bus-joined-service.
+function getLastBreakMin(busBreakData) {
+    if (busBreakData && busBreakData.length > 0) {
+        const longBreaks = busBreakData.filter(breakItem => breakItem.break_duration > 180);
+        if (longBreaks.length > 0) {
+            const lastLongBreak = longBreaks[longBreaks.length - 1];
+            if (lastLongBreak && lastLongBreak.time_departed) {
+                const lastBreakTime = new Date(lastLongBreak.time_departed.replace(/\.\d+/, ''));
+                const diffInMinutes = Math.floor((Date.now() - lastBreakTime.getTime()) / (1000 * 60));
+                return Math.max(0, diffInMinutes);
+            }
+        }
+    }
+    return null;
+}
+
+function formatLastBreakAgo(lastBreakMin) {
+    const hours = Math.floor(lastBreakMin / 60);
+    const minutes = lastBreakMin % 60;
+    const timeString = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    return `Last break ${timeString} ago`;
+}
+
+function updateBusLastBreakLine(busName, busBreakData) {
+    const data = busBreakData || (busBreaksCache[busName] ? busBreaksCache[busName].data : null);
+    const lastBreakMin = getLastBreakMin(data);
+    if (lastBreakMin !== null) {
+        $('.bus-last-break').text(formatLastBreakAgo(lastBreakMin));
+    } else {
+        $('.bus-last-break').text('');
+    }
+}
+
 function populateBusBreaks(busBreakData, busName) {
     const MAX_INITIAL_BREAKS = 7; // Maximum number of breaks shown initially
 
@@ -186,57 +221,11 @@ function populateBusBreaks(busBreakData, busName) {
         // $('.bus-breaks').append(`<div class="text-1p2rem" style="grid-column: 1 / span 3; color: #acacac;">This bus hasn't taken any breaks yet.</div>`);
         $('.past-breaks-wrapper, .bus-history, .show-breaks-prompt').hide();
         $('.show-more-breaks, .show-all-breaks').hide();
-        $('.info-overdue-break').hide();
-        // Update max height since overdue break is now hidden
-        updateNextStopsMaxHeight();
+        updateBusLastBreakLine(busName, busBreakData);
         return;
     }
 
-    // Calculate time since last long break (duration > 180 seconds)
-    const lastBreakMin = (() => {
-        if (busBreakData && busBreakData.length > 0) {
-            // Filter for long breaks only (duration > 180 seconds)
-            const longBreaks = busBreakData.filter(breakItem => breakItem.break_duration > 180);
-            
-            if (longBreaks.length > 0) {
-                // Get the most recent long break
-                const lastLongBreak = longBreaks[longBreaks.length - 1];
-                if (lastLongBreak && lastLongBreak.time_departed) {
-                    const lastBreakTime = new Date(lastLongBreak.time_departed.replace(/\.\d+/, ''));
-                    const currentTime = new Date();
-                    const diffInMs = currentTime - lastBreakTime;
-                    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-                    // console.log(`Last long break was ${diffInMinutes} minutes ago`);
-                    return diffInMinutes;
-                }
-            } else {
-                console.log('No long breaks found in data');
-            }
-        }
-        console.log('No break data available');
-        return null;
-    })();
-
-    if (lastBreakMin && lastBreakMin > 120) {
-        // Only show if actually overdue (more than 2 hours)
-        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>${Math.floor(lastBreakMin / 60)}h since break</span></div>`).show();
-        updateNextStopsMaxHeight();
-    } else if (settings['toggle-always-show-break-overdue'] && lastBreakMin !== null) {
-        const hours = Math.floor(lastBreakMin / 60);
-        const minutes = lastBreakMin % 60;
-        let timeString = '';
-        if (hours > 0) {
-            timeString += `${hours} hour${hours !== 1 ? 's' : ''}`;
-        }
-        if (minutes > 0 || hours === 0) {
-            if (hours > 0) timeString += ' ';
-            timeString += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-        }
-        $('.info-overdue-break').html(`<div class="flex align-center justify-center gap-x-0p5rem"><i class="fa-solid fa-clock"></i> <span>Last break ${timeString} ago!</span></div>`).show();
-        updateNextStopsMaxHeight();
-    } else {
-        $('.info-overdue-break').hide();
-    }
+    updateBusLastBreakLine(busName, busBreakData);
 
     // Content is populated on demand; only show the wrapper if the user
     // already pressed the prompt for this bus (stale fetches stay hidden).

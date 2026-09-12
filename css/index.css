@@ -936,7 +936,7 @@ html, body {
     overflow-x: hidden;
 }
 
-.info-extra, .info-overdue-break {
+.info-extra {
     font-size: 1.5rem;
     color: var(--theme-extra);
     line-height: 0.7;
@@ -975,11 +975,6 @@ html, body {
     61.54% { background-position: 0% 0; }
     100% { background-position: 0% 0; }
 }
-
-.info-overdue-break {
-    font-size: 1.3rem !important;
-}
-
 
 .bus-oos {
     padding: 0.3rem 0.8rem;
@@ -1309,11 +1304,19 @@ html, body {
     font-weight: bold;
 }
 
-.bus-joined-service {
+.bus-joined-service, .bus-last-break {
     /* margin-bottom: 0.5rem; find some other way to add this  */
     font-size: 1.3rem;
     color: gray;
     margin-top: 1rem;
+}
+
+.bus-last-break:not(:empty) + .bus-joined-service {
+    margin-top: 0.25rem;
+}
+
+.bus-last-break:empty {
+    margin-top: 0;
 }
 
 .bus-data-extra {

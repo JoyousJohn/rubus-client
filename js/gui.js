@@ -3959,7 +3959,6 @@ const toggleSettings = [
     'toggle-always-show-esc-hint',
     'toggle-pause-bus-markers-on-pan',
     'toggle-cull-offscreen-bus-markers',
-    'toggle-always-show-break-overdue',
     'toggle-settings-btn-end',
     'toggle-hide-direct-feedback',
     'toggle-force-show-polylines',
