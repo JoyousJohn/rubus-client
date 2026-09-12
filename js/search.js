@@ -550,7 +550,6 @@ $(document).ready(function() {
         if ($container.length > 0) {
           $container.scrollTop(0);
         }
-        $('.search-fav-routes, .search-recents, .search-recent-navigations').scrollTop(0);
         requestAnimationFrame(updateAllHistoryScrollFades);
       }, 150);
     });
