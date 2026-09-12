@@ -1621,6 +1621,29 @@ function calculateForwardDistance(startIndex, endIndex, totalStops) {
     }
 }
 
+// Resolve boarding/alighting to the occurrence pair with the shortest forward
+// distance, so duplicated stops (SAC NB stop 3 on wknd1-style routes) use the
+// correct leg instead of the first occurrence.
+function getRouteLegIndices(stops, startId, endId) {
+    const s = parseInt(startId);
+    const e = parseInt(endId);
+    const total = stops.length;
+    const startIndices = [];
+    const endIndices = [];
+    stops.forEach((v, i) => {
+        if (v === s) startIndices.push(i);
+        if (v === e) endIndices.push(i);
+    });
+    let best = null;
+    for (const si of startIndices) {
+        for (const ei of endIndices) {
+            const distance = (ei - si + total) % total;
+            if (best === null || distance < best.distance) best = { startIndex: si, endIndex: ei, distance };
+        }
+    }
+    return best;
+}
+
 // Calculate a score for a route combination (higher is better)
 function calculateRouteScore(routes, totalWalkingFeet, startStop, endStop) {
     let score = 0;
@@ -2754,16 +2777,15 @@ function findConnectingRoutes(startStopId, endStopId) {
     for (const routeName of possibleRoutes) {
         const routeStops = stopLists[routeName];
 
-        // Check if both stops are on this route
-        const startIndex = routeStops.indexOf(parseInt(startStopId));
-        const endIndex = routeStops.indexOf(parseInt(endStopId));
+        // Occurrence-aware: duplicated stops resolve to the shortest forward leg
+        const leg = getRouteLegIndices(routeStops, startStopId, endStopId);
 
-        if (startIndex !== -1 && endIndex !== -1) {
+        if (leg !== null) {
             connectingRoutes.push({
                 name: routeName,
                 stops: routeStops,
-                startIndex: startIndex,
-                endIndex: endIndex
+                startIndex: leg.startIndex,
+                endIndex: leg.endIndex
             });
         }
     }
@@ -3055,25 +3077,14 @@ function selectBestRoute(routes, startStop, endStop) {
     const scoredRoutes = validRoutes.map(route => {
         let score = 0;
 
-        // Prefer routes with fewer stops between start and end (circular distance, less strict)
+        // Prefer routes with fewer stops between start and end. Stored indices
+        // are already the shortest forward leg, so penalize forward distance.
         const total = (route.stops || []).length;
-        const diff = Math.abs(route.endIndex - route.startIndex);
-        const circStopsBetween = total > 0 ? Math.min(diff, total - diff) : diff;
+        const circStopsBetween = calculateForwardDistance(route.startIndex, route.endIndex, total);
         score -= circStopsBetween * 3; // Softer penalty so longer-but-reasonable routes remain viable alternates
-
-        // Prefer routes that go in the logical direction (start index < end index)
-        if (route.startIndex < route.endIndex) {
-            score += 5;
-        }
 
         // Prefer shorter route names (might indicate more direct routes)
         score -= route.name.length;
-
-        // Prefer routes that don't require going backwards
-        const isForwardDirection = route.startIndex < route.endIndex;
-        if (isForwardDirection) {
-            score += 3;
-        }
 
         // Strongly deprioritize weekend variants so they are not chosen by default
         const n = String(route.name || '').toLowerCase();
@@ -3105,12 +3116,22 @@ function getRouteDetails(route, startStopId, endStopId) {
         return { ...route, stopsInOrder: stops, direction: 'forward', totalStops: 0 };
     }
 
-    const startIndex = (typeof startStopId !== 'undefined' && startStopId !== null)
-        ? (route.stops || []).indexOf(parseInt(startStopId))
-        : (typeof route.startIndex === 'number' ? route.startIndex : -1);
-    const endIndex = (typeof endStopId !== 'undefined' && endStopId !== null)
-        ? (route.stops || []).indexOf(parseInt(endStopId))
-        : (typeof route.endIndex === 'number' ? route.endIndex : -1);
+    let startIndex;
+    let endIndex;
+    if (typeof startStopId !== 'undefined' && startStopId !== null &&
+        typeof endStopId !== 'undefined' && endStopId !== null) {
+        // Occurrence-aware: duplicated stops resolve to the shortest forward leg
+        const leg = getRouteLegIndices(route.stops, startStopId, endStopId);
+        startIndex = leg.startIndex;
+        endIndex = leg.endIndex;
+    } else {
+        startIndex = (typeof startStopId !== 'undefined' && startStopId !== null)
+            ? (route.stops || []).indexOf(parseInt(startStopId))
+            : (typeof route.startIndex === 'number' ? route.startIndex : -1);
+        endIndex = (typeof endStopId !== 'undefined' && endStopId !== null)
+            ? (route.stops || []).indexOf(parseInt(endStopId))
+            : (typeof route.endIndex === 'number' ? route.endIndex : -1);
+    }
 
     if (startIndex === -1 || endIndex === -1) {
         return { ...route, stopsInOrder: stops, direction: 'forward', totalStops: 0 };
