@@ -1172,7 +1172,7 @@ html, body {
 
 .next-stop-circle {
     /* These dots are shared: the routes subpanel defines --stop-dot-size on
-       .route-stops-grid to size them at 12px, while the bus popup's next-stops
+       .route-stops-grid to size them at 14px, while the bus popup's next-stops
        grid uses this class without defining it. The 10px fallback is that
        surface's long-standing size, so leaving it undefined there is intentional
        rather than broken. */
@@ -2107,6 +2107,11 @@ html, body {
     padding: 1rem;
     /* Left padding is the rail the bus icons live in. */
     padding-left: var(--bus-rail-width);
+    /* Top padding is the incoming wrap stub's room, mirroring padding-bottom
+       below: the head stub must fit inside existing layout height. 1rem left
+       room for only ~10px of the 80px stub, crushing the wrap leg's second
+       half onto the first dot. */
+    padding-top: 9rem;
     position: relative;
     overflow-y: scroll;
     margin-bottom: 8rem;

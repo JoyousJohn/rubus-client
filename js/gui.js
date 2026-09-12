@@ -1102,11 +1102,16 @@ const ROUTE_LOOP_LINE_DOT_OFFSET = 4;
 const ROUTE_BUS_PROGRESS_SEAM_OVERLAP = 2;
 
 // Longest the fading stubs standing in for the route's wrap segment are allowed
-// to be. The actual length is whatever room the grid already has at that end
-// (measured in updateRouteBusPositions), clamped to this: the stubs must not add
+// to be. The actual length is the grid's content padding at that end
+// (measured in sizeRouteLoopLines), clamped to this: the stubs must not add
 // layout height, or the invisible side of the fade would push the stop list
 // around.
 const ROUTE_LOOP_LINE_MAX = 80;
+// Half-width of the crossfade around the wrap-leg midpoint (in progress
+// units). The list is linear so the bus must teleport from the tail stub's end
+// to the head stub's start at prog 0.5; fading opacity to 0 at the midpoint
+// keeps that from reading as motion.
+const ROUTE_WRAP_FADE_HALF = 0.04;
 
 let routeBusRailWidth = null;
 
@@ -1123,26 +1128,33 @@ function routeBusMarkerTransform(topPx) {
     return `translate(-100%, -50%) translateY(${topPx}px)`;
 }
 
-// Size the two wrap stubs to the space the grid already has above the first dot
-// and below the last dot. Because the gradient fades to nothing at the stub's
-// far end, ending exactly at the grid's clip edge leaves no visible cut-off.
+// Size the two wrap stubs to the grid's content padding above the first dot
+// and below the last dot. Lengths are derived from content coordinates
+// (visible rect plus scrollTop) and scrollHeight, so they are constant
+// regardless of scroll position: measuring visible room instead would collapse
+// one stub to 0 whenever its end is scrolled out of view and strand wrap-leg
+// buses on the dot. Because the gradient fades to nothing at the stub's
+// far end, ending exactly at the content edge leaves no visible cut-off.
 // Both stubs start at the same offset within their dot as the main connecting
-// line does, so they join it seamlessly. The dot's measured height (not a
-// constant) sets where the head stub stops relative to the dot's bottom edge.
+// line does, so they join it seamlessly.
 function sizeRouteLoopLines($grid, $dots) {
     const gridEl = $grid[0];
     const gridRect = gridEl.getBoundingClientRect();
     const firstRect = $dots[0].getBoundingClientRect();
     const lastRect = $dots[$dots.length - 1].getBoundingClientRect();
+    const scrollTop = gridEl.scrollTop;
 
-    const dotHeight = firstRect.height;
     const lineStartFromDotTop = ROUTE_LOOP_LINE_DOT_OFFSET;
 
+    // Content offset of each dot's top edge from the content origin.
+    const firstDotTop = firstRect.top - gridRect.top + scrollTop;
+    const lastDotTop = lastRect.top - gridRect.top + scrollTop;
+
     const headLength = Math.min(ROUTE_LOOP_LINE_MAX,
-        Math.max(0, firstRect.top + lineStartFromDotTop - gridRect.top));
-    // Reach the grid's bottom edge from where the line starts inside the last dot.
+        Math.max(0, firstDotTop + lineStartFromDotTop));
+    // Reach the content bottom edge from where the line starts inside the last dot.
     const tailLength = Math.min(ROUTE_LOOP_LINE_MAX,
-        Math.max(0, gridRect.bottom - lastRect.bottom + dotHeight - lineStartFromDotTop));
+        Math.max(0, gridEl.scrollHeight - (lastDotTop + lineStartFromDotTop)));
 
     gridEl.style.setProperty('--route-loop-head-length', headLength + 'px');
 
@@ -1313,8 +1325,9 @@ function getBusRouteRank(busName, route) {
 
     // When en route to next_stop, bus is between (stopIdx - 1) and stopIdx.
     // If progress is known (0 to 1), use (stopIdx - 1 + progress), bounded.
+    // Unknown (NaN/out of range) means mid-leg, matching computeRouteBusPlacement.
     let prog = progressToNextStop(busName);
-    if (typeof prog !== 'number' || isNaN(prog) || prog < 0 || prog > 1) {
+    if (Number.isNaN(prog) || prog < 0 || prog > 1) {
         prog = 0.5;
     }
     const prevIdx = (stopIdx - 1 + routeStops.length) % routeStops.length;
@@ -1482,11 +1495,13 @@ function findRouteStopIndexAfter(routeStops, target, startIndex) {
 }
 
 // Where a bus sits on the rail, in the grid's content coordinates, or null when
-// it can't be placed. Returns { top, trailFrom }:
+// it can't be placed. Returns { top, trailFrom, opacity }:
 //   top      - the bus's y (marker icon and progress dot)
 //   trailFrom- y of the stop it last departed, for the travelled-segment overlay;
 //              null when there is no partial leg to draw (bus stopped, or the leg
 //              is unknown)
+//   opacity  - 1 except on the wrap leg, where it fades to 0 at the midpoint so
+//              the tail-to-head teleport doesn't read as motion; absent means 1.
 //
 // A bus's reported fix only advances on the bus poll (~5s) and the GPS feed
 // itself broadcasts every ~5-12s, so positioning straight from busData steps
@@ -1518,7 +1533,7 @@ function computeRouteBusPlacement(busName, routeStops, centers, headLength, tail
         : findRouteStopIndexAfter(routeStops, bus.next_stop, fromIdx);
 
     let prog = progressToNextStop(busName, latOverride, lngOverride);
-    if (typeof prog !== 'number' || isNaN(prog)) prog = 0;
+    if (Number.isNaN(prog)) prog = 0.5;
     prog = Math.max(0, Math.min(1, prog));
 
     // Bus left the last stop and is heading back around to the first. The list
@@ -1526,24 +1541,33 @@ function computeRouteBusPlacement(busName, routeStops, centers, headLength, tail
     // stub below the last dot and the second half runs down the incoming stub
     // from above the first dot — rather than parking every such bus on the last
     // dot. The travelled segment follows it onto whichever stub it is on.
+    // Opacity fades to 0 at the midpoint so the unavoidable tail-end to
+    // head-start teleport doesn't read as motion (applied in paint).
     const lastIdx = routeStops.length - 1;
     const wrapsToFirst = fromIdx === lastIdx && toIdx === -1 &&
         findRouteStopIndex(routeStops, bus.next_stop) === 0;
 
     if (wrapsToFirst) {
+        const opacity = Math.min(1, Math.abs(prog - 0.5) / ROUTE_WRAP_FADE_HALF);
         if (prog <= 0.5) {
             return {
                 top: centers[lastIdx].y + (prog / 0.5) * tailLength,
-                trailFrom: centers[lastIdx].y
+                trailFrom: centers[lastIdx].y,
+                opacity
             };
         }
         const headTop = centers[0].y - headLength;
         return {
             top: headTop + ((prog - 0.5) / 0.5) * headLength,
-            trailFrom: headTop
+            trailFrom: headTop,
+            opacity
         };
     }
-    if (fromIdx !== -1 && toIdx === fromIdx + 1) {
+    if (fromIdx !== -1 && toIdx > fromIdx) {
+        // One or more forward segments: lerp across the whole span so a bus
+        // that skipped a stop slides through the intermediate dots instead of
+        // parking at the departure dot. prog is already 0..1 along the
+        // geographic from->to leg, mapped here onto the rail span.
         return {
             top: centers[fromIdx].y + prog * (centers[toIdx].y - centers[fromIdx].y),
             trailFrom: centers[fromIdx].y
@@ -1581,7 +1605,20 @@ function updateRouteBusPositions() {
     const progressChanged = $progressOverlay.length ? syncRouteBusProgress($progressOverlay, panelRoute) : false;
     const busSetChanged = markersChanged || progressChanged;
 
-    if (busSetChanged || !routeBusRailMetrics || routeBusRailMetrics.count !== $dots.length) {
+    // Row heights can shift without any bus joining/leaving (font load, theme
+    // or rail-width change re-wrapping a stop card). The stored centers would
+    // then be stale, so verify the first dot is still where it was measured.
+    let drifted = false;
+    if (!busSetChanged && routeBusRailMetrics && routeBusRailMetrics.count === $dots.length) {
+        const gridRect = gridEl.getBoundingClientRect();
+        const firstRect = $dots.eq(0)[0].getBoundingClientRect();
+        const y = firstRect.top + firstRect.height / 2 - gridRect.top + gridEl.scrollTop;
+        const x = firstRect.left + firstRect.width / 2 - gridRect.left;
+        drifted = Math.abs(y - routeBusRailMetrics.centers[0].y) > 1 ||
+            Math.abs(x - routeBusRailMetrics.centers[0].x) > 1;
+    }
+
+    if (busSetChanged || drifted || !routeBusRailMetrics || routeBusRailMetrics.count !== $dots.length) {
         // The rail sets the grid's left padding, so it has to settle before any
         // dot is measured.
         routeBusRailMetrics = null;
@@ -1615,8 +1652,8 @@ function updateRouteBusPositions() {
 // bus is new, out of service, or its marker is removed).
 function getInterpolatedBusLatLng(busName) {
     const bus = busData[busName];
-    const marker = (typeof busMarkers !== 'undefined' && busMarkers) ? busMarkers[busName] : null;
-    if (marker && typeof marker.getLatLng === 'function') {
+    const marker = busMarkers[busName];
+    if (marker) {
         const ll = marker.getLatLng();
         if (ll && Number.isFinite(ll.lat) && Number.isFinite(ll.lng)) {
             return ll;
@@ -1667,7 +1704,7 @@ function paintRouteBusPositions() {
             return;
         }
         this.style.display = '';
-        placed.push({ el: this, top: placement.top, name: busName });
+        placed.push({ el: this, top: placement.top, name: busName, opacity: placement.opacity === undefined ? 1 : placement.opacity });
     });
 
     // Keep markers that land on the same spot (e.g. two buses at one stop) from
@@ -1697,7 +1734,7 @@ function paintRouteBusPositions() {
         if (!moved) break;
     }
 
-    placed.forEach(({ el, top }) => {
+    placed.forEach(({ el, top, opacity }) => {
         const firstPlacement = el._routeBusTop === undefined;
         // Keep sub-pixel positions (the icon travels well under a pixel per
         // frame, so rounding would make it step). Only a move big enough to see
@@ -1716,6 +1753,11 @@ function paintRouteBusPositions() {
         if (el._routeBusLeft !== markerRight) {
             el.style.left = markerRight + 'px';
             el._routeBusLeft = markerRight;
+        }
+        // Wrap-leg crossfade around the tail-to-head teleport midpoint.
+        if (el._routeBusOpacity !== opacity) {
+            el.style.opacity = opacity;
+            el._routeBusOpacity = opacity;
         }
     });
 
@@ -1743,6 +1785,13 @@ function paintRouteBusProgress($grid, placements, lineX) {
         if (this._routeBusVisible !== true) {
             this.style.visibility = 'visible';
             this._routeBusVisible = true;
+        }
+
+        // Same wrap-leg crossfade as the marker so segment and dot fade together.
+        const opacity = placement.opacity === undefined ? 1 : placement.opacity;
+        if (this._routeBusOpacity !== opacity) {
+            this.style.opacity = opacity;
+            this._routeBusOpacity = opacity;
         }
 
         if (this._routeBusLeft !== lineX) {
@@ -1784,22 +1833,35 @@ let routeBusRailFrameId = null;
 
 // Drive the rail from the map's own frame clock while a route is rendered, so
 // the icons animate with the markers rather than only when new data lands. The
-// loop parks itself when the panel closes (the poll hook restarts it) and is
-// suspended automatically by the browser while the tab is hidden, resuming on
-// its own — so it deliberately does not test document.hidden.
+// loop parks itself when the panel closes or is hidden (the poll hook restarts
+// it) and is suspended automatically by the browser while the tab is hidden,
+// resuming on its own — so it deliberately does not test document.hidden.
+// A transient null metrics (resize, fresh render) does NOT park the loop: it
+// remeasures through updateRouteBusPositions and keeps ticking.
 function ensureRouteBusRailLoop() {
     if (routeBusRailFrameId !== null) return;
     const tick = () => {
         routeBusRailFrameId = null;
+        const gridEl = $('.route-stops-grid')[0];
         const $overlay = $('.route-stops-grid').children('.route-bus-overlay');
-        if (!panelRoute || !$overlay.length || !routeBusRailMetrics) return;
-        paintRouteBusPositions();
-        routeBusRailFrameId = requestAnimationFrame(tick);
+        if (!panelRoute || !$overlay.length) return;
+        if (!gridEl || gridEl.getBoundingClientRect().height <= 0) return;
+        if (routeBusRailMetrics) {
+            paintRouteBusPositions();
+        } else {
+            updateRouteBusPositions();
+        }
+        if (routeBusRailFrameId === null && panelRoute) {
+            routeBusRailFrameId = requestAnimationFrame(tick);
+        }
     };
     routeBusRailFrameId = requestAnimationFrame(tick);
 }
 
-window.addEventListener('resize', invalidateRouteBusRailMetrics);
+window.addEventListener('resize', () => {
+    invalidateRouteBusRailMetrics();
+    updateRouteBusPositions();
+});
 
 function selectedRoute(route) {
     console.log('selectedRoute called with:', route);
@@ -1966,11 +2028,9 @@ function selectedRoute(route) {
             firstCircle.append('<div class="next-stop-circle" style="z-index: 1;"></div>');
         }
 
-        let i = 0;
-
         let positiveBuses = [];
         busesByRoutes[selectedCampus][route].forEach(busName => {
-            if (progressToNextStop(busName) < 1) { // have to debug why some stops are missed - prob a passio location issue, right?
+            if (progressToNextStop(busName) < 1) {
                 positiveBuses.push(busName);
             }
         })
@@ -2082,9 +2142,6 @@ function selectedRoute(route) {
 
                 }
 
-                i++;
-                previousStopId = stopId;
-
             });
 
         // console.log('---')
@@ -2120,7 +2177,6 @@ function selectedRoute(route) {
         const firstRect = firstCircle[0].getBoundingClientRect();
         const lastRect = lastCircle[0].getBoundingClientRect();
         const heightDiff = Math.abs(lastRect.top - firstRect.top);
-        console.log(heightDiff)
         // head-line: the fading incoming stub above the first dot.
         firstCircle.addClass('connecting-line head-line');
         firstCircle[0].style.setProperty('--connecting-line-height', `${heightDiff}px`);
