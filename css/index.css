@@ -1673,6 +1673,11 @@ html, body {
     height: 100vh;
 }
 
+.route-text {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .route-name {
     font-weight: bold;
     font-size: 2.5rem;
@@ -1987,6 +1992,8 @@ html, body {
     row-gap: 0.3rem;
     align-items: center;
     margin-top: 0.75rem;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 /* Wrapper grouping one bus's cells so the row can be added/removed/reordered as
@@ -1994,6 +2001,10 @@ html, body {
    so the layout is unchanged. */
 .route-bus-row {
     display: contents;
+}
+
+.route-bus-row > * {
+    cursor: pointer;
 }
 
 .route-bus-name {
@@ -2101,6 +2112,8 @@ html, body {
     margin-bottom: 8rem;
     padding-bottom: 18rem;
     scrollbar-width: none; /* Firefox */
+    user-select: none;
+    -webkit-user-select: none;
 }
 .route-stops-grid::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
@@ -2182,6 +2195,10 @@ html, body {
     line-height: 1;
     white-space: nowrap;
     color: var(--theme-color);
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 /* A freshly created marker has no position yet: it is appended before the rail
@@ -2224,6 +2241,7 @@ html, body {
     top: 0;
     visibility: hidden;
     color: var(--route-color);
+    pointer-events: auto;
 }
 
 .route-bus-progress-line {
@@ -2252,7 +2270,8 @@ html, body {
     height: 9px;
     background: currentColor;
     opacity: 0.85;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
     clip-path: polygon(0 0, 100% 0, 50% 100%);
     /* translateX(-50%) centres the triangle on the line. No Y shift: the
        triangle's flat top edge sits exactly at the y it is given, which is where
@@ -2285,7 +2304,8 @@ html, body {
 
 .route-stop-name {
     font-size: 1.75rem;
-    color: var(--theme-color)
+    color: var(--theme-color);
+    cursor: pointer;
 }
 
 .route-buses-for-stop {
@@ -2293,10 +2313,10 @@ html, body {
     grid-template-columns: auto auto 1fr;
     font-size: 1.5rem;
     column-gap: 1rem;
-}
-
-.route-buses-for-stop {
-    color: var(--theme-color)
+    align-items: center;
+    color: var(--theme-color);
+    cursor: pointer;
+    margin-top: 0.3rem;
 }
 
 .buses-panel-wrapper {

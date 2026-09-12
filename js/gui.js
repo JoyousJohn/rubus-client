@@ -1218,9 +1218,15 @@ function buildRouteBusMarker(busName, route) {
     // is-unplaced keeps a new marker invisible until paintRouteBusPositions gives
     // it a real position (see the CSS comment): it is created before the rail is
     // measured, so until then it only has the top-of-grid base transform.
-    const $marker = $('<div class="route-bus-marker is-unplaced"></div>').attr('bus-name', busName);
+    const $marker = $('<div class="route-bus-marker is-unplaced pointer"></div>').attr('bus-name', busName);
     $marker.append($('<i class="fa-solid fa-bus"></i>'));
     $marker.append($('<span class="route-bus-marker-name"></span>').text(busData[busName].busName || busName));
+    $marker.click(function() {
+        closeRouteMenu();
+        sourceRouteName = route;
+        sourceStopId = null;
+        flyToBus(busName);
+    });
     return $marker;
 }
 
@@ -1233,7 +1239,13 @@ function buildRouteBusProgress(busName, route) {
     el.className = 'route-bus-progress';
     el.setAttribute('bus-name', busName);
     el.appendChild($('<div class="route-bus-progress-line"></div>')[0]);
-    el.appendChild($('<div class="route-bus-progress-dot"></div>')[0]);
+    const $dot = $('<div class="route-bus-progress-dot pointer"></div>').click(function() {
+        closeRouteMenu();
+        sourceRouteName = route;
+        sourceStopId = null;
+        flyToBus(busName);
+    });
+    el.appendChild($dot[0]);
     return el;
 }
 
@@ -1368,6 +1380,15 @@ function buildRouteBusRow(busName) {
     } else {
         $row.append($nameCol, $iconCol, $stopCol, $capCol);
     }
+
+    const onFly = function() {
+        const r = panelRoute || busData[busName]?.route;
+        closeRouteMenu();
+        if (r) sourceRouteName = r;
+        sourceStopId = null;
+        flyToBus(busName);
+    };
+    $nameCol.add($iconCol).add($stopCol).add($speedCol).add($capCol).click(onFly);
 
     return $row;
 }
@@ -1925,8 +1946,20 @@ function selectedRoute(route) {
     stopLists[route].forEach((stopId, index) => {
 
         $('.route-stops-grid').append('<div class="next-stop-circle"></div>')
-        const $stopElm = $('<div class="flex flex-col"><div class="route-stop-name"></div><div class="route-buses-for-stop"></div></div>');
-        $stopElm.find('.route-stop-name').text(stopsData[stopId].name);
+        const $stopElm = $('<div class="flex flex-col"><div class="route-stop-name pointer"></div></div>');
+        $stopElm.find('.route-stop-name').text(stopsData[stopId].name).click(function() {
+            closeRouteMenu();
+            sourceRouteName = route;
+            sourceBusName = null;
+            sourceStopId = null;
+            flyToStop(stopId, true);
+            if (shownRoute !== route) {
+                toggleRoute(route);
+            } else {
+                toggleRouteSelectors(route, false);
+                updateTooltips(route);
+            }
+        });
 
         if (!firstCircle) {
             firstCircle = $('.route-stops-grid .next-stop-circle').last();
@@ -2000,34 +2033,38 @@ function selectedRoute(route) {
 
                     let eta;
 
-                    const $gridElm = $stopElm.find('.route-buses-for-stop');
+                    const isAtStop = (busData[busName].at_stop && (Array.isArray(busData[busName].stopId) ? stopId === busData[busName].stopId[0] : stopId === busData[busName].stopId)) ||
+                                     (busData[busName].at_stop && stopId == busData[busName].stopId[0] && previousStopId == busData[busName].stopId[1]);
 
-                    if (busData[busName].at_stop && (Array.isArray(busData[busName].stopId) ? stopId === busData[busName].stopId[0] : stopId === busData[busName].stopId)) {
-                        eta = 0;
-                        const $bn1 = $('<div class="rbfs-bn"></div>').text(busData[busName].busName).click(function(){ flyToBus(busName); closeRouteMenu(); });
-                        $gridElm.append($bn1);
-                        $gridElm.append(`<div class="bold">Here</div>`);
-                        $gridElm.append(`<div class="align-right">Arrived</div>`);
+                    if (isAtStop) {
+                        const $row = $('<div class="route-buses-for-stop pointer"></div>').click(function(){
+                            closeRouteMenu();
+                            sourceRouteName = route;
+                            sourceStopId = null;
+                            flyToBus(busName);
+                        });
+                        $row.append($('<div class="rbfs-bn"></div>').text(busData[busName].busName));
+                        $row.append(`<div class="bold">Here</div>`);
+                        $row.append(`<div class="align-right">Arrived</div>`);
+                        $stopElm.append($row);
                         return;
-                    } else if (busData[busName].at_stop && stopId == busData[busName].stopId[0] && previousStopId == busData[busName].stopId[1]) { // wknd & all special case at sac nb
-                        eta = 0;
-                        const $bn2 = $('<div class="rbfs-bn"></div>').text(busData[busName].busName).click(function(){ flyToBus(busName); closeRouteMenu(); });
-                        $gridElm.append($bn2);
-                        $gridElm.append(`<div class="bold">Here</div>`);
-                        $gridElm.append(`<div class="align-right">Arrived</div>`);
-                        return;
+                    }
+
+                    if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId) {
+                        eta = getETAForStop(busName, stopId, previousStopId);
                     } else {
-                        const $bn3 = $('<div class="rbfs-bn"></div>').text(busData[busName].busName).click(function(){ flyToBus(busName); closeRouteMenu(); });
-                        $gridElm.append($bn3);
-                        if ((route === 'wknd1' || route === 'all' || route === 'winter1' || route === 'on1' || route === 'summer1') && stopId === 3 && previousStopId) {
-                            eta = getETAForStop(busName, stopId, previousStopId);
-                        } else {
-                            eta = getETAForStop(busName, stopId);
-                        }
+                        eta = getETAForStop(busName, stopId);
                     }
 
                     if (eta !== undefined) {
-                        $gridElm.append(`<div class="bold">${Math.ceil(eta/60)}m</div>`);
+                        const $row = $('<div class="route-buses-for-stop pointer"></div>').click(function(){
+                            closeRouteMenu();
+                            sourceRouteName = route;
+                            sourceStopId = null;
+                            flyToBus(busName);
+                        });
+                        $row.append($('<div class="rbfs-bn"></div>').text(busData[busName].busName));
+                        $row.append(`<div class="bold">${Math.ceil(eta/60)}m</div>`);
 
                         let stopsAwayText = '';
 
@@ -2039,7 +2076,8 @@ function selectedRoute(route) {
                             stopsAwayText = stopsAway + ' stops away';
                         }
 
-                        $gridElm.append(`<div class="align-right">${stopsAwayText}</div>`);
+                        $row.append(`<div class="align-right">${stopsAwayText}</div>`);
+                        $stopElm.append($row);
                     }
 
                 }
@@ -4592,6 +4630,14 @@ $(document).ready(function() {
             openSearchBack();
             return;
         }
+        // If we arrived here from a route in the routes subpanel
+        if (sourceRouteName) {
+            const returnRoute = sourceRouteName;
+            sourceRouteName = null;
+            hideInfoBoxes(true);
+            selectedRoute(returnRoute);
+            return;
+        }
         flyToBus(sourceBusName);
         $('.stop-info-popup').hide();
         $('.stop-info-hide-oos').hide();
@@ -4613,6 +4659,13 @@ $(document).ready(function() {
     });
 
     $('.bus-info-back-wrapper').click(function() {
+        if (sourceRouteName) {
+            const returnRoute = sourceRouteName;
+            sourceRouteName = null;
+            hideInfoBoxes(true);
+            selectedRoute(returnRoute);
+            return;
+        }
         flyToStop(sourceStopId);
         if (!shownRoute) {
             showAllBuses();

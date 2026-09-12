@@ -43,6 +43,7 @@ function plotBus(busName, immediatelyUpdate=false, moved=true) {
         busMarkers[busName].on('click', function() {
             sourceStopId = null;
             sourceBusName = null;
+            sourceRouteName = null;
             selectBusMarker(busName);
         });
 

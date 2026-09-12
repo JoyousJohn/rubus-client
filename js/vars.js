@@ -9,6 +9,7 @@ let forceImmediateUpdate = false;
 // Prevent overlapping network fetches
 let busFetchInProgress = false;
 var activeStops = [];
+var sourceRouteName = null;
 // Timestamp (ms) of the last successful ETA-table fetch. Used to know on resume
 // whether the leg-time/waits tables are stale enough to warrant a refresh before
 // recomputing per-bus busETAs — see fetchETAs() and triggerImmediateResumeUpdate().

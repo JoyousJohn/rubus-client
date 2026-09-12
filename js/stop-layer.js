@@ -271,6 +271,7 @@
             }
             sourceStopId = null;
             sourceBusName = null;
+            sourceRouteName = null;
             if (typeof clearPanoutFeedback === 'function') { clearPanoutFeedback(); }
             popStopInfo(stopId);
             if (!shownRoute) {

@@ -130,6 +130,11 @@ function hideInfoBoxes(instantly_hide) {
         sourceBusName = null;
     }
 
+    if (sourceRouteName) {
+        $('.stop-info-back, .stop-info-back-wrapper, .bus-info-back, .bus-info-back-wrapper').stop(true, true).hide();
+        sourceRouteName = null;
+    }
+
     if (sourceStopId) {
         $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).hide();
         sourceStopId = null;

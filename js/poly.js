@@ -137,6 +137,7 @@ function applyForceShowStops() {
                 if ($('body').hasClass('parking-permit-mode')) return;
                 sourceStopId = null;
                 sourceBusName = null;
+                sourceRouteName = null;
                 clearPanoutFeedback();
                 popStopInfo(id);
                 if (!shownRoute) {
@@ -2340,6 +2341,7 @@ async function popStopInfo(stopId) {
                 if ($('body').hasClass('parking-permit-mode')) return;
                 sourceStopId = null;
                 sourceBusName = null;
+                sourceRouteName = null;
                 clearPanoutFeedback();
                 popStopInfo(stopId);
                 if (!shownRoute) {
@@ -2545,7 +2547,32 @@ async function popStopInfo(stopId) {
         $('.stop-info-hide-oos').hide();
     }
 
-    if (sourceBusName && !sourceStopId) {
+    if (sourceRouteName) {
+        const routeKey = sourceRouteName;
+        let displayRoute = routeKey;
+        if (displayRoute === 'wknd1' || displayRoute === 'wknd2') {
+            displayRoute = 'Weekend ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'on1' || displayRoute === 'on2') {
+            displayRoute = 'Overnight ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'summer1' || displayRoute === 'summer2') {
+            displayRoute = displayRoute.charAt(0).toUpperCase() + displayRoute.slice(1, -1) + ' ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'winter1' || displayRoute === 'winter2') {
+            displayRoute = displayRoute.charAt(0).toUpperCase() + displayRoute.slice(1, -1) + ' ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'all') {
+            displayRoute = 'All Campus';
+        } else if (displayRoute === 'kbs') {
+            displayRoute = 'Knightsbridge';
+        } else {
+            displayRoute = displayRoute.toUpperCase();
+        }
+
+        const routeColor = colorMappings[routeKey] || 'var(--theme-color)';
+
+        $('.stop-info-back .flex div').html(`<span class="bold-600">${displayRoute}</span> route`);
+        $('.stop-info-back').css('color', routeColor);
+        $('.stop-info-back, .stop-info-back-wrapper').stop(true, true).show();
+        $('.stop-info-back-wrapper').css('display', 'flex');
+    } else if (sourceBusName && !sourceStopId) {
         const bus = busData[sourceBusName];
         const routeKey = bus?.route || '';
         let displayRoute = routeKey;
@@ -2683,6 +2710,7 @@ async function addStopsToMap() {
 
                 sourceStopId = null;
                 sourceBusName = null;
+                sourceRouteName = null;
                 clearPanoutFeedback();
                 popStopInfo(stopId);
                 if (!shownRoute) {

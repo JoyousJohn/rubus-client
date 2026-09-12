@@ -480,14 +480,41 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
         resetBreaksGate(busName);
     }
     
-    if (sourceStopId) {
+    if (sourceRouteName) {
+        const routeKey = sourceRouteName;
+        let displayRoute = routeKey;
+        if (displayRoute === 'wknd1' || displayRoute === 'wknd2') {
+            displayRoute = 'Weekend ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'on1' || displayRoute === 'on2') {
+            displayRoute = 'Overnight ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'summer1' || displayRoute === 'summer2') {
+            displayRoute = displayRoute.charAt(0).toUpperCase() + displayRoute.slice(1, -1) + ' ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'winter1' || displayRoute === 'winter2') {
+            displayRoute = displayRoute.charAt(0).toUpperCase() + displayRoute.slice(1, -1) + ' ' + displayRoute.slice(-1);
+        } else if (displayRoute === 'all') {
+            displayRoute = 'All Campus';
+        } else if (displayRoute === 'kbs') {
+            displayRoute = 'Knightsbridge';
+        } else {
+            displayRoute = displayRoute.toUpperCase();
+        }
+
+        const routeColor = colorMappings[routeKey] || 'var(--theme-color)';
+
+        $('.bus-info-back .flex div').html(`<span class="bold-600">${displayRoute}</span> route`);
+        $('.bus-info-back').css('color', routeColor);
+        $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).show();
+        $('.bus-info-back-wrapper').css('display', 'flex');
+    } else if (sourceStopId) {
         const stop = stopsData[sourceStopId];
         const stopDisplayName = stop?.shorterName || stop?.shortName || stop?.name || 'BACK';
         $('.bus-info-back .flex div').text(stopDisplayName);
+        $('.bus-info-back').css('color', '');
         $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).show();
         $('.bus-info-back-wrapper').css('display', 'flex');
     } else {
         $('.bus-info-back .flex div').text('BACK');
+        $('.bus-info-back').css('color', '');
         $('.bus-info-back, .bus-info-back-wrapper').stop(true, true).hide();
     }
     sourceBusName = busName;
@@ -851,6 +878,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         $closestWrap.find('.next-stop-name').text(closestStopName);
         $grid.append($closestWrap.click(() => {
             sourceStopId = null;
+            sourceRouteName = null;
             flyToStop(closestStopId, true); // true indicates user interaction
         }));
         $grid.append($(`<div class="flex flex-col center pointer closest-stop-bg h-100 justify-center" style="margin-right: -1rem; border-radius: 0 0.8rem 0.8rem 0; padding-right: 1rem;">
@@ -858,6 +886,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
             <div class="next-stop-time closest-stop-time">temp:temp</div>
         </div>`).click(() => {
             sourceStopId = null;
+            sourceRouteName = null;
             flyToStop(closestStopId, true); // true indicates user interaction
         }));
         $('.next-stops-grid > .grid').css('margin-top', '-0.5rem')
@@ -891,12 +920,14 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
         // Rebuild wrapper via html is safe since escaped, but we keep html for simplicity
         $grid.append($atStopWrap.click(() => {
                 sourceStopId = null;
+                sourceRouteName = null;
                 flyToStop(stopId);
             }));
         $grid.append($(`<div class="flex flex-col center pointer">
             <div class="next-stop-eta here-eta" data-stop-id="${stopId}">Here</div>
         </div>`).click(() => {
             sourceStopId = null;
+            sourceRouteName = null;
             flyToStop(stopId);
         }));
 
@@ -928,6 +959,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
                 <div class="next-stop-name flex">${row.stopName}</div>
             </div>`).click(() => {
                 sourceStopId = null;
+                sourceRouteName = null;
                 flyToStop(row.stopId);
             }));
         $grid.append($(`<div class="flex flex-col center pointer">
@@ -935,6 +967,7 @@ function rebuildGrid(busName, data, rows, shouldShowClosestStop, closestStopIsNe
             <div class="next-stop-time">${row.formattedTime}</div>
         </div>`).click(() => {
             sourceStopId = null;
+            sourceRouteName = null;
             flyToStop(row.stopId);
         }));
         etaLabelsToSet.push([row.stopId, row.eta]);
