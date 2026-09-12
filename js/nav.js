@@ -386,16 +386,24 @@ $(document).ready(function() {
         
         // Always set the selected building as the destination
         setNavigationFromBuilding(currentBuildingName, 'to');
-        openDirectionsNav();
         window.errorTracker.trackNavigationWrapperShow('Building directions button');
 
-        prepareNavFromWithRecents();
+        // If we know where the user is, try to auto-fill nav-from from their
+        // location (near stop → building/lot → address) and compute the route
+        // without focusing or showing recents. Otherwise keep manual flow.
+        (async function() {
+            try {
+                if (await tryAutoFillNavFromUserLocation()) return;
+            } catch (e) {}
+            openDirectionsNav();
+            prepareNavFromWithRecents();
 
-        // Focus on the from input for user to enter their starting location
-        // (programmatic focus — don't pop autocomplete for a pre-filled value).
-        window._suppressNavAutocompleteOnFocus = true;
-        if (window.focusNavFromInput) window.focusNavFromInput();
-        else $('#nav-from-input').focus();
+            // Focus on the from input for user to enter their starting location
+            // (programmatic focus — don't pop autocomplete for a pre-filled value).
+            window._suppressNavAutocompleteOnFocus = true;
+            if (window.focusNavFromInput) window.focusNavFromInput();
+            else $('#nav-from-input').focus();
+        })();
     });
 
     // Handle navigation input functionality
@@ -2650,6 +2658,115 @@ function findClosestStops(targetLat, targetLng, maxStops = 5) {
 function findClosestStop(targetLat, targetLng) {
     const closestStops = findClosestStops(targetLat, targetLng, 1);
     return closestStops.length > 0 ? closestStops[0] : { distance: Infinity };
+}
+
+// ── Auto-fill nav origin from user location (search Nav button flow) ──
+// Priority: 1) near active bus stop → 2) inside building/lot feature →
+// 3) near address point. Anything else (or no location) falls back to
+// manual entry (focus nav-from + recents). Errors reject to the caller,
+// whose .catch runs the manual flow.
+const NAV_AUTO_ORIGIN_STOP_THRESHOLD_METERS = 150; // ~500ft, ~2min walk
+const NAV_AUTO_ORIGIN_ADDRESS_THRESHOLD_METERS = 50; // same as road match threshold
+
+function getUserPositionForNav() {
+    if (Array.isArray(userPosition) && userPosition.length === 2 &&
+        userPosition[0] != null && userPosition[1] != null) {
+        return [userPosition[0], userPosition[1]];
+    }
+    return null;
+}
+
+function findNearestActiveStopForNav(lat, lng) {
+    const ids = activeStops.length > 0 ? activeStops : Object.keys(stopsData);
+    let best = null;
+    let bestDist = Infinity;
+    for (const sid of ids) {
+        const s = stopsData[sid];
+        if (!s) continue;
+        const d = calculateDistance(lat, lng, s.latitude, s.longitude); // meters
+        if (d < bestDist) {
+            bestDist = d;
+            best = { id: String(sid), name: s.name };
+        }
+    }
+    return (best && bestDist <= NAV_AUTO_ORIGIN_STOP_THRESHOLD_METERS) ? best : null;
+}
+
+function ensureBuildingsForNavOrigin() {
+    if (window.buildingsLayer && window.buildingSpatialIndex) return Promise.resolve(true);
+    const loadPromise = loadBuildings().then(() => true).catch(() => false);
+    const timeout = new Promise(resolve => setTimeout(() => resolve(false), 1500));
+    return Promise.race([loadPromise, timeout]);
+}
+
+function findNearestAddressPointForNav(lat, lng) {
+    let best = null;
+    let bestDist = Infinity;
+    for (const item of window.buildingList) {
+        if (!item || item.category !== 'address') continue;
+        const d = calculateDistance(lat, lng, item.lat, item.lng);
+        if (d < bestDist) {
+            bestDist = d;
+            best = item;
+        }
+    }
+    return (best && bestDist <= NAV_AUTO_ORIGIN_ADDRESS_THRESHOLD_METERS) ? best : null;
+}
+
+// Resolve the best nav origin for the user's current location.
+// Returns { kind: 'stop'|'building'|'address', ... } or null when the user
+// is outside all of these (caller keeps the manual focus+recents flow).
+async function resolveNavOriginFromUserLocation() {
+    const pos = getUserPositionForNav();
+    if (!pos) return null;
+
+    // 1) Near an active bus stop — highest priority.
+    const nearStop = findNearestActiveStopForNav(pos[0], pos[1]);
+    if (nearStop) return { kind: 'stop', id: nearStop.id, name: nearStop.name };
+
+    // 2) Inside a building/lot polygon.
+    await ensureBuildingsForNavOrigin();
+    const building = getBuildingAtLocation(pos[0], pos[1]);
+    if (building && building.name) return { kind: 'building', name: building.name };
+
+    // 3) Near an address point.
+    const addr = findNearestAddressPointForNav(pos[0], pos[1]);
+    if (addr) return { kind: 'address', name: addr.name };
+
+    return null;
+}
+
+function finishAutoFilledNavOrigin(fromName) {
+    openDirectionsNav();
+    setNavPendingSourceSelection(false);
+    $('.nav-search-results').addClass('none').empty();
+    $('#nav-from-input').blur();
+    $('#nav-to-input').blur();
+    document.activeElement.blur();
+    const toVal = $('#nav-to-input').val().trim();
+    const fromVal = $('#nav-from-input').val().trim() || fromName;
+    if (fromVal && toVal) {
+        setTimeout(() => calculateRoute(fromVal, toVal), 60);
+    }
+}
+
+// Destination must already be set (nav-to) before calling. Sets nav-from
+// from the user location, opens nav, and computes the route — without ever
+// focusing nav-from or showing recents. Returns true when auto-filled.
+async function tryAutoFillNavFromUserLocation() {
+    const origin = await resolveNavOriginFromUserLocation();
+    if (!origin) return false;
+    // Don't auto-fill when the origin is the destination itself.
+    const toValNorm = $('#nav-to-input').val().trim().toLowerCase();
+    if (origin.kind === 'stop' && String(selectedToStop) === String(origin.id)) return false;
+    if (origin.name && toValNorm === origin.name.trim().toLowerCase()) return false;
+    if (origin.kind === 'stop') {
+        setNavigationFromStop(origin.id, 'from');
+    } else {
+        setNavigationFromBuilding(origin.name, 'from');
+    }
+    finishAutoFilledNavOrigin(origin.name);
+    return true;
 }
 
 // Resolve an input string to a place object (building or stop)

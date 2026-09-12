@@ -929,50 +929,27 @@ $(document).ready(function() {
             setNavigationFromBuilding(item.name, 'to');
         }
 
-        // TEMPORARILY COMMENTED OUT: never auto-populate the source field with
-        // the closest stop to the user's location. This was causing confusing
-        // prefills (e.g. "RWJMS Research Tower") and out-of-bounds users to get
-        // a random closest stop. Intended to be re-enabled later.
-        // const hasUserLocation = typeof userPosition !== 'undefined' &&
-        //     Array.isArray(userPosition) && userPosition.length === 2 &&
-        //     userPosition[0] != null && userPosition[1] != null;
-        // if (hasUserLocation) {
-        //     const closestStop = findClosestStop(userPosition[0], userPosition[1]);
-        //     const distanceMiles = Number.isFinite(closestStop?.distance)
-        //         ? closestStop.distance / 1609.34
-        //         : Infinity;
-        //     const inBounds = distanceMiles <= maxDistanceMiles || settings['toggle-bypass-max-distance'];
-        //     if (inBounds && closestStop && closestStop.id != null && stopsData[closestStop.id]) {
-        //         setNavigationFromStop(String(closestStop.id), 'from');
-        //     }
-        // }
-
-        openDirectionsNav();
-        // If there are recent searches, hide nav-to and show recents in nav-from dropdown instantly
-        if (typeof prepareNavFromWithRecents === 'function') {
+        const manualNavFromFlow = function() {
+            openDirectionsNav();
+            // If there are recent searches, hide nav-to and show recents in nav-from dropdown instantly
             prepareNavFromWithRecents();
-        } else {
-            let _hasRecents = false;
-            try {
-                const _raw = localStorage.getItem('recentSearches');
-                const _arr = _raw ? JSON.parse(_raw) : [];
-                _hasRecents = Array.isArray(_arr) && _arr.some(it => it && it.type !== 'navigation' && it.name && it.category);
-            } catch(e) { _hasRecents = false; }
-            if (_hasRecents) {
-                selectedFromBuilding = null;
-                selectedFromStop = null;
-                isSettingInputProgrammatically = true;
-                $('#nav-from-input').val('').trigger('input');
-                isSettingInputProgrammatically = false;
-                $('#nav-from-clear-btn').hide();
-                setNavPendingSourceSelection(true);
-                renderNavFromRecents();
-            } else {
-                setNavPendingSourceSelection(false);
-            }
+            window._suppressNavAutocompleteOnFocus = true;
+            window.focusNavFromInput();
+        };
+
+        // If we know where the user is, try to auto-fill nav-from from their
+        // location (near active stop → building/lot → address) and compute the
+        // route without focusing or showing recents. Only fall back to manual
+        // entry when the user is outside all of these or has no location.
+        try {
+            tryAutoFillNavFromUserLocation().then(function(autoFilled) {
+                if (!autoFilled) manualNavFromFlow();
+            }).catch(function() {
+                manualNavFromFlow();
+            });
+        } catch (e) {
+            manualNavFromFlow();
         }
-        window._suppressNavAutocompleteOnFocus = true;
-        window.focusNavFromInput();
         sa_event('btn_press', {
             'btn': 'search_result_directions',
             'result': item.name,

@@ -1295,20 +1295,33 @@
                             
                             // Always set the selected stop as the destination
                             setNavigationFromStop(currentStopId, 'to');
-                            openDirectionsNav();
 
-                            if (typeof prepareNavFromWithRecents === 'function') {
+                            const manualStopNavFromFlow = function() {
+                                openDirectionsNav();
                                 prepareNavFromWithRecents();
-                            }
 
-                            // Focus on the from input for user to enter their starting location
-                            // (programmatic focus — don't pop autocomplete).
-                            window._suppressNavAutocompleteOnFocus = true;
-                            if (window.focusNavFromInput) window.focusNavFromInput();
-                            else {
-                                setTimeout(() => {
-                                    $('#nav-from-input').focus();
-                                }, 0);
+                                // Focus on the from input for user to enter their starting location
+                                // (programmatic focus — don't pop autocomplete).
+                                window._suppressNavAutocompleteOnFocus = true;
+                                if (window.focusNavFromInput) window.focusNavFromInput();
+                                else {
+                                    setTimeout(() => {
+                                        $('#nav-from-input').focus();
+                                    }, 0);
+                                }
+                            };
+
+                            // Auto-fill nav-from from user location when possible
+                            // (near stop → building/lot → address), without
+                            // focusing or showing recents.
+                            try {
+                                tryAutoFillNavFromUserLocation().then(function(autoFilled) {
+                                    if (!autoFilled) manualStopNavFromFlow();
+                                }).catch(function() {
+                                    manualStopNavFromFlow();
+                                });
+                            } catch (e) {
+                                manualStopNavFromFlow();
                             }
                         });
 
