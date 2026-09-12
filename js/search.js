@@ -620,9 +620,9 @@ $(document).ready(function() {
         // Get all available options (buildings and active stops)
         const allOptions = [];
         
-        // Add all buildings from buildingList
-        if (buildingList) {
-            for (const building of buildingList) {
+        // Add all buildings from buildingIndex
+        if (buildingIndex) {
+            for (const building of Object.values(buildingIndex)) {
                 allOptions.push({
                     ...building,
                     category: 'building',
