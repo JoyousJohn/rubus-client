@@ -1719,29 +1719,8 @@
       "campus": "busch",
       "abbreviations": [
         "HLL"
-      ]
-    },
-    "hill center": {
-      "id": "3752",
-      "name": "Hill Center for the Mathematical Sciences",
-      "category": "building",
-      "lat": 40.521872348633565,
-      "lng": -74.4624206535,
-      "campus": "busch",
-      "abbreviations": [
-        "HLL"
-      ]
-    },
-    "hill center building": {
-      "id": "3752",
-      "name": "Hill Center for the Mathematical Sciences",
-      "category": "building",
-      "lat": 40.521872348633565,
-      "lng": -74.4624206535,
-      "campus": "busch",
-      "abbreviations": [
-        "HLL"
-      ]
+      ],
+      "aliases": ["Hill Center", "Hill Center Building"]
     },
     "pharmacy/psychology parking deck": {
       "id": "3756",
@@ -3155,7 +3134,8 @@
       "campus": "livingston",
       "abbreviations": [
         "RC"
-      ]
+      ],
+      "aliases": ["Rutgers Cinema", "Cinema", "Movie Theater", "Livi B", "Livingston B"]
     },
     "livingston apartments building c": {
       "id": "4179",
@@ -10770,46 +10750,7 @@
       "lng": -74.438584,
       "campus": "livingston"
     },
-    "rutgers cinema": {
-      "id": "4178",
-      "name": "Rutgers Cinema",
-      "category": "entertainment",
-      "lat": 40.52552275407359,
-      "lng": -74.4372872526,
-      "campus": "livingston"
-    },
-    "cinema": {
-      "id": "4178",
-      "name": "Rutgers Cinema",
-      "category": "entertainment",
-      "lat": 40.52552275407359,
-      "lng": -74.4372872526,
-      "campus": "livingston"
-    },
-    "movie theater": {
-      "id": "4178",
-      "name": "Rutgers Cinema",
-      "category": "entertainment",
-      "lat": 40.52552275407359,
-      "lng": -74.4372872526,
-      "campus": "livingston"
-    },
-    "livi b": {
-      "id": "4178",
-      "name": "Livingston Apartments Building B",
-      "category": "building",
-      "lat": 40.52552275407359,
-      "lng": -74.4372872526,
-      "campus": "livingston"
-    },
-    "livingston b": {
-      "id": "4178",
-      "name": "Livingston Apartments Building B",
-      "category": "building",
-      "lat": 40.52552275407359,
-      "lng": -74.4372872526,
-      "campus": "livingston"
-    },
+
     "livingston student center (stop)": {
       "id": "13",
       "name": "Livingston Student Center",
