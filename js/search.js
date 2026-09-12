@@ -219,8 +219,28 @@ function fitSearchHeadingText() {
 
 $(window).on('resize', () => requestAnimationFrame(() => fitSearchHeadingText()));
 
+function updateHistoryScrollFade(el) {
+  if (!el) return;
+  const canScroll = el.scrollHeight > el.clientHeight + 2;
+  const atBottom = (el.scrollTop + el.clientHeight) >= (el.scrollHeight - 6);
+  $(el).toggleClass('scroll-fade-bottom', canScroll && !atBottom);
+}
+
+function updateAllHistoryScrollFades() {
+  $('.search-fav-routes, .search-recents, .search-recent-navigations').each(function() {
+    updateHistoryScrollFade(this);
+  });
+}
+
 function adjustSearchHeights() {
   const isMobile = $(window).width() <= 992;
+  const scrollContainers = document.querySelectorAll('.search-fav-routes, .search-recents, .search-recent-navigations');
+  const atBottomMap = new Map();
+  scrollContainers.forEach(el => {
+    const atBottom = (el.scrollTop + el.clientHeight) >= (el.scrollHeight - 8);
+    atBottomMap.set(el, atBottom);
+  });
+
   if (isMobile && window.visualViewport) {
     const vvp = window.visualViewport;
     $('.search-wrapper').css({
@@ -238,6 +258,14 @@ function adjustSearchHeights() {
       'width': ''
     });
   }
+
+  scrollContainers.forEach(el => {
+    if (atBottomMap.get(el) && el.scrollHeight > el.clientHeight) {
+      el.scrollTop = el.scrollHeight - el.clientHeight;
+    }
+  });
+
+  requestAnimationFrame(updateAllHistoryScrollFades);
 }
 
 function attachSearchViewportListeners() {
@@ -318,6 +346,16 @@ $(document).ready(function() {
     const $input = $('.search-pill-bar input');
     const $clearBtn = $('.search-clear-btn');
     $input.val('')
+
+    document.addEventListener('scroll', function(e) {
+        if (e.target && e.target.classList && (
+            e.target.classList.contains('search-fav-routes') ||
+            e.target.classList.contains('search-recents') ||
+            e.target.classList.contains('search-recent-navigations')
+        )) {
+            updateHistoryScrollFade(e.target);
+        }
+    }, true);
 
     // Return the FINAL custom icon class directly (no FontAwesome swap needed),
     // so rendering search rows does not trigger the global MutationObserver.
@@ -512,6 +550,8 @@ $(document).ready(function() {
         if ($container.length > 0) {
           $container.scrollTop(0);
         }
+        $('.search-fav-routes, .search-recents, .search-recent-navigations').scrollTop(0);
+        requestAnimationFrame(updateAllHistoryScrollFades);
       }, 150);
     });
     $(document).on('blur', '.search-pill-bar input', function() {
@@ -1501,6 +1541,10 @@ $(document).ready(function() {
                 $navList.append($row);
             });
         }
+        $searchFavRoutes.scrollTop(0);
+        $searchRecents.scrollTop(0);
+        $navList.scrollTop(0);
+        requestAnimationFrame(updateAllHistoryScrollFades);
     }
     window.populateRecentSearches = populateRecentSearches;
 
@@ -1711,6 +1755,7 @@ function openSearch() {
     if (typeof hideCenterStops === 'function') hideCenterStops();
     adjustSearchHeights();
     attachSearchViewportListeners();
+    $('.search-fav-routes, .search-recents, .search-recent-navigations').scrollTop(0);
 }
 
 // Reopen the search menu (used by the "Back to search" button on building/stop popups
@@ -1724,5 +1769,6 @@ function openSearchBack() {
     if (typeof hideCenterStops === 'function') hideCenterStops();
     adjustSearchHeights();
     attachSearchViewportListeners();
+    $('.search-fav-routes, .search-recents, .search-recent-navigations').scrollTop(0);
     $('.search-pill-bar input').trigger('input').focus();
 }

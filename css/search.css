@@ -302,7 +302,7 @@
 .search-recent-navigations-wrapper {
     border-top: 1px solid var(--theme-line-bg);
     border-bottom: 1px solid var(--theme-line-bg);
-    padding: 1rem 0 0 0;
+    padding: 0;
     margin: 0;
 }
 
@@ -327,25 +327,24 @@
     min-height: 3.2rem;
 }
 
-.search-fav-routes {
+.search-recents-wrapper {
     margin-top: 0.25rem;
 }
 
 /* Scrollable history lists: hold all entries but constrain each list to
-   roughly 3 rows visible (3.2rem rows + 1rem gaps = 11.6rem rows area, plus
-   0.5rem top/bottom interior padding = 12.6rem; border-box keeps the math
-   exact). Interior padding (not divider margins, which sit outside the
-   scrollports and can't cushion edge rows) keeps rows off the container
-   edges, and proximity snap settles partial rows fully visible instead of
-   resting sliced mid-text. */
+   roughly 4.2 rows visible (4.2 × 3.2rem rows + 2×1rem gaps = 15.44rem rows area, plus
+   1rem top/bottom interior padding = 17.44rem; border-box keeps the math
+   exact). Interior padding cushions rows off the container edges and dividers.
+   Showing a partial 5th row provides a natural scroll affordance without
+   scroll-snap hijacking desktop mouse wheels or mobile momentum. */
 .search-fav-routes,
 .search-recents,
 .search-recent-navigations {
-    max-height: 12.6rem;
+    max-height: 17.44rem;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
-    padding: 0.5rem 0;
-    scroll-snap-type: y proximity;
+    padding: 1rem 0;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -356,17 +355,19 @@
     display: none;
 }
 
-.search-fav-routes .search-result-item,
-.search-recents .search-result-item,
-.search-recent-navigations .search-result-item {
-    scroll-snap-align: start;
+.search-fav-routes.scroll-fade-bottom,
+.search-recents.scroll-fade-bottom,
+.search-recent-navigations.scroll-fade-bottom {
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 2.5rem), transparent 100%);
+    mask-image: linear-gradient(to bottom, black calc(100% - 2.5rem), transparent 100%);
 }
 
-/* Recents and recent navigations get a deeper bottom cushion above their dividing lines. */
-.search-recents,
-.search-recent-navigations {
-    padding-bottom: 1rem;
-    max-height: 13.1rem; /* 11.6rem rows area + 0.5rem top + 1rem bottom */
+/* Maintain bottom cushion underneath the last row before dividing lines,
+   especially when text wraps onto multiple lines. */
+.search-fav-routes .search-result-item:last-child,
+.search-recents .search-result-item:last-child,
+.search-recent-navigations .search-result-item:last-child {
+    margin-bottom: 0.5rem;
 }
 
 .search-fav-routes .search-result-item i.fa-star,
@@ -381,7 +382,7 @@
     height: 1px;
     background-color: var(--theme-line-bg);
     opacity: 0.5;
-    margin: 1.2rem 0;
+    margin: 0;
 }
 
 .recent-nav-remove-btn:hover {
@@ -557,6 +558,7 @@
     align-items: center;
     column-gap: 1rem;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 /* Selected (already open) result — bold the name */
