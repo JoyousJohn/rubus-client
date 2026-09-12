@@ -1615,7 +1615,7 @@ function updateStopBuses(stopId, actuallyShownRoute) {
                 if ((servicedRoute === 'wknd1' || servicedRoute === 'all' || servicedRoute === 'winter1' || servicedRoute === 'on1' || servicedRoute === 'summer1') && Number(stopId) === 3) { // special case: show both VIA paths
                     const viaMap = busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
                     if (viaMap && Object.keys(viaMap).length) {
-                        const approachPrev = busData[busName] && busData[busName]['prevStopId'];
+                        const approachPrev = resolveSacLeg(busData[busName]['stopId'], busData[busName]['prevStopId']);
                         Object.entries(viaMap).forEach(([prevIdStr, etaSecs]) => {
                             const prevId = Number(prevIdStr);
                             if (![2, 22].includes(prevId)) {

@@ -865,6 +865,7 @@ function updateTimeToStops(busNames) {
         // console.log(routeStops.length)
         let sortedStops = []
         let via; // capture approach leg only when special-case applies
+        let sacLeg = null; // resolved SAC NB approach leg (2 or 22) when next is 3
 
         const nextStopIndex = routeStops.indexOf(nextStop);
         if (nextStopIndex !== -1) {
@@ -874,17 +875,20 @@ function updateTimeToStops(busNames) {
 
         if ((busRoute === 'wknd1' || busRoute === 'all' || busRoute === 'winter1' || busRoute === 'on1' || busRoute === 'summer1') && nextStop === 3) { // special case
 
-            if (!busData[busName]['prevStopId']) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
+            // At / departed from 2 or 22, the leg is the current stop itself;
+            // prevStopId is one leg behind (e.g. 16 while enroute 22->3).
+            sacLeg = resolveSacLeg(stopId, busData[busName]['prevStopId']);
+
+            if (sacLeg == null) { // very rare case when bus added to server data where next stop is sac nb and there is no previous data yet, accurate eta cannot be known
                 delete busETAs[busName]
                 return
             }
 
-            const prevStopId = busData[busName]['prevStopId']
-            via = prevStopId
+            via = sacLeg
             // console.log('special case')
-            if (prevStopId === 2) {
+            if (sacLeg === 2) {
                 sortedStops = [3, 6, 9, 10, 12, 13, 14, 4, 17, 18, 19, 20, 21, 16, 22, 3, 1, 2] 
-            } else if (prevStopId === 22) {
+            } else if (sacLeg === 22) {
                 sortedStops = [3, 1, 2, 3, 6, 9, 10, 12, 13, 14, 4, 17, 18, 19, 20, 21, 16, 22]
             }
         }
@@ -995,14 +999,20 @@ function updateTimeToStops(busNames) {
                 // console.log(thisStopId)
 
                 if (isSpecialRoute && thisStopId === 3) { // special handling for SAC North
-                    // Determine the approach leg for this occurrence of 3
-                    const approachPrev = (i === 0 && busData[busName] && busData[busName]['prevStopId']) ? busData[busName]['prevStopId'] : prevStopId;
+                    // Determine the approach leg for this occurrence of 3.
+                    // sacLeg (resolved above from current stop when next is 3)
+                    // is authoritative for the imminent visit; later visits use
+                    // the sorted-sequence predecessor.
+                    const approachPrev = (i === 0 && sacLeg != null) ? sacLeg
+                        : ((i === 0 && busData[busName] && busData[busName]['prevStopId']) ? busData[busName]['prevStopId'] : prevStopId);
                     if (approachPrev !== undefined) {
                         if (![2, 22].includes(Number(approachPrev))) {
+                            // Only a true anomaly (e.g. skipped 22 event) reaches
+                            // here now; at/near 2|22 resolves via sacLeg above.
                             console.warn('[pre] Unexpected approach predecessor for Stop 3 on ' + busName + '; approachPrev: ' + approachPrev);
                         } else {
                             if (!busETAs[busName][thisStopId]) busETAs[busName][thisStopId] = {'via': {}};
-                            busETAs[busName][thisStopId]['via'][approachPrev] = Math.round(currentETA);
+                            busETAs[busName][thisStopId]['via'][Number(approachPrev)] = Math.round(currentETA);
                         }
                     }
                     // Do not overwrite stop 3 with a numeric ETA on special routes

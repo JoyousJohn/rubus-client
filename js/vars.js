@@ -290,6 +290,23 @@ function isSpecialRoute(route) {
     return r === 'wknd1' || r === 'all' || r === 'winter1' || r === 'on1' || r === 'summer1';
 }
 
+// SAC North (stop 3) is visited twice per loop on wknd1/all-style routes
+// (2->3->6 vs 22->3->1). Resolves which approach leg a bus is on. When still
+// sitting at / just departed from 2 or 22, the leg is the current stop
+// itself — busData.prevStopId is one leg behind (e.g. 16 while enroute
+// 22->3) and must not be used as the leg.
+function resolveSacLeg(stopId, prevRaw) {
+    const sid = Array.isArray(stopId) ? Number(stopId[0]) : Number(stopId);
+    let prev = Number(prevRaw);
+    if ((prevRaw == null) && Array.isArray(stopId) && stopId.length > 1) {
+        prev = Number(stopId[1]);
+    }
+    if (sid === 2) return 2;
+    if (sid === 22) return 22;
+    if (sid === 3) return (prev === 2 || prev === 22) ? prev : null;
+    return (prev === 2 || prev === 22) ? prev : null;
+}
+
 // Unified ETA accessor that hides schema differences
 function getETAForStop(busName, stopId, previousStopId) {
     if (!busETAs || !busETAs[busName]) return undefined;
@@ -308,6 +325,7 @@ function getETAForStop(busName, stopId, previousStopId) {
     return typeof busEntry === 'number' ? busEntry : (typeof busETAs[busName][stopId] === 'number' ? busETAs[busName][stopId] : undefined);
 }
 window.isSpecialRoute = isSpecialRoute;
+window.resolveSacLeg = resolveSacLeg;
 window.getETAForStop = getETAForStop;
 
 // Coordinate ingestion helpers (used by pre.js). A coordinate is only

@@ -726,7 +726,7 @@ function renderNextStopsGrid(busName) {
     // Special-case ordering for SAC NB (stop 3) approach legs on weekend/all-style routes
     let approachPrev = null;
     if (isSpecialRoute(data.route) && nextStop === 3) {
-        approachPrev = data.prevStopId;
+        approachPrev = resolveSacLeg(data.stopId, data.prevStopId);
         if (!approachPrev) {
             const viaMap = busETAs && busETAs[busName] && busETAs[busName][3] && busETAs[busName][3]['via'];
             const via22 = viaMap && (viaMap['22'] ?? viaMap[22]);
