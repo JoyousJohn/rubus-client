@@ -1418,8 +1418,15 @@ const routeCutoffSchedules = window.routeCutoffSchedules = {
         thu: '03:46',
         fri: '03:46'
     },
+    'helix': {
+        daily: '18:00'
+    },
     'kbs': {
-        daily: '19:00'
+        mon: '19:00',
+        tue: '19:00',
+        wed: '19:00',
+        thu: '19:00',
+        fri: '19:00'
     },
     'lx': {
         mon: '02:29',
