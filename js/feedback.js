@@ -296,6 +296,15 @@ function sendFeedback() {
         }
     }
 
+    capturePostHog('feedback_submitted', {
+        source: feedbackSource,
+        feedback_length: feedback.length,
+        has_contact: contact.length > 0,
+        route: routeVal || null,
+        bus_name: busNameVal || null,
+        campus: settings['campus'] || 'nb'
+    });
+
     const sendToRubus = true;
     const sendToTripshot = (feedbackSource === 'direct') && $('.feedback-dest-tripshot').is(':checked');
 
@@ -447,6 +456,12 @@ $(document).ready(function() {
                 toggle: 'toggle-hide-direct-feedback',
                 isChecked: true,
                 source: 'direct_feedback_modal'
+            });
+            capturePostHog('settings_changed', {
+                setting: 'toggle-hide-direct-feedback',
+                value: true,
+                source: 'direct_feedback_modal',
+                campus: settings['campus'] || 'nb'
             });
         }
     });

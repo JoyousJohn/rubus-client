@@ -886,9 +886,7 @@ function swapNavLocations(e) {
     }
     triggerNavButtonFeedback($('.route-swap-btn, .route-swap-button'));
 
-    if (typeof capturePostHog === 'function') {
-        capturePostHog('navigation_action', { action: 'swap_locations' });
-    }
+    capturePostHog('navigation_action', { action: 'swap_locations' });
 
     const fromInput = $('#nav-from-input');
     const toInput = $('#nav-to-input');
@@ -972,9 +970,7 @@ function randomizeNavLocations(e) {
     }
     triggerNavButtonFeedback($('.route-random-btn'));
 
-    if (typeof capturePostHog === 'function') {
-        capturePostHog('navigation_action', { action: 'randomize_locations' });
-    }
+    capturePostHog('navigation_action', { action: 'randomize_locations' });
 
     if (!_hasRandomizedSinceSave) {
         _savedExplicitNav = {
@@ -1100,9 +1096,7 @@ function revertNavLocations() {
         updateNavFavoriteStarState();
     }
     sa_event('btn_press', { btn: 'revert_nav', from: fromName, to: toName });
-    if (typeof capturePostHog === 'function') {
-        capturePostHog('navigation_action', { action: 'revert_locations', from: fromName, to: toName });
-    }
+    capturePostHog('navigation_action', { action: 'revert_locations', from: fromName, to: toName });
 }
 window.revertNavLocations = revertNavLocations;
 
@@ -1236,9 +1230,7 @@ function toggleCurrentNavFavorite() {
         favorites.splice(existingIndex, 1);
         saveFavoriteNavRoutes(favorites);
         sa_event('btn_press', { btn: 'unfavorite_nav_route', from: fromName, to: toName });
-        if (typeof capturePostHog === 'function') {
-            capturePostHog('navigation_action', { action: 'unfavorite_route', from: fromName, to: toName });
-        }
+        capturePostHog('navigation_action', { action: 'unfavorite_route', from: fromName, to: toName });
     } else {
         // Add favorite to beginning
         const newFav = {
@@ -1263,9 +1255,7 @@ function toggleCurrentNavFavorite() {
         favorites.unshift(newFav);
         saveFavoriteNavRoutes(favorites);
         sa_event('btn_press', { btn: 'favorite_nav_route', from: fromName, to: toName });
-        if (typeof capturePostHog === 'function') {
-            capturePostHog('navigation_action', { action: 'favorite_route', from: fromName, to: toName });
-        }
+        capturePostHog('navigation_action', { action: 'favorite_route', from: fromName, to: toName });
     }
 
     updateNavFavoriteStarState();
@@ -1909,6 +1899,12 @@ function calculateRoute(from, to) {
             const missingFrom = !startBuilding ? `"${from}"` : '';
             const missingTo = !endBuilding ? `"${to}"` : '';
             const connector = missingFrom && missingTo ? ' or ' : '';
+            capturePostHog('navigation_failed', {
+                from_name: from,
+                to_name: to,
+                failure_stage: 'geocode',
+                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+            });
             showNavigationMessage(`Could not find location data for ${missingFrom}${connector}${missingTo}`);
             if (typeof updateNavFavoriteStarState === 'function') {
                 updateNavFavoriteStarState();
@@ -2032,6 +2028,12 @@ function calculateRoute(from, to) {
                 return;
             }
             showNavigationMessage("Could not find nearby bus stops");
+            capturePostHog('navigation_failed', {
+                from_name: (startBuilding && startBuilding.name) || from,
+                to_name: (endBuilding && endBuilding.name) || to,
+                failure_stage: 'no_stops',
+                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+            });
             return;
         }
 
@@ -2075,6 +2077,12 @@ function calculateRoute(from, to) {
                 return;
             }
             showNavigationMessage("No bus routes connect these locations");
+            capturePostHog('navigation_failed', {
+                from_name: (startBuilding && startBuilding.name) || from,
+                to_name: (endBuilding && endBuilding.name) || to,
+                failure_stage: 'no_path',
+                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+            });
             return;
         }
 
@@ -2563,15 +2571,13 @@ function showNavigationAutocomplete(inputElement, query) {
                     'category': item.category || 'unknown'
                 });
 
-                if (typeof capturePostHog === 'function') {
-                    capturePostHog('search_result_selected', {
-                        item_name: item.name,
-                        item_category: item.category || 'unknown',
-                        item_id: item.id || item.number || null,
-                        source: isFromInput ? 'nav_from_autocomplete' : 'nav_to_autocomplete',
-                        campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-                    });
-                }
+                capturePostHog('search_result_selected', {
+                    item_name: item.name,
+                    item_category: item.category || 'unknown',
+                    item_id: item.id || item.number || null,
+                    source: isFromInput ? 'nav_from_autocomplete' : 'nav_to_autocomplete',
+                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                });
 
                 // Refresh input styling/state
                 inputElement.trigger('input');
@@ -2635,19 +2641,17 @@ function showNavigationAutocomplete(inputElement, query) {
         renderNavItems(poiResults);
     }
 
-    if (typeof capturePostHog === 'function') {
-        clearTimeout(window._posthogNavSearchTimer);
-        window._posthogNavSearchTimer = setTimeout(() => {
-            capturePostHog('search_performed', {
-                query: sanitizedQuery,
-                query_length: sanitizedQuery.length,
-                result_count: poiResults.length,
-                has_results: poiResults.length > 0,
-                source: isFromInput ? 'nav_from' : 'nav_to',
-                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-            });
-        }, 500);
-    }
+    clearTimeout(window._posthogNavSearchTimer);
+    window._posthogNavSearchTimer = setTimeout(() => {
+        capturePostHog('search_performed', {
+            query: sanitizedQuery,
+            query_length: sanitizedQuery.length,
+            result_count: poiResults.length,
+            has_results: poiResults.length > 0,
+            source: isFromInput ? 'nav_from' : 'nav_to',
+            campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+        });
+    }, 500);
 
     // 2. Debounced search: Municipal addresses (120ms)
     if (hasAddressSearch) {
@@ -4648,19 +4652,17 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 'route_index': newRouteIndex
             });
 
-            if (typeof capturePostHog === 'function') {
-                capturePostHog('navigation_route_selected', {
-                    route_name: newRoute.name,
-                    display_name: routesForDisplay[newRouteIndex].displayName || newRoute.name,
-                    route_type: newRoute.isWalk ? 'walk' : (newRoute.isTransfer ? 'transfer' : 'direct'),
-                    route_index: newRouteIndex,
-                    from_route: (routesForDisplay[curSelected] && routesForDisplay[curSelected].route) ? routesForDisplay[curSelected].route.name : '',
-                    journey_minutes: newRoute.journeyMinutes || newRoute.walkMinutes || null,
-                    from_name: (navRouteSession && navRouteSession.routeData && navRouteSession.routeData.startBuilding && navRouteSession.routeData.startBuilding.name) || (navRouteSession && navRouteSession.fromVal) || '',
-                    to_name: (navRouteSession && navRouteSession.routeData && navRouteSession.routeData.endBuilding && navRouteSession.routeData.endBuilding.name) || (navRouteSession && navRouteSession.toVal) || '',
-                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-                });
-            }
+            capturePostHog('navigation_route_selected', {
+                route_name: newRoute.name,
+                display_name: routesForDisplay[newRouteIndex].displayName || newRoute.name,
+                route_type: newRoute.isWalk ? 'walk' : (newRoute.isTransfer ? 'transfer' : 'direct'),
+                route_index: newRouteIndex,
+                from_route: (routesForDisplay[curSelected] && routesForDisplay[curSelected].route) ? routesForDisplay[curSelected].route.name : '',
+                journey_minutes: newRoute.journeyMinutes || newRoute.walkMinutes || null,
+                from_name: (navRouteSession && navRouteSession.routeData && navRouteSession.routeData.startBuilding && navRouteSession.routeData.startBuilding.name) || (navRouteSession && navRouteSession.fromVal) || '',
+                to_name: (navRouteSession && navRouteSession.routeData && navRouteSession.routeData.endBuilding && navRouteSession.routeData.endBuilding.name) || (navRouteSession && navRouteSession.toVal) || '',
+                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+            });
 
             // Update visual selection across all pills
             const defaultBg = 'var(--theme-unselected-route-bg)';
@@ -6459,24 +6461,22 @@ function displayRoute(routeData) {
     };
     window.navRouteSession = navRouteSession;
 
-    if (typeof capturePostHog === 'function') {
-        const selectedEntry = routesForDisplay[selectedRouteDisplayIndex];
-        const selectedRouteObj = (selectedEntry && selectedEntry.route) || route;
-        capturePostHog('navigation_calculated', {
-            from_name: (startBuilding && startBuilding.name) || originalInputs.from,
-            from_category: (startBuilding && startBuilding.category) || (startIsStop ? 'stop' : 'building'),
-            to_name: (endBuilding && endBuilding.name) || originalInputs.to,
-            to_category: (endBuilding && endBuilding.category) || (endIsStop ? 'stop' : 'building'),
-            routes_count: routesForDisplay.length,
-            has_direct: routesForDisplay.some(r => !r.isTransfer && !r.isWalk),
-            has_transfer: routesForDisplay.some(r => r.isTransfer),
-            has_walk: routesForDisplay.some(r => r.isWalk),
-            recommended_route: (selectedEntry && selectedEntry.displayName) || (selectedRouteObj && selectedRouteObj.name) || '',
-            recommended_duration_minutes: (selectedRouteObj && (selectedRouteObj.journeyMinutes || selectedRouteObj.walkMinutes)) || null,
-            has_live_buses: !!(selectedEntry && selectedEntry.hasLive),
-            campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-        });
-    }
+    const selectedEntry = routesForDisplay[selectedRouteDisplayIndex];
+    const selectedRouteObj = (selectedEntry && selectedEntry.route) || route;
+    capturePostHog('navigation_calculated', {
+        from_name: (startBuilding && startBuilding.name) || originalInputs.from,
+        from_category: (startBuilding && startBuilding.category) || (startIsStop ? 'stop' : 'building'),
+        to_name: (endBuilding && endBuilding.name) || originalInputs.to,
+        to_category: (endBuilding && endBuilding.category) || (endIsStop ? 'stop' : 'building'),
+        routes_count: routesForDisplay.length,
+        has_direct: routesForDisplay.some(r => !r.isTransfer && !r.isWalk),
+        has_transfer: routesForDisplay.some(r => r.isTransfer),
+        has_walk: routesForDisplay.some(r => r.isWalk),
+        recommended_route: (selectedEntry && selectedEntry.displayName) || (selectedRouteObj && selectedRouteObj.name) || '',
+        recommended_duration_minutes: (selectedRouteObj && (selectedRouteObj.journeyMinutes || selectedRouteObj.walkMinutes)) || null,
+        has_live_buses: !!(selectedEntry && selectedEntry.hasLive),
+        campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+    });
 
     // Render the route selector above the directions wrapper (outside the scrolled content)
     renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex);
@@ -6522,14 +6522,12 @@ function displayRoute(routeData) {
                 navRouteSession.routeData.selectedTransferLeg2BusIndex = null;
                 updateNavBusesDisplay();
 
-                if (typeof capturePostHog === 'function') {
-                    capturePostHog('navigation_bus_selected', {
-                        bus_name: String(busName),
-                        bus_index: (typeof busIndex !== 'undefined') ? parseInt(busIndex, 10) : 0,
-                        leg: 'transfer_leg1',
-                        campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-                    });
-                }
+                capturePostHog('navigation_bus_selected', {
+                    bus_name: String(busName),
+                    bus_index: (typeof busIndex !== 'undefined') ? parseInt(busIndex, 10) : 0,
+                    leg: 'transfer_leg1',
+                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                });
             }
         });
     }
@@ -6562,14 +6560,12 @@ function displayRoute(routeData) {
                 }
                 updateNavBusesDisplay();
 
-                if (typeof capturePostHog === 'function') {
-                    capturePostHog('navigation_bus_selected', {
-                        bus_name: busNameStr,
-                        bus_index: parsedIdx,
-                        leg: listType || 'boarding',
-                        campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-                    });
-                }
+                capturePostHog('navigation_bus_selected', {
+                    bus_name: busNameStr,
+                    bus_index: parsedIdx,
+                    leg: listType || 'boarding',
+                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                });
             }
         });
     }

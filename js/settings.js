@@ -6,6 +6,13 @@ $('.settings-toggle .toggle-input').on('change', function () {
         'toggle': toggleId,
         'isChecked': isChecked
     });
+
+    capturePostHog('settings_changed', {
+        setting: toggleId,
+        value: isChecked,
+        source: 'settings_toggle',
+        campus: settings['campus'] || 'nb'
+    });
     switch (toggleId) {
 
         case 'toggle-dim-on-pan':

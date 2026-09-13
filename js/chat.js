@@ -375,6 +375,12 @@ $(function() {
 
 // Show chat UI when chat button is clicked
 $(document).on('click', '.chat-btn', function() {
+  capturePostHog('chat_opened', {
+      campus: settings['campus'] || 'nb',
+      model: settings['chatbot-model'] || 'ling',
+      provider: settings['chatbot-provider'] || 'auto'
+  });
+  sa_event('btn_press', { btn: 'chat_open' });
   $('.chat-wrapper').removeClass('none').show();
   attachChatViewportListeners();
   adjustChatHeights();
@@ -391,6 +397,16 @@ $(document).on('click', '.chat-btn', function() {
             const $userMsg = $(`<div class="chat-message user">${$('<div>').text(example.q).html()}</div>`);
             $messages.append($userMsg);
             window.chatHistory.push({ role: 'user', content: example.q });
+            capturePostHog('chat_message_sent', {
+                message: example.q,
+                message_length: example.q.length,
+                history_length: window.chatHistory.length,
+                model: settings['chatbot-model'] || 'ling',
+                provider: settings['chatbot-provider'] || 'auto',
+                is_example: true,
+                campus: settings['campus'] || 'nb'
+            });
+            sa_event('btn_press', { btn: 'chat_example_selected' });
             const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
             $messages.append($botMsg);
             scrollChatToBottom($messages, false);
@@ -460,6 +476,10 @@ $(document).on('blur', '.chat-ui-input', function() {
 });
 
 function closeChat() {
+  capturePostHog('chat_closed', {
+      campus: settings['campus'] || 'nb',
+      message_count: window.chatHistory.length || 0
+  });
   $('.chat-wrapper').hide();
   detachChatViewportListeners();
   // Clear inline sizing
@@ -548,6 +568,16 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     const $userMsg = $(`<div class="chat-message user">${$('<div>').text(msg).html()}</div>`);
     $messages.append($userMsg);
     window.chatHistory.push({ role: 'user', content: msg });
+    capturePostHog('chat_message_sent', {
+        message: msg,
+        message_length: msg.length,
+        history_length: window.chatHistory.length,
+        model: settings['chatbot-model'] || 'ling',
+        provider: settings['chatbot-provider'] || 'auto',
+        is_example: false,
+        campus: settings['campus'] || 'nb'
+    });
+    sa_event('btn_press', { btn: 'chat_message_sent' });
     $input.val('');
     scrollChatToBottom($messages, true);
 
@@ -827,9 +857,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 }
 
                 let rawText = finalAnswer;
+                let responseError = null;
                 if (!rawText && data.progress && data.progress.startsWith('Error:')) {
                     console.error('[Chat Error]', data.progress);
                     const errLower = data.progress.toLowerCase();
+                    responseError = (errLower.includes('429') || errLower.includes('rate-limit') || errLower.includes('busy')) ? 'rate_limit' : 'provider_error';
                     if (errLower.includes('429') || errLower.includes('rate-limit') || errLower.includes('busy')) {
                         finalAnswer = 'Sorry, the assistant is temporarily busy due to high demand. Please try again in a moment.';
                     } else {
@@ -838,12 +870,14 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 } else if (rawText && rawText.startsWith('Error:')) {
                     console.error('[Chat Error]', rawText);
                     const errLower = rawText.toLowerCase();
+                    responseError = (errLower.includes('429') || errLower.includes('rate-limit') || errLower.includes('busy')) ? 'rate_limit' : 'provider_error';
                     if (errLower.includes('429') || errLower.includes('rate-limit') || errLower.includes('busy')) {
                         finalAnswer = 'Sorry, the assistant is temporarily busy due to high demand. Please try again in a moment.';
                     } else {
                         finalAnswer = 'Sorry, I encountered an issue processing your request. Please try again shortly.';
                     }
                 } else if (!rawText) {
+                    responseError = 'empty_response';
                     finalAnswer = 'Sorry, I received an empty response.';
                 } else {
                     const channelFinalMatch = rawText.match(/(?:<\|channel\|>final<\|message\|>|assistantfinal|assistant:\s*final|<final>)([\s\S]*)/i);
@@ -870,6 +904,18 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 const totalAnswerTokens = data.completion_tokens || estimateTokens(finalAnswer);
                 const finalAnswerTps = (totalAnswerTokens / answerDurationSec).toFixed(1);
 
+                capturePostHog('chat_response_received', {
+                    success: !responseError,
+                    error_type: responseError,
+                    latency_ms: Math.round(performance.now() - reqStartTime),
+                    answer_length: finalAnswer.length,
+                    completion_tokens: totalAnswerTokens,
+                    suggestions_count: suggestions.length,
+                    model: currentModel,
+                    provider: currentProvider,
+                    campus: settings['campus'] || 'nb'
+                });
+
                 console.log(finalAnswer);
                 const processedAnswer = colorRouteNames(parseMarkdown(finalAnswer));
                 $botMsg.html(`<div class="chat-message-content">${processedAnswer}</div>`).removeClass('loading');
@@ -881,6 +927,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     suggestions.forEach(question => {
                         const $chip = $('<button class="chat-suggestion-chip" type="button"></button>').text(question);
                         $chip.on('click', function() {
+                            capturePostHog('chat_suggestion_clicked', {
+                                model: currentModel,
+                                provider: currentProvider,
+                                campus: settings['campus'] || 'nb'
+                            });
                             $('.chat-ui-input').val(question);
                             $('.chat-ui-input-bar').trigger('submit');
                             $chipsContainer.fadeOut(200, function() { $(this).remove(); });
@@ -1037,6 +1088,14 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         }
         if (err.name === 'AbortError') return;
         console.error('SSE error:', err);
+        capturePostHog('chat_response_received', {
+            success: false,
+            error_type: 'network_error',
+            latency_ms: Math.round(performance.now() - reqStartTime),
+            model: currentModel,
+            provider: currentProvider,
+            campus: settings['campus'] || 'nb'
+        });
         $botMsg.text('Sorry, there was a problem connecting to the chatbot.').removeClass('loading');
         $messages.scrollTop($messages[0].scrollHeight);
         window.currentChatController = null;

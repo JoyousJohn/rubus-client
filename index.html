@@ -263,7 +263,8 @@
                     if (curBuild && curBuild !== '__BUILD_HASH__') {
                         localStorage.setItem('rubus-app-build', curBuild);
                     }
-                    if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_refresh' });
+                    sa_event('btn_press', { btn: 'update_toast_refresh' });
+                    capturePostHog('update_toast_action', { action: 'refresh', campus: settings['campus'] || 'nb' });
                     const $toast = $('#update-toast');
                     $toast.stop(true, true).show().css('opacity', 1);
                     $toast.find('.update-toast-actions').hide();
@@ -369,7 +370,8 @@
 
                 $(document).on('click', '#update-dismiss-btn', function(e) {
                     e.preventDefault();
-                    if (typeof sa_event === 'function') sa_event('btn_press', { btn: 'update_toast_dismiss' });
+                    sa_event('btn_press', { btn: 'update_toast_dismiss' });
+                    capturePostHog('update_toast_action', { action: 'dismiss', campus: settings['campus'] || 'nb' });
                     sessionStorage.setItem('rubus-dismissed-build', pendingTargetBuild || '1');
                     dismissUpdateToast();
                 });
@@ -1098,7 +1100,7 @@
                 <div class="knight-mover">
                     <div class="center" id="knight-mover-status">ⓘ No buses in service</div>
                     <div class="flex justify-center mt-0p5rem mb-0p5rem">
-                        <div class="flex gap-x-0p5rem align-center justify-center bg-ckm max-content px-1rem py-0p5rem br-0p5rem pointer" onclick="if(typeof sa_event==='function'){sa_event('btn_press',{btn:'call_knight_mover'});}window.location.href='tel:7329327433'">
+                        <div class="flex gap-x-0p5rem align-center justify-center bg-ckm max-content px-1rem py-0p5rem br-0p5rem pointer" onclick="sa_event('btn_press',{btn:'call_knight_mover'});window.location.href='tel:7329327433'">
                             <i class="fa-solid fa-phone text-1p4rem white"></i>
                             <div class="call white">Call Knight Mover</div>
                         </div>

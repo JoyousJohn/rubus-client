@@ -915,14 +915,12 @@ $(document).ready(function() {
 
     // Open the from/to form with this place as the destination
     function onRowDirections(item) {
-        if (typeof capturePostHog === 'function') {
-            capturePostHog('search_directions_clicked', {
-                item_name: item.name,
-                item_category: item.category,
-                item_id: item.id || item.number || null,
-                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-            });
-        }
+        capturePostHog('search_directions_clicked', {
+            item_name: item.name,
+            item_category: item.category,
+            item_id: item.id || item.number || null,
+            campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+        });
 
         // Set the place as the destination
         if (item.category === 'stop') {
@@ -1152,19 +1150,17 @@ $(document).ready(function() {
             renderResults(poiResults, onPick, query);
         }
 
-        if (typeof capturePostHog === 'function') {
-            clearTimeout(window._posthogMainSearchTimer);
-            window._posthogMainSearchTimer = setTimeout(() => {
-                capturePostHog('search_performed', {
-                    query: sanitizedQuery,
-                    query_length: sanitizedQuery.length,
-                    result_count: poiResults.length,
-                    has_results: poiResults.length > 0,
-                    source: 'main_search',
-                    campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-                });
-            }, 500);
-        }
+        clearTimeout(window._posthogMainSearchTimer);
+        window._posthogMainSearchTimer = setTimeout(() => {
+            capturePostHog('search_performed', {
+                query: sanitizedQuery,
+                query_length: sanitizedQuery.length,
+                result_count: poiResults.length,
+                has_results: poiResults.length > 0,
+                source: 'main_search',
+                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+            });
+        }, 500);
 
         if (!buildingsLayer) {
             loadBuildings().then(() => {
@@ -1318,15 +1314,13 @@ $(document).ready(function() {
         
         sa_event('btn_press', eventData);
 
-        if (typeof capturePostHog === 'function') {
-            capturePostHog('search_result_selected', {
-                item_name: item.name,
-                item_category: item.category,
-                item_id: item.id || item.number || null,
-                source: (eventData && eventData.btn) ? eventData.btn : 'search_results',
-                campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-            });
-        }
+        capturePostHog('search_result_selected', {
+            item_name: item.name,
+            item_category: item.category,
+            item_id: item.id || item.number || null,
+            source: (eventData && eventData.btn) ? eventData.btn : 'search_results',
+            campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+        });
     }
     
     function getRecentNavigations() {
@@ -1393,13 +1387,11 @@ $(document).ready(function() {
 
                 $row.css('cursor', 'pointer');
                 $row.on('click', function() {
-                    if (typeof capturePostHog === 'function') {
-                        capturePostHog('favorite_nav_route_selected', {
-                            from: fromName,
-                            to: toName,
-                            campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
-                        });
-                    }
+                    capturePostHog('favorite_nav_route_selected', {
+                        from: fromName,
+                        to: toName,
+                        campus: (typeof selectedCampus !== 'undefined' ? selectedCampus : 'nb')
+                    });
                     if (typeof openFavoriteNavRoute === 'function') {
                         openFavoriteNavRoute(fav);
                     }

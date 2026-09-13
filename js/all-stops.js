@@ -190,6 +190,11 @@ $('.info-panels').click(function(e) {
     // NOTE: do NOT reset scroll here — each subpanel (routes/stops/network)
     // restores its own remembered position at the end of this open flow.
     $('.info-panels-show-hide-wrapper').show();
+    capturePostHog('info_panels_opened', {
+        subpanel: (typeof panelOrder !== 'undefined' && panelOrder[lastUserSelectedPanelIndex]) || 'stops',
+        source: 'info_button',
+        campus: settings['campus'] || 'nb'
+    });
     // Guard the remembered positions while repopulation collapses/rebuilds
     // content (empty() clamps scrollTop to 0 and must not overwrite memory).
     pauseInfoSubpanelScrollSaving();

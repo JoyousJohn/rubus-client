@@ -1930,6 +1930,11 @@ function selectedRoute(route) {
         pauseInfoSubpanelScrollSaving();
         $('.info-panels-show-hide-wrapper').show();
         if (infoWasHidden) {
+            capturePostHog('info_panels_opened', {
+                subpanel: 'routes',
+                source: 'route_select',
+                campus: settings['campus'] || 'nb'
+            });
             markPanelOpened('info');
             if (isDesktop && !isTouchDevice) showEscNotice('info');
         }
@@ -4362,6 +4367,13 @@ function updateSettings() {
             'value': $(this).attr(settingsOption + '-option')
         });
 
+        capturePostHog('settings_changed', {
+            setting: settingsOption,
+            value: $(this).attr(settingsOption + '-option'),
+            source: 'settings',
+            campus: settings['campus'] || 'nb'
+        });
+
         // console.log(settingsOption)
         if (settingsOption === 'font') {
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
@@ -4597,12 +4609,23 @@ function syncPostHogPersonProfile() {
     const personProps = {
         campus: currentSettings['campus'] || 'nb',
         theme: currentSettings['theme'] || 'system',
+        font: currentSettings['font'] || 'PP Neue Montreal',
+        marker_style: currentSettings['marker-type'] || 'rubus',
+        marker_size: currentSettings['marker-size'] || 'medium',
         chat_enabled: !!currentSettings['toggle-show-chat'],
         chatbot_provider: currentSettings['chatbot-provider'] || 'auto',
         chatbot_model: currentSettings['chatbot-model'] || 'ling',
         buildings_enabled: !!currentSettings['toggle-show-buildings'],
         parking_enabled: !!currentSettings['toggle-show-parking'],
         bike_racks_enabled: !!currentSettings['toggle-show-bike-racks'],
+        etas_in_seconds: !!currentSettings['toggle-show-etas-in-seconds'],
+        dim_on_pan: !!currentSettings['toggle-dim-on-pan'],
+        offscreen_indicators: !!currentSettings['toggle-offscreen-bus-indicators'],
+        stops_above_buses: !!currentSettings['toggle-stops-above-buses'],
+        out_of_service_enabled: !!currentSettings['toggle-show-out-of-service'],
+        bus_focusing: !!currentSettings['toggle-hide-other-routes'],
+        bus_names_enabled: !!currentSettings['toggle-show-bus-names'],
+        always_show_second: !!currentSettings['toggle-always-show-second'],
         low_performance_mode: !!currentSettings['toggle-low-performance'],
         spoofing_enabled: !!currentSettings['toggle-spoofing'],
         favorite_buses: favList,
@@ -4634,9 +4657,13 @@ function updateRubusLogo(logoFilename) {
 function selectRubusLogo(logoFilename) {
     updateRubusLogo(logoFilename);
     saveSettings();
-    if (typeof sa_event === 'function') {
-        sa_event('settings_change', { setting: 'rubus_logo', value: logoFilename });
-    }
+    sa_event('settings_change', { setting: 'rubus_logo', value: logoFilename });
+    capturePostHog('settings_changed', {
+        setting: 'rubus_logo',
+        value: logoFilename,
+        source: 'settings',
+        campus: settings['campus'] || 'nb'
+    });
 }
 
 $(document).ready(function() {
@@ -5832,6 +5859,13 @@ function selectTheme(theme) {
         sa_event('theme_changed', {
             'theme': selectedTheme,
             'source': 'modal_confirm'
+        });
+
+        capturePostHog('settings_changed', {
+            setting: 'theme',
+            value: selectedTheme,
+            source: 'modal_confirm',
+            campus: settings['campus'] || 'nb'
         });
 
         const activeTheme = resolveAutoTheme(selectedTheme);

@@ -69,6 +69,7 @@ let lastTouchEndTime = 0;
 const panelOrder = ['routes', 'stops', 'network'];
 let currentPanelIndex = 1; // Default to stops panel (middle position)
 let lastUserSelectedPanelIndex = 1; // Track user's last explicitly selected panel
+let lastTrackedInfoSubpanel = null; // Last subpanel reported via info_subpanel_viewed
 
 // Persist the last explicitly selected subpanel across reloads/sessions.
 // Stored as the panel name (not the index) so reorderings stay valid.
@@ -451,6 +452,13 @@ function updatePanelPosition(panel, options) {
 	currentPanelIndex = panelIndex;
 	if (opts.isUserExplicitSelection !== false) {
 		setLastUserSelectedPanelIndex(panelIndex);
+	}
+	if (opts.isUserExplicitSelection !== false && panel !== lastTrackedInfoSubpanel) {
+		lastTrackedInfoSubpanel = panel;
+		capturePostHog('info_subpanel_viewed', {
+			subpanel: panel,
+			campus: settings['campus'] || 'nb'
+		});
 	}
 
 	// Sync slider indicator with panel (keep legacy class for compat)

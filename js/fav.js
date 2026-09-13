@@ -77,12 +77,10 @@ function toggleFavoriteRoute(route) {
     saveFavoriteRoutes();
     updateRouteStarState(lowerRoute);
 
-    if (typeof sa_event === 'function') {
-        sa_event('route_favorite_toggle', {
-            'route': lowerRoute,
-            'isFavorite': isNowFavorite
-        });
-    }
+    sa_event('route_favorite_toggle', {
+        'route': lowerRoute,
+        'isFavorite': isNowFavorite
+    });
 
     if (typeof populateRouteSelectors === 'function' && typeof activeRoutes !== 'undefined') {
         populateRouteSelectors(activeRoutes);
