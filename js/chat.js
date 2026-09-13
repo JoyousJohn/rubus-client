@@ -568,10 +568,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     function formatModelName(rawModel) {
         if (!rawModel) return '';
         const m = rawModel.toLowerCase();
-        if (m.includes('ling-3') || m === 'ling') return 'Ling 3.0 Flash';
-        if (m.includes('deepseek-v4') || m === 'deepseek') return 'DeepSeek V4 Flash';
-        if (m.includes('solar') || m === 'solar-pro') return 'Solar Pro';
-        if (m.includes('mercury')) return 'Mercury 2.5';
+        if (m === 'ling' || m.includes('ling')) return 'Ling';
+        if (m === 'deepseek' || m.includes('deepseek')) return 'DeepSeek';
+        if (m === 'solar' || m.includes('solar')) return 'Solar';
+        if (m === 'mercury' || m.includes('mercury')) return 'Mercury';
+        if (m === 'bonsai' || m.includes('bonsai')) return 'Bonsai';
         return rawModel.split('/').pop();
     }
 
