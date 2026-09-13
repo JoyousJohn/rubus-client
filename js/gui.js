@@ -1234,12 +1234,25 @@ function buildRouteBusMarker(busName, route) {
     $marker.append($('<i class="fa-solid fa-bus"></i>'));
     $marker.append($('<span class="route-bus-marker-name"></span>').text(busData[busName].busName || busName));
     $marker.click(function() {
-        closeRouteMenu();
-        sourceRouteName = route;
-        sourceStopId = null;
-        flyToBus(busName);
+        flyToBusFromRoutePanel(busName, route);
     });
     return $marker;
+}
+
+// Tap-to-fly from the routes subpanel. If the map has an explicit different
+// route filter, switch it to the bus's route first (awaited: toggleRoute hides
+// popups and fits bounds after an async polyline fetch, so flying before it
+// settles would get overridden). No-op when all routes are shown or already
+// on the bus's route.
+async function flyToBusFromRoutePanel(busName, fallbackRoute) {
+    const busRoute = (busData[busName] && busData[busName].route) || fallbackRoute;
+    closeRouteMenu();
+    if (busRoute) sourceRouteName = busRoute;
+    sourceStopId = null;
+    if (shownRoute && busRoute && shownRoute !== busRoute) {
+        await toggleRoute(busRoute);
+    }
+    flyToBus(busName);
 }
 
 // The on-the-line progress element for a moving bus: a coloured segment from the
@@ -1252,10 +1265,7 @@ function buildRouteBusProgress(busName, route) {
     el.setAttribute('bus-name', busName);
     el.appendChild($('<div class="route-bus-progress-line"></div>')[0]);
     const $dot = $('<div class="route-bus-progress-dot pointer"></div>').click(function() {
-        closeRouteMenu();
-        sourceRouteName = route;
-        sourceStopId = null;
-        flyToBus(busName);
+        flyToBusFromRoutePanel(busName, route);
     });
     el.appendChild($dot[0]);
     return el;
@@ -1395,11 +1405,7 @@ function buildRouteBusRow(busName) {
     }
 
     const onFly = function() {
-        const r = panelRoute || busData[busName]?.route;
-        closeRouteMenu();
-        if (r) sourceRouteName = r;
-        sourceStopId = null;
-        flyToBus(busName);
+        flyToBusFromRoutePanel(busName, panelRoute);
     };
     $nameCol.add($iconCol).add($stopCol).add($speedCol).add($capCol).click(onFly);
 
@@ -2098,10 +2104,7 @@ function selectedRoute(route) {
 
                     if (isAtStop) {
                         const $row = $('<div class="route-buses-for-stop pointer"></div>').click(function(){
-                            closeRouteMenu();
-                            sourceRouteName = route;
-                            sourceStopId = null;
-                            flyToBus(busName);
+                            flyToBusFromRoutePanel(busName, route);
                         });
                         $row.append($('<div class="rbfs-bn"></div>').text(busData[busName].busName));
                         $row.append(`<div class="bold">Here</div>`);
@@ -2118,10 +2121,7 @@ function selectedRoute(route) {
 
                     if (eta !== undefined) {
                         const $row = $('<div class="route-buses-for-stop pointer"></div>').click(function(){
-                            closeRouteMenu();
-                            sourceRouteName = route;
-                            sourceStopId = null;
-                            flyToBus(busName);
+                            flyToBusFromRoutePanel(busName, route);
                         });
                         $row.append($('<div class="rbfs-bn"></div>').text(busData[busName].busName));
                         $row.append(`<div class="bold">${Math.ceil(eta/60)}m</div>`);

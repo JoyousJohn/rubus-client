@@ -100,6 +100,9 @@ function getCenteredYBelowPopup(contentEl) {
 // essential:true keeps prefers-reduced-motion from turning user-initiated
 // flights into instant jumps.
 function flyToCenteredBelow(latlng, zoom, popupEl, duration) {
+    // Any new popup flight retargets the map, so an in-progress bus follow
+    // must end first (safe for flyToBus: startFollowBus runs after this).
+    stopFollowBus();
     const size = map.getSize();
     const cx = size.x / 2;
     const cy = size.y / 2;

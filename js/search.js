@@ -447,6 +447,7 @@ $(document).ready(function() {
                           Math.abs(current.lng - view.center.lng) > 1e-9 ||
                           Math.abs(map.getZoom() - view.zoom) > 1e-9;
             if (moved) {
+                stopFollowBus();
                 map.flyTo(view.center, view.zoom, { duration: 0.3 });
             }
         }
@@ -590,6 +591,7 @@ $(document).ready(function() {
                           Math.abs(current.lng - view.center.lng) > 1e-9 ||
                           Math.abs(map.getZoom() - view.zoom) > 1e-9;
             if (moved) {
+                stopFollowBus();
                 map.flyTo(view.center, view.zoom, { duration: 0.3 });
             }
         }

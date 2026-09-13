@@ -647,6 +647,82 @@ function startStoppedForTimer(busName) {
     }, 1000);
 }
 
+// Follow mode: after flyToBus lands, keep panning the map so the bus stays
+// where it landed on screen while it moves. Driven each frame from the
+// marker's interpolated position (same source as the route rail), so it
+// tracks smoothly between polls. Ends on user drag, refocus, or bus removal.
+let followedBusName = null;
+let followAnchorPoint = null;
+let followFrameId = null;
+let followDragHandler = null;
+
+function stopFollowBus() {
+    followedBusName = null;
+    followAnchorPoint = null;
+    if (followFrameId !== null) {
+        cancelAnimationFrame(followFrameId);
+        followFrameId = null;
+    }
+    if (followDragHandler) {
+        map.off('dragstart', followDragHandler);
+        followDragHandler = null;
+    }
+}
+
+function followTick() {
+    followFrameId = null;
+    if (!followedBusName || popupBusName !== followedBusName) {
+        stopFollowBus();
+        return;
+    }
+    const marker = busMarkers[followedBusName];
+    const bus = busData[followedBusName];
+    if (!marker || !bus || marker._isOnMap === false) {
+        stopFollowBus();
+        return;
+    }
+    let ll = marker.getLatLng() || { lat: Number(bus.lat), lng: Number(bus.long) };
+    if (!Number.isFinite(ll.lat) || !Number.isFinite(ll.lng)) {
+        stopFollowBus();
+        return;
+    }
+    const pt = map.latLngToContainerPoint([ll.lat, ll.lng]);
+    // Apply the exact float delta (no whole-pixel threshold): the camera is
+    // float-precise, so sub-pixel pans track smoothly. A >=1px deadband lets
+    // drift accumulate then snaps the whole scene at once — the creep-snap
+    // cycle that reads as jitter at low speeds. Epsilon only skips work when
+    // effectively stationary.
+    const dx = pt.x - followAnchorPoint.x;
+    const dy = pt.y - followAnchorPoint.y;
+    if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
+        map.panBy([dx, dy], { animate: false });
+    }
+    followFrameId = requestAnimationFrame(followTick);
+}
+
+function startFollowBus(busName) {
+    stopFollowBus();
+    followedBusName = busName;
+    // dragstart is user-only (programmatic pans fire movestart, not this),
+    // so the loop's own panBy calls can't cancel it.
+    followDragHandler = function() { stopFollowBus(); };
+    map.on('dragstart', followDragHandler);
+    // Anchor once the flight settles; a stale listener from an interrupted
+    // flight self-invalidates on the name check below.
+    map.once('moveend', function() {
+        if (followedBusName !== busName) return;
+        const marker = busMarkers[busName];
+        const bus = busData[busName];
+        if (!marker || !bus) {
+            stopFollowBus();
+            return;
+        }
+        let ll = marker.getLatLng() || { lat: Number(bus.lat), lng: Number(bus.long) };
+        followAnchorPoint = map.latLngToContainerPoint([ll.lat, ll.lng]);
+        followFrameId = requestAnimationFrame(followTick);
+    });
+}
+
 function flyToBus(busName) {
     if (!busName) {
         console.error(`Invalid bus ID: busName is undefined or null. Input bus ID: ${busName}`);
@@ -682,6 +758,7 @@ function flyToBus(busName) {
     // current content bottom (above the action-button row) is measurable here.
     const contentEl = document.querySelector('.bus-info-popup .info-next-stops');
     flyToCenteredBelow([lat, lng], targetZoom, contentEl, 0.3);
+    startFollowBus(busName);
 }
 
 

@@ -351,6 +351,7 @@ function renderOffScreenIndicators(container, indicators) {
             const captured = ind;
             el.onclick = function(e) {
                 e.stopPropagation();
+                stopFollowBus();
                 if (map) {
                     map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
                         animate: true,
@@ -382,6 +383,7 @@ function renderOffScreenIndicators(container, indicators) {
                 const captured = ind;
                 el.onclick = function(e) {
                     e.stopPropagation();
+                    stopFollowBus();
                     if (map) {
                         map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
                             animate: true,
@@ -399,15 +401,16 @@ function renderOffScreenIndicators(container, indicators) {
                 // downgrade cluster to single if needed
                 if (el.querySelector('.offscreen-bus-marker-count')) {
                     el.innerHTML = `<i class="fa-solid fa-arrow-up offscreen-bus-marker-arrow"></i>`;
-                    const captured = ind;
-                    el.onclick = function(e) {
-                        e.stopPropagation();
-                        if (map) {
-                            map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
-                                animate: true,
-                                duration: 0.3
-                            });
-                        }
+                const captured = ind;
+                el.onclick = function(e) {
+                    e.stopPropagation();
+                    stopFollowBus();
+                    if (map) {
+                        map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
+                            animate: true,
+                            duration: 0.3
+                        });
+                    }
                         if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-select-on-tap']) {
                             if (typeof popInfo === 'function') {
                                 popInfo(captured.busName);
