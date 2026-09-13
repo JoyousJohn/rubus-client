@@ -301,10 +301,21 @@ function adjustChatHeights() {
   }
 }
 
+function maybeRestoreChatBottomAfterViewportChange() {
+  if (chatUserScrolledUp) return;
+  const $messages = $('.chat-ui-messages');
+  if ($messages.length > 0 && $('.chat-wrapper').is(':visible')) {
+    scrollChatToBottom($messages, true);
+  }
+}
+
 function attachChatViewportListeners() {
   if (chatViewportListenersAttached) return;
   chatViewportListenersAttached = true;
-  chatVvpHandler = () => requestAnimationFrame(adjustChatHeights);
+  chatVvpHandler = () => requestAnimationFrame(() => {
+    adjustChatHeights();
+    maybeRestoreChatBottomAfterViewportChange();
+  });
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', chatVvpHandler);
     window.visualViewport.addEventListener('scroll', chatVvpHandler);
@@ -383,6 +394,9 @@ $(document).on('click', '.chat-btn', function() {
   sa_event('btn_press', { btn: 'chat_open' });
   $('.chat-wrapper').removeClass('none').show();
   attachChatViewportListeners();
+  attachChatMessagesScrollTracker();
+  chatUserScrolledUp = false;
+  chatIgnoreNextMessagesScroll = false;
   adjustChatHeights();
   updateChatInitialMessage();
 
@@ -424,6 +438,38 @@ $(document).on('click', '.chat-btn', function() {
 });
 
 let isUserTouchingChat = false;
+// True when the user has manually scrolled the messages container up away
+// from the bottom. Programmatic scrolls to bottom clear it; keyboard
+// focus/blur + viewport resizes respect it.
+let chatUserScrolledUp = false;
+let chatIgnoreNextMessagesScroll = false;
+const CHAT_BOTTOM_THRESHOLD_PX = 40;
+
+function isChatMessagesNearBottom($messages, threshold) {
+  if (!$messages || !$messages.length) return true;
+  const el = $messages[0];
+  if (!el) return true;
+  if (el.scrollHeight <= el.clientHeight + 1) return true;
+  const limit = (typeof threshold === 'number') ? threshold : CHAT_BOTTOM_THRESHOLD_PX;
+  return (el.scrollTop + el.clientHeight) >= (el.scrollHeight - limit);
+}
+
+function attachChatMessagesScrollTracker() {
+  const $messages = $('.chat-ui-messages');
+  if (!$messages.length || $messages.data('scroll-tracker-attached')) return;
+  $messages.data('scroll-tracker-attached', true);
+  $messages.on('scroll', function() {
+    if (chatIgnoreNextMessagesScroll) {
+      chatIgnoreNextMessagesScroll = false;
+      return;
+    }
+    chatUserScrolledUp = !isChatMessagesNearBottom($(this), CHAT_BOTTOM_THRESHOLD_PX);
+  });
+}
+
+$(function() {
+  attachChatMessagesScrollTracker();
+});
 
 $(document).on('touchstart pointerdown', '.chat-ui-messages', function(e) {
   if (e.pointerType && e.pointerType === 'mouse' && e.button !== 0) return;
@@ -453,7 +499,10 @@ function scrollChatToTurnTopOrBottom($messages, $userMsg, force = false) {
   const visibleHeight = el.clientHeight;
 
   if (totalTurnHeight > visibleHeight) {
-    // If the response exceeds available wrapper height, position user's query near the top
+    // If the response exceeds available wrapper height, position user's query near the top.
+    // This is programmatic positioning, not a manual scroll-up, so keep the
+    // pinned state intact.
+    chatIgnoreNextMessagesScroll = true;
     $messages.scrollTop(Math.max(0, userMsgTop - 8));
   } else {
     // If it fits inside the wrapper, scroll to bottom so the full exchange is in view
@@ -461,10 +510,12 @@ function scrollChatToTurnTopOrBottom($messages, $userMsg, force = false) {
   }
 }
 
-// Nudge layout when input gains focus (keyboard opening)
-// Height adjustment is handled by visualViewport.resize listener; focus handler just scrolls to bottom
+// Tapping into / leaving the input (mobile keyboard showing/hiding resizes the
+// visual viewport) should restore the bottom, unless the user explicitly
+// scrolled up in the messages container.
 $(document).on('focus', '.chat-ui-input', function() {
   setTimeout(() => {
+    if (chatUserScrolledUp) return;
     const $messages = $('.chat-ui-messages');
     if ($messages.length > 0) {
       scrollChatToBottom($messages, true);
@@ -472,7 +523,14 @@ $(document).on('focus', '.chat-ui-input', function() {
   }, 150);
 });
 $(document).on('blur', '.chat-ui-input', function() {
-  setTimeout(adjustChatHeights, 50);
+  setTimeout(() => {
+    adjustChatHeights();
+    if (chatUserScrolledUp) return;
+    const $messages = $('.chat-ui-messages');
+    if ($messages.length > 0) {
+      scrollChatToBottom($messages, true);
+    }
+  }, 50);
 });
 
 function closeChat() {
@@ -700,6 +758,21 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         return $currentThinkingBox;
     }
 
+    function isThinkingAtBottom($box) {
+        if (!$box || !$box.length) return true;
+        const el = $box.find('.thinking-content')[0];
+        if (!el) return true;
+        if (el.scrollHeight <= el.clientHeight + 1) return true;
+        const threshold = 24;
+        return (el.scrollTop + el.clientHeight) >= (el.scrollHeight - threshold);
+    }
+
+    function scrollThinkingToBottom($box) {
+        if (!$box || !$box.length) return;
+        const el = $box.find('.thinking-content')[0];
+        if (el) el.scrollTop = el.scrollHeight;
+    }
+
     function ensureBotMeta() {
         if (!$botMeta) {
             $botMeta = $(`
@@ -748,14 +821,18 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 streamedThinking += data.thinking_delta;
 
                 ensureThinkingBox();
+                var _autoScroll1 = isThinkingAtBottom($currentThinkingBox);
                 $currentThinkingBox.find('.thinking-content').text(streamedThinking);
+                if (_autoScroll1) scrollThinkingToBottom($currentThinkingBox);
                 $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(getLiveStatusString()));
                 updateActiveTps();
             } else if (data.thinking && !data.done) {
                 if (!streamedThinking) {
                     streamedThinking = data.thinking;
                     ensureThinkingBox();
+                    var _autoScroll2 = isThinkingAtBottom($currentThinkingBox);
                     $currentThinkingBox.find('.thinking-content').text(streamedThinking);
+                    if (_autoScroll2) scrollThinkingToBottom($currentThinkingBox);
                     $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(getLiveStatusString()));
                 }
             }
@@ -780,7 +857,9 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                         }
                     }
                     ensureThinkingBox();
+                    var _autoScroll3 = isThinkingAtBottom($currentThinkingBox);
                     $currentThinkingBox.find('.thinking-content').text(streamedThinking);
+                    if (_autoScroll3) scrollThinkingToBottom($currentThinkingBox);
                     const thinkTokens = estimateTokens(streamedThinking);
                     $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${Number(thinkTokens).toLocaleString()} tokens`));
                 } else if ($currentThinkingBox) {
@@ -851,7 +930,9 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 const thinkingToDisplay = (streamedThinking || data.thinking || '').trim();
                 if (thinkingToDisplay) {
                     ensureThinkingBox();
+                    var _autoScroll4 = isThinkingAtBottom($currentThinkingBox);
                     $currentThinkingBox.find('.thinking-content').text(thinkingToDisplay);
+                    if (_autoScroll4) scrollThinkingToBottom($currentThinkingBox);
                     const thinkTokens = data.reasoning_tokens || estimateTokens(thinkingToDisplay);
                     $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${Number(thinkTokens).toLocaleString()} tokens`));
                 }
