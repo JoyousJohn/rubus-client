@@ -935,8 +935,8 @@ function updateTimeToStops(busNames) {
                     const avgWaitAtStop = waits ? waits[prevStopId] : undefined
 
                     if (avgWaitAtStop) {
-                        // 1.17x grace before flagging overtime
-                        const overtimeThreshold = avgWaitAtStop * 1.17;
+                        // 1.27x grace before flagging overtime
+                        const overtimeThreshold = avgWaitAtStop * 1.27;
                         if (arrivedAgoSeconds < overtimeThreshold) {
                             const expectedWaitAtStop = overtimeThreshold - arrivedAgoSeconds
     
