@@ -302,20 +302,11 @@ function adjustChatHeights() {
   }
 }
 
-function maybeRestoreChatBottomAfterViewportChange() {
-  if (chatUserScrolledUp) return;
-  const $messages = $('.chat-ui-messages');
-  if ($messages.length > 0 && $('.chat-wrapper').is(':visible')) {
-    scrollChatToBottom($messages, true);
-  }
-}
-
 function attachChatViewportListeners() {
   if (chatViewportListenersAttached) return;
   chatViewportListenersAttached = true;
   chatVvpHandler = () => requestAnimationFrame(() => {
     adjustChatHeights();
-    maybeRestoreChatBottomAfterViewportChange();
   });
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', chatVvpHandler);
@@ -396,55 +387,88 @@ $(document).on('click', '.chat-btn', function() {
   $('.chat-wrapper').removeClass('none').show();
   attachChatViewportListeners();
   attachChatMessagesScrollTracker();
+  attachChatRecsDragScroll();
   chatUserScrolledUp = false;
-  chatIgnoreNextMessagesScroll = false;
+  chatAutoScrollSticky = true;
+  cancelSmoothScroll();
+  $('.chat-scroll-bottom-btn').removeClass('visible has-new');
   adjustChatHeights();
   updateChatInitialMessage();
 
     // Clear previous recommendations to prevent unbounded DOM growth
     $('.chat-recs').empty();
-    const shuffled = [...exampleChats].sort(() => 0.5 - Math.random());
-    shuffled.forEach(example => {
-        const $rec = $('<div class="p-1rem br-1rem pointer" style="background-color: var(--theme-chat-recs-bg); color: var(--theme-chat-recs-text);"></div>').text(example.q);
-        $('.chat-recs').append($rec.click(function() {
-            $('.chat-recs').hide();
-            const $messages = $('.chat-ui-messages');
-            const $userMsg = $(`<div class="chat-message user">${$('<div>').text(example.q).html()}</div>`);
-            $messages.append($userMsg);
-            window.chatHistory.push({ role: 'user', content: example.q });
-            capturePostHog('chat_message_sent', {
-                message: example.q,
-                message_length: example.q.length,
-                history_length: window.chatHistory.length,
-                model: settings['chatbot-model'] || 'ling',
-                provider: settings['chatbot-provider'] || 'auto',
-                is_example: true,
-                campus: settings['campus'] || 'nb'
-            });
-            sa_event('btn_press', { btn: 'chat_example_selected' });
-            const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
-            $messages.append($botMsg);
-            scrollChatToBottom($messages, false);
-            setTimeout(() => {
-                const processedExample = colorRouteNames(parseMarkdown(example.a));
-                $botMsg.html(processedExample).removeClass('loading');
+    if (!window.chatHistory || window.chatHistory.length === 0) {
+        $('.chat-recs').show();
+        const $rows = [
+            $('<div class="chat-recs-row"></div>'),
+            $('<div class="chat-recs-row"></div>'),
+            $('<div class="chat-recs-row"></div>')
+        ];
+        const shuffled = [...exampleChats].sort(() => 0.5 - Math.random());
+        shuffled.forEach((example, idx) => {
+            const $rec = $('<button class="chat-suggestion-chip" type="button"></button>').text(example.q);
+            $rec.click(function(e) {
+                if (chatRecsJustDragged) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return;
+                }
+                $('.chat-recs').hide();
+                const $messages = $('.chat-ui-messages');
+                const $userMsg = $(`<div class="chat-message user">${$('<div>').text(example.q).html()}</div>`);
+                $messages.append($userMsg);
+                window.chatHistory.push({ role: 'user', content: example.q });
+                capturePostHog('chat_message_sent', {
+                    message: example.q,
+                    message_length: example.q.length,
+                    history_length: window.chatHistory.length,
+                    model: settings['chatbot-model'] || 'ling',
+                    provider: settings['chatbot-provider'] || 'auto',
+                    is_example: true,
+                    campus: settings['campus'] || 'nb'
+                });
+                sa_event('btn_press', { btn: 'chat_example_selected' });
+                const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
                 $messages.append($botMsg);
-                window.chatHistory.push({ role: 'assistant', content: example.a });  // Add bot response to history
-                scrollChatToTurnTopOrBottom($messages, $userMsg, false);
-            }, 1333);
-        }))
-    })
-    $('.chat-recs').scrollLeft(0);
+                scrollChatToUserMessageTop($messages, $userMsg);
+                setTimeout(() => {
+                    const processedExample = colorRouteNames(parseMarkdown(example.a));
+                    $botMsg.html(processedExample).removeClass('loading');
+                    $messages.append($botMsg);
+                    window.chatHistory.push({ role: 'assistant', content: example.a });  // Add bot response to history
+                    if (chatAutoScrollSticky) {
+                        smoothScrollChatToBottom($messages);
+                    } else {
+                        $('.chat-scroll-bottom-btn').addClass('has-new');
+                    }
+                }, 1333);
+            });
+            $rows[idx % 3].append($rec);
+        });
+        $rows.forEach($row => $('.chat-recs').append($row));
+        $('.chat-recs').scrollLeft(0);
+    }
     $('.chat-ui-input').focus();
 });
 
 let isUserTouchingChat = false;
-// True when the user has manually scrolled the messages container up away
-// from the bottom. Programmatic scrolls to bottom clear it; keyboard
-// focus/blur + viewport resizes respect it.
+let touchStartY = 0;
+// True when the view is locked to follow new streamed tokens at the bottom.
+// When user manually scrolls up, this becomes false (pausing auto-scroll).
+let chatAutoScrollSticky = true;
 let chatUserScrolledUp = false;
-let chatIgnoreNextMessagesScroll = false;
+let smoothScrollRaf = null;
+let currentTargetScrollTop = null;
+let lastProgrammaticScrollTime = 0;
 const CHAT_BOTTOM_THRESHOLD_PX = 40;
+
+function cancelSmoothScroll() {
+  if (smoothScrollRaf) {
+    cancelAnimationFrame(smoothScrollRaf);
+    smoothScrollRaf = null;
+  }
+  currentTargetScrollTop = null;
+}
 
 function isChatMessagesNearBottom($messages, threshold) {
   if (!$messages || !$messages.length) return true;
@@ -455,82 +479,316 @@ function isChatMessagesNearBottom($messages, threshold) {
   return (el.scrollTop + el.clientHeight) >= (el.scrollHeight - limit);
 }
 
+function updateScrollBottomBtn() {
+  const $messages = $('.chat-ui-messages');
+  const $btn = $('.chat-scroll-bottom-btn');
+  if (!$messages.length || !$btn.length) return;
+  const el = $messages[0];
+  if (!el) return;
+
+  const isScrollable = (el.scrollHeight - el.clientHeight) > 24;
+  const isNearBottom = isChatMessagesNearBottom($messages, CHAT_BOTTOM_THRESHOLD_PX);
+
+  if (isScrollable && !isNearBottom) {
+    $btn.addClass('visible');
+  } else {
+    $btn.removeClass('visible has-new');
+  }
+}
+
+// Smooth auto-scroll loop for streaming tokens:
+// Glides down to follow newly wrapped lines without snapping or abrupt jumps.
+function smoothScrollChatToBottom($messages, speed = 0.18) {
+  if (!$messages || !$messages.length) return;
+  const el = $messages[0];
+  if (!el) return;
+
+  const maxScroll = el.scrollHeight - el.clientHeight;
+  if (maxScroll <= 0) return;
+
+  currentTargetScrollTop = maxScroll;
+
+  if (smoothScrollRaf) return;
+
+  function step() {
+    if (!chatAutoScrollSticky || isUserTouchingChat) {
+      cancelSmoothScroll();
+      return;
+    }
+
+    const current = el.scrollTop;
+    const target = currentTargetScrollTop !== null ? currentTargetScrollTop : (el.scrollHeight - el.clientHeight);
+    const diff = target - current;
+
+    if (diff <= 0) {
+      cancelSmoothScroll();
+      return;
+    }
+
+    if (diff < 0.75) {
+      lastProgrammaticScrollTime = performance.now();
+      el.scrollTop = target;
+      cancelSmoothScroll();
+      return;
+    }
+
+    let delta = diff * speed;
+    if (delta < 0.8) delta = 0.8;
+    if (delta > diff) delta = diff;
+
+    lastProgrammaticScrollTime = performance.now();
+    el.scrollTop = current + delta;
+
+    smoothScrollRaf = requestAnimationFrame(step);
+  }
+
+  smoothScrollRaf = requestAnimationFrame(step);
+}
+
 function attachChatMessagesScrollTracker() {
   const $messages = $('.chat-ui-messages');
   if (!$messages.length || $messages.data('scroll-tracker-attached')) return;
   $messages.data('scroll-tracker-attached', true);
+
+  let lastScrollTop = $messages[0].scrollTop;
+
   $messages.on('scroll', function() {
-    if (chatIgnoreNextMessagesScroll) {
-      chatIgnoreNextMessagesScroll = false;
-      return;
+    const currentScrollTop = this.scrollTop;
+    const now = performance.now();
+    const isProgrammatic = (now - lastProgrammaticScrollTime) < 100;
+
+    if (!isProgrammatic) {
+      if (currentScrollTop < lastScrollTop - 2) {
+        chatAutoScrollSticky = false;
+        chatUserScrolledUp = true;
+        cancelSmoothScroll();
+      } else if (isChatMessagesNearBottom($(this), CHAT_BOTTOM_THRESHOLD_PX)) {
+        chatAutoScrollSticky = true;
+        chatUserScrolledUp = false;
+      }
     }
-    chatUserScrolledUp = !isChatMessagesNearBottom($(this), CHAT_BOTTOM_THRESHOLD_PX);
+
+    lastScrollTop = currentScrollTop;
+    updateScrollBottomBtn();
+  });
+
+  $messages.on('wheel', function(e) {
+    const orig = e.originalEvent;
+    if (!orig) return;
+    if (orig.deltaY < 0) {
+      chatAutoScrollSticky = false;
+      chatUserScrolledUp = true;
+      cancelSmoothScroll();
+      updateScrollBottomBtn();
+    } else if (orig.deltaY > 0) {
+      setTimeout(() => {
+        if (isChatMessagesNearBottom($messages, CHAT_BOTTOM_THRESHOLD_PX)) {
+          chatAutoScrollSticky = true;
+          chatUserScrolledUp = false;
+          updateScrollBottomBtn();
+        }
+      }, 30);
+    }
+  });
+}
+
+let isChatRecsDragging = false;
+let chatRecsJustDragged = false;
+let chatRecsMomentumRaf = null;
+
+function attachChatRecsDragScroll() {
+  const $recs = $('.chat-recs');
+  if (!$recs.length || $recs.data('drag-scroll-attached')) return;
+  $recs.data('drag-scroll-attached', true);
+
+  let isDown = false;
+  let startX = 0;
+  let startScroll = 0;
+  let lastX = 0;
+  let lastTime = 0;
+  let velocity = 0;
+  const DRAG_THRESHOLD = 4;
+
+  function stopMomentum() {
+    if (chatRecsMomentumRaf) {
+      cancelAnimationFrame(chatRecsMomentumRaf);
+      chatRecsMomentumRaf = null;
+    }
+  }
+
+  $recs.on('pointerdown mousedown', function(e) {
+    if (e.type === 'pointerdown' && e.pointerType && e.pointerType !== 'mouse') return;
+    if (e.button !== 0) return;
+    stopMomentum();
+    isDown = true;
+    isChatRecsDragging = false;
+    startX = e.clientX || (e.originalEvent && e.originalEvent.clientX) || 0;
+    lastX = startX;
+    lastTime = performance.now();
+    velocity = 0;
+    startScroll = this.scrollLeft;
+  });
+
+  $(document).on('pointermove mousemove', function(e) {
+    if (!isDown) return;
+    const clientX = e.clientX || (e.originalEvent && e.originalEvent.clientX) || 0;
+    const dx = clientX - startX;
+    const now = performance.now();
+    const dt = now - lastTime;
+    if (dt > 10) {
+      velocity = (clientX - lastX) / dt;
+      lastX = clientX;
+      lastTime = now;
+    }
+    if (!isChatRecsDragging && Math.abs(dx) > DRAG_THRESHOLD) {
+      isChatRecsDragging = true;
+      $recs.addClass('dragging');
+    }
+    if (isChatRecsDragging) {
+      const recsEl = $recs[0];
+      if (recsEl) recsEl.scrollLeft = startScroll - dx;
+      if (e.cancelable) e.preventDefault();
+    }
+  });
+
+  $(document).on('pointerup pointercancel mouseup', function(e) {
+    if (!isDown) return;
+    isDown = false;
+    if (isChatRecsDragging) {
+      isChatRecsDragging = false;
+      $recs.removeClass('dragging');
+      chatRecsJustDragged = true;
+      setTimeout(() => { chatRecsJustDragged = false; }, 80);
+
+      const recsEl = $recs[0];
+      if (recsEl && Math.abs(velocity) > 0.2) {
+        let v = velocity;
+        const step = () => {
+          v *= 0.92;
+          if (Math.abs(v) < 0.05) return;
+          recsEl.scrollLeft -= v * 16;
+          chatRecsMomentumRaf = requestAnimationFrame(step);
+        };
+        chatRecsMomentumRaf = requestAnimationFrame(step);
+      }
+    }
+  });
+
+  $recs.on('wheel', function(e) {
+    const orig = e.originalEvent;
+    if (!orig) return;
+    if (Math.abs(orig.deltaY) > Math.abs(orig.deltaX)) {
+      stopMomentum();
+      this.scrollLeft += orig.deltaY;
+      e.preventDefault();
+    }
   });
 }
 
 $(function() {
   attachChatMessagesScrollTracker();
+  attachChatRecsDragScroll();
 });
 
 $(document).on('touchstart pointerdown', '.chat-ui-messages', function(e) {
   if (e.pointerType && e.pointerType === 'mouse' && e.button !== 0) return;
   isUserTouchingChat = true;
+  cancelSmoothScroll();
+  const evt = e.originalEvent || e;
+  touchStartY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+});
+
+$(document).on('touchmove pointermove', '.chat-ui-messages', function(e) {
+  if (!isUserTouchingChat) return;
+  const evt = e.originalEvent || e;
+  const currentY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+  if (currentY > touchStartY + 6) {
+    chatAutoScrollSticky = false;
+    chatUserScrolledUp = true;
+    cancelSmoothScroll();
+    updateScrollBottomBtn();
+  }
 });
 
 $(document).on('touchend touchcancel pointerup pointercancel', function() {
   isUserTouchingChat = false;
+  const $messages = $('.chat-ui-messages');
+  if ($messages.length && isChatMessagesNearBottom($messages, CHAT_BOTTOM_THRESHOLD_PX)) {
+    chatAutoScrollSticky = true;
+    chatUserScrolledUp = false;
+  }
+  updateScrollBottomBtn();
+});
+
+// Floating scroll-to-bottom button click handler
+$(document).on('click', '.chat-scroll-bottom-btn', function() {
+  const $messages = $('.chat-ui-messages');
+  if (!$messages.length) return;
+  const el = $messages[0];
+  if (!el) return;
+
+  chatAutoScrollSticky = true;
+  chatUserScrolledUp = false;
+  $('.chat-scroll-bottom-btn').removeClass('visible has-new');
+
+  const target = el.scrollHeight - el.clientHeight;
+  lastProgrammaticScrollTime = performance.now() + 450;
+  el.scrollTo({
+    top: target,
+    behavior: 'smooth'
+  });
 });
 
 function scrollChatToBottom($messages, force = false) {
   if (!$messages || !$messages.length) return;
-  if (!force && isUserTouchingChat) {
-    return; // Maintain user's scroll location while finger/pointer is actively on screen
-  }
-  $messages.scrollTop($messages[0].scrollHeight);
-}
-
-function scrollChatToTurnTopOrBottom($messages, $userMsg, force = false) {
-  if (!$messages || !$messages.length) return;
-  if (!force && isUserTouchingChat) {
-    return; // Maintain user's scroll location while finger/pointer is actively on screen
-  }
-  const el = $messages[0];
-  const userMsgTop = ($userMsg && $userMsg.length && $userMsg[0]) ? $userMsg[0].offsetTop : 0;
-  const totalTurnHeight = el.scrollHeight - userMsgTop;
-  const visibleHeight = el.clientHeight;
-
-  if (totalTurnHeight > visibleHeight) {
-    // If the response exceeds available wrapper height, position user's query near the top.
-    // This is programmatic positioning, not a manual scroll-up, so keep the
-    // pinned state intact.
-    chatIgnoreNextMessagesScroll = true;
-    $messages.scrollTop(Math.max(0, userMsgTop - 8));
+  if (!force && isUserTouchingChat) return;
+  if (force) {
+    cancelSmoothScroll();
+    chatAutoScrollSticky = true;
+    chatUserScrolledUp = false;
+    const el = $messages[0];
+    if (el) el.scrollTop = el.scrollHeight;
+    updateScrollBottomBtn();
   } else {
-    // If it fits inside the wrapper, scroll to bottom so the full exchange is in view
-    $messages.scrollTop(el.scrollHeight);
+    smoothScrollChatToBottom($messages);
   }
 }
 
-// Tapping into / leaving the input (mobile keyboard showing/hiding resizes the
-// visual viewport) should restore the bottom, unless the user explicitly
-// scrolled up in the messages container.
+function scrollChatToUserMessageTop($messages, $userMsg) {
+  if (!$messages || !$messages.length || !$userMsg || !$userMsg.length) return;
+  const container = $messages[0];
+  const userEl = $userMsg[0];
+  if (!container || !userEl) return;
+
+  cancelSmoothScroll();
+  chatAutoScrollSticky = true;
+  chatUserScrolledUp = false;
+  $('.chat-scroll-bottom-btn').removeClass('visible has-new');
+
+  requestAnimationFrame(() => {
+    const containerRect = container.getBoundingClientRect();
+    const userRect = userEl.getBoundingClientRect();
+    const targetTop = userRect.top - containerRect.top + container.scrollTop;
+    const targetScrollTop = Math.max(0, targetTop - 8);
+    lastProgrammaticScrollTime = performance.now() + 450;
+    container.scrollTo({
+      top: targetScrollTop,
+      behavior: 'smooth'
+    });
+  });
+}
+
+// Adjust layout on focus/blur (mobile keyboard showing/hiding) without scrolling down
 $(document).on('focus', '.chat-ui-input', function() {
   setTimeout(() => {
-    if (chatUserScrolledUp) return;
-    const $messages = $('.chat-ui-messages');
-    if ($messages.length > 0) {
-      scrollChatToBottom($messages, true);
-    }
-  }, 150);
+    adjustChatHeights();
+    updateScrollBottomBtn();
+  }, 50);
 });
 $(document).on('blur', '.chat-ui-input', function() {
   setTimeout(() => {
     adjustChatHeights();
-    if (chatUserScrolledUp) return;
-    const $messages = $('.chat-ui-messages');
-    if ($messages.length > 0) {
-      scrollChatToBottom($messages, true);
-    }
+    updateScrollBottomBtn();
   }, 50);
 });
 
@@ -539,6 +797,10 @@ function closeChat() {
       campus: settings['campus'] || 'nb',
       message_count: window.chatHistory.length || 0
   });
+  cancelSmoothScroll();
+  chatAutoScrollSticky = true;
+  chatUserScrolledUp = false;
+  $('.chat-scroll-bottom-btn').removeClass('visible has-new');
   $('.chat-wrapper').hide();
   detachChatViewportListeners();
   // Clear inline sizing
@@ -638,7 +900,6 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     });
     sa_event('btn_press', { btn: 'chat_message_sent' });
     $input.val('');
-    scrollChatToBottom($messages, true);
 
     const reqStartTime = performance.now();
     let phase = 'waiting'; // 'waiting' | 'thinking' | 'answering'
@@ -741,7 +1002,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         </div>
     `);
     $messages.append($botMsg);
-    scrollChatToBottom($messages, false);
+    scrollChatToUserMessageTop($messages, $userMsg);
 
     function ensureThinkingBox() {
         if (!$currentThinkingBox) {
@@ -887,7 +1148,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     </div>
                 `);
                 $thinkingDiv.insertBefore($botMsg);
-                scrollChatToBottom($messages, false);
+                if (chatAutoScrollSticky) {
+                    smoothScrollChatToBottom($messages);
+                } else {
+                    $('.chat-scroll-bottom-btn').addClass('has-new');
+                }
             }
 
             // 3. Streaming answer content delta
@@ -914,7 +1179,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     .replace(/<\|[^>]*>/g, '');
                 $botMsg.find('.chat-message-content').html(colorRouteNames(parseMarkdown(cleanStream)));
                 updateActiveTps();
-                scrollChatToBottom($messages, false);
+                if (chatAutoScrollSticky) {
+                    smoothScrollChatToBottom($messages);
+                } else {
+                    $('.chat-scroll-bottom-btn').addClass('has-new');
+                }
             }
 
             // 4. Response complete
@@ -1025,9 +1294,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
 
                 window.chatHistory.push({ role: 'assistant', content: finalAnswer, thinking: thinkingToDisplay, model: currentModel, provider: currentProvider });
                 window.currentChatController = null;
-                scrollChatToTurnTopOrBottom($messages, $userMsg, false);
-            } else {
-                scrollChatToBottom($messages, false);
+                if (chatAutoScrollSticky) {
+                    smoothScrollChatToBottom($messages);
+                } else {
+                    $('.chat-scroll-bottom-btn').addClass('has-new');
+                }
             }
         } catch (err) {
             console.error('Error handling chat data:', err, data);
@@ -1041,7 +1312,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     );
 
     async function sendChatRequest() {
-        const payload = JSON.stringify({ user_query: msg, conversation_history: historyToSend, model: selectedModel, provider: selectedProvider });
+        // Persistent anonymous uid (created in gui.js settings load) so the
+        // backend can attribute chat logs per user without any login.
+        let chatUid = null;
+        try { chatUid = localStorage.getItem('uid'); } catch (e) { chatUid = null; }
+        const payload = JSON.stringify({ user_query: msg, conversation_history: historyToSend, model: selectedModel, provider: selectedProvider, user_id: chatUid });
 
         // 1. If on localhost, try the local backend first
         if (isLocalDev) {
@@ -1073,7 +1348,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
 
         // 3. If remote returns 405 Method Not Allowed or 501, fallback to GET
         if (remoteResp.status === 405 || remoteResp.status === 501) {
-            const getUrl = `${remoteEndpoint}?user_query=${encodeURIComponent(msg)}&conversation_history=${encodeURIComponent(JSON.stringify(historyToSend))}&model=${encodeURIComponent(selectedModel)}`;
+            const getUrl = `${remoteEndpoint}?user_query=${encodeURIComponent(msg)}&conversation_history=${encodeURIComponent(JSON.stringify(historyToSend))}&model=${encodeURIComponent(selectedModel)}&user_id=${encodeURIComponent(chatUid || '')}`;
             remoteResp = await fetch(getUrl, {
                 method: 'GET',
                 headers: { 'Accept': 'text/event-stream' },
@@ -1179,7 +1454,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
             campus: settings['campus'] || 'nb'
         });
         $botMsg.text('Sorry, there was a problem connecting to the chatbot.').removeClass('loading');
-        $messages.scrollTop($messages[0].scrollHeight);
+        if (chatAutoScrollSticky) {
+            smoothScrollChatToBottom($messages);
+        } else {
+            $('.chat-scroll-bottom-btn').addClass('has-new');
+        }
         window.currentChatController = null;
     });
 });
