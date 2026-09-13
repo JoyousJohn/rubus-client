@@ -120,7 +120,6 @@
                     if (curBuild && curBuild !== '__BUILD_HASH__') {
                         localStorage.setItem('rubus-announced-build', curBuild);
                     }
-                    localStorage.setItem('last-update-toast-show', Date.now().toString());
                     if (successToastTimer) clearTimeout(successToastTimer);
                     const $toast = $('#update-toast');
                     const metaBuildNum = $('meta[name="rubus-build-num"]').attr('content');
@@ -258,7 +257,6 @@
                     // activate a worker (below). Setting it before a blind reload
                     // printed a fake "Installed update" toast every tap and looped
                     // forever when the version never advanced.
-                    localStorage.setItem('last-update-toast-show', Date.now().toString());
                     const curBuild = $('meta[name="rubus-build"]').attr('content');
                     if (curBuild && curBuild !== '__BUILD_HASH__') {
                         localStorage.setItem('rubus-app-build', curBuild);
@@ -385,7 +383,8 @@
                     }
                 });
 
-                // Check and show deferred update toast after 8-hour cooldown expires
+                // Announce a newly-loaded build on every visit (no time gate:
+                // announcedBuild dedupes, so each build announces exactly once).
                 function checkAndShowDeferredUpdateToast() {
                     const currentBuild = $('meta[name="rubus-build"]').attr('content');
                     if (!currentBuild || currentBuild === '__BUILD_HASH__') return;
@@ -421,18 +420,10 @@
                             // Don't overwrite an update-available toast that won the race.
                             const $t = $('#update-toast');
                             if ($t.is(':visible') && $t.find('.update-toast-actions').is(':visible')) return;
-                            const lastShow = localStorage.getItem('last-update-toast-show');
-                            const eightHours = 8 * 60 * 60 * 1000;
-                            if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
-                                showUpdatedSuccessToast();
-                            }
+                            showUpdatedSuccessToast();
                         }).catch(function() {
                             // Offline or fetch failed: fall back to announcing the loaded page.
-                            const lastShow = localStorage.getItem('last-update-toast-show');
-                            const eightHours = 8 * 60 * 60 * 1000;
-                            if (!lastShow || (Date.now() - parseInt(lastShow, 10) >= eightHours)) {
-                                showUpdatedSuccessToast();
-                            }
+                            showUpdatedSuccessToast();
                         });
                     }
                 }
