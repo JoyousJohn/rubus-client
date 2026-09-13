@@ -272,7 +272,8 @@ let chatVvpHandler = null;
 function setChatHeightsForViewportHeight(viewportHeightPx) {
   const headerHeight = $('.chat-ui-header').outerHeight() || 0;
   const inputBarHeight = $('.chat-ui-input-bar').outerHeight() || 0;
-  const availableHeight = Math.max(0, viewportHeightPx - headerHeight - inputBarHeight);
+  const disclaimerHeight = $('.chat-disclaimer').outerHeight() || 0;
+  const availableHeight = Math.max(0, viewportHeightPx - headerHeight - inputBarHeight - disclaimerHeight);
   $('.chat-ui-panel').css('height', viewportHeightPx + 'px');
   $('.chat-ui-messages').css('height', availableHeight + 'px');
 }
