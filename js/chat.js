@@ -329,7 +329,7 @@ function detachChatViewportListeners() {
 }
 
 function updateChatInitialMessage() {
-    const baseMsg = 'Ask me complex questions about bus routes, schedules, navigation, and more.';
+    const baseMsg = 'I can help with navigation, routes, stops, and schedules.';
     let busCount = 0;
     let routeCount = 0;
     if (typeof busesByRoutes !== 'undefined' && typeof selectedCampus !== 'undefined' && busesByRoutes[selectedCampus]) {
@@ -353,7 +353,9 @@ function updateChatInitialMessage() {
         text = `${baseMsg} There are currently ${busStr} running on ${routeStr}.`;
     }
     
-    const $firstBotMsg = $('.chat-ui-messages .chat-message.bot').first();
+    const $firstBotMsg = $('.chat-ui-messages .chat-initial-prompt').length
+        ? $('.chat-ui-messages .chat-initial-prompt').first()
+        : $('.chat-ui-messages .chat-message.bot').first();
     if ($firstBotMsg.length) {
         $firstBotMsg.text(text);
     }

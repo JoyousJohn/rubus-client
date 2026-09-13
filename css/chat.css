@@ -85,6 +85,28 @@
   margin-bottom: 0.25rem;
 }
 
+.chat-message.bot.chat-beta-notice {
+  background: rgba(86, 95, 229, 0.06);
+  border: 1px solid rgba(86, 95, 229, 0.2);
+  border-radius: 1.2rem;
+  padding: 1.1rem 1.4rem;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0;
+  font-size: 1.4rem;
+  line-height: 1.55;
+}
+
+.chat-message.bot.chat-beta-notice .chat-beta-title {
+  color: var(--theme-accent, #565fe5);
+  font-weight: 500;
+}
+
+.chat-initial-prompt {
+  margin-top: 0;
+}
+
 .chat-message.bot ul.chat-md-list {
   margin: 0.5rem 0;
   padding-left: 1.6rem;
