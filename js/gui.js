@@ -4115,6 +4115,12 @@ function loadSettingsFromStorage() {
         return null;
     }
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        // Chatbot model and provider are session-only; reset to default on reload/refresh
+        if ('chatbot-model' in parsed || 'chatbot-provider' in parsed) {
+            delete parsed['chatbot-model'];
+            delete parsed['chatbot-provider'];
+            localStorage.setItem('settings', JSON.stringify(parsed));
+        }
         // Stored settings only contain user overrides (saveSettings prunes
         // defaults), so overlay them on the current defaults to get the full
         // effective settings object.
@@ -4148,6 +4154,10 @@ function saveSettings() {
             // Always persist the migration flag once set so the one-time
             // migration doesn't re-run and wipe overrides.
             stored[key] = settings[key];
+        } else if (key === 'chatbot-model' || key === 'chatbot-provider') {
+            // Chatbot model and provider are session-only and reset on refresh/reload;
+            // do not persist them to localStorage.
+            continue;
         } else if (settings[key] !== defaultSettings[key]) {
             stored[key] = settings[key];
         }
@@ -4614,7 +4624,7 @@ function syncPostHogPersonProfile() {
         marker_size: currentSettings['marker-size'] || 'medium',
         chat_enabled: !!currentSettings['toggle-show-chat'],
         chatbot_provider: currentSettings['chatbot-provider'] || 'auto',
-        chatbot_model: currentSettings['chatbot-model'] || 'ling',
+        chatbot_model: currentSettings['chatbot-model'] || 'deepseek',
         buildings_enabled: !!currentSettings['toggle-show-buildings'],
         parking_enabled: !!currentSettings['toggle-show-parking'],
         bike_racks_enabled: !!currentSettings['toggle-show-bike-racks'],

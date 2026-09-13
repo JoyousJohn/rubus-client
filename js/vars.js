@@ -77,7 +77,7 @@ const defaultSettings = {
 
     
     // dev settings
-    'chatbot-model': 'ling',
+    'chatbot-model': 'deepseek',
     'chatbot-provider': 'auto',
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
@@ -156,6 +156,12 @@ try {
     if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            // Chatbot model and provider are session-only; reset to default on reload/refresh
+            if ('chatbot-model' in parsed || 'chatbot-provider' in parsed) {
+                delete parsed['chatbot-model'];
+                delete parsed['chatbot-provider'];
+                localStorage.setItem('settings', JSON.stringify(parsed));
+            }
             settings = {...defaultSettings, ...parsed};
             if (!('colorMappings' in parsed)) delete settings['colorMappings'];
             if (!('colorMappingsMigrated' in parsed)) delete settings['colorMappingsMigrated'];
