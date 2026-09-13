@@ -185,17 +185,14 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
                 // Store the original route state BEFORE any click/long-press processing
                 if (!routePanelOpenedFromLongPress) {
                     shownBeforeRoute = shownRoute;
-                    console.log('Storing shownBeforeRoute before interaction:', shownBeforeRoute);
                 }
 
                 longPressTimer = setTimeout(() => {
                     isLongPress = true;
-                    console.log('Long press triggered for route:', route);
                     // Remember current map selection state so we can restore it on close
                     routePanelOpenedFromLongPress = true;
 
                     if (panelRoute !== route && route !== 'fav') {
-                        console.log('Calling selectedRoute from long press while in subpanel');
                         selectedRoute(route);
                     }
                 }, 500); 
@@ -1870,18 +1867,12 @@ window.addEventListener('resize', () => {
 });
 
 function selectedRoute(route) {
-    console.log('selectedRoute called with:', route);
-    console.log('panelRoute:', panelRoute);
-    console.log('isLongPress:', isLongPress);
-    console.log('routePanelOpenedFromLongPress:', routePanelOpenedFromLongPress);
-
     // Store the current map selection exactly once when entering panels
     if (!$('.info-panels-show-hide-wrapper').is(':visible')) {
         // Prefer lastMapShownRoute if available (accurate map state), otherwise shownRoute
         originalShownRoute = (lastMapShownRoute !== null && lastMapShownRoute !== undefined)
             ? lastMapShownRoute
             : (shownRoute || null);
-        console.log('Storing originalShownRoute for restoration (entry):', originalShownRoute);
     }
 
     if (panelRoute === route) {
@@ -3730,12 +3721,6 @@ function closeRouteMenu() {
     const rememberedPanelRoute = panelRoute || lastPanelRoute;
     cancelInfoPanelAnimation();
     $('.subpanels-container').removeClass('is-dragging-or-animating');
-    console.log('closeRouteMenu called');
-    console.log('routePanelOpenedFromLongPress:', routePanelOpenedFromLongPress);
-    console.log('originalShownRoute:', originalShownRoute);
-    console.log('shownRoute before close:', shownRoute);
-    console.log('panelRoute before close:', panelRoute);
-    console.log('shownBeforeRoute before close:', shownBeforeRoute);
 
     // Hide info panels and show bottom controls
     $('.info-panels-show-hide-wrapper').hide();
@@ -3771,8 +3756,6 @@ function closeRouteMenu() {
     // Store the original route selection before resetting state holders
     // If opened via long-press, use shownBeforeRoute; otherwise use originalShownRoute
     let routeToRestore = routePanelOpenedFromLongPress ? shownBeforeRoute : originalShownRoute;
-    console.log('Restoring original route selection (state):', routeToRestore);
-    console.log('Using shownBeforeRoute because routePanelOpenedFromLongPress:', routePanelOpenedFromLongPress);
 
     // Reset state holders
     routePanelOpenedFromLongPress = false;
@@ -3780,9 +3763,6 @@ function closeRouteMenu() {
     // Update last map selection tracker after restore
     lastMapShownRoute = shownRoute;
     shownBeforeRoute = null;
-    console.log('shownRoute after restore:', shownRoute);
-
-    console.log('shownRoute after closeRouteMenu:', shownRoute);
 
     panelRoute = null;
     
@@ -3797,18 +3777,12 @@ function closeRouteMenu() {
     if (routeToRestore) {
         // Ensure we end with the original single-route filter
         if (shownRoute !== routeToRestore) {
-            console.log('Toggling to original route:', routeToRestore);
             toggleRoute(routeToRestore);
-        } else {
-            console.log('Already on original route:', routeToRestore);
         }
     } else {
         // No original route to restore - clear any active selection to show all routes
         if (shownRoute) {
-            console.log('Clearing route selection to show all routes');
             toggleRoute(shownRoute); // This will unselect the current route
-        } else {
-            console.log('Already showing all buses');
         }
     }
 

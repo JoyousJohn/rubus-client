@@ -186,7 +186,6 @@ $('.info-panels').click(function(e) {
 
     // Store the original route selection from state before opening panels
     originalShownRoute = shownRoute || null;
-    console.log('Storing originalShownRoute for restoration (entry):', originalShownRoute);
 
     // NOTE: do NOT reset scroll here — each subpanel (routes/stops/network)
     // restores its own remembered position at the end of this open flow.
