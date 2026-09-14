@@ -4167,8 +4167,10 @@ function saveSettings() {
 
 // Chatbot models and their providers are served by rubus-chat (/chat/models)
 // rather than duplicated here, so the dev-settings buttons always match the
-// server's allowlist.
+// server's allowlist and the server-defined default model is used on each visit.
 let chatbotModelCatalog = null;
+let chatbotModelSessionOverridden = false;
+let chatbotProviderSessionOverridden = false;
 
 function getChatServerBaseUrls() {
     const isLocalDev = window.location.hostname === 'localhost' ||
@@ -4192,6 +4194,22 @@ async function fetchChatbotModelCatalog() {
     return null;
 }
 
+// Fetch the catalog and default model on page load so the server's default model
+// takes effect on each visit/reload without persisting in localStorage.
+const chatbotCatalogPromise = fetchChatbotModelCatalog().then(catalog => {
+    if (catalog && catalog.default_model && !chatbotModelSessionOverridden) {
+        settings['chatbot-model'] = catalog.default_model;
+        const model = (catalog.models || []).find(m => m.key === catalog.default_model);
+        if (model && model.default_provider && !chatbotProviderSessionOverridden) {
+            settings['chatbot-provider'] = model.default_provider;
+        }
+    }
+    return catalog;
+}).catch(err => {
+    console.warn('[Chatbot Settings] Failed initial catalog fetch:', err);
+    return null;
+});
+
 function renderChatbotModelOptions() {
     const $container = $('#chatbot-model-options');
     if (!chatbotModelCatalog) return;
@@ -4199,7 +4217,6 @@ function renderChatbotModelOptions() {
     if (!chatbotModelCatalog.models.some(model => model.key === selectedModel)) {
         selectedModel = chatbotModelCatalog.default_model;
         settings['chatbot-model'] = selectedModel;
-        saveSettings();
     }
     $container.empty();
     // One column per model rather than a fixed 3-column grid.
@@ -4227,7 +4244,6 @@ function renderChatbotProviderOptions() {
     if (!providerKeys.includes(selectedProvider)) {
         selectedProvider = defaultProvider;
         settings['chatbot-provider'] = selectedProvider;
-        saveSettings();
     }
     $container.empty();
     // One column per provider rather than a fixed 3-column grid.
@@ -4244,10 +4260,20 @@ function renderChatbotProviderOptions() {
 }
 
 async function populateChatbotOptions() {
-    chatbotModelCatalog = await fetchChatbotModelCatalog();
+    chatbotModelCatalog = await chatbotCatalogPromise;
+    if (!chatbotModelCatalog) {
+        chatbotModelCatalog = await fetchChatbotModelCatalog();
+    }
     if (!chatbotModelCatalog) {
         console.error('[Chatbot Settings] Could not load chatbot models from the chat server');
         return;
+    }
+    if (!chatbotModelSessionOverridden && chatbotModelCatalog.default_model) {
+        settings['chatbot-model'] = chatbotModelCatalog.default_model;
+        const model = (chatbotModelCatalog.models || []).find(m => m.key === chatbotModelCatalog.default_model);
+        if (model && model.default_provider && !chatbotProviderSessionOverridden) {
+            settings['chatbot-provider'] = model.default_provider;
+        }
     }
     renderChatbotModelOptions();
     renderChatbotProviderOptions();
@@ -4465,6 +4491,7 @@ function updateSettings() {
             }
 
         } else if (settingsOption === 'chatbot-model') {
+            chatbotModelSessionOverridden = true;
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['chatbot-model'] = $(this).attr('chatbot-model-option')
@@ -4474,6 +4501,7 @@ function updateSettings() {
             renderChatbotProviderOptions()
 
         } else if (settingsOption === 'chatbot-provider') {
+            chatbotProviderSessionOverridden = true;
             $(`div.settings-selected[settings-option="${settingsOption}"]`).removeClass('settings-selected')
             $(this).addClass('settings-selected')
             settings['chatbot-provider'] = $(this).attr('chatbot-provider-option')
