@@ -1094,7 +1094,11 @@ async function fetchWhere() {
             const oldStopId = Array.isArray(oldRaw) ? parseInt(oldRaw[0]) : (oldRaw !== undefined && oldRaw !== null ? parseInt(oldRaw) : NaN);
             busData[busName]['stopId'] = newStopId;
             if (busLocations[busName]['where'].length === 2) {
-                busData[busName]['prevStopId'] = parseInt(busLocations[busName]['where'][1]);
+                const wPrev = parseInt(busLocations[busName]['where'][1]);
+                // Server dupes [3,3] on departure (now fixed server-side) - ignore it and keep leg
+                if (wPrev !== newStopId) {
+                    busData[busName]['prevStopId'] = wPrev;
+                }
                 busData[busName]['at_stop'] = false;
             } else if (busLocations[busName]['where'].length === 1) {
                 busData[busName]['at_stop'] = true;
