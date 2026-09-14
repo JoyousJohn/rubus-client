@@ -5191,21 +5191,52 @@ window.navLeaveByBaseTimestamp = null;
 
 let _navWheelHideTimer = null;
 
+// Snapped departure offsets (minutes) for the time wheel: "Now" plus the next
+// 12 wall-clock times landing on even 5-minute marks. E.g. base 10:51pm gives
+// [0, 4, 9, 14, ..., 59]; a base already on a mark gives [0, 5, ..., 60].
+function getNavWheelSpec() {
+    const d = new Date(window.navLeaveByBaseTimestamp || Date.now());
+    d.setSeconds(0, 0);
+    const r = d.getMinutes() % 5;
+    const gap = (r === 0) ? 5 : (5 - r);
+    const offsets = [0];
+    for (let i = 0; i < 12; i++) offsets.push(gap + (i * 5));
+    return { base: d.getTime(), gap, offsets, maxOffset: offsets[offsets.length - 1] };
+}
+
+// Map a minute offset to a fractional wheel-item index for positioning.
+// Piecewise: the first interval is `gap` minutes, the rest are 5 minutes (identity when gap is 5).
+function navWheelIndexForOffset(offset) {
+    const gap = getNavWheelSpec().gap;
+    if (offset <= gap) return offset / gap;
+    return 1 + ((offset - gap) / 5);
+}
+
+// Index of the snapped option nearest to `offset` (clamped into range).
+function navWheelNearestIndex(offset) {
+    const offsets = getNavWheelSpec().offsets;
+    const clamped = Math.max(0, Math.min(offsets[offsets.length - 1], offset || 0));
+    let best = 0;
+    for (let i = 1; i < offsets.length; i++) {
+        if (Math.abs(offsets[i] - clamped) < Math.abs(offsets[best] - clamped)) best = i;
+    }
+    return best;
+}
+
 function renderNavTimeWheelItems() {
     const track = document.getElementById('nav-time-wheel-track');
     if (!track) throw new Error('[nav:leave-by] #nav-time-wheel-track missing from DOM');
-    const baseTimestamp = window.navLeaveByBaseTimestamp || Date.now();
+    const spec = getNavWheelSpec();
     let html = '';
-    for (let i = 0; i <= 12; i++) {
-        const offset = i * 5;
-        const timeMs = baseTimestamp + (offset * 60000);
+    spec.offsets.forEach((offset, i) => {
+        const timeMs = spec.base + (offset * 60000);
         const timeStr = new Date(timeMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         const offsetLabel = offset === 0 ? 'Now' : `+${offset} min`;
         html += `<div class="nav-time-wheel-item" data-index="${i}" data-offset="${offset}">` +
             `<span class="nav-time-wheel-time">${timeStr}</span>` +
             `<span class="nav-time-wheel-offset">${offsetLabel}</span>` +
             `</div>`;
-    }
+    });
     track.innerHTML = html;
 }
 window.renderNavTimeWheelItems = renderNavTimeWheelItems;
@@ -5214,7 +5245,7 @@ function updateWheelPosition(continuousOffset, animate) {
     const track = document.getElementById('nav-time-wheel-track');
     if (!track) throw new Error('[nav:leave-by] #nav-time-wheel-track missing from DOM');
     const ITEM_HEIGHT = 32;
-    const continuousIndex = continuousOffset / 5;
+    const continuousIndex = navWheelIndexForOffset(continuousOffset);
     const translateY = - (continuousIndex * ITEM_HEIGHT);
 
     if (animate) {
@@ -5281,6 +5312,7 @@ window.hideNavTimeWheel = hideNavTimeWheel;
 
 let _navLeaveByRecalcTimer = null;
 let _navLastCalculatedOffset = null;
+let _navLeaveByPendingReselect = false;
 
 function initNavTimeSelector() {
     if (window._navTimeSelectorInitialized) return;
@@ -5291,7 +5323,7 @@ function initNavTimeSelector() {
     let isDragging = false;
     let startY = 0;
     let startOffset = 0;
-    const pxPerStep = 22; // 22px vertical drag per 5-minute increment
+    const pxPerStep = 22; // 22px vertical drag per wheel item (~5 minutes)
 
     col.addEventListener('pointerdown', function(e) {
         if (e.button !== 0 && e.pointerType === 'mouse') return;
@@ -5310,6 +5342,7 @@ function initNavTimeSelector() {
 
     col.addEventListener('pointermove', function(e) {
         if (!isDragging) return;
+        const spec = getNavWheelSpec();
         const dy = startY - e.clientY; // positive = dragging UP
         const offsetChange = (dy / pxPerStep) * 5;
         let rawOffset = startOffset + offsetChange;
@@ -5318,13 +5351,13 @@ function initNavTimeSelector() {
         let visualOffset = rawOffset;
         if (visualOffset < 0) {
             visualOffset = visualOffset * 0.25;
-        } else if (visualOffset > 60) {
-            visualOffset = 60 + (visualOffset - 60) * 0.25;
+        } else if (visualOffset > spec.maxOffset) {
+            visualOffset = spec.maxOffset + (visualOffset - spec.maxOffset) * 0.25;
         }
 
         updateWheelPosition(visualOffset, false);
 
-        const targetOffset = Math.max(0, Math.min(60, Math.round(rawOffset / 5) * 5));
+        const targetOffset = spec.offsets[navWheelNearestIndex(rawOffset)];
         if (targetOffset !== (window.navLeaveByOffsetMinutes || 0)) {
             setNavLeaveByOffset(targetOffset, false, false);
         }
@@ -5352,8 +5385,10 @@ function initNavTimeSelector() {
         wheelAcc += e.deltaY;
         if (Math.abs(wheelAcc) >= 20 || Math.abs(e.deltaY) >= 40) {
             const dir = wheelAcc < 0 ? 1 : -1; // deltaY < 0 = scroll up -> later time
+            const spec = getNavWheelSpec();
             const current = window.navLeaveByOffsetMinutes || 0;
-            const next = Math.max(0, Math.min(60, current + (dir * 5)));
+            const nextIdx = Math.max(0, Math.min(spec.offsets.length - 1, navWheelNearestIndex(current) + dir));
+            const next = spec.offsets[nextIdx];
             wheelAcc = 0;
             if (next !== current) {
                 e.preventDefault();
@@ -5366,11 +5401,12 @@ function initNavTimeSelector() {
         }
     }, { passive: false });
 
-    // Stepper buttons: up chevron moves earlier (-5), down chevron moves later (+5)
+    // Stepper buttons: up chevron moves earlier, down chevron moves later (snapped marks)
     $(document).on('click', '.nav-time-step-up', function(e) {
         e.stopPropagation();
+        const spec = getNavWheelSpec();
         const current = window.navLeaveByOffsetMinutes || 0;
-        const next = Math.max(0, current - 5);
+        const next = spec.offsets[Math.max(0, navWheelNearestIndex(current) - 1)];
         if (next !== current) {
             showNavTimeWheel();
             setNavLeaveByOffset(next, false, true);
@@ -5381,8 +5417,9 @@ function initNavTimeSelector() {
 
     $(document).on('click', '.nav-time-step-down', function(e) {
         e.stopPropagation();
+        const spec = getNavWheelSpec();
         const current = window.navLeaveByOffsetMinutes || 0;
-        const next = Math.min(60, current + 5);
+        const next = spec.offsets[Math.min(spec.offsets.length - 1, navWheelNearestIndex(current) + 1)];
         if (next !== current) {
             showNavTimeWheel();
             setNavLeaveByOffset(next, false, true);
@@ -5394,10 +5431,13 @@ function initNavTimeSelector() {
 window.initNavTimeSelector = initNavTimeSelector;
 
 function setNavLeaveByOffset(offset, force = false, immediate = true) {
-    const clamped = Math.max(0, Math.min(60, Math.round(offset / 5) * 5));
-    if (!force && clamped === window.navLeaveByOffsetMinutes && _navLastCalculatedOffset === clamped) {
+    const spec = getNavWheelSpec();
+    const prevOffset = window.navLeaveByOffsetMinutes || 0;
+    const clamped = spec.offsets[navWheelNearestIndex(offset)];
+    if (!force && clamped === prevOffset && _navLastCalculatedOffset === clamped) {
         return;
     }
+    const reselectFastest = clamped !== prevOffset;
     window.navLeaveByOffsetMinutes = clamped;
     if (navRouteSession && navRouteSession.routeData) {
         navRouteSession.routeData.leaveByOffsetMinutes = clamped;
@@ -5409,7 +5449,7 @@ function setNavLeaveByOffset(offset, force = false, immediate = true) {
     $('#nav-leave-by-val').text(leaveTimeStr);
 
     $('.nav-time-step-up').css('opacity', clamped <= 0 ? '0.25' : '0.8').prop('disabled', clamped <= 0);
-    $('.nav-time-step-down').css('opacity', clamped >= 60 ? '0.25' : '0.8').prop('disabled', clamped >= 60);
+    $('.nav-time-step-down').css('opacity', clamped >= spec.maxOffset ? '0.25' : '0.8').prop('disabled', clamped >= spec.maxOffset);
 
     if (_navLeaveByRecalcTimer) {
         clearTimeout(_navLeaveByRecalcTimer);
@@ -5419,15 +5459,17 @@ function setNavLeaveByOffset(offset, force = false, immediate = true) {
     if (immediate) {
         if (force || _navLastCalculatedOffset !== clamped) {
             _navLastCalculatedOffset = clamped;
-            recalculateNavForLeaveBy(clamped);
+            recalculateNavForLeaveBy(clamped, { reselectFastest });
         }
     } else {
+        _navLeaveByPendingReselect = _navLeaveByPendingReselect || reselectFastest;
         _navLeaveByRecalcTimer = setTimeout(() => {
             _navLeaveByRecalcTimer = null;
             if (_navLastCalculatedOffset !== clamped) {
                 _navLastCalculatedOffset = clamped;
-                recalculateNavForLeaveBy(clamped);
+                recalculateNavForLeaveBy(clamped, { reselectFastest: _navLeaveByPendingReselect });
             }
+            _navLeaveByPendingReselect = false;
         }, 75);
     }
 }
@@ -5442,7 +5484,8 @@ function updateNavTimeRowInitial(routesForDisplay, routeData) {
         d.setSeconds(0, 0);
         window.navLeaveByBaseTimestamp = d.getTime();
     }
-    const initialOffset = routeData.leaveByOffsetMinutes || 0;
+    const spec = getNavWheelSpec();
+    const initialOffset = spec.offsets[navWheelNearestIndex(routeData.leaveByOffsetMinutes || 0)];
     window.navLeaveByOffsetMinutes = initialOffset;
     routeData.leaveByOffsetMinutes = initialOffset;
     routeData.baseTimestamp = window.navLeaveByBaseTimestamp;
@@ -5486,7 +5529,7 @@ function updateNavTimeRowInitial(routesForDisplay, routeData) {
     $('#nav-arrive-by-val').text(arriveTimeStr);
 
     $('.nav-time-step-up').css('opacity', initialOffset <= 0 ? '0.25' : '0.8').prop('disabled', initialOffset <= 0);
-    $('.nav-time-step-down').css('opacity', initialOffset >= 60 ? '0.25' : '0.8').prop('disabled', initialOffset >= 60);
+    $('.nav-time-step-down').css('opacity', initialOffset >= spec.maxOffset ? '0.25' : '0.8').prop('disabled', initialOffset >= spec.maxOffset);
     $row.removeClass('none');
 
     // Pre-render and position the wheel track so it is primed
@@ -5507,6 +5550,7 @@ function resetNavLeaveByTime() {
         _navLeaveByRecalcTimer = null;
     }
     _navLastCalculatedOffset = null;
+    _navLeaveByPendingReselect = false;
     if (_navWheelHideTimer) {
         clearTimeout(_navWheelHideTimer);
         _navWheelHideTimer = null;
@@ -5525,7 +5569,8 @@ function resetNavLeaveByTime() {
 }
 window.resetNavLeaveByTime = resetNavLeaveByTime;
 
-function recalculateNavForLeaveBy(offsetMinutes) {
+function recalculateNavForLeaveBy(offsetMinutes, options) {
+    const reselectFastest = !!(options && options.reselectFastest);
     const rd = navRouteSession.routeData;
     rd.leaveByOffsetMinutes = offsetMinutes;
     const allRoutes = rd.allCandidateRoutes;
@@ -5773,10 +5818,18 @@ function recalculateNavForLeaveBy(offsetMinutes) {
             entries: computedEntries.map(e => ({ name: e.route.name, hasLive: e.hasLive, arrival: new Date(e.arrivalTimestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), journeyMin: e.journeyMinutes }))
         });
 
-        // Always select the fastest route for the new departure time — a
-        // different path may be quickest than the previously selected one.
-        // (computedEntries is sorted fastest-first above, so index 0 is best.)
-        const selIdx = 0;
+        // Select the active route: when the departure time changed, track the
+        // fastest route for the new time (computedEntries is sorted
+        // fastest-first above, so index 0 is best). On same-offset refreshes
+        // (live data ticks), keep the user's current (possibly manual) pick.
+        let selIdx = 0;
+        if (!reselectFastest) {
+            const curRestoreKey = rd.restoreRouteName ? String(rd.restoreRouteName).trim().toLowerCase() : null;
+            if (curRestoreKey) {
+                const found = computedEntries.findIndex(e => String(e.route.name).trim().toLowerCase() === curRestoreKey);
+                if (found >= 0) selIdx = found;
+            }
+        }
 
         rd.routesForDisplay = computedEntries;
         rd.selectedRouteDisplayIndex = selIdx;
@@ -6027,6 +6080,21 @@ function updateNavBusesDisplay() {
         const endStop = routeData.endStop;
         if (!route) return;
 
+        const leaveTimeStr = new Date(
+            ((routeData.baseTimestamp || window.navLeaveByBaseTimestamp || Date.now()) +
+            ((routeData.leaveByOffsetMinutes || window.navLeaveByOffsetMinutes || 0) * 60000))
+        ).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const setWaypointDesc = (selector, text) => {
+            const $row = $(selector);
+            if ($row.length === 0) return;
+            const $desc = $row.find('.waypoint-description');
+            if ($desc.length > 0) {
+                $desc.text(text);
+            } else {
+                $row.find('.waypoint-header').append(`<div class="waypoint-description">${text}</div>`);
+            }
+        };
+
         if (route.isWalk) {
             $('.incoming-buses-list').remove();
             $('.destination-buses-list').remove();
@@ -6047,6 +6115,7 @@ function updateNavBusesDisplay() {
                     $endRow.find('.waypoint-header').append(`<div class="waypoint-description">${desc}</div>`);
                 }
             }
+            setWaypointDesc('.waypoint-row[data-waypoint-role="start_building"]', `Start here at ${leaveTimeStr}`);
             updateNavInfoBanners(route, routeData.selectedRouteDisplayIndex, routeData.routesForDisplay);
             positionGlobalWaypointConnector();
             return;
@@ -6078,17 +6147,6 @@ function updateNavBusesDisplay() {
                 leaveByOffsetMinutes,
                 baseTimestamp
             });
-
-            const setWaypointDesc = (selector, text) => {
-                const $row = $(selector);
-                if ($row.length === 0) return;
-                const $desc = $row.find('.waypoint-description');
-                if ($desc.length > 0) {
-                    $desc.text(text);
-                } else {
-                    $row.find('.waypoint-header').append(`<div class="waypoint-description">${text}</div>`);
-                }
-            };
 
             if (hasEndWalk) {
                 const desc = endTimeStr ? `End here at ${endTimeStr}` : 'End here';
@@ -6228,6 +6286,7 @@ function updateNavBusesDisplay() {
             }
 
             updateEndWaypointDescription();
+            setWaypointDesc('.waypoint-row[data-waypoint-role="start_building"]', `Start here at ${leaveTimeStr}`);
             if (typeof updateNavInfoBanners === 'function') {
                 updateNavInfoBanners(route, routeData.selectedRouteDisplayIndex, routeData.routesForDisplay);
             }
@@ -6297,6 +6356,7 @@ function updateNavBusesDisplay() {
         }
 
         updateEndWaypointDescription();
+        setWaypointDesc('.waypoint-row[data-waypoint-role="start_building"]', `Start here at ${leaveTimeStr}`);
 
         updateNavInfoBanners(route, routeData.selectedRouteDisplayIndex, routeData.routesForDisplay);
 
@@ -6340,6 +6400,8 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
 
         if (window.navLeaveByOffsetMinutes > 0) {
             console.log('[nav:leave-by] updateNavOnOutOfService delegating to recalculateNavForLeaveBy, offset:', window.navLeaveByOffsetMinutes);
+            // Same-offset refresh from a live data tick: recalculate times but
+            // preserve the user's current route selection (no reselectFastest).
             recalculateNavForLeaveBy(window.navLeaveByOffsetMinutes);
             return;
         }
@@ -6564,6 +6626,10 @@ function renderTimelineWaypointsHtml(data) {
         endIsStop = false
     } = data;
 
+    const leaveOffsetMins = data.leaveByOffsetMinutes || window.navLeaveByOffsetMinutes || 0;
+    const leaveBaseMs = data.baseTimestamp || window.navLeaveByBaseTimestamp || Date.now();
+    const leaveTimeStr = new Date(leaveBaseMs + (leaveOffsetMins * 60000)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
     if (route && route.isWalk) {
         const walkMin = (typeof route.journeyMinutes === 'number' && route.journeyMinutes > 0)
             ? route.journeyMinutes
@@ -6593,7 +6659,7 @@ function renderTimelineWaypointsHtml(data) {
                 <div class="waypoint-content" style="margin-left: 0.75rem;">
                     <div class="waypoint-header">
                         <h4 class="waypoint-title" style="user-select: none;">${startName} <i class="fa-duotone fa-solid fa-right" style="--fa-primary-color: var(--theme-link); --fa-secondary-color: color-mix(in srgb, var(--theme-link) 70%, white);"></i></h4>
-                        <div class="waypoint-description">Start here</div>
+                        <div class="waypoint-description">Start here at ${leaveTimeStr}</div>
                     </div>
                 </div>
             </div>
@@ -6673,7 +6739,7 @@ function renderTimelineWaypointsHtml(data) {
             type: startIsStop ? 'stop' : 'building',
             name: startBuilding.name,
             role: 'start_building',
-            description: 'Start here'
+            description: `Start here at ${leaveTimeStr}`
         });
     }
 
