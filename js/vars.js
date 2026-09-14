@@ -67,6 +67,7 @@ const defaultSettings = {
     'toggle-settings-btn-end': false,
     'toggle-hide-direct-feedback': false,
     'toggle-show-buildings': true,
+    'toggle-show-route-arrows': true,
     'toggle-show-alerts-other-campuses': false,
     'toggle-show-out-of-service': false,
     'toggle-show-bus-btns': true,

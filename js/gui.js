@@ -3977,6 +3977,7 @@ const toggleSettings = [
     'toggle-show-arrival-times',
     'toggle-show-bus-speeds',
     'toggle-stops-above-buses',
+    'toggle-show-route-arrows',
     'toggle-eta-tooltips-above-buses',
     'toggle-always-show-second',
     'toggle-show-bike-racks',

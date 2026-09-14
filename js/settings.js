@@ -60,6 +60,11 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-show-route-arrows':
+            settings['toggle-show-route-arrows'] = isChecked;
+            applyRouteArrowsVisibility();
+            break;
+
         case 'toggle-eta-tooltips-above-buses':
             settings['toggle-eta-tooltips-above-buses'] = isChecked;
             if (typeof updateStopsLayerOrder === 'function') {

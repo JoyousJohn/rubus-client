@@ -6,6 +6,59 @@ let previousRoutesWithPolylines = new Set();
 const FORCE_SHOW_SETTING = 'force-show-polylines';
 const FORCE_SHOW_TOGGLE = 'toggle-force-show-polylines';
 
+// Per-route navigation-arrow sprites for route direction arrows.
+// GL `symbol` layers can't render DOM `<i>` tags, so the arrow is drawn
+// directly to a hi-res canvas (FA `fa-solid fa-location-arrow-up` style:
+// rounded triangle with a notched base) and registered via `map.addImage`
+// with `sdf: false`. Each route color gets its own pre-baked sprite (color
+// fill + white halo painted in canvas) — this keeps edges crisp under
+// rotation, unlike treating a small raster as SDF (which caused the halo
+// aliasing). Drawn pointing EAST because line symbols align east at
+// `icon-rotate: 0`. Mirrors the per-color sprite cache in js/bus-layer.js.
+function routeArrowImageName(color) {
+    return 'route-arrow-' + String(color || '#888').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+}
+
+function buildRouteArrowImageData(color) {
+    const S = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = S;
+    canvas.height = S;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, S, S);
+    // `fa-solid` (vs sharp): same silhouette, rounded corners.
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(112, 64);  // tip (east)
+    ctx.lineTo(24, 24);   // base top
+    ctx.lineTo(48, 64);   // base notch
+    ctx.lineTo(24, 104);  // base bottom
+    ctx.closePath();
+    // White halo baked underneath (SDF halo is skipped for crispness).
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 16;
+    ctx.stroke();
+    ctx.fillStyle = color || '#888';
+    ctx.fill();
+    return ctx.getImageData(0, 0, S, S);
+}
+
+// Register (or re-register after a style reload clears images) the sprite
+// for a route color. Returns the image name, or null when the map isn't
+// ready. Safe to call on every polyline add: `hasImage` short-circuits.
+function ensureRouteArrowImage(color) {
+    try {
+        if (!map) return null;
+        const name = routeArrowImageName(color);
+        if (map.hasImage(name)) return name;
+        map.addImage(name, buildRouteArrowImageData(color), { pixelRatio: 2, sdf: false });
+        return name;
+    } catch (e) {
+        console.warn('[RouteArrows] addImage failed:', e);
+        return null;
+    }
+}
+
 // Effective "stops above buses" state for DOM stop markers. The ETA tooltip
 // labels are children of the stop markers, so "Show ETA Tooltips Above
 // Buses" also raises the markers (unavoidable in DOM mode; in WebGL mode
@@ -14,6 +67,35 @@ function stopMarkersAboveBuses() {
     return !!(settings['toggle-stops-above-buses'] || settings['toggle-eta-tooltips-above-buses']);
 }
 window.stopMarkersAboveBuses = stopMarkersAboveBuses;
+
+// Route direction arrows are enabled by default (`toggle-show-route-arrows`).
+// Missing key (older stored settings) counts as on.
+function routeArrowsEnabled() {
+    return settings['toggle-show-route-arrows'] !== false;
+}
+window.routeArrowsEnabled = routeArrowsEnabled;
+
+// Show/hide all route arrow layers per the toggle. When turning back on,
+// missing arrow layers are recreated via each polyline's add() (which also
+// re-registers style-cleared sprites).
+function applyRouteArrowsVisibility() {
+    try {
+        if (!map || !polylines) return;
+        const on = routeArrowsEnabled();
+        for (const route in polylines) {
+            const poly = polylines[route];
+            if (!poly) continue;
+            if (on) poly.addTo(map);
+            const arrowId = poly._mapLibreArrowId;
+            if (arrowId && map.getLayer(arrowId)) {
+                map.setLayoutProperty(arrowId, 'visibility', on ? 'visible' : 'none');
+            }
+        }
+    } catch (e) {
+        console.warn('[RouteArrows] visibility apply failed:', e);
+    }
+}
+window.applyRouteArrowsVisibility = applyRouteArrowsVisibility;
 
 function isForceShowEnabled() {
     return settings && settings[FORCE_SHOW_TOGGLE] === true;
@@ -49,6 +131,8 @@ async function addForceShowPolyline(routeName) {
         opacity: 1,
         smoothFactor: 1,
         underOtherPolylines: routeName === 'helix' || routeName === 'kbs',
+        arrows: true,
+        routeName: routeName,
     };
     const polyline = L.polyline(coordinates, polylineOptions);
     polyline.addTo(map);
@@ -249,6 +333,11 @@ window.createMapLibrePolyline = function(coordinates, options) {
     const routeId = 'poly_' + Math.random().toString(36).substring(2, 9);
     const sourceId = `src_${routeId}`;
     const layerId = `layer_${routeId}`;
+    const arrowLayerId = `${layerId}-arrows`;
+    // Directional arrows are opt-in (route polylines pass `arrows: true`).
+    // Debug/distance lines reuse L.polyline and must stay plain lines.
+    const arrowsEnabled = options.arrows === true;
+    const polyRouteName = options.routeName || null;
     
     let geoCoords = [];
     if (coordinates && coordinates.length) {
@@ -271,6 +360,20 @@ window.createMapLibrePolyline = function(coordinates, options) {
     let currentOpacity = options.opacity !== undefined ? options.opacity : 1;
     let currentWeight = options.weight || 4;
 
+    // Arrows sit at 0.42× line opacity normally, 0.8× when their route is
+    // the active selection (shownRoute pill or focused bus with
+    // hide-other-routes). Hidden lines (opacity 0) keep arrows hidden.
+    function arrowOpacity() {
+        if (polyRouteName) {
+            if (shownRoute && shownRoute === polyRouteName) return currentOpacity * 0.8;
+            if (popupBusName && settings['toggle-hide-other-routes'] &&
+                busData[popupBusName] && busData[popupBusName].route === polyRouteName) {
+                return currentOpacity * 0.8;
+            }
+        }
+        return currentOpacity * 0.42;
+    }
+
     // Layer creation is gated on the style JSON being parsed: Style.addSource /
     // addLayer throw while the style isn't loaded (Style._checkLoaded). The
     // gate is 'style.load' / style._loaded — NOT map.isStyleLoaded() or the map
@@ -282,7 +385,7 @@ window.createMapLibrePolyline = function(coordinates, options) {
     function add() {
         if (!map) return;
         if (removed) return;
-        if (isAdded && map.getSource(sourceId) && map.getLayer(layerId)) return;
+        if (isAdded && map.getSource(sourceId) && map.getLayer(layerId) && (!arrowsEnabled || map.getLayer(arrowLayerId))) return;
         if (!(map.style && map.style._loaded)) return; // retried on style.load
         isAdded = false;
         try {
@@ -301,6 +404,11 @@ window.createMapLibrePolyline = function(coordinates, options) {
                 });
             }
 
+            // Anchor shared by the line and its arrows: both go below ALL
+            // marker layers so polylines stay below stops and buses.
+            // Declared here (not inside the line-only block) so the arrow
+            // block below can reuse it when the line already exists.
+            let beforeId;
             if (!map.getLayer(layerId)) {
                 // Anchor polylines below ALL marker layers. The "Show Stops
                 // Above Buses" toggle inverts the stop/bus stacking order, so
@@ -311,7 +419,6 @@ window.createMapLibrePolyline = function(coordinates, options) {
                 // inserted between buses and stops — above the buses — which
                 // then persisted via force-show settings (polyline at:243).
                 const stopsAbove = !!settings['toggle-stops-above-buses'];
-                let beforeId;
                 if (stopsAbove) {
                     if (map.getLayer('bus-markers-layer')) beforeId = 'bus-markers-layer';
                     else if (map.getLayer('bus-markers-glow')) beforeId = 'bus-markers-glow';
@@ -349,6 +456,51 @@ window.createMapLibrePolyline = function(coordinates, options) {
                     }
                 }, beforeId);
             }
+            if (arrowsEnabled && routeArrowsEnabled() && !map.getLayer(arrowLayerId)) {
+                // Directional arrows along the interpolated line. `symbol-spacing`
+                // is screen-space distance (px) along the rendered LineString, so
+                // uneven route vertices don't matter and longer routes naturally
+                // get more arrows. `icon-keep-upright: false` preserves travel
+                // direction on westbound segments. Same `beforeId` anchor keeps
+                // arrows just above their line but below all marker layers.
+                // When the line already existed `beforeId` is unset, so recompute
+                // the marker anchor instead of appending above the markers.
+                if (!beforeId) {
+                    const stopsAboveRetry = !!settings['toggle-stops-above-buses'];
+                    if (stopsAboveRetry) {
+                        if (map.getLayer('bus-markers-layer')) beforeId = 'bus-markers-layer';
+                        else if (map.getLayer('bus-markers-glow')) beforeId = 'bus-markers-glow';
+                        else if (map.getLayer('stop-markers-layer')) beforeId = 'stop-markers-layer';
+                    } else {
+                        if (map.getLayer('stop-markers-layer')) beforeId = 'stop-markers-layer';
+                        else if (map.getLayer('bus-markers-layer')) beforeId = 'bus-markers-layer';
+                        else if (map.getLayer('bus-markers-glow')) beforeId = 'bus-markers-glow';
+                    }
+                }
+                const arrowBeforeId = (beforeId && map.getLayer(beforeId)) ? beforeId : undefined;
+                // Pre-baked per-color sprite (crisp hi-res raster, halo painted
+                // in canvas). Skipped only when the map isn't ready yet — the
+                // layer still gets added and renders once the image registers.
+                const arrowImage = ensureRouteArrowImage(currentColor) || routeArrowImageName(currentColor);
+                map.addLayer({
+                    id: arrowLayerId,
+                    type: 'symbol',
+                    source: sourceId,
+                    layout: {
+                        'symbol-placement': 'line',
+                        'symbol-spacing': 111,
+                        'icon-image': arrowImage,
+                        'icon-size': 0.45,
+                        'icon-rotation-alignment': 'map',
+                        'icon-keep-upright': false,
+                        'icon-allow-overlap': true,
+                        'icon-ignore-placement': true
+                    },
+                    paint: {
+                        'icon-opacity': arrowOpacity()
+                    }
+                }, arrowBeforeId);
+            }
             isAdded = true;
         } catch (e) {
             console.error('[MapLibre Polyline] failed to add source/layer for', layerId, ':', e);
@@ -385,6 +537,7 @@ window.createMapLibrePolyline = function(coordinates, options) {
             map.off('style.load', onStyleLoad);
             styleLoadBound = false;
         }
+        if (map.getLayer(arrowLayerId)) map.removeLayer(arrowLayerId);
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
         isAdded = false;
@@ -417,6 +570,8 @@ window.createMapLibrePolyline = function(coordinates, options) {
     const wrapper = {
         _latlngs: coordinates,
         _mapLibreLayerId: layerId,
+        _mapLibreArrowId: arrowLayerId,
+        _routeName: polyRouteName,
         isAdded: function() { return isAdded && !!(map && map.getLayer && map.getLayer(layerId)); },
         addTo: function(targetMap) {
             ensureAdded();
@@ -438,6 +593,14 @@ window.createMapLibrePolyline = function(coordinates, options) {
                 map.setPaintProperty(layerId, 'line-color', currentColor);
                 map.setPaintProperty(layerId, 'line-opacity', currentOpacity);
                 map.setPaintProperty(layerId, 'line-width', currentWeight);
+            }
+            if (arrowsEnabled && map && map.getLayer(arrowLayerId)) {
+                // Pre-baked sprites: a color change means swapping the image,
+                // not tinting (sdf is off for crispness).
+                if (newStyle.color) {
+                    map.setLayoutProperty(arrowLayerId, 'icon-image', ensureRouteArrowImage(currentColor) || routeArrowImageName(currentColor));
+                }
+                map.setPaintProperty(arrowLayerId, 'icon-opacity', arrowOpacity());
             }
             return wrapper;
         },
@@ -847,6 +1010,8 @@ async function setPolylines(activeRoutes, opts = {}) {
             opacity: targetOpacity,
             smoothFactor: 1,
             underOtherPolylines: routeName === 'helix' || routeName === 'kbs',
+            arrows: true,
+            routeName: routeName,
         });
 
         polyline.addTo(map);
@@ -975,6 +1140,8 @@ async function addPolylineForRoute(routeName) {
             opacity: targetOpacity,
             smoothFactor: 1,
             underOtherPolylines: routeName === 'helix' || routeName === 'kbs',
+            arrows: true,
+            routeName: routeName,
         };
 
         const polyline = L.polyline(coordinates, polylineOptions);

@@ -106,6 +106,8 @@ window.initMap = function() {
                     for (const r in polylines) {
                         const lid = polylines[r] && polylines[r]._mapLibreLayerId;
                         if (lid && map.getLayer(lid)) polyIds.push(lid);
+                        const arrowId = polylines[r] && polylines[r]._mapLibreArrowId;
+                        if (arrowId && map.getLayer(arrowId)) polyIds.push(arrowId);
                     }
                     if (polyIds.length) {
                         const idx = styleLayers.findIndex(l => polyIds.includes(l.id));
@@ -128,6 +130,10 @@ window.initMap = function() {
                     const lid = poly && poly._mapLibreLayerId;
                     if (lid && map.getLayer(lid) && map.getLayer(lowestMarkerId)) {
                         map.moveLayer(lid, lowestMarkerId);
+                    }
+                    const arrowId = poly && poly._mapLibreArrowId;
+                    if (arrowId && map.getLayer(arrowId) && map.getLayer(lowestMarkerId)) {
+                        map.moveLayer(arrowId, lowestMarkerId);
                     }
                 }
             }
