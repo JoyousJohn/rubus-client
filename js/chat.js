@@ -329,6 +329,7 @@ function detachChatViewportListeners() {
 }
 
 function updateChatInitialMessage() {
+    if (window.chatHistory && window.chatHistory.length > 0) return;
     const baseMsg = 'I can help with navigation, routes, stops, and schedules.';
     let busCount = 0;
     let routeCount = 0;
@@ -355,11 +356,16 @@ function updateChatInitialMessage() {
     
     const $firstBotMsg = $('.chat-ui-messages .chat-initial-prompt').length
         ? $('.chat-ui-messages .chat-initial-prompt').first()
-        : $('.chat-ui-messages .chat-message.bot').first();
-    if ($firstBotMsg.length) {
+        : $('.chat-ui-messages .chat-message.bot:not(.chat-beta-notice)').first();
+    if ($firstBotMsg.length && $firstBotMsg.text() !== text) {
         $firstBotMsg.text(text);
     }
 }
+window.updateChatInitialMessage = updateChatInitialMessage;
+
+document.addEventListener('rubus-bus-data-loaded', function() {
+    updateChatInitialMessage();
+});
 
 window.updateChatButtonVisibility = function() {
     const campus = (typeof settings !== 'undefined' && settings && settings['campus']) || 'nb';
@@ -1469,9 +1475,6 @@ $(document).ready(function() {
     const path = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
     const urlParams = new URLSearchParams(window.location.search);
     if (path === '/chat' || path.endsWith('/chat') || window.location.hash === '#chat' || urlParams.has('chat')) {
-        // Wait slightly to ensure everything is initialized, then open the chat UI
-        setTimeout(() => {
-            $('.chat-btn').trigger('click');
-        }, 100);
+        $('.chat-btn').trigger('click');
     }
 });
