@@ -1,5 +1,6 @@
 // js/map-info-boxes.js - extracted verbatim from js/map.js
 function hideInfoBoxes(instantly_hide) {
+    stopFollowBus();
     searchReentry = false;
     if (typeof searchBackActive !== 'undefined') searchBackActive = false;
     navReentry = false;

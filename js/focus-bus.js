@@ -655,6 +655,8 @@ let followedBusName = null;
 let followAnchorPoint = null;
 let followFrameId = null;
 let followDragHandler = null;
+let followMoveEndHandler = null;
+let followContainerHandlers = null;
 
 function stopFollowBus() {
     followedBusName = null;
@@ -665,7 +667,20 @@ function stopFollowBus() {
     }
     if (followDragHandler) {
         map.off('dragstart', followDragHandler);
+        map.off('zoomstart', followDragHandler);
+        map.off('rotatestart', followDragHandler);
+        map.off('pitchstart', followDragHandler);
         followDragHandler = null;
+    }
+    if (followMoveEndHandler) {
+        map.off('moveend', followMoveEndHandler);
+        followMoveEndHandler = null;
+    }
+    if (followContainerHandlers) {
+        const c = map.getContainer();
+        c.removeEventListener('mousedown', followContainerHandlers.mousedown);
+        c.removeEventListener('touchstart', followContainerHandlers.touchstart);
+        followContainerHandlers = null;
     }
 }
 
@@ -703,13 +718,17 @@ function followTick() {
 function startFollowBus(busName) {
     stopFollowBus();
     followedBusName = busName;
-    // dragstart is user-only (programmatic pans fire movestart, not this),
-    // so the loop's own panBy calls can't cancel it.
-    followDragHandler = function() { stopFollowBus(); };
+    const container = map.getContainer();
+    const earlyStop = () => stopFollowBus();
+    container.addEventListener('mousedown', earlyStop, { once: true });
+    container.addEventListener('touchstart', earlyStop, { once: true, passive: true });
+    followContainerHandlers = { mousedown: earlyStop, touchstart: earlyStop };
+    followDragHandler = () => stopFollowBus();
     map.on('dragstart', followDragHandler);
-    // Anchor once the flight settles; a stale listener from an interrupted
-    // flight self-invalidates on the name check below.
-    map.once('moveend', function() {
+    map.on('zoomstart', followDragHandler);
+    map.on('rotatestart', followDragHandler);
+    map.on('pitchstart', followDragHandler);
+    followMoveEndHandler = function() {
         if (followedBusName !== busName) return;
         const marker = busMarkers[busName];
         const bus = busData[busName];
@@ -719,8 +738,11 @@ function startFollowBus(busName) {
         }
         let ll = marker.getLatLng() || { lat: Number(bus.lat), lng: Number(bus.long) };
         followAnchorPoint = map.latLngToContainerPoint([ll.lat, ll.lng]);
+        map.off('moveend', followMoveEndHandler);
+        followMoveEndHandler = null;
         followFrameId = requestAnimationFrame(followTick);
-    });
+    };
+    map.on('moveend', followMoveEndHandler);
 }
 
 function flyToBus(busName) {

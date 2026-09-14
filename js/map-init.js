@@ -224,11 +224,13 @@ window.initMap = function() {
     map.on('dragstart', function() {
         mapDragged = true;
 
-        if (isDesktop && !isTouchDevice) {
+        const isFollowing = !!followedBusName;
+
+        if (isDesktop && !isTouchDevice && !isFollowing) {
             return;
         }
 
-        if (isTransitioning || (isDesktop && !isTouchDevice) || isFittingBounds || returningToSavedView) {
+        if (!isFollowing && (isTransitioning || (isDesktop && !isTouchDevice) || isFittingBounds || returningToSavedView)) {
             return; 
 
         } else {
