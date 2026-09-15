@@ -4943,6 +4943,12 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 navRouteSession.routeData.selectedRouteDisplayIndex = newRouteIndex;
             }
 
+            // The wheel shows the SELECTED route's arrivals: refresh its rows
+            // when the selection changes so "arrive X · Ym" tracks the pill.
+            if (isNavWheelVisible()) {
+                renderNavTimeWheelItems();
+            }
+
             const routeData = navRouteSession ? navRouteSession.routeData : null;
             if (!routeData) return;
 
@@ -5517,11 +5523,14 @@ function getNavWheelArrivalContext() {
 }
 
 // Arrival info for `offset` on the currently selected route: display text plus
-// trip length in minutes (0 when unknown). computeRouteEndTime covers live
+// trip length in minutes (0 when unknown). computeRouteEndMs covers live
 // routes; the journey estimate covers the rest (and supplies the duration).
+// When live, the trip length is DERIVED from the same arrival timestamp the
+// row displays, so "arrive X · Ym" and the live pill's Y agree instead of
+// drifting apart.
 function computeNavWheelArrival(ctx, offset) {
     if (!ctx) return { text: '--', journeyMin: 0 };
-    const end = computeRouteEndTime({
+    const endMs = computeRouteEndMs({
         route: ctx.route,
         startStop: ctx.startStop,
         transferStop: ctx.transferStop,
@@ -5532,8 +5541,12 @@ function computeNavWheelArrival(ctx, offset) {
         leaveByOffsetMinutes: offset,
         baseTimestamp: ctx.base
     });
+    const end = endMs === null ? null : new Date(endMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     let journeyMin = 0;
-    if (ctx.route.isWalk) {
+    if (endMs !== null) {
+        const rawTrip = (endMs - (ctx.base + (offset * 60000))) / 60000;
+        journeyMin = rawTrip > 0 ? Math.max(1, Math.round(rawTrip)) : 0;
+    } else if (ctx.route.isWalk) {
         journeyMin = (typeof ctx.route.journeyMinutes === 'number' && ctx.route.journeyMinutes > 0)
             ? ctx.route.journeyMinutes
             : (ctx.route.walkMinutes || 0);
@@ -5569,6 +5582,15 @@ function renderNavTimeWheelItems() {
     track.innerHTML = html;
 }
 window.renderNavTimeWheelItems = renderNavTimeWheelItems;
+
+// True while the leave-by/arrive wheel is on screen. Used by the live ETA tick
+// and route selection to refresh rows without waste (render is cheap, but the
+// track only exists meaningfully inside the open wheel).
+function isNavWheelVisible() {
+    const wheel = document.getElementById('nav-time-wheel');
+    return !!wheel && !wheel.classList.contains('none');
+}
+window.isNavWheelVisible = isNavWheelVisible;
 
 function updateWheelPosition(continuousOffset, animate) {
     const track = document.getElementById('nav-time-wheel-track');
@@ -6287,6 +6309,10 @@ function recalculateNavForLeaveBy(offsetMinutes, options) {
         $('.nav-time-row').removeClass('none');
 
         renderNavRouteSelector(computedEntries, selIdx, { focusWalk: reselectFastest });
+        if (isNavWheelVisible()) {
+            renderNavTimeWheelItems();
+            updateWheelPosition(window.navLeaveByOffsetMinutes || 0, false);
+        }
 
         if (computedEntries.length > 0 && rd.route) {
             const curRoute = rd.route;
@@ -6339,8 +6365,11 @@ function getRouteRenderKey(route, startStop, transferStop, endStop) {
 }
 window.getRouteRenderKey = getRouteRenderKey;
 
-// Calculate expected arrival time at the route destination (arrival at alighting stop + walk to destination)
-function computeRouteEndTime(options) {
+// Arrival timestamp (ms) for the given departure offset, or null when no live
+// bus/route covers it. Shared by computeRouteEndTime (display text) and the
+// nav time wheel (which derives row trip length from this same live result so
+// the "· Xm" agrees with what a live pill shows).
+function computeRouteEndMs(options) {
     if (!options) return null;
     const {
         route,
@@ -6368,8 +6397,7 @@ function computeRouteEndTime(options) {
         const walkMin = (typeof route.journeyMinutes === 'number' && route.journeyMinutes > 0)
             ? route.journeyMinutes
             : ((route.walkMinutes) || (startWalkDistance && typeof startWalkDistance.feet === 'number' ? Math.ceil(startWalkDistance.feet / 220) : (typeof startWalkDistance === 'number' ? Math.ceil(startWalkDistance / 220) : 0)));
-        const finalEtaTimestampMs = baseTime + (offsetMins * 60 * 1000) + (walkMin * 60 * 1000);
-        return new Date(finalEtaTimestampMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        return baseTime + (offsetMins * 60 * 1000) + (walkMin * 60 * 1000);
     }
 
     if (!route || !startStop || !endStop) return null;
@@ -6455,8 +6483,15 @@ function computeRouteEndTime(options) {
     }
 
     const now = Date.now();
-    const finalEtaTimestampMs = now + (alightingEtaSec * 1000) + (endWalkMin * 60 * 1000);
-    return new Date(finalEtaTimestampMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return now + (alightingEtaSec * 1000) + (endWalkMin * 60 * 1000);
+}
+window.computeRouteEndMs = computeRouteEndMs;
+
+// Calculate expected arrival time at the route destination (arrival at alighting stop + walk to destination)
+function computeRouteEndTime(options) {
+    const ms = computeRouteEndMs(options);
+    if (ms === null) return null;
+    return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 window.computeRouteEndTime = computeRouteEndTime;
 
@@ -6850,6 +6885,12 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
                 renderNavRouteSelector(routesForDisplay, routeData.selectedRouteDisplayIndex);
                 if (typeof updateNavInfoBanners === 'function') {
                     updateNavInfoBanners(currentRoute, routeData.selectedRouteDisplayIndex, routesForDisplay);
+                }
+                // Live ETAs moved: refresh the open wheel's arrivals + trip
+                // lengths so they track the pills instead of going stale.
+                if (isNavWheelVisible()) {
+                    renderNavTimeWheelItems();
+                    updateWheelPosition(window.navLeaveByOffsetMinutes || 0, false);
                 }
                 if (routesForDisplay && routesForDisplay.length > 0) {
                     const earliestArrival = routesForDisplay[0].arrivalTimestamp || ((window.navLeaveByBaseTimestamp || Date.now()) + ((routesForDisplay[0].journeyMinutes || routesForDisplay[0].walkMinutes || 0) * 60000));
