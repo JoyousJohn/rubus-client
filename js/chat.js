@@ -1,42 +1,143 @@
-const exampleChats = [
-    {
-        'q': 'Where does the LX stop?',
-        'a': 'The LX route stops at the College Avenue Student Center, The Yard, Student Activities Center, Livingston Plaza, Livingston Student Center, and Quads.'
-    }, {
-        'q': 'How do I get from The Yard to SoCam South?',
-        'a': 'To get from The Yard to SoCam Apts (SB), you can take the EE route, which stops at both The Yard and SoCam Apts (SB).'
-    }, {
-        'q': 'When does the H start running?',
-        'a': 'The H route starts running at 7:00 AM.'
-    }, {
-        'q': 'What do I do if I need to get somewhere late at night after buses stopped running?',
-        'a': 'You can use the Knight Mover on-demand late-night service, which operates from 3:00 AM to 7:00 AM, Monday through Thursday. You can call them at 732-932-RIDE (7433), but be aware that they stop accepting calls at 5:45 AM.'
-    }, {
-        'q': 'How do I get from Busch to Cook if the REXB alreaddy stopped running?',
-        'a': 'If the REXB route has already stopped running, you can take the A or H route from Busch to College Avenue, then transfer to the EE or F route to get to Cook.'
-    }, {
-        'q': 'How does the EE differ from the F?',
-        'a': 'The EE route differs from the F route in that it also stops at SoCam Apts in downtown New Brunswick, whereas the F route does not. Additionally, the EE route stops at more locations on the Cook campus, including Red Oak Lane, Lipman Hall, Biel Road, Henderson, and Gibbons, whereas the F route only stops at College Hall and Lipman Hall.'
-    }, {
-        'q': 'Do I need a pass or ticket to ride the bus?',
-        'a': 'No, you do not need a pass or ticket to ride the Rutgers buses. The buses are completely free for all Rutgers students, so you can just board the bus without needing any kind of payment or pass.'
-    }, {
-        'q': 'What are the peak hours for bus service?',
-        'a': 'The peak hours for bus service are typically 8:00-10:00 AM and 4:00-7:00 PM, when buses are busiest and you can expect crowds and possible overflows. During these times, buses usually come every 5-10 minutes.'
-    }, {
-        'q': 'How do I get from one campus to another?',
-        'a': 'To get from one campus to another, you can take a Rutgers bus. The specific route you take will depend on which campuses you are traveling between. For example, to get from College Avenue to Busch, you can take the A or H route. To get from College Avenue to Livingston, you can take the LX route. To get from Busch to Livingston, you can take the B route. To get from College Ave to Cook or Douglass, you can take the EE or F route. If you are not sure which route to take, I can help you figure it out. Which campuses are you trying to travel between?'
-    }, {
-        'q': 'What routes connect the different campuses?',
-        'a': 'The A and H routes connect College Avenue to Busch, the LX route connects College Avenue to Livingston, the B route connects Busch to Livingston, and the EE and F routes connect College Avenue to Cook/Douglass, while the REXB and REXL routes provide additional connections between Busch, Livingston, and Cook/Douglass campuses.'
-    }, {
-        'q': 'What are the event shuttles and when are they used?',
-        'a': 'The event shuttles are special buses that are provided for big events, such as commencement and football games. They are used to transport students and attendees to and from these events. For example, during football games, special football shuttles are available, starting a few hours before the game and running until at least 2 hours after the game.'
-    }, {
-        'q': 'What is RUBus.live?',
-        'a': 'RUBus.live is the leading bus tracking application for the Rutgers University bus network in accuracy. It features extremely precise ETAs, many UI options to view bus data, and provides a better user experience than the Passio GO! app.'
+// Starter suggestion templates with typed slots. Taps submit live chat requests;
+// there are no pre-generated answers. Curated literals only (no dependency on
+// lib/stops.js load order), so every slot resolves to a recognizable place the
+// backend can resolve. Deliberately excludes vague general-info questions.
+const CHAT_STARTER_PLACES = [
+    { n: 'The Yard', c: 'ca' },
+    { n: 'Livingston Student Center', c: 'livi' },
+    { n: 'Hill Center', c: 'busch' },
+    { n: 'College Avenue Student Center', c: 'ca' },
+    { n: 'Busch Student Center', c: 'busch' },
+    { n: 'College Hall', c: 'cook' },
+    { n: 'Red Oak Lane', c: 'cook' },
+    { n: 'Quads', c: 'livi' },
+    { n: 'Allison Road Classrooms', c: 'busch' },
+    { n: 'Rutgers Cinema', c: 'livi' },
+    { n: 'SoCam Apts', c: 'downtown' },
+    { n: "Jersey Mike's Arena", c: 'livi' }
+];
+
+const CHAT_STARTER_STOPS = [
+    'Livingston Student Center',
+    'The Yard',
+    'College Avenue Student Center',
+    'Hill Center',
+    'Busch Student Center',
+    'Allison Road Classrooms',
+    'College Hall',
+    'Red Oak Lane',
+    'SoCam Apts',
+    'Quads'
+];
+
+const CHAT_STARTER_BUILDINGS = [
+    'Rutgers Cinema',
+    'Old Queens',
+    'College Hall',
+    'Hill Center',
+    'Livingston Student Center',
+    'Busch Student Center',
+    'Werblin Recreation Center',
+    "Jersey Mike's Arena"
+];
+
+const CHAT_STARTER_CAMPUSES = ['Busch', 'Livingston', 'College Avenue', 'Cook/Douglass'];
+
+const CHAT_WEEKDAY_ROUTES = ['LX', 'EE', 'A', 'H', 'B', 'F', 'C', 'REXB', 'REXL', 'Helix', 'KBS'];
+const CHAT_WEEKEND_ROUTES = ['Weekend 1', 'Weekend 2', 'Helix'];
+
+const CHAT_STARTER_TEMPLATES = [
+    { cat: 'nav', text: 'How do I get from {FROM} to {TO}?' },
+    { cat: 'nav', text: 'Fastest bus from {FROM} to {TO}?' },
+    { cat: 'nav', text: 'How far is {FROM} from {TO}?' },
+    { cat: 'routes', text: 'Where does the {ROUTE} stop?' },
+    { cat: 'routes', text: 'What routes stop at {STOP}?' },
+    { cat: 'routes', text: 'How does the {ROUTE_A} differ from the {ROUTE_B}?' },
+    { cat: 'routes', text: 'What bus routes run today?' },
+    { cat: 'live', text: 'When is the next bus at {STOP}?' },
+    { cat: 'live', text: 'Where are the {ROUTE} buses right now?' },
+    { cat: 'live', text: 'What buses are at {STOP} right now?' },
+    { cat: 'live', text: 'How long does the {ROUTE} loop take?' },
+    { cat: 'live', text: 'What buses are running right now?' },
+    { cat: 'live', text: 'Which buses just started running?' },
+    { cat: 'info', text: 'When does the {ROUTE} run?' },
+    { cat: 'info', text: 'Where is {BUILDING}?' },
+    { cat: 'info', text: 'What parking is near {PLACE}?' },
+    { cat: 'info', text: 'What parking lots are on {CAMPUS}?' },
+    { cat: 'info', text: 'How long do buses stop at {STOP}?' },
+    { cat: 'info', text: 'Which stops are near 5 Sicard Street?' },
+    { cat: 'info', text: 'Where does the Helix shuttle stop?' }
+];
+
+function chatStarterIsWeekend() {
+    const day = new Date().getDay();
+    return day === 0 || day === 6;
+}
+
+function chatStarterRoutePool() {
+    return chatStarterIsWeekend() ? CHAT_WEEKEND_ROUTES : CHAT_WEEKDAY_ROUTES;
+}
+
+function chatPick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function chatPickFromTo(requireDifferentCampus) {
+    const from = chatPick(CHAT_STARTER_PLACES);
+    let to = chatPick(CHAT_STARTER_PLACES);
+    let guard = 0;
+    while ((to.n === from.n || (requireDifferentCampus && to.c === from.c)) && guard++ < 20) {
+        to = chatPick(CHAT_STARTER_PLACES);
     }
-]
+    return [from.n, to.n];
+}
+
+function chatFillStarter(template) {
+    let q = template.text;
+    if (q.includes('{FROM}') || q.includes('{TO}')) {
+        const needsDifferentCampus = template.cat === 'nav';
+        const [from, to] = chatPickFromTo(needsDifferentCampus);
+        q = q.replace('{FROM}', from).replace('{TO}', to);
+    }
+    if (q.includes('{ROUTE_A}')) {
+        const pool = chatStarterRoutePool();
+        const a = chatPick(pool);
+        let b = chatPick(pool);
+        let guard = 0;
+        while (b === a && guard++ < 10) b = chatPick(pool);
+        q = q.replace('{ROUTE_A}', a).replace('{ROUTE_B}', b);
+    } else if (q.includes('{ROUTE}')) {
+        q = q.replace('{ROUTE}', chatPick(chatStarterRoutePool()));
+    }
+    if (q.includes('{STOP}')) q = q.replace('{STOP}', chatPick(CHAT_STARTER_STOPS));
+    if (q.includes('{BUILDING}')) q = q.replace('{BUILDING}', chatPick(CHAT_STARTER_BUILDINGS));
+    if (q.includes('{PLACE}')) q = q.replace('{PLACE}', chatPick(CHAT_STARTER_PLACES).n);
+    if (q.includes('{CAMPUS}')) q = q.replace('{CAMPUS}', chatPick(CHAT_STARTER_CAMPUSES));
+    return q;
+}
+
+// Stratified sample: 2 nav + 3 live + 2 routes + 2 info = 9 chips covering
+// navigation, live tracking, network, and place/schedule in every open.
+function buildChatStarterQuestions() {
+    const byCat = { nav: [], live: [], routes: [], info: [] };
+    CHAT_STARTER_TEMPLATES.forEach(t => byCat[t.cat].push(t));
+    const want = { nav: 2, live: 3, routes: 2, info: 2 };
+    const out = [];
+    const seen = new Set();
+    Object.keys(want).forEach(cat => {
+        const pool = [...byCat[cat]].sort(() => 0.5 - Math.random());
+        let n = 0;
+        for (const t of pool) {
+            if (n >= want[cat]) break;
+            const q = chatFillStarter(t);
+            if (seen.has(q)) continue;
+            seen.add(q);
+            out.push(q);
+            n++;
+        }
+    });
+    return out;
+}
 
 const readableRouteNames = {
     'weekend 1': 'wknd1',
@@ -204,10 +305,21 @@ function colorRouteNames(text) {
     
     const sorted = [...knownRoutes].sort((a, b) => b.length - a.length);
     const escaped = sorted.map(r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const routeRegex = new RegExp(`\\b(${escaped.join('|')})\\b(?:\\s+(route\\b))?`, 'gi');
+    // A lone letter after "Building" is a building label ("Building B"), not
+    // a route: exclude exactly that case, color everything else as before.
+    const routeRegex = new RegExp(`(?<!\\bbuilding\\s)\\b(${escaped.join('|')})\\b(?:\\s+(route\\b))?`, 'gi');
     
     const colorLine = (line) => {
-        return line.replace(/(^|>)([^<]*?)(?=<|$)/g, (match, before, content) => {
+        // Sentence-initial "A" is the article, not route A — unless it heads
+        // a route list ("A, B", "A and H"). Stash it behind a digit-only
+        // placeholder the coloring passes cannot match, restore afterwards.
+        // Bold "**A**" never matches (line starts with "<"), so routes stay.
+        const stashedA = [];
+        const guarded = line.replace(/(^|[.!?]|<\/(?:div|li|p|ul)>|<li>|<br\s*\/?>|:)(\s*)(A)\b(?!\s*(?:,|and|or|&|\/)\s*[ABCFH]\b)/g, (m, pre, ws, a) => {
+            stashedA.push(a);
+            return `${pre}${ws}\0${stashedA.length - 1}\0`;
+        });
+        const colored = guarded.replace(/(^|>)([^<]*?)(?=<|$)/g, (match, before, content) => {
             if (!content) return match;
             
             let processed = content;
@@ -227,14 +339,14 @@ function colorRouteNames(text) {
                     return `<span style="color: #65acf2;">${matchedStr}</span>`;
                 });
             }
-            
+
             processed = processed.replace(readableRegex, (matchStr, name) => {
                 const key = readableRouteNames[name.toLowerCase()];
                 const color = colorMappings[key];
                 if (color) return `<span style="color: ${escColor(color)}">${esc(matchStr)}</span>`;
                 return esc(matchStr);
             });
-            
+
             processed = processed.replace(routeRegex, (matchStr, name, routeWord) => {
                 if (name === name.toLowerCase()) return esc(matchStr);
                 if (name.toLowerCase() === 'all' && !routeWord) {
@@ -249,9 +361,10 @@ function colorRouteNames(text) {
                 }
                 return esc(matchStr);
             });
-            
+
             return before + processed;
         });
+        return colored.replace(/\0(\d+)\0/g, (m, i) => stashedA[+i]);
     };
 
     const lines = text.split('\n');
@@ -412,44 +525,24 @@ $(document).on('click', '.chat-btn', function() {
             $('<div class="chat-recs-row"></div>'),
             $('<div class="chat-recs-row"></div>')
         ];
-        const shuffled = [...exampleChats].sort(() => 0.5 - Math.random());
-        shuffled.forEach((example, idx) => {
-            const $rec = $('<button class="chat-suggestion-chip" type="button"></button>').text(example.q);
+        const questions = buildChatStarterQuestions();
+        questions.forEach((q, idx) => {
+            const $rec = $('<button class="chat-suggestion-chip" type="button"></button>').text(q);
             $rec.click(function(e) {
                 if (chatRecsJustDragged) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     return;
                 }
-                $('.chat-recs').hide();
-                const $messages = $('.chat-ui-messages');
-                const $userMsg = $(`<div class="chat-message user">${$('<div>').text(example.q).html()}</div>`);
-                $messages.append($userMsg);
-                window.chatHistory.push({ role: 'user', content: example.q });
-                capturePostHog('chat_message_sent', {
-                    message: example.q,
-                    message_length: example.q.length,
-                    history_length: window.chatHistory.length,
+                capturePostHog('chat_suggestion_clicked', {
                     model: settings['chatbot-model'] || 'deepseek',
                     provider: settings['chatbot-provider'] || 'auto',
-                    is_example: true,
                     campus: settings['campus'] || 'nb'
                 });
                 sa_event('btn_press', { btn: 'chat_example_selected' });
-                const $botMsg = $('<div class="chat-message bot loading">Thinking...</div>');
-                $messages.append($botMsg);
-                scrollChatToUserMessageTop($messages, $userMsg);
-                setTimeout(() => {
-                    const processedExample = colorRouteNames(parseMarkdown(example.a));
-                    $botMsg.html(processedExample).removeClass('loading');
-                    $messages.append($botMsg);
-                    window.chatHistory.push({ role: 'assistant', content: example.a });  // Add bot response to history
-                    if (chatAutoScrollSticky) {
-                        smoothScrollChatToBottom($messages);
-                    } else {
-                        $('.chat-scroll-bottom-btn').addClass('has-new');
-                    }
-                }, 1333);
+                $('.chat-recs').hide();
+                $('.chat-ui-input').val(q);
+                $('.chat-ui-input-bar').trigger('submit');
             });
             $rows[idx % 3].append($rec);
         });
@@ -926,6 +1019,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     function formatModelName(rawModel) {
         if (!rawModel) return '';
         const m = rawModel.toLowerCase();
+        if (m === 'ling-fin' || m.includes('fin')) return 'Ling Fin';
         if (m === 'ling' || m.includes('ling')) return 'Ling';
         if (m === 'deepseek' || m.includes('deepseek')) return 'DeepSeek';
         if (m === 'solar' || m.includes('solar')) return 'Solar';
