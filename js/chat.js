@@ -501,8 +501,18 @@ $(function() {
     window.updateChatButtonVisibility();
 });
 
+// One session id per conversation (fresh when history is empty) so the
+// server can link a client's turns into a replayable thread in Mongo.
+function ensureChatSessionId() {
+    if (!window.chatHistory || window.chatHistory.length === 0 || !window.chatSessionId) {
+        window.chatSessionId = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    }
+    return window.chatSessionId;
+}
+
 // Show chat UI when chat button is clicked
 $(document).on('click', '.chat-btn', function() {
+  ensureChatSessionId();
   capturePostHog('chat_opened', {
       campus: settings['campus'] || 'nb',
       model: settings['chatbot-model'] || defaultSettings['chatbot-model'],
@@ -1438,7 +1448,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         // backend can attribute chat logs per user without any login.
         let chatUid = null;
         try { chatUid = localStorage.getItem('uid'); } catch (e) { chatUid = null; }
-        const payload = JSON.stringify({ user_query: msg, conversation_history: historyToSend, model: selectedModel, provider: selectedProvider, user_id: chatUid });
+        const payload = JSON.stringify({ user_query: msg, conversation_history: historyToSend, model: selectedModel, provider: selectedProvider, user_id: chatUid, session_id: window.chatSessionId || null });
 
         // 1. If on localhost, try the local backend first
         if (isLocalDev) {
@@ -1470,7 +1480,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
 
         // 3. If remote returns 405 Method Not Allowed or 501, fallback to GET
         if (remoteResp.status === 405 || remoteResp.status === 501) {
-            const getUrl = `${remoteEndpoint}?user_query=${encodeURIComponent(msg)}&conversation_history=${encodeURIComponent(JSON.stringify(historyToSend))}&model=${encodeURIComponent(selectedModel)}&user_id=${encodeURIComponent(chatUid || '')}`;
+            const getUrl = `${remoteEndpoint}?user_query=${encodeURIComponent(msg)}&conversation_history=${encodeURIComponent(JSON.stringify(historyToSend))}&model=${encodeURIComponent(selectedModel)}&user_id=${encodeURIComponent(chatUid || '')}&session_id=${encodeURIComponent(window.chatSessionId || '')}`;
             remoteResp = await fetch(getUrl, {
                 method: 'GET',
                 headers: { 'Accept': 'text/event-stream' },
