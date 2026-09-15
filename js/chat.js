@@ -505,7 +505,7 @@ $(function() {
 $(document).on('click', '.chat-btn', function() {
   capturePostHog('chat_opened', {
       campus: settings['campus'] || 'nb',
-      model: settings['chatbot-model'] || 'ling',
+      model: settings['chatbot-model'] || defaultSettings['chatbot-model'],
       provider: settings['chatbot-provider'] || 'auto'
   });
   sa_event('btn_press', { btn: 'chat_open' });
@@ -539,7 +539,7 @@ $(document).on('click', '.chat-btn', function() {
                     return;
                 }
                 capturePostHog('chat_suggestion_clicked', {
-                    model: settings['chatbot-model'] || 'ling',
+                    model: settings['chatbot-model'] || defaultSettings['chatbot-model'],
                     provider: settings['chatbot-provider'] || 'auto',
                     campus: settings['campus'] || 'nb'
                 });
@@ -1006,7 +1006,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         message: msg,
         message_length: msg.length,
         history_length: window.chatHistory.length,
-        model: settings['chatbot-model'] || 'ling',
+        model: settings['chatbot-model'] || defaultSettings['chatbot-model'],
         provider: settings['chatbot-provider'] || 'auto',
         is_example: false,
         campus: settings['campus'] || 'nb'
@@ -1025,7 +1025,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     let $currentThinkingBox = null;
     let $botMeta = null;
 
-    const selectedModel = settings['chatbot-model'] || 'ling';
+    const selectedModel = settings['chatbot-model'] || defaultSettings['chatbot-model'];
     const selectedProvider = settings['chatbot-provider'] || 'auto';
     let currentModel = selectedModel;
     let currentProvider = selectedProvider;
