@@ -4247,8 +4247,7 @@ function renderChatbotProviderOptions() {
         settings['chatbot-provider'] = selectedProvider;
     }
     $container.empty();
-    // One column per provider rather than a fixed 3-column grid.
-    $container.css('grid-template-columns', `repeat(${Math.max(providers.length, 1)}, 1fr)`);
+    // Horizontal scroll row (see #chatbot-provider-options CSS), not grid columns.
     providers.forEach(provider => {
         $('<div>')
             .addClass('settings-option')

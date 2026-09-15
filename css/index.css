@@ -2775,6 +2775,19 @@ html, body {
     user-select: none;
 }
 
+/* Chatbot providers vary in count and label width: horizontal scroll row
+ * instead of squeezed grid columns. ID+class beats the grid utilities. */
+#chatbot-provider-options.settings-options {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+#chatbot-provider-options .settings-option {
+    flex: 1 0 auto;
+    white-space: nowrap;
+}
+
 .force-show-dependent.disabled, .offscreen-indicators-dependent.disabled {
     opacity: 0.4;
 }
