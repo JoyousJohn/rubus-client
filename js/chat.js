@@ -1016,36 +1016,36 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     let currentModel = selectedModel;
     let currentProvider = selectedProvider;
 
-    function formatModelName(rawModel) {
-        if (!rawModel) return '';
-        const m = rawModel.toLowerCase();
-        if (m === 'ling-fin' || m.includes('fin')) return 'Ling Fin';
-        if (m === 'ling' || m.includes('ling')) return 'Ling';
-        if (m === 'deepseek' || m.includes('deepseek')) return 'DeepSeek';
-        if (m === 'solar' || m.includes('solar')) return 'Solar';
-        if (m === 'mercury' || m.includes('mercury')) return 'Mercury';
-        if (m === 'bonsai' || m.includes('bonsai')) return 'Bonsai';
-        return rawModel.split('/').pop();
+    // Display labels come from the server: /chat/models serves key->label
+    // pairs (also used for the settings buttons), and stream events already
+    // carry display-ready model/provider strings. No local name maps.
+    function chatCatalogLabel(kind, key) {
+        if (kind === 'provider' && String(key || '').trim().toLowerCase() === 'auto') return '';
+        try {
+            const models = (chatbotModelCatalog && chatbotModelCatalog.models) || [];
+            if (kind === 'model') {
+                const found = models.find((entry) => entry && entry.key === key);
+                return (found && found.label) || '';
+            }
+            for (const model of models) {
+                const found = ((model && model.providers) || []).find((entry) => entry && entry.key === key);
+                if (found && found.label) return found.label;
+            }
+        } catch (e) {}
+        return '';
     }
 
-    function formatProviderName(rawProvider) {
-        if (!rawProvider || rawProvider === 'auto') return '';
-        const p = rawProvider.trim();
-        if (p.toLowerCase() === 'deepinfra') return 'DeepInfra';
-        if (p.toLowerCase() === 'novita') return 'Novita';
-        if (p.toLowerCase() === 'together') return 'Together';
-        if (p.toLowerCase() === 'upstage') return 'Upstage';
-        if (p.toLowerCase() === 'sail research') return 'Sail Research';
-        if (p.toLowerCase() === 'baseten' || p.toLowerCase() === 'baseten (us)') return 'Baseten (US)';
-        if (p.toLowerCase() === 'wafer') return 'Wafer';
-        if (p.length > 0 && p[0] === p[0].toUpperCase()) return p;
-        return p.charAt(0).toUpperCase() + p.slice(1);
+    function formatServerName(raw) {
+        if (!raw) return '';
+        const s = String(raw).split('/').pop().trim();
+        if (!s || s.toLowerCase() === 'auto') return '';
+        return s;
     }
 
     function formatThinkingBadge(metric) {
         const parts = [];
-        const modelStr = formatModelName(currentModel);
-        const providerStr = formatProviderName(currentProvider);
+        const modelStr = chatCatalogLabel('model', currentModel) || formatServerName(currentModel);
+        const providerStr = chatCatalogLabel('provider', currentProvider) || formatServerName(currentProvider);
         if (modelStr) parts.push(modelStr);
         if (providerStr) parts.push(providerStr);
         if (metric) {
