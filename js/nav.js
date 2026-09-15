@@ -7999,6 +7999,9 @@ function displayRoute(routeData) {
             if (buildingKey) {
                 const building = buildingIndex[buildingKey];
                 
+                // Close navigation wrapper first so UI settles and route selectors/bottom are restored
+                closeNavigation();
+
                 // Ensure buildings layer is loaded before showing building info
                 if (!buildingsLayer) {
                     loadBuildings().then(() => {
@@ -8018,9 +8021,6 @@ function displayRoute(routeData) {
                     }
                 }
                 
-                // Close navigation wrapper and hide search
-                closeNavigation();
-                
                 sa_event('btn_press', {
                     'btn': 'nav_waypoint_building_clicked',
                     'building': waypointName,
@@ -8036,6 +8036,9 @@ function displayRoute(routeData) {
             if (stopId) {
                 const stop = stopsData[stopId];
                 
+                // Close navigation first so UI settles and route selectors/bottom are restored
+                closeNavigation();
+
                 // Show stop info (top-anchored card), then fly the stop into
                 // the center of the map area that remains visible below it.
                 popStopInfo(parseInt(stopId));
@@ -8045,9 +8048,6 @@ function displayRoute(routeData) {
                     clearPanoutFeedback();
                     flyToCenteredBelow([stop.latitude, stop.longitude], 16, document.querySelector('.stop-info-popup .stop-info-popup-inner'), 1.5);
                 }
-                
-                // Close navigation
-                closeNavigation();
                 
                 sa_event('btn_press', {
                     'btn': 'nav_waypoint_stop_clicked',
@@ -8745,6 +8745,7 @@ window.openNavBack = openNavBack;
 // Fully close and clear navigation UI and state
 function closeNavigation() {
     capturePostHog('navigation_action', { action: 'close_navigation' });
+    $('#nav-from-input, #nav-to-input').blur();
     try {
         // Clear route UI
         $('.nav-directions-wrapper').removeClass('flex').addClass('none').empty();

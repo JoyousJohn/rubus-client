@@ -38,6 +38,16 @@ isTouchDevice = checkIsTouchDevice();
 // content (above the popup's bottom action-button row) and the map's bottom
 // edge — i.e. centered in the still-visible map area. The buttons are short,
 // so it's fine for them to sit above the centered space.
+let lastInputBlurTime = 0;
+$(document).on('blur', 'input', function() {
+    lastInputBlurTime = Date.now();
+});
+
+// Compute the container-pixel y (relative to the map's top-left) at which the
+// given lat/lng should land so it sits mid-way between the bottom of the popup
+// content (above the popup's bottom action-button row) and the map's bottom
+// edge — i.e. centered in the still-visible map area. The buttons are short,
+// so it's fine for them to sit above the centered space.
 // Falls back to the map's true center (map height / 2) when no content
 // element is measurable.
 function getCenteredYBelowPopup(contentEl) {
@@ -103,20 +113,34 @@ function flyToCenteredBelow(latlng, zoom, popupEl, duration) {
     // Any new popup flight retargets the map, so an in-progress bus follow
     // must end first (safe for flyToBus: startFollowBus runs after this).
     stopFollowBus();
-    const size = map.getSize();
-    const cx = size.x / 2;
-    const cy = size.y / 2;
-    const desiredY = getCenteredYBelowPopup(popupEl);
 
-    // Feature should stay horizontally centered and land at desiredY.
-    const offsetY = desiredY - cy;
+    // If a keyboard was active or recently blurred, wait briefly for it to dismiss
+    // so map container dimensions and layout have settled before calculating.
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+        document.activeElement.blur();
+    }
+    const delay = (Date.now() - lastInputBlurTime < 400) ? 250 : 0;
 
-    map.flyTo([latlng[0], latlng[1]], zoom, {
-        animate: true,
-        duration: duration !== undefined ? duration : 0.5,
-        essential: true,
-        offset: { x: 0, y: offsetY }
-    });
+    setTimeout(() => {
+        stopFollowBus();
+        if (delay > 0) {
+            map.resize();
+        }
+        const size = map.getSize();
+        const cx = size.x / 2;
+        const cy = size.y / 2;
+        const desiredY = getCenteredYBelowPopup(popupEl);
+
+        // Feature should stay horizontally centered and land at desiredY.
+        const offsetY = desiredY - cy;
+
+        map.flyTo([latlng[0], latlng[1]], zoom, {
+            animate: true,
+            duration: duration !== undefined ? duration : 0.5,
+            essential: true,
+            offset: { x: 0, y: offsetY }
+        });
+    }, delay);
 }
 
 let currentTileLayerType = 'streets'; // Track the current tile layer type

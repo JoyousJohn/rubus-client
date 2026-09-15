@@ -1685,6 +1685,7 @@ $(document).ready(function() {
 });
 
 function closeSearch() {
+    $('.search-pill-bar input').blur();
     $('.search-wrapper').addClass('none');
     if (searchMode !== 'directions') {
         $('.navigate-wrapper').addClass('none');
