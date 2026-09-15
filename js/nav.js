@@ -4519,16 +4519,75 @@ function filterTransferRoutesForDisplay(routesForDisplay, routeCombosMap, routeD
         return calculateOptionWalkMinutes(entry.route, combo, routeData) || 0;
     };
 
+    const getWalkFeet = (entry) => {
+        const rKey = entry.route && entry.route.name && String(entry.route.name).toLowerCase();
+        const combo = routeCombosMap && routeCombosMap[rKey];
+        if (combo && typeof combo.totalWalkingFeet === 'number') {
+            return combo.totalWalkingFeet;
+        }
+        if (entry.route && typeof entry.route.totalWalkingFeet === 'number') {
+            return entry.route.totalWalkingFeet;
+        }
+        return getWalkMinutes(entry) * 220;
+    };
+
     const isTransferEntry = (entry) => {
         return !!(entry.isTransfer || (entry.route && (entry.route.isTransfer || (entry.route.leg1 && entry.route.leg2))));
     };
 
     const directRoutes = routesForDisplay.filter(e => !isTransferEntry(e) && !e.isWalk && !(e.route && e.route.isWalk));
-    const transferRoutes = routesForDisplay.filter(e => isTransferEntry(e));
+    let transferRoutes = routesForDisplay.filter(e => isTransferEntry(e));
 
     // If there are no direct routes or no transfer routes, nothing to filter
     if (directRoutes.length === 0 || transferRoutes.length === 0) {
         return routesForDisplay;
+    }
+
+    // Filter out transfers that are redundant with their own constituent direct routes.
+    // E.g., for B -> H, only compare against direct B or direct H (if present as a direct route).
+    // If a constituent direct route is as fast or faster AND requires as little or less walking,
+    // the transfer is redundant and should not be shown.
+    transferRoutes = transferRoutes.filter(t => {
+        const r = t.route || t;
+        const l1 = (r.leg1 && r.leg1.route && r.leg1.route.name) ||
+                   (r.leg1 && r.leg1.name) ||
+                   (typeof r.name === 'string' && r.name.includes('-') && r.name.split('-')[0]) || '';
+        const l2 = (r.leg2 && r.leg2.route && r.leg2.route.name) ||
+                   (r.leg2 && r.leg2.name) ||
+                   (typeof r.name === 'string' && r.name.includes('-') && r.name.split('-')[1]) || '';
+        const legNames = new Set([String(l1).toLowerCase().trim(), String(l2).toLowerCase().trim()].filter(Boolean));
+        if (legNames.size === 0) return true;
+
+        const matchingDirects = directRoutes.filter(d => {
+            const dr = d.route || d;
+            const dName = String(dr.name || d.displayName || '').toLowerCase().trim();
+            return legNames.has(dName);
+        });
+        if (matchingDirects.length === 0) return true;
+
+        const tTotal = getTotalMinutes(t);
+        const tWalk = getWalkMinutes(t);
+        const tFeet = getWalkFeet(t);
+
+        const isRedundant = matchingDirects.some(d => {
+            if (t.hasLive && !d.hasLive) return false;
+            const dTotal = getTotalMinutes(d);
+            const dWalk = getWalkMinutes(d);
+            const dFeet = getWalkFeet(d);
+            const fasterOrEqual = dTotal > 0 && tTotal > 0 && dTotal <= tTotal;
+            const lessOrEqualWalk = dWalk <= tWalk && dFeet <= (tFeet + 50);
+            return fasterOrEqual && lessOrEqualWalk;
+        });
+
+        if (NAV_DEBUG && isRedundant) {
+            console.log(`[nav] dropping redundant transfer ${t.displayName || r.name} in favor of constituent direct route`);
+        }
+
+        return !isRedundant;
+    });
+
+    if (transferRoutes.length === 0) {
+        return routesForDisplay.filter(e => !isTransferEntry(e));
     }
 
     // Determine direct routes to compare against (prefer live direct routes if any exist)
@@ -4543,8 +4602,46 @@ function filterTransferRoutesForDisplay(routesForDisplay, routeCombosMap, routeD
     const directWalkTimes = comparisonDirects.map(getWalkMinutes);
     const minDirectWalk = Math.min(...directWalkTimes);
 
-    // 1. Transfer routes with significantly less walking (always kept, independent of travel time)
-    const lowWalkingTransfers = transferRoutes.filter(t => (minDirectWalk - getWalkMinutes(t) >= 4));
+    // 1. Transfer routes with significantly less walking. NOT an absolute
+    // keep-all: a 0-walk transfer still has to survive transfer-vs-transfer
+    // Pareto (45m/0w keeps, 81m/0w drops) and is capped to the fastest 3.
+    // This is your Busch→Red Oak case: direct REXB has walk, so every 0-walk
+    // transfer lands here and previously bypassed all dominance checks.
+    const isDominatedByTransfer = (t, others) => {
+        const tTotal = getTotalMinutes(t);
+        const tWalk = getWalkMinutes(t);
+        const tFeet = getWalkFeet(t);
+        if (!(tTotal > 0)) return false;
+        return others.some(o => {
+            if (o === t) return false;
+            if (t.hasLive && !o.hasLive) return false;
+            const oTotal = getTotalMinutes(o);
+            const oWalk = getWalkMinutes(o);
+            const oFeet = getWalkFeet(o);
+            if (!(oTotal > 0)) return false;
+            if (!(oTotal <= tTotal && oWalk <= tWalk && oFeet <= (tFeet + 50))) return false;
+            // Require a meaningful gap so near-ties (your 3 comparable 0-walk
+            // options within minutes of each other) all survive, while
+            // significantly slower duplicates (81m vs 45m same walk) drop.
+            return (oTotal + 5 <= tTotal) || (oWalk + 4 <= tWalk);
+        });
+    };
+
+    const lowWalkingCandidates = transferRoutes
+        .filter(t => (minDirectWalk - getWalkMinutes(t) >= 4))
+        .sort((a, b) => getTotalMinutes(a) - getTotalMinutes(b));
+    const lowWalkingPareto = lowWalkingCandidates.filter(t => {
+        const dominated = isDominatedByTransfer(t, lowWalkingCandidates);
+        if (NAV_DEBUG && dominated) {
+            const r = t.route || t;
+            console.log(`[nav] dropping dominated low-walk transfer ${t.displayName || r.name} t=${getTotalMinutes(t)}m/${getWalkMinutes(t)}w live=${!!t.hasLive}`);
+        }
+        return !dominated;
+    });
+    const lowWalkingTransfers = lowWalkingPareto.slice(0, 3);
+    if (NAV_DEBUG && lowWalkingPareto.length > lowWalkingTransfers.length) {
+        console.log(`[nav] capping low-walk transfers to fastest 3 of ${lowWalkingPareto.length}`);
+    }
 
     // 2. Remaining transfer routes
     const otherTransfers = transferRoutes.filter(t => !lowWalkingTransfers.includes(t));
@@ -4555,20 +4652,81 @@ function filterTransferRoutesForDisplay(routesForDisplay, routeCombosMap, routeD
         return tTime > 0 && slowestDirectTotalTime > 0 && tTime < slowestDirectTotalTime;
     });
 
-    // Slower than the slowest direct route: keep ALL live slower transfers
-    // (they're actionable — e.g. EE runs later than F, so EE→LX must survive
-    // even when F→LX is faster on paper), plus a maximum of ONE offline
-    // slower transfer for schedule reference.
+    // Slower than the slowest direct route: keep live slower transfers unless
+    // strictly dominated by a direct (as fast or faster AND no more walking).
+    // Drops slower+more-walk clutter but preserves actionable backups (e.g.
+    // EE runs later than F, so EE→LX survives when its walk is competitive),
+    // plus a maximum of ONE non-dominated offline slower for reference.
+    // DOMINANCE IS CHECKED AGAINST ALL DIRECTS (live + offline) SO A SLOW
+    // LIVE TRANSFER CANNOT HIDE BEHIND A SLOW LIVE-DIRECT OUTLIER, AND IT IS
+    // APPLIED TO BOTH faster AND slower BUCKETS (a transfer faster than the
+    // *slowest* direct can still be dominated by the *fastest* one).
     const slowerTransfers = otherTransfers
         .filter(t => !fasterTransfers.includes(t))
         .sort((a, b) => getTotalMinutes(a) - getTotalMinutes(b));
 
-    const liveSlowerTransfers = slowerTransfers.filter(t => t.hasLive);
-    const maxOneOfflineSlowerTransfer = slowerTransfers.filter(t => !t.hasLive).slice(0, 1);
+    const isDominatedByDirect = (t, directs) => {
+        const tTotal = getTotalMinutes(t);
+        const tWalk = getWalkMinutes(t);
+        const tFeet = getWalkFeet(t);
+        return directs.some(d => {
+            if (t.hasLive && !d.hasLive) return false;
+            const dTotal = getTotalMinutes(d);
+            const dWalk = getWalkMinutes(d);
+            const dFeet = getWalkFeet(d);
+            const fasterOrEqual = dTotal > 0 && tTotal > 0 && dTotal <= tTotal;
+            if (!fasterOrEqual) return false;
+            const lessOrEqualWalk = dWalk <= tWalk && dFeet <= (tFeet + 50);
+            if (!lessOrEqualWalk) return false;
+            return true;
+        });
+    };
+
+    // Dominance applies to faster transfers too: e.g. directs 26m + 70m,
+    // transfer 49m is "faster than slowest" but still dominated by the 26m
+    // direct with equal/less walk.
+    const fasterKept = fasterTransfers.filter(t => {
+        const dominated = isDominatedByDirect(t, directRoutes);
+        if (NAV_DEBUG && dominated) {
+            const r = t.route || t;
+            console.log(`[nav] dropping dominated faster transfer ${t.displayName || r.name} t=${getTotalMinutes(t)}m/${getWalkMinutes(t)}w live=${!!t.hasLive}`);
+        }
+        return !dominated;
+    });
+
+    const nonDominatedSlower = slowerTransfers.filter(t => {
+        const dominated = isDominatedByDirect(t, directRoutes);
+        if (NAV_DEBUG && dominated) {
+            const r = t.route || t;
+            console.log(`[nav] dropping dominated slower transfer ${t.displayName || r.name} t=${getTotalMinutes(t)}m/${getWalkMinutes(t)}w live=${!!t.hasLive}`);
+        }
+        return !dominated;
+    });
+
+    // Cap live slower backups: fastest 2 only. Without this every
+    // non-dominated live slower survives (your Busch→Red Oak dozen).
+    const liveSlowerUncapped = nonDominatedSlower.filter(t => t.hasLive);
+    // Transfer-vs-transfer: a slower live backup dominated by a kept faster /
+    // low-walk transfer (same/less walk, earlier arrival) goes too. This
+    // catches 81m/0w vs 45m/0w, which no direct dominates when the direct
+    // itself has walk (8m <= 0m fails).
+    const liveSlowerPareto = liveSlowerUncapped.filter(t => {
+        const dominated = isDominatedByTransfer(t, [...lowWalkingTransfers, ...fasterKept, ...liveSlowerUncapped]);
+        if (NAV_DEBUG && dominated) {
+            const r = t.route || t;
+            console.log(`[nav] dropping transfer-dominated slower ${t.displayName || r.name} t=${getTotalMinutes(t)}m/${getWalkMinutes(t)}w live=${!!t.hasLive}`);
+        }
+        return !dominated;
+    });
+    const liveSlowerTransfers = liveSlowerPareto.slice(0, 2);
+    if (NAV_DEBUG && liveSlowerUncapped.length > liveSlowerTransfers.length) {
+        console.log(`[nav] capping live slower transfers to fastest 2 of ${liveSlowerUncapped.length} (pareto ${liveSlowerPareto.length})`);
+    }
+    const maxOneOfflineSlowerTransfer = nonDominatedSlower.filter(t => !t.hasLive).slice(0, 1);
 
     const eligibleTransfers = new Set([
         ...lowWalkingTransfers,
-        ...fasterTransfers,
+        ...fasterKept,
         ...liveSlowerTransfers,
         ...maxOneOfflineSlowerTransfer
     ]);
