@@ -973,12 +973,20 @@ function truncateChatHistory(history) {
     return truncated;
 }
 
+// One request at a time: the input bar stays locked while a response is
+// generating and unlocks on done/error, so messages can't pile up mid-stream.
+function setChatInputEnabled(on) {
+    $('.chat-ui-input').prop('disabled', !on);
+    $('.chat-ui-send').prop('disabled', !on);
+}
+
 $(document).on('submit', '.chat-ui-input-bar', function(e) {
     e.preventDefault();
 
     $('.chat-recs').hide();
 
     const $input = $(this).find('.chat-ui-input');
+    if ($input.prop('disabled')) return;
     let msg = $input.val().trim();
     if (!msg) return;
     // Client-side size limit to avoid DoS and huge payloads
@@ -1001,8 +1009,10 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     });
     sa_event('btn_press', { btn: 'chat_message_sent' });
     $input.val('');
+    setChatInputEnabled(false);
 
     const reqStartTime = performance.now();
+    let responseDone = false;
     let phase = 'waiting'; // 'waiting' | 'thinking' | 'answering'
     let phaseStartTime = null;
     let streamedThinking = '';
@@ -1292,6 +1302,8 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
 
             // 4. Response complete
             else if (data.done) {
+                responseDone = true;
+                setChatInputEnabled(true);
                 if (tpsInterval) {
                     clearInterval(tpsInterval);
                     tpsInterval = null;
@@ -1470,6 +1482,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         if (contentType.includes('application/json') && !contentType.includes('text/event-stream')) {
             const data = await response.json();
             handleChatData(data.done !== undefined ? data : { done: true, answer: data.answer || data.response || JSON.stringify(data), progress: data.progress, model: data.model, provider: data.provider });
+            if (!responseDone) throw new Error('Chat response ended without completion');
             return;
         }
         if (!response.body || !response.body.getReader) {
@@ -1484,17 +1497,20 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     try { handleChatData(JSON.parse(jsonStr)); } catch (e) {}
                 }
             });
+            if (!responseDone) throw new Error('Chat response ended without completion');
             return;
         }
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let aborted = false;
         while (true) {
             let chunk;
             try {
                 chunk = await reader.read();
             } catch (readErr) {
                 if (readErr && (readErr.name === 'AbortError' || readErr.message?.includes('aborted'))) {
+                    aborted = true;
                     break;
                 }
                 throw readErr;
@@ -1542,11 +1558,18 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 }
             }
         }
+        if (aborted) {
+            window.currentChatController = null;
+            setChatInputEnabled(true);
+            return;
+        }
+        if (!responseDone) throw new Error('Chat response ended without completion');
     }).catch(err => {
         if (tpsInterval) {
             clearInterval(tpsInterval);
             tpsInterval = null;
         }
+        setChatInputEnabled(true);
         if (err.name === 'AbortError') return;
         console.error('SSE error:', err);
         capturePostHog('chat_response_received', {

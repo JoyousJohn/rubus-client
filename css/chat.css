@@ -492,6 +492,17 @@
   transform: scale(0.97);
 }
 
+.chat-ui-send:disabled {
+  opacity: 0.4;
+  cursor: default;
+  filter: none;
+  transform: none;
+}
+
+.chat-ui-input:disabled {
+  opacity: 0.6;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chat-ui-send:active { transform: none; }
 }
