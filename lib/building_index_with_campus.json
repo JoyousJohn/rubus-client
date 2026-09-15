@@ -2536,7 +2536,8 @@
       "name": "Daniel I. Kessler Teaching Laboratories",
       "category": "building",
       "lat": 40.524584264456536,
-      "lng": -74.468492466
+      "lng": -74.468492466,
+      "aliases": ["Woody's Cafe"]
     },
     "33 knightsbridge": {
       "id": "3912",
