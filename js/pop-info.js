@@ -337,7 +337,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
     }
     // Hide when there's no campus mapping so the empty element's flex gap
     // doesn't shift the route letter off-center.
-    campusesElement.text(campusText).toggle(!!campusText);
+    // TEMP-DISABLED: campusesElement.text(campusText).toggle(!!campusText);
     
     if (campusText) {
         setTimeout(() => {

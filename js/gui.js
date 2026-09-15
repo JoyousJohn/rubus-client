@@ -1969,7 +1969,7 @@ function selectedRoute(route) {
 
     $('.route-panel').each(function() { this.style.setProperty('--route-color', colorMappings[route]); });
     $('.route-name').text(route.toUpperCase());
-    $('.route-campuses').text(campusMappings[route]);
+    // TEMP-DISABLED: $('.route-campuses').text(campusMappings[route]);
     if (typeof updateRouteStarState === 'function') {
         updateRouteStarState(route);
     }
