@@ -4220,8 +4220,7 @@ function renderChatbotModelOptions() {
         settings['chatbot-model'] = selectedModel;
     }
     $container.empty();
-    // One column per model rather than a fixed 3-column grid.
-    $container.css('grid-template-columns', `repeat(${Math.max(chatbotModelCatalog.models.length, 1)}, 1fr)`);
+    // Horizontal scroll row (see #chatbot-model-options CSS), not grid columns.
     chatbotModelCatalog.models.forEach(model => {
         $('<div>')
             .addClass('settings-option')

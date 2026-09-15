@@ -2775,15 +2775,18 @@ html, body {
     user-select: none;
 }
 
-/* Chatbot providers vary in count and label width: horizontal scroll row
- * instead of squeezed grid columns. ID+class beats the grid utilities. */
-#chatbot-provider-options.settings-options {
+/* Chatbot model/provider rows vary in count and label width: horizontal
+ * scroll rows instead of squeezed grid columns. ID+class beats the grid
+ * utilities. Options grow to fill the row when few, scroll when many. */
+#chatbot-provider-options.settings-options,
+#chatbot-model-options.settings-options {
     display: flex;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
 }
-#chatbot-provider-options .settings-option {
+#chatbot-provider-options .settings-option,
+#chatbot-model-options .settings-option {
     flex: 1 0 auto;
     white-space: nowrap;
 }
