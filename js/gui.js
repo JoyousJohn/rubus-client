@@ -4652,7 +4652,7 @@ function syncPostHogPersonProfile() {
         marker_size: currentSettings['marker-size'] || 'medium',
         chat_enabled: !!currentSettings['toggle-show-chat'],
         chatbot_provider: currentSettings['chatbot-provider'] || 'auto',
-        chatbot_model: currentSettings['chatbot-model'] || 'deepseek',
+        chatbot_model: currentSettings['chatbot-model'] || 'ling',
         buildings_enabled: !!currentSettings['toggle-show-buildings'],
         parking_enabled: !!currentSettings['toggle-show-parking'],
         bike_racks_enabled: !!currentSettings['toggle-show-bike-racks'],

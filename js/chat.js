@@ -450,6 +450,10 @@ function updateChatInitialMessage() {
         for (const route in busesByRoutes[selectedCampus]) {
             const buses = busesByRoutes[selectedCampus][route] || [];
             const validBuses = buses.filter(b => {
+                // isBusInService (not isBusShownOnMap): the show-out-of-service
+                // toggle must not inflate the "running" count, and off-route
+                // buses are excluded via distanceFromLine either way.
+                if (typeof isBusInService === 'function') return isBusInService(b);
                 if (typeof isBusShownOnMap === 'function') return isBusShownOnMap(b);
                 return typeof busData !== 'undefined' && busData[b] && !busData[b].oos && !busData[b].atDepot;
             });
@@ -501,7 +505,7 @@ $(function() {
 $(document).on('click', '.chat-btn', function() {
   capturePostHog('chat_opened', {
       campus: settings['campus'] || 'nb',
-      model: settings['chatbot-model'] || 'deepseek',
+      model: settings['chatbot-model'] || 'ling',
       provider: settings['chatbot-provider'] || 'auto'
   });
   sa_event('btn_press', { btn: 'chat_open' });
@@ -535,7 +539,7 @@ $(document).on('click', '.chat-btn', function() {
                     return;
                 }
                 capturePostHog('chat_suggestion_clicked', {
-                    model: settings['chatbot-model'] || 'deepseek',
+                    model: settings['chatbot-model'] || 'ling',
                     provider: settings['chatbot-provider'] || 'auto',
                     campus: settings['campus'] || 'nb'
                 });
@@ -1002,7 +1006,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         message: msg,
         message_length: msg.length,
         history_length: window.chatHistory.length,
-        model: settings['chatbot-model'] || 'deepseek',
+        model: settings['chatbot-model'] || 'ling',
         provider: settings['chatbot-provider'] || 'auto',
         is_example: false,
         campus: settings['campus'] || 'nb'
@@ -1021,7 +1025,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     let $currentThinkingBox = null;
     let $botMeta = null;
 
-    const selectedModel = settings['chatbot-model'] || 'deepseek';
+    const selectedModel = settings['chatbot-model'] || 'ling';
     const selectedProvider = settings['chatbot-provider'] || 'auto';
     let currentModel = selectedModel;
     let currentProvider = selectedProvider;
@@ -1290,6 +1294,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 let cleanStream = streamedAnswer
                     .replace(/<suggestions>[\s\S]*?(?:<\/suggestions>|$)/gi, '')
                     .replace(/<think(?:ing)?>[\s\S]*?(?:<\/think(?:ing)?>|$)/gi, '')
+                    .replace(/<\/?role(?:\s[^>]*)?>/gi, '')
                     .replace(/<\|[^>]*>/g, '');
                 $botMsg.find('.chat-message-content').html(colorRouteNames(parseMarkdown(cleanStream)));
                 updateActiveTps();
@@ -1360,6 +1365,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                         rawText = rawText.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
                     }
                     rawText = rawText.replace(/<\|[^>]+>/g, '');
+                    rawText = rawText.replace(/<\/?role(?:\s[^>]*)?>/gi, '');
                     finalAnswer = rawText.trim() || 'There was an issue formatting the response.';
                 }
 

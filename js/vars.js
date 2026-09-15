@@ -78,7 +78,7 @@ const defaultSettings = {
 
     
     // dev settings
-    'chatbot-model': 'deepseek',
+    'chatbot-model': 'ling',
     'chatbot-provider': 'auto',
     'bus-positioning': 'exact',
     'toggle-pause-update-marker': false,
