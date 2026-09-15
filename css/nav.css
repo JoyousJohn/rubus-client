@@ -458,13 +458,16 @@
     opacity: 0.25;
 }
 
-/* Floating single-column time wheel overlay moving over other elements */
+/* Floating two-column time wheel overlay (leave time + arrival time), spanning
+   the full time row over both pills */
 .nav-time-wheel-overlay {
     position: absolute;
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.92);
-    width: 154px;
+    left: 0;
+    right: 0;
+    transform: translate(0, -50%) scale(0.92);
+    width: auto;
+    max-width: none;
     height: 256px;
     overflow: hidden;
     pointer-events: none;
@@ -484,7 +487,7 @@
 .nav-time-wheel-overlay.active {
     opacity: 1;
     visibility: visible;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(0, -50%) scale(1);
 }
 
 .nav-time-wheel-lens {
@@ -519,8 +522,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0 0.8rem;
+    gap: 2.5rem;
+    padding: 0 1rem;
     font-size: 1.35rem;
     font-weight: 600;
     color: var(--theme-color);
@@ -543,29 +546,82 @@
     text-align: right;
 }
 
-.nav-time-wheel-offset {
-    font-size: 1.05rem;
-    font-weight: 600;
-    opacity: 0.7;
-    padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--theme-color) 8%, transparent);
-    min-width: 48px;
-    text-align: center;
-    box-sizing: border-box;
-    display: inline-block;
-    line-height: 1.2;
-    font-variant-numeric: tabular-nums;
+.nav-time-wheel-header {
+    position: absolute;
+    top: 78px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2.5rem;
+    padding: 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 3;
 }
 
-.nav-time-wheel-item.selected .nav-time-wheel-offset {
-    background-color: color-mix(in srgb, var(--theme-link) 22%, transparent);
-    color: var(--theme-link);
+/* Outer spans hold column alignment; inner chips shrink-wrap the text */
+.nav-time-wheel-header > span {
+    display: flex;
+    justify-content: center;
+}
+
+.nav-time-wheel-header-chip {
+    background-color: var(--theme-card-bg);
+    border: 1px solid var(--theme-line-bg);
+    border-radius: 999px;
+    padding: 0.2rem 0.8rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    color: color-mix(in srgb, var(--theme-color) 60%, transparent);
+}
+
+.nav-time-wheel-header span:first-child {
+    /* mirrors the leave time width so columns line up */
+    min-width: 68px;
+}
+
+.nav-time-wheel-header span:last-child {
+    min-width: 64px;
+    text-align: center;
+}
+
+.nav-time-wheel-arrive {
+    font-variant-numeric: tabular-nums;
+    min-width: 64px;
+    text-align: right;
+    font-size: 1.2rem;
+    font-weight: 600;
+    opacity: 0.8;
+    position: relative;
+}
+
+.nav-time-wheel-item.selected .nav-time-wheel-arrive {
     opacity: 1;
+    color: var(--theme-link);
     font-weight: 700;
 }
 
+.nav-time-wheel-trip {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    opacity: 0.6;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 /* Route selector rendered above the directions wrapper (sticky at top when scrolling) */
+.nav-directions-wrapper {
+    transition: margin-top 0.18s ease;
+}
 .nav-route-selector-container {
     position: sticky;
     top: 0;
@@ -575,7 +631,7 @@
     padding: 0.5rem 0;
     box-sizing: border-box;
     width: 100%;
-    transition: box-shadow 0.15s ease;
+    transition: box-shadow 0.15s ease, margin-top 0.18s ease;
 }
 
 .nav-route-selector-container.nav-stuck {

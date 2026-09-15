@@ -4801,6 +4801,7 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                     navRouteSession.routeData.startWalkDistance = (combo && combo.startWalkDistance) || routeData.startWalkDistance;
                     navRouteSession.routeData.endWalkDistance = null;
                     navRouteSession.routeData.restoreRouteName = 'walk';
+                    navRouteSession.routeData.routeSelectionMode = 'manual';
                     navRouteSession.routeData.selectedTransferLeg1BusName = null;
                     navRouteSession.routeData.selectedTransferLeg1BusIndex = null;
                     navRouteSession.routeData.selectedIncomingBusName = null;
@@ -4866,6 +4867,7 @@ function bindNavRouteOptionClicks(routesForDisplay) {
                 navRouteSession.routeData.startWalkDistance = effectiveStartWalk;
                 navRouteSession.routeData.endWalkDistance = effectiveEndWalk;
                 navRouteSession.routeData.restoreRouteName = newRoute.name;
+                navRouteSession.routeData.routeSelectionMode = 'manual';
                 navRouteSession.routeData.selectedTransferLeg1BusName = null;
                 navRouteSession.routeData.selectedTransferLeg1BusIndex = null;
                 navRouteSession.routeData.selectedIncomingBusName = null;
@@ -4967,8 +4969,109 @@ function checkNavSelectorIntegrity(context) {
     } catch (e) {}
 }
 
-function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
+// Scroll the walk pill into the visible strip on an authoritative render (a
+// departure-time change). The strip hides its scrollbar, so a pill can be
+// present in the DOM yet invisible; without this, the walk option only
+// surfaced later when a live tick re-ordered the strip so a full re-render
+// snapped it in. Two guards keep it from fighting the strip:
+//   1. It is only ever called with focusWalk=true, which is set solely when
+//      reselectFastest is true (the departure time actually moved). Live 5s
+//      ticks and other same-offset refreshes never reach it, so the strip is
+//      never yanked during background updates.
+//   2. It is a no-op while the walk pill is fully or partially inside the
+//      viewport; it acts only when the pill is entirely scrolled out. A
+//      partial peek is the "it's there, keep scrolling" affordance the hidden
+//      scrollbar would otherwise deny.
+//
+// Precedence: prefer a scroll position that keeps BOTH the walk pill and the
+// selected pill visible. When the two can't share the viewport (walk sorted
+// far from the fastest on a narrow phone) walk wins — after a departure-time
+// change the walk option is the pill being evaluated, and the "Arrive by"
+// header still shows the best arrival. When walk is itself the selection
+// (fastest), the selected-pill snap already covers it and this is a no-op.
+// Exact pill edges in scroller-content coordinates, plus the current viewport.
+// offsetLeft is relative to the offsetParent (the sticky outer container
+// here, which includes the scroller's own padding), so it overshoots
+// scrollLeft math by that padding; rect diffs stay exact regardless of
+// nesting, padding, or subpixel layout.
+function navPillRect(scrollerEl, pillEl) {
+    const sRect = scrollerEl.getBoundingClientRect();
+    const pRect = pillEl.getBoundingClientRect();
+    const left = pRect.left - sRect.left + scrollerEl.scrollLeft;
+    const viewLeft = scrollerEl.scrollLeft;
+    return { left, right: left + pRect.width, viewLeft, viewRight: viewLeft + scrollerEl.clientWidth };
+}
+
+function scrollNavWalkIntoView($scroller) {
+    if (!$scroller || !$scroller.length) return;
+    const scrollerEl = $scroller[0];
+    const $walk = $scroller.find('.route-option.route-option-walk');
+    if (!$walk.length) return;
+    const w = navPillRect(scrollerEl, $walk[0]);
+    if (w.right > w.viewLeft && w.left < w.viewRight) return;
+
+    // Preferred scroll puts the walk pill fully in view (12px margin, matching
+    // the selected-pill snap). Shrink it to the overlap of the walk and
+    // selected pills' viewport ranges when they can coexist; otherwise keep
+    // the walk target (walk wins the conflict).
+    let desired = (w.right > w.viewRight)
+        ? w.right - scrollerEl.clientWidth + 12
+        : w.left - 12;
+    const $selected = $scroller.find('.route-option.selected');
+    if ($selected.length) {
+        const s = navPillRect(scrollerEl, $selected[0]);
+        const lo = Math.max(s.right - scrollerEl.clientWidth + 12, w.right - scrollerEl.clientWidth + 12);
+        const hi = Math.min(s.left - 12, w.left - 12);
+        if (lo <= hi) {
+            desired = Math.max(lo, Math.min(hi, desired));
+        }
+    }
+    const maxScroll = Math.max(0, scrollerEl.scrollWidth - scrollerEl.clientWidth);
+    scrollerEl.scrollLeft = Math.min(maxScroll, Math.max(0, desired));
+}
+window.scrollNavWalkIntoView = scrollNavWalkIntoView;
+
+// Console evidence for the walk-pill timing bug: whether the walk option is in
+// the DOM and inside the visible strip viewport after a render. walkIndex -1
+// with walkIncluded false means the filter dropped it (data); walkIndex >= 0
+// with walkVisible false means the pill is rendered but scrolled out of the
+// hidden-scrollbar strip (visibility, not data). Logged on authoritative
+// (departure-time change) renders and whenever walk is missing from view.
+function logNavPillRenderMetrics(routesForDisplay, $scroller, path, focusWalk, selectedIndex) {
+    if (!NAV_DEBUG) return;
+    const walkIndex = routesForDisplay.findIndex(e => e.isWalk || (e.route && e.route.isWalk));
+    const walkIncluded = walkIndex >= 0;
+    let walkVisible = false;
+    let scroll = null;
+    if ($scroller && $scroller.length) {
+        const scrollerEl = $scroller[0];
+        scroll = { left: scrollerEl.scrollLeft, clientWidth: scrollerEl.clientWidth, scrollWidth: scrollerEl.scrollWidth };
+        if (walkIndex >= 0) {
+            const $walk = $scroller.find('.route-option.route-option-walk');
+            const walkEl = $walk.length ? $walk[0] : null;
+            if (walkEl) {
+                const w = navPillRect(scrollerEl, walkEl);
+                walkVisible = w.right > w.viewLeft && w.left < w.viewRight;
+            }
+        }
+    }
+    if (focusWalk || (walkIncluded && !walkVisible)) {
+        console.log('[nav] pills render:', {
+            path,
+            focusWalk,
+            walkIncluded,
+            walkIndex,
+            walkVisible,
+            scroll,
+            selectedIndex,
+            keys: routesForDisplay.map(e => String((e.route && e.route.name) || e.displayName || '').toLowerCase())
+        });
+    }
+}
+
+function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex, opts) {
     checkNavSelectorIntegrity('renderNavRouteSelector');
+    const focusWalk = !!(opts && opts.focusWalk);
     const $container = $('.nav-route-selector-container');
     if (!$container.length) return;
     if (!routesForDisplay || routesForDisplay.length <= 1) {
@@ -5044,6 +5147,10 @@ function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
                 $dot.remove();
             }
         });
+        if (focusWalk) {
+            scrollNavWalkIntoView($container.find('.route-options-container'));
+        }
+        logNavPillRenderMetrics(routesForDisplay, $container.find('.route-options-container'), 'in-place', focusWalk, selectedRouteDisplayIndex);
         return;
     }
 
@@ -5069,18 +5176,18 @@ function renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex) {
         const $selected = $newScroller.find('.route-option.selected');
         if ($selected.length) {
             const scrollerEl = $newScroller[0];
-            const selEl = $selected[0];
-            const selLeft = selEl.offsetLeft;
-            const selRight = selLeft + selEl.offsetWidth;
-            const viewLeft = scrollerEl.scrollLeft;
-            const viewRight = viewLeft + scrollerEl.clientWidth;
+            const s = navPillRect(scrollerEl, $selected[0]);
 
-            if (selLeft < viewLeft) {
-                scrollerEl.scrollLeft = Math.max(0, selLeft - 12);
-            } else if (selRight > viewRight) {
-                scrollerEl.scrollLeft = selRight - scrollerEl.clientWidth + 12;
+            if (s.left < s.viewLeft) {
+                scrollerEl.scrollLeft = Math.max(0, s.left - 12);
+            } else if (s.right > s.viewRight) {
+                scrollerEl.scrollLeft = s.right - scrollerEl.clientWidth + 12;
             }
         }
+        if (focusWalk) {
+            scrollNavWalkIntoView($newScroller);
+        }
+        logNavPillRenderMetrics(routesForDisplay, $newScroller, 'full', focusWalk, selectedRouteDisplayIndex);
     }
 }
 window.renderNavRouteSelector = renderNavRouteSelector;
@@ -5223,18 +5330,82 @@ function navWheelNearestIndex(offset) {
     return best;
 }
 
+// Route context for per-option arrival times: the currently selected route and
+// its stops/walks, so each wheel row can show "leave X -> arrive Y".
+function getNavWheelArrivalContext() {
+    const rd = (navRouteSession && navRouteSession.routeData) || null;
+    if (!rd) return null;
+    const entries = rd.routesForDisplay || [];
+    const entry = entries[rd.selectedRouteDisplayIndex ?? 0] || entries[0];
+    const r = entry && entry.route;
+    if (!r) return null;
+    const rKey = (r.name ? String(r.name) : '').toLowerCase();
+    const combo = (rd.routeCombosMap && rd.routeCombosMap[rKey]) || null;
+    const startStop = (combo && combo.startStop) || (r && r.startStop) || rd.startStop;
+    const endStop = (combo && combo.endStop) || (r && r.endStop) || rd.endStop;
+    const hasEndWalk = !!(rd.endWalkDistance && rd.endWalkDistance.feet > 30 && endStop && rd.endBuilding && (String(endStop.id) !== String(rd.endBuilding.id) || !rd.endIsStop));
+    return {
+        route: r,
+        combo,
+        startStop,
+        transferStop: r.transferStop || (combo && combo.transferStop) || rd.transferStop,
+        endStop,
+        startWalkDistance: (combo && combo.startWalkDistance) || rd.startWalkDistance,
+        endWalkDistance: (combo && combo.endWalkDistance) || rd.endWalkDistance,
+        hasEndWalk,
+        base: rd.baseTimestamp || window.navLeaveByBaseTimestamp || Date.now(),
+        rd
+    };
+}
+
+// Arrival info for `offset` on the currently selected route: display text plus
+// trip length in minutes (0 when unknown). computeRouteEndTime covers live
+// routes; the journey estimate covers the rest (and supplies the duration).
+function computeNavWheelArrival(ctx, offset) {
+    if (!ctx) return { text: '--', journeyMin: 0 };
+    const end = computeRouteEndTime({
+        route: ctx.route,
+        startStop: ctx.startStop,
+        transferStop: ctx.transferStop,
+        endStop: ctx.endStop,
+        startWalkDistance: ctx.startWalkDistance,
+        endWalkDistance: ctx.endWalkDistance,
+        hasEndWalk: ctx.hasEndWalk,
+        leaveByOffsetMinutes: offset,
+        baseTimestamp: ctx.base
+    });
+    let journeyMin = 0;
+    if (ctx.route.isWalk) {
+        journeyMin = (typeof ctx.route.journeyMinutes === 'number' && ctx.route.journeyMinutes > 0)
+            ? ctx.route.journeyMinutes
+            : (ctx.route.walkMinutes || 0);
+    } else {
+        journeyMin = calculateOptionJourneyMinutes(ctx.route, ctx.combo, Object.assign({}, ctx.rd, { leaveByOffsetMinutes: offset }));
+    }
+    const validJourney = (typeof journeyMin === 'number') && isFinite(journeyMin) && journeyMin > 0;
+    const roundedJourney = validJourney ? Math.round(journeyMin) : 0;
+    if (end) return { text: end, journeyMin: roundedJourney };
+    if (!validJourney) return { text: '--', journeyMin: 0 };
+    return {
+        text: new Date(ctx.base + ((offset + journeyMin) * 60000)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+        journeyMin: roundedJourney
+    };
+}
+
 function renderNavTimeWheelItems() {
     const track = document.getElementById('nav-time-wheel-track');
     if (!track) throw new Error('[nav:leave-by] #nav-time-wheel-track missing from DOM');
     const spec = getNavWheelSpec();
+    const ctx = getNavWheelArrivalContext();
     let html = '';
     spec.offsets.forEach((offset, i) => {
         const timeMs = spec.base + (offset * 60000);
         const timeStr = new Date(timeMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        const offsetLabel = offset === 0 ? 'Now' : `+${offset} min`;
+        const arr = computeNavWheelArrival(ctx, offset);
+        const tripHtml = arr.journeyMin > 0 ? `<span class="nav-time-wheel-trip">· ${arr.journeyMin}m</span>` : '';
         html += `<div class="nav-time-wheel-item" data-index="${i}" data-offset="${offset}">` +
             `<span class="nav-time-wheel-time">${timeStr}</span>` +
-            `<span class="nav-time-wheel-offset">${offsetLabel}</span>` +
+            `<span class="nav-time-wheel-arrive">${arr.text}${tripHtml}</span>` +
             `</div>`;
     });
     track.innerHTML = html;
@@ -5287,14 +5458,36 @@ function showNavTimeWheel() {
     wheel.classList.add('active');
     $('#nav-leave-by-val').css('opacity', '0');
     $('.nav-time-steppers').css('opacity', '0.2');
+    pushNavContentBelowWheel();
 }
 window.showNavTimeWheel = showNavTimeWheel;
+
+// Push the pills/directions below the open wheel so live route recalculation
+// stays visible while scrolling through departure times. The push is measured
+// from the wheel/row rects (both above the pushed content), so re-showing is
+// idempotent. Cleared when the wheel hides.
+function pushNavContentBelowWheel() {
+    const wheel = document.getElementById('nav-time-wheel');
+    const row = document.querySelector('.nav-time-row');
+    const container = document.querySelector('.nav-route-selector-container');
+    const directions = document.querySelector('.nav-directions-wrapper');
+    const target = (!container.classList.contains('none') && container.children.length > 0) ? container : directions;
+    if (target.classList.contains('none')) return;
+    const push = Math.max(0, Math.ceil(wheel.getBoundingClientRect().bottom - row.getBoundingClientRect().bottom) + 12);
+    target.style.marginTop = push + 'px';
+}
+
+function clearNavWheelPush() {
+    document.querySelector('.nav-route-selector-container').style.marginTop = '';
+    document.querySelector('.nav-directions-wrapper').style.marginTop = '';
+}
 
 function hideNavTimeWheel(delayMs = 220) {
     if (_navWheelHideTimer) {
         clearTimeout(_navWheelHideTimer);
     }
     _navWheelHideTimer = setTimeout(() => {
+        clearNavWheelPush();
         const wheel = document.getElementById('nav-time-wheel');
         if (wheel) {
             wheel.classList.remove('active');
@@ -5313,6 +5506,14 @@ window.hideNavTimeWheel = hideNavTimeWheel;
 let _navLeaveByRecalcTimer = null;
 let _navLastCalculatedOffset = null;
 let _navLeaveByPendingReselect = false;
+// Minimum minutes faster a new fastest route must be before a same-offset
+// live refresh revises an auto-picked selection (blocks tick flapping).
+const NAV_AUTO_RESELECT_MARGIN_MINUTES = 2;
+// Walks at or under this length are always plausible enough to show, no matter
+// what live bus ETAs say (same bar as the no-bus case). walkMin/walkDist are
+// static per search, so this also makes walk membership deterministic across
+// live ticks: it appears with the bus options, never seconds later.
+const NAV_WALK_ALWAYS_SHOW_MINUTES = 45;
 
 function initNavTimeSelector() {
     if (window._navTimeSelectorInitialized) return;
@@ -5370,10 +5571,12 @@ function initNavTimeSelector() {
         if (e) col.releasePointerCapture(e.pointerId);
 
         const finalOffset = window.navLeaveByOffsetMinutes || 0;
+        // Immediate recalculation on release if not already calculated, then
+        // refresh arrivals (selection may have changed) and snap position.
+        setNavLeaveByOffset(finalOffset, false, true);
+        renderNavTimeWheelItems();
         updateWheelPosition(finalOffset, true);
         hideNavTimeWheel(220);
-        // Immediate recalculation on release if not already calculated
-        setNavLeaveByOffset(finalOffset, false, true);
     };
 
     col.addEventListener('pointerup', endDrag);
@@ -5395,6 +5598,7 @@ function initNavTimeSelector() {
                 e.stopPropagation();
                 showNavTimeWheel();
                 setNavLeaveByOffset(next, false, true);
+                renderNavTimeWheelItems();
                 updateWheelPosition(next, true);
                 hideNavTimeWheel(500);
             }
@@ -5410,6 +5614,7 @@ function initNavTimeSelector() {
         if (next !== current) {
             showNavTimeWheel();
             setNavLeaveByOffset(next, false, true);
+            renderNavTimeWheelItems();
             updateWheelPosition(next, true);
             hideNavTimeWheel(400);
         }
@@ -5423,6 +5628,7 @@ function initNavTimeSelector() {
         if (next !== current) {
             showNavTimeWheel();
             setNavLeaveByOffset(next, false, true);
+            renderNavTimeWheelItems();
             updateWheelPosition(next, true);
             hideNavTimeWheel(400);
         }
@@ -5437,7 +5643,12 @@ function setNavLeaveByOffset(offset, force = false, immediate = true) {
     if (!force && clamped === prevOffset && _navLastCalculatedOffset === clamped) {
         return;
     }
-    const reselectFastest = clamped !== prevOffset;
+    // Fast-track the fastest route when the computed departure time actually
+    // moved. prevOffset is the displayed time, which the drag already set to
+    // the final value; comparing against the last *calculated* offset keeps
+    // the release recalc (drag: 25 -> drop at 30) an authoritative re-track
+    // instead of a same-offset refresh.
+    const reselectFastest = clamped !== (_navLastCalculatedOffset != null ? _navLastCalculatedOffset : prevOffset);
     window.navLeaveByOffsetMinutes = clamped;
     if (navRouteSession && navRouteSession.routeData) {
         navRouteSession.routeData.leaveByOffsetMinutes = clamped;
@@ -5560,6 +5771,7 @@ function resetNavLeaveByTime() {
         wheel.classList.remove('active');
         wheel.classList.add('none');
     }
+    clearNavWheelPush();
     $('#nav-leave-by-val').css('opacity', '1').text('--');
     $('.nav-time-steppers').css('opacity', '1');
     $('#nav-arrive-by-val').text('--');
@@ -5771,7 +5983,13 @@ function recalculateNavForLeaveBy(offsetMinutes, options) {
             const busOptions = computedEntries.filter(e => !e.isWalk && !(e.route && e.route.isWalk));
             const walkMin = walkEntry.journeyMinutes || walkEntry.walkMinutes;
             const walkDist = (walkEntry.route && walkEntry.route.totalWalkingFeet) || (walkEntry.route && walkEntry.route.walkDistance && walkEntry.route.walkDistance.feet) || (walkMin * 220);
-            if (busOptions.length > 0 && !shouldIncludeWalkOption(walkMin, walkDist, busOptions)) {
+            const walkKept = walkMin > 0 && (walkMin <= NAV_WALK_ALWAYS_SHOW_MINUTES || shouldIncludeWalkOption(walkMin, walkDist, busOptions));
+            if (NAV_DEBUG) console.log('[nav:leave-by] walk filter:', {
+                offset: offsetMinutes, walkMin, walkDist,
+                buses: busOptions.map(e => ({ name: e.route.name, hasLive: e.hasLive, journeyMin: e.journeyMinutes })),
+                included: walkKept
+            });
+            if (!walkKept) {
                 computedEntries = computedEntries.filter(e => e !== walkEntry);
             }
         }
@@ -5818,16 +6036,30 @@ function recalculateNavForLeaveBy(offsetMinutes, options) {
             entries: computedEntries.map(e => ({ name: e.route.name, hasLive: e.hasLive, arrival: new Date(e.arrivalTimestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), journeyMin: e.journeyMinutes }))
         });
 
-        // Select the active route: when the departure time changed, track the
-        // fastest route for the new time (computedEntries is sorted
-        // fastest-first above, so index 0 is best). On same-offset refreshes
-        // (live data ticks), keep the user's current (possibly manual) pick.
+        // Select the active route. A changed departure time always tracks the
+        // fastest route (computedEntries is sorted fastest-first above, so
+        // index 0 is best). Same-offset live refreshes keep explicit manual
+        // picks; auto picks re-track fastest only when clearly beaten (the
+        // margin blocks tick-flapping around the boundary).
         let selIdx = 0;
-        if (!reselectFastest) {
-            const curRestoreKey = rd.restoreRouteName ? String(rd.restoreRouteName).trim().toLowerCase() : null;
-            if (curRestoreKey) {
-                const found = computedEntries.findIndex(e => String(e.route.name).trim().toLowerCase() === curRestoreKey);
-                if (found >= 0) selIdx = found;
+        const curRestoreKey = rd.restoreRouteName ? String(rd.restoreRouteName).trim().toLowerCase() : null;
+        const found = curRestoreKey
+            ? computedEntries.findIndex(e => String(e.route.name).trim().toLowerCase() === curRestoreKey)
+            : -1;
+        if (reselectFastest) {
+            rd.routeSelectionMode = 'auto';
+        } else if (rd.routeSelectionMode === 'manual' && found >= 0) {
+            selIdx = found;
+        } else if (found >= 0) {
+            const prevEntries = rd.routesForDisplay || [];
+            const prevPick = prevEntries[rd.selectedRouteDisplayIndex] || prevEntries.find(e => String(e.route.name).trim().toLowerCase() === curRestoreKey);
+            const prevJourney = (prevPick && typeof prevPick.journeyMinutes === 'number') ? prevPick.journeyMinutes : Infinity;
+            const bestJourney = (computedEntries[0] && typeof computedEntries[0].journeyMinutes === 'number') ? computedEntries[0].journeyMinutes : Infinity;
+            if (bestJourney + NAV_AUTO_RESELECT_MARGIN_MINUTES < prevJourney) {
+                rd.routeSelectionMode = 'auto';
+                selIdx = 0;
+            } else {
+                selIdx = found;
             }
         }
 
@@ -5896,7 +6128,7 @@ function recalculateNavForLeaveBy(offsetMinutes, options) {
         $('.nav-route-selector-container').removeClass('none');
         $('.nav-time-row').removeClass('none');
 
-        renderNavRouteSelector(computedEntries, selIdx);
+        renderNavRouteSelector(computedEntries, selIdx, { focusWalk: reselectFastest });
 
         if (computedEntries.length > 0 && rd.route) {
             const curRoute = rd.route;
@@ -6400,8 +6632,8 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
 
         if (window.navLeaveByOffsetMinutes > 0) {
             console.log('[nav:leave-by] updateNavOnOutOfService delegating to recalculateNavForLeaveBy, offset:', window.navLeaveByOffsetMinutes);
-            // Same-offset refresh from a live data tick: recalculate times but
-            // preserve the user's current route selection (no reselectFastest).
+            // Same-offset refresh from a live data tick: recalculate times.
+            // Manual picks stay; auto picks re-track only when clearly beaten.
             recalculateNavForLeaveBy(window.navLeaveByOffsetMinutes);
             return;
         }
@@ -7179,7 +7411,13 @@ function displayRoute(routeData) {
             const busOptions = routesForDisplay.filter(e => !e.isWalk && !(e.route && e.route.isWalk));
             const walkMin = walkEntry.journeyMinutes || walkEntry.walkMinutes;
             const walkDist = (walkEntry.route && walkEntry.route.totalWalkingFeet) || (walkEntry.route && walkEntry.route.walkDistance && walkEntry.route.walkDistance.feet) || (walkMin * 220);
-            if (!shouldIncludeWalkOption(walkMin, walkDist, busOptions)) {
+            const walkKept = walkMin > 0 && (walkMin <= NAV_WALK_ALWAYS_SHOW_MINUTES || shouldIncludeWalkOption(walkMin, walkDist, busOptions));
+            if (NAV_DEBUG) console.log('[nav] walk filter (initial):', {
+                walkMin, walkDist,
+                buses: busOptions.map(e => ({ name: e.route.name, hasLive: e.hasLive, journeyMin: e.journeyMinutes })),
+                included: walkKept
+            });
+            if (!walkKept) {
                 routesForDisplay = routesForDisplay.filter(e => e !== walkEntry);
             }
         }
@@ -7373,6 +7611,7 @@ function displayRoute(routeData) {
     renderNavRouteSelector(routesForDisplay, selectedRouteDisplayIndex);
 
     // Snapshot this route view for the "<- Back to nav" button on waypoint popups.
+    const priorRouteSelectionMode = (navRouteSession && navRouteSession.routeData && navRouteSession.routeData.routeSelectionMode) || 'auto';
     navRouteSession = {
         routeData: {
             startBuilding,
@@ -7395,6 +7634,7 @@ function displayRoute(routeData) {
             endIsStop,
             routeCombosMap,
             restoreRouteName: (routesForDisplay[selectedRouteDisplayIndex] && routesForDisplay[selectedRouteDisplayIndex].route.name) || route.name,
+            routeSelectionMode: restoreRouteName ? priorRouteSelectionMode : 'auto',
             selectedIncomingBusName: routeData.selectedIncomingBusName || null,
             selectedIncomingBusIndex: routeData.selectedIncomingBusIndex ?? null,
             selectedTransferLeg1BusName: routeData.selectedTransferLeg1BusName || null,
