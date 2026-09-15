@@ -942,6 +942,8 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         if (p.toLowerCase() === 'together') return 'Together';
         if (p.toLowerCase() === 'upstage') return 'Upstage';
         if (p.toLowerCase() === 'sail research') return 'Sail Research';
+        if (p.toLowerCase() === 'baseten' || p.toLowerCase() === 'baseten (us)') return 'Baseten (US)';
+        if (p.toLowerCase() === 'wafer') return 'Wafer';
         if (p.length > 0 && p[0] === p[0].toUpperCase()) return p;
         return p.charAt(0).toUpperCase() + p.slice(1);
     }
