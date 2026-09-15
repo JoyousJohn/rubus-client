@@ -888,4 +888,5 @@ $('.satellite-btn').click(function() {
         let theme = resolveAutoTheme(settings['theme']);
         $(this).addClass('active');
     }
+    updateRouteArrowsTheme();
 });

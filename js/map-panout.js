@@ -180,6 +180,8 @@ function changeMapStyle(newStyle) {
         busLayerManager.regenerateThemeSprites();
     }
 
+    updateRouteArrowsTheme();
+
     // Satellite mode owns its own tiles
     if (currentTileLayerType === 'satellite' || !map) {
         return;

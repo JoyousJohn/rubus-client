@@ -11,15 +11,37 @@ const FORCE_SHOW_TOGGLE = 'toggle-force-show-polylines';
 // directly to a hi-res canvas (FA `fa-solid fa-location-arrow-up` style:
 // rounded triangle with a notched base) and registered via `map.addImage`
 // with `sdf: false`. Each route color gets its own pre-baked sprite (color
-// fill + white halo painted in canvas) — this keeps edges crisp under
-// rotation, unlike treating a small raster as SDF (which caused the halo
-// aliasing). Drawn pointing EAST because line symbols align east at
-// `icon-rotate: 0`. Mirrors the per-color sprite cache in js/bus-layer.js.
-function routeArrowImageName(color) {
-    return 'route-arrow-' + String(color || '#888').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+// fill + halo painted in canvas) — this keeps edges crisp under rotation,
+// unlike treating a small raster as SDF (which caused halo aliasing).
+// Halo color is theme-aware: dark (#161616) on dark map themes (Dark, Spruce,
+// Charm, and satellite) for crisp silhouette separation against the polyline
+// without harsh white glare, and white (#ffffff) on light themes (Light, Coffee).
+// Drawn pointing EAST because line symbols align east at `icon-rotate: 0`.
+// Mirrors the per-color sprite cache in js/bus-layer.js.
+
+function isDarkMapTheme() {
+    if (currentTileLayerType === 'satellite') return true;
+    const rawTheme = document.documentElement.getAttribute('theme') || settings['theme'] || selectedTheme || 'light';
+    const style = resolveMapTileStyle(resolveAutoTheme(rawTheme));
+    return style === 'dark-v11' || style === 'forest' || style === 'glamour';
 }
 
-function buildRouteArrowImageData(color) {
+function routeArrowHaloVariant() {
+    return isDarkMapTheme() ? 'dark' : 'light';
+}
+
+function routeArrowHaloColor(variant) {
+    const v = variant || routeArrowHaloVariant();
+    return v === 'dark' ? '#161616' : '#ffffff';
+}
+
+function routeArrowImageName(color, haloVariant) {
+    const variant = haloVariant || routeArrowHaloVariant();
+    const cleanColor = String(color || '#888').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    return `route-arrow-${cleanColor}-${variant}`;
+}
+
+function buildRouteArrowImageData(color, haloColor) {
     const S = 128;
     const canvas = document.createElement('canvas');
     canvas.width = S;
@@ -34,8 +56,8 @@ function buildRouteArrowImageData(color) {
     ctx.lineTo(48, 64);   // base notch
     ctx.lineTo(24, 104);  // base bottom
     ctx.closePath();
-    // White halo baked underneath (SDF halo is skipped for crispness).
-    ctx.strokeStyle = '#ffffff';
+    // Halo baked underneath (SDF halo is skipped for crispness).
+    ctx.strokeStyle = haloColor || routeArrowHaloColor();
     ctx.lineWidth = 16;
     ctx.stroke();
     ctx.fillStyle = color || '#888';
@@ -44,14 +66,16 @@ function buildRouteArrowImageData(color) {
 }
 
 // Register (or re-register after a style reload clears images) the sprite
-// for a route color. Returns the image name, or null when the map isn't
-// ready. Safe to call on every polyline add: `hasImage` short-circuits.
-function ensureRouteArrowImage(color) {
+// for a route color and halo variant. Returns the image name, or null when
+// the map isn't ready. Safe to call on every polyline add: `hasImage` short-circuits.
+function ensureRouteArrowImage(color, haloVariant) {
     try {
         if (!map) return null;
-        const name = routeArrowImageName(color);
+        const variant = haloVariant || routeArrowHaloVariant();
+        const name = routeArrowImageName(color, variant);
         if (map.hasImage(name)) return name;
-        map.addImage(name, buildRouteArrowImageData(color), { pixelRatio: 2, sdf: false });
+        const halo = routeArrowHaloColor(variant);
+        map.addImage(name, buildRouteArrowImageData(color, halo), { pixelRatio: 2, sdf: false });
         return name;
     } catch (e) {
         console.warn('[RouteArrows] addImage failed:', e);
@@ -96,6 +120,28 @@ function applyRouteArrowsVisibility() {
     }
 }
 window.applyRouteArrowsVisibility = applyRouteArrowsVisibility;
+
+// Switch route arrow sprites between light (white halo) and dark (dark halo)
+// to match the active map theme. Called from changeMapStyle and satellite toggles.
+function updateRouteArrowsTheme() {
+    try {
+        if (!map || !polylines) return;
+        const variant = routeArrowHaloVariant();
+        for (const route in polylines) {
+            const poly = polylines[route];
+            if (!poly) continue;
+            const arrowId = poly._mapLibreArrowId;
+            if (arrowId && map.getLayer(arrowId)) {
+                const color = poly.getColor() || colorMappings[route] || '#888';
+                const imageName = ensureRouteArrowImage(color, variant) || routeArrowImageName(color, variant);
+                map.setLayoutProperty(arrowId, 'icon-image', imageName);
+            }
+        }
+    } catch (e) {
+        console.warn('[RouteArrows] updateRouteArrowsTheme failed:', e);
+    }
+}
+window.updateRouteArrowsTheme = updateRouteArrowsTheme;
 
 function isForceShowEnabled() {
     return settings && settings[FORCE_SHOW_TOGGLE] === true;
@@ -488,9 +534,9 @@ window.createMapLibrePolyline = function(coordinates, options) {
                     source: sourceId,
                     layout: {
                         'symbol-placement': 'line',
-                        'symbol-spacing': 111,
+                        'symbol-spacing': 133,
                         'icon-image': arrowImage,
-                        'icon-size': 0.45,
+                        'icon-size': 0.38,
                         'icon-rotation-alignment': 'map',
                         'icon-keep-upright': false,
                         'icon-allow-overlap': true,
@@ -572,6 +618,7 @@ window.createMapLibrePolyline = function(coordinates, options) {
         _mapLibreLayerId: layerId,
         _mapLibreArrowId: arrowLayerId,
         _routeName: polyRouteName,
+        getColor: function() { return currentColor; },
         isAdded: function() { return isAdded && !!(map && map.getLayer && map.getLayer(layerId)); },
         addTo: function(targetMap) {
             ensureAdded();
