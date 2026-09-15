@@ -7803,7 +7803,7 @@ function displayRoute(routeData) {
                         
                         // Fly to the building location
                         if (building && building.lat && building.lng) {
-                            flyToCenteredBelow([building.lat, building.lng], 15.5, document.querySelector('.building-info-popup .br-1rem.p-1rem'), 1.5);
+                            flyToCenteredBelow([building.lat, building.lng], 16.5, document.querySelector('.building-info-popup .br-1rem.p-1rem'), 1.5);
                         }
                     });
                 } else {
@@ -7811,7 +7811,7 @@ function displayRoute(routeData) {
                     
                     // Fly to the building location
                     if (building && building.lat && building.lng) {
-                        flyToCenteredBelow([building.lat, building.lng], 15.5, document.querySelector('.building-info-popup .br-1rem.p-1rem'), 1.5);
+                        flyToCenteredBelow([building.lat, building.lng], 16.5, document.querySelector('.building-info-popup .br-1rem.p-1rem'), 1.5);
                     }
                 }
                 
@@ -7840,7 +7840,7 @@ function displayRoute(routeData) {
                 // Fly to the stop location
                 if (stop && stop.latitude && stop.longitude) {
                     clearPanoutFeedback();
-                    flyToCenteredBelow([stop.latitude, stop.longitude], 15.5, document.querySelector('.stop-info-popup .stop-info-popup-inner'), 1.5);
+                    flyToCenteredBelow([stop.latitude, stop.longitude], 16, document.querySelector('.stop-info-popup .stop-info-popup-inner'), 1.5);
                 }
                 
                 // Close navigation

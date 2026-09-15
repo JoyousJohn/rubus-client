@@ -1279,7 +1279,7 @@ $(document).ready(function() {
     function selectBuilding(buildingData) {
         // Show building info and fly to location immediately
         showBuildingInfo(buildingData);
-        flyToCenteredBelow([buildingData.lat, buildingData.lng], 15.5, document.querySelector('.building-info-popup .br-1rem.p-1rem'), 0.3);
+        flyToCenteredBelow([buildingData.lat, buildingData.lng], 16.5, document.querySelector('.building-info-popup .br-1rem.p-1rem'), 0.3);
         
         if (!buildingsLayer) {
             loadBuildings().then(() => {
@@ -1304,7 +1304,7 @@ $(document).ready(function() {
         if (item.category === 'stop') {
             // Handle stop selection
             popStopInfo(Number(item.id));
-            flyToCenteredBelow([item.lat, item.lng], 15.5, document.querySelector('.stop-info-popup .stop-info-popup-inner'), 0.3);
+            flyToCenteredBelow([item.lat, item.lng], 16, document.querySelector('.stop-info-popup .stop-info-popup-inner'), 0.3);
             saveRecentSearch(item);
         } else {
             // Handle building selection
