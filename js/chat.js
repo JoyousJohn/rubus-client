@@ -315,7 +315,7 @@ function colorRouteNames(text) {
         // placeholder the coloring passes cannot match, restore afterwards.
         // Bold "**A**" never matches (line starts with "<"), so routes stay.
         const stashedA = [];
-        const guarded = line.replace(/(^|[.!?]|<\/(?:div|li|p|ul)>|<li>|<br\s*\/?>|:)(\s*)(A)\b(?!\s*(?:,|and|or|&|\/)\s*[ABCFH]\b)/g, (m, pre, ws, a) => {
+        const guarded = line.replace(/(^|[.!?]|<\/(?:div|li|p|ul)>|<li>|<br\s*\/?>|:)(\s*)(A)\b(?=\s*[a-z])(?!\s*(?:,|and|or|&|\/)\s*[ABCFH]\b)/g, (m, pre, ws, a) => {
             stashedA.push(a);
             return `${pre}${ws}\0${stashedA.length - 1}\0`;
         });
