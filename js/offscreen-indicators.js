@@ -353,7 +353,7 @@ function renderOffScreenIndicators(container, indicators) {
                 e.stopPropagation();
                 stopFollowBus();
                 if (map) {
-                    map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
+                    map.flyTo(captured.latLng, Math.max(map.getZoom(), 15.5), {
                         animate: true,
                         duration: 0.3
                     });
@@ -385,7 +385,7 @@ function renderOffScreenIndicators(container, indicators) {
                     e.stopPropagation();
                     stopFollowBus();
                     if (map) {
-                        map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
+                        map.flyTo(captured.latLng, Math.max(map.getZoom(), 15.5), {
                             animate: true,
                             duration: 0.3
                         });
@@ -406,7 +406,7 @@ function renderOffScreenIndicators(container, indicators) {
                     e.stopPropagation();
                     stopFollowBus();
                     if (map) {
-                        map.flyTo(captured.latLng, Math.max(map.getZoom(), 15), {
+                        map.flyTo(captured.latLng, Math.max(map.getZoom(), 15.5), {
                             animate: true,
                             duration: 0.3
                         });

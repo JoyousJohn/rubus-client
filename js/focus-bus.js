@@ -762,7 +762,7 @@ function flyToBus(busName) {
     const markerLatLng = busMarkers[busName]?.getLatLng?.();
     const lat = markerLatLng?.lat ?? Number(busData[busName].lat);
     const lng = markerLatLng?.lng ?? Number(busData[busName].long);
-    const targetZoom = 18;
+    const targetZoom = 15.5;
 
     // Leaving a stop for a bus: remember the stop's 2nd-loop expansion and
     // scroll position so the bus back button can restore them. The visibility
