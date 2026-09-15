@@ -154,6 +154,16 @@ function openRUBusSocket() {
                 return;
             }
 
+            if (eventData['event'] === 'route_change') {
+                // Live route reassignment: bust the network subpanel cache
+                // so the route transfers list refreshes. Must return here —
+                // route_change payloads carry no stopId, and the
+                // arrival/departure path below would clobber
+                // busData[busName].stopId with undefined.
+                invalidateRouteChangesCache();
+                return;
+            }
+
             // if(eventData['event'] === 'out_of_service') {
                 
             //     eventData['oos_buses'].forEach(busName => {

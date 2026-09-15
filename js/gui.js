@@ -3502,6 +3502,17 @@ function updateRouteChangesMenu() {
         });
 }
 
+// Bust the 60s cache (e.g. on a live route_change WS event). Refreshes
+// immediately when the network subpanel is visible; otherwise the next
+// panel open re-fetches fresh.
+function invalidateRouteChangesCache() {
+    routeChangesCache.timestamp = 0;
+    if ($('.route-changes-wrapper').is(':visible')) {
+        updateRouteChangesMenu();
+    }
+}
+window.invalidateRouteChangesCache = invalidateRouteChangesCache;
+
 const routeChangesOpenDetails = new Set();
 
 function formatRouteDuration(ms) {
@@ -3545,8 +3556,20 @@ function renderRouteChangesMenu(allChanges) {
     }
     if (rows.length === 0) {
         $wrapper.hide();
+        routeChangesOpenDetails.clear();
         return;
     }
+    // Drop expanded-state keys for rows that no longer exist so the set
+    // can't grow unboundedly across refreshes.
+    const liveKeys = new Set(rows.map(row =>
+        `${row.busName}_${row.time}_${row.oldRoute}_${row.newRoute}_${row.historyIndex}`));
+    for (const key of routeChangesOpenDetails) {
+        if (!liveKeys.has(key)) routeChangesOpenDetails.delete(key);
+    }
+    const timeMsOrNull = (value) => {
+        const ms = new Date(value).getTime();
+        return isNaN(ms) ? null : ms;
+    };
     rows.sort((a, b) => {
         let cmp = 0;
         if (routeChangesSortColumn === 'bus') {
@@ -3558,18 +3581,29 @@ function renderRouteChangesMenu(allChanges) {
             const changeB = String(`${b.oldRoute || '?'}_${b.newRoute || '?'}`).toUpperCase();
             cmp = changeA.localeCompare(changeB, undefined, { sensitivity: 'base' });
         } else {
-            const timeA = new Date(a.time).getTime() || 0;
-            const timeB = new Date(b.time).getTime() || 0;
-            cmp = timeA - timeB;
+            const timeA = timeMsOrNull(a.time);
+            const timeB = timeMsOrNull(b.time);
+            if (timeA === null && timeB === null) cmp = 0;
+            else if (timeA === null) return 1;
+            else if (timeB === null) return -1;
+            else cmp = timeA - timeB;
+            return routeChangesSortDirection === 'asc' ? cmp : -cmp;
         }
         if (cmp !== 0) {
             return routeChangesSortDirection === 'asc' ? cmp : -cmp;
         }
-        return new Date(b.time) - new Date(a.time);
+        // Tie-break by time in the same direction; rows with unparseable
+        // times sort last regardless of direction.
+        const timeA = timeMsOrNull(a.time);
+        const timeB = timeMsOrNull(b.time);
+        if (timeA === null && timeB === null) return 0;
+        if (timeA === null) return 1;
+        if (timeB === null) return -1;
+        return routeChangesSortDirection === 'asc' ? timeA - timeB : timeB - timeA;
     });
     $wrapper.show();
 
-    rows.slice(0, 30).forEach(row => {
+    rows.forEach(row => {
         const busLabel = (busData[row.busName] && busData[row.busName].busName)
             ? busData[row.busName].busName : row.busName;
         const oldRouteColor = (row.oldRoute && colorMappings[row.oldRoute])
@@ -3598,7 +3632,7 @@ function renderRouteChangesMenu(allChanges) {
 
         // Chevron and the rest of the change column to its right as the expand zone
         const $expandZone = $('<div class="route-changes-expand-zone pointer" aria-label="Toggle details" title="Toggle details"></div>');
-        const rowKey = `${row.busName}_${row.time}_${row.oldRoute}_${row.newRoute}`;
+        const rowKey = `${row.busName}_${row.time}_${row.oldRoute}_${row.newRoute}_${row.historyIndex}`;
         const isExpanded = routeChangesOpenDetails.has(rowKey);
         const $chevron = $('<i class="route-changes-chevron fa-solid pointer"></i>')
             .addClass(isExpanded ? 'fa-chevron-up' : 'fa-chevron-down');
@@ -3667,12 +3701,20 @@ function renderRouteChangesMenu(allChanges) {
         }
 
         const $detailContent = $('<div class="route-changes-detail-content"></div>');
-        const $oldItem = $('<div class="route-changes-detail-item"></div>')
-            .append($('<span class="route-changes-detail-label"></span>').html(`On <span style="color: ${oldRouteColor};">${oldRouteName}</span>:`))
-            .append($('<span class="route-changes-detail-val"></span>').text(oldRouteDurationText));
-        const $newItem = $('<div class="route-changes-detail-item"></div>')
-            .append($('<span class="route-changes-detail-label"></span>').html(`On <span style="color: ${newRouteColor};">${newRouteName}</span>:`))
-            .append($('<span class="route-changes-detail-val"></span>').text(newRouteDurationText));
+        const $oldItem = $('<div class="route-changes-detail-item"></div>');
+        $oldItem.append(
+            $('<span class="route-changes-detail-label"></span>')
+                .append(document.createTextNode('On '))
+                .append($('<span></span>').css('color', oldRouteColor).text(oldRouteName))
+                .append(document.createTextNode(':'))
+        ).append($('<span class="route-changes-detail-val"></span>').text(oldRouteDurationText));
+        const $newItem = $('<div class="route-changes-detail-item"></div>');
+        $newItem.append(
+            $('<span class="route-changes-detail-label"></span>')
+                .append(document.createTextNode('On '))
+                .append($('<span></span>').css('color', newRouteColor).text(newRouteName))
+                .append(document.createTextNode(':'))
+        ).append($('<span class="route-changes-detail-val"></span>').text(newRouteDurationText));
 
         $detailContent.append($oldItem).append($newItem);
         $detailRow.append($detailContent);
