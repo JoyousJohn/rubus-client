@@ -792,11 +792,25 @@ function showAllPolylinesFromMap() {
     showAllPolylines();
 }
 
+// Rate-limited per-bus warning for the "at a stop but not in service" case: the
+// feed says the bus is dwelling here, but the in-service predicate disagrees
+// (no fix yet, or off the polyline). Without this the closest-stops chip would
+// read "Here" while routeHasInServiceBuses() paints the route gray, so log the
+// contradiction instead of silently rendering it.
+const _stopHereContradictionWarned = {};
+function warnStopHereContradiction(busName, stopId) {
+    const now = Date.now();
+    if (_stopHereContradictionWarned[busName] && now - _stopHereContradictionWarned[busName] < 30000) return;
+    _stopHereContradictionWarned[busName] = now;
+    const bus = busData[busName];
+    console.warn(`[stop-here-contradiction] Bus ${busName} at_stop=true at stop ${stopId} but not in service (lat=${bus.lat} long=${bus.long} oos=${bus.oos} atDepot=${bus.atDepot} offLine=${distanceFromLine(busName)} offLineDetails=${JSON.stringify(distanceFromLine(busName, true))}) - suppressing "Here" label`);
+}
+
 function isRouteBusAtStop(route, stopId) {
     const targetStopId = Number(stopId);
     if (isNaN(targetStopId)) return false;
 
-    const checkBus = (bus) => {
+    const checkBus = (busName, bus) => {
         if (!bus || !bus.at_stop) return false;
         if (bus.oos || bus.atDepot) return false;
 
@@ -804,12 +818,21 @@ function isRouteBusAtStop(route, stopId) {
         if (busStopId === null || busStopId === undefined) return false;
 
         const currentStopId = Array.isArray(busStopId) ? busStopId[0] : busStopId;
-        return Number(currentStopId) === targetStopId;
+        if (Number(currentStopId) !== targetStopId) return false;
+
+        // Use the same in-service predicate that colours the chip: a bus with no
+        // fix (or off the line) must not claim "Here" on top of a gray route.
+        if (!isRouteBusInService(busName)) {
+            warnStopHereContradiction(busName, targetStopId);
+            return false;
+        }
+
+        return true;
     };
 
     const routeBuses = (busesByRoutes && selectedCampus && busesByRoutes[selectedCampus] && busesByRoutes[selectedCampus][route]) || [];
     for (const busName of routeBuses) {
-        if (checkBus(busData && busData[busName])) {
+        if (checkBus(busName, busData && busData[busName])) {
             return true;
         }
     }
@@ -817,7 +840,7 @@ function isRouteBusAtStop(route, stopId) {
     if (typeof busData === 'object' && busData !== null) {
         for (const busName in busData) {
             const bus = busData[busName];
-            if (bus && (bus.route === route || (bus.route && bus.route.toLowerCase() === route.toLowerCase())) && checkBus(bus)) {
+            if (bus && (bus.route === route || (bus.route && bus.route.toLowerCase() === route.toLowerCase())) && checkBus(busName, bus)) {
                 return true;
             }
         }
@@ -5447,15 +5470,18 @@ function populateMeClosestStops() {
         const busesHere = routesServicing(parseInt(stopId))
         // console.log(busesHere)
         busesHere.forEach(route => {
-            const soonestBus = getSoonestBus(parseInt(stopId), route);
-            const eta = soonestBus[1];
+            let etaText = '';
+            if (isRouteBusAtStop(route, parseInt(stopId))) {
+                etaText = ' Here';
+            } else {
+                const soonestBus = getSoonestBus(parseInt(stopId), route);
+                const eta = soonestBus[1];
+                if (eta !== null && eta !== Infinity && typeof eta === 'number') {
+                    etaText = ` ${Math.ceil(eta / 60)}m`;
+                }
+            }
             const hasInService = routeHasInServiceBuses(route);
             const bgCol = hasInService ? colorMappings[route] : 'gray';
-
-            let etaText = '';
-            if (eta !== null && eta !== Infinity && typeof eta === 'number') {
-                etaText = ` ${Math.ceil(eta / 60)}m`;
-            }
 
             $routesHereDiv.append($(`<div class="route-here route-here-${route} pointer">${route.toUpperCase()}${etaText}</div>`)
             .attr('data-stop-id', String(stopId))
@@ -5547,10 +5573,14 @@ function refreshMeClosestStopsEtas() {
         const $chip = $(this);
         const sid = parseInt($chip.attr('data-stop-id'));
         const route = $chip.attr('data-route');
-        const eta = getSoonestBus(sid, route, validCache)[1];
         let etaText = '';
-        if (eta !== null && eta !== Infinity && typeof eta === 'number') {
-            etaText = ` ${Math.ceil(eta / 60)}m`;
+        if (isRouteBusAtStop(route, sid)) {
+            etaText = ' Here';
+        } else {
+            const eta = getSoonestBus(sid, route, validCache)[1];
+            if (eta !== null && eta !== Infinity && typeof eta === 'number') {
+                etaText = ` ${Math.ceil(eta / 60)}m`;
+            }
         }
         const next = `${route.toUpperCase()}${etaText}`;
         if ($chip.text() !== next) $chip.text(next);
