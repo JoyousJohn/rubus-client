@@ -55,6 +55,117 @@ function getSoonestBus(stopId, route, validCache) {
     return [lowestBusName, lowestETA];
 }
 
+// Stops-subpanel ETA rows carry an absolute arrival stamp (data-eta-abs) and the
+// 1s ticker derives `ceil((abs - now)/1000)` from it, i.e. "the stamped whole
+// seconds minus the whole seconds elapsed". Stamping a *quantized* value is what
+// keeps a freshly-set ETA on screen for a full second: tied to the raw fractional
+// ETA, the value would hit its next second boundary part-way through the ticker's
+// interval and appear to drop a second immediately after refreshing.
+let incomingEtaTicker = null;
+
+function formatIncomingEta(seconds) {
+    const s = Math.max(0, Math.ceil(seconds));
+    return s >= 60 ? `${Math.floor(s / 60)}m` : `${s}s`;
+}
+
+// Whole seconds remaining, plus the absolute stamp that matches it.
+function incomingEtaStamp(eta, now) {
+    const secs = Math.round(eta);
+    return { secs, abs: now + secs * 1000 };
+}
+
+function tickIncomingEtas() {
+    const $panel = $('.all-stops-inner');
+    if (!$panel.is(':visible')) return;
+    const now = Date.now();
+    $panel.find('.incoming-eta[data-eta-abs]').each(function() {
+        const $el = $(this);
+        const abs = Number($el.attr('data-eta-abs'));
+        const text = formatIncomingEta((abs - now) / 1000);
+        if ($el.text() !== text) $el.text(text);
+    });
+}
+
+function startIncomingEtaTicker() {
+    if (incomingEtaTicker === null) {
+        incomingEtaTicker = setInterval(tickIncomingEtas, 1000);
+    }
+}
+
+// In-place ETA refresh for the stops subpanel, driven from the updateTimeToStops
+// cycle. Unlike a full populateAllStops() rebuild this leaves the list's scroll
+// position and hover state alone, so it's throttled to poll cadence; the 1s
+// ticker covers the countdown between refreshes.
+let _lastAllStopsEtaRefresh = 0;
+function refreshAllStopsEtas() {
+    if (!$('.all-stops-inner').is(':visible')) return;
+    const now = Date.now();
+    if (now - _lastAllStopsEtaRefresh < 4000) return;
+    _lastAllStopsEtaRefresh = now;
+
+    // Rows are collected per stop, because each stop's list is re-sorted by
+    // soonest arrival once its ETAs have been refreshed.
+    const stops = new Map();
+    $('.all-stops-inner .incoming-eta[data-stop-id][data-route]').each(function() {
+        const $eta = $(this);
+        const gridEl = $eta.parent().get(0);
+        let entry = stops.get(gridEl);
+        if (!entry) {
+            entry = { $grid: $(gridEl), etas: [] };
+            stops.set(gridEl, entry);
+        }
+        entry.etas.push($eta);
+    });
+
+    // Share the isValid() geometry across every row's buses for this pass.
+    const validCache = new Map();
+    stops.forEach(({ $grid, etas }) => {
+        const rows = [];
+        etas.forEach($eta => {
+            // The render appends a row's chip and ETA as consecutive siblings, so
+            // the chip is the ETA's previous sibling. Captured before any moving.
+            const $chip = $eta.prev('.incoming-route-chip');
+            const stopId = parseInt($eta.attr('data-stop-id'));
+            const route = $eta.attr('data-route');
+
+            if (isRouteBusAtStop(route, stopId)) {
+                $eta.removeAttr('data-eta-abs');
+                if ($eta.text() !== 'Here') $eta.text('Here');
+                rows.push({ $chip, $eta, secs: 0 });
+                return;
+            }
+
+            const [busName, eta] = getSoonestBus(stopId, route, validCache);
+            if (!busData[busName]) {
+                // No inbound bus left on this route (went OOS / changed route).
+                // Drop the whole row: leaving the chip behind with a blank ETA
+                // reads worse than the row simply going away. (A route that later
+                // regains a bus is picked up by the next full rebuild, which the
+                // new/changed-bus fetchWhere path triggers.)
+                $chip.remove();
+                $eta.remove();
+                return;
+            }
+
+            const { secs, abs } = incomingEtaStamp(eta, now);
+            $eta.attr('data-eta-abs', String(abs));
+            const text = formatIncomingEta(secs);
+            if ($eta.text() !== text) $eta.text(text);
+            rows.push({ $chip, $eta, secs });
+        });
+
+        // Soonest first ("Here" leads), moving each chip with its ETA, and only
+        // when the order actually changed so idle passes don't reflow the list.
+        if (rows.length < 2) return;
+        const sorted = rows.slice().sort((a, b) => a.secs - b.secs);
+        if (sorted.every((row, i) => row.$eta.get(0) === rows[i].$eta.get(0))) return;
+
+        sorted.forEach(({ $chip, $eta }) => {
+            $grid.append($chip).append($eta);
+        });
+    });
+}
+
 function populateAllStops() {
     if (typeof activeStops === 'undefined') {
         return;
@@ -100,18 +211,21 @@ function populateAllStops() {
                         // Note: Not calling closeRouteMenu() here as this is switching to stop view
                     });
                 $allStopsGridElm.append($stopsElm);
-                servicingRoutes.forEach(route => {
-                    let [busName, eta] = getSoonestBus(stopId, route);
-                    
-                    if (busData[busName]) {
-                        if (eta >= 60) {
-                            const minutes = Math.floor(eta / 60);
-                            eta = `${minutes}m`;
-                        } else {
-                            eta = `${eta}s`;
-                        }
+                // Soonest arrival first; a bus at the stop ("Here") leads.
+                servicingRoutes
+                    .map(route => {
+                        const busAtStop = isRouteBusAtStop(route, stopId);
+                        const [busName, eta] = busAtStop ? [null, null] : getSoonestBus(stopId, route);
+                        return { route, busAtStop, busName, eta };
+                    })
+                    .filter(row => row.busAtStop || busData[row.busName])
+                    .sort((a, b) => (a.busAtStop ? 0 : a.eta) - (b.busAtStop ? 0 : b.eta))
+                    .forEach(({ route, busAtStop, busName, eta }) => {
                         const _rc = (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[busData[busName]?.route] || colorMappings[route] || '#000') : (colorMappings[busData[busName]?.route] || colorMappings[route] || '#000'));
-                        const $routeChip = $('<div class="white text-1p5rem bold-500 br-0p5rem w-auto center" style="padding: 0.2rem 1rem;"></div>').css('background-color', _rc).text((busData[busName]?.route || route).toUpperCase())
+                        const $routeChip = $('<div class="incoming-route-chip white text-1p5rem bold-500 br-0p5rem w-auto center" style="padding: 0.2rem 1rem;"></div>')
+                            .attr('data-stop-id', String(stopId))
+                            .attr('data-route', route)
+                            .css('background-color', _rc).text((busData[busName]?.route || route).toUpperCase())
                             .on('click', function(e) {
                                 cancelInfoPanelAnimation();
                                 $('.subpanels-container').removeClass('is-dragging-or-animating');
@@ -140,9 +254,18 @@ function populateAllStops() {
                                 flyToStop(stopId, true);
                             });
                         $stopsElm.find('.incoming-list').append($routeChip);
-                        $stopsElm.find('.incoming-list').append($('<div class="text-1p6rem bold right"></div>').text(eta));
-                    }
-                })
+
+                        const $etaElm = $('<div class="incoming-eta text-1p6rem bold right"></div>')
+                            .attr('data-stop-id', String(stopId))
+                            .attr('data-route', route);
+                        if (busAtStop) {
+                            $etaElm.text('Here');
+                        } else {
+                            const { secs, abs } = incomingEtaStamp(eta, Date.now());
+                            $etaElm.attr('data-eta-abs', String(abs)).text(formatIncomingEta(secs));
+                        }
+                        $stopsElm.find('.incoming-list').append($etaElm);
+                    });
             }
         })
         if (campusHasBuses) {
@@ -151,6 +274,8 @@ function populateAllStops() {
             $('.all-stops-inner').append($allStopsGridElm);
         }
     }
+
+    startIncomingEtaTicker();
 }
 
 

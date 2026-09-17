@@ -840,7 +840,7 @@ function isRouteBusAtStop(route, stopId) {
     if (typeof busData === 'object' && busData !== null) {
         for (const busName in busData) {
             const bus = busData[busName];
-            if (bus && (bus.route === route || (bus.route && bus.route.toLowerCase() === route.toLowerCase())) && checkBus(busName, bus)) {
+            if ((bus.route === route || (bus.route && bus.route.toLowerCase() === route.toLowerCase())) && checkBus(busName, bus)) {
                 return true;
             }
         }
