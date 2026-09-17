@@ -1306,10 +1306,81 @@ $(function() {
     const $searchInput = $('#settings-search-input');
     const $clearBtn = $('.settings-search-clear');
 
-    window.filterSettings = function(query, isExpanding) {
-        query = query.trim().toLowerCase();
+    // Query-flag alias -> canonical status filter. A Map rather than a plain
+    // object so an all-lowercase token like "constructor" resolves to undefined
+    // instead of something off Object.prototype.
+    const STATUS_ALIASES = new Map([
+        ['on', 'on'], ['enabled', 'on'], ['active', 'on'], ['true', 'on'], ['1', 'on'],
+        ['off', 'off'], ['inactive', 'off'], ['false', 'off'], ['0', 'off'],
+        ['locked', 'locked'], ['unavailable', 'locked'], ['blocked', 'locked'],
+        ['disabled', 'disabled']
+    ]);
 
-        if (query.length > 0) {
+    // Class match by substring: the settings markup uses compound class names
+    // ("explain-plus", "settings-notice-..."), so token equality is not enough.
+    const classHas = ($el, token) => ($el.attr('class') || '').includes(token);
+
+    // An empty text query matches every row, so a status-only filter still lists.
+    const matchesText = ($el, textQuery) => textQuery === '' || $el.text().toLowerCase().includes(textQuery);
+
+    // Explanation boxes carry no status, so they only ever match on text.
+    const explainBoxMatches = ($el, textQuery, statusFilter) =>
+        !statusFilter && textQuery !== '' && $el.text().toLowerCase().includes(textQuery);
+
+    function parseSettingsQuery(rawQuery) {
+        let query = rawQuery.trim().toLowerCase();
+
+        // Matches shorthands and aliases: :on, :off, is:on, status:on, s:on, state:on, etc.
+        const flagRegex = /(?:^|\s)(?:(?:is|status|s|state):|:)([a-z]+)(?=\s|$)/i;
+        const match = query.match(flagRegex);
+        const statusFilter = match ? (STATUS_ALIASES.get(match[1].toLowerCase()) || null) : null;
+
+        if (statusFilter) {
+            query = query.replace(flagRegex, ' ').replace(/\s+/g, ' ').trim();
+        }
+
+        return { textQuery: query, statusFilter };
+    }
+
+    function getSettingItemStatus($el) {
+        const $checkbox = $el.find('input[type="checkbox"]');
+        return {
+            isToggle: $checkbox.length > 0,
+            isOn: $checkbox.prop('checked') === true,
+            isLocked: $el.hasClass('disabled') ||
+                      $el.find('input:disabled').length > 0 ||
+                      $el.hasClass('unavailable')
+        };
+    }
+
+    function checkItemStatusMatches(itemStatus, statusFilter) {
+        if (!statusFilter) return true;
+        if (!itemStatus.isToggle && !itemStatus.isLocked) return false;
+
+        switch (statusFilter) {
+            case 'on':
+                // Only show toggle settings when filtering for on
+                return itemStatus.isToggle && itemStatus.isOn;
+            case 'off':
+                // Only show toggle settings when filtering for off
+                return itemStatus.isToggle && !itemStatus.isOn;
+            case 'locked':
+                return itemStatus.isLocked;
+            case 'disabled':
+                // "disabled" matches turned off toggle OR locked/non-interactive
+                return (itemStatus.isToggle && !itemStatus.isOn) || itemStatus.isLocked;
+        }
+    }
+
+    window.filterSettings = function(query, isExpanding) {
+        const { textQuery, statusFilter } = parseSettingsQuery(query);
+        const hasFilter = textQuery.length > 0 || statusFilter !== null;
+
+        // Rows this pass decides to show, so the value reads as "how much did this query
+        // match" rather than "how many rows exist". Only counted while filtering.
+        let matchCount = 0;
+
+        if (hasFilter) {
             $clearBtn.show();
             $('.settings-footer-wrapper').hide();
         } else {
@@ -1334,32 +1405,33 @@ $(function() {
                     const depChildren = $item.children('div').toArray();
                     for (let j = 0; j < depChildren.length; j++) {
                         const $depItem = $(depChildren[j]);
-                        const isExplain = $depItem.attr('class') && $depItem.attr('class').includes('explain');
-                        const itemText = $depItem.text().toLowerCase();
-                        const selfMatches = query !== '' && itemText.includes(query);
+                        const isExplain = classHas($depItem, 'explain');
 
-                        if (query === '') {
+                        if (!hasFilter) {
                             if (!isExplain) {
                                 $depItem.show();
                             }
                         } else {
-                            let nextExplainMatches = false;
-                            if (j + 1 < depChildren.length && $(depChildren[j + 1]).is('div')) {
-                                const $next = $(depChildren[j + 1]);
-                                if ($next.attr('class') && $next.attr('class').includes('explain')) {
-                                    if ($next.text().toLowerCase().includes(query)) {
-                                        nextExplainMatches = true;
-                                    }
-                                }
-                            }
-
                             if (isExplain) {
-                                if (selfMatches) {
+                                if (explainBoxMatches($depItem, textQuery, statusFilter)) {
                                     depHasMatch = true;
                                 }
                             } else {
-                                if (selfMatches || nextExplainMatches) {
+                                const depStatus = getSettingItemStatus($depItem);
+                                const statusMatches = checkItemStatusMatches(depStatus, statusFilter);
+                                const selfTextMatches = matchesText($depItem, textQuery);
+
+                                let nextExplainMatches = false;
+                                if (j + 1 < depChildren.length) {
+                                    const $next = $(depChildren[j + 1]);
+                                    if (classHas($next, 'explain') && matchesText($next, textQuery)) {
+                                        nextExplainMatches = true;
+                                    }
+                                }
+
+                                if (statusMatches && (selfTextMatches || nextExplainMatches)) {
                                     $depItem.show();
+                                    matchCount++;
                                     depHasMatch = true;
                                 } else {
                                     $depItem.hide();
@@ -1368,7 +1440,7 @@ $(function() {
                         }
                     }
 
-                    if (query === '') {
+                    if (!hasFilter) {
                         $item.hide();
                     } else if (depHasMatch) {
                         $item.show();
@@ -1393,47 +1465,45 @@ $(function() {
                 const className = $item.attr('class') || '';
                 // Skip notices such as "Option unavailable on iPhone" or "settings-notice"
                 if (className.includes('unavailable') || className.includes('settings-notice')) {
-                    if (query !== '') {
+                    if (hasFilter) {
                         $item.hide();
                     }
                     continue;
                 }
 
-                // Check if this item is an explanation box (contains 'explain')
                 const isExplain = className.includes('explain');
-                const itemText = $item.text().toLowerCase();
-                const selfMatches = query !== '' && itemText.includes(query);
 
-                if (query === '') {
+                if (!hasFilter) {
                     // Reset to default layout visibility (toggles shown, explanations retain CSS/slide state or default hidden if unused)
                     if (!isExplain) {
                         $item.show();
                     }
                 } else {
-                    let nextExplainMatches = false;
-
-                    // If next element is an explanation box that matches (skipping notice elements)
-                    for (let n = i + 1; n < children.length; n++) {
-                        const $next = $(children[n]);
-                        if (!$next.is('div')) continue;
-                        const nClass = $next.attr('class') || '';
-                        if (nClass.includes('unavailable') || nClass.includes('settings-notice')) continue;
-
-                        if (nClass.includes('explain')) {
-                            if ($next.text().toLowerCase().includes(query)) {
-                                nextExplainMatches = true;
-                            }
-                        }
-                        break; // Stop looking after the first non-notice div
-                    }
-
                     if (isExplain) {
-                        if (selfMatches) {
+                        if (explainBoxMatches($item, textQuery, statusFilter)) {
                             sectionHasMatch = true;
                         }
                     } else {
-                        if (selfMatches || nextExplainMatches) {
+                        const itemStatus = getSettingItemStatus($item);
+                        const statusMatches = checkItemStatusMatches(itemStatus, statusFilter);
+                        const selfTextMatches = matchesText($item, textQuery);
+
+                        let nextExplainMatches = false;
+                        for (let n = i + 1; n < children.length; n++) {
+                            const $next = $(children[n]);
+                            if (!$next.is('div')) continue;
+                            const nClass = $next.attr('class') || '';
+                            if (nClass.includes('unavailable') || nClass.includes('settings-notice')) continue;
+
+                            if (nClass.includes('explain') && matchesText($next, textQuery)) {
+                                nextExplainMatches = true;
+                            }
+                            break;
+                        }
+
+                        if (statusMatches && (selfTextMatches || nextExplainMatches)) {
                             $item.show();
+                            matchCount++;
                             sectionHasMatch = true;
                         } else {
                             $item.hide();
@@ -1442,7 +1512,7 @@ $(function() {
                 }
             }
 
-            if (query === '' || sectionHasMatch) {
+            if (!hasFilter || sectionHasMatch) {
                 $section.show();
                 if ($header.length) $header.show();
             } else {
@@ -1465,12 +1535,20 @@ $(function() {
                     if ($item.parents('.settings-chatbot-model').length) return; // handled as part of parent section
                     if ($item.parents('.settings-chatbot-provider').length) return; // handled as part of parent section
 
-                    const text = $item.text().toLowerCase();
-                    if (query === '' || text.includes(query)) {
+                    if (!hasFilter) {
                         $item.show();
-                        if (query !== '' && text.includes(query)) devHasMatch = true;
                     } else {
-                        $item.hide();
+                        const itemStatus = getSettingItemStatus($item);
+                        const statusMatches = checkItemStatusMatches(itemStatus, statusFilter);
+                        const textMatches = matchesText($item, textQuery);
+
+                        if (statusMatches && textMatches) {
+                            $item.show();
+                            matchCount++;
+                            devHasMatch = true;
+                        } else {
+                            $item.hide();
+                        }
                     }
                 });
 
@@ -1480,30 +1558,42 @@ $(function() {
                 const $routeOptions = $('.force-show-option');
                 let forceRouteMatch = false;
 
-                if (query !== '') {
-                    $routeOptions.each(function() {
-                        const routeText = $(this).text().toLowerCase();
-                        if (routeText.includes(query)) {
-                            forceRouteMatch = true;
-                        }
-                    });
-                }
+                if (hasFilter) {
+                    const polyStatus = getSettingItemStatus($forceShowMainRow);
+                    const polyStatusMatches = checkItemStatusMatches(polyStatus, statusFilter);
 
-                if (query === '' || forceRouteMatch) {
-                    $routeOptions.show();
-                    if (forceRouteMatch) {
+                    if (textQuery !== '') {
+                        $routeOptions.each(function() {
+                            const routeText = $(this).text().toLowerCase();
+                            if (routeText.includes(textQuery)) {
+                                forceRouteMatch = true;
+                            }
+                        });
+                    }
+
+                    const mainTextMatches = matchesText($forceShowMainRow, textQuery);
+
+                    if (polyStatusMatches && (mainTextMatches || forceRouteMatch)) {
+                        $routeOptions.show();
                         devHasMatch = true;
                         $forceShowMainRow.show();
-                        $forceShowDep.show();
-                        $forceShowDep.find('.force-show-stops-row').show();
-                        $forceShowDep.find('.force-show-polylines-container').show();
+                        if (forceRouteMatch) {
+                            $forceShowDep.show();
+                            $forceShowDep.find('.force-show-stops-row').show();
+                            $forceShowDep.find('.force-show-polylines-container').show();
+                        } else {
+                            $forceShowDep.hide();
+                        }
+                    } else {
+                        $forceShowMainRow.hide();
+                        $forceShowDep.hide();
                     }
                 } else {
-                    $forceShowMainRow.hide();
-                    $forceShowDep.hide();
+                    $routeOptions.show();
+                    $forceShowMainRow.show();
                 }
 
-                if (query === '') {
+                if (!hasFilter) {
                     $devHead.show();
                 } else {
                     devHasMatch ? $devHead.show() : $devHead.hide();
@@ -1512,7 +1602,7 @@ $(function() {
                 // Update segFocusNotice visibility based on parent toggle row visibility
                 updateSegFocusNotice();
             } else {
-                if (query === '') {
+                if (!hasFilter) {
                     $devHead.show();
                 } else {
                     $devHead.hide();
@@ -1521,6 +1611,8 @@ $(function() {
                 $devWrapper.find('.flex, .settings-bus-positioning, .settings-raster-sharpness, .settings-bus-marker-renderer, .settings-reset-settings, .settings-reset-location, .force-show-dependent, .force-show-option').show();
             }
         }
+
+        return matchCount;
     }
 
     if (isDesktop && !isTouchDevice) {
@@ -1535,16 +1627,38 @@ $(function() {
     }
 
     let settingsSearchDebounce = null;
+
+    // Coalesce typing into a single filter pass per frame. filterSettings walks the
+    // whole settings list and runs selector queries per row, so calling it inline on
+    // every input event throws most of that work away - only the latest query in a
+    // frame matters, and the filter is a pure relayout with nothing reading its
+    // intermediate states.
+    let filterRaf = null;
+    let lastMatchCount = 0;
+    const cancelScheduledFilter = () => {
+        if (filterRaf === null) return;
+        cancelAnimationFrame(filterRaf);
+        filterRaf = null;
+    };
+    const scheduleFilter = (query) => {
+        cancelScheduledFilter();
+        filterRaf = requestAnimationFrame(() => {
+            filterRaf = null;
+            lastMatchCount = filterSettings(query);
+        });
+    };
+
     $searchInput.on('input', function() {
         const query = $(this).val();
-        filterSettings(query);
+        scheduleFilter(query);
 
         clearTimeout(settingsSearchDebounce);
         const trimmed = query.trim();
         if (trimmed.length > 0) {
             settingsSearchDebounce = setTimeout(function() {
                 sa_event('settings_search', {
-                    'query': trimmed
+                    'query': trimmed,
+                    'matches': lastMatchCount
                 });
             }, 500);
         }
@@ -1559,6 +1673,11 @@ $(function() {
             'btn': 'settings_search_clear'
         });
         $searchInput.val('');
+        // Setting .value programmatically fires no 'input' event, so the input handler
+        // never gets a chance to cancel what the last keystroke left pending. Drop both
+        // the queued filter frame and the queued analytics event here instead.
+        cancelScheduledFilter();
+        clearTimeout(settingsSearchDebounce);
         filterSettings('');
         $searchInput.focus();
     });
