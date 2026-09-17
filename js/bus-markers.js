@@ -367,7 +367,12 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
     // Clamp k to [0, 2.0] to guarantee progress is strictly monotonically increasing (never moves backwards)
     let kRatio = avgSpeedMs > 0 ? (initialVelocityMs / avgSpeedMs) : 1.0;
     kRatio = Math.max(0, Math.min(kRatio, 2.0));
-    const kCoeff = kRatio - 1.0;
+    // kCoeff = 0 makes progress linear (p(tau) = tau), so this leg runs at its own average
+    // speed with no acceleration/deceleration easing at all. (kCoeff, not kRatio: a
+    // kRatio of 0 gives kCoeff -1, which is the ease-in from rest.) Resolved once per leg
+    // rather than per frame on purpose: lowering kCoeff mid-leg moves progress backwards
+    // for the same tau, which would jerk the marker back along its own path.
+    const kCoeff = settings['toggle-disable-velocity-smoothing'] ? 0 : kRatio - 1.0;
 
     // Pause accumulation: while the "Pause Bus Markers on Pan" dev setting is
     // active, elapsed wall-clock time is excluded from animation progress so

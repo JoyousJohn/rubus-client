@@ -789,6 +789,10 @@ $('.settings-toggle .toggle-input').on('change', function () {
             }
             break;
 
+        case 'toggle-disable-velocity-smoothing':
+            settings['toggle-disable-velocity-smoothing'] = isChecked;
+            break;
+
         case 'toggle-low-performance-mode':
             settings['toggle-low-performance-mode'] = isChecked;
             if (isChecked) {

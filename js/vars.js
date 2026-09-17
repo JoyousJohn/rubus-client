@@ -136,6 +136,7 @@ const defaultSettings = {
     'bus-animation-rate': 'off',
     'toggle-force-show-polylines': false,
     'toggle-force-show-stops': true,
+    'toggle-disable-velocity-smoothing': false,
     'force-show-polylines': '',
     'custom-tile-url': '',
     

@@ -4088,6 +4088,7 @@ const toggleSettings = [
     'toggle-show-closest-stops',
     'toggle-show-center-stops',
     'toggle-show-etas-in-ms',
+    'toggle-disable-velocity-smoothing',
 ]
 
 let colorMappings;
