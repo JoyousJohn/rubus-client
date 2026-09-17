@@ -5701,8 +5701,12 @@ const NAV_WALK_ALWAYS_SHOW_MINUTES = 45;
 
 function initNavTimeSelector() {
     if (window._navTimeSelectorInitialized) return;
-    const col = document.getElementById('nav-leave-by-col');
-    if (!col) throw new Error('[nav:leave-by] #nav-leave-by-col missing from DOM');
+    // The whole row is the grab surface, not just the departure pill: either
+    // pill, the gap between them, or the row's own padding all open the wheel
+    // and drive the drag. The wheel overlay is pointer-events:none, so it never
+    // becomes a target.
+    const row = document.querySelector('.nav-time-row');
+    if (!row) throw new Error('[nav:leave-by] .nav-time-row missing from DOM');
     window._navTimeSelectorInitialized = true;
 
     let isDragging = false;
@@ -5710,22 +5714,22 @@ function initNavTimeSelector() {
     let startOffset = 0;
     const pxPerStep = 22; // 22px vertical drag per wheel item (~5 minutes)
 
-    col.addEventListener('pointerdown', function(e) {
+    row.addEventListener('pointerdown', function(e) {
         if (e.button !== 0 && e.pointerType === 'mouse') return;
         if (e.target.closest('.nav-time-step-btn')) return;
 
         isDragging = true;
         startY = e.clientY;
         startOffset = window.navLeaveByOffsetMinutes || 0;
-        col.classList.add('nav-dragging');
+        row.classList.add('nav-dragging');
 
         showNavTimeWheel();
         updateWheelPosition(startOffset, false);
 
-        col.setPointerCapture(e.pointerId);
+        row.setPointerCapture(e.pointerId);
     });
 
-    col.addEventListener('pointermove', function(e) {
+    row.addEventListener('pointermove', function(e) {
         if (!isDragging) return;
         const spec = getNavWheelSpec();
         const dy = startY - e.clientY; // positive = dragging UP
@@ -5751,8 +5755,8 @@ function initNavTimeSelector() {
     const endDrag = function(e) {
         if (!isDragging) return;
         isDragging = false;
-        col.classList.remove('nav-dragging');
-        if (e) col.releasePointerCapture(e.pointerId);
+        row.classList.remove('nav-dragging');
+        if (e) row.releasePointerCapture(e.pointerId);
 
         const finalOffset = window.navLeaveByOffsetMinutes || 0;
         // Immediate recalculation on release if not already calculated, then
@@ -5763,12 +5767,12 @@ function initNavTimeSelector() {
         hideNavTimeWheel(220);
     };
 
-    col.addEventListener('pointerup', endDrag);
-    col.addEventListener('pointercancel', endDrag);
+    row.addEventListener('pointerup', endDrag);
+    row.addEventListener('pointercancel', endDrag);
 
     // Mouse wheel / trackpad scrolling
     let wheelAcc = 0;
-    col.addEventListener('wheel', function(e) {
+    row.addEventListener('wheel', function(e) {
         wheelAcc += e.deltaY;
         if (Math.abs(wheelAcc) >= 20 || Math.abs(e.deltaY) >= 40) {
             const dir = wheelAcc < 0 ? 1 : -1; // deltaY < 0 = scroll up -> later time
@@ -5959,9 +5963,7 @@ function resetNavLeaveByTime() {
     $('#nav-leave-by-val').css('opacity', '1').text('--');
     $('.nav-time-steppers').css('opacity', '1');
     $('#nav-arrive-by-val').text('--');
-    $('.nav-time-row').addClass('none');
-    const col = document.getElementById('nav-leave-by-col');
-    if (col) col.classList.remove('nav-dragging');
+    $('.nav-time-row').addClass('none').removeClass('nav-dragging');
 }
 window.resetNavLeaveByTime = resetNavLeaveByTime;
 

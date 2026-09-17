@@ -349,6 +349,10 @@
     position: relative;
     z-index: 50;
     overflow: visible;
+    /* The whole row drives the time wheel: the vertical drag has to win over
+       page scrolling anywhere in it, not only over the departure pill. */
+    touch-action: none;
+    cursor: ns-resize;
 }
 
 .nav-time-row.none {
@@ -375,14 +379,14 @@
 }
 
 .nav-time-col-leave {
-    cursor: ns-resize;
-    touch-action: none;
     overflow: visible;
     z-index: 51;
 }
 
-.nav-time-col-leave:hover,
-.nav-time-col-leave.nav-dragging {
+/* Hovering or dragging anywhere in the row highlights both pills, so the whole
+   row reads as one control rather than just the departure side. */
+.nav-time-row:hover .nav-time-col,
+.nav-time-row.nav-dragging .nav-time-col {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
