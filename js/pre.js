@@ -341,6 +341,16 @@ async function fetchBusData(immediatelyUpdate, isInitial, skipPolylineUpdateFrom
                 const lastMoveTime = busData[busName].previousMoveTime || busData[busName].previousTime || currentTime;
                 const timeSinceLastMove = currentTime - lastMoveTime;
 
+                // Measured ground speed across the last two distinct GPS fixes (m/s).
+                // The marker animation seeds its velocity handoff from this whenever it has
+                // no live tween to inherit from, so a leg that starts without animation
+                // state begins at the bus's real speed instead of dead zero.
+                const moveElapsedSeconds = timeSinceLastMove / 1000;
+                if (coordsAreFinite && moveElapsedSeconds > 0.5) {
+                    const movedMiles = haversine(lastPosition[0], lastPosition[1], apiLat, apiLng);
+                    busData[busName].pollVelocityMs = Math.min((movedMiles * 1609.344) / moveElapsedSeconds, 45);
+                }
+
                 // Effective interval between GPS position changes:
                 // Transit GPS feeds broadcast in ~5-12s intervals. If the bus was stationary at a stop
                 // for longer (>15s), clamp to nominal 10s GPS interval so it resumes at normal driving speed.

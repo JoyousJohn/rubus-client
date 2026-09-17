@@ -139,13 +139,18 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
         return;
     }
 
-    // Capture previous instantaneous velocity (m/s) so the new animation can smoothly accelerate/decelerate
+    // Capture the velocity (m/s) this leg should start at, so the marker's speed stays
+    // continuous across retargets instead of snapping to the new leg's average rate.
+    // Prefer the live position tween's instantaneous velocity. When no position tween is
+    // live - it finished, was cancelled, or the slot is held by a rotation tween - fall
+    // back to the bus's measured ground speed for the last polling interval. That value
+    // lives on busData, so unlike a tween's state it survives every animation ending.
     let initialVelocityMs = 0;
     const prevAnim = animationFrames[busName];
-    if (prevAnim && prevAnim.lastVelocity !== undefined) {
+    if (prevAnim && prevAnim.lastVelocity > 0) {
         initialVelocityMs = prevAnim.lastVelocity;
-    } else if (prevAnim && prevAnim.duration > 0 && prevAnim.totalPathDistance > 0) {
-        initialVelocityMs = prevAnim.totalPathDistance / (prevAnim.duration / 1000);
+    } else if (busData[busName].pollVelocityMs > 0) {
+        initialVelocityMs = busData[busName].pollVelocityMs;
     }
 
     // Cancel any existing animation for this bus before starting a new one
@@ -535,7 +540,6 @@ const updateMarkerPosition = (busName, immediatelyUpdate, moved = true) => {
         }
 
         if (progress >= 1) {
-            animateMarker.lastVelocity = 0;
             if (marker) {
                 marker._idleSince = performance.now();
             }
