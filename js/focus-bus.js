@@ -341,22 +341,53 @@ function distanceFromLine(busName, returnDetails = false) {
 
     if (!polyPoints || !polyPoints.length) return returnDetails ? { isOffLine: false, feet: 0 } : false;
     
-    let flatPoints = polyPoints;
-    if (Array.isArray(polyPoints[0])) {
-        if (typeof polyPoints[0][0] === 'number') {
-            flatPoints = polyPoints;
-        } else {
-            flatPoints = polyPoints.flat(1);
-        }
+    // Group into rings: a flat point list is one run, a list of lists is several.
+    // Points are only ever paired within a ring, so two runs are never joined by
+    // a segment the map does not draw.
+    let rings;
+    const firstPoint = polyPoints[0];
+    if (Array.isArray(firstPoint) && typeof firstPoint[0] === 'number') {
+        rings = [polyPoints];                       // [[lat, lng], ...]
+    } else if (Array.isArray(firstPoint)) {
+        rings = polyPoints.filter(ring => Array.isArray(ring) && ring.length > 1);
+    } else {
+        rings = [polyPoints];                       // [{lat, lng}, ...]
     }
-    
+
+    // Measure in a local metre plane centred on the bus: raw longitude degrees are
+    // ~cos(lat) too wide, and this keeps the projection a true perpendicular one
+    // without a spherical call per point.
+    const metresPerLatDeg = 111194.9;
+    const metresPerLngDeg = metresPerLatDeg * Math.cos(busLatLng.lat * Math.PI / 180);
+    const pointLat = (pt) => Array.isArray(pt) ? Number(pt[0]) : Number(pt.lat);
+    const pointLng = (pt) => Array.isArray(pt) ? Number(pt[1]) : Number(pt.lng);
+
     let minDist = Infinity;
-    for (let i = 0; i < flatPoints.length; i++) {
-        const pt = flatPoints[i];
-        if (!pt) continue;
-        const d = busLatLng.distanceTo(pt);
-        if (typeof d === 'number' && !isNaN(d) && d < minDist) {
-            minDist = d;
+    let pointCount = 0;
+    for (const ring of rings) {
+        pointCount += ring.length;
+        for (let i = 0; i + 1 < ring.length; i++) {
+            const aLat = pointLat(ring[i]), aLng = pointLng(ring[i]);
+            const bLat = pointLat(ring[i + 1]), bLng = pointLng(ring[i + 1]);
+            if (!Number.isFinite(aLat) || !Number.isFinite(aLng) ||
+                !Number.isFinite(bLat) || !Number.isFinite(bLng)) continue;
+
+            const ax = (aLng - busLatLng.lng) * metresPerLngDeg;
+            const ay = (aLat - busLatLng.lat) * metresPerLatDeg;
+            const bx = (bLng - busLatLng.lng) * metresPerLngDeg;
+            const by = (bLat - busLatLng.lat) * metresPerLatDeg;
+
+            // Nearest point on the segment: project onto the line through A and B,
+            // then clamp the parameter to [0,1] so the foot can't land off the ends.
+            const dx = bx - ax, dy = by - ay;
+            const lenSq = dx * dx + dy * dy;
+            let t = lenSq > 0 ? -(ax * dx + ay * dy) / lenSq : 0;
+            if (t < 0) t = 0;
+            else if (t > 1) t = 1;
+
+            const cx = ax + t * dx, cy = ay + t * dy;
+            const d = Math.sqrt(cx * cx + cy * cy);
+            if (d < minDist) minDist = d;
         }
     }
 
@@ -364,7 +395,7 @@ function distanceFromLine(busName, returnDetails = false) {
     try {
         if (typeof performance !== 'undefined' && window.busPopupPerfLog) {
             const _dDur = performance.now() - _d0;
-            if (_dDur > 25) window.busPopupPerfLog(`distanceFromLine SLOW: ${_dDur.toFixed(1)}ms points=${flatPoints.length}`, busName);
+            if (_dDur > 25) window.busPopupPerfLog(`distanceFromLine SLOW: ${_dDur.toFixed(1)}ms points=${pointCount}`, busName);
         }
     } catch (e) {}
     
