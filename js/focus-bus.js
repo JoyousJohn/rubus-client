@@ -778,9 +778,11 @@ function flyToBus(busName) {
     // Center the bus in the map area still visible below the bus info popup.
     // The popup is shown synchronously by selectBusMarker → popInfo, so its
     // current content bottom (above the action-button row) is measurable here.
+    // Follow once the flight has been started: the flight can be deferred while
+    // a keyboard dismisses, and starting the follow before that would let the
+    // flight's stopFollowBus() cancel it.
     const contentEl = document.querySelector('.bus-info-popup .info-next-stops');
-    flyToCenteredBelow([lat, lng], targetZoom, contentEl, 0.3);
-    startFollowBus(busName);
+    flyToCenteredBelow([lat, lng], targetZoom, contentEl, 0.3, () => startFollowBus(busName));
 }
 
 

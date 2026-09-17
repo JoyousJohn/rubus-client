@@ -156,7 +156,6 @@ function refreshAllStopsEtas() {
 
         // Soonest first ("Here" leads), moving each chip with its ETA, and only
         // when the order actually changed so idle passes don't reflow the list.
-        if (rows.length < 2) return;
         const sorted = rows.slice().sort((a, b) => a.secs - b.secs);
         if (sorted.every((row, i) => row.$eta.get(0) === rows[i].$eta.get(0))) return;
 

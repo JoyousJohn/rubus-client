@@ -33,15 +33,12 @@ function checkIsTouchDevice() {
 isDesktop = $(window).width() > 992 && $(window).height() >= 500 && !checkIsTouchDevice();
 isTouchDevice = checkIsTouchDevice();
 
-// Compute the container-pixel y (relative to the map's top-left) at which the
-// given lat/lng should land so it sits mid-way between the bottom of the popup
-// content (above the popup's bottom action-button row) and the map's bottom
-// edge — i.e. centered in the still-visible map area. The buttons are short,
-// so it's fine for them to sit above the centered space.
-let lastInputBlurTime = 0;
-$(document).on('blur', 'input', function() {
-    lastInputBlurTime = Date.now();
-});
+// True while an on-screen keyboard (or similar browser chrome) is covering part
+// of the page: it shrinks the visual viewport relative to the layout viewport.
+function keyboardShowing() {
+    const vv = window.visualViewport;
+    return !!vv && (window.innerHeight - vv.height) > 100;
+}
 
 // Compute the container-pixel y (relative to the map's top-left) at which the
 // given lat/lng should land so it sits mid-way between the bottom of the popup
@@ -109,30 +106,16 @@ function getCenteredYBelowPopup(contentEl) {
 //
 // essential:true keeps prefers-reduced-motion from turning user-initiated
 // flights into instant jumps.
-function flyToCenteredBelow(latlng, zoom, popupEl, duration) {
-    // Any new popup flight retargets the map, so an in-progress bus follow
-    // must end first (safe for flyToBus: startFollowBus runs after this).
+function flyToCenteredBelow(latlng, zoom, popupEl, duration, onFlown) {
+    // Any new popup flight retargets the map, so an in-progress bus follow must
+    // end first. Callers that then start a follow (flyToBus) must do it in
+    // onFlown, because a flight can be deferred while a keyboard dismisses.
     stopFollowBus();
 
-    // If a keyboard was active or recently blurred, wait briefly for it to dismiss
-    // so map container dimensions and layout have settled before calculating.
-    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
-        document.activeElement.blur();
-    }
-    const delay = (Date.now() - lastInputBlurTime < 400) ? 250 : 0;
-
-    setTimeout(() => {
-        stopFollowBus();
-        if (delay > 0) {
-            map.resize();
-        }
+    const fly = () => {
         const size = map.getSize();
-        const cx = size.x / 2;
         const cy = size.y / 2;
-        const desiredY = getCenteredYBelowPopup(popupEl);
-
-        // Feature should stay horizontally centered and land at desiredY.
-        const offsetY = desiredY - cy;
+        const offsetY = getCenteredYBelowPopup(popupEl) - cy;
 
         map.flyTo([latlng[0], latlng[1]], zoom, {
             animate: true,
@@ -140,7 +123,33 @@ function flyToCenteredBelow(latlng, zoom, popupEl, duration) {
             essential: true,
             offset: { x: 0, y: offsetY }
         });
-    }, delay);
+        if (onFlown) onFlown();
+    };
+
+    // Nothing covering the map: fly now, synchronously, so the flight stays
+    // ordered with respect to whatever the caller does after this returns.
+    if (!keyboardShowing()) {
+        fly();
+        return;
+    }
+
+    // A keyboard is up, so the container won't report its real height until it
+    // finishes dismissing. Wait for that (bounded) instead of guessing a fixed
+    // delay, then resize and fly.
+    const vv = window.visualViewport;
+    let settleTimer = null;
+    let done = false;
+    const finish = () => {
+        if (done) return;
+        done = true;
+        vv.removeEventListener('resize', onResize);
+        clearTimeout(settleTimer);
+        map.resize();
+        fly();
+    };
+    const onResize = () => { if (!keyboardShowing()) finish(); };
+    vv.addEventListener('resize', onResize);
+    settleTimer = setTimeout(finish, 300);
 }
 
 let currentTileLayerType = 'streets'; // Track the current tile layer type
