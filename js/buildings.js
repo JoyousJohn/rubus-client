@@ -839,12 +839,29 @@ function isPointInPolygon(lat, lng, polygon) {
     return inside;
 }
 
+// True once initMap() has created the map instance. Distinguishes the expected
+// "settings updated before the map exists" first run from a real bug where the
+// map reference has gone missing.
+let mapHasBeenCreated = false;
+
 // Listen for settings update or map creation to restore building state
 document.addEventListener('rubus-settings-updated', function() {
-    if (!window.map) return;
+    // initMap() dispatches this at map-init.js:5, before assigning `map` at
+    // map-init.js:10, so on a first run there is no map yet. That is expected:
+    // the rubus-map-created listener below re-runs the restore once the map
+    // exists, and restoreBuildingLayerState re-reads the current settings, so
+    // nothing is lost by returning early. After the map has been created once,
+    // a missing map means something actually broke.
+    if (typeof map === 'undefined' || !map) {
+        if (mapHasBeenCreated) {
+            console.warn('[buildings] Settings updated after map creation but the map instance is missing; building layer state was not restored');
+        }
+        return;
+    }
     restoreBuildingLayerState();
 });
 document.addEventListener('rubus-map-created', function() {
+    mapHasBeenCreated = true;
     restoreBuildingLayerState();
 });
 
