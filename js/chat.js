@@ -555,7 +555,7 @@ $(document).on('click', '.chat-btn', function() {
                 });
                 sa_event('btn_press', { btn: 'chat_example_selected' });
                 $('.chat-recs').hide();
-                $('.chat-ui-input').val(q);
+                $('.chat-ui-input').val(q).data('is-example', true);
                 $('.chat-ui-input-bar').trigger('submit');
             });
             $rows[idx % 3].append($rec);
@@ -1038,6 +1038,10 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     $('.chat-recs').hide();
 
     const $input = $(this).find('.chat-ui-input');
+    // One-shot flag stamped by suggestion-chip taps. Consumed before the
+    // early returns so a dropped submit can't misattribute the next message.
+    const isExample = $input.data('is-example') === true;
+    $input.removeData('is-example');
     if ($input.prop('disabled')) return;
     let msg = $input.val().trim();
     if (!msg) return;
@@ -1056,7 +1060,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         history_length: window.chatHistory.length,
         model: settings['chatbot-model'] || defaultSettings['chatbot-model'],
         provider: settings['chatbot-provider'] || 'auto',
-        is_example: false,
+        is_example: isExample,
         campus: settings['campus'] || 'nb'
     });
     sa_event('btn_press', { btn: 'chat_message_sent' });
@@ -1461,7 +1465,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                                 provider: currentProvider,
                                 campus: settings['campus'] || 'nb'
                             });
-                            $('.chat-ui-input').val(question);
+                            $('.chat-ui-input').val(question).data('is-example', true);
                             $('.chat-ui-input-bar').trigger('submit');
                             $chipsContainer.fadeOut(200, function() { $(this).remove(); });
                         });
