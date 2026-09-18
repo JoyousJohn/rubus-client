@@ -3,6 +3,12 @@ let _pendingThemeTimeout
 
 let selectedCampusRoutes = [];
 
+// Weekend per America/New_York wall time (device timezone may differ for travelers).
+function isWeekendEastern() {
+    const day = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short' }).format(new Date());
+    return day === 'Sat' || day === 'Sun';
+}
+
 function populateRouteSelectors(allActiveRoutes, stopId = null) {
     // Drag/scroll state must be initialized before the selection-highlight block
     // below calls smoothScrollTo (declaration-before-use; binding is per-invocation,
@@ -91,13 +97,25 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         routesArray.unshift('summer1');
     }
 
-    if (routesArray.includes('wknd2')) {
-        routesArray = routesArray.filter(route => route !== 'wknd2');
-        routesArray.unshift('wknd2');
-    }
-    if (routesArray.includes('wknd1')) {
-        routesArray = routesArray.filter(route => route !== 'wknd1');
-        routesArray.unshift('wknd1');
+    // Weekend routes lead on Eastern weekends, trail on Eastern weekdays.
+    if (isWeekendEastern()) {
+        if (routesArray.includes('wknd2')) {
+            routesArray = routesArray.filter(route => route !== 'wknd2');
+            routesArray.unshift('wknd2');
+        }
+        if (routesArray.includes('wknd1')) {
+            routesArray = routesArray.filter(route => route !== 'wknd1');
+            routesArray.unshift('wknd1');
+        }
+    } else {
+        if (routesArray.includes('wknd1')) {
+            routesArray = routesArray.filter(route => route !== 'wknd1');
+            routesArray.push('wknd1');
+        }
+        if (routesArray.includes('wknd2')) {
+            routesArray = routesArray.filter(route => route !== 'wknd2');
+            routesArray.push('wknd2');
+        }
     }
 
     // Favorited routes should always show up first
