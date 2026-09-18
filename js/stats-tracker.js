@@ -1,6 +1,8 @@
 // js/stats-tracker.js - device-local user action tracking, backed by IndexedDB.
-// Captures only visits, bus views, stop views, and building taps. Data never
-// leaves the device. Wraps window.sa_event so Simple Analytics keeps working.
+// Captures visits, bus views, stop views, building taps, and chatbot token
+// spend. Data never leaves the device. Wraps window.sa_event so Simple
+// Analytics keeps working. Chatbot token totals are additionally mirrored to
+// localStorage for cheap synchronous reads (see CHAT_TOKEN_LS_KEY).
 const LocalStats = (function() {
     if (typeof window.indexedDB === 'undefined') {
         throw new Error('[stats] indexedDB required but unavailable');
@@ -10,10 +12,11 @@ const LocalStats = (function() {
     }
     const DB_NAME = 'rubus_analytics';
     const DB_VERSION = 1;
-    const TRACKED_EVENTS = new Set(['load', 'view_bus', 'view_stop', 'building_tap']);
+    const TRACKED_EVENTS = new Set(['load', 'view_bus', 'view_stop', 'building_tap', 'chat_tokens']);
     const RETENTION_DAYS = 90;
     const FLUSH_INTERVAL_MS = 5000;
     const FLUSH_BATCH = 50;
+    const CHAT_TOKEN_LS_KEY = 'rubus-chat-token-spend-v1';
 
     let db = null;
     let pending = [];
@@ -36,7 +39,70 @@ const LocalStats = (function() {
             case 'view_bus': return String(p.route || '');
             case 'view_stop': return String(p.stop_name || '');
             case 'building_tap': return String(p.building || '');
+            case 'chat_tokens': return String(p.model || 'unknown');
             default: return '';
+        }
+    }
+
+    // Token quantities carried on chat_tokens props. Accepts `tokens`
+    // (canonical) plus common server aliases so callers don't normalize.
+    function getTokenSpend(props) {
+        const candidates = [props.tokens, props.total_tokens, props.totalTokens];
+        for (let i = 0; i < candidates.length; i++) {
+            const n = Math.floor(Number(candidates[i]));
+            if (isFinite(n) && n > 0) return n;
+        }
+        // Fall back to summing parts (completion + reasoning + prompt/input).
+        let sum = 0;
+        const parts = [props.completion_tokens, props.reasoning_tokens, props.prompt_tokens, props.input_tokens];
+        parts.forEach(function(v) {
+            const n = Math.floor(Number(v));
+            if (isFinite(n) && n > 0) sum += n;
+        });
+        return sum;
+    }
+
+    function readChatTokenSpendLS() {
+        try {
+            const raw = localStorage.getItem(CHAT_TOKEN_LS_KEY);
+            if (!raw) return { totalTokens: 0, totalMessages: 0, byModel: {}, byDay: {}, updatedAt: 0 };
+            const parsed = JSON.parse(raw);
+            return {
+                totalTokens: Math.max(0, Math.floor(Number(parsed.totalTokens)) || 0),
+                totalMessages: Math.max(0, Math.floor(Number(parsed.totalMessages)) || 0),
+                byModel: (parsed.byModel && typeof parsed.byModel === 'object') ? parsed.byModel : {},
+                byDay: (parsed.byDay && typeof parsed.byDay === 'object') ? parsed.byDay : {},
+                updatedAt: Number(parsed.updatedAt) || 0
+            };
+        } catch (e) {
+            return { totalTokens: 0, totalMessages: 0, byModel: {}, byDay: {}, updatedAt: 0 };
+        }
+    }
+
+    function bumpChatTokenSpendLS(model, day, tokens) {
+        try {
+            const data = readChatTokenSpendLS();
+            const n = Math.max(0, Math.floor(Number(tokens)) || 0);
+            if (n <= 0) return data;
+            const modelKey = String(model || 'unknown');
+            data.totalTokens += n;
+            data.totalMessages += 1;
+            if (!data.byModel[modelKey]) data.byModel[modelKey] = { tokens: 0, messages: 0 };
+            data.byModel[modelKey].tokens += n;
+            data.byModel[modelKey].messages += 1;
+            if (!data.byDay[day]) data.byDay[day] = { tokens: 0, messages: 0 };
+            data.byDay[day].tokens += n;
+            data.byDay[day].messages += 1;
+            // Prune per-day entries beyond retention so the key stays small.
+            const days = Object.keys(data.byDay).sort();
+            while (days.length > RETENTION_DAYS) {
+                delete data.byDay[days.shift()];
+            }
+            data.updatedAt = Date.now();
+            localStorage.setItem(CHAT_TOKEN_LS_KEY, JSON.stringify(data));
+            return data;
+        } catch (e) {
+            return null;
         }
     }
 
@@ -101,6 +167,17 @@ const LocalStats = (function() {
                 cursor.continue();
             }
         };
+        const tx2 = db.transaction('daily', 'readwrite');
+        const daily = tx2.objectStore('daily');
+        daily.openCursor().onsuccess = function(e) {
+            const cursor = e.target.result;
+            if (cursor) {
+                if (cursor.value && cursor.value.day && cursor.value.day <= cutoffDay) {
+                    daily.delete(cursor.primaryKey);
+                }
+                cursor.continue();
+            }
+        };
     }
 
     function flush() {
@@ -132,10 +209,13 @@ const LocalStats = (function() {
             const bucket = getBucket(ev);
             const key = ev.name + '\u0000' + ev.day + '\u0000' + bucket;
             if (!bumps[key]) {
-                bumps[key] = { name: ev.name, day: ev.day, bucket: bucket, count: 0, lastTs: 0 };
+                bumps[key] = { name: ev.name, day: ev.day, bucket: bucket, count: 0, tokens: 0, lastTs: 0 };
             }
             bumps[key].count++;
             bumps[key].lastTs = Math.max(bumps[key].lastTs, ev.ts);
+            if (ev.name === 'chat_tokens') {
+                bumps[key].tokens += getTokenSpend(ev.props);
+            }
         });
         Object.keys(bumps).forEach(function(keyStr) {
             const bump = bumps[keyStr];
@@ -145,9 +225,10 @@ const LocalStats = (function() {
                 if (existing) {
                     existing.count += bump.count;
                     existing.lastTs = Math.max(existing.lastTs, bump.lastTs);
+                    existing.tokens = (Math.floor(Number(existing.tokens)) || 0) + (bump.tokens || 0);
                     dailyStore.put(existing);
                 } else {
-                    dailyStore.add({ name: bump.name, day: bump.day, bucket: bump.bucket, count: bump.count, lastTs: bump.lastTs });
+                    dailyStore.add({ name: bump.name, day: bump.day, bucket: bump.bucket, count: bump.count, tokens: bump.tokens || 0, lastTs: bump.lastTs });
                 }
             };
         });
@@ -172,7 +253,15 @@ const LocalStats = (function() {
     function track(name, props) {
         if (!TRACKED_EVENTS.has(name)) return;
         const ts = Date.now();
-        pending.push({ name: name, ts: ts, day: easternDay(ts), props: props || {} });
+        const day = easternDay(ts);
+        pending.push({ name: name, ts: ts, day: day, props: props || {} });
+        // Mirror chatbot token quantities to localStorage synchronously so the
+        // PostHog event carries the up-to-date running total for this user.
+        if (name === 'chat_tokens') {
+            const tokens = getTokenSpend(props);
+            if (tokens <= 0) console.warn('[stats] chat_tokens event with no positive token quantity, skipped:', props);
+            bumpChatTokenSpendLS(props.model || 'unknown', day, tokens);
+        }
         if (pending.length >= FLUSH_BATCH) {
             flush();
         } else {
@@ -268,6 +357,7 @@ const LocalStats = (function() {
         track: track,
         getDailyStats: getDailyStats,
         flush: flush,
-        rewrapSaEvent: rewrapSaEvent
+        rewrapSaEvent: rewrapSaEvent,
+        getChatTokenSpend: readChatTokenSpendLS
     };
 })();

@@ -4734,8 +4734,16 @@ function syncPostHogPersonProfile() {
         favorite_buses: favList,
         favorite_routes: favRouteList,
         is_pwa: !!isPWA,
-        is_touch_device: !!isTouch
+        is_touch_device: !!isTouch,
+        chat_total_tokens: 0,
+        chat_total_messages: 0
     };
+
+    // Backfill device-local chatbot totals so the PostHog person profile shows
+    // the running count even before the next chat message fires its $set.
+    const chatSpend = LocalStats.getChatTokenSpend();
+    personProps.chat_total_tokens = chatSpend.totalTokens;
+    personProps.chat_total_messages = chatSpend.totalMessages;
 
     const setOnceProps = {
         time_joined: timeJoined,

@@ -987,6 +987,44 @@ function truncateChatHistory(history) {
     return truncated;
 }
 
+// Device-local chatbot token spend tracking. Records per-completion spend via
+// LocalStats (IndexedDB daily aggregates keyed by model, mirrored to
+// localStorage under 'rubus-chat-token-spend-v1'). No UI reads this.
+function chatTokenNum(v) {
+    const n = Math.floor(Number(v));
+    return (isFinite(n) && n > 0) ? n : 0;
+}
+
+function estimateChatTokens(text) {
+    if (!text) return 0;
+    return Math.max(1, Math.round(String(text).length / 3.8));
+}
+
+function recordChatTokenSpend(data, opts) {
+    if (opts.responseError) return null;
+    const model = opts.model || data.model || 'unknown';
+    const provider = opts.provider || data.provider || 'auto';
+    const completion = chatTokenNum(data.completion_tokens || data.output_tokens)
+        || estimateChatTokens(opts.answer || data.answer || '');
+    const reasoning = chatTokenNum(data.reasoning_tokens)
+        || (opts.thinking ? estimateChatTokens(opts.thinking) : 0);
+    const promptServer = chatTokenNum(data.prompt_tokens || data.input_tokens || data.promptTokens);
+    const prompt = promptServer || estimateChatTokens(opts.question || '');
+    const total = chatTokenNum(data.total_tokens || data.tokens || data.totalTokens)
+        || (completion + reasoning + prompt);
+    if (total <= 0) return null;
+    const spend = { completion: completion, reasoning: reasoning, prompt: prompt, total: total };
+    sa_event('chat_tokens', {
+        model: model,
+        provider: provider,
+        tokens: total,
+        completion_tokens: completion,
+        reasoning_tokens: reasoning,
+        prompt_tokens: prompt
+    });
+    return spend;
+}
+
 // One request at a time: the input bar stays locked while a response is
 // generating and unlocks on done/error, so messages can't pile up mid-stream.
 function setChatInputEnabled(on) {
@@ -1368,16 +1406,43 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                 const totalAnswerTokens = data.completion_tokens || estimateTokens(finalAnswer);
                 const finalAnswerTps = (totalAnswerTokens / answerDurationSec).toFixed(1);
 
+                // Local-first: updates the device-local cumulative totals
+                // synchronously, so the PostHog event below can carry the
+                // up-to-date running total for this user.
+                const chatSpend = recordChatTokenSpend(data, {
+                    responseError: responseError,
+                    model: currentModel,
+                    provider: currentProvider,
+                    answer: finalAnswer,
+                    thinking: thinkingToDisplay,
+                    question: msg
+                });
+
+                const chatCumulative = LocalStats.getChatTokenSpend();
+
+                const chatPersonSet = {
+                    chat_last_model: currentModel,
+                    chat_last_provider: currentProvider,
+                    chat_total_tokens: chatCumulative.totalTokens,
+                    chat_total_messages: chatCumulative.totalMessages
+                };
+
                 capturePostHog('chat_response_received', {
                     success: !responseError,
                     error_type: responseError,
                     latency_ms: Math.round(performance.now() - reqStartTime),
                     answer_length: finalAnswer.length,
-                    completion_tokens: totalAnswerTokens,
+                    completion_tokens: (chatSpend && chatSpend.completion) || totalAnswerTokens,
+                    reasoning_tokens: (chatSpend && chatSpend.reasoning) || (thinkingToDisplay ? estimateChatTokens(thinkingToDisplay) : 0),
+                    prompt_tokens: (chatSpend && chatSpend.prompt) || estimateChatTokens(msg),
+                    total_tokens: (chatSpend && chatSpend.total) || totalAnswerTokens,
+                    chat_total_tokens: chatCumulative.totalTokens,
+                    chat_total_messages: chatCumulative.totalMessages,
                     suggestions_count: suggestions.length,
                     model: currentModel,
                     provider: currentProvider,
-                    campus: settings['campus'] || 'nb'
+                    campus: settings['campus'] || 'nb',
+                    $set: chatPersonSet
                 });
 
                 console.log(finalAnswer);
