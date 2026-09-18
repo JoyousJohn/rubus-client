@@ -1301,12 +1301,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     ensureBotMeta();
                 }
                 streamedAnswer += data.delta;
-                let cleanStream = streamedAnswer
-                    .replace(/<suggestions>[\s\S]*?(?:<\/suggestions>|$)/gi, '')
-                    .replace(/<think(?:ing)?>[\s\S]*?(?:<\/think(?:ing)?>|$)/gi, '')
-                    .replace(/<\/?role(?:\s[^>]*)?>/gi, '')
-                    .replace(/<\|[^>]*>/g, '');
-                $botMsg.find('.chat-message-content').html(colorRouteNames(parseMarkdown(cleanStream)));
+                $botMsg.find('.chat-message-content').html(colorRouteNames(parseMarkdown(streamedAnswer)));
                 updateActiveTps();
                 if (chatAutoScrollSticky) {
                     smoothScrollChatToBottom($messages);
@@ -1338,7 +1333,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${Number(thinkTokens).toLocaleString()} tokens`));
                 }
 
-                let rawText = finalAnswer;
+                const rawText = finalAnswer;
                 let responseError = null;
                 if (!rawText && data.progress && data.progress.startsWith('Error:')) {
                     console.error('[Chat Error]', data.progress);
@@ -1362,20 +1357,6 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     responseError = 'empty_response';
                     finalAnswer = 'Sorry, I received an empty response.';
                 } else {
-                    const channelFinalMatch = rawText.match(/(?:<\|channel\|>final<\|message\|>|assistantfinal|assistant:\s*final|<final>)([\s\S]*)/i);
-                    if (channelFinalMatch) {
-                        rawText = channelFinalMatch[1];
-                    } else {
-                        rawText = rawText.replace(/<\|channel\|>analysis<\|message\|>[\s\S]*?<\|end\|>/gi, '');
-                        rawText = rawText.replace(/<\|channel\|>[^<]+<\|message\|>/gi, '');
-                        rawText = rawText.replace(/<\|start\|>assistant/gi, '');
-                        rawText = rawText.replace(/<\|end\|>/gi, '');
-                        rawText = rawText.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, '');
-                        rawText = rawText.replace(/<analysis>[\s\S]*?<\/analysis>/gi, '');
-                        rawText = rawText.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
-                    }
-                    rawText = rawText.replace(/<\|[^>]+>/g, '');
-                    rawText = rawText.replace(/<\/?role(?:\s[^>]*)?>/gi, '');
                     finalAnswer = rawText.trim() || 'There was an issue formatting the response.';
                 }
 
