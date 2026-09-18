@@ -5188,8 +5188,16 @@ function handleNearestStop(fly) {
             sourceStopId = null;
             sourceBusName = null;
             if (!sharedBusName) {
-                flyToStop(thisClosestStopId, false); // false indicates automatic navigation, no analytics event
-                console.log("Flying to closest stop");
+                if (isNavMenuOpen()) {
+                    // The user opened the nav menu, so keep it up and just move
+                    // the map behind it. flyToStop() would open the stop popup,
+                    // whose closeSearch() hides the search/nav wrapper.
+                    flyMapToStopInBackground(thisClosestStopId);
+                    console.log("Flying to closest stop in background (nav menu open)");
+                } else {
+                    flyToStop(thisClosestStopId, false); // false indicates automatic navigation, no analytics event
+                    console.log("Flying to closest stop");
+                }
             }    
         } else {
             console.log("Not flying to closest stop");
@@ -5301,6 +5309,23 @@ function flyToStop(stopId, fromUserInteraction = false) {
             'stop_name': stopName
         });
     }
+}
+
+// True while the directions/nav menu (a child of .search-wrapper) is actually
+// on screen. Uses :visible rather than the .none class because closeSearch()
+// only clears .none when searchMode !== 'directions', leaving the wrapper
+// without .none while its hidden .search-wrapper parent keeps it invisible.
+function isNavMenuOpen() {
+    return $('.navigate-wrapper').is(':visible');
+}
+
+// Fly the map to a stop without opening its info popup, so an open nav menu
+// stays up. Mirrors flyToStop()'s camera target (zoom 16, centered below the
+// popup — with no popup that is the map center — keyboard aware) but skips
+// popStopInfo()/popRiderStopInfo() and the closeSearch() they trigger.
+function flyMapToStopInBackground(stopId) {
+    const stopData = stopsData[stopId];
+    flyToCenteredBelow([Number(stopData.latitude), Number(stopData.longitude)], 16, null, 0.5);
 }
 
 function flyToClosestStop() {
