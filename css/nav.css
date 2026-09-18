@@ -1642,6 +1642,10 @@
 }
 
 .nav-close-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: auto;
     background-color: var(--theme-link);
     color: var(--theme-bg);
     cursor: pointer;

@@ -6343,7 +6343,7 @@ function recalculateNavForLeaveBy(offsetMinutes, options) {
                             <div class="waypoint-rows-container"></div>
                         </div>
                         <div class="flex justify-center mt-3rem mb-2rem">
-                            <div class="nav-close-btn py-1rem px-2rem br-4rem text-1p6rem bold-600 w-min" onclick="closeNavigation()">CLOSE</div>
+                            <div class="nav-close-btn py-1rem px-2rem br-4rem text-1p6rem bold-600 w-min" onclick="continueInChat()"><i class="fa-solid fa-sparkles"></i> Continue in Chat</div>
                         </div>
                     `);
                 }
@@ -7886,7 +7886,7 @@ function displayRoute(routeData) {
 
     directionsContainer.append(`
         <div class="flex justify-center mt-3rem mb-2rem">
-            <div class="nav-close-btn py-1rem px-2rem br-4rem text-1p6rem bold-600 w-min" onclick="closeNavigation()">CLOSE</div>
+            <div class="nav-close-btn py-1rem px-2rem br-4rem text-1p6rem bold-600 w-min" onclick="continueInChat()"><i class="fa-solid fa-sparkles"></i> Continue in Chat</div>
         </div>
     `);
 
@@ -8800,6 +8800,30 @@ function closeNavigation() {
         }
     }
 }
+
+// Hand the current route's endpoints to the chatbot, close nav, and open chat
+function continueInChat() {
+    const rd = (navRouteSession && navRouteSession.routeData) || null;
+    const from = (rd && rd.startBuilding && rd.startBuilding.name)
+        || (rd && rd.originalInputs && rd.originalInputs.from)
+        || (navRouteSession && navRouteSession.fromVal)
+        || $('#nav-from-input').val() || '';
+    const to = (rd && rd.endBuilding && rd.endBuilding.name)
+        || (rd && rd.originalInputs && rd.originalInputs.to)
+        || (navRouteSession && navRouteSession.toVal)
+        || $('#nav-to-input').val() || '';
+    const start = String(from).trim();
+    const end = String(to).trim();
+    const message = (start && end)
+        ? `How do I navigate from ${start} to ${end}?`
+        : 'How do I navigate around campus?';
+
+    closeNavigation();
+    $('.chat-btn').trigger('click');
+    $('.chat-ui-input').val(message);
+    $('.chat-ui-input-bar').trigger('submit');
+}
+window.continueInChat = continueInChat;
 
 // Populate navigation examples using popular locations from search recommendations
 function populateNavigationExamples() {
