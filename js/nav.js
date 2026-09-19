@@ -5825,6 +5825,14 @@ function initNavTimeSelector() {
 window.initNavTimeSelector = initNavTimeSelector;
 
 function setNavLeaveByOffset(offset, force = false, immediate = true) {
+    // "Now" always means now: re-anchor a stale session base before snapping,
+    // so dragging or stepping back to Now can't resurrect session start.
+    if ((offset || 0) <= 0) {
+        const d = new Date();
+        d.setSeconds(0, 0);
+        window.navLeaveByBaseTimestamp = d.getTime();
+        if (navRouteSession && navRouteSession.routeData) navRouteSession.routeData.baseTimestamp = window.navLeaveByBaseTimestamp;
+    }
     const spec = getNavWheelSpec();
     const prevOffset = window.navLeaveByOffsetMinutes || 0;
     const clamped = spec.offsets[navWheelNearestIndex(offset)];
@@ -5873,6 +5881,62 @@ function setNavLeaveByOffset(offset, force = false, immediate = true) {
     }
 }
 window.setNavLeaveByOffset = setNavLeaveByOffset;
+
+// Live clock for the leave-by/arrive row. Re-anchors "leave now" as wall time
+// advances and refreshes arrivals against live ETAs on a tick and on tab
+// resume. Same-offset recalcs preserve manual route picks (see
+// recalculateNavForLeaveBy), so this is safe to run blind. A pinned future
+// departure is kept absolute until it passes, then snaps back to now.
+const NAV_TIME_ROW_TICK_MS = 30000;
+let _navTimeRowTickTimer = null;
+let _navTimeRowResumeHooked = false;
+
+function refreshNavTimeRowLive() {
+    if (!navRouteSession || !navRouteSession.routeData) return;
+    if ($('.nav-directions-wrapper').hasClass('none')) return;
+    const rd = navRouteSession.routeData;
+    const now = Date.now();
+    const offset = window.navLeaveByOffsetMinutes || 0;
+    const base = window.navLeaveByBaseTimestamp || now;
+    if (offset > 0) {
+        // Pinned departure: per-poll recalcs already track arrivals; only snap
+        // once the pinned time passes (one-shot full recalc, then offset 0).
+        if (base + (offset * 60000) <= now) setNavLeaveByOffset(0, true, true);
+        return;
+    }
+    // "Leave now": re-anchor the clock and re-derive the two clock texts from
+    // the already-live journeyMinutes. No ETA recompute, no re-sort, so pills
+    // can't shuffle under a tap. Gated on the minute: every display here is
+    // minute-precision, so a same-minute tick could only churn DOM.
+    const d = new Date();
+    d.setSeconds(0, 0);
+    if (base === d.getTime()) return;
+    window.navLeaveByBaseTimestamp = d.getTime();
+    rd.baseTimestamp = window.navLeaveByBaseTimestamp;
+    $('#nav-leave-by-val').text(new Date(window.navLeaveByBaseTimestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+    const earliest = rd.routesForDisplay[0];
+    const earliestJourney = earliest ? (earliest.journeyMinutes || earliest.walkMinutes || 0) : 0;
+    if (earliestJourney > 0) {
+        $('#nav-arrive-by-val').text(new Date(window.navLeaveByBaseTimestamp + (earliestJourney * 60000)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+    }
+    if (isNavWheelVisible()) {
+        renderNavTimeWheelItems();
+        updateWheelPosition(0, false);
+    }
+}
+window.refreshNavTimeRowLive = refreshNavTimeRowLive;
+
+function ensureNavTimeRowTick() {
+    if (!_navTimeRowResumeHooked) {
+        _navTimeRowResumeHooked = true;
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') refreshNavTimeRowLive();
+        });
+        window.addEventListener('focus', function() { refreshNavTimeRowLive(); });
+    }
+    if (_navTimeRowTickTimer) return;
+    _navTimeRowTickTimer = setInterval(refreshNavTimeRowLive, NAV_TIME_ROW_TICK_MS);
+}
 
 function updateNavTimeRowInitial(routesForDisplay, routeData) {
     const $row = $('.nav-time-row');
@@ -5938,6 +6002,7 @@ function updateNavTimeRowInitial(routesForDisplay, routeData) {
     if (!window._navTimeSelectorInitialized) {
         initNavTimeSelector();
     }
+    ensureNavTimeRowTick();
 }
 window.updateNavTimeRowInitial = updateNavTimeRowInitial;
 
@@ -6871,6 +6936,14 @@ function updateNavOnOutOfService(oosBusNames, emptiedRoutes) {
                     entry.journeyMinutes = newJourneyMinutes;
                     timeChanged = true;
                 }
+            });
+            // Keep each absolute arrival glued to its live duration: the row
+            // derives its clock from these stamps, and journeyMinutes above is
+            // the freshest per-poll value. No re-sort here (see anti-thrash
+            // note below); the tick re-anchors the base this is added to.
+            const liveLeaveTs = window.navLeaveByBaseTimestamp || Date.now();
+            routesForDisplay.forEach(function(e) {
+                if (e.journeyMinutes > 0) e.arrivalTimestamp = liveLeaveTs + (e.journeyMinutes * 60000);
             });
 
             if (statusChanged || timeChanged) {
