@@ -1971,13 +1971,11 @@ html, body {
     background-color: var(--theme-accent, #3565f8);
     border: 1px solid transparent;
     padding: 0 2rem;
-    box-shadow: 0 4px 12px rgba(53, 101, 248, 0.35);
     transition: all 0.2s ease;
 }
 
 .color-confirm:hover {
     background-color: #2452e6;
-    box-shadow: 0 6px 16px rgba(53, 101, 248, 0.45);
 }
 
 .route-active-buses {
