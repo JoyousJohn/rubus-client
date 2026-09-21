@@ -180,6 +180,59 @@
         box-sizing: border-box;
     }
 
+    .info-panels-layout-container {
+        position: relative;
+    }
+
+    /* Track an explicitly resized info panels width (info-panels.js sets
+       --info-panels-width on :root when the user drags the edge) */
+    .color-selection-modal {
+        width: var(--info-panels-width, 100%);
+        max-width: var(--info-panels-width, 25%);
+    }
+
+    /* Right-edge drag handle for resizing the info panels width */
+    .info-panels-layout-container .info-panels-resize-handle {
+        display: block;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 12px;
+        height: 100%;
+        cursor: ew-resize;
+        z-index: 405;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        background: transparent;
+    }
+
+    .info-panels-layout-container .info-panels-resize-handle::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 4px;
+        height: 4rem;
+        border-radius: 2px;
+        background-color: var(--theme-border);
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    .info-panels-layout-container .info-panels-resize-handle:hover::after,
+    .info-panels-layout-container .info-panels-resize-handle.dragging::after {
+        opacity: 1;
+    }
+
+    body.info-panels-resizing,
+    body.info-panels-resizing * {
+        cursor: ew-resize !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+    }
+
     .color-selection-modal {
         z-index: 500;
         white-space: normal;

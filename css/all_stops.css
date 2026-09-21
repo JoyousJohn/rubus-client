@@ -15,6 +15,11 @@
     min-height: 0;
 }
 
+/* Right-edge width resize handle — visible on desktop only (see desktop.css) */
+.info-panels-resize-handle {
+    display: none;
+}
+
 .info-panels-content {
     flex: 1 1 0; /* Grow and shrink, but start from 0 height */
     overflow-y: auto;

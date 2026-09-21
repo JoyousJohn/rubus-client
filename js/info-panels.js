@@ -841,6 +841,8 @@ $(function() {
 	try { updateInfoPanelIndicator(panelOrder[lastUserSelectedPanelIndex] || 'stops', { immediate: true }); } catch(e) {}
 	try { initInfoPanelSliderDrag(); } catch(e) { console.warn('initInfoPanelSliderDrag failed', e); }
 	initInfoSubpanelScrollMemory();
+	applyStoredInfoPanelsWidth();
+	initInfoPanelsResize();
 });
 
 let initialTransformX = 0;
@@ -1140,8 +1142,115 @@ function navigateToPanel(direction) {
     selectInfoPanel(newPanel, newElement[0]);
 }
 
+// ── Desktop width resizing (right-edge drag) ────────────────────────────
+// On desktop the panels are pinned left at 25% width. Dragging the right
+// edge of .info-panels-layout-container resizes .info-panels-wrapper and
+// re-lays-out the subpanels to match. The width persists across sessions.
+const INFO_PANELS_WIDTH_KEY = 'rubus_info_panels_width_px';
+const INFO_PANELS_MIN_WIDTH = 280;
+
+function infoPanelsWidthMediaMatches() {
+	return window.matchMedia('(min-width: 992px) and (min-height: 500px)').matches;
+}
+
+function infoPanelsMaxWidth() {
+	return Math.round(Math.min(window.innerWidth * 0.7, 920));
+}
+
+function clampInfoPanelsWidth(w) {
+	return Math.max(INFO_PANELS_MIN_WIDTH, Math.min(infoPanelsMaxWidth(), Math.round(w)));
+}
+
+// Apply an explicit width to the panels wrapper and mirror it to the
+// --info-panels-width var so .color-selection-modal tracks it on desktop.
+function setExplicitPanelsWidth(w) {
+	const wrapper = document.querySelector('.info-panels-show-hide-wrapper .info-panels-wrapper');
+	wrapper.style.width = w + 'px';
+	wrapper.style.maxWidth = w + 'px';
+	document.documentElement.style.setProperty('--info-panels-width', w + 'px');
+}
+
+function clearExplicitPanelsWidth() {
+	const wrapper = document.querySelector('.info-panels-show-hide-wrapper .info-panels-wrapper');
+	wrapper.style.width = '';
+	wrapper.style.maxWidth = '';
+	document.documentElement.style.removeProperty('--info-panels-width');
+}
+
+function applyStoredInfoPanelsWidth() {
+	if (!infoPanelsWidthMediaMatches()) {
+		clearExplicitPanelsWidth();
+		return;
+	}
+	let stored = 0;
+	try { stored = parseFloat(localStorage.getItem(INFO_PANELS_WIDTH_KEY)); } catch(e) {}
+	if (stored > 0) setExplicitPanelsWidth(clampInfoPanelsWidth(stored));
+}
+
+function relayoutInfoPanelsForWidth() {
+	const $container = $('.subpanels-container');
+	const w = getInfoPanelWidth();
+	$container.width(3 * w);
+	$container.children('.subpanel').width(w);
+	$container.css({ 'transition': 'none', 'transform': 'translateX(' + (-currentPanelIndex * w) + 'px)' });
+	updateInfoPanelIndicator(panelOrder[currentPanelIndex], { immediate: true });
+}
+
+function initInfoPanelsResize() {
+	const handle = document.querySelector('.info-panels-resize-handle');
+	const wrapper = document.querySelector('.info-panels-show-hide-wrapper .info-panels-wrapper');
+	let dragging = false;
+	let startX = 0;
+	let startW = 0;
+	let rafId = 0;
+	let pendingW = 0;
+
+	function paint() {
+		rafId = 0;
+		setExplicitPanelsWidth(pendingW);
+		if ($('.info-panels-show-hide-wrapper').is(':visible')) relayoutInfoPanelsForWidth();
+	}
+
+	handle.addEventListener('pointerdown', function(e) {
+		if (!infoPanelsWidthMediaMatches()) return;
+		if (e.button !== undefined && e.button !== 0) return;
+		dragging = true;
+		startX = e.clientX;
+		startW = wrapper.getBoundingClientRect().width;
+		handle.classList.add('dragging');
+		document.body.classList.add('info-panels-resizing');
+		try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+		e.preventDefault();
+	});
+
+	handle.addEventListener('pointermove', function(e) {
+		if (!dragging) return;
+		pendingW = clampInfoPanelsWidth(startW + (e.clientX - startX));
+		if (!rafId) rafId = requestAnimationFrame(paint);
+	});
+
+	function endDrag(e) {
+		if (!dragging) return;
+		dragging = false;
+		if (rafId) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
+		pendingW = clampInfoPanelsWidth(startW + (e.clientX - startX));
+		setExplicitPanelsWidth(pendingW);
+		if ($('.info-panels-show-hide-wrapper').is(':visible')) relayoutInfoPanelsForWidth();
+		try { localStorage.setItem(INFO_PANELS_WIDTH_KEY, String(pendingW)); } catch(err) {}
+		handle.classList.remove('dragging');
+		document.body.classList.remove('info-panels-resizing');
+	}
+
+	handle.addEventListener('pointerup', endDrag);
+	handle.addEventListener('pointercancel', endDrag);
+}
+
 // Handle window resize while info panels are open
 $(window).on('resize', function() {
+	applyStoredInfoPanelsWidth();
 	if ($('.info-panels-show-hide-wrapper').is(':visible')) {
 		const $container = $('.subpanels-container');
 		const $allSubpanels = $container.children('.subpanel');
