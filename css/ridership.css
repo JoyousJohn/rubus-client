@@ -302,6 +302,32 @@
     -webkit-user-select: none;
 }
 
+.route-changes-campus-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
+    border: 1px solid var(--theme-border);
+    overflow: hidden;
+    font-family: var(--font-family);
+    margin-bottom: 1.5rem;
+}
+
+.route-changes-campus-btn {
+    padding: 0.5rem 0.9rem;
+    color: var(--theme-color);
+    text-align: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.route-changes-campus-btn.selected {
+    background-color: color-mix(in srgb, var(--theme-color) 90%, transparent);
+    color: var(--theme-bg);
+}
+
 .route-changes-grid {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -453,4 +479,14 @@
 .route-changes-detail-val {
     color: var(--theme-color);
     font-weight: 400;
+}
+
+.route-changes-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--theme-extra);
+    font-size: 1.4rem;
+    padding: 1rem 0 0.5rem 0;
+    user-select: none;
+    -webkit-user-select: none;
 }

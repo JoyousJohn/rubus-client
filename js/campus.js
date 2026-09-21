@@ -167,6 +167,9 @@ async function campusChanged() {
     selectedCampus = newCampus;
     setSelectedCampusButton(selectedCampus);
     console.log(`campus changed to ${selectedCampus}`)
+    // Keep the Route Changes campus filter in sync with the user's current
+    // campus (its default).
+    setRouteChangesCampus(selectedCampus);
     stopsData = allStopsData[selectedCampus];
 
     // Clear building location cache when switching campuses since coordinates are campus-specific

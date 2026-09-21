@@ -3525,6 +3525,42 @@ function toggleRouteChangesSort(column) {
 }
 window.toggleRouteChangesSort = toggleRouteChangesSort;
 
+// Campus filter for the Route Changes panel. One of 'nb' | 'camden' |
+// 'newark' | 'all'. Null means "not yet chosen" -> fall back to the user's
+// current selectedCampus (the default selected button).
+let routeChangesCampus = null;
+const ROUTE_CHANGES_CAMPUSES = ['nb', 'camden', 'newark'];
+
+function getActiveRouteChangesCampus() {
+    if (routeChangesCampus === 'all') return 'all';
+    if (ROUTE_CHANGES_CAMPUSES.includes(routeChangesCampus)) return routeChangesCampus;
+    if (ROUTE_CHANGES_CAMPUSES.includes(selectedCampus)) return selectedCampus;
+    return 'nb';
+}
+
+function getRouteChangeCampus(oldRoute, newRoute) {
+    const lookup = (route) => routesByCampus[String(route).trim().toLowerCase()] || null;
+    return lookup(newRoute) || lookup(oldRoute);
+}
+
+function updateRouteChangesCampusButtons() {
+    const active = getActiveRouteChangesCampus();
+    $('.route-changes-campus-btn').each(function() {
+        const campus = $(this).data('campus');
+        $(this).toggleClass('selected', campus === active);
+    });
+}
+
+function setRouteChangesCampus(campus) {
+    if (campus !== 'all' && !ROUTE_CHANGES_CAMPUSES.includes(campus)) return;
+    routeChangesCampus = campus;
+    updateRouteChangesCampusButtons();
+    if (routeChangesCache.data) {
+        renderRouteChangesMenu(routeChangesCache.data);
+    }
+}
+window.setRouteChangesCampus = setRouteChangesCampus;
+
 function updateRouteChangesMenu() {
     const now = Date.now();
     if (routeChangesCache.data && (now - routeChangesCache.timestamp) < ROUTE_CHANGES_CACHE_MS) {
@@ -3576,15 +3612,16 @@ function renderRouteChangesMenu(allChanges) {
     if (!$grid.length) return;
 
     updateRouteChangesSortHeaders();
+    updateRouteChangesCampusButtons();
     $grid.children().not('.route-changes-heading, .route-changes-header-divider').remove();
 
-    const rows = [];
+    const allRows = [];
     for (const busName in (allChanges || {})) {
         const busHistory = (allChanges[busName] || [])
             .slice()
             .sort((a, b) => new Date(a.time) - new Date(b.time));
         busHistory.forEach((change, idx) => {
-            rows.push({
+            allRows.push({
                 busName,
                 oldRoute: change.old_route,
                 newRoute: change.new_route,
@@ -3595,17 +3632,27 @@ function renderRouteChangesMenu(allChanges) {
             });
         });
     }
-    if (rows.length === 0) {
+    if (allRows.length === 0) {
         $wrapper.hide();
         routeChangesOpenDetails.clear();
         return;
     }
     // Drop expanded-state keys for rows that no longer exist so the set
     // can't grow unboundedly across refreshes.
-    const liveKeys = new Set(rows.map(row =>
+    const liveKeys = new Set(allRows.map(row =>
         `${row.busName}_${row.time}_${row.oldRoute}_${row.newRoute}_${row.historyIndex}`));
     for (const key of routeChangesOpenDetails) {
         if (!liveKeys.has(key)) routeChangesOpenDetails.delete(key);
+    }
+    const activeCampus = getActiveRouteChangesCampus();
+    const rows = activeCampus === 'all'
+        ? allRows.slice()
+        : allRows.filter(row =>
+            getRouteChangeCampus(row.oldRoute, row.newRoute) === activeCampus);
+    if (rows.length === 0) {
+        $wrapper.show();
+        $grid.append($('<div class="route-changes-empty"></div>').text('No route changes for this campus today.'));
+        return;
     }
     const timeMsOrNull = (value) => {
         const ms = new Date(value).getTime();
