@@ -1025,10 +1025,11 @@ function recordChatTokenSpend(data, opts) {
     return spend;
 }
 
-// One request at a time: the input bar stays locked while a response is
+// One request at a time: the send button stays locked while a response is
 // generating and unlocks on done/error, so messages can't pile up mid-stream.
+// The text input stays editable throughout so the next message can be
+// composed while waiting.
 function setChatInputEnabled(on) {
-    $('.chat-ui-input').prop('disabled', !on);
     $('.chat-ui-send').prop('disabled', !on);
 }
 
@@ -1042,7 +1043,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     // early returns so a dropped submit can't misattribute the next message.
     const isExample = $input.data('is-example') === true;
     $input.removeData('is-example');
-    if ($input.prop('disabled')) return;
+    if ($(this).find('.chat-ui-send').prop('disabled')) return;
     let msg = $input.val().trim();
     if (!msg) return;
     // Client-side size limit to avoid DoS and huge payloads
