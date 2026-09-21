@@ -74,6 +74,11 @@
         top: 0;
         row-gap: 0.5rem;
         text-align: center;
+        /* Bleed room for the selected pill's outer `0 0 10px` glow so it
+           isn't hard-clipped. Left already has 2rem from mobile; add the
+           missing right room. Map-only: the subpanel rail has its own
+           bleed below. */
+        padding-right: 12px;
     }
 
     .settings-btn {
@@ -303,6 +308,13 @@
         overflow-y: auto;
         overflow-x: hidden;
         z-index: 402;
+        /* Horizontal bleed inside the scrollport for the selected pill's
+           outer `0 0 10px` glow. box-shadow paints outside the border-box
+           and any overflow!=visible ancestor clips it, and overflow-x can't
+           be visible while overflow-y scrolls — so the glow needs padding
+           to live in. */
+        padding: 0 12px;
+        box-sizing: border-box;
     }
 
     #route-selectors-container .bottom {
@@ -313,10 +325,14 @@
 
     #route-selectors-container .route-selectors {
         position: static;
-        overflow-x: hidden;
-        overflow-y: visible;
+        /* Must not clip: the outer container already scrolls (and carries
+           the bleed padding above). Hidden+visible would compute to
+           hidden+auto and clip the glow a second time. Zero horizontal
+           padding so the bleed lives only on the scroll container. */
+        overflow: visible;
         padding-left: 0;
         padding-top: 0;
+        padding-right: 0;
         touch-action: pan-y;
     }
 
