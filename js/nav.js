@@ -7497,11 +7497,13 @@ function renderTimelineWaypointsHtml(data) {
                 const stopsCount = Math.max(0, (activeDetails && activeDetails.stopsInOrder ? activeDetails.stopsInOrder.length : (activeDetails.totalStops || (activeDetails.stops ? activeDetails.stops.length : 0))) - 1);
                 const stopsSeq = isTransfer ? buildStopsSeqHtml(leg1.routeDetails, startStop.id, transferStop.id) : (route.stopsInOrder ? buildStopsSeqHtml(route, startStop.id, endStop.id) : '');
                 // Early-alighting only applies to the leg ending at the
-                // destination; leg 1 ends at the transfer stop.
-                const earlyHint = (!isTransfer && route.stopsInOrder)
+                // destination; leg 1 ends at the transfer stop. Live-only:
+                // offline routes are reference-only (no buses running) and the
+                // hint is derived from live ETA data.
+                const earlyHint = (!isTransfer && isLive && route.stopsInOrder)
                     ? getEarlyAlightHint(route, startStop.id, endStop.id, endBuilding, endWalkDistance)
                     : null;
-                const rationale = (!isTransfer && activeDetails._rationale) || null;
+                const rationale = (!isTransfer && isLive && activeDetails._rationale) || null;
 
                 travelHtml = `
                     <div class="waypoint-emoji waypoint-travel-bus" data-leg="1">
@@ -7520,8 +7522,9 @@ function renderTimelineWaypointsHtml(data) {
                 const activeDetails = leg2.routeDetails || leg2;
                 const stopsCount = Math.max(0, (activeDetails && activeDetails.stopsInOrder ? activeDetails.stopsInOrder.length : (activeDetails.totalStops || (activeDetails.stops ? activeDetails.stops.length : 0))) - 1);
                 const stopsSeq = buildStopsSeqHtml(leg2.routeDetails, transferStop.id, endStop.id);
-                const earlyHint = getEarlyAlightHint(leg2.routeDetails, transferStop.id, endStop.id, endBuilding, endWalkDistance);
-                const rationale = activeDetails._rationale || null;
+                // Live-only: offline leg-2 is reference-only (no buses running).
+                const earlyHint = isLive ? getEarlyAlightHint(leg2.routeDetails, transferStop.id, endStop.id, endBuilding, endWalkDistance) : null;
+                const rationale = (isLive && activeDetails._rationale) || null;
 
                 travelHtml = `
                     <div class="waypoint-emoji waypoint-travel-bus" data-leg="2">
