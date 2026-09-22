@@ -490,3 +490,101 @@
     user-select: none;
     -webkit-user-select: none;
 }
+
+/* Route Times Chart (per-route loop time through the day) */
+.route-times-chart-wrapper {
+    display: none;
+    position: relative;
+    height: 300px;
+    margin-top: 2rem;
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    border: 1px solid var(--theme-border);
+    box-sizing: border-box;
+    padding: 1rem;
+}
+
+.route-times-title {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: var(--theme-color);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Out of Service Panel */
+.out-of-service-wrapper {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 1rem;
+    background-color: var(--theme-bg-closest-stop);
+    border: 1px solid var(--theme-border);
+    box-sizing: border-box;
+    padding: 2rem;
+}
+
+.out-of-service-title {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.out-of-service-grid {
+    display: grid;
+    grid-template-columns: auto auto auto 1fr;
+    column-gap: 1.5rem;
+    font-size: 2rem;
+}
+
+.out-of-service-heading {
+    color: var(--theme-extra);
+    font-weight: 500;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s ease;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.out-of-service-heading:hover {
+    color: var(--theme-color);
+}
+
+.out-of-service-heading.active {
+    color: var(--theme-color);
+    font-weight: 700;
+}
+
+.out-of-service-sort-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.out-of-service-header-divider {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--theme-line-bg);
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+    width: 100%;
+    justify-self: center;
+}
+
+.out-of-service-bus,
+.out-of-service-route,
+.out-of-service-time,
+.out-of-service-duration {
+    display: flex;
+    align-items: center;
+}
+
+.out-of-service-time,
+.out-of-service-duration {
+    color: var(--theme-color-lighter);
+}

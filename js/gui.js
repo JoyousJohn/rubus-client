@@ -2940,6 +2940,7 @@ function updateBusOverview(routes) {
     updateAverageWaitByRoute();
     updateBusServiceTime();
     updateRouteChangesMenu();
+    updateOutOfServiceMenu();
 }
 
 
@@ -2965,10 +2966,18 @@ function busesOverview() {
     }
 
     updateRidershipChart();
+
+    // Ensure chart is initialized before updating
+    if (!routeTimesChart) {
+        makeRouteTimesChart();
+    }
+
+    updateRouteTimesChart();
     updateWaitTimes();
     updateAverageWaitByRoute();
     updateBusServiceTime();
     updateRouteChangesMenu();
+    updateOutOfServiceMenu();
 }
 
 let ridershipChart;
@@ -3861,6 +3870,342 @@ function renderRouteChangesMenu(allChanges) {
         $grid.append($timeCol);
         $grid.append($detailRow);
     });
+}
+
+// Out of Service menu (network subpanel, under Route Changes): fleet-wide list
+// of today's exit-service events, with the route the bus was running and how
+// long it had been in service. Served by GET /get_all_out_of_service
+// (rubus-server), fed by back's out_of_service hook events. Cached 60s; hidden
+// when empty/unreachable.
+let outOfServiceCache = { data: null, timestamp: 0 };
+const OUT_OF_SERVICE_CACHE_MS = 60 * 1000;
+
+let outOfServiceSortColumn = 'time';
+let outOfServiceSortDirection = 'desc';
+
+function updateOutOfServiceSortHeaders() {
+    const cols = ['bus', 'route', 'time', 'duration'];
+    const chevronClass = outOfServiceSortDirection === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down';
+
+    cols.forEach(col => {
+        const $heading = $(`.out-of-service-heading-${col}`);
+        const $icon = $(`.out-of-service-sort-icon-${col}`);
+        if (outOfServiceSortColumn === col) {
+            $heading.addClass('active');
+            $icon.removeClass('none fa-chevron-up fa-chevron-down').addClass(chevronClass);
+        } else {
+            $heading.removeClass('active');
+            $icon.addClass('none');
+        }
+    });
+}
+
+function toggleOutOfServiceSort(column) {
+    if (outOfServiceSortColumn === column) {
+        outOfServiceSortDirection = outOfServiceSortDirection === 'desc' ? 'asc' : 'desc';
+    } else {
+        outOfServiceSortColumn = column;
+        outOfServiceSortDirection = column === 'time' ? 'desc' : 'asc';
+    }
+    if (outOfServiceCache.data) {
+        renderOutOfServiceMenu(outOfServiceCache.data);
+    }
+}
+window.toggleOutOfServiceSort = toggleOutOfServiceSort;
+
+function updateOutOfServiceMenu() {
+    const now = Date.now();
+    if (outOfServiceCache.data && (now - outOfServiceCache.timestamp) < OUT_OF_SERVICE_CACHE_MS) {
+        renderOutOfServiceMenu(outOfServiceCache.data);
+        return;
+    }
+    fetch('https://demo.rubus.live/get_all_out_of_service')
+        .then(response => response.json())
+        .then(data => {
+            outOfServiceCache = { data: data || {}, timestamp: Date.now() };
+            renderOutOfServiceMenu(outOfServiceCache.data);
+        })
+        .catch(error => {
+            console.warn('Out of service fetch failed:', error);
+            $('.out-of-service-wrapper').hide();
+        });
+}
+
+// Bust the 60s cache (e.g. on a live out_of_service WS event). Refreshes
+// immediately when the network subpanel is visible; otherwise the next panel
+// open re-fetches fresh.
+function invalidateOutOfServiceCache() {
+    outOfServiceCache.timestamp = 0;
+    if ($('.out-of-service-wrapper').is(':visible')) {
+        updateOutOfServiceMenu();
+    }
+}
+window.invalidateOutOfServiceCache = invalidateOutOfServiceCache;
+
+function renderOutOfServiceMenu(allRecords) {
+    const $grid = $('.out-of-service-grid');
+    const $wrapper = $('.out-of-service-wrapper');
+    if (!$grid.length) return;
+
+    updateOutOfServiceSortHeaders();
+    $grid.children().not('.out-of-service-heading, .out-of-service-header-divider').remove();
+
+    const rows = [];
+    for (const busName in (allRecords || {})) {
+        (allRecords[busName] || []).forEach(record => {
+            rows.push({
+                busName,
+                route: record.route,
+                time: record.time,
+                durationSeconds: record.duration_seconds
+            });
+        });
+    }
+
+    if (rows.length === 0) {
+        $wrapper.hide();
+        return;
+    }
+
+    const timeMsOrNull = (value) => {
+        const ms = new Date(value).getTime();
+        return isNaN(ms) ? null : ms;
+    };
+    rows.sort((a, b) => {
+        let cmp = 0;
+        if (outOfServiceSortColumn === 'bus') {
+            cmp = a.busName.localeCompare(b.busName, undefined, { numeric: true, sensitivity: 'base' });
+        } else if (outOfServiceSortColumn === 'route') {
+            cmp = (a.route || '?').localeCompare(b.route || '?', undefined, { sensitivity: 'base' });
+        } else if (outOfServiceSortColumn === 'duration') {
+            if (a.durationSeconds === null || b.durationSeconds === null) {
+                if (a.durationSeconds === b.durationSeconds) cmp = 0;
+                else return a.durationSeconds === null ? 1 : -1;
+            } else {
+                cmp = a.durationSeconds - b.durationSeconds;
+            }
+        } else {
+            const timeA = timeMsOrNull(a.time);
+            const timeB = timeMsOrNull(b.time);
+            if (timeA === null || timeB === null) {
+                if (timeA === timeB) cmp = 0;
+                else return timeA === null ? 1 : -1;
+            } else {
+                cmp = timeA - timeB;
+            }
+        }
+        if (cmp !== 0) {
+            return outOfServiceSortDirection === 'asc' ? cmp : -cmp;
+        }
+        // Tie-break by time in the same direction; unparseable times sort last.
+        const timeA = timeMsOrNull(a.time);
+        const timeB = timeMsOrNull(b.time);
+        if (timeA === null || timeB === null) return 0;
+        return outOfServiceSortDirection === 'asc' ? timeA - timeB : timeB - timeA;
+    });
+    $wrapper.show();
+
+    rows.forEach(row => {
+        const busLabel = (busData[row.busName] && busData[row.busName].busName)
+            ? busData[row.busName].busName : row.busName;
+        const routeLabel = (row.route || '?').toUpperCase();
+        const routeColor = (row.route && colorMappings[row.route])
+            ? colorMappings[row.route] : 'var(--theme-color)';
+        const exitTime = new Date(row.time);
+        const timeStr = isNaN(exitTime)
+            ? ''
+            : exitTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const durationStr = row.durationSeconds === null
+            ? 'Unknown'
+            : formatRouteDuration(row.durationSeconds * 1000);
+
+        const $busCol = $('<div class="out-of-service-bus text-2rem"></div>').text(busLabel);
+        const $routeCol = $('<div class="out-of-service-route text-2rem"></div>').css('color', routeColor).text(routeLabel);
+        const $timeCol = $('<div class="out-of-service-time text-2rem"></div>').text(timeStr);
+        const $durationCol = $('<div class="out-of-service-duration text-2rem"></div>').text(durationStr);
+
+        $grid.append($busCol);
+        $grid.append($routeCol);
+        $grid.append($timeCol);
+        $grid.append($durationCol);
+    });
+}
+
+let routeTimesChart;
+
+async function makeRouteTimesChart() {
+    const canvas = document.getElementById('route-times-chart');
+    const ctx = canvas.getContext('2d');
+
+    if (routeTimesChart) {
+        routeTimesChart.destroy();
+        routeTimesChart = null;
+    }
+
+    routeTimesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                tooltip: {
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y} min`;
+                        },
+                        title: function(tooltipItems) {
+                            return tooltipItems[0].label;
+                        }
+                    }
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        font: { size: 10 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return `${value}m`;
+                        }
+                    },
+                    grid: {
+                        display: false
+                    },
+                    border: {
+                        display: false
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        callback: function(val) {
+                            const time = this.getLabelForValue(val);
+                            if (!time) return '';
+                            const hour = parseInt(time.split(':')[0]);
+                            const ampmMatch = time.match(/[AP]M/i);
+                            const ampm = ampmMatch ? ampmMatch[0].toUpperCase() : '';
+
+                            const totalDataPoints = this.chart.data.labels.length;
+                            if (totalDataPoints > 150) {
+                                return hour % 2 !== 0 || !time.includes(':00') ? '' : hour + ampm;
+                            } else {
+                                return time.includes(':00') ? hour + ampm : '';
+                            }
+                        }
+                    }
+                }
+            },
+            maintainAspectRatio: false
+        }
+    });
+}
+
+// UTC minute-of-day to Eastern minute-of-day, matching the ridership chart's
+// service-day convention (5:00 AM start; earlier hours belong to the prior day).
+function easternMinuteFromUtcMinute(utcMinute) {
+    const easternOffset = getEasternOffsetMinutes();
+    let easternMinutes = (utcMinute - easternOffset) % 1440;
+    if (easternMinutes < 0) easternMinutes += 1440;
+    return easternMinutes;
+}
+
+async function updateRouteTimesChart() {
+    if (!$('.buses-panel-wrapper').is(':visible')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('https://demo.rubus.live/route_loop_times');
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const routeSeries = await response.json();
+
+        if (!Object.keys(routeSeries).length) {
+            $('.route-times-chart-wrapper').hide();
+            return;
+        }
+
+        const minuteKeys = new Set();
+        for (const route in routeSeries) {
+            for (const minute in routeSeries[route]) {
+                minuteKeys.add(parseInt(minute, 10));
+            }
+        }
+
+        const sortMinutes = (utcMinute) => {
+            const easternMinutes = easternMinuteFromUtcMinute(utcMinute);
+            return easternMinutes < 300 ? easternMinutes + 1440 : easternMinutes;
+        };
+        const sortedMinutes = Array.from(minuteKeys).sort((a, b) => sortMinutes(a) - sortMinutes(b));
+
+        const labels = [];
+        const labelIndexByMinute = new Map();
+        sortedMinutes.forEach((utcMinute, index) => {
+            const easternMinutes = easternMinuteFromUtcMinute(utcMinute);
+            const hours = Math.floor(easternMinutes / 60);
+            const minutes = easternMinutes % 60;
+            const hour12 = hours % 12 || 12;
+            const ampm = hours < 12 ? 'AM' : 'PM';
+            const minuteStr = minutes < 10 ? '0' + minutes : minutes;
+            labels.push(`${hour12}:${minuteStr} ${ampm}`);
+            labelIndexByMinute.set(utcMinute, index);
+        });
+
+        // One dataset per route so each route's line keeps its map color and
+        // can be toggled from the legend.
+        const datasets = Object.keys(routeSeries).sort().map(route => {
+            const values = new Array(labels.length).fill(null);
+            for (const minute in routeSeries[route]) {
+                const idx = labelIndexByMinute.get(parseInt(minute, 10));
+                if (idx !== undefined) values[idx] = routeSeries[route][minute];
+            }
+            const color = colorMappings[route];
+            return {
+                label: route.toUpperCase(),
+                data: values,
+                borderColor: color,
+                backgroundColor: color,
+                tension: 0.4,
+                pointRadius: 0,
+                spanGaps: true,
+                fill: false
+            };
+        });
+
+        if (!routeTimesChart) {
+            console.error('Route times chart not initialized');
+            return;
+        }
+
+        routeTimesChart.data.labels = labels;
+        routeTimesChart.data.datasets = datasets;
+        routeTimesChart.update();
+        $('.route-times-chart-wrapper').show();
+    } catch (error) {
+        console.error('Error fetching route loop times:', error);
+        $('.route-times-chart-wrapper').hide();
+    }
 }
 
 function closeRouteMenu() {

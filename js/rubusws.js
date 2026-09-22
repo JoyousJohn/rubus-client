@@ -204,20 +204,16 @@ function openRUBusSocket() {
                 return;
             }
 
-            // if(eventData['event'] === 'out_of_service') {
-                
-            //     eventData['oos_buses'].forEach(busName => {
-            //         if (busName in busData) {
-            //             console.log(`[Out of Service] Bus ${busData[busName].busName} is out of service`)
-            //             busMarkers[busName].remove();
-            //             delete busMarkers[busName];
-            //             delete busData[busName];
-            //             delete busETAs[busName];
-            //         }
-            //     })
-            //     return;    
-
-            // }
+            if (eventData['event'] === 'out_of_service') {
+                // Live exit-service event: bust the network subpanel cache so
+                // the out-of-service list refreshes. Must return here —
+                // out_of_service payloads carry no stopId, and the
+                // arrival/departure path below would clobber
+                // busData[busName].stopId with undefined. Bus teardown stays
+                // with the next poll's makeBulkOoS diff.
+                invalidateOutOfServiceCache();
+                return;
+            }
 
             const busName = eventData.busName;
 

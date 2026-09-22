@@ -1442,6 +1442,10 @@
                                     <div class="ridership-avg"></div>
                                     <div class="ridership-max"></div>
                                 </div>
+                                <div class="route-times-chart-wrapper none">
+                                    <div class="route-times-title text-1p7rem">Route Times</div>
+                                    <canvas id="route-times-chart" width="400" height="200"></canvas>
+                                </div>
                                 <div class="ridership-super-wrapper">
                                     <div class="avg-wait-wrapper">
                                         <div class="avg-wait-title text-1p7rem">Wait Between Buses</div>
@@ -1497,6 +1501,28 @@
                                                 <i class="route-changes-sort-icon route-changes-sort-icon-time fa-solid fa-chevron-down none"></i>
                                             </div>
                                             <div class="route-changes-header-divider"></div>
+                                        </div>
+                                    </div>
+                                    <div class="out-of-service-wrapper none">
+                                        <div class="out-of-service-title text-1p7rem">Out of Service</div>
+                                        <div class="out-of-service-grid grid select-none">
+                                            <div class="out-of-service-heading out-of-service-heading-bus pointer active" onclick="toggleOutOfServiceSort('bus')">
+                                                <span>BUS</span>
+                                                <i class="out-of-service-sort-icon out-of-service-sort-icon-bus fa-solid fa-chevron-down"></i>
+                                            </div>
+                                            <div class="out-of-service-heading out-of-service-heading-route pointer" onclick="toggleOutOfServiceSort('route')">
+                                                <span>ROUTE</span>
+                                                <i class="out-of-service-sort-icon out-of-service-sort-icon-route fa-solid fa-chevron-down none"></i>
+                                            </div>
+                                            <div class="out-of-service-heading out-of-service-heading-time pointer" onclick="toggleOutOfServiceSort('time')">
+                                                <span>OUT AT</span>
+                                                <i class="out-of-service-sort-icon out-of-service-sort-icon-time fa-solid fa-chevron-down none"></i>
+                                            </div>
+                                            <div class="out-of-service-heading out-of-service-heading-duration pointer" onclick="toggleOutOfServiceSort('duration')">
+                                                <span>IN SERVICE</span>
+                                                <i class="out-of-service-sort-icon out-of-service-sort-icon-duration fa-solid fa-chevron-down none"></i>
+                                            </div>
+                                            <div class="out-of-service-header-divider"></div>
                                         </div>
                                     </div>
                                 </div>
