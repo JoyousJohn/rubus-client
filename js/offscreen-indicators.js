@@ -359,10 +359,8 @@ function renderOffScreenIndicators(container, indicators) {
                     });
                 }
                 if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-select-on-tap']) {
-                    if (typeof popInfo === 'function') {
-                        const targetBus = captured.isCluster ? captured.members[0].busName : captured.busName;
-                        popInfo(targetBus);
-                    }
+                    const targetBus = captured.isCluster ? captured.members[0].busName : captured.busName;
+                    selectBusMarker(targetBus);
                 }
             };
             container.appendChild(el);
@@ -391,9 +389,7 @@ function renderOffScreenIndicators(container, indicators) {
                         });
                     }
                     if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-select-on-tap']) {
-                        if (typeof popInfo === 'function') {
-                            popInfo(captured.members[0].busName);
-                        }
+                        selectBusMarker(captured.members[0].busName);
                     }
                 };
             } else {
@@ -412,9 +408,7 @@ function renderOffScreenIndicators(container, indicators) {
                         });
                     }
                         if (typeof settings !== 'undefined' && settings['toggle-offscreen-bus-indicators-select-on-tap']) {
-                            if (typeof popInfo === 'function') {
-                                popInfo(captured.busName);
-                            }
+                            selectBusMarker(captured.busName);
                         }
                     };
                 }
