@@ -34,11 +34,14 @@ function getTranslateX($element) {
 
 // Compositor-friendly writes: transform-only, no layout properties.
 // Container + indicator are promoted via will-change in CSS.
+// Direct style writes (not jQuery .css) to stay inside the 8.3ms 120Hz budget.
 function setContainerX($container, x) {
-	$container.css('transform', 'translate3d(' + x + 'px, 0, 0)');
+	const el = $container && $container[0] ? $container[0] : $container;
+	el.style.transform = 'translate3d(' + x + 'px, 0, 0)';
 }
 function setIndicatorX($indicator, x) {
-	$indicator.css('transform', 'translateX(' + x + 'px)');
+	const el = $indicator && $indicator[0] ? $indicator[0] : $indicator;
+	el.style.transform = 'translateX(' + x + 'px)';
 }
 function getIndicatorX($indicator) {
 	if (!$indicator || !$indicator.length) return 0;
@@ -623,18 +626,27 @@ function initInfoPanelSliderDrag() {
 		} catch(e) {}
 	}
 
-	// Cached per-gesture metrics (measured once on pointerdown, not per move)
+	// Cached per-gesture metrics (measured once on pointerdown, not per move).
+	// The paint step must do ZERO layout reads to hold 120Hz (8.3ms budget).
 	let cachedOptionWidth = 0;
 	let cachedSliderLeft = 0;
+	let cachedSliderCount = 3;
+	let cachedSliderViewportW = 0;
+	let cachedIndicatorHalfW = 0;
+	let cachedSliderContainerEl = null;
+	let cachedSliderOptions = null;
 	let sliderDragFrame = 0;
 	let pendingClientX = 0;
 	function cacheSliderMetrics() {
-		try {
-			const rect = slider.getBoundingClientRect();
-			cachedSliderLeft = rect.left;
-			const n = slider.querySelectorAll('.info-panel-option').length || 3;
-			cachedOptionWidth = n ? rect.width / n : 0;
-		} catch(err) {}
+		const rect = slider.getBoundingClientRect();
+		cachedSliderLeft = rect.left;
+		const n = slider.querySelectorAll('.info-panel-option').length;
+		cachedSliderCount = n;
+		cachedOptionWidth = rect.width / n;
+		cachedSliderOptions = slider.querySelectorAll('.info-panel-option');
+		cachedIndicatorHalfW = indicator.offsetWidth / 2;
+		cachedSliderViewportW = getInfoPanelWidth();
+		cachedSliderContainerEl = document.querySelector('.subpanels-container');
 	}
 
 	slider.addEventListener('pointerdown', function(e) {
@@ -670,37 +682,33 @@ function initInfoPanelSliderDrag() {
 
 	function paintSliderDrag() {
 		sliderDragFrame = 0;
-		const count = (typeof panelOrder !== 'undefined' ? panelOrder.length : 3);
+		const count = cachedSliderCount;
 		const maxX = Math.max(0, (count - 1) * cachedOptionWidth);
-		const halfW = indicator.offsetWidth / 2;
-		let newX = (pendingClientX - cachedSliderLeft) - halfW;
+		// All values cached on pointerdown — no offsetWidth / getBoundingClientRect here.
+		let newX = (pendingClientX - cachedSliderLeft) - cachedIndicatorHalfW;
 		// Base left is -3px, so shift travel window by +3 to keep symmetric bleed
 		newX = Math.max(0, Math.min(maxX, newX + 3));
 		indicator.style.transform = `translateX(${newX}px)`;
 
-		const closest = getClosestPanel(pendingClientX);
-		if (closest) {
-			const panel = closest.getAttribute('data-panel');
-			if (panel !== lastClosestPanel) {
-				lastClosestPanel = panel;
-				slider.querySelectorAll('.info-panel-option').forEach(o => {
-					o.classList.remove('selected');
-					o.classList.remove('all-stops-selected-menu');
-				});
-				closest.classList.add('selected');
-				closest.classList.add('all-stops-selected-menu');
-			}
+		// Closest index arithmetically — no per-frame DOM measurement.
+		const closestIdx = Math.max(0, Math.min(count - 1, Math.round((pendingClientX - cachedSliderLeft) / cachedOptionWidth)));
+		const closestPanel = panelOrder[closestIdx];
+		if (closestPanel !== lastClosestPanel) {
+			lastClosestPanel = closestPanel;
+			cachedSliderOptions.forEach(o => {
+				o.classList.remove('selected');
+				o.classList.remove('all-stops-selected-menu');
+			});
+			cachedSliderOptions[closestIdx].classList.add('selected');
+			cachedSliderOptions[closestIdx].classList.add('all-stops-selected-menu');
 		}
 
 		// Mirror drag on main container — percentage, not same pixels.
-		try {
-			const $container = $('.subpanels-container');
-			if ($container.length && maxX > 0) {
-				const indicatorProgress = Math.max(0, Math.min(1, newX / maxX));
-				const targetX = -indicatorProgress * (count - 1) * getInfoPanelWidth();
-				setContainerX($container, targetX);
-			}
-		} catch(err) {}
+		if (maxX > 0) {
+			const indicatorProgress = Math.max(0, Math.min(1, newX / maxX));
+			const targetX = -indicatorProgress * (count - 1) * cachedSliderViewportW;
+			cachedSliderContainerEl.style.transform = 'translate3d(' + targetX + 'px, 0, 0)';
+		}
 	}
 
 	slider.addEventListener('pointermove', function(e) {
@@ -860,25 +868,22 @@ let cachedContentOptionWidth = 0;
 let dragHasIndicator = false;
 let $dragSlider = null;
 let $dragIndicator = null;
+let cachedContentContainerEl = null;
+let cachedContentOptions = null;
 
 function flushContentDrag() {
 	contentDragFrame = 0;
 	if (pendingContainerX === null) return;
-	const $container = $('.subpanels-container');
-	if ($container.length) {
-		setContainerX($container, pendingContainerX);
+	// Direct style writes on cached elements — no $() lookup, no transition
+	// rewrite per frame (transition was already set to 'none' on gesture start).
+	cachedContentContainerEl.style.transform = 'translate3d(' + pendingContainerX + 'px, 0, 0)';
+	if (pendingIndicatorX !== null) {
+		$dragIndicator[0].style.transform = 'translateX(' + pendingIndicatorX + 'px)';
 	}
-	if (dragHasIndicator && $dragIndicator && $dragIndicator.length && pendingIndicatorX !== null) {
-		$dragIndicator.css('transition', 'none');
-		setIndicatorX($dragIndicator, pendingIndicatorX);
-	}
-	if (pendingClosestIdx !== lastAppliedClosestIdx && $dragSlider && $dragSlider.length) {
+	if (pendingClosestIdx !== lastAppliedClosestIdx) {
 		lastAppliedClosestIdx = pendingClosestIdx;
-		const closestPanel = panelOrder[pendingClosestIdx];
-		if (closestPanel) {
-			$dragSlider.find('.info-panel-option').removeClass('selected all-stops-selected-menu');
-			$dragSlider.find(`[data-panel="${closestPanel}"]`).addClass('selected all-stops-selected-menu');
-		}
+		cachedContentOptions.forEach(o => o.classList.remove('selected', 'all-stops-selected-menu'));
+		cachedContentOptions[pendingClosestIdx].classList.add('selected', 'all-stops-selected-menu');
 	}
 	pendingContainerX = null;
 }
@@ -929,6 +934,7 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 	initialTransformX = getTranslateX($container);
 	// Cache layout once per gesture — reused for every move frame
 	cachedViewportW = getInfoPanelWidth();
+	cachedContentContainerEl = $container[0] || null;
 	lastAppliedClosestIdx = currentPanelIndex;
 	pendingClosestIdx = currentPanelIndex;
 	pendingIndicatorX = null;
@@ -937,17 +943,20 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 		$dragIndicator = $('.info-panel-indicator');
 		dragHasIndicator = $dragSlider.length > 0 && $dragIndicator.length > 0;
 		cachedContentOptionWidth = 0;
+		cachedContentOptions = null;
 		if (dragHasIndicator) {
 			const w = $dragSlider[0].getBoundingClientRect().width;
-			const n = $dragSlider[0].querySelectorAll('.info-panel-option').length || panelOrder.length;
+			const opts = $dragSlider[0].querySelectorAll('.info-panel-option');
+			const n = opts.length || panelOrder.length;
 			cachedContentOptionWidth = n ? w / n : 0;
+			cachedContentOptions = opts;
 			$dragIndicator.css({ 'transition': 'none', 'left': '-3px' });
 		}
 	} catch(err) { dragHasIndicator = false; }
 	velocityX = 0;
 	lastMoveTime = 0;
 	lastMoveX = dragStartX;
-	touchStartTime = Date.now();
+	touchStartTime = performance.now();
     isDragging = false;
 });
 
@@ -975,15 +984,16 @@ $('.info-panels-content').on('touchmove mousemove', function(e) {
         isDragging = true;
 			suppressSubpanelClick = true;
 			lastSubpanelDragEndTime = Date.now();
-			if (horizontalDominant && Math.abs(deltaX) > 12) {
-				e.preventDefault();
-			}
-			const currentTime = Date.now();
+			// No preventDefault here: .info-panels-content is touch-action:pan-y
+			// so the browser already yields horizontal to JS. Calling
+			// preventDefault would force a main-thread round-trip per move.
+			const currentTime = performance.now();
 			if (lastMoveTime > 0) {
 				const timeDelta = currentTime - lastMoveTime;
 				const positionDelta = dragEndX - lastMoveX;
 				if (timeDelta > 0) {
-					velocityX = positionDelta / timeDelta;
+					const instant = positionDelta / timeDelta;
+					velocityX = velocityX ? (velocityX * 0.7 + instant * 0.3) : instant;
 				}
 			}
 			lastMoveTime = currentTime;
@@ -1014,11 +1024,9 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 		cancelAnimationFrame(contentDragFrame);
 		contentDragFrame = 0;
 		if (pendingContainerX !== null) {
-			const $c = $('.subpanels-container');
-			if ($c.length) setContainerX($c, pendingContainerX);
-			if (dragHasIndicator && $dragIndicator && $dragIndicator.length && pendingIndicatorX !== null) {
-				$dragIndicator.css('transition', 'none');
-				setIndicatorX($dragIndicator, pendingIndicatorX);
+			cachedContentContainerEl.style.transform = 'translate3d(' + pendingContainerX + 'px, 0, 0)';
+			if (pendingIndicatorX !== null) {
+				$dragIndicator[0].style.transform = 'translateX(' + pendingIndicatorX + 'px)';
 			}
 			pendingContainerX = null;
 		}
@@ -1047,7 +1055,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
     }
 	const totalDx = dragEndX - dragStartX;
 	const totalDy = dragEndY - dragStartY;
-	const totalDuration = Date.now() - touchStartTime;
+	const totalDuration = performance.now() - touchStartTime;
 	const didDragGesture = isDragging || (dragStartX && (Math.abs(totalDx) > 10 || Math.abs(totalDy) > 15));
 	if (didDragGesture) {
 		suppressSubpanelClick = true;

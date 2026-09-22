@@ -50,6 +50,7 @@
     /* Initial positioning handled by JavaScript */
     transform: translateX(-100vw); /* Start at stops panel to avoid initial animation */
     will-change: transform;
+    backface-visibility: hidden;
 }
 
 .subpanel {
@@ -61,6 +62,9 @@
     margin-right: 0 !important;
     display: flex;
     flex-direction: column;
+    /* Isolate layout/paint per panel so dragging the 300vw strip
+       doesn't re-layout offscreen panels every frame at 120Hz. */
+    contain: layout style;
 }
 
 .subpanel.route-panel {
