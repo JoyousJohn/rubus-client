@@ -29,7 +29,6 @@ function clearSimFavs() {
         simFavs.clear();
     }
     $('.favs').empty();
-    favsShown = false;
 }
 window.clearSimFavs = clearSimFavs;
 
@@ -103,8 +102,6 @@ $('.bus-star').click(function() {
 
     if (!favBuses.includes(currentBusName)) {
 
-        console.log('hmm')
-
         favBuses.push(currentBusName); 
         if (sim && busData[currentBusName] && busData[currentBusName].type === 'sim') {
             simFavs.add(currentBusName);
@@ -142,8 +139,6 @@ $('.bus-star').click(function() {
 
     } else {
 
-        console.log('hmm2')
-
         favBuses = favBuses.filter(busName => busName !== currentBusName);
         simFavs.delete(currentBusName);
         $(this).find('i').css('color', 'var(--theme-color)').removeClass('icon-star-solid').addClass('icon-star')
@@ -155,14 +150,11 @@ $('.bus-star').click(function() {
                 const previousShownRoute = JSON.parse(JSON.stringify(shownRoute));
                 populateRouteSelectors(activeRoutes);
                 shownRoute = null;
-                console.log(previousShownRoute)
                 // toggleRouteSelectors(previousShownRoute);
             } else {
                 populateRouteSelectors(activeRoutes);
                 showAllPolylines();
             }
-        } else {
-            favsShown = false;
         }
 
         let favRoutes = new Set([]);
@@ -176,9 +168,6 @@ $('.bus-star').click(function() {
                 }
             }
         });
-
-        console.log('1')
-        console.log(favRoutes)
 
         if (shownRoute && shownRoute === 'fav') {
             busMarkers[currentBusName].setVisibility(false);
@@ -269,7 +258,7 @@ async function populateFavs(popSelectors = true) {
     $('.favs').empty();
 
     favBuses.forEach(favName => {
-        if (busData[favName]) { // RACE CONDITION SOMEWHERE!!!
+        if (busData[favName]) {
             
             // Only show favorites that belong to the current campus
             const favRoute = busData[favName].route;
@@ -277,10 +266,6 @@ async function populateFavs(popSelectors = true) {
             if (favCampus !== selectedCampus) {
                 return; // Skip this favorite as it doesn't belong to current campus
             }
-
-            // console.log(`${favName} in `)
-            // console.log(busData[favName])
-            // console.log(busMarkers[favName])
 
             const _route = busData[favName].route;
             const _color = (typeof escapeCssColor === 'function' ? escapeCssColor(colorMappings[_route] || '#000') : (colorMappings[_route] || '#000'));
@@ -298,15 +283,19 @@ async function populateFavs(popSelectors = true) {
             })
             $('.favs').append($thisFav)
 
+            // Race condition: the favorite marker is applied one tick later so it
+            // lands on the marker built by the current poll, but that gap lets the
+            // world change underneath us. In between, a poll can take the bus out
+            // of service (deleting its busMarkers entry) or the user can un-favorite
+            // the bus (removing it from favBuses). The old guard only checked that
+            // the marker still existed, so an un-favorite landing in the gap was
+            // silently overwritten and the bus stayed gold. Re-checking both the
+            // marker and favBuses here means this deferred write can never touch a
+            // removed marker nor resurrect a removed favorite.
             setTimeout(() => {
-
-                // console.log(Object.keys(busMarkers))
-                // console.log(favName.toString())
-
-                // The marker may have been removed since this was scheduled
-                // (a poll could take the bus out of service in between).
-                if (busMarkers[favName.toString()]) {
-                    busMarkers[favName.toString()].setFavorite(true);
+                const marker = busMarkers[favName.toString()];
+                if (marker && favBuses.includes(favName)) {
+                    marker.setFavorite(true);
                 }
             }, 0);
 
@@ -319,11 +308,7 @@ async function populateFavs(popSelectors = true) {
 
 }
 
-let favsShown = false;
-
 function toggleFavorites() {
-
-    console.log(shownRoute)
 
     if (shownRoute === 'fav') {
 
@@ -340,8 +325,6 @@ function toggleFavorites() {
                 }
             }
         });
-
-        console.log(favRoutes)
 
         const visibleBounds = L.latLngBounds();
 
@@ -373,7 +356,6 @@ function toggleFavorites() {
         hideStopsExcept(Array.from(favRoutes));
 
         if (visibleBounds.isValid()) {
-            console.log('has bound');
             map.fitBounds(visibleBounds);
         } else { // last fav bus was removed
             map.fitBounds(bounds[selectedCampus]);
@@ -388,15 +370,12 @@ function toggleFavorites() {
         }
 
     } else {
-        for (const polyline in polylines) {
-            polylines[polyline].setStyle({ opacity: 1 });
-        }
-        for (const stopId in busStopMarkers) {
-            busStopMarkers[stopId].addTo(map);
-        }
-        for (const marker in busMarkers) {
-            busMarkers[marker].setVisibility(true);
-        }
+        // Leaving the favorites view: restore the normal all-routes map state.
+        showAllPolylines();
+        showAllBuses();
+        showAllStops();
+        clearAllStopEtas();
+        map.fitBounds(polylineBounds);
     }
 
     function hideStopsExcept(excludedRoutes) {
@@ -417,8 +396,6 @@ function toggleFavorites() {
             }
         }
     }
-
-    favsShown = !favsShown;
 
     if (typeof window.updateCenterStops === 'function') {
         window.updateCenterStops();

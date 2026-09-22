@@ -184,13 +184,14 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         if (route === 'fav') {
             color = 'gold'; // Keep fav route selector gold
             
-            // Bind minimal handler for favorites selector using existing logic
-            $routeElm.on('click touchend', function(event) {
+            // Toggle the favorites-only map view. Clicking the star while it is
+            // already active clears the filter and restores every route/bus/stop.
+            $routeElm.on('click', function(event) {
                 event.preventDefault();
-                if (!panelRoute) {
-                    toggleRouteSelectors('fav');
-                    toggleFavorites();
-                }
+                if (panelRoute) return;
+                const isUnselecting = (shownRoute === 'fav');
+                toggleRouteSelectors('fav', isUnselecting);
+                toggleFavorites();
             });
         } else if (knownRoutes.includes(route)) {
             color = colorMappings[route]
@@ -243,32 +244,28 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
 
                 // Allow immediate taps inside routes subpanel regardless of prior long-press
                 if ((routesTabActive || panelRoute) && !moved) {
-                    if (route !== 'fav') {
-                        selectedRoute(route);
-                    } else if (!panelRoute && route === 'fav') {
-                        toggleRouteSelectors('fav');
-                        toggleFavorites();
-                    }
+                    selectedRoute(route);
                     isLongPress = false;
                     return;
                 }
 
                 // Otherwise, apply normal gating outside of panels
                 if (!isLongPress && !moved) {
-                    if (route !== 'fav') {
-                        toggleRoute(route);
-                    } else if (!panelRoute && route === 'fav') {
-                        toggleRouteSelectors('fav');
-                        toggleFavorites();
-                    }
+                    toggleRoute(route);
                 }
                 isLongPress = false;
             })
         }
 
-        const hasInService = routeHasInServiceBuses(route);
-        if (!hasInService) color = 'gray';
-        $routeElm.css('background-color', color).css('opacity', hasInService ? '1' : '0.5');
+        if (route === 'fav') {
+            // The favorites pill is a fixed gold star, not a real route, so it
+            // must not go through the in-service coloring below.
+            $routeElm.css('background-color', 'gold').css('opacity', '1');
+        } else {
+            const hasInService = routeHasInServiceBuses(route);
+            if (!hasInService) color = 'gray';
+            $routeElm.css('background-color', color).css('opacity', hasInService ? '1' : '0.5');
+        }
         
         // Check if settings button should be at the end
         if (settings['toggle-settings-btn-end']) {
@@ -307,7 +304,7 @@ function populateRouteSelectors(allActiveRoutes, stopId = null) {
         // Use the existing toggleRouteSelectors logic to select the route
         $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn, .direct-feedback-btn').each(function() {
             const rn = $(this).attr('routeName');
-            if (rn && rn !== effectivePillRoute) {
+            if (rn && rn !== effectivePillRoute && rn !== 'fav') {
                 const rnInService = routeHasInServiceBuses(rn);
                 $(this).css('background-color', 'gray').css('opacity', rnInService ? '1' : '0.5');
             }
@@ -611,11 +608,14 @@ function toggleRouteSelectors(route, wasSelected = false) {
         // Gray out all route selectors (including those without polylines) except the selected one, parking campus selector, sim button, settings button, and direct feedback button
         $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn, .direct-feedback-btn').each(function() {
             const rn = $(this).attr('routeName');
-            if (rn !== route) {
+            if (rn !== route && rn !== 'fav') {
                 const rnInService = routeHasInServiceBuses(rn);
                 $(this).css('background-color', 'gray').css('box-shadow', '').css('opacity', rnInService ? '1' : '0.5');
             }
         });
+
+        // The favorites pill is a permanent gold star; never leave it grayed out.
+        $('.route-selector[routeName="fav"]').css('background-color', 'gold').css('opacity', '1');
 
         // Always use the route color when selected, regardless of in-service status
         const selectedRouteColor = colorMappings[route];
@@ -662,11 +662,12 @@ function toggleRouteSelectors(route, wasSelected = false) {
 function highlightSubpanelRoutePill(route) {
     $('.route-selector').not('.parking-campus-selector, .settings-btn, .sim-btn, .direct-feedback-btn').each(function() {
         const rn = $(this).attr('routeName');
-        if (rn !== route) {
+        if (rn !== route && rn !== 'fav') {
             const rnInService = routeHasInServiceBuses(rn);
             $(this).css('background-color', 'gray').css('box-shadow', '').css('opacity', rnInService ? '1' : '0.5');
         }
     });
+    $('.route-selector[routeName="fav"]').css('background-color', 'gold').css('opacity', '1');
     const selectedRouteColor = colorMappings[route];
     $(`.route-selector[routeName="${route}"]`).css('background-color', selectedRouteColor).css('box-shadow', `0 0 10px ${selectedRouteColor}`).css('opacity', '1');
 }
