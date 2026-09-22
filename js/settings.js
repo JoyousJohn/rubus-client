@@ -126,6 +126,7 @@ $('.settings-toggle .toggle-input').on('change', function () {
         case 'toggle-show-out-of-service':
             console.log(`Show Out of Service is now ${isChecked ? 'ON' : 'OFF'}`);
             settings['toggle-show-out-of-service'] = isChecked;
+            updateBusNetworkTitle();
             populateRouteSelectors(activeRoutes);
             prunePolylinesWithoutInService();
             addStopsToMap();

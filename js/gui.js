@@ -2732,7 +2732,11 @@ function updateBusNetworkTitle() {
     const campusRoutes = busesByRoutes[selectedCampus] || {};
     for (const route of Object.keys(campusRoutes)) {
         if (route === 'undefined') continue;
-        count += (campusRoutes[route] || []).length;
+        campusRoutes[route].forEach(busName => {
+            // Follows the "show out of service buses" setting: OOS,
+            // at-depot and off-line buses only count once that toggle is on.
+            if (isBusShownOnMap(busName)) count += 1;
+        });
     }
     $('#bus-network-title').text(`${count} Bus${count === 1 ? '' : 'es'} on Network`);
 }
