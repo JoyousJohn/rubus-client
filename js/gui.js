@@ -4177,12 +4177,13 @@ async function updateRouteTimesChart() {
         });
 
         // One dataset per route so each route's line keeps its map color and
-        // can be toggled from the legend.
+        // can be toggled from the legend. Each sample carries provenance
+        // (legs/observed_legs) alongside the value; the chart plots the value.
         const datasets = Object.keys(routeSeries).sort().map(route => {
             const values = new Array(labels.length).fill(null);
             for (const minute in routeSeries[route]) {
                 const idx = labelIndexByMinute.get(parseInt(minute, 10));
-                if (idx !== undefined) values[idx] = routeSeries[route][minute];
+                if (idx !== undefined) values[idx] = routeSeries[route][minute].min;
             }
             const color = colorMappings[route];
             return {
