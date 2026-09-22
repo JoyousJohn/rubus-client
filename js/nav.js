@@ -3596,9 +3596,9 @@ function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, s
         }).map(b => `
             <div class="incoming-bus-row ${showRadio ? 'selectable-incoming-bus' : ''} ${b.isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${b.index}" data-list-type="${listType}" ${showRadio ? 'title="Tap to select this bus"' : ''}>
                 ${b.radioHtml}
-                <span class="incoming-bus-name" style="color: ${b.routeColor};">${escapeHtml(b.busLabel)}${b.showNextLoop ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}</span>
+                <span class="incoming-bus-name" style="color: ${b.routeColor};">${escapeHtml(b.busLabel)}</span>
                 <span class="incoming-bus-arrival">arrives ${b.arrivalTime}</span>
-                <span class="incoming-bus-wait ${b.soonest ? 'soonest' : ''}">${b.waitMin > 0 ? `${b.waitMin}m wait` : 'No wait'}</span>
+                <span class="incoming-bus-wait ${b.soonest && !b.showNextLoop ? 'soonest' : ''}"${b.showNextLoop ? ' style="font-weight: 400; text-decoration: none;"' : ''}>${b.showNextLoop ? `<span style="font-weight: 700; ${b.soonest ? 'text-decoration: underline;' : 'text-decoration: none;'}">${b.waitMin > 0 ? `${b.waitMin}m wait` : 'No wait'}</span><span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem; font-weight: 400; text-decoration: none;">(next loop)</span>` : `${b.waitMin > 0 ? `${b.waitMin}m wait` : 'No wait'}`}</span>
             </div>
         `).join('');
 
@@ -3642,8 +3642,8 @@ function getArrivingBusesHtml(routeName, boardingStopId, alightingStopId, walkSe
             const showNextLoop = (b.loop || 1) > 1 && top.some(other => String(other.busName) === String(b.busName) && other.loop === 1);
             return `
                 <div class="destination-bus-row ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}">
-                    <span class="destination-bus-name" style="color: ${routeColor};">${escapeHtml(busLabel)}${showNextLoop ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}</span>
-                    <span class="destination-bus-arrival">${arrivalTime} arrival</span>
+                    <span class="destination-bus-name" style="color: ${routeColor};">${escapeHtml(busLabel)}</span>
+                    <span class="destination-bus-arrival"${showNextLoop ? ' style="font-weight: 400;"' : ''}>${showNextLoop ? `<span style="font-weight: ${isSelected ? '700' : '400'};">${arrivalTime} arrival</span><span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem; font-weight: 400;">(next loop)</span>` : `${arrivalTime} arrival`}</span>
                 </div>
             `;
         }).join('');
@@ -3744,8 +3744,8 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
                 return `
                     <div class="destination-bus-row ${showRadio ? 'selectable-transfer-bus' : ''} ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${i}" data-eta-transfer="${etaTransfer}" ${showRadio ? 'title="Tap to select this bus"' : ''}>
                         ${radioHtml}
-                        <span class="destination-bus-name" style="color: ${leg1Color};">${escapeHtml(busLabel)}${showNextLoop ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}</span>
-                        <span class="destination-bus-arrival">${arrivalTime} arrival</span>
+                        <span class="destination-bus-name" style="color: ${leg1Color};">${escapeHtml(busLabel)}</span>
+                        <span class="destination-bus-arrival"${showNextLoop ? ' style="font-weight: 400;"' : ''}>${showNextLoop ? `<span style="font-weight: ${isSelected ? '700' : '400'};">${arrivalTime} arrival</span><span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem; font-weight: 400;">(next loop)</span>` : `${arrivalTime} arrival`}</span>
                     </div>
                 `;
             }).join('');
@@ -3784,9 +3784,9 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
             return `
                 <div class="incoming-bus-row ${showLeg2Radio ? 'selectable-incoming-bus' : ''} ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${i}" data-list-type="transfer_leg2" ${showLeg2Radio ? 'title="Tap to select this bus"' : ''}>
                     ${radioHtml}
-                    <span class="incoming-bus-name" style="color: ${leg2Color};">${escapeHtml(busLabel)}${showNextLoop ? `<span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem;">(next loop)</span>` : ''}</span>
+                    <span class="incoming-bus-name" style="color: ${leg2Color};">${escapeHtml(busLabel)}</span>
                     <span class="incoming-bus-arrival">arrives ${arrivalTime}</span>
-                    <span class="incoming-bus-wait ${i === 0 ? 'soonest' : ''}">${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}</span>
+                    <span class="incoming-bus-wait ${(i === 0) && !showNextLoop ? 'soonest' : ''}"${showNextLoop ? ' style="font-weight: 400; text-decoration: none;"' : ''}>${showNextLoop ? `<span style="font-weight: 700; ${(i === 0) ? 'text-decoration: underline;' : 'text-decoration: none;'}">${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}</span><span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem; font-weight: 400; text-decoration: none;">(next loop)</span>` : `${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}`}</span>
                 </div>
             `;
         }).join('');
