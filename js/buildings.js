@@ -226,11 +226,23 @@ async function populateBuildingClosestStopsList(feature) {
             });
         });
         $list.append($item);
-        // Populate bus routes badges
+        // Populate bus routes badges (with live ETA, mirroring the closest stops menu)
         const $routesDiv = $item.find('.building-stop-bus-routes');
         stop.routes.forEach(route => {
             const color = routeHasInServiceBuses(route) ? colorMappings[route] : 'gray';
-            const $badge = $(`<div class="building-route-badge pointer" style="background:${color};color:white;padding:0.2rem 0.8rem;border-radius:0.5rem;font-size:1.2rem;">${route.toUpperCase()}</div>`).click(async function(e) {
+            let etaText = '';
+            const sid = Number(stop.stopId);
+            if (isRouteBusAtStop(route, sid)) {
+                etaText = ' Here';
+            } else {
+                const eta = getSoonestBus(sid, route)[1];
+                if (Number.isFinite(eta)) {
+                    etaText = ` ${Math.ceil(eta / 60)}m`;
+                }
+            }
+            const $badge = $(`<div class="building-route-badge pointer" style="background:${color};color:white;padding:0.2rem 0.8rem;border-radius:0.5rem;font-size:1.2rem;">${route.toUpperCase()}${etaText}</div>`)
+                .attr('data-stop-id', String(stop.stopId))
+                .attr('data-route', route).click(async function(e) {
                 e.stopPropagation();
                 if (buildingClosestStopsMode === 'all') {
                     await startSim();
@@ -265,6 +277,36 @@ async function populateBuildingClosestStopsList(feature) {
     $showMoreWrapper.append($openInGoogleMaps);
     $list.append($showMoreWrapper);
 
+}
+
+// In-place ETA refresh for the building closest-stops badges, mirroring
+// refreshMeClosestStopsEtas in gui.js. Called from updateTimeToStops so open
+// building popups stay live without a full rebuild.
+let _lastBuildingEtaRefresh = 0;
+function refreshBuildingClosestStopsEtas() {
+    const now = Date.now();
+    if (now - _lastBuildingEtaRefresh < 4000) return;
+    _lastBuildingEtaRefresh = now;
+
+    const $chips = $('.building-closest-stops-list .building-route-badge[data-stop-id][data-route]');
+    if (!$chips.length) return;
+
+    $chips.each(function() {
+        const $chip = $(this);
+        const sid = Number($chip.attr('data-stop-id'));
+        const route = $chip.attr('data-route');
+        let etaText = '';
+        if (isRouteBusAtStop(route, sid)) {
+            etaText = ' Here';
+        } else {
+            const eta = getSoonestBus(sid, route)[1];
+            if (Number.isFinite(eta)) {
+                etaText = ` ${Math.ceil(eta / 60)}m`;
+            }
+        }
+        const next = `${route.toUpperCase()}${etaText}`;
+        if ($chip.text() !== next) $chip.text(next);
+    });
 }
 
 function setupBuildingClosestStopsSwitcher() {
@@ -874,3 +916,4 @@ window.getBoundingBox = getBoundingBox;
 window.clearBuildingLocationCache = clearBuildingLocationCache;
 window.BuildingSpatialIndex = BuildingSpatialIndex;
 window.onUserLocationChanged = onUserLocationChanged;
+window.refreshBuildingClosestStopsEtas = refreshBuildingClosestStopsEtas;

@@ -5589,7 +5589,7 @@ function populateMeClosestStops() {
             } else {
                 const soonestBus = getSoonestBus(parseInt(stopId), route);
                 const eta = soonestBus[1];
-                if (eta !== null && eta !== Infinity && typeof eta === 'number') {
+                if (Number.isFinite(eta)) {
                     etaText = ` ${Math.ceil(eta / 60)}m`;
                 }
             }
@@ -5691,7 +5691,7 @@ function refreshMeClosestStopsEtas() {
             etaText = ' Here';
         } else {
             const eta = getSoonestBus(sid, route, validCache)[1];
-            if (eta !== null && eta !== Infinity && typeof eta === 'number') {
+            if (Number.isFinite(eta)) {
                 etaText = ` ${Math.ceil(eta / 60)}m`;
             }
         }

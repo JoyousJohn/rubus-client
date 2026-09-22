@@ -1045,6 +1045,7 @@ function updateTimeToStops(busNames) {
 
     refreshMeClosestStopsEtas();
     refreshAllStopsEtas();
+    refreshBuildingClosestStopsEtas();
 
     // Keep the open routes subpanel in sync with live bus state (header rows and
     // the rail of bus icons) on the same pass that recomputes ETAs: this is the
