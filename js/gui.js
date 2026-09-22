@@ -2726,6 +2726,17 @@ function toggleOverviewSort(column) {
 window.toggleOverviewSort = toggleOverviewSort;
 
 let routeRiderships = {}
+
+function updateBusNetworkTitle() {
+    let count = 0;
+    const campusRoutes = busesByRoutes[selectedCampus] || {};
+    for (const route of Object.keys(campusRoutes)) {
+        if (route === 'undefined') continue;
+        count += (campusRoutes[route] || []).length;
+    }
+    $('#bus-network-title').text(`${count} Bus${count === 1 ? '' : 'es'} on Network`);
+}
+
 function updateBusOverview(routes) {
 
     const loopTimes = calculateLoopTimes();
@@ -2733,6 +2744,7 @@ function updateBusOverview(routes) {
     // Check if busesByRoutes and selectedCampus exist before accessing
     if (!busesByRoutes || !busesByRoutes[selectedCampus]) {
         console.log('No buses data available for campus:', selectedCampus);
+        updateBusNetworkTitle();
         $('.buses-overview-grid').hide().children().not('.bus-overview-heading, .bus-overview-header-divider').remove();
         return;
     }
@@ -2747,6 +2759,8 @@ function updateBusOverview(routes) {
     if (routes.includes('undefined')) { // Should I even track this?
         routes = routes.filter(route => route !== 'undefined');
     }
+
+    updateBusNetworkTitle();
 
     // console.log(`Updating bus overview for routes: ${routes.join(', ')}`)
 
