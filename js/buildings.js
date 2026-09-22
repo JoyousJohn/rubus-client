@@ -362,6 +362,7 @@ function showBuildingInfo(feature) {
     navBackActive = cameFromNav;       // persist for the back-button click handler (set after hideInfoBoxes)
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
+    $('.chat-btn').hide();
     $('.building-info-popup-inner').scrollTop(0);
     setTimeout(updateBuildingPopupMaxHeight, 0);
     markPanelOpened('right');
@@ -503,6 +504,7 @@ function loadBuildings() {
                                     locationMarker.on('click', function() {
                                         $('.bus-info-popup, .stop-info-popup').hide();
                                         $('.my-location-popup').show();
+                                        $('.chat-btn').hide();
                                         markPanelOpened('right');
                                         if (typeof hideCenterStops === 'function') hideCenterStops();
                                     });
@@ -515,6 +517,7 @@ function loadBuildings() {
 
                                 $('.fly-closest-stop-wrapper').fadeIn();
                                 $('.my-location-popup').show();
+                                $('.chat-btn').hide();
                                 markPanelOpened('right');
                                 if (typeof hideCenterStops === 'function') hideCenterStops();
 

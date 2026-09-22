@@ -15,6 +15,7 @@ function hideInfoBoxes(instantly_hide) {
         $('.bus-info-popup, .stop-info-popup, .my-location-popup, .building-info-popup').fadeOut();
         closeSearch();
     }
+    $('.chat-btn').show();
     delete window._panelOpenedAt['right'];
     
     // Hide the out of service hide button when closing popups

@@ -144,6 +144,7 @@ function initSpoofing() {
             locationMarker.on('click', function() {
                 $('.bus-info-popup, .stop-info-popup').hide();
                 $('.my-location-popup').show();
+                $('.chat-btn').hide();
                 markPanelOpened('right');
                 hideCenterStops();
             });
@@ -159,6 +160,7 @@ function initSpoofing() {
         // "you" away, same as opening a building popup does.
         hideInfoBoxes(true);
         $('.my-location-popup').show();
+        $('.chat-btn').hide();
         markPanelOpened('right');
         hideCenterStops();
     });

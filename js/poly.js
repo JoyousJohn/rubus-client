@@ -2692,6 +2692,7 @@ async function popStopInfo(stopId) {
     populateRouteSelectors(activeRoutes, stopId);
     
     $('.settings-btn, .sim-btn, .direct-feedback-btn').hide();
+    $('.chat-btn').hide();
 
     // return;
 

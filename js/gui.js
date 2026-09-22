@@ -5263,6 +5263,7 @@ function handleNearestStop(fly) {
         locationMarker.on('click', function() {
             $('.bus-info-popup, .stop-info-popup').hide();  
             $('.my-location-popup').show();
+            $('.chat-btn').hide();
             markPanelOpened('right');
             if (typeof hideCenterStops === 'function') hideCenterStops();
             // map.flyTo(userPosition, 18, {

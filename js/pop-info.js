@@ -598,6 +598,7 @@ function popInfo(busName, resetCampusFontSize, isNewBus = false) {
 
     _plog('popInfo: before popup show');
     $('.bus-info-popup').stop(true, true).show();
+    $('.chat-btn').hide();
     _plog('popInfo: after popup show (DOM updated, before paint)');
     if (_perfTap) {
         requestAnimationFrame(() => { if (window.busPopupPerfLog) window.busPopupPerfLog('popInfo: popup first frame painted (rAF)', busName); });
