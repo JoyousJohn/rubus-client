@@ -169,8 +169,8 @@ async function populateBuildingClosestStopsList(feature) {
     // Sort by distance
     stopsWithDistance.sort((a, b) => a.distance - b.distance);
 
-    // Only show the closest 3 with at least one route
-    const stopsToShow = stopsWithDistance.slice(0, 3);
+    // Closest 2 render up front; the rest render on "Show all stops"
+    const initialStops = stopsWithDistance.slice(0, 2);
 
     // Render
     const $list = $('.building-closest-stops-list');
@@ -184,7 +184,7 @@ async function populateBuildingClosestStopsList(feature) {
         window.open(`https://www.google.com/maps/search/?api=1&query=${buildingLat},${buildingLng}`, '_blank');
     });
 
-    if (stopsToShow.length === 0) {
+    if (stopsWithDistance.length === 0) {
         $heading.hide();
         // Only Google Maps button when no stops
         $showMoreWrapper.append($openInGoogleMaps);
@@ -194,8 +194,8 @@ async function populateBuildingClosestStopsList(feature) {
         $heading.show();
     }
 
-    // Show only the closest stop at first
-    stopsToShow.forEach((stop, idx) => {
+    // One stop row: name, distance, and route badges with live ETAs
+    const renderBuildingStopItem = (stop) => {
         // If less than 1,000ft, show in ft, else in mi
         let distStr;
         if (stop.distance < 0.189) { // 1,000ft = 0.189 miles
@@ -204,9 +204,8 @@ async function populateBuildingClosestStopsList(feature) {
             distStr = `${parseFloat(stop.distance.toFixed(2))} mi`;
         }
 
-        const extraClass = idx === 0 ? '' : 'building-stop-extra';
         const $item = $(`
-            <div class="flex flex-col mb-0p5rem ${extraClass}" style="${idx > 0 ? 'display:none;' : ''}">
+            <div class="flex flex-col mb-0p5rem">
                 <div class="flex align-center pointer">
                     <div class="building-stop-name mr-0p5rem text-1p5rem">${stop.name}</div>
                     <div class="building-stop-dist text-1p2rem" style="color: gray;">${distStr}</div>
@@ -259,16 +258,21 @@ async function populateBuildingClosestStopsList(feature) {
             });
             $routesDiv.append($badge);
         });
-    });
+    };
 
-    // If there are more than 1 stop, add a 'Show more stops' link
-    if (stopsToShow.length > 1) {
-        const $showMore = $('<div class="building-show-more-stops pointer mt-1rem flex align-center" style="color:rgb(105, 105, 191); font-size:1.2rem; text-align:left;"><i class="fa-solid fa-arrow-down mr-0p5rem"></i>Show more stops</div>');
+    initialStops.forEach(renderBuildingStopItem);
+
+    // More than 2 stops: collapse the rest behind "Show all stops", which
+    // renders every nearby active stop (the popup scrolls)
+    if (stopsWithDistance.length > 2) {
+        const $showMore = $('<div class="building-show-all-stops pointer mt-1rem flex align-center" style="color:rgb(105, 105, 191); font-size:1.2rem; text-align:left;"><i class="fa-solid fa-arrow-down mr-0p5rem"></i>Show all stops</div>');
         $showMore.click(function() {
-            $('.building-stop-extra').slideDown(200);
+            $showMoreWrapper.detach();
+            stopsWithDistance.slice(2).forEach(renderBuildingStopItem);
+            $list.append($showMoreWrapper);
             $(this).hide();
             sa_event('btn_press', {
-                'btn': 'building_show_more_stops'
+                'btn': 'building_show_all_stops'
             });
         });
         $showMoreWrapper.append($showMore);
@@ -309,6 +313,20 @@ function refreshBuildingClosestStopsEtas() {
     });
 }
 
+// Viewport-measured cap for the whole popup, mirroring
+// updateStopBusesMaxHeight in poly.js: popup bottom clears the action row
+// and the bottom bar. Recomputed on show/resize/flight, so no content
+// shrink-wrap: max-height only caps, short popups are unaffected.
+function updateBuildingPopupMaxHeight() {
+    const inner = $('.building-info-popup-inner');
+    const maxHeight = window.innerHeight - inner.offset().top - $('.building-info-actions').innerHeight() - $('.bottom').innerHeight();
+    inner.css('max-height', maxHeight - 75);
+}
+
+$(window).resize(function() {
+    updateBuildingPopupMaxHeight();
+});
+
 function setupBuildingClosestStopsSwitcher() {
     // Only set up once
     if ($('.building-closest-stops-options').data('setup')) return;
@@ -344,6 +362,8 @@ function showBuildingInfo(feature) {
     navBackActive = cameFromNav;       // persist for the back-button click handler (set after hideInfoBoxes)
     $('.building-info-popup .building-name').text(feature.name);
     $('.building-info-popup').stop(true, true).show();
+    $('.building-info-popup-inner').scrollTop(0);
+    setTimeout(updateBuildingPopupMaxHeight, 0);
     markPanelOpened('right');
     // Show "Back to search"/"Back to nav" when this building was opened from
     // a search result or a navigation waypoint
@@ -917,3 +937,4 @@ window.clearBuildingLocationCache = clearBuildingLocationCache;
 window.BuildingSpatialIndex = BuildingSpatialIndex;
 window.onUserLocationChanged = onUserLocationChanged;
 window.refreshBuildingClosestStopsEtas = refreshBuildingClosestStopsEtas;
+window.updateBuildingPopupMaxHeight = updateBuildingPopupMaxHeight;

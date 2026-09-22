@@ -192,6 +192,9 @@ function flyToCenteredBelow(latlng, zoom, popupEl, duration, onFlown) {
         if ($('.bus-info-popup').is(':visible')) {
             updateNextStopsMaxHeight();
         }
+        if ($('.building-info-popup').is(':visible')) {
+            updateBuildingPopupMaxHeight();
+        }
         const size = map.getSize();
         const cy = size.y / 2;
         const offsetY = getCenteredYBelowPopup(popupEl) - cy;
