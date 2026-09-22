@@ -179,21 +179,27 @@ function hideInfoBoxes(instantly_hide) {
 
 }
 
+// Menus that have already shown the hint this page load. After a user has seen
+// the hint, further opens of that menu only get a delayed reminder.
 const shownEscTypes = new Set();
 
-function showEscNotice(type) {
-    // Every right-side popup (bus/stop/building) funnels through here on open.
-    if (type !== 'info') {
-        markPanelOpened('right');
-    }
+// The menu each hint type belongs to, checked when a reminder timer fires.
+const escMenuSelectors = {
+    bus: '.bus-info-popup',
+    stop: '.stop-info-popup',
+    building: '.building-info-popup',
+    info: '.info-panels-show-hide-wrapper'
+};
 
-    if (!isDesktop || isTouchDevice) return;
+// Bumped on every open of a menu. A reminder timer compares its captured token
+// so that a newer open supersedes a still-pending reminder from an older one.
+const escOpenTokens = {};
 
-    if (!settings['toggle-always-show-esc-hint']) {
-        if (shownEscTypes.has(type)) return;
-        shownEscTypes.add(type);
-    }
+// How long a repeat open of the same menu must stay open before the hint is
+// shown again, so returning users learn nothing new but stuck users are reminded.
+const ESC_HINT_REMINDER_DELAY_MS = 5000;
 
+function showEscNoticeNow() {
     const $notice = $('.desktop-esc-notice');
     if (!$notice.length) return;
 
@@ -213,3 +219,42 @@ function showEscNotice(type) {
     void $path[0]?.offsetWidth;
     $path.addClass('animate-glow');
 }
+
+function showEscNotice(type) {
+    // Every right-side popup (bus/stop/building) funnels through here on open.
+    if (type !== 'info') {
+        markPanelOpened('right');
+    }
+
+    if (!isDesktop || isTouchDevice) return;
+
+    const token = escOpenTokens[type] = (escOpenTokens[type] || 0) + 1;
+
+    // "Always Show Esc Hint" opts out of the once-per-type rule entirely.
+    if (!settings['toggle-always-show-esc-hint']) {
+        if (shownEscTypes.has(type)) {
+            // Already seen: stay quiet on open, then remind only if the user is
+            // still in that same menu after the delay.
+            setTimeout(() => {
+                if (escOpenTokens[type] !== token) return; // superseded by a newer open
+                if (!$(escMenuSelectors[type]).is(':visible')) return;
+                showEscNoticeNow();
+            }, ESC_HINT_REMINDER_DELAY_MS);
+            return;
+        }
+        shownEscTypes.add(type);
+    }
+
+    showEscNoticeNow();
+}
+
+// Clicking the "Press Esc to close" pill does the same thing as pressing Esc,
+// so touch/click users get the same escape hatch the hint promises.
+$(document).on('click', '.desktop-esc-notice', function() {
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Escape',
+        code: 'Escape',
+        bubbles: true,
+        cancelable: true
+    }));
+});
