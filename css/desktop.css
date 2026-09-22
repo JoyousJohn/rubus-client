@@ -69,7 +69,8 @@
     }
 
     .route-selectors {
-        flex-direction: column;
+        /* Vertical rail: stack the grid items in rows (one implicit column). */
+        grid-auto-flow: row;
         position: fixed;
         top: 0;
         row-gap: 0.5rem;

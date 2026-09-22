@@ -2573,7 +2573,14 @@ html, body {
 }
 
 .route-selectors {
-    display: flex;
+    display: grid;
+    /* A grid column track is sized after the row's block size is known, so an
+       aspect-ratio pill (the fav star) contributes its real square width to
+       this container's max-content. As a flex row it contributed only its
+       content width, making `width: max-content` ~2rem too narrow and letting
+       `overflow-x: scroll` clip whatever selector sat last. */
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
     font-family: var(--font-family);
     font-weight: bold;
     column-gap: 0.5rem;
