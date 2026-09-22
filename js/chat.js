@@ -1072,6 +1072,8 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
     let responseDone = false;
     let phase = 'waiting'; // 'waiting' | 'thinking' | 'answering'
     let phaseStartTime = null;
+    let segmentStartTokens = 0; // streamed tokens predating the current phase segment
+    let thinkActiveMs = 0; // thinking-stream time accumulated across tool-gap segments
     let streamedThinking = '';
     let streamedAnswer = '';
     let tpsInterval = null;
@@ -1140,11 +1142,11 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
         if (elapsedPhaseSec < 0.1) return '';
 
         if (phase === 'thinking') {
-            const tokens = estimateTokens(streamedThinking);
+            const tokens = estimateTokens(streamedThinking) - segmentStartTokens;
             const tps = (tokens / elapsedPhaseSec).toFixed(1);
             return `${tps} tps`;
         } else if (phase === 'answering') {
-            const tokens = estimateTokens(streamedAnswer);
+            const tokens = estimateTokens(streamedAnswer) - segmentStartTokens;
             const tps = (tokens / elapsedPhaseSec).toFixed(1);
             return `${tps} tps`;
         }
@@ -1250,6 +1252,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
                     if (streamedThinking && !streamedThinking.endsWith('\n\n')) {
                         streamedThinking += (streamedThinking.endsWith('\n') ? '\n' : '\n\n');
                     }
+                    segmentStartTokens = estimateTokens(streamedThinking);
                 }
                 streamedThinking += data.thinking_delta;
 
@@ -1273,6 +1276,7 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
             // 2. Tool call progress notification
             if (data.progress && !data.done) {
                 console.log(data);
+                if (phase === 'thinking' && phaseStartTime) thinkActiveMs += performance.now() - phaseStartTime;
                 phase = 'waiting';
                 phaseStartTime = null;
                 streamedAnswer = '';
@@ -1330,14 +1334,16 @@ $(document).on('submit', '.chat-ui-input-bar', function(e) {
             if (data.delta && !data.done) {
                 if (phase !== 'answering') {
                     // Finalize thinking header badge if it exists
-                    if ($currentThinkingBox && phase === 'thinking') {
-                        const thinkSec = Math.max(0.1, (performance.now() - phaseStartTime) / 1000).toFixed(1);
+                    if ($currentThinkingBox && (phase === 'thinking' || thinkActiveMs > 0)) {
+                        if (phase === 'thinking' && phaseStartTime) thinkActiveMs += performance.now() - phaseStartTime;
+                        const thinkSec = Math.max(0.1, thinkActiveMs / 1000).toFixed(1);
                         const thinkTokens = estimateTokens(streamedThinking);
                         const thinkTps = (thinkTokens / thinkSec).toFixed(1);
                         $currentThinkingBox.find('.thinking-tps-badge').text(formatThinkingBadge(`${thinkSec}s · ${thinkTps} tps`));
                     }
                     phase = 'answering';
                     phaseStartTime = performance.now();
+                    segmentStartTokens = estimateTokens(streamedAnswer);
                     $('.chat-message.bot.thinking').slideUp();
                     $botMsg.show().removeClass('loading');
                     $botMsg.html('<div class="chat-message-content"></div>');
