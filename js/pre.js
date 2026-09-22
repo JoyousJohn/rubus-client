@@ -1098,7 +1098,7 @@ async function fetchWhere() {
                 // } // may need to set previousPosition keys here
             }
             
-            if (!busLocations[busName]['where']) { continue; } // joined service and didn't get to a stop polygon yet        
+            if (!busLocations[busName]['where'] || !busLocations[busName]['where'].length) { continue; } // joined service and didn't get to a stop polygon yet
             
             const newStopId = parseInt(busLocations[busName]['where'][0]);
             const oldRaw = busData[busName]['stopId'];
@@ -1766,23 +1766,9 @@ $(document).ready(async function() {
             }
             _lastResumeTrigger = now;
 
-            // A long sleep almost always kills the WebSocket without a 'close'
-            // reaching us (still nominally OPEN), and openRUBusSocket() skips
-            // reconnecting while it looks OPEN. Without this refresh a resume
-            // could never re-learn stop state: the HTTP polls recover positions
-            // (/buses), ETAs (/etas) and stopIds (/where) but fetchBusData never
-            // writes at_stop, and /where can't tell dwelling from en-route, so a
-            // bus that arrived during the idle kept at_stop=false - rendered as
-            // already on its way to the next stop - until its next arrival
-            // event. Reconnecting replays the server's bus_data snapshot, which
-            // carries the authoritative stopped/time_arrived (exactly what a
-            // page reload gets).
             const idleMs = pageIdleSince ? (now - pageIdleSince) : 0;
             pageIdleSince = 0;
-            if (idleMs > socketRefreshAfterIdleMs) {
-                closeRUBusSocket();
-                openRUBusSocket();
-            }
+            const refreshSocket = idleMs > socketRefreshAfterIdleMs;
 
             // Re-fetch the ETA/waits tables when they're stale (the app slept for
             // longer than this threshold), so busETAs are recomputed from fresh
@@ -1806,7 +1792,30 @@ $(document).ready(async function() {
             }
 
             // Kick a fetch right away to avoid waiting for the interval
-            if (!settings['toggle-pause-tripshot-polling']) { fetchBusData(true); }
+            if (!settings['toggle-pause-tripshot-polling']) {
+                const resumed = fetchBusData(true);
+                // A long sleep almost always kills the WebSocket without a
+                // 'close' reaching us (it still looks OPEN, so openRUBusSocket()
+                // would skip reconnecting) - only a fresh connection replays the
+                // server's bus_data snapshot with the authoritative
+                // stopped/time_arrived, which the HTTP polls never carry
+                // (positions/ETAs/stopIds recover, at_stop does not).
+                //
+                // Reconnect only once that fetch has registered every in-service
+                // bus: the snapshot is ignored for busNames the client doesn't
+                // know yet, so reconnecting before the fetch would silently drop
+                // stop state for buses that joined service while asleep.
+                if (refreshSocket) {
+                    resumed.finally(() => {
+                        closeRUBusSocket();
+                        openRUBusSocket();
+                    });
+                }
+            } else if (refreshSocket) {
+                // Polling paused: no fetch is coming, so reconnect right away.
+                closeRUBusSocket();
+                openRUBusSocket();
+            }
         };
 
         const triggerPause = () => {

@@ -77,6 +77,41 @@ let rubusSocketGen = 0;
 // that recover on the immediate reconnect, so only surface the banner if no
 // successful open lands within the window.
 let liveUpdatesFailureTimer = null;
+// Unexpected-drop recovery: an unplanned close is retried with an escalating
+// backoff (reset on a successful open). Without it a dropped socket leaves the
+// app on HTTP-only data - which carries positions, ETAs and stopIds but no
+// stop state (at_stop/time_arrived are live-feed only).
+let rubusSocketReconnectAttempt = 0;
+const RUBUS_SOCKET_RECONNECT_BASE_MS = 5000;
+const RUBUS_SOCKET_RECONNECT_MAX_MS = 60000;
+// Half-open sockets never fire 'close' or 'error', so the time of the last
+// message the server sent is the only evidence that the live feed is gone.
+// The watchdog below reconnects when that silence outlasts in-service buses
+// (a busy feed delivers arrivals/departures/ETA broadcasts every few minutes).
+let lastRubusWsMessageAt = 0;
+let rubusWsWatchdogTimer = null;
+const RUBUS_WS_SILENCE_MS = 5 * 60 * 1000;
+const RUBUS_WS_WATCHDOG_INTERVAL_MS = 60000;
+
+function startRubusSocketWatchdog() {
+    if (rubusWsWatchdogTimer) return;
+    rubusWsWatchdogTimer = setInterval(() => {
+        if (sim) return;
+        // Resumes own the hidden-window case (pageIdleSince / socket refresh).
+        if (typeof document !== 'undefined' && document.hidden) return;
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+        // Only OPEN-but-silent sockets: the close handler owns the rest.
+        if (!socket || socket.readyState !== WebSocket.OPEN) return;
+        if (!lastRubusWsMessageAt || (Date.now() - lastRubusWsMessageAt) < RUBUS_WS_SILENCE_MS) return;
+        if (typeof busData !== 'object' || busData === null) return;
+        const inService = Object.keys(busData).some(busName =>
+            typeof isBusInService === 'function' ? isBusInService(busName) : !!busData[busName]);
+        if (!inService) return;
+        console.warn(`[RUBus WS] No server message for ${Math.round((Date.now() - lastRubusWsMessageAt) / 1000)}s with buses in service - forcing a reconnect`);
+        closeRUBusSocket();
+        openRUBusSocket();
+    }, RUBUS_WS_WATCHDOG_INTERVAL_MS);
+}
 
 function updateETAs(etasData) {
     etas = etasData[selectedCampus] || {};
@@ -100,6 +135,7 @@ function closeRUBusSocket() {
 }
 
 function openRUBusSocket() {
+    startRubusSocketWatchdog();
     if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
         return;
     }
@@ -126,6 +162,10 @@ function openRUBusSocket() {
             return;
         }
         // console.log("RUBus WebSocket connection opened");
+        // A successful open resets the reconnect backoff: the connection is
+        // healthy again, so the next unexpected drop retries promptly.
+        rubusSocketReconnectAttempt = 0;
+        lastRubusWsMessageAt = Date.now();
         // A successful open cancels any pending transient-error mark: the
         // connection recovered inside the grace window, so there is no outage.
         if (liveUpdatesFailureTimer) {
@@ -407,6 +447,8 @@ function openRUBusSocket() {
             // console.log("Formatted message from server:", eventData);
             processEventData(eventData);
 
+            lastRubusWsMessageAt = Date.now();
+
             // Update RUBus response time since WebSocket is active
             updateRubusResponseTime();
         } catch (error) {
@@ -420,6 +462,19 @@ function openRUBusSocket() {
         if (ws._gen !== rubusSocketGen || socket !== ws) {
             return;
         }
+        // Unplanned drop: our own closeRUBusSocket() bumps the generation and
+        // returns above. Retry with backoff, otherwise the app keeps polling
+        // positions/ETAs over HTTP while every arrival/departure event - the
+        // only live carrier of at_stop/time_arrived - is silently lost.
+        socket = null;
+        window.socket = null;
+        const delay = Math.min(RUBUS_SOCKET_RECONNECT_MAX_MS,
+            RUBUS_SOCKET_RECONNECT_BASE_MS * Math.pow(2, rubusSocketReconnectAttempt));
+        rubusSocketReconnectAttempt++;
+        setTimeout(() => {
+            if (sim || socket) return;
+            openRUBusSocket();
+        }, delay);
         // console.log("Passio WebSocket connection closed:", event);
     });
 
