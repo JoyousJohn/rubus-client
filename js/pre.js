@@ -1110,9 +1110,23 @@ async function fetchWhere() {
                 if (wPrev !== newStopId) {
                     busData[busName]['prevStopId'] = wPrev;
                 }
-                busData[busName]['at_stop'] = false;
+                // Do NOT infer at_stop from the array length. Server-side
+                // where = [lastReachedStop, previousStop], so a bus parked at a
+                // stop keeps a 2-element array for its whole dwell (confirmed
+                // against /bus_status: is_at_stop=true while where=[2,1]), and
+                // [stop] only appears for a bus that reached a single stop
+                // since joining service. Clearing at_stop here wiped the
+                // WS-derived state (arrival event / connect snapshot) on every
+                // immediate update - i.e. on every resume - leaving dwelling
+                // buses rendered as already en-route until their next arrival.
             } else if (busLocations[busName]['where'].length === 1) {
-                busData[busName]['at_stop'] = true;
+                // [stop] only means "hasn't reached a second stop since joining
+                // service" and it survives departure, so it can only seed the
+                // flag while nothing else owns it - the WS arrival/departure
+                // events and the connect snapshot are authoritative afterwards.
+                if (!('at_stop' in busData[busName])) {
+                    busData[busName]['at_stop'] = true;
+                }
                 // Server where=[stop] carries no approach leg, but SAC NB (stop 3)
                 // is visited twice (2->3->6 vs 22->3->1). Keep last known prev when
                 // still at the same stop so the stop popup can still show To <next>.
@@ -1752,6 +1766,24 @@ $(document).ready(async function() {
             }
             _lastResumeTrigger = now;
 
+            // A long sleep almost always kills the WebSocket without a 'close'
+            // reaching us (still nominally OPEN), and openRUBusSocket() skips
+            // reconnecting while it looks OPEN. Without this refresh a resume
+            // could never re-learn stop state: the HTTP polls recover positions
+            // (/buses), ETAs (/etas) and stopIds (/where) but fetchBusData never
+            // writes at_stop, and /where can't tell dwelling from en-route, so a
+            // bus that arrived during the idle kept at_stop=false - rendered as
+            // already on its way to the next stop - until its next arrival
+            // event. Reconnecting replays the server's bus_data snapshot, which
+            // carries the authoritative stopped/time_arrived (exactly what a
+            // page reload gets).
+            const idleMs = pageIdleSince ? (now - pageIdleSince) : 0;
+            pageIdleSince = 0;
+            if (idleMs > socketRefreshAfterIdleMs) {
+                closeRUBusSocket();
+                openRUBusSocket();
+            }
+
             // Re-fetch the ETA/waits tables when they're stale (the app slept for
             // longer than this threshold), so busETAs are recomputed from fresh
             // leg-time data instead of a stale schedule. Gate ensures only one such
@@ -1780,6 +1812,10 @@ $(document).ready(async function() {
         const triggerPause = () => {
             // Cancel all animations immediately when page is blurred or hidden
             cancelAllAnimations();
+
+            // Start of an idle window; the resume handler uses its length to
+            // decide whether the WebSocket is likely dead (see pageIdleSince).
+            pageIdleSince = Date.now();
 
             if (typeof sim !== 'undefined' && sim) {
                 if (typeof pauseSim === 'function') {

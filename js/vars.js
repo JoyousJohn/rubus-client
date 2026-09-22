@@ -17,6 +17,13 @@ let lastETAsFetchTime = 0;
 // Gate to prevent duplicate resume-time ETA refreshes when focus + a source both
 // fire within the debounce window (mirrors the _lastResumeTrigger logic).
 let _etAsRefreshScheduled = false;
+// Timestamp (ms) of when the page went idle (blur/hidden). Read on resume to
+// tell a long sleep from a quick focus flip: the WebSocket can die silently
+// while the tab is asleep (still nominally OPEN, so openRUBusSocket() would
+// skip reconnecting) and only a fresh connection replays the server's bus_data
+// snapshot, which is the sole carrier of at_stop/time_arrived.
+let pageIdleSince = 0;
+const socketRefreshAfterIdleMs = 60000;
 
 // Diagnostic log filter: limits detailed per-bus logs to keep console concise.
 // Always includes the clicked/focused bus (popupBusName).
