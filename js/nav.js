@@ -725,6 +725,7 @@ function setupNavigationInputs() {
                     $('.nav-directions-wrapper').removeClass('none').addClass('flex');
                     $('.nav-route-selector-container').removeClass('none');
                     $('.nav-time-row').removeClass('none');
+                    positionGlobalWaypointConnector();
                     if (typeof updateNavInfoBanners === 'function') {
                         updateNavInfoBanners();
                     } else if (typeof updateNavTransferInfoBanner === 'function') {
@@ -1931,6 +1932,7 @@ function calculateRoute(from, to) {
             $('.nav-directions-wrapper').removeClass('none').addClass('flex');
             $('.nav-route-selector-container').removeClass('none');
             $('.nav-time-row').removeClass('none');
+            positionGlobalWaypointConnector();
             if (typeof updateNavInfoBanners === 'function') {
                 updateNavInfoBanners();
             } else if (typeof updateNavTransferInfoBanner === 'function') {
@@ -4234,6 +4236,10 @@ function loadWalkingRoadNames(startBuilding, endBuilding, startStop, endStop, st
         console.warn('Error loading walking road names:', error);
         // Hide the road lists if there's an error
         $('#start-walking-roads, #end-walking-roads').hide();
+    }).finally(() => {
+        // Both road lists have settled (filled or hidden) and every row below
+        // them may have shifted — re-measure the connector once here.
+        positionGlobalWaypointConnector();
     });
 }
 
@@ -8190,6 +8196,13 @@ function adjustAttachedListCornerRadii() {
 function positionGlobalWaypointConnector() {
     const container = $('.waypoint-rows-container');
     if (container.length === 0) {
+        return;
+    }
+
+    // A hidden subtree reports zero rects from .offset(), so measuring here
+    // would bake a stub at the container top. The panel reshow paths re-run
+    // this once the rows are visible again.
+    if (!container.is(':visible')) {
         return;
     }
 

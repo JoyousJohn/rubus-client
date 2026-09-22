@@ -269,6 +269,11 @@ function adjustSearchHeights() {
   });
 
   requestAnimationFrame(updateAllHistoryScrollFades);
+
+  // The viewport resize/scroll reflow above (mobile keyboard) moves waypoint
+  // rows after nav's own resize handler has run, so re-measure the connector
+  // once the new wrapper geometry is applied.
+  positionGlobalWaypointConnector();
 }
 
 function attachSearchViewportListeners() {
