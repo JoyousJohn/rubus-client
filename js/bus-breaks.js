@@ -53,7 +53,9 @@ function buildChronBreakList(busName, breakDataChron) {
     for (let k = 0; k < breakDataChron.length; k++) {
         const currItem = breakDataChron[k];
         const prevItem = k > 0 ? breakDataChron[k - 1] : null;
-        const currId = currItem.stop_id;
+        // Server canonicalizes stop_id to str; stopLists are numeric, so
+        // normalize before the strict comparisons below.
+        const currId = Number(currItem.stop_id);
         const currRoute = currItem.route || activeRoute || currentRoute;
 
         // Route change: separator row, then start the new segment fresh.
@@ -76,7 +78,7 @@ function buildChronBreakList(busName, breakDataChron) {
         }
 
         // Same route as previous: drive the cursor through its stop list.
-        const prevId = prevItem.stop_id;
+        const prevId = Number(prevItem.stop_id);
 
         // Duplicate consecutive record for the same visit: no travel, no miss.
         if (currId === prevId) {
