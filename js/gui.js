@@ -3582,7 +3582,6 @@ function updateRouteChangesCampusButtons() {
 }
 
 function setRouteChangesCampus(campus) {
-    if (campus !== 'all' && !ROUTE_CHANGES_CAMPUSES.includes(campus)) return;
     routeChangesCampus = campus;
     updateRouteChangesCampusButtons();
     if (routeChangesCache.data) {
@@ -3889,6 +3888,35 @@ const OUT_OF_SERVICE_CACHE_MS = 60 * 1000;
 let outOfServiceSortColumn = 'time';
 let outOfServiceSortDirection = 'desc';
 
+// Campus filter for the Out of Service panel, mirroring Route Changes:
+// one of 'nb' | 'camden' | 'newark' | 'all'. Null -> selectedCampus.
+let outOfServiceCampus = null;
+const OUT_OF_SERVICE_CAMPUSES = ['nb', 'camden', 'newark'];
+
+function getActiveOutOfServiceCampus() {
+    if (outOfServiceCampus === 'all') return 'all';
+    if (OUT_OF_SERVICE_CAMPUSES.includes(outOfServiceCampus)) return outOfServiceCampus;
+    if (OUT_OF_SERVICE_CAMPUSES.includes(selectedCampus)) return selectedCampus;
+    return 'nb';
+}
+
+function updateOutOfServiceCampusButtons() {
+    const active = getActiveOutOfServiceCampus();
+    $('.out-of-service-campus-btn').each(function() {
+        const campus = $(this).data('campus');
+        $(this).toggleClass('selected', campus === active);
+    });
+}
+
+function setOutOfServiceCampus(campus) {
+    outOfServiceCampus = campus;
+    updateOutOfServiceCampusButtons();
+    if (outOfServiceCache.data) {
+        renderOutOfServiceMenu(outOfServiceCache.data);
+    }
+}
+window.setOutOfServiceCampus = setOutOfServiceCampus;
+
 function updateOutOfServiceSortHeaders() {
     const cols = ['bus', 'route', 'time', 'duration'];
     const chevronClass = outOfServiceSortDirection === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down';
@@ -3954,12 +3982,13 @@ function renderOutOfServiceMenu(allRecords) {
     if (!$grid.length) return;
 
     updateOutOfServiceSortHeaders();
+    updateOutOfServiceCampusButtons();
     $grid.children().not('.out-of-service-heading, .out-of-service-header-divider').remove();
 
-    const rows = [];
+    const allRows = [];
     for (const busName in (allRecords || {})) {
         (allRecords[busName] || []).forEach(record => {
-            rows.push({
+            allRows.push({
                 busName,
                 route: record.route,
                 time: record.time,
@@ -3968,8 +3997,18 @@ function renderOutOfServiceMenu(allRecords) {
         });
     }
 
-    if (rows.length === 0) {
+    if (allRows.length === 0) {
         $wrapper.hide();
+        return;
+    }
+    const activeCampus = getActiveOutOfServiceCampus();
+    const rows = activeCampus === 'all'
+        ? allRows.slice()
+        : allRows.filter(row =>
+            routesByCampus[String(row.route || '').trim().toLowerCase()] === activeCampus);
+    if (rows.length === 0) {
+        $wrapper.show();
+        $grid.append($('<div class="out-of-service-empty"></div>').text('No out-of-service buses for this campus today.'));
         return;
     }
 

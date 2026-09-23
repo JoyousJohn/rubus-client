@@ -544,9 +544,46 @@
     -webkit-user-select: none;
 }
 
+.out-of-service-campus-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    background-color: color-mix(in srgb, var(--theme-bg) 84%, transparent);
+    border: 1px solid var(--theme-border);
+    overflow: hidden;
+    font-family: var(--font-family);
+    margin-bottom: 1.5rem;
+}
+
+.out-of-service-campus-btn {
+    padding: 0.5rem 0.9rem;
+    color: var(--theme-color);
+    text-align: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.out-of-service-campus-btn.selected {
+    background-color: color-mix(in srgb, var(--theme-color) 90%, transparent);
+    color: var(--theme-bg);
+}
+
+.out-of-service-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--theme-extra);
+    font-size: 1.4rem;
+    padding: 1rem 0 0.5rem 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .out-of-service-grid {
     display: grid;
-    grid-template-columns: auto auto auto 1fr;
+    /* Slack lives in ROUTE so OUT AT and IN SERVICE hug the right edge. */
+    grid-template-columns: auto 1fr auto auto;
     column-gap: 1.5rem;
     font-size: 2rem;
 }
