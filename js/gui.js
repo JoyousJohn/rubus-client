@@ -2984,12 +2984,40 @@ function busesOverview() {
     updateOutOfServiceMenu();
 }
 
+const currentXCrosshairPlugin = {
+    id: 'currentXCrosshair',
+    afterDatasetsDraw(chart) {
+        const tooltip = chart.tooltip;
+        if (tooltip.opacity === 0) return;
+        if (!Number.isFinite(tooltip.caretX)) {
+            throw new Error('Chart tooltip has no valid crosshair X position');
+        }
+
+        const {ctx, chartArea} = chart;
+        const x = Math.round(tooltip.caretX) + 0.5;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
+        ctx.stroke();
+        ctx.restore();
+    }
+};
+
 let ridershipChart;
 
 async function makeRidershipChart() {
    
     const canvas = document.getElementById('ridership-chart');
     const ctx = canvas.getContext('2d');
+    const getThemeValue = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const getTooltipFont = weight => ({
+        size: 12,
+        family: getThemeValue('--font-family'),
+        weight
+    });
 
     // Destroy existing chart if it exists
     if (ridershipChart) {
@@ -3022,9 +3050,32 @@ async function makeRidershipChart() {
                     enabled: true,
                     mode: 'index',
                     intersect: false,
+                    backgroundColor: () => getThemeValue('--theme-bg'),
+                    titleColor: () => getThemeValue('--theme-color-lighter'),
+                    bodyColor: () => getThemeValue('--theme-color'),
+                    borderColor: () => getThemeValue('--theme-border'),
+                    multiKeyBackground: () => getThemeValue('--theme-bg'),
+                    titleFont: () => getTooltipFont('bold'),
+                    bodyFont: () => getTooltipFont('normal'),
+                    borderWidth: 1,
+                    cornerRadius: 6,
+                    padding: 6,
+                    caretSize: 5,
+                    caretPadding: 2,
+                    boxWidth: 10,
+                    boxHeight: 10,
+                    boxPadding: 1,
                     callbacks: {
                         label: function(context) {
                             return `${context.parsed.y} riders`;
+                        },
+                        labelColor: function() {
+                            return {
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgb(75, 192, 192)',
+                                borderWidth: 1,
+                                borderDash: []
+                            };
                         },
                         title: function(tooltipItems) {
                             return tooltipItems[0].label;
@@ -3077,7 +3128,8 @@ async function makeRidershipChart() {
                 }
             },
             maintainAspectRatio: false
-        }
+        },
+        plugins: [currentXCrosshairPlugin]
     });
 }
 
@@ -4078,7 +4130,8 @@ function renderOutOfServiceMenu(allRecords) {
 
 function renderRouteTimesExternalTooltip(context) {
     const tooltipModel = context.tooltip;
-    const chartBox = context.chart.canvas.parentElement;
+    const canvas = context.chart.canvas;
+    const chartBox = canvas.parentElement;
 
     let tooltip = chartBox.querySelector('.route-times-external-tooltip');
     if (!tooltip) {
@@ -4121,9 +4174,8 @@ function renderRouteTimesExternalTooltip(context) {
     caret.style.height = `${caretSize}px`;
     tooltip.appendChild(caret);
 
-    const caretGap = 12;
-    tooltip.style.left = `${tooltipModel.caretX}px`;
-    tooltip.style.top = `${tooltipModel.caretY - tooltip.offsetHeight - caretSize - caretGap}px`;
+    tooltip.style.left = `${tooltipModel.caretX + canvas.offsetLeft}px`;
+    tooltip.style.top = `${tooltipModel.caretY + canvas.offsetTop - tooltip.offsetHeight - caretSize - 12}px`;
     tooltip.style.transform = 'translateX(-50%)';
 }
 
@@ -4281,29 +4333,6 @@ const routeTimesMedianLinePlugin = {
         ctx.strokeStyle = color;
         ctx.globalAlpha = 0.65;
         ctx.setLineDash([6, 4]);
-        ctx.stroke();
-        ctx.restore();
-    }
-};
-
-const routeTimesCrosshairPlugin = {
-    id: 'routeTimesCrosshair',
-    afterDatasetsDraw(chart) {
-        const tooltip = chart.tooltip;
-        if (tooltip.opacity === 0) return;
-
-        const {ctx, chartArea} = chart;
-        if (!Number.isFinite(tooltip.caretX)) {
-            throw new Error('Route Loops tooltip has no valid crosshair X position');
-        }
-
-        const x = Math.round(tooltip.caretX) + 0.5;
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(x, chartArea.top);
-        ctx.lineTo(x, chartArea.bottom);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
         ctx.stroke();
         ctx.restore();
     }
@@ -4557,7 +4586,7 @@ async function makeRouteTimesChart() {
             },
             maintainAspectRatio: false
         },
-        plugins: [routeTimesTrackingPlugin, routeTimesLineHoverPlugin, routeTimesMedianLinePlugin, routeTimesCrosshairPlugin, routeTimesIntersectionDotPlugin, routeTimesLineSelectionPlugin, routeTimesLegendPillPlugin]
+        plugins: [routeTimesTrackingPlugin, routeTimesLineHoverPlugin, routeTimesMedianLinePlugin, currentXCrosshairPlugin, routeTimesIntersectionDotPlugin, routeTimesLineSelectionPlugin, routeTimesLegendPillPlugin]
     });
 }
 
