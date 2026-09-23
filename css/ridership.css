@@ -493,7 +493,8 @@
 
 /* Route Times Chart (per-route loop time through the day) */
 .route-times-chart-wrapper {
-    display: none;
+    display: flex;
+    flex-direction: column;
     position: relative;
     height: 300px;
     margin-top: 2rem;
@@ -502,6 +503,19 @@
     border: 1px solid var(--theme-border);
     box-sizing: border-box;
     padding: 1rem;
+}
+
+/* Chart.js sizes the canvas to its parent, so the canvas lives in its own
+   flex box that excludes the title and padding — otherwise the canvas (and
+   its bottom legend) overflows the wrapper. */
+.route-times-chart-box {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+}
+
+.route-times-chart-wrapper.none {
+    display: none;
 }
 
 .route-times-title {

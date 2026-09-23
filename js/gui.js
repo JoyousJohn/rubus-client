@@ -3178,9 +3178,11 @@ function calculateLoopTimes() {
             continue;
         }
 
-        for (let i = 0; i < stopList.length - 1; i++) {
+        for (let i = 0; i < stopList.length; i++) {
             const thisStop = stopList[i];
 
+            // A full loop is stopList.length legs, not one fewer: index 0 is the
+            // wrap from the last stop back to the first.
             let prevStop;
             if (i === 0) {
                 prevStop = stopList[stopList.length - 1];
@@ -4146,57 +4148,96 @@ async function updateRouteTimesChart() {
         const routeSeries = await response.json();
 
         if (!Object.keys(routeSeries).length) {
-            $('.route-times-chart-wrapper').hide();
+            $('.route-times-chart-wrapper').addClass('none');
             return;
         }
 
+        // A route is only shown where it actually had buses in service that
+        // minute. Provenance can't answer this: the server's etas table is
+        // never cleared, so a route that stopped hours ago still reports fully
+        // observed legs. The sample's `buses` count is the authoritative flag,
+        // and it also keeps the axis to the hours anything was running.
+        // Server minute keys are usually plain UTC minutes ("540"), but on the
+        // fall-back DST day a repeated hour is suffixed ("540#2"). Key
+        // everything by the raw string so the repeat keeps its own slot;
+        // parseInt would collapse it back into the base minute.
+        const keyParts = (key) => {
+            const m = /^(\d+)(?:#(\d+))?$/.exec(key);
+            return m ? { base: parseInt(m[1], 10), suffix: m[2] ? parseInt(m[2], 10) : 1 }
+                     : { base: NaN, suffix: 1 };
+        };
+        const routeSamples = {};
         const minuteKeys = new Set();
         for (const route in routeSeries) {
+            const samples = [];
             for (const minute in routeSeries[route]) {
-                minuteKeys.add(parseInt(minute, 10));
+                const sample = routeSeries[route][minute];
+                if (!sample.buses) continue;
+                const { base, suffix } = keyParts(minute);
+                if (Number.isNaN(base)) continue;
+                minuteKeys.add(minute);
+                samples.push([minute, base, suffix, sample.min]);
             }
+            routeSamples[route] = samples;
+        }
+
+        if (!minuteKeys.size) {
+            $('.route-times-chart-wrapper').addClass('none');
+            return;
         }
 
         const sortMinutes = (utcMinute) => {
             const easternMinutes = easternMinuteFromUtcMinute(utcMinute);
             return easternMinutes < 300 ? easternMinutes + 1440 : easternMinutes;
         };
-        const sortedMinutes = Array.from(minuteKeys).sort((a, b) => sortMinutes(a) - sortMinutes(b));
+        const sortedMinutes = Array.from(minuteKeys).sort((a, b) => {
+            const pa = keyParts(a), pb = keyParts(b);
+            return sortMinutes(pa.base) - sortMinutes(pb.base) || pa.suffix - pb.suffix;
+        });
 
         const labels = [];
         const labelIndexByMinute = new Map();
-        sortedMinutes.forEach((utcMinute, index) => {
-            const easternMinutes = easternMinuteFromUtcMinute(utcMinute);
+        const seenBaseMinutes = new Map();
+        sortedMinutes.forEach((minute, index) => {
+            const { base } = keyParts(minute);
+            const occurrence = (seenBaseMinutes.get(base) || 0) + 1;
+            seenBaseMinutes.set(base, occurrence);
+            const easternMinutes = easternMinuteFromUtcMinute(base);
             const hours = Math.floor(easternMinutes / 60);
             const minutes = easternMinutes % 60;
             const hour12 = hours % 12 || 12;
             const ampm = hours < 12 ? 'AM' : 'PM';
             const minuteStr = minutes < 10 ? '0' + minutes : minutes;
-            labels.push(`${hour12}:${minuteStr} ${ampm}`);
-            labelIndexByMinute.set(utcMinute, index);
+            labels.push(occurrence > 1 ? `${hour12}:${minuteStr} ${ampm} (${occurrence})` : `${hour12}:${minuteStr} ${ampm}`);
+            labelIndexByMinute.set(minute, index);
         });
 
         // One dataset per route so each route's line keeps its map color and
-        // can be toggled from the legend. Each sample carries provenance
-        // (legs/observed_legs) alongside the value; the chart plots the value.
-        const datasets = Object.keys(routeSeries).sort().map(route => {
-            const values = new Array(labels.length).fill(null);
-            for (const minute in routeSeries[route]) {
-                const idx = labelIndexByMinute.get(parseInt(minute, 10));
-                if (idx !== undefined) values[idx] = routeSeries[route][minute].min;
-            }
-            const color = colorMappings[route];
-            return {
-                label: route.toUpperCase(),
-                data: values,
-                borderColor: color,
-                backgroundColor: color,
-                tension: 0.4,
-                pointRadius: 0,
-                spanGaps: true,
-                fill: false
-            };
-        });
+        // can be toggled from the legend. Routes with no in-service samples
+        // today are dropped entirely rather than drawn empty.
+        const datasets = Object.keys(routeSeries).sort()
+            .filter(route => routeSamples[route].length)
+            .map(route => {
+                const values = new Array(labels.length).fill(null);
+                for (const [minute, , , loopTimeMin] of routeSamples[route]) {
+                    const idx = labelIndexByMinute.get(minute);
+                    if (idx !== undefined) values[idx] = loopTimeMin;
+                }
+                const color = colorMappings[route];
+                return {
+                    label: route.toUpperCase(),
+                    data: values,
+                    borderColor: color,
+                    backgroundColor: color,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    // A gap means the route had no buses in service that
+                    // minute, so break the line rather than bridging it and
+                    // implying service continued.
+                    spanGaps: false,
+                    fill: false
+                };
+            });
 
         if (!routeTimesChart) {
             console.error('Route times chart not initialized');
@@ -4205,11 +4246,16 @@ async function updateRouteTimesChart() {
 
         routeTimesChart.data.labels = labels;
         routeTimesChart.data.datasets = datasets;
+        // Show before laying out: update() against a hidden wrapper
+        // measures a zero-size box, mis-sizing the canvas so the bottom
+        // legend spills past the wrapper border. Class toggle (not
+        // jQuery show/hide) so the wrapper's flex display survives.
+        $('.route-times-chart-wrapper').removeClass('none');
         routeTimesChart.update();
-        $('.route-times-chart-wrapper').show();
+        routeTimesChart.resize();
     } catch (error) {
         console.error('Error fetching route loop times:', error);
-        $('.route-times-chart-wrapper').hide();
+        $('.route-times-chart-wrapper').addClass('none');
     }
 }
 
