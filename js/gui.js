@@ -4076,6 +4076,377 @@ function renderOutOfServiceMenu(allRecords) {
     });
 }
 
+function renderRouteTimesExternalTooltip(context) {
+    const tooltipModel = context.tooltip;
+    const chartBox = context.chart.canvas.parentElement;
+
+    let tooltip = chartBox.querySelector('.route-times-external-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'route-times-external-tooltip';
+        chartBox.appendChild(tooltip);
+    }
+
+    tooltip.style.opacity = tooltipModel.opacity;
+    tooltip.setAttribute('aria-hidden', tooltipModel.opacity === 0 ? 'true' : 'false');
+    if (tooltipModel.opacity === 0) return;
+
+    tooltip.replaceChildren();
+
+    if (tooltipModel.title.length) {
+        const title = document.createElement('div');
+        title.className = 'route-times-external-tooltip-title';
+        title.textContent = tooltipModel.title.join(' ');
+        tooltip.appendChild(title);
+    }
+
+    tooltipModel.body.forEach((body, index) => {
+        const row = document.createElement('div');
+        row.className = 'route-times-external-tooltip-row';
+        const color = document.createElement('span');
+        color.className = 'route-times-external-tooltip-color';
+        const labelColor = tooltipModel.labelColors[index];
+        color.style.backgroundColor = labelColor.backgroundColor;
+        color.style.borderColor = labelColor.borderColor;
+        const label = document.createElement('span');
+        label.textContent = body.before.concat(body.lines, body.after).join(' ');
+        row.append(color, label);
+        tooltip.appendChild(row);
+    });
+
+    const caretSize = tooltipModel.options.caretSize;
+    const caret = document.createElement('div');
+    caret.className = 'route-times-external-tooltip-caret';
+    caret.style.width = `${caretSize * 2}px`;
+    caret.style.height = `${caretSize}px`;
+    tooltip.appendChild(caret);
+
+    const caretGap = 12;
+    tooltip.style.left = `${tooltipModel.caretX}px`;
+    tooltip.style.top = `${tooltipModel.caretY - tooltip.offsetHeight - caretSize - caretGap}px`;
+    tooltip.style.transform = 'translateX(-50%)';
+}
+
+Chart.Tooltip.positioners.routeTimesCursor = function(items, eventPosition) {
+    const positions = items
+        .filter(item => item.element.hasValue())
+        .map(item => item.element.tooltipPosition());
+    if (!positions.length) {
+        return false;
+    }
+    return {
+        x: eventPosition.x,
+        y: Math.min(...positions.map(position => position.y)),
+        yAlign: 'bottom'
+    };
+};
+
+const routeTimesDefaultHiddenRoutes = new Set(['C', 'KBS', 'HELIX']);
+const routeTimesExplicitlyShownRoutes = new Set();
+const routeTimesInactiveLineColor = 'rgba(128, 128, 128, 0.5)';
+const routeTimesAggregationMinutes = 10;
+const routeTimesHoverDistance = 14;
+const routeTimesTapMoveThreshold = 10;
+const routeTimesMedianCache = new WeakMap();
+let routeTimesHoveredRoute = null;
+
+function getMedian(values) {
+    if (!values.length) throw new Error('Cannot calculate a median from an empty array');
+    const sorted = [...values].sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2
+        ? sorted[middle]
+        : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function getRouteTimesDatasetMedian(dataset) {
+    const cached = routeTimesMedianCache.get(dataset);
+    if (cached && cached.data === dataset.data) return cached.median;
+
+    const values = [];
+    for (const value of dataset.data) {
+        if (value === null) continue;
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            throw new Error(`Invalid Route Loops value for ${dataset.label}: ${value}`);
+        }
+        values.push(value);
+    }
+    const median = getMedian(values);
+    routeTimesMedianCache.set(dataset, { data: dataset.data, median });
+    return median;
+}
+
+function selectRouteTimesDataset(chart, datasetIndex) {
+    const datasets = chart.data.datasets;
+    const selectedRoute = datasets[datasetIndex];
+
+    const isSelected = datasets.every((dataset, index) => {
+        return index === datasetIndex ? !dataset.hidden : dataset.hidden;
+    });
+    if (!isSelected && routeTimesDefaultHiddenRoutes.has(selectedRoute.label)) {
+        routeTimesExplicitlyShownRoutes.add(selectedRoute.label);
+    }
+    datasets.forEach((dataset, index) => {
+        dataset.hidden = isSelected
+            ? routeTimesDefaultHiddenRoutes.has(dataset.label) && !routeTimesExplicitlyShownRoutes.has(dataset.label)
+            : index !== datasetIndex;
+    });
+    chart.update();
+}
+
+const routeTimesTrackingPlugin = {
+    id: 'routeTimesTracking',
+    afterEvent(chart, args) {
+        if (args.inChartArea || args.event.type === 'mouseout') return;
+
+        const {chartArea} = chart;
+        if (args.event.x < chartArea.left || args.event.x > chartArea.right || args.event.y < chartArea.top) return;
+
+        const active = chart.getElementsAtEventForMode({
+            native: null,
+            x: args.event.x,
+            y: chartArea.top + chartArea.height / 2
+        }, 'index', {
+            axis: 'x',
+            intersect: false
+        }, false);
+        chart.tooltip.setActiveElements(active, {
+            x: args.event.x,
+            y: args.event.y
+        });
+        args.changed = true;
+    }
+};
+
+const routeTimesLineHoverPlugin = {
+    id: 'routeTimesLineHover',
+    afterEvent(chart, args) {
+        let nextRoute = null;
+        if (args.inChartArea) {
+            const nearest = chart.getElementsAtEventForMode(args.event, 'nearest', {
+                axis: 'xy',
+                intersect: false
+            }, false);
+            const item = nearest[0];
+            if (item) {
+                const point = item.element.tooltipPosition();
+                const distance = Math.hypot(point.x - args.event.x, point.y - args.event.y);
+                if (distance <= routeTimesHoverDistance) {
+                    nextRoute = chart.data.datasets[item.datasetIndex].label;
+                }
+            }
+        }
+
+        const legendHovered = chart.legend._hoveredItem;
+        chart.canvas.style.cursor = nextRoute || legendHovered ? 'pointer' : '';
+        if (nextRoute === routeTimesHoveredRoute) return;
+        routeTimesHoveredRoute = nextRoute;
+        if (args.event.type === 'click' && nextRoute) return;
+        chart.update('none');
+    },
+    afterDatasetsDraw(chart) {
+        if (!routeTimesHoveredRoute) return;
+        const datasetIndex = chart.data.datasets.findIndex(dataset => dataset.label === routeTimesHoveredRoute);
+        if (datasetIndex < 0) {
+            throw new Error(`Unable to redraw Route Loops dataset: ${routeTimesHoveredRoute}`);
+        }
+        if (!chart.isDatasetVisible(datasetIndex)) {
+            throw new Error(`Route Loops dataset is unexpectedly hidden: ${routeTimesHoveredRoute}`);
+        }
+        chart.getDatasetMeta(datasetIndex).controller.draw();
+    }
+};
+
+const routeTimesMedianLinePlugin = {
+    id: 'routeTimesMedianLine',
+    afterDatasetsDraw(chart) {
+        const visibleMetas = chart.getSortedVisibleDatasetMetas();
+        if (visibleMetas.length !== 1) return;
+
+        const meta = visibleMetas[0];
+        const dataset = chart.data.datasets[meta.index];
+        const median = getRouteTimesDatasetMedian(dataset);
+        const y = meta.vScale.getPixelForValue(median);
+        if (!Number.isFinite(y)) {
+            throw new Error(`Unable to position Route Loops median for ${dataset.label}`);
+        }
+
+        const {ctx, chartArea} = chart;
+        const color = dataset.routeColor;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.65;
+        ctx.setLineDash([6, 4]);
+        ctx.stroke();
+        ctx.restore();
+    }
+};
+
+const routeTimesCrosshairPlugin = {
+    id: 'routeTimesCrosshair',
+    afterDatasetsDraw(chart) {
+        const tooltip = chart.tooltip;
+        if (tooltip.opacity === 0) return;
+
+        const {ctx, chartArea} = chart;
+        if (!Number.isFinite(tooltip.caretX)) {
+            throw new Error('Route Loops tooltip has no valid crosshair X position');
+        }
+
+        const x = Math.round(tooltip.caretX) + 0.5;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
+        ctx.stroke();
+        ctx.restore();
+    }
+};
+
+const routeTimesIntersectionDotPlugin = {
+    id: 'routeTimesIntersectionDot',
+    afterDatasetsDraw(chart) {
+        const tooltip = chart.tooltip;
+        if (tooltip.opacity === 0) return;
+
+        let datasetIndex = -1;
+        if (routeTimesHoveredRoute) {
+            datasetIndex = chart.data.datasets.findIndex(dataset => dataset.label === routeTimesHoveredRoute);
+        } else if (chart.getVisibleDatasetCount() === 1) {
+            datasetIndex = chart.getSortedVisibleDatasetMetas()[0].index;
+        } else {
+            return;
+        }
+        if (datasetIndex < 0) {
+            throw new Error(`Unable to draw Route Loops intersection dot for ${routeTimesHoveredRoute || datasetIndex}`);
+        }
+        if (!chart.isDatasetVisible(datasetIndex)) {
+            throw new Error(`Route Loops intersection dataset is unexpectedly hidden: ${datasetIndex}`);
+        }
+
+        const dataPoint = tooltip.dataPoints.find(point => point.datasetIndex === datasetIndex);
+        if (!dataPoint) return;
+        const element = chart.getDatasetMeta(datasetIndex).data[dataPoint.dataIndex];
+        if (element.skip) return;
+
+        const point = element.tooltipPosition();
+        const color = chart.data.datasets[datasetIndex].routeColor;
+        const {ctx} = chart;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+    }
+};
+
+const routeTimesTapGesture = {
+    active: false,
+    moved: false,
+    startX: 0,
+    startY: 0
+};
+
+const routeTimesLineSelectionPlugin = {
+    id: 'routeTimesLineSelection',
+    beforeEvent(chart, args) {
+        const nativeType = args.event.native.type;
+        if (nativeType === 'touchstart') {
+            routeTimesTapGesture.active = true;
+            routeTimesTapGesture.moved = false;
+            routeTimesTapGesture.startX = args.event.x;
+            routeTimesTapGesture.startY = args.event.y;
+        } else if (nativeType === 'touchmove' && routeTimesTapGesture.active) {
+            const distance = Math.hypot(
+                args.event.x - routeTimesTapGesture.startX,
+                args.event.y - routeTimesTapGesture.startY
+            );
+            if (distance > routeTimesTapMoveThreshold) routeTimesTapGesture.moved = true;
+        } else if (nativeType === 'touchcancel') {
+            routeTimesTapGesture.active = false;
+            routeTimesTapGesture.moved = false;
+        }
+    },
+    afterEvent(chart, args) {
+        if (args.event.type !== 'click') return;
+
+        const wasDrag = routeTimesTapGesture.moved;
+        routeTimesTapGesture.active = false;
+        routeTimesTapGesture.moved = false;
+        if (wasDrag || !args.inChartArea || !routeTimesHoveredRoute) return;
+
+        const datasetIndex = chart.data.datasets.findIndex(dataset => dataset.label === routeTimesHoveredRoute);
+        if (datasetIndex < 0) {
+            throw new Error(`Unable to select Route Loops dataset: ${routeTimesHoveredRoute}`);
+        }
+        selectRouteTimesDataset(chart, datasetIndex);
+    }
+};
+
+const routeTimesLegendPillPlugin = {
+    id: 'routeTimesLegendPills',
+    afterDraw(chart) {
+        const legend = chart.legend;
+        const {ctx} = chart;
+        const {size: fontSize, family: fontFamily, weight: fontWeight} = legend.options.labels.font;
+        const visibleMetas = chart.getSortedVisibleDatasetMetas();
+        const selectedDatasetIndex = visibleMetas.length === 1 ? visibleMetas[0].index : -1;
+        ctx.save();
+        ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        legend.legendItems.forEach((item, index) => {
+            const hitbox = legend.legendHitBoxes[index];
+            const dataset = chart.data.datasets[item.datasetIndex];
+
+            const x = hitbox.left;
+            const y = hitbox.top;
+            const width = hitbox.width;
+            const height = hitbox.height;
+            const radius = Math.min(width, height) / 2;
+            const isVisible = chart.isDatasetVisible(item.datasetIndex);
+            const isSelected = item.datasetIndex === selectedDatasetIndex;
+            const routeColor = dataset.routeColor;
+
+            ctx.save();
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(x, y, width, height, radius);
+            } else {
+                ctx.moveTo(x + radius, y);
+                ctx.arcTo(x + width, y, x + width, y + height, radius);
+                ctx.arcTo(x + width, y + height, x, y + height, radius);
+                ctx.arcTo(x, y + height, x, y, radius);
+                ctx.arcTo(x, y, x + width, y, radius);
+                ctx.closePath();
+            }
+            ctx.fillStyle = isVisible ? routeColor : routeTimesInactiveLineColor;
+            if (isSelected) {
+                ctx.shadowColor = routeColor;
+                ctx.shadowBlur = 8;
+            }
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = isVisible ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.15)';
+            ctx.stroke();
+            ctx.fillStyle = isVisible ? '#fff' : 'rgba(255, 255, 255, 0.5)';
+            ctx.fillText(item.text, x + width / 2, y + height / 2);
+            ctx.restore();
+        });
+
+        ctx.restore();
+    }
+};
+
 let routeTimesChart;
 
 async function makeRouteTimesChart() {
@@ -4095,18 +4466,27 @@ async function makeRouteTimesChart() {
         },
         options: {
             responsive: true,
+            events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchcancel'],
             interaction: {
                 intersect: false,
                 mode: 'index'
             },
             plugins: {
                 tooltip: {
-                    enabled: true,
+                    enabled: false,
+                    external: renderRouteTimesExternalTooltip,
                     mode: 'index',
                     intersect: false,
+                    position: 'routeTimesCursor',
                     callbacks: {
                         label: function(context) {
                             return `${context.dataset.label}: ${context.parsed.y} min`;
+                        },
+                        labelColor: function(context) {
+                            return {
+                                borderColor: context.dataset.routeColor,
+                                backgroundColor: context.dataset.routeColor
+                            };
                         },
                         title: function(tooltipItems) {
                             return tooltipItems[0].label;
@@ -4116,10 +4496,29 @@ async function makeRouteTimesChart() {
                 legend: {
                     display: true,
                     position: 'bottom',
+                    onClick: function(event, legendItem, legend) {
+                        selectRouteTimesDataset(legend.chart, legendItem.datasetIndex);
+                    },
+                    onHover: function(event, legendItem, legend) {
+                        legend.chart.canvas.style.cursor = 'pointer';
+                    },
+                    onLeave: function(event, legendItem, legend) {
+                        legend.chart.canvas.style.cursor = routeTimesHoveredRoute ? 'pointer' : '';
+                    },
                     labels: {
-                        boxWidth: 10,
-                        boxHeight: 10,
-                        font: { size: 10 }
+                        boxWidth: 18,
+                        boxHeight: 24,
+                        padding: 5,
+                        font: { size: 12, family: 'sans-serif', weight: 'bold' },
+                        generateLabels: function(chart) {
+                            return Chart.defaults.plugins.legend.labels.generateLabels(chart).map(item => ({
+                                ...item,
+                                fillStyle: 'transparent',
+                                strokeStyle: 'transparent',
+                                lineWidth: 0,
+                                fontColor: 'transparent'
+                            }));
+                        }
                     }
                 }
             },
@@ -4148,21 +4547,17 @@ async function makeRouteTimesChart() {
                             const time = this.getLabelForValue(val);
                             if (!time) return '';
                             const hour = parseInt(time.split(':')[0]);
-                            const ampmMatch = time.match(/[AP]M/i);
-                            const ampm = ampmMatch ? ampmMatch[0].toUpperCase() : '';
-
-                            const totalDataPoints = this.chart.data.labels.length;
-                            if (totalDataPoints > 150) {
-                                return hour % 2 !== 0 || !time.includes(':00') ? '' : hour + ampm;
-                            } else {
-                                return time.includes(':00') ? hour + ampm : '';
-                            }
+                            const minute = parseInt(time.split(':')[1], 10);
+                            const ampm = time.match(/[AP]M/i)[0].toUpperCase();
+                            const bucketCenterMinute = Math.floor(routeTimesAggregationMinutes / 2);
+                            return minute <= bucketCenterMinute ? hour + ampm : '';
                         }
                     }
                 }
             },
             maintainAspectRatio: false
-        }
+        },
+        plugins: [routeTimesTrackingPlugin, routeTimesLineHoverPlugin, routeTimesMedianLinePlugin, routeTimesCrosshairPlugin, routeTimesIntersectionDotPlugin, routeTimesLineSelectionPlugin, routeTimesLegendPillPlugin]
     });
 }
 
@@ -4208,16 +4603,38 @@ async function updateRouteTimesChart() {
         const routeSamples = {};
         const minuteKeys = new Set();
         for (const route in routeSeries) {
-            const samples = [];
+            const buckets = new Map();
             for (const minute in routeSeries[route]) {
                 const sample = routeSeries[route][minute];
                 if (!sample.buses) continue;
                 const { base, suffix } = keyParts(minute);
-                if (Number.isNaN(base)) continue;
-                minuteKeys.add(minute);
-                samples.push([minute, base, suffix, sample.min]);
+                if (Number.isNaN(base)) {
+                    throw new Error(`Invalid route-loop minute for ${route}: ${minute}`);
+                }
+                if (typeof sample.min !== 'number' || !Number.isFinite(sample.min)) {
+                    throw new Error(`Invalid route-loop value for ${route} at ${minute}: ${sample.min}`);
+                }
+
+                const bucketStart = Math.floor(base / routeTimesAggregationMinutes) * routeTimesAggregationMinutes;
+                const bucketKey = `${bucketStart}#${suffix}`;
+                if (!buckets.has(bucketKey)) {
+                    buckets.set(bucketKey, {
+                        base: bucketStart,
+                        suffix,
+                        values: []
+                    });
+                }
+                buckets.get(bucketKey).values.push(sample.min);
             }
-            routeSamples[route] = samples;
+
+            routeSamples[route] = Array.from(buckets.values()).map(bucket => {
+                const representativeBase = bucket.base + Math.floor(routeTimesAggregationMinutes / 2);
+                const minute = bucket.suffix === 1
+                    ? String(representativeBase)
+                    : `${representativeBase}#${bucket.suffix}`;
+                minuteKeys.add(minute);
+                return [minute, getMedian(bucket.values)];
+            });
         }
 
         if (!minuteKeys.size) {
@@ -4258,18 +4675,33 @@ async function updateRouteTimesChart() {
             .filter(route => routeSamples[route].length)
             .map(route => {
                 const values = new Array(labels.length).fill(null);
-                for (const [minute, , , loopTimeMin] of routeSamples[route]) {
+                for (const [minute, loopTimeMin] of routeSamples[route]) {
                     const idx = labelIndexByMinute.get(minute);
-                    if (idx !== undefined) values[idx] = loopTimeMin;
+                    if (idx === undefined) {
+                        throw new Error(`Missing Route Loops label index for ${route}: ${minute}`);
+                    }
+                    values[idx] = loopTimeMin;
                 }
                 const color = colorMappings[route];
+                if (!color) {
+                    throw new Error(`Missing color mapping for route: ${route}`);
+                }
                 return {
                     label: route.toUpperCase(),
+                    hidden: routeTimesDefaultHiddenRoutes.has(route.toUpperCase()) && !routeTimesExplicitlyShownRoutes.has(route.toUpperCase()),
                     data: values,
-                    borderColor: color,
+                    routeColor: color,
+                    borderColor: function(context) {
+                        return routeTimesHoveredRoute && context.dataset.label !== routeTimesHoveredRoute
+                            ? routeTimesInactiveLineColor
+                            : color;
+                    },
                     backgroundColor: color,
-                    tension: 0.4,
+                    tension: 0.5,
+                    cubicInterpolationMode: 'default',
                     pointRadius: 0,
+                    pointHoverRadius: 0,
+                    pointHoverBorderWidth: 0,
                     // A gap means the route had no buses in service that
                     // minute, so break the line rather than bridging it and
                     // implying service continued.
@@ -4279,8 +4711,7 @@ async function updateRouteTimesChart() {
             });
 
         if (!routeTimesChart) {
-            console.error('Route times chart not initialized');
-            return;
+            throw new Error('Route Loops chart is not initialized');
         }
 
         routeTimesChart.data.labels = labels;
@@ -4295,6 +4726,7 @@ async function updateRouteTimesChart() {
     } catch (error) {
         console.error('Error fetching route loop times:', error);
         $('.route-times-chart-wrapper').addClass('none');
+        throw error;
     }
 }
 

@@ -963,7 +963,7 @@ $('.info-panels-content').on('touchstart mousedown', function(e) {
 $('.info-panels-content').on('touchmove mousemove', function(e) {
     if (!dragStartX || !dragStartY) return;
     const target = $(e.target);
-	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select').length > 0) {
+	if (target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-times-chart-wrapper, .route-header, .route-star, .color-circle, button, input, select').length > 0) {
 		return;
 	}
     if (e.type === 'touchmove') {
@@ -1045,7 +1045,7 @@ $('.info-panels-content').on('touchend mouseup', function(e) {
 		dragEndY = e.clientY;
 	}
     const target = $(e.target);
-    const isInteractive = target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-header, .route-star, .color-circle, button, input, select, .incoming-wrapper, .incoming-list, .all-stops-grid, .campus-stops-list, .route-stops-grid').length > 0;
+    const isInteractive = target.closest('.bottom, .route-selectors, .route-selector, .ridership-chart-wrapper, #ridership-chart, .route-times-chart-wrapper, .route-header, .route-star, .color-circle, button, input, select, .incoming-wrapper, .incoming-list, .all-stops-grid, .campus-stops-list, .route-stops-grid').length > 0;
     if (isInteractive && !isDragging && (!dragStartX || Math.abs(dragEndX - dragStartX) < 10)) {
         dragStartX = dragStartY = dragEndX = dragEndY = 0;
         isDragging = false;
