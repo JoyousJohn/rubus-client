@@ -3478,6 +3478,52 @@ function getRoutePreviousStopId(routeName, targetStopId, otherStopId, role = 'bo
 }
 window.getRoutePreviousStopId = getRoutePreviousStopId;
 
+function getReadySeconds(value) {
+    return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function getNavBusAtStopState(busName, routeName, stopId, previousStopId) {
+    const bus = busData[busName];
+    if (!bus || !bus.at_stop) return null;
+    if (String(bus.route || '').toLowerCase() !== String(routeName || '').toLowerCase()) return null;
+    if (stopId === null || stopId === undefined) return null;
+
+    const targetStopId = Number(stopId);
+    const rawStopId = bus.stopId;
+    const currentStopId = Number(Array.isArray(rawStopId) ? rawStopId[0] : rawStopId);
+    if (!Number.isFinite(targetStopId) || !Number.isFinite(currentStopId) || currentStopId !== targetStopId) return null;
+
+    const lowerRouteName = String(routeName || '').toLowerCase();
+    const routeStops = stopLists[lowerRouteName] || null;
+    if (Array.isArray(routeStops)) {
+        const targetOccurrences = routeStops.filter(id => Number(id) === targetStopId).length;
+        if (targetOccurrences > 1) {
+            let actualPreviousStopId = bus.prevStopId;
+            if ((actualPreviousStopId === null || actualPreviousStopId === undefined) &&
+                Array.isArray(rawStopId) && rawStopId.length > 1) {
+                actualPreviousStopId = rawStopId[1];
+            }
+            if (previousStopId === null || previousStopId === undefined ||
+                !Number.isFinite(Number(actualPreviousStopId)) ||
+                Number(actualPreviousStopId) !== Number(previousStopId)) {
+                return null;
+            }
+        }
+    }
+
+    let departureEta = null;
+    const averageWait = waits ? Number(waits[targetStopId]) : NaN;
+    const arrivedAt = bus.timeArrived === null || bus.timeArrived === undefined
+        ? NaN
+        : new Date(bus.timeArrived).getTime();
+    if (Number.isFinite(averageWait) && averageWait >= 0 && Number.isFinite(arrivedAt)) {
+        const arrivedAgoSeconds = Math.max(0, Math.floor((Date.now() - arrivedAt) / 1000));
+        departureEta = Math.max(0, Math.ceil(averageWait - arrivedAgoSeconds));
+    }
+
+    return { departureEta };
+}
+
 // Top N buses approaching a given stop for a route, sorted soonest-first.
 // Shared by the boarding ("next buses") list and the alighting ("arrival") list
 // so both show the exact same buses. When fewer than `limit` buses are found on
@@ -3496,6 +3542,7 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit, previousS
     if (!routeKey || !busesByRoutes[selectedCampus][routeKey]) return [];
 
     const targetLimit = (typeof limit === 'number' && limit > 0) ? limit : 3;
+    const readyAtSec = getReadySeconds(walkSeconds);
     const loopTimes = (typeof calculateLoopTimes === 'function') ? calculateLoopTimes() : null;
     let loopTimeSec = (loopTimes && typeof loopTimes[routeKey] === 'number' && isFinite(loopTimes[routeKey]) && loopTimes[routeKey] > 0)
         ? loopTimes[routeKey] * 60
@@ -3514,6 +3561,19 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit, previousS
             if (busData[busName].oos || busData[busName].atDepot) return;
             if (typeof isBusInService === 'function' && !isBusInService(busName)) return;
             if (typeof isBusShownOnMap === 'function' && !isBusShownOnMap(busName)) return;
+
+            const stopState = getNavBusAtStopState(busName, routeKey, stopId, previousStopId);
+            if (stopState && (readyAtSec === 0 ||
+                (stopState.departureEta !== null && readyAtSec <= stopState.departureEta))) {
+                firstPasses.push({
+                    busName,
+                    eta: readyAtSec === 0 ? 0 : stopState.departureEta,
+                    loop: 1,
+                    isHere: true
+                });
+                return;
+            }
+
             // ETA to the boarding stop (seconds) on the current loop
             const eta = (typeof getETAForStop === 'function') ? getETAForStop(busName, stopId, previousStopId) : undefined;
             if (typeof eta !== 'number' || !isFinite(eta) || eta < 0) return;
@@ -3523,11 +3583,11 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit, previousS
             // rider just catches it on a later loop.
             let catchEta = eta;
             let catchLoop = 1;
-            while (walkSeconds > 0 && catchEta < walkSeconds && loopTimeSec > 0) {
+            while (readyAtSec > 0 && catchEta < readyAtSec && loopTimeSec > 0) {
                 catchEta += loopTimeSec;
                 catchLoop += 1;
             }
-            if (walkSeconds > 0 && catchEta < walkSeconds) return;
+            if (readyAtSec > 0 && catchEta < readyAtSec) return;
             firstPasses.push({ busName, eta: catchEta, loop: catchLoop });
         } catch (e) {}
     });
@@ -3544,7 +3604,8 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit, previousS
                 candidates.push({
                     busName: b.busName,
                     eta: b.eta + (nextLoop * loopTimeSec),
-                    loop: b.loop + nextLoop
+                    loop: b.loop + nextLoop,
+                    isHere: false
                 });
             });
         }
@@ -3554,7 +3615,110 @@ function getTopApproachingBuses(routeName, stopId, walkSeconds, limit, previousS
     return candidates.slice(0, targetLimit);
 }
 
-function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, selectedBusIndex, listType = 'boarding', previousStopId) {
+function getHereBusNoticeHtml(context) {
+    if (!context || !Array.isArray(context.candidates)) return '';
+    const routeName = context.routeName;
+    const stopId = context.stopId;
+    const previousStopId = context.previousStopId;
+    const readyAtSec = getReadySeconds(context.readyAtSec);
+    const impactReadyAtSec = getReadySeconds(context.impactReadyAtSec) || readyAtSec;
+    const displayedCandidates = context.candidates;
+    const displayedHereCandidates = displayedCandidates.filter(candidate => candidate && candidate.isHere);
+    if (displayedHereCandidates.length === 0) return '';
+
+    const canProjectImpact = Boolean(context.routeData && context.route && routeName !== undefined && stopId !== undefined);
+    const impactCandidates = canProjectImpact
+        ? getTopApproachingBuses(routeName, stopId, impactReadyAtSec, 100, previousStopId)
+        : displayedCandidates;
+    const projectedHereCandidates = impactCandidates.filter(candidate => candidate && candidate.isHere);
+    const hereCandidates = projectedHereCandidates.length > 0 ? projectedHereCandidates : displayedHereCandidates;
+
+    const hereBusNames = new Set(hereCandidates.map(candidate => String(candidate.busName)));
+    const hereCount = hereBusNames.size;
+    const baseText = hereCount === 1
+        ? 'A bus is at this stop now, but it may depart before you can board. If you miss it, you will need to catch the next bus.'
+        : `${hereCount} buses are at this stop now, but they may depart before you can board. If you miss all of them, you will need to catch a later bus.`;
+    let impactText = '';
+
+    try {
+        const routeData = context.routeData;
+        const route = context.route;
+        if (routeData && route) {
+            const latestHereEta = Math.max.apply(null, hereCandidates.map(candidate => candidate.eta));
+            const nextCandidate = impactCandidates
+                .filter(candidate => candidate && !candidate.isHere && candidate.eta >= latestHereEta)
+                .sort((a, b) => a.eta - b.eta)[0];
+            const currentEntry = (routeData.routesForDisplay || []).find(entry =>
+                entry && entry.route && String(entry.route.name || '').toLowerCase() === String(route.name || '').toLowerCase()
+            );
+            const alternativeEntry = (routeData.routesForDisplay || [])
+                .filter(entry => entry && entry.route &&
+                    String(entry.route.name || '').toLowerCase() !== String(route.name || '').toLowerCase() &&
+                    typeof entry.journeyMinutes === 'number' && entry.journeyMinutes > 0)
+                .sort((a, b) => a.journeyMinutes - b.journeyMinutes)[0];
+
+            if (nextCandidate && currentEntry && alternativeEntry) {
+                const endWalkDistance = routeData.endWalkDistance;
+                const endBuilding = routeData.endBuilding;
+                const endStop = routeData.endStop;
+                const endIsStop = !!routeData.endIsStop;
+                const hasEndWalk = !!(endWalkDistance && endWalkDistance.feet > 30 && endStop && endBuilding &&
+                    (String(endStop.id) !== String(endBuilding.id) || !endIsStop));
+                const offsetMinutes = routeData.leaveByOffsetMinutes || window.navLeaveByOffsetMinutes || 0;
+                const nowTimestamp = Date.now();
+                const baseTime = routeData.baseTimestamp || window.navLeaveByBaseTimestamp || nowTimestamp;
+                const routeEndOptions = {
+                    route,
+                    startStop: routeData.startStop,
+                    transferStop: route.transferStop || routeData.transferStop,
+                    endStop,
+                    startWalkDistance: routeData.startWalkDistance,
+                    endWalkDistance,
+                    hasEndWalk,
+                    selectedTransferLeg1BusIndex: routeData.selectedTransferLeg1BusIndex,
+                    selectedTransferLeg1BusName: routeData.selectedTransferLeg1BusName,
+                    selectedIncomingBusIndex: routeData.selectedIncomingBusIndex,
+                    selectedIncomingBusName: routeData.selectedIncomingBusName,
+                    selectedTransferLeg2BusIndex: routeData.selectedTransferLeg2BusIndex,
+                    selectedTransferLeg2BusName: routeData.selectedTransferLeg2BusName,
+                    leaveByOffsetMinutes: offsetMinutes,
+                    baseTimestamp: baseTime,
+                    transferBufferSec: route.isTransfer ? 120 : 0,
+                    nowTimestamp
+                };
+                const currentEndMs = computeRouteEndMs(routeEndOptions);
+                const missedEndMs = computeRouteEndMs({
+                    ...routeEndOptions,
+                    boardingOverride: nextCandidate,
+                    boardingOverrideLeg: context.boardingLeg
+                });
+                const leaveAtMs = baseTime + (offsetMinutes * 60 * 1000);
+
+                if (currentEndMs !== null && missedEndMs !== null) {
+                    const currentMinutes = Math.max(0, Math.ceil((currentEndMs - leaveAtMs) / 60000));
+                    const missedMinutes = Math.max(0, Math.ceil((missedEndMs - leaveAtMs) / 60000));
+                    const slowerBy = missedMinutes - alternativeEntry.journeyMinutes;
+                    if (currentMinutes <= alternativeEntry.journeyMinutes && slowerBy >= 1) {
+                        const alternativeName = alternativeEntry.displayName || alternativeEntry.route.name || 'alternative route';
+                        const minuteLabel = slowerBy === 1 ? 'minute' : 'minutes';
+                        impactText = ` If you do, this route may be about ${slowerBy} ${minuteLabel} slower than the ${escapeHtml(alternativeName)} option.`;
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('[nav] Here-bus impact calculation failed:', e);
+    }
+
+    return `
+        <div class="nav-at-stop-notice" role="note">
+            <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
+            <span>${baseText}${impactText}</span>
+        </div>
+    `;
+}
+
+function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, selectedBusIndex, listType = 'boarding', previousStopId, noticeContext = null) {
     try {
         const now = Date.now();
         const top = getTopApproachingBuses(routeName, stopId, walkSeconds, 3, previousStopId);
@@ -3587,6 +3751,7 @@ function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, s
                 waitMin,
                 busLabel,
                 routeColor,
+                isHere: !!b.isHere,
                 soonest: i === 0,
                 isSelected,
                 radioHtml,
@@ -3597,14 +3762,28 @@ function getUpcomingBusesHtml(routeName, stopId, walkSeconds, selectedBusName, s
             <div class="incoming-bus-row ${showRadio ? 'selectable-incoming-bus' : ''} ${b.isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${b.index}" data-list-type="${listType}" ${showRadio ? 'title="Tap to select this bus"' : ''}>
                 ${b.radioHtml}
                 <span class="incoming-bus-name" style="color: ${b.routeColor};">${escapeHtml(b.busLabel)}</span>
-                <span class="incoming-bus-arrival">arrives ${b.arrivalTime}</span>
+                <span class="incoming-bus-arrival">${b.isHere ? 'Here' : `arrives ${b.arrivalTime}`}</span>
                 <span class="incoming-bus-wait ${b.soonest && !b.showNextLoop ? 'soonest' : ''}"${b.showNextLoop ? ' style="font-weight: 400; text-decoration: none;"' : ''}>${b.showNextLoop ? `<span style="font-weight: 700; ${b.soonest ? 'text-decoration: underline;' : 'text-decoration: none;'}">${b.waitMin > 0 ? `${b.waitMin}m wait` : 'No wait'}</span><span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem; font-weight: 400; text-decoration: none;">(next loop)</span>` : `${b.waitMin > 0 ? `${b.waitMin}m wait` : 'No wait'}`}</span>
             </div>
         `).join('');
+        const boardingLeg = listType === 'boarding_leg1' ? 'leg1' : 'direct';
+        const hereNoticeHtml = getHereBusNoticeHtml({
+            candidates: top,
+            routeName,
+            stopId,
+            readyAtSec: walkSeconds,
+            previousStopId,
+            routeData: noticeContext && noticeContext.routeData,
+            route: noticeContext && noticeContext.route,
+            boardingLeg
+        });
 
         return `
-            <div class="incoming-buses-list ${showRadio ? 'has-radio' : ''}" data-list-type="${listType}">
-                ${rows}
+            <div class="nav-stop-buses-block" data-nav-buses-block="${listType}">
+                <div class="incoming-buses-list ${showRadio ? 'has-radio' : ''}" data-list-type="${listType}">
+                    ${rows}
+                </div>
+                ${hereNoticeHtml}
             </div>
         `;
     } catch (e) {
@@ -3694,7 +3873,7 @@ window.getBusArrivalETAAtStop = getBusArrivalETAAtStop;
 //    tappable to select which Leg 1 bus the user is taking (earliest/soonest selected by default).
 // 2. Incoming buses list (Leg 2): 3 soonest buses departing the transfer stop towards the alighting stop,
 //    filtered to only include buses arriving at or after the selected Leg 1 bus reaches the transfer stop.
-function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transferStopId, walkSeconds, selectedBusName, leg1TravelMin, selectedBusIndex, selectedLeg2BusName, selectedLeg2BusIndex, endStopId) {
+function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transferStopId, walkSeconds, selectedBusName, leg1TravelMin, selectedBusIndex, selectedLeg2BusName, selectedLeg2BusIndex, endStopId, noticeContext = null) {
     try {
         // For a route option requiring a transfer, BOTH routes must be in service.
         // If either route is not in service (e.g. options to the right of the vertical line),
@@ -3785,11 +3964,22 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
                 <div class="incoming-bus-row ${showLeg2Radio ? 'selectable-incoming-bus' : ''} ${isSelected ? 'selected' : ''}" data-bus-name="${b.busName}" data-bus-index="${i}" data-list-type="transfer_leg2" ${showLeg2Radio ? 'title="Tap to select this bus"' : ''}>
                     ${radioHtml}
                     <span class="incoming-bus-name" style="color: ${leg2Color};">${escapeHtml(busLabel)}</span>
-                    <span class="incoming-bus-arrival">arrives ${arrivalTime}</span>
+                    <span class="incoming-bus-arrival">${b.isHere ? 'Here' : `arrives ${arrivalTime}`}</span>
                     <span class="incoming-bus-wait ${(i === 0) && !showNextLoop ? 'soonest' : ''}"${showNextLoop ? ' style="font-weight: 400; text-decoration: none;"' : ''}>${showNextLoop ? `<span style="font-weight: 700; ${(i === 0) ? 'text-decoration: underline;' : 'text-decoration: none;'}">${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}</span><span class="incoming-bus-loop" style="font-size: 0.9em; opacity: 0.7; margin-left: 0.25rem; font-weight: 400; text-decoration: none;">(next loop)</span>` : `${waitMin > 0 ? `${waitMin}m wait` : 'No wait'}`}</span>
                 </div>
             `;
         }).join('');
+        const hereNoticeHtml = getHereBusNoticeHtml({
+            candidates: topLeg2,
+            routeName: leg2RouteName,
+            stopId: transferStopId,
+            readyAtSec: selectedArrivalSec,
+            impactReadyAtSec: selectedArrivalSec + 120,
+            previousStopId: leg2Prev,
+            routeData: noticeContext && noticeContext.routeData,
+            route: noticeContext && noticeContext.route,
+            boardingLeg: 'leg2'
+        });
 
         const incomingListHtml = `
             <div class="incoming-buses-list transfer-incoming-buses-list ${showLeg2Radio ? 'has-radio' : ''}" data-list-type="transfer_leg2">
@@ -3800,15 +3990,18 @@ function getTransferBusesHtml(leg1RouteName, leg2RouteName, startStopId, transfe
         if (!destListHtml || !incomingListHtml) return '';
 
         return `
-            <div class="transfer-buses-container">
-                <div class="transfer-top-bus-wrapper">
-                    ${destListHtml}
-                    <div class="transfer-buses-connector">
-                        <div class="transfer-connector-line"></div>
-                        <div class="transfer-connector-triangle"></div>
+            <div class="nav-stop-buses-block" data-nav-buses-block="transfer_leg2">
+                <div class="transfer-buses-container">
+                    <div class="transfer-top-bus-wrapper">
+                        ${destListHtml}
+                        <div class="transfer-buses-connector">
+                            <div class="transfer-connector-line"></div>
+                            <div class="transfer-connector-triangle"></div>
+                        </div>
                     </div>
+                    ${incomingListHtml}
                 </div>
-                ${incomingListHtml}
+                ${hereNoticeHtml}
             </div>
         `;
     } catch (e) {
@@ -6462,6 +6655,10 @@ function computeRouteEndMs(options) {
         selectedIncomingBusName,
         selectedTransferLeg2BusIndex,
         selectedTransferLeg2BusName,
+        boardingOverride = null,
+        boardingOverrideLeg = null,
+        transferBufferSec = 0,
+        nowTimestamp = null,
         leaveByOffsetMinutes,
         baseTimestamp
     } = options;
@@ -6504,30 +6701,34 @@ function computeRouteEndMs(options) {
             return null;
         }
         const leg1TravelMin = computeBusTravelTimeMinutes(leg1.routeDetails || leg1);
-        const leg1Prev = getRoutePreviousStopId(leg1RouteName, startStopId, transferStopId, 'boarding');
-        const topLeg1 = getTopApproachingBuses(leg1RouteName, startStopId, startWalkSec, 3, leg1Prev);
-        if (topLeg1.length === 0) return null;
-
-        let selBus = topLeg1[0];
-        if (typeof selectedTransferLeg1BusIndex === 'number' && selectedTransferLeg1BusIndex >= 0 && selectedTransferLeg1BusIndex < topLeg1.length) {
-            selBus = topLeg1[selectedTransferLeg1BusIndex];
-        } else if (selectedTransferLeg1BusName) {
-            const found = topLeg1.find(b => b.busName === selectedTransferLeg1BusName);
-            if (found) selBus = found;
+        let selBus = boardingOverrideLeg === 'leg1' ? boardingOverride : null;
+        if (!selBus) {
+            const leg1Prev = getRoutePreviousStopId(leg1RouteName, startStopId, transferStopId, 'boarding');
+            const topLeg1 = getTopApproachingBuses(leg1RouteName, startStopId, startWalkSec, 3, leg1Prev);
+            if (topLeg1.length === 0) return null;
+            selBus = topLeg1[0];
+            if (typeof selectedTransferLeg1BusIndex === 'number' && selectedTransferLeg1BusIndex >= 0 && selectedTransferLeg1BusIndex < topLeg1.length) {
+                selBus = topLeg1[selectedTransferLeg1BusIndex];
+            } else if (selectedTransferLeg1BusName) {
+                const found = topLeg1.find(b => b.busName === selectedTransferLeg1BusName);
+                if (found) selBus = found;
+            }
         }
 
         const leg1AlightPrev = getRoutePreviousStopId(leg1RouteName, transferStopId, startStopId, 'alighting');
         const arriveAtTransferSec = getBusArrivalETAAtStop(selBus, transferStopId, leg1RouteName, leg1TravelMin, leg1AlightPrev);
-        const leg2Prev = getRoutePreviousStopId(leg2RouteName, transferStopId, endStopId, 'boarding');
-        const topLeg2 = getTopApproachingBuses(leg2RouteName, transferStopId, arriveAtTransferSec, 3, leg2Prev);
-        if (topLeg2.length === 0) return null;
-
-        let selLeg2Bus = topLeg2[0];
-        if (typeof selectedTransferLeg2BusIndex === 'number' && selectedTransferLeg2BusIndex >= 0 && selectedTransferLeg2BusIndex < topLeg2.length) {
-            selLeg2Bus = topLeg2[selectedTransferLeg2BusIndex];
-        } else if (selectedTransferLeg2BusName) {
-            const found = topLeg2.find(b => b.busName === selectedTransferLeg2BusName);
-            if (found) selLeg2Bus = found;
+        let selLeg2Bus = boardingOverrideLeg === 'leg2' ? boardingOverride : null;
+        if (!selLeg2Bus) {
+            const leg2Prev = getRoutePreviousStopId(leg2RouteName, transferStopId, endStopId, 'boarding');
+            const topLeg2 = getTopApproachingBuses(leg2RouteName, transferStopId, arriveAtTransferSec + transferBufferSec, 3, leg2Prev);
+            if (topLeg2.length === 0) return null;
+            selLeg2Bus = topLeg2[0];
+            if (typeof selectedTransferLeg2BusIndex === 'number' && selectedTransferLeg2BusIndex >= 0 && selectedTransferLeg2BusIndex < topLeg2.length) {
+                selLeg2Bus = topLeg2[selectedTransferLeg2BusIndex];
+            } else if (selectedTransferLeg2BusName) {
+                const found = topLeg2.find(b => b.busName === selectedTransferLeg2BusName);
+                if (found) selLeg2Bus = found;
+            }
         }
 
         const leg2TravelMin = computeBusTravelTimeMinutes(leg2.routeDetails || leg2);
@@ -6538,16 +6739,18 @@ function computeRouteEndMs(options) {
         if (!navRouteHasLiveBuses(rName)) {
             return null;
         }
-        const boardingPrev = getRoutePreviousStopId(rName, startStopId, endStopId, 'boarding');
-        const top = getTopApproachingBuses(rName, startStopId, startWalkSec, 3, boardingPrev);
-        if (top.length === 0) return null;
-
-        let selBus = top[0];
-        if (typeof selectedIncomingBusIndex === 'number' && selectedIncomingBusIndex >= 0 && selectedIncomingBusIndex < top.length) {
-            selBus = top[selectedIncomingBusIndex];
-        } else if (selectedIncomingBusName) {
-            const found = top.find(b => b.busName === selectedIncomingBusName);
-            if (found) selBus = found;
+        let selBus = boardingOverrideLeg === 'direct' ? boardingOverride : null;
+        if (!selBus) {
+            const boardingPrev = getRoutePreviousStopId(rName, startStopId, endStopId, 'boarding');
+            const top = getTopApproachingBuses(rName, startStopId, startWalkSec, 3, boardingPrev);
+            if (top.length === 0) return null;
+            selBus = top[0];
+            if (typeof selectedIncomingBusIndex === 'number' && selectedIncomingBusIndex >= 0 && selectedIncomingBusIndex < top.length) {
+                selBus = top[selectedIncomingBusIndex];
+            } else if (selectedIncomingBusName) {
+                const found = top.find(b => b.busName === selectedIncomingBusName);
+                if (found) selBus = found;
+            }
         }
 
         const travelMin = computeBusTravelTimeMinutes(route.routeDetails || route);
@@ -6559,7 +6762,7 @@ function computeRouteEndMs(options) {
         return null;
     }
 
-    const now = Date.now();
+    const now = nowTimestamp || Date.now();
     return now + (alightingEtaSec * 1000) + (endWalkMin * 60 * 1000);
 }
 window.computeRouteEndMs = computeRouteEndMs;
@@ -6598,9 +6801,7 @@ function updateNavBusesDisplay() {
         };
 
         if (route.isWalk) {
-            $('.incoming-buses-list').remove();
-            $('.destination-buses-list').remove();
-            $('.transfer-buses-container').remove();
+            $('.nav-stop-buses-block, .destination-buses-list').remove();
             const endTimeStr = computeRouteEndTime({
                 route,
                 startWalkDistance: routeData.startWalkDistance,
@@ -6723,7 +6924,16 @@ function updateNavBusesDisplay() {
                 routeData.selectedTransferLeg2BusIndex = null;
             }
 
-            const upcomingHtml = getUpcomingBusesHtml(route.leg1.route.name, startStop.id, walkSeconds, selectedLeg1BusName, selectedLeg1BusIndex, 'boarding_leg1', leg1Prev);
+            const upcomingHtml = getUpcomingBusesHtml(
+                route.leg1.route.name,
+                startStop.id,
+                walkSeconds,
+                selectedLeg1BusName,
+                selectedLeg1BusIndex,
+                'boarding_leg1',
+                leg1Prev,
+                { routeData, route }
+            );
             const transferBusesHtml = transferStop ? getTransferBusesHtml(
                 route.leg1.route.name,
                 route.leg2.route.name,
@@ -6735,30 +6945,31 @@ function updateNavBusesDisplay() {
                 selectedLeg1BusIndex,
                 selectedLeg2BusName,
                 selectedLeg2BusIndex,
-                endStop ? endStop.id : null
+                endStop ? endStop.id : null,
+                { routeData, route }
             ) : '';
 
             const arrivingHtml = transferStop ? getArrivingBusesHtml(route.leg2.route.name, transferStop.id, endStop.id, selectedArrivalSec, selectedLeg2BusName, selectedLeg2BusIndex) : '';
 
             // Update boarding stop incoming list
-            const $incomingList = $('.waypoint-row.stop-row.boarding + .incoming-buses-list');
-            if ($incomingList.length > 0) {
+            const $boardingBlock = $('.waypoint-row.stop-row.boarding + .nav-stop-buses-block[data-nav-buses-block="boarding_leg1"]');
+            if ($boardingBlock.length > 0) {
                 if (upcomingHtml) {
-                    if ($incomingList[0].outerHTML.trim() !== upcomingHtml.trim()) $incomingList.replaceWith(upcomingHtml);
+                    if ($boardingBlock[0].outerHTML.trim() !== upcomingHtml.trim()) $boardingBlock.replaceWith(upcomingHtml);
                 } else {
-                    $incomingList.remove();
+                    $boardingBlock.remove();
                 }
             } else if (upcomingHtml) {
                 $('.waypoint-row.stop-row.boarding').after(upcomingHtml);
             }
 
             // Update transfer stop buses container
-            const $transferBuses = $('.waypoint-row.stop-row.transfer').next('.transfer-buses-container, .incoming-buses-list');
-            if ($transferBuses.length > 0) {
+            const $transferBlock = $('.waypoint-row.stop-row.transfer').next('.nav-stop-buses-block[data-nav-buses-block="transfer_leg2"]');
+            if ($transferBlock.length > 0) {
                 if (transferBusesHtml) {
-                    if ($transferBuses[0].outerHTML.trim() !== transferBusesHtml.trim()) $transferBuses.replaceWith(transferBusesHtml);
+                    if ($transferBlock[0].outerHTML.trim() !== transferBusesHtml.trim()) $transferBlock.replaceWith(transferBusesHtml);
                 } else {
-                    $transferBuses.remove();
+                    $transferBlock.remove();
                 }
             } else if (transferBusesHtml) {
                 $('.waypoint-row.stop-row.transfer').after(transferBusesHtml);
@@ -6820,17 +7031,26 @@ function updateNavBusesDisplay() {
             routeData.selectedIncomingBusIndex = null;
         }
 
-        const upcomingHtml = getUpcomingBusesHtml(route.name, startStop.id, walkSeconds, selectedIncomingBusName, selectedIncomingBusIndex, 'direct_boarding', boardingPrev);
+        const upcomingHtml = getUpcomingBusesHtml(
+            route.name,
+            startStop.id,
+            walkSeconds,
+            selectedIncomingBusName,
+            selectedIncomingBusIndex,
+            'direct_boarding',
+            boardingPrev,
+            { routeData, route }
+        );
         const arrivingHtml = getArrivingBusesHtml(route.name, startStop.id, endStop.id, walkSeconds, selectedIncomingBusName, selectedIncomingBusIndex);
 
-        const $incomingList = $('.incoming-buses-list');
-        if ($incomingList.length > 0) {
+        const $boardingBlock = $('.waypoint-row.stop-row.boarding + .nav-stop-buses-block[data-nav-buses-block="direct_boarding"]');
+        if ($boardingBlock.length > 0) {
             if (upcomingHtml) {
-                if ($incomingList[0].outerHTML.trim() !== upcomingHtml.trim()) {
-                    $incomingList.replaceWith(upcomingHtml);
+                if ($boardingBlock[0].outerHTML.trim() !== upcomingHtml.trim()) {
+                    $boardingBlock.replaceWith(upcomingHtml);
                 }
             } else {
-                $incomingList.remove();
+                $boardingBlock.remove();
             }
         } else if (upcomingHtml) {
             $('.waypoint-row.stop-row.boarding').after(upcomingHtml);
@@ -7411,7 +7631,16 @@ function renderTimelineWaypointsHtml(data) {
             const selIdx = isTransfer ? data.selectedTransferLeg1BusIndex : data.selectedIncomingBusIndex;
             const listType = isTransfer ? 'boarding_leg1' : 'direct_boarding';
             const boardingPrev = getRoutePreviousStopId(rName, startStop.id, isTransfer ? transferStop.id : endStop.id, 'boarding');
-            busesHtml = getUpcomingBusesHtml(rName, startStop.id, startWalkSec, selName, selIdx, listType, boardingPrev);
+            busesHtml = getUpcomingBusesHtml(
+                rName,
+                startStop.id,
+                startWalkSec,
+                selName,
+                selIdx,
+                listType,
+                boardingPrev,
+                { routeData: data.navRouteData, route }
+            );
         } else if (waypoint.role === 'transfer') {
             busesHtml = getTransferBusesHtml(
                 leg1.route.name,
@@ -7424,7 +7653,8 @@ function renderTimelineWaypointsHtml(data) {
                 data.selectedTransferLeg1BusIndex,
                 data.selectedTransferLeg2BusName,
                 data.selectedTransferLeg2BusIndex,
-                endStop ? endStop.id : null
+                endStop ? endStop.id : null,
+                { routeData: data.navRouteData, route }
             );
         } else if (waypoint.role === 'alighting') {
             if (isTransfer) {
@@ -7870,6 +8100,12 @@ function displayRoute(routeData) {
                     transferStop: route.transferStop || routeData.transferStop,
                     endStop,
                     route,
+                    navRouteData: {
+                        ...routeData,
+                        route,
+                        routesForDisplay,
+                        selectedRouteDisplayIndex
+                    },
                     startWalkDistance,
                     endWalkDistance,
                     startIsStop,
@@ -8729,6 +8965,7 @@ function updateRouteDisplay(routeData) {
             transferStop: route.transferStop || routeData.transferStop,
             endStop,
             route,
+            navRouteData: rd,
             startWalkDistance,
             endWalkDistance,
             startIsStop,

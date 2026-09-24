@@ -350,6 +350,8 @@ function openRUBusSocket() {
                 popInfo(busName) // this is on the bus wrapper 
             }
 
+            updateNavOnOutOfService();
+
         }
 
         // Initial connection, recall from visibilityChange
@@ -418,6 +420,7 @@ function openRUBusSocket() {
             // popup re-render (popInfo / updateTooltips).
             if (snapshotBusNames.length) {
                 updateTimeToStops(snapshotBusNames);
+                updateNavOnOutOfService();
             }
             if (popupStopId) {
                 updateStopBuses(popupStopId);
