@@ -4246,6 +4246,19 @@ function selectRouteTimesDataset(chart, datasetIndex) {
     chart.update();
 }
 
+function isPointInRouteTimesLegendPill(chart, x, y) {
+    const legend = chart?.legend;
+    if (!legend) return false;
+    if (legend._getLegendItemAt?.(x, y)) return true;
+    const hitBoxes = legend.legendHitBoxes;
+    if (hitBoxes && hitBoxes.some(box => (
+        box && x >= box.left && x <= box.left + box.width && y >= box.top && y <= box.top + box.height
+    ))) {
+        return true;
+    }
+    return y >= legend.top && y <= legend.bottom;
+}
+
 const routeTimesTrackingPlugin = {
     id: 'routeTimesTracking',
     afterEvent(chart, args) {
@@ -4253,6 +4266,14 @@ const routeTimesTrackingPlugin = {
 
         const {chartArea} = chart;
         if (args.event.x < chartArea.left || args.event.x > chartArea.right || args.event.y < chartArea.top) return;
+
+        if (isPointInRouteTimesLegendPill(chart, args.event.x, args.event.y)) {
+            if (chart.tooltip && (chart.tooltip.getActiveElements().length || chart.tooltip.opacity)) {
+                chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                args.changed = true;
+            }
+            return;
+        }
 
         const active = chart.getElementsAtEventForMode({
             native: null,
@@ -4526,6 +4547,7 @@ async function makeRouteTimesChart() {
                     display: true,
                     position: 'bottom',
                     onClick: function(event, legendItem, legend) {
+                        legend.chart.tooltip?.setActiveElements([], { x: 0, y: 0 });
                         selectRouteTimesDataset(legend.chart, legendItem.datasetIndex);
                     },
                     onHover: function(event, legendItem, legend) {
